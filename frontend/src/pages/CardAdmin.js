@@ -517,7 +517,9 @@ function HeroLayoutPicker({ card, user, onChange }) {
                 active ? "border-blue-900 bg-blue-50/60 shadow-md" : "border-slate-100 bg-white hover:border-slate-300"
               }`}
             >
-              <LiveCardPreview card={card} user={user} variant={o.key} />
+              <PhoneFrame>
+                <LiveCardPreview card={card} user={user} variant={o.key} />
+              </PhoneFrame>
               <div className="flex items-center gap-1.5 mt-2">
                 {active && <span className="w-1.5 h-1.5 rounded-full bg-blue-900" />}
                 <div className={`font-bold text-[13px] ${active ? "text-blue-900" : "text-slate-800"}`}>{o.label}</div>
@@ -528,6 +530,19 @@ function HeroLayoutPicker({ card, user, onChange }) {
         })}
       </div>
     </Card>
+  );
+}
+
+function PhoneFrame({ children }) {
+  return (
+    <div className="relative mx-auto w-full">
+      <div className="rounded-[20px] bg-slate-950 p-[3px] shadow-xl shadow-slate-900/30 relative">
+        <div className="absolute top-[3px] left-1/2 -translate-x-1/2 w-10 h-2 rounded-b-xl bg-slate-950 z-20" />
+        <div className="rounded-[17px] overflow-hidden relative bg-slate-900">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -581,7 +596,7 @@ function LiveCardPreview({ card, user, variant }) {
   if (variant === "photo") {
     return (
       <div
-        className="aspect-[3/4] rounded-xl overflow-hidden relative p-1.5 flex flex-col"
+        className="aspect-[9/17] rounded-[14px] overflow-hidden relative p-1.5 flex flex-col"
         style={{ background: `linear-gradient(180deg, ${brand} 0%, ${brandDeep} 100%)` }}
       >
         {/* Hero photo or initials */}
@@ -610,7 +625,7 @@ function LiveCardPreview({ card, user, variant }) {
   // logo_circle
   return (
     <div
-      className="aspect-[3/4] rounded-xl overflow-hidden relative p-1.5 flex flex-col"
+      className="aspect-[9/17] rounded-[14px] overflow-hidden relative p-1.5 flex flex-col"
       style={{ background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 80%)` }}
     >
       {/* Cover or logo backdrop */}
