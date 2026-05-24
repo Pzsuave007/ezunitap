@@ -20,6 +20,7 @@ import Settings from "@/pages/Settings";
 import PublicQuote from "@/pages/PublicQuote";
 import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
+import Landing from "@/pages/Landing";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -37,6 +38,22 @@ function PublicOnly({ children }) {
   return children;
 }
 
+/**
+ * Wrapper for the protected app tree. If the visitor is at "/" and not logged in,
+ * render the public Landing page instead of redirecting to /login. Any other
+ * protected URL redirects to /login as usual.
+ */
+function HomeOrAuth() {
+  const { user, loading } = useAuth();
+  const isRoot = window.location.pathname === "/";
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+  if (!user) {
+    if (isRoot) return <Landing />;
+    return <Navigate to="/login" replace />;
+  }
+  return <Layout />;
+}
+
 function App() {
   return (
     <div className="App">
@@ -48,7 +65,7 @@ function App() {
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/c/:slug" element={<SmartCard />} />
 
-            <Route element={<Protected><Layout /></Protected>}>
+            <Route element={<HomeOrAuth />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/clientes" element={<Clients />} />
               <Route path="/clientes/:id" element={<ClientDetail />} />
