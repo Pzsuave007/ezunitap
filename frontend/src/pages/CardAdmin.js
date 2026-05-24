@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export default function CardAdmin() {
   const [analytics, setAnalytics] = useState({ totals: {}, all_events: 0, leads: 0, reviews: 0 });
   const [reviews, setReviews] = useState([]);
   const [leads, setLeads] = useState([]);
+  const { user } = useAuth();
 
   const baseUrl = window.location.origin;
   const publicUrl = card ? `${baseUrl}/c/${card.slug}` : "";
@@ -136,7 +138,7 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
-          <HeroLayoutPicker card={card} onChange={(v) => update("hero_layout", v)} />
+          <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
           {card.hero_layout === "logo_circle" && (
             <CoverPhotoUploader card={card} onChange={load} />
           )}
@@ -486,25 +488,25 @@ function CoverPhotoUploader({ card, onChange }) {
   return <AssetUploader card={card} onChange={onChange} kind="cover" />;
 }
 
-function HeroLayoutPicker({ card, onChange }) {
+function HeroLayoutPicker({ card, user, onChange }) {
   const options = [
     {
       key: "photo",
       label: "Foto Grande",
-      desc: "Tu foto llena toda la portada. Look premium y personal.",
+      desc: "Tu foto llena la portada. Look premium.",
     },
     {
       key: "logo_circle",
-      label: "Foto de Trabajo + Avatar",
-      desc: "Una foto de tu trabajo o tu logo como fondo, y tu foto en un círculo pequeño.",
+      label: "Foto/Logo + Avatar",
+      desc: "Foto de tu trabajo o logo de fondo + foto chica en círculo.",
     },
   ];
   const current = card.hero_layout || "photo";
   return (
     <Card className="card-elevated p-5 border-0 shadow-none">
       <h3 className="font-heading font-bold text-base mb-1">Estilo de tu tarjeta</h3>
-      <p className="text-xs text-slate-500 mb-3">Elige cómo quieres que se vea tu tarjeta pública.</p>
-      <div className="grid grid-cols-2 gap-2">
+      <p className="text-xs text-slate-500 mb-3">Preview en vivo con tu data. Cambia entre estilos hasta encontrar el que más te late.</p>
+      <div className="grid grid-cols-2 gap-2.5">
         {options.map((o) => {
           const active = current === o.key;
           return (
@@ -513,13 +515,16 @@ function HeroLayoutPicker({ card, onChange }) {
               type="button"
               data-testid={`hero-layout-${o.key}`}
               onClick={() => onChange(o.key)}
-              className={`text-left rounded-2xl p-3 border-2 transition-all tap ${
-                active ? "border-blue-900 bg-blue-50/60" : "border-slate-100 bg-white hover:border-slate-300"
+              className={`text-left rounded-2xl p-2 border-2 transition-all tap ${
+                active ? "border-blue-900 bg-blue-50/60 shadow-md" : "border-slate-100 bg-white hover:border-slate-300"
               }`}
             >
-              <HeroLayoutThumb variant={o.key} active={active} />
-              <div className={`font-bold text-sm mt-2 ${active ? "text-blue-900" : "text-slate-800"}`}>{o.label}</div>
-              <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{o.desc}</div>
+              <LiveCardPreview card={card} user={user} variant={o.key} />
+              <div className="flex items-center gap-1.5 mt-2">
+                {active && <span className="w-1.5 h-1.5 rounded-full bg-blue-900" />}
+                <div className={`font-bold text-[13px] ${active ? "text-blue-900" : "text-slate-800"}`}>{o.label}</div>
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">{o.desc}</div>
             </button>
           );
         })}
@@ -528,42 +533,124 @@ function HeroLayoutPicker({ card, onChange }) {
   );
 }
 
-function HeroLayoutThumb({ variant, active }) {
-  // Mini SVG-ish preview of each layout.
+function LiveCardPreview({ card, user, variant }) {
+  const brand = card.brand_color || "#1E3A8A";
+  const accent = card.accent_color || "#10B981";
+  const brandDeep = adjustColor(brand, -45);
+  const photoId = card.profile_photo_id;
+  const logoId = card.logo_photo_id;
+  const coverId = card.cover_photo_id;
+  const profileUrl = photoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${photoId}` : null;
+  const logoUrl = logoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${logoId}` : null;
+  const coverUrl = coverId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${coverId}` : null;
+  const businessName = user?.business_name || "Mi Negocio";
+  const ownerName = user?.owner_name || "";
+  const role = card.role || ownerName;
+  const initials = (ownerName || businessName).split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+
   if (variant === "photo") {
     return (
-      <div className={`aspect-[3/4] rounded-xl overflow-hidden relative ${active ? "ring-2 ring-blue-900" : ""}`}
-           style={{ background: "linear-gradient(180deg, #475569 0%, #0F172A 100%)" }}>
-        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-          <div className="w-3 h-3 rounded bg-white/40" />
-          <div className="w-5 h-2.5 rounded-full bg-white/30" />
+      <div
+        className="aspect-[3/4] rounded-xl overflow-hidden relative"
+        style={{ background: `linear-gradient(180deg, ${brand} 0%, ${brandDeep} 100%)` }}
+      >
+        {/* Hero photo or initials */}
+        {profileUrl ? (
+          <img src={profileUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="font-heading font-bold text-white/85 text-3xl tracking-tight">{initials || "?"}</div>
+          </div>
+        )}
+        {/* Bottom darken gradient */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 35%, rgba(5,8,16,0.85) 100%)" }} />
+        {/* Top bar */}
+        <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between">
+          {logoUrl ? (
+            <div className="w-5 h-5 rounded-md bg-white/90 p-0.5">
+              <img src={logoUrl} alt="" className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-5 h-5 rounded-md bg-white/15 backdrop-blur-md" />
+          )}
+          <div className="px-1.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[6px] font-bold text-white">ES</div>
         </div>
-        <div className="absolute inset-x-3 bottom-2">
-          <div className="h-1.5 rounded bg-white/90 w-3/4 mb-1" />
-          <div className="h-1 rounded bg-white/50 w-1/2" />
+        {/* Bottom info */}
+        <div className="absolute bottom-1 inset-x-1.5 text-white">
+          <div className="font-heading font-bold text-[10px] leading-tight truncate">{businessName}</div>
+          {role && <div className="text-[7px] text-white/80 truncate mt-0.5">{role}</div>}
         </div>
+        {/* Accent CTA dot */}
+        <div className="absolute bottom-1 right-1.5 w-3 h-1 rounded-full" style={{ background: accent }} />
       </div>
     );
   }
+
+  // logo_circle
   return (
-    <div className={`aspect-[3/4] rounded-xl overflow-hidden relative ${active ? "ring-2 ring-blue-900" : ""}`}
-         style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #064E3B 100%)" }}>
-      {/* Faux work pattern */}
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: "repeating-linear-gradient(45deg, #fff 0 2px, transparent 2px 8px)",
-      }} />
-      <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-        <div className="w-3 h-3 rounded bg-white/60" />
-        <div className="w-5 h-2.5 rounded-full bg-white/30" />
+    <div
+      className="aspect-[3/4] rounded-xl overflow-hidden relative"
+      style={{ background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 80%)` }}
+    >
+      {/* Cover photo or logo backdrop */}
+      {coverUrl ? (
+        <>
+          <img src={coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,8,16,0.3) 0%, transparent 30%, rgba(5,8,16,0.85) 100%)" }} />
+        </>
+      ) : logoUrl ? (
+        <div className="absolute inset-0 flex items-start justify-center pt-4">
+          <img src={logoUrl} alt="" className="max-w-[60%] max-h-[40%] object-contain opacity-90" />
+        </div>
+      ) : null}
+      {/* Top bar */}
+      <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between">
+        {logoUrl && coverUrl ? (
+          <div className="w-5 h-5 rounded-md bg-white/90 p-0.5">
+            <img src={logoUrl} alt="" className="w-full h-full object-contain" />
+          </div>
+        ) : (
+          <div className="w-5 h-5 rounded-md bg-white/15 backdrop-blur-md" />
+        )}
+        <div className="px-1.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[6px] font-bold text-white">ES</div>
       </div>
-      {/* Avatar circle */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-[40%] w-8 h-8 rounded-full bg-white border-2 border-white shadow-md" />
-      <div className="absolute inset-x-0 bottom-2 text-center">
-        <div className="h-1.5 rounded bg-white/90 w-1/2 mx-auto mb-1" />
-        <div className="h-1 rounded bg-white/50 w-1/3 mx-auto" />
+      {/* Circular avatar centered */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 mt-2">
+        <div
+          className="w-12 h-12 rounded-full p-[2px]"
+          style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}
+        >
+          <div className="w-full h-full rounded-full bg-white p-[2px]">
+            {profileUrl ? (
+              <img src={profileUrl} alt="" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div className="w-full h-full rounded-full flex items-center justify-center font-heading font-bold text-white text-xs" style={{ background: brandDeep }}>
+                {initials || "?"}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+      {/* Bottom info — centered */}
+      <div className="absolute bottom-1 inset-x-1 text-white text-center">
+        <div className="font-heading font-bold text-[9px] leading-tight truncate px-1">{businessName}</div>
+        {role && <div className="text-[6px] text-white/75 truncate mt-0.5">{role}</div>}
+      </div>
+      {/* Accent CTA dot */}
+      <div className="absolute bottom-1 right-1.5 w-2 h-1 rounded-full" style={{ background: accent }} />
     </div>
   );
+}
+
+// adjustColor helper — keep in sync with SmartCard's helper.
+function adjustColor(hex, amt) {
+  if (!hex) return "#000000";
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = Math.max(0, Math.min(255, parseInt(h.slice(0, 2), 16) + amt));
+  const g = Math.max(0, Math.min(255, parseInt(h.slice(2, 4), 16) + amt));
+  const b = Math.max(0, Math.min(255, parseInt(h.slice(4, 6), 16) + amt));
+  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 function AssetUploader({ card, onChange, kind, heroLayout }) {
