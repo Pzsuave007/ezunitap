@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
-  Phone, MapPin, Languages, Bot,
+  Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2,
 } from "lucide-react";
 
 const FEATURES = [
@@ -447,71 +447,108 @@ function MiniStat({ label, value, accent }) {
 }
 
 function SmartCardPreview() {
+  // Logo + Avatar layout (same look as in CardAdmin live preview, but at landing scale).
+  const brand = "#1E3A8A";
+  const accent = "#10B981";
+  const brandDeep = "#0B1A4A";
+  // Cover photo — a contractor / construction work scene
+  const coverUrl = "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=80&auto=format&fit=crop";
+  const avatarUrl = "/landing-portrait.jpg";
+
   return (
     <div className="relative mx-auto max-w-xs lg:max-w-sm">
+      {/* Phone body */}
       <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-purple-900/30 relative border border-white/5">
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-10" />
-        <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-slate-950">
-          {/* Hero photo */}
-          <img
-            src="/landing-portrait.jpg"
-            alt="contractor portrait"
-            className="absolute inset-0 w-full h-full object-cover object-top"
-          />
-          {/* Photo gradient overlay so text reads */}
-          <div className="absolute inset-0" style={{
-            background:
-              "linear-gradient(180deg, rgba(5,8,16,0.55) 0%, transparent 30%, transparent 50%, rgba(5,8,16,0.85) 90%, rgba(5,8,16,0.98) 100%)",
-          }} />
-          {/* Top mesh tint */}
-          <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{
-            background: "radial-gradient(ellipse at top, rgba(30,58,138,0.65) 0%, transparent 60%)",
-          }} />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-30" />
+        <div
+          className="w-full h-full rounded-[2.3rem] overflow-hidden relative flex flex-col"
+          style={{ background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 80%)` }}
+        >
+          {/* Cover image background */}
+          <div className="absolute inset-0">
+            <img src={coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{
+              background:
+                "linear-gradient(180deg, rgba(5,8,16,0.4) 0%, transparent 25%, transparent 55%, rgba(5,8,16,0.85) 88%, rgba(5,8,16,0.98) 100%)",
+            }} />
+            <div className="absolute inset-0 mix-blend-overlay opacity-40" style={{
+              background: `radial-gradient(ellipse at top, ${brand}99 0%, transparent 60%)`,
+            }} />
+          </div>
 
-          {/* Top bar — logo + lang chip */}
-          <div className="absolute top-6 inset-x-4 flex items-center justify-between z-10">
-            <div className="w-10 h-10 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/40 flex items-center justify-center shadow-lg">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
-                <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+          {/* Top bar — logo + ES pill */}
+          <div className="absolute top-7 inset-x-5 flex items-center justify-between z-20">
+            <div className="w-12 h-12 rounded-2xl bg-white shadow-lg p-2">
+              <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
+                <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
               </div>
             </div>
-            <div className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-xl border border-white/20 text-[9px] font-bold text-white inline-flex items-center gap-1">
-              <Globe className="w-2.5 h-2.5" /> ES
+            <div className="px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white inline-flex items-center gap-1.5">
+              <Globe className="w-3 h-3" />
+              <span className="text-[11px] font-bold">ES</span>
             </div>
           </div>
 
-          {/* Verified badge */}
-          <div className="absolute top-20 left-4 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 backdrop-blur-xl border border-white/15">
-            <Star className="w-3 h-3 text-amber-300 fill-amber-300" />
-            <span className="text-[9px] font-bold uppercase tracking-wider text-white">Verified Pro</span>
+          {/* Circular avatar centered */}
+          <div className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 z-10">
+            <div
+              className="w-[124px] h-[124px] rounded-full p-[3px]"
+              style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}
+            >
+              <div className="w-full h-full rounded-full bg-white p-[3px]">
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+              </div>
+            </div>
           </div>
 
-          {/* Bottom info */}
-          <div className="absolute bottom-0 inset-x-0 p-4 text-white z-10">
-            <div className="font-heading font-bold text-2xl leading-tight">Carlos Rodriguez</div>
-            <div className="text-xs text-white/75 mt-1">Owner & Lead Contractor</div>
-            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-white/65">
-              <MapPin className="w-3 h-3" /> Houston, TX
-            </div>
-            <div className="grid grid-cols-4 gap-1.5 mt-4">
+          {/* Bottom content */}
+          <div className="mt-auto relative z-10 px-5 pb-5 text-white text-center">
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Uni2 Marketing</h3>
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Agency</h3>
+            <div className="text-base text-white/85 mt-2 drop-shadow">Paul Zacapantzi</div>
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-4 gap-2 mt-5 px-3 py-3 rounded-2xl backdrop-blur-md text-left"
+                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {[
-                { i: Phone, l: "Call" },
-                { i: MessageSquare, l: "Text" },
-                { i: Phone, l: "Wh." },
-                { i: Star, l: "Mail" },
-              ].map((x, i) => (
-                <div key={i} className="rounded-xl bg-white/10 backdrop-blur-xl border border-white/15 p-2 text-center">
-                  <x.i className="w-3.5 h-3.5 text-white mx-auto" />
-                  <div className="text-[8px] text-white/75 mt-0.5">{x.l}</div>
+                { Icon: Phone, label: "Call" },
+                { Icon: MessageSquare, label: "Text" },
+                { Icon: Send, label: "WhatsApp" },
+                { Icon: Mail, label: "Email" },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
+                    style={{ background: brand, boxShadow: `0 4px 12px ${brand}66` }}
+                  >
+                    <Icon className="w-5 h-5 text-white" strokeWidth={2.2} />
+                  </div>
+                  <div className="text-[10px] text-white/85 font-semibold">{label}</div>
                 </div>
               ))}
             </div>
-            <div className="mt-2 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 flex items-center justify-center gap-1.5 text-xs font-bold shadow-lg shadow-emerald-700/30">
-              <Sparkles className="w-3.5 h-3.5" /> Request a Free Estimate
+
+            {/* Save Contact bar */}
+            <div className="mt-2 rounded-2xl px-3 py-2.5 flex items-center gap-2 backdrop-blur-md"
+                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                <QrCode className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                <Share2 className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="flex-1 flex items-center justify-center gap-1.5 text-white text-xs font-bold">
+                <Save className="w-3.5 h-3.5" />
+                Save Contact
+              </div>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: accent }}>
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
             </div>
           </div>
         </div>
       </div>
+
       {/* Floating chips */}
       <div className="hidden sm:flex absolute right-0 lg:-right-4 top-16 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
