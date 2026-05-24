@@ -239,16 +239,17 @@ export default function Landing() {
       </section>
 
       {/* ====== SMART CARD HIGHLIGHT ====== */}
-      <section id="card" className="py-20 lg:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 -z-10" style={{
-          background: "radial-gradient(ellipse at top right, #050810 0%, #0F172A 60%, #1E1B4B 100%)"
-        }} />
-        <div className="absolute inset-0 -z-10 opacity-30 pointer-events-none">
+      <section
+        id="card"
+        className="py-20 lg:py-28 relative overflow-hidden text-white"
+        style={{ background: "radial-gradient(ellipse at top right, #050810 0%, #0F172A 60%, #1E1B4B 100%)" }}
+      >
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
           <div className="absolute top-20 left-1/4 w-96 h-96 rounded-full blur-3xl" style={{ background: "#7C3AED" }} />
           <div className="absolute bottom-10 right-1/4 w-80 h-80 rounded-full blur-3xl" style={{ background: "#10B981" }} />
         </div>
 
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 items-center relative">
           <div className="lg:col-span-6 text-white">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-xs font-bold uppercase tracking-wider mb-6">
               <Star className="w-3.5 h-3.5 text-amber-300" /> El feature más premium
@@ -450,30 +451,48 @@ function SmartCardPreview() {
     <div className="relative mx-auto max-w-xs lg:max-w-sm">
       <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-purple-900/30 relative border border-white/5">
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-10" />
-        <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative" style={{
-          background: "radial-gradient(ellipse at top, #1E3A8A 0%, #050810 65%)"
-        }}>
-          {/* Hero photo placeholder */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950" />
-          <div className="absolute top-6 left-4 w-9 h-9 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center">
-            <Hammer className="w-4 h-4 text-white" />
-          </div>
-          <div className="absolute top-6 right-4 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-xl border border-white/20 text-[9px] font-bold text-white inline-flex items-center gap-1">
-            <Globe className="w-2.5 h-2.5" /> ES
-          </div>
+        <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-slate-950">
+          {/* Hero photo */}
+          <img
+            src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=600&q=80"
+            alt="contractor portrait"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Photo gradient overlay so text reads */}
+          <div className="absolute inset-0" style={{
+            background:
+              "linear-gradient(180deg, rgba(5,8,16,0.55) 0%, transparent 30%, transparent 50%, rgba(5,8,16,0.85) 90%, rgba(5,8,16,0.98) 100%)",
+          }} />
+          {/* Top mesh tint */}
+          <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{
+            background: "radial-gradient(ellipse at top, rgba(30,58,138,0.65) 0%, transparent 60%)",
+          }} />
 
-          {/* Big initials hero */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-3xl opacity-50" style={{ background: "radial-gradient(circle, #10B981 0%, transparent 70%)" }} />
-              <div className="font-heading text-7xl font-bold text-white relative">CR</div>
+          {/* Top bar — logo + lang chip */}
+          <div className="absolute top-6 inset-x-4 flex items-center justify-between z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/40 flex items-center justify-center shadow-lg">
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
+                <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-xl border border-white/20 text-[9px] font-bold text-white inline-flex items-center gap-1">
+              <Globe className="w-2.5 h-2.5" /> ES
             </div>
           </div>
 
+          {/* Verified badge */}
+          <div className="absolute top-20 left-4 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 backdrop-blur-xl border border-white/15">
+            <Star className="w-3 h-3 text-amber-300 fill-amber-300" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white">Verified Pro</span>
+          </div>
+
           {/* Bottom info */}
-          <div className="absolute bottom-0 inset-x-0 p-4 text-white">
-            <div className="font-heading font-bold text-xl">Carlos Rodriguez</div>
-            <div className="text-xs text-white/70 mt-0.5">Owner & Lead Contractor</div>
+          <div className="absolute bottom-0 inset-x-0 p-4 text-white z-10">
+            <div className="font-heading font-bold text-2xl leading-tight">Carlos Rodriguez</div>
+            <div className="text-xs text-white/75 mt-1">Owner & Lead Contractor</div>
+            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-white/65">
+              <MapPin className="w-3 h-3" /> Houston, TX
+            </div>
             <div className="grid grid-cols-4 gap-1.5 mt-4">
               {[
                 { i: Phone, l: "Call" },
@@ -487,13 +506,13 @@ function SmartCardPreview() {
                 </div>
               ))}
             </div>
-            <div className="mt-2 h-9 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 flex items-center justify-center gap-1.5 text-xs font-bold">
-              <Sparkles className="w-3 h-3" /> Request a Free Estimate
+            <div className="mt-2 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 flex items-center justify-center gap-1.5 text-xs font-bold shadow-lg shadow-emerald-700/30">
+              <Sparkles className="w-3.5 h-3.5" /> Request a Free Estimate
             </div>
           </div>
         </div>
       </div>
-      {/* Floating chip */}
+      {/* Floating chips */}
       <div className="absolute -right-2 lg:-right-6 top-1/4 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
         <div className="text-[11px]">
