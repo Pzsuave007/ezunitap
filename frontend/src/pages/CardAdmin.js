@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   IdCard, QrCode, Copy, ExternalLink, Eye, Plus, Trash2, Loader2,
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
+  Image as ImageIcon, Upload, X as XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -117,6 +118,7 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
+          <LogoUploader card={card} onChange={load} />
           <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
             <h3 className="font-heading font-bold text-base">Lo básico</h3>
             <div>
@@ -364,6 +366,90 @@ function StatTile({ label, value, accent }) {
       <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</div>
       <div className={`font-heading text-2xl font-bold mt-1 bg-gradient-to-br ${cls} bg-clip-text text-transparent`}>
         {value}
+      </div>
+    </Card>
+  );
+}
+
+function LogoUploader({ card, onChange }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const logoUrl = card.logo_photo_id
+    ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${card.logo_photo_id}`
+    : null;
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await api.post("/card/logo", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success("Logo subido");
+      onChange();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error subiendo logo");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm("¿Quitar logo?")) return;
+    await api.delete("/card/logo");
+    toast.success("Logo removido");
+    onChange();
+  };
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none">
+      <h3 className="font-heading font-bold text-base mb-3 flex items-center gap-2">
+        <ImageIcon className="w-5 h-5 text-emerald-600" /> Logo del negocio
+      </h3>
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="logo"
+              data-testid="logo-preview"
+              className="w-20 h-20 rounded-2xl object-cover border border-slate-200 shadow-sm"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+              <ImageIcon className="w-8 h-8" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-slate-500 mb-2">PNG, JPEG o WEBP. Cuadrado se ve mejor. Máx 8MB.</p>
+          <div className="flex gap-2">
+            <Button
+              data-testid="logo-upload-btn"
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
+              {logoUrl ? "Cambiar" : "Subir"}
+            </Button>
+            {logoUrl && (
+              <Button
+                data-testid="logo-remove-btn"
+                size="sm"
+                variant="outline"
+                onClick={remove}
+                className="rounded-xl text-red-600"
+              >
+                <XIcon className="w-3.5 h-3.5 mr-1" /> Quitar
+              </Button>
+            )}
+          </div>
+          <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleFile} />
+        </div>
       </div>
     </Card>
   );

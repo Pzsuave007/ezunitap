@@ -946,6 +946,57 @@ async def update_card_settings(payload: CardSettingsIn, user_id: str = Depends(g
     return await _ensure_card(user_id)
 
 
+@api_router.post("/card/logo")
+async def upload_card_logo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
+    """Upload business logo. Stored under cards/logos/{user_id}/{uuid}.{ext}."""
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
+    data = await file.read()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
+    logo_id = _new_id()
+    path = f"{app_name}/cards/logos/{user_id}/{logo_id}.{ext}"
+    try:
+        backend = storage_service.get_storage()
+        result = backend.put(path, data, content_type)
+    except Exception as e:
+        raise HTTPException(500, f"Storage error: {e}")
+    # Track as a photo record so the public photo endpoint can serve it
+    photo_doc = {
+        "id": logo_id,
+        "user_id": user_id,
+        "client_id": None,
+        "job_id": None,
+        "label": "logo",
+        "storage_path": result.get("path", path),
+        "content_type": content_type,
+        "size": result.get("size", len(data)),
+        "is_deleted": False,
+        "is_logo": True,
+        "created_at": _now_iso(),
+    }
+    await db.photos.insert_one(photo_doc)
+    # Update card with logo reference
+    await _ensure_card(user_id)
+    await db.cards.update_one(
+        {"user_id": user_id},
+        {"$set": {"logo_photo_id": logo_id, "updated_at": _now_iso()}},
+    )
+    return {"ok": True, "logo_photo_id": logo_id}
+
+
+@api_router.delete("/card/logo")
+async def delete_card_logo(user_id: str = Depends(get_current_user_id)):
+    card = await _ensure_card(user_id)
+    pid = card.get("logo_photo_id")
+    if pid:
+        await db.photos.update_one({"id": pid, "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.cards.update_one({"user_id": user_id}, {"$set": {"logo_photo_id": None}})
+    return {"ok": True}
+
+
 @api_router.get("/card/analytics")
 async def card_analytics(user_id: str = Depends(get_current_user_id)):
     card = await _ensure_card(user_id)
@@ -1037,9 +1088,10 @@ async def public_get_card(slug: str):
     card, user = await _public_card_by_slug(slug)
     # Gather public-safe data
     reviews = await db.reviews.find({"user_id": card["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
-    # Photos from completed jobs OR all photos
+    # Photos from completed jobs OR all photos (exclude logo)
     photos = await db.photos.find(
-        {"user_id": card["user_id"], "is_deleted": False}, {"_id": 0}
+        {"user_id": card["user_id"], "is_deleted": False, "is_logo": {"$ne": True}, "label": {"$ne": "logo"}},
+        {"_id": 0},
     ).sort("created_at", -1).to_list(30)
     return {
         "business": {
