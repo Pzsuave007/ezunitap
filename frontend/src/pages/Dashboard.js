@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Users, FileText, Receipt, Briefcase, DollarSign,
   Plus, UserPlus, Sparkles, ArrowRight, TrendingUp,
+  Settings as SettingsIcon,
 } from "lucide-react";
 
 const StatCard = ({ icon: Icon, label, value, accent, testid }) => (
@@ -75,12 +76,29 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="text-sm text-slate-500">{greeting()},</div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">
-          {user?.owner_name || user?.business_name || "Hola"} 👋
-        </h1>
-        <p className="text-slate-500 mt-1">Aquí está tu negocio hoy.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm text-slate-500">{greeting()},</div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight truncate">
+            {user?.owner_name || user?.business_name || "Hola"} 👋
+          </h1>
+          <button
+            data-testid="dashboard-business-name"
+            onClick={() => navigate("/ajustes")}
+            className="mt-1 text-sm text-slate-500 hover:text-blue-900 inline-flex items-center gap-1 tap"
+          >
+            {user?.business_name || "Aquí está tu negocio hoy."}
+            <span className="text-[10px] opacity-60">✎</span>
+          </button>
+        </div>
+        <button
+          data-testid="dashboard-settings-btn"
+          onClick={() => navigate("/ajustes")}
+          className="flex-shrink-0 w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 tap shadow-sm"
+          aria-label="Ajustes"
+        >
+          <SettingsIcon className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Quick Actions */}
