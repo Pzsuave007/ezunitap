@@ -1101,7 +1101,10 @@ async def get_card_settings(user_id: str = Depends(get_current_user_id)):
 @api_router.put("/card/settings")
 async def update_card_settings(payload: CardSettingsIn, user_id: str = Depends(get_current_user_id)):
     card = await _ensure_card(user_id)
-    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # exclude_unset = only fields explicitly sent by the client (true PATCH/merge).
+    # This prevents Pydantic defaults ("", [], False, 0) from wiping out saved data
+    # when the frontend omits a field from the payload.
+    update = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
     # If slug is provided, ensure unique
     if "slug" in update and update["slug"] and update["slug"] != card["slug"]:
         new_slug = _slugify(update["slug"])
