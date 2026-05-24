@@ -139,9 +139,7 @@ export default function CardAdmin() {
 
         <TabsContent value="design" className="mt-4 space-y-3">
           <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
-          {card.hero_layout === "logo_circle" && (
-            <CoverPhotoUploader card={card} onChange={load} />
-          )}
+          <CoverPhotoUploader card={card} onChange={load} />
           <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
           <LogoUploader card={card} onChange={load} />
           <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
@@ -548,40 +546,63 @@ function LiveCardPreview({ card, user, variant }) {
   const role = card.role || ownerName;
   const initials = (ownerName || businessName).split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
+  const TopBar = () => (
+    <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between z-10">
+      {logoUrl ? (
+        <div className="w-6 h-6 rounded-md bg-white p-0.5 shadow">
+          <img src={logoUrl} alt="" className="w-full h-full object-contain" />
+        </div>
+      ) : (
+        <div className="w-6 h-6 rounded-md bg-white/15 backdrop-blur-md border border-white/20" />
+      )}
+      <div className="px-1.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[6px] font-bold text-white border border-white/15">ES</div>
+    </div>
+  );
+
+  const ActionButtons = () => (
+    <div className="grid grid-cols-4 gap-[3px] mt-1.5">
+      {["call", "text", "wh", "mail"].map((k) => (
+        <div key={k} className="rounded-md py-1 flex flex-col items-center" style={{ background: brand, boxShadow: `0 1px 3px ${brand}80` }}>
+          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+          <div className="text-[5px] text-white/85 mt-0.5 font-semibold capitalize">{k === "wh" ? "Wh" : k}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const SaveBar = () => (
+    <div className="mt-1 rounded-md py-1 flex items-center justify-center gap-1 backdrop-blur-md" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="w-1.5 h-1.5 rounded-sm bg-white/70" />
+      <div className="text-[5px] text-white/80 font-semibold">Save Contact</div>
+      <div className="w-2 h-2 rounded-full" style={{ background: accent }} />
+    </div>
+  );
+
   if (variant === "photo") {
     return (
       <div
-        className="aspect-[3/4] rounded-xl overflow-hidden relative"
+        className="aspect-[3/4] rounded-xl overflow-hidden relative p-1.5 flex flex-col"
         style={{ background: `linear-gradient(180deg, ${brand} 0%, ${brandDeep} 100%)` }}
       >
         {/* Hero photo or initials */}
-        {profileUrl ? (
-          <img src={profileUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="font-heading font-bold text-white/85 text-3xl tracking-tight">{initials || "?"}</div>
-          </div>
-        )}
-        {/* Bottom darken gradient */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 35%, rgba(5,8,16,0.85) 100%)" }} />
-        {/* Top bar */}
-        <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between">
-          {logoUrl ? (
-            <div className="w-5 h-5 rounded-md bg-white/90 p-0.5">
-              <img src={logoUrl} alt="" className="w-full h-full object-contain" />
-            </div>
+        <div className="absolute inset-0">
+          {profileUrl ? (
+            <img src={profileUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
-            <div className="w-5 h-5 rounded-md bg-white/15 backdrop-blur-md" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="font-heading font-bold text-white/85 text-3xl tracking-tight">{initials || "?"}</div>
+            </div>
           )}
-          <div className="px-1.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[6px] font-bold text-white">ES</div>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, rgba(5,8,16,0.92) 92%)" }} />
         </div>
-        {/* Bottom info */}
-        <div className="absolute bottom-1 inset-x-1.5 text-white">
-          <div className="font-heading font-bold text-[10px] leading-tight truncate">{businessName}</div>
-          {role && <div className="text-[7px] text-white/80 truncate mt-0.5">{role}</div>}
+        <TopBar />
+        {/* Bottom block */}
+        <div className="mt-auto relative z-10">
+          <div className="font-heading font-bold text-[9px] leading-[1.05] text-white drop-shadow line-clamp-2">{businessName}</div>
+          {role && <div className="text-[6px] text-white/80 truncate mt-0.5">{role}</div>}
+          <ActionButtons />
+          <SaveBar />
         </div>
-        {/* Accent CTA dot */}
-        <div className="absolute bottom-1 right-1.5 w-3 h-1 rounded-full" style={{ background: accent }} />
       </div>
     );
   }
@@ -589,55 +610,44 @@ function LiveCardPreview({ card, user, variant }) {
   // logo_circle
   return (
     <div
-      className="aspect-[3/4] rounded-xl overflow-hidden relative"
+      className="aspect-[3/4] rounded-xl overflow-hidden relative p-1.5 flex flex-col"
       style={{ background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 80%)` }}
     >
-      {/* Cover photo or logo backdrop */}
-      {coverUrl ? (
-        <>
-          <img src={coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,8,16,0.3) 0%, transparent 30%, rgba(5,8,16,0.85) 100%)" }} />
-        </>
-      ) : logoUrl ? (
-        <div className="absolute inset-0 flex items-start justify-center pt-4">
-          <img src={logoUrl} alt="" className="max-w-[60%] max-h-[40%] object-contain opacity-90" />
-        </div>
-      ) : null}
-      {/* Top bar */}
-      <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between">
-        {logoUrl && coverUrl ? (
-          <div className="w-5 h-5 rounded-md bg-white/90 p-0.5">
-            <img src={logoUrl} alt="" className="w-full h-full object-contain" />
+      {/* Cover or logo backdrop */}
+      <div className="absolute inset-0">
+        {coverUrl ? (
+          <>
+            <img src={coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,8,16,0.35) 0%, transparent 25%, rgba(5,8,16,0.6) 70%, rgba(5,8,16,0.92) 100%)" }} />
+          </>
+        ) : logoUrl ? (
+          <div className="absolute inset-0 flex items-center justify-center pb-12">
+            <img src={logoUrl} alt="" className="max-w-[60%] max-h-[35%] object-contain opacity-90" />
           </div>
-        ) : (
-          <div className="w-5 h-5 rounded-md bg-white/15 backdrop-blur-md" />
-        )}
-        <div className="px-1.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[6px] font-bold text-white">ES</div>
+        ) : null}
       </div>
-      {/* Circular avatar centered */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 mt-2">
-        <div
-          className="w-12 h-12 rounded-full p-[2px]"
-          style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}
-        >
-          <div className="w-full h-full rounded-full bg-white p-[2px]">
+      <TopBar />
+      {/* Avatar centered */}
+      <div className="absolute left-1/2 top-[34%] -translate-x-1/2 z-10">
+        <div className="w-11 h-11 rounded-full p-[2px]" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+          <div className="w-full h-full rounded-full bg-white p-[1.5px]">
             {profileUrl ? (
               <img src={profileUrl} alt="" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <div className="w-full h-full rounded-full flex items-center justify-center font-heading font-bold text-white text-xs" style={{ background: brandDeep }}>
+              <div className="w-full h-full rounded-full flex items-center justify-center font-heading font-bold text-white text-[10px]" style={{ background: brandDeep }}>
                 {initials || "?"}
               </div>
             )}
           </div>
         </div>
       </div>
-      {/* Bottom info — centered */}
-      <div className="absolute bottom-1 inset-x-1 text-white text-center">
-        <div className="font-heading font-bold text-[9px] leading-tight truncate px-1">{businessName}</div>
-        {role && <div className="text-[6px] text-white/75 truncate mt-0.5">{role}</div>}
+      {/* Bottom block — centered */}
+      <div className="mt-auto relative z-10 text-center">
+        <div className="font-heading font-bold text-[9px] leading-[1.05] text-white drop-shadow px-1 line-clamp-2">{businessName}</div>
+        {role && <div className="text-[6px] text-white/80 truncate mt-0.5">{role}</div>}
+        <ActionButtons />
+        <SaveBar />
       </div>
-      {/* Accent CTA dot */}
-      <div className="absolute bottom-1 right-1.5 w-2 h-1 rounded-full" style={{ background: accent }} />
     </div>
   );
 }
