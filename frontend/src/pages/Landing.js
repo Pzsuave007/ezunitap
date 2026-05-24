@@ -454,9 +454,9 @@ function SmartCardPreview() {
         <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-slate-950">
           {/* Hero photo */}
           <img
-            src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=600&q=80"
+            src="/landing-portrait.jpg"
             alt="contractor portrait"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
           {/* Photo gradient overlay so text reads */}
           <div className="absolute inset-0" style={{
@@ -513,14 +513,14 @@ function SmartCardPreview() {
         </div>
       </div>
       {/* Floating chips */}
-      <div className="absolute -right-2 lg:-right-6 top-1/4 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
+      <div className="hidden sm:flex absolute right-0 lg:-right-4 top-16 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
         <div className="text-[11px]">
           <div className="font-bold leading-tight">5.0 reseñas</div>
           <div className="text-slate-500">147 clientes</div>
         </div>
       </div>
-      <div className="absolute -left-2 lg:-left-6 bottom-1/4 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
+      <div className="hidden sm:flex absolute left-0 lg:-left-4 top-40 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
         <Bot className="w-4 h-4 text-purple-600" />
         <div className="text-[11px]">
           <div className="font-bold leading-tight">AI respondió</div>
