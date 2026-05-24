@@ -178,3 +178,88 @@ async def analyze_photo_for_quote(image_base64: str, extra_note_es: str = "") ->
     if not data:
         raise ValueError("AI could not analyze photo. Try another image.")
     return data
+
+
+# ============================================================================
+# Smart Card AI Assistant (public chat for end customers)
+# ============================================================================
+CARD_ASSISTANT_SYSTEM_TEMPLATE = """You are a friendly customer service assistant for {business_name}, a {business_type} business.
+
+Business info:
+- Name: {business_name}
+- Services: {services}
+- Service area: {service_area}
+- Phone: {phone}
+- Email: {email}
+
+Your job:
+1. Greet warmly. Be conversational, brief, helpful.
+2. Answer questions about services, service area, what's included, typical project timelines.
+3. If the customer wants a quote, ask for: their name, phone (or email), property address, brief project description. Gather these step by step (one or two questions at a time, not all at once).
+4. When you have enough info (name + phone OR email + a project description), respond with a short confirmation AND end your message with a line on its own:
+   LEAD_READY: {{"name":"...","phone":"...","email":"...","address":"...","description":"...","service":"..."}}
+5. Never invent exact prices. Say "the owner will follow up with a custom quote within 24 hours".
+6. Reply in {language} ({language_code}). Keep responses under 80 words.
+7. Stay on-topic (services, scheduling, quotes). Decline politely if off-topic.
+"""
+
+
+async def card_assistant_chat(
+    history: list,
+    user_message: str,
+    business_name: str,
+    business_type: str,
+    services: str,
+    service_area: str,
+    phone: str,
+    email: str,
+    language_code: str = "en",
+) -> str:
+    """Chat assistant for the public Smart Business Card. history is a list of {role, content}."""
+    language = "English" if language_code == "en" else "Spanish"
+    system = CARD_ASSISTANT_SYSTEM_TEMPLATE.format(
+        business_name=business_name or "this business",
+        business_type=business_type or "service",
+        services=services or "various services",
+        service_area=service_area or "the local area",
+        phone=phone or "n/a",
+        email=email or "n/a",
+        language=language,
+        language_code=language_code,
+    )
+    chat = _new_chat(system)
+    # Replay prior conversation as alternating user/assistant
+    for turn in history[-12:]:
+        role = turn.get("role")
+        content = turn.get("content", "")
+        if role == "user":
+            await chat.send_message(UserMessage(text=content))
+        # Note: emergentintegrations LlmChat handles history per session_id internally.
+        # We use a fresh session each call so we feed the prior turns ourselves.
+    response = await chat.send_message(UserMessage(text=user_message))
+    return (response or "").strip()
+
+
+SOCIAL_POST_SYSTEM = """You write short, engaging social media captions for a contractor's completed project.
+
+Output ONLY JSON:
+{
+  "facebook": "1-2 short paragraphs, friendly tone, with 2-3 emojis and 3-4 hashtags",
+  "instagram": "Eye-catching first line, then short body, ending with 6-8 hashtags",
+  "google": "Professional Google Business post, 1-2 sentences, no hashtags"
+}
+
+Match the tone to a small local service business. Mention service area if provided.
+All output in ENGLISH unless told otherwise.
+"""
+
+
+async def generate_social_posts(job_title: str, description_es: str = "", service_area: str = "") -> dict:
+    chat = _new_chat(SOCIAL_POST_SYSTEM)
+    text = f"Project title: {job_title}\nService area: {service_area or 'local'}\nContext (Spanish): {description_es or '(none)'}"
+    response = await chat.send_message(UserMessage(text=text))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not produce social posts.")
+    return data
+

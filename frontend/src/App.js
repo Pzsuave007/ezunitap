@@ -17,6 +17,8 @@ import Messages from "@/pages/Messages";
 import Scope from "@/pages/Scope";
 import Settings from "@/pages/Settings";
 import PublicQuote from "@/pages/PublicQuote";
+import SmartCard from "@/pages/SmartCard";
+import CardAdmin from "@/pages/CardAdmin";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -43,6 +45,7 @@ function App() {
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
+            <Route path="/c/:slug" element={<SmartCard />} />
 
             <Route element={<Protected><Layout /></Protected>}>
               <Route path="/" element={<Dashboard />} />
@@ -55,6 +58,7 @@ function App() {
               <Route path="/invoices/nuevo" element={<InvoiceDetail />} />
               <Route path="/invoices/:id" element={<InvoiceDetail />} />
               <Route path="/trabajos" element={<Jobs />} />
+              <Route path="/tarjeta" element={<CardAdmin />} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />

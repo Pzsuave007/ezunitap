@@ -1,14 +1,21 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, Settings, Hammer, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, Settings, Hammer, Sparkles, IdCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
+  { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true },
   { to: "/quotes", label: "Quotes", icon: FileText },
   { to: "/invoices", label: "Invoices", icon: Receipt },
+];
+
+const SIDEBAR_EXTRA = [
   { to: "/trabajos", label: "Trabajos", icon: Briefcase },
+  { to: "/mensajes", label: "Mensajes AI", icon: MessageSquare },
+  { to: "/scope", label: "Scope of Work", icon: Sparkles },
+  { to: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
 export default function Layout() {
@@ -36,7 +43,7 @@ export default function Layout() {
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {NAV.map((n) => (
             <NavLink
               key={n.to}
@@ -53,42 +60,22 @@ export default function Layout() {
               {n.label}
             </NavLink>
           ))}
-          <NavLink
-            to="/mensajes"
-            data-testid="nav-mensajes"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
-                isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
-              }`
-            }
-          >
-            <MessageSquare className="w-5 h-5" strokeWidth={2} />
-            Mensajes AI
-          </NavLink>
-          <NavLink
-            to="/scope"
-            data-testid="nav-scope"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
-                isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
-              }`
-            }
-          >
-            <Sparkles className="w-5 h-5" strokeWidth={2} />
-            Scope of Work
-          </NavLink>
-          <NavLink
-            to="/ajustes"
-            data-testid="nav-ajustes"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
-                isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
-              }`
-            }
-          >
-            <Settings className="w-5 h-5" strokeWidth={2} />
-            Ajustes
-          </NavLink>
+          <div className="h-px bg-slate-100 my-2" />
+          {SIDEBAR_EXTRA.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              data-testid={`nav-${n.to.replace("/", "")}`}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
+                  isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
+                }`
+              }
+            >
+              <n.icon className="w-5 h-5" strokeWidth={2} />
+              {n.label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="p-4 border-t border-slate-100">
@@ -139,22 +126,47 @@ export default function Layout() {
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
       >
         <div className="grid grid-cols-5">
-          {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              data-testid={`bottomnav-${n.to.replace("/", "") || "home"}`}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 py-2.5 tap ${
-                  isActive ? "text-blue-900" : "text-slate-400"
-                }`
-              }
-            >
-              <n.icon className="w-5 h-5" strokeWidth={2} />
-              <span className="text-[10px] font-semibold">{n.label}</span>
-            </NavLink>
-          ))}
+          {NAV.map((n) => {
+            if (n.accent) {
+              return (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.end}
+                  data-testid={`bottomnav-${n.to.replace("/", "") || "home"}`}
+                  className="flex flex-col items-center justify-center gap-1 py-2 tap"
+                >
+                  {({ isActive }) => (
+                    <>
+                      <div
+                        className={`w-11 h-11 -mt-5 rounded-2xl flex items-center justify-center shadow-lg text-white ring-4 ring-white ${isActive ? "scale-105" : ""}`}
+                        style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #10B981 100%)" }}
+                      >
+                        <n.icon className="w-5 h-5" strokeWidth={2.2} />
+                      </div>
+                      <span className={`text-[10px] font-bold ${isActive ? "text-blue-900" : "text-slate-500"}`}>{n.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              );
+            }
+            return (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                end={n.end}
+                data-testid={`bottomnav-${n.to.replace("/", "") || "home"}`}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center gap-1 py-2.5 tap ${
+                    isActive ? "text-blue-900" : "text-slate-400"
+                  }`
+                }
+              >
+                <n.icon className="w-5 h-5" strokeWidth={2} />
+                <span className="text-[10px] font-semibold">{n.label}</span>
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
     </div>
