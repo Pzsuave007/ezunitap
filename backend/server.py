@@ -140,7 +140,16 @@ class JobIn(BaseModel):
     quote_id: Optional[str] = None
     invoice_id: Optional[str] = None
     status: str = "new_lead"  # new_lead, estimate_sent, approved, scheduled, in_progress, waiting_payment, completed
-    scheduled_date: Optional[str] = None
+    scheduled_date: Optional[str] = None  # YYYY-MM-DD, start date
+    end_date: Optional[str] = None        # YYYY-MM-DD, for multi-day projects
+    start_time: Optional[str] = ""        # HH:MM 24h
+    end_time: Optional[str] = ""          # HH:MM 24h
+    all_day: bool = False
+    address: Optional[str] = ""           # job site address; falls back to client address
+    # Recurrence
+    recurrence: Optional[str] = "none"    # none | weekly | biweekly | monthly
+    recurrence_days: List[str] = []       # ["mon","tue","wed","thu","fri","sat","sun"]
+    recurrence_end_date: Optional[str] = None  # YYYY-MM-DD
     notes: Optional[str] = ""
 
 
@@ -673,6 +682,143 @@ async def update_job(job_id: str, payload: JobIn, user_id: str = Depends(get_cur
 async def delete_job(job_id: str, user_id: str = Depends(get_current_user_id)):
     await db.jobs.delete_one({"id": job_id, "user_id": user_id})
     return {"ok": True}
+
+
+# ============================================================================
+# CALENDAR — expands jobs (single, multi-day, recurring) into per-day events
+# ============================================================================
+from datetime import date, timedelta  # noqa: E402
+
+_WEEKDAYS = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
+
+
+def _parse_date(s: Optional[str]) -> Optional[date]:
+    if not s:
+        return None
+    try:
+        return date.fromisoformat(s[:10])
+    except (ValueError, TypeError):
+        return None
+
+
+def _expand_job_occurrences(job: dict, range_start: date, range_end: date) -> list[dict]:
+    """Return per-day occurrences of a job that fall within [range_start, range_end]."""
+    start = _parse_date(job.get("scheduled_date"))
+    if not start:
+        return []
+    rec = (job.get("recurrence") or "none").lower()
+    rec_end = _parse_date(job.get("recurrence_end_date")) or range_end
+    end_date_field = _parse_date(job.get("end_date"))
+
+    occurrences: list[date] = []
+
+    if rec == "none":
+        # Multi-day project: one event per day from start..end_date (inclusive). Single day if no end_date.
+        last = end_date_field or start
+        d = start
+        while d <= last:
+            if range_start <= d <= range_end:
+                occurrences.append(d)
+            d += timedelta(days=1)
+            if d > range_end:
+                break
+    elif rec in ("weekly", "biweekly"):
+        step = 7 if rec == "weekly" else 14
+        days_set = {_WEEKDAYS[x] for x in (job.get("recurrence_days") or []) if x in _WEEKDAYS}
+        if not days_set:
+            days_set = {start.weekday()}
+        # Walk week-by-week from start week
+        week_anchor = start - timedelta(days=start.weekday())  # Monday of start week
+        d = max(week_anchor, range_start - timedelta(days=6))
+        # Snap d back to a valid anchor
+        delta_weeks = (d - week_anchor).days // 7
+        d = week_anchor + timedelta(days=delta_weeks * 7)
+        while d <= min(rec_end, range_end):
+            # Only include this week if it matches biweekly cadence
+            weeks_since_start = (d - week_anchor).days // 7
+            if step == 7 or weeks_since_start % 2 == 0:
+                for offset in range(7):
+                    occ = d + timedelta(days=offset)
+                    if (
+                        occ.weekday() in days_set
+                        and start <= occ <= rec_end
+                        and range_start <= occ <= range_end
+                    ):
+                        occurrences.append(occ)
+            d += timedelta(days=7)
+    elif rec == "monthly":
+        d = start
+        while d <= min(rec_end, range_end):
+            if range_start <= d <= range_end:
+                occurrences.append(d)
+            # next month, same day-of-month (clamp)
+            year = d.year + (1 if d.month == 12 else 0)
+            month = 1 if d.month == 12 else d.month + 1
+            day = min(start.day, _last_day_of_month(year, month))
+            d = date(year, month, day)
+
+    return [
+        {
+            "job_id": job["id"],
+            "title": job.get("title", ""),
+            "client_id": job.get("client_id"),
+            "status": job.get("status", "scheduled"),
+            "date": occ.isoformat(),
+            "start_time": job.get("start_time") or "",
+            "end_time": job.get("end_time") or "",
+            "all_day": bool(job.get("all_day") or (not job.get("start_time"))),
+            "address": job.get("address") or "",
+            "notes": job.get("notes") or "",
+            "recurrence": rec,
+            "is_project": rec == "none" and end_date_field is not None and end_date_field > start,
+        }
+        for occ in sorted(occurrences)
+    ]
+
+
+def _last_day_of_month(year: int, month: int) -> int:
+    if month == 12:
+        return 31
+    nxt = date(year, month + 1, 1)
+    return (nxt - timedelta(days=1)).day
+
+
+@api_router.get("/calendar/events")
+async def calendar_events(
+    start: str = Query(..., description="YYYY-MM-DD inclusive"),
+    end: str = Query(..., description="YYYY-MM-DD inclusive"),
+    user_id: str = Depends(get_current_user_id),
+):
+    range_start = _parse_date(start)
+    range_end = _parse_date(end)
+    if not range_start or not range_end or range_end < range_start:
+        raise HTTPException(400, "Rango de fechas inválido")
+    if (range_end - range_start).days > 400:
+        raise HTTPException(400, "Rango máximo 400 días")
+
+    jobs_cur = db.jobs.find({"user_id": user_id}, {"_id": 0})
+    jobs = await jobs_cur.to_list(2000)
+
+    # Enrich with client info (single query)
+    client_ids = list({j.get("client_id") for j in jobs if j.get("client_id")})
+    clients = {}
+    if client_ids:
+        async for c in db.clients.find({"user_id": user_id, "id": {"$in": client_ids}}, {"_id": 0}):
+            clients[c["id"]] = c
+
+    events: list[dict] = []
+    for j in jobs:
+        for ev in _expand_job_occurrences(j, range_start, range_end):
+            cl = clients.get(ev["client_id"], {})
+            ev["client_name"] = cl.get("name", "")
+            ev["client_phone"] = cl.get("phone", "")
+            ev["client_email"] = cl.get("email", "")
+            if not ev["address"]:
+                ev["address"] = cl.get("address", "")
+            events.append(ev)
+
+    events.sort(key=lambda e: (e["date"], e["start_time"] or "00:00"))
+    return {"events": events, "range_start": start, "range_end": end}
 
 
 # ============================================================================

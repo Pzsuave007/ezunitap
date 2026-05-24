@@ -13,6 +13,7 @@ import QuoteDetail from "@/pages/QuoteDetail";
 import Invoices from "@/pages/Invoices";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import Jobs from "@/pages/Jobs";
+import Calendar from "@/pages/Calendar";
 import Messages from "@/pages/Messages";
 import Scope from "@/pages/Scope";
 import Settings from "@/pages/Settings";
@@ -58,6 +59,7 @@ function App() {
               <Route path="/invoices/nuevo" element={<InvoiceDetail />} />
               <Route path="/invoices/:id" element={<InvoiceDetail />} />
               <Route path="/trabajos" element={<Jobs />} />
+              <Route path="/calendario" element={<Calendar />} />
               <Route path="/tarjeta" element={<CardAdmin />} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />

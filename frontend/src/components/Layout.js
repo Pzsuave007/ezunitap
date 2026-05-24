@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -7,11 +7,12 @@ const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true },
-  { to: "/quotes", label: "Quotes", icon: FileText },
+  { to: "/calendario", label: "Agenda", icon: CalendarDays },
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
 ];
 
 const SIDEBAR_EXTRA = [
+  { to: "/quotes", label: "Quotes", icon: FileText },
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/trabajos", label: "Trabajos", icon: Briefcase },
   { to: "/mensajes", label: "Mensajes AI", icon: MessageSquare },

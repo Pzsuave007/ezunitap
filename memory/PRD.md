@@ -64,6 +64,15 @@ Latino contractor/business owner (roofing, drywall, painting, etc.), non-technic
   - `hero_overlay` 0-100 slider — controls darkness over hero photo for text legibility
   - Verified end-to-end: PUT `/api/card/settings` persists, public `/api/public/card/:slug` returns fields, `SmartCard.js` applies via `CardStyles` (radial gradient, hero-gradient, mesh orbs)
 
+### Calendar / Agenda (Feb 24, 2026)
+- New `/calendario` page (4 views: Hoy / Semana / Mes / Lista), mobile-first
+- Job model extended: `start_date`, `end_date`, `start_time`, `end_time`, `all_day`, `address`, `recurrence`, `recurrence_days[]`, `recurrence_end_date`
+- 3 job modes in editor: **Una vez** (single day), **Proyecto** (multi-day range), **Recurrente** (weekly / biweekly / monthly with day-of-week picker)
+- Endpoint `GET /api/calendar/events?start=...&end=...` expands recurrences server-side and joins client name/phone/address
+- Event detail sheet with one-tap Call/WhatsApp to client
+- Bottom nav: "Agenda" replaced "Quotes" (Quotes moved to sidebar extras since calendar is daily-use for contractors)
+- Verified: single (1 day), project Mar 10-24 (15 days), weekly Mon+Thu Mar (9 occurrences), biweekly Wed Apr-May (5 occurrences) all expand correctly
+
 ## Test Credentials
 See `/app/memory/test_credentials.md`
 
