@@ -107,46 +107,46 @@ export default function ClientDetail() {
           <Button
             data-testid="client-create-quote"
             onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)}
-            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm"
           >
-            <Sparkles className="w-4 h-4 mr-1" /> Quote AI
+            <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" /> Quote AI
           </Button>
           <Button
             data-testid="client-create-invoice"
             onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)}
             variant="outline"
-            className="h-12 rounded-xl border-slate-200"
+            className="h-12 rounded-xl border-slate-200 text-sm"
           >
-            <Receipt className="w-4 h-4 mr-1" /> Invoice
+            <Receipt className="w-4 h-4 mr-1 flex-shrink-0" /> Invoice
           </Button>
           <Button
             data-testid="client-send-message"
             onClick={() => navigate(`/mensajes?client_id=${id}`)}
             variant="outline"
-            className="h-12 rounded-xl border-slate-200"
+            className="h-12 rounded-xl border-slate-200 text-sm"
           >
-            <MessageSquare className="w-4 h-4 mr-1" /> Mensaje
+            <MessageSquare className="w-4 h-4 mr-1 flex-shrink-0" /> Mensaje
           </Button>
           <Button
             data-testid="client-upload-photo"
             onClick={() => fileInput.current?.click()}
             variant="outline"
-            className="h-12 rounded-xl border-slate-200"
+            className="h-12 rounded-xl border-slate-200 text-sm"
             disabled={uploading}
           >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Camera className="w-4 h-4 mr-1" />}
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1 flex-shrink-0" /> : <Camera className="w-4 h-4 mr-1 flex-shrink-0" />}
             Foto
           </Button>
           <input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadPhoto} />
         </div>
-        <div className="flex items-center gap-2 mt-3 text-xs">
-          <span className="text-slate-500">Etiqueta foto:</span>
+        <div className="flex items-center gap-1.5 mt-3 text-xs flex-wrap">
+          <span className="text-slate-500 mr-1">Etiqueta:</span>
           {["before", "during", "after"].map((l) => (
             <button
               key={l}
               onClick={() => setPhotoLabel(l)}
               data-testid={`label-${l}`}
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600"}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600"}`}
             >
               {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
             </button>
@@ -155,12 +155,24 @@ export default function ClientDetail() {
       </Card>
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid grid-cols-5 rounded-xl bg-slate-100 p-1 h-auto">
-          <TabsTrigger value="info" className="rounded-lg text-xs" data-testid="tab-info">Info</TabsTrigger>
-          <TabsTrigger value="quotes" className="rounded-lg text-xs" data-testid="tab-quotes">Quotes ({history.quotes.length})</TabsTrigger>
-          <TabsTrigger value="invoices" className="rounded-lg text-xs" data-testid="tab-invoices">Invoices ({history.invoices.length})</TabsTrigger>
-          <TabsTrigger value="messages" className="rounded-lg text-xs" data-testid="tab-messages">Msgs ({history.messages.length})</TabsTrigger>
-          <TabsTrigger value="photos" className="rounded-lg text-xs" data-testid="tab-photos">Fotos ({history.photos.length})</TabsTrigger>
+        <TabsList className="grid grid-cols-5 rounded-xl bg-slate-100 p-1 h-auto gap-0.5">
+          <TabsTrigger value="info" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-info">Info</TabsTrigger>
+          <TabsTrigger value="quotes" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-quotes">
+            <span className="hidden lg:inline">Quotes ({history.quotes.length})</span>
+            <span className="lg:hidden">Quotes·{history.quotes.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="invoices" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-invoices">
+            <span className="hidden lg:inline">Invoices ({history.invoices.length})</span>
+            <span className="lg:hidden">Inv·{history.invoices.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-messages">
+            <span className="hidden lg:inline">Mensajes ({history.messages.length})</span>
+            <span className="lg:hidden">Msgs·{history.messages.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-photos">
+            <span className="hidden lg:inline">Fotos ({history.photos.length})</span>
+            <span className="lg:hidden">Fotos·{history.photos.length}</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="mt-4">

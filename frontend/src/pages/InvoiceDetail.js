@@ -178,13 +178,19 @@ export default function InvoiceDetail() {
             <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> Agregar</Button>
           </div>
           {invoice.line_items.map((li, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 mb-2">
-              <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="col-span-12 lg:col-span-5 h-11 rounded-xl" />
-              <Input type="number" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-3 lg:col-span-2 h-11 rounded-xl" />
-              <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-3 lg:col-span-1 h-11 rounded-xl" />
-              <Input type="number" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-3 lg:col-span-2 h-11 rounded-xl" />
-              <div className="col-span-2 lg:col-span-1 flex items-center text-sm font-semibold">${li.amount.toFixed(2)}</div>
-              <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500"><Trash2 className="w-4 h-4" /></button>
+            <div key={i} className="bg-slate-50 rounded-xl p-3 mb-2 space-y-2 lg:space-y-0 lg:bg-transparent lg:p-0">
+              <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="h-11 rounded-xl bg-white lg:hidden" />
+              <div className="grid grid-cols-12 gap-2 items-center">
+                <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="hidden lg:block lg:col-span-5 h-11 rounded-xl" />
+                <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-3 lg:col-span-2 h-11 rounded-xl bg-white" />
+                <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-3 lg:col-span-1 h-11 rounded-xl bg-white" />
+                <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-4 lg:col-span-2 h-11 rounded-xl bg-white" />
+                <div className="col-span-2 lg:col-span-1 flex items-center justify-end lg:justify-start text-sm font-semibold whitespace-nowrap">${li.amount.toFixed(2)}</div>
+                <button type="button" onClick={() => removeItem(i)} className="hidden lg:flex col-span-1 items-center justify-center text-red-500"><Trash2 className="w-4 h-4" /></button>
+              </div>
+              <button type="button" onClick={() => removeItem(i)} className="lg:hidden flex items-center gap-1 text-red-500 text-xs font-semibold">
+                <Trash2 className="w-3.5 h-3.5" /> Quitar ítem
+              </button>
             </div>
           ))}
         </div>

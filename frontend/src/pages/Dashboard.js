@@ -10,14 +10,14 @@ import {
 } from "lucide-react";
 
 const StatCard = ({ icon: Icon, label, value, accent, testid }) => (
-  <Card data-testid={testid} className="card-elevated p-5 border-0 shadow-none">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{label}</div>
-        <div className="font-heading text-3xl font-bold mt-2 tracking-tight">{value}</div>
+  <Card data-testid={testid} className="card-elevated p-4 lg:p-5 border-0 shadow-none">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.14em] lg:tracking-[0.18em] text-slate-500 leading-tight">{label}</div>
+        <div className="font-heading text-2xl lg:text-3xl font-bold mt-1.5 lg:mt-2 tracking-tight">{value}</div>
       </div>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${accent}`}>
-        <Icon className="w-5 h-5" strokeWidth={2.2} />
+      <div className={`w-9 h-9 lg:w-11 lg:h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${accent}`}>
+        <Icon className="w-4 h-4 lg:w-5 lg:h-5" strokeWidth={2.2} />
       </div>
     </div>
   </Card>
@@ -27,16 +27,16 @@ const QuickButton = ({ icon: Icon, label, onClick, primary, testid }) => (
   <button
     data-testid={testid}
     onClick={onClick}
-    className={`tap flex flex-col items-center justify-center gap-2 py-5 rounded-2xl border ${
+    className={`tap flex flex-col items-center justify-center gap-1.5 py-4 lg:py-5 px-1 rounded-2xl border min-h-[96px] ${
       primary
         ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm"
         : "bg-white hover:bg-slate-50 text-slate-900 border-slate-200"
     }`}
   >
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${primary ? "bg-white/15" : "bg-slate-100"}`}>
-      <Icon className="w-5 h-5" strokeWidth={2.2} />
+    <div className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${primary ? "bg-white/15" : "bg-slate-100"}`}>
+      <Icon className="w-4 h-4 lg:w-5 lg:h-5" strokeWidth={2.2} />
     </div>
-    <span className="text-sm font-semibold text-center px-2">{label}</span>
+    <span className="text-[11px] lg:text-sm font-semibold text-center leading-tight">{label}</span>
   </button>
 );
 
@@ -115,10 +115,10 @@ export default function Dashboard() {
       </div>
 
       <Card className="card-elevated p-5 border-0 shadow-none">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start lg:items-center justify-between gap-3 flex-col lg:flex-row">
+          <div className="w-full lg:w-auto">
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Pagos pendientes</div>
-            <div className="font-heading text-4xl font-bold mt-1 tracking-tight">
+            <div className="font-heading text-3xl lg:text-4xl font-bold mt-1 tracking-tight">
               ${stats.pending_amount?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </div>
             <div className="text-sm text-slate-500 mt-1 flex items-center gap-1">
@@ -129,7 +129,7 @@ export default function Dashboard() {
           <Button
             data-testid="view-invoices-btn"
             onClick={() => navigate("/invoices")}
-            className="rounded-xl bg-blue-900 hover:bg-blue-950 text-white h-11"
+            className="rounded-xl bg-blue-900 hover:bg-blue-950 text-white h-11 w-full lg:w-auto"
           >
             Ver invoices <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
