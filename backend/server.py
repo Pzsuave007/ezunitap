@@ -220,6 +220,10 @@ class CardSettingsIn(BaseModel):
     about_me: Optional[str] = ""  # short bio paragraph (English)
     role: Optional[str] = ""  # e.g., "Owner & Lead Contractor"
     theme: Optional[str] = "auto"  # "auto" | "light" | "dark"
+    # Layout style for the hero of the public card.
+    # "photo" = full-bleed portrait (premium / personal). "logo_circle" = work/cover
+    # photo as background + small circular avatar (for people who prefer not to be on full display).
+    hero_layout: Optional[str] = "photo"  # "photo" | "logo_circle"
 
 
 class CardLeadIn(BaseModel):
@@ -1077,6 +1081,8 @@ async def _ensure_card(user_id: str) -> dict:
         "brand_color": "#1E3A8A",
         "accent_color": "#10B981",
         "hero_overlay": 60,
+        "hero_layout": "photo",
+        "cover_photo_id": None,
         "services": [],
         "hours": "",
         "whatsapp": user.get("phone", ""),
@@ -1137,10 +1143,20 @@ async def delete_card_profile_photo(user_id: str = Depends(get_current_user_id))
     return await _delete_card_asset(user_id, kind="profile_photo")
 
 
+@api_router.post("/card/cover-photo")
+async def upload_card_cover_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
+    return await _upload_card_asset(file, user_id, kind="cover")
+
+
+@api_router.delete("/card/cover-photo")
+async def delete_card_cover_photo(user_id: str = Depends(get_current_user_id)):
+    return await _delete_card_asset(user_id, kind="cover")
+
+
 async def _upload_card_asset(file: UploadFile, user_id: str, kind: str):
-    """Shared helper for logo and profile photo uploads."""
-    label_map = {"logo": "logo", "profile_photo": "profile_photo"}
-    field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id"}
+    """Shared helper for logo, profile photo and cover photo uploads."""
+    label_map = {"logo": "logo", "profile_photo": "profile_photo", "cover": "cover"}
+    field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
     label = label_map[kind]
     field = field_map[kind]
 
@@ -1170,6 +1186,7 @@ async def _upload_card_asset(file: UploadFile, user_id: str, kind: str):
         "is_deleted": False,
         "is_logo": (kind == "logo"),
         "is_profile": (kind == "profile_photo"),
+        "is_cover": (kind == "cover"),
         "created_at": _now_iso(),
     }
     await db.photos.insert_one(photo_doc)
@@ -1182,7 +1199,7 @@ async def _upload_card_asset(file: UploadFile, user_id: str, kind: str):
 
 
 async def _delete_card_asset(user_id: str, kind: str):
-    field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id"}
+    field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
     field = field_map[kind]
     card = await _ensure_card(user_id)
     pid = card.get(field)
@@ -1290,7 +1307,8 @@ async def public_get_card(slug: str):
             "is_deleted": False,
             "is_logo": {"$ne": True},
             "is_profile": {"$ne": True},
-            "label": {"$nin": ["logo", "profile_photo"]},
+            "is_cover": {"$ne": True},
+            "label": {"$nin": ["logo", "profile_photo", "cover"]},
         },
         {"_id": 0},
     ).sort("created_at", -1).to_list(30)

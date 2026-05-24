@@ -136,7 +136,11 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
-          <ProfilePhotoUploader card={card} onChange={load} />
+          <HeroLayoutPicker card={card} onChange={(v) => update("hero_layout", v)} />
+          {card.hero_layout === "logo_circle" && (
+            <CoverPhotoUploader card={card} onChange={load} />
+          )}
+          <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
           <LogoUploader card={card} onChange={load} />
           <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
             <h3 className="font-heading font-bold text-base">Lo básico</h3>
@@ -474,23 +478,119 @@ function LogoUploader({ card, onChange }) {
   return <AssetUploader card={card} onChange={onChange} kind="logo" />;
 }
 
-function ProfilePhotoUploader({ card, onChange }) {
-  return <AssetUploader card={card} onChange={onChange} kind="profile_photo" />;
+function ProfilePhotoUploader({ card, onChange, heroLayout }) {
+  return <AssetUploader card={card} onChange={onChange} kind="profile_photo" heroLayout={heroLayout} />;
 }
 
-function AssetUploader({ card, onChange, kind }) {
+function CoverPhotoUploader({ card, onChange }) {
+  return <AssetUploader card={card} onChange={onChange} kind="cover" />;
+}
+
+function HeroLayoutPicker({ card, onChange }) {
+  const options = [
+    {
+      key: "photo",
+      label: "Foto Grande",
+      desc: "Tu foto llena toda la portada. Look premium y personal.",
+    },
+    {
+      key: "logo_circle",
+      label: "Foto de Trabajo + Avatar",
+      desc: "Una foto de tu trabajo o tu logo como fondo, y tu foto en un círculo pequeño.",
+    },
+  ];
+  const current = card.hero_layout || "photo";
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none">
+      <h3 className="font-heading font-bold text-base mb-1">Estilo de tu tarjeta</h3>
+      <p className="text-xs text-slate-500 mb-3">Elige cómo quieres que se vea tu tarjeta pública.</p>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((o) => {
+          const active = current === o.key;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              data-testid={`hero-layout-${o.key}`}
+              onClick={() => onChange(o.key)}
+              className={`text-left rounded-2xl p-3 border-2 transition-all tap ${
+                active ? "border-blue-900 bg-blue-50/60" : "border-slate-100 bg-white hover:border-slate-300"
+              }`}
+            >
+              <HeroLayoutThumb variant={o.key} active={active} />
+              <div className={`font-bold text-sm mt-2 ${active ? "text-blue-900" : "text-slate-800"}`}>{o.label}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{o.desc}</div>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function HeroLayoutThumb({ variant, active }) {
+  // Mini SVG-ish preview of each layout.
+  if (variant === "photo") {
+    return (
+      <div className={`aspect-[3/4] rounded-xl overflow-hidden relative ${active ? "ring-2 ring-blue-900" : ""}`}
+           style={{ background: "linear-gradient(180deg, #475569 0%, #0F172A 100%)" }}>
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+          <div className="w-3 h-3 rounded bg-white/40" />
+          <div className="w-5 h-2.5 rounded-full bg-white/30" />
+        </div>
+        <div className="absolute inset-x-3 bottom-2">
+          <div className="h-1.5 rounded bg-white/90 w-3/4 mb-1" />
+          <div className="h-1 rounded bg-white/50 w-1/2" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={`aspect-[3/4] rounded-xl overflow-hidden relative ${active ? "ring-2 ring-blue-900" : ""}`}
+         style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #064E3B 100%)" }}>
+      {/* Faux work pattern */}
+      <div className="absolute inset-0 opacity-20" style={{
+        backgroundImage: "repeating-linear-gradient(45deg, #fff 0 2px, transparent 2px 8px)",
+      }} />
+      <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+        <div className="w-3 h-3 rounded bg-white/60" />
+        <div className="w-5 h-2.5 rounded-full bg-white/30" />
+      </div>
+      {/* Avatar circle */}
+      <div className="absolute left-1/2 -translate-x-1/2 top-[40%] w-8 h-8 rounded-full bg-white border-2 border-white shadow-md" />
+      <div className="absolute inset-x-0 bottom-2 text-center">
+        <div className="h-1.5 rounded bg-white/90 w-1/2 mx-auto mb-1" />
+        <div className="h-1 rounded bg-white/50 w-1/3 mx-auto" />
+      </div>
+    </div>
+  );
+}
+
+function AssetUploader({ card, onChange, kind, heroLayout }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
   const config = kind === "profile_photo"
     ? {
-        title: "Foto del dueño",
+        title: heroLayout === "logo_circle" ? "Tu foto (avatar)" : "Foto del dueño",
         endpoint: "/card/profile-photo",
         idField: "profile_photo_id",
-        helper: "Foto tuya o del equipo. Vertical funciona mejor. Aparece como hero gigante en tu tarjeta. Máx 8MB.",
-        roundedClass: "rounded-3xl",
-        size: "w-24 h-32",
+        helper: heroLayout === "logo_circle"
+          ? "Tu foto aparece pequeña en un círculo bonito en medio de tu tarjeta. Cuadrada se ve mejor. Máx 8MB."
+          : "Foto tuya o del equipo. Vertical funciona mejor. Aparece como hero gigante en tu tarjeta. Máx 8MB.",
+        roundedClass: heroLayout === "logo_circle" ? "rounded-full" : "rounded-3xl",
+        size: heroLayout === "logo_circle" ? "w-20 h-20" : "w-24 h-32",
         testid: "profile",
+      }
+    : kind === "cover"
+    ? {
+        title: "Foto de fondo / portada",
+        endpoint: "/card/cover-photo",
+        idField: "cover_photo_id",
+        helper: "Una foto de tu trabajo (techo terminado, jardín bonito, cocina pintada...) que se use como fondo de tu tarjeta. Si no subes ninguna, mostramos tu logo grande sobre un fondo con tus colores.",
+        roundedClass: "rounded-2xl",
+        size: "w-28 h-20",
+        testid: "cover",
       }
     : {
         title: "Logo del negocio",
@@ -531,7 +631,7 @@ function AssetUploader({ card, onChange, kind }) {
     onChange();
   };
 
-  const Icon = kind === "profile_photo" ? Camera : ImageIcon;
+  const Icon = kind === "profile_photo" ? Camera : kind === "cover" ? ImageIcon : ImageIcon;
 
   return (
     <Card className="card-elevated p-5 border-0 shadow-none">

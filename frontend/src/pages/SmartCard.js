@@ -159,6 +159,8 @@ export default function SmartCard() {
   const heroOverlay = Math.max(0, Math.min(100, card.hero_overlay ?? 60)) / 100;
   const logoUrl = card.logo_photo_id ? `${API}/public/card/photo/${card.logo_photo_id}` : null;
   const profileUrl = card.profile_photo_id ? `${API}/public/card/photo/${card.profile_photo_id}` : null;
+  const coverUrl = card.cover_photo_id ? `${API}/public/card/photo/${card.cover_photo_id}` : null;
+  const heroLayout = card.hero_layout || "photo";  // "photo" | "logo_circle"
 
   const phoneClean = (business.phone || "").replace(/\D/g, "");
   const whatsappClean = (card.whatsapp || business.phone || "").replace(/\D/g, "");
@@ -213,8 +215,39 @@ export default function SmartCard() {
             </button>
           </div>
 
-          {/* The hero image / placeholder */}
-          {profileUrl ? (
+          {/* The hero image / placeholder — switches between two layouts */}
+          {heroLayout === "logo_circle" ? (
+            <div className="hero-cover">
+              {coverUrl ? (
+                <img src={coverUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0" style={{
+                  background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 70%)`,
+                }} />
+              )}
+              <div className="hero-cover-gradient" />
+              {/* Big logo if no cover photo */}
+              {!coverUrl && logoUrl && (
+                <div className="absolute inset-0 flex items-center justify-center pb-32">
+                  <img src={logoUrl} alt="business logo" className="max-w-[55%] max-h-[40%] object-contain opacity-95 drop-shadow-2xl" />
+                </div>
+              )}
+              {/* Circular avatar */}
+              <div className="hero-avatar-wrap">
+                <div className="hero-avatar-ring" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+                  <div className="hero-avatar">
+                    {profileUrl ? (
+                      <img src={profileUrl} alt={ownerName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-heading font-bold text-white text-3xl" style={{ background: brandDeep }}>
+                        {initials || <Hammer className="w-8 h-8" />}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : profileUrl ? (
             <div className="hero-photo">
               <img src={profileUrl} alt={ownerName} className="absolute inset-0 w-full h-full object-cover" />
               <div className="hero-gradient" />
@@ -229,13 +262,13 @@ export default function SmartCard() {
           )}
 
           {/* Name + role overlay */}
-          <div className="absolute bottom-0 inset-x-0 z-10 px-6 pb-7 reveal">
+          <div className={`absolute bottom-0 inset-x-0 z-10 px-6 pb-7 reveal ${heroLayout === "logo_circle" ? "text-center" : ""}`}>
             {card.business_type && (
               <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/75 mb-2">
                 {card.business_type}
               </div>
             )}
-            <h1 className="font-heading font-extrabold tracking-tight leading-[0.95] text-white drop-shadow-2xl text-[44px]" data-testid="card-business-name">
+            <h1 className={`font-heading font-extrabold tracking-tight leading-[0.95] text-white drop-shadow-2xl ${heroLayout === "logo_circle" ? "text-[34px]" : "text-[44px]"}`} data-testid="card-business-name">
               {business.name}
             </h1>
             {(card.role || ownerName !== business.name) && (
@@ -244,7 +277,7 @@ export default function SmartCard() {
               </div>
             )}
             {card.tagline && (
-              <p className="text-sm text-white/75 mt-1.5 leading-snug max-w-xs">{card.tagline}</p>
+              <p className={`text-sm text-white/75 mt-1.5 leading-snug ${heroLayout === "logo_circle" ? "mx-auto max-w-xs" : "max-w-xs"}`}>{card.tagline}</p>
             )}
           </div>
         </div>
@@ -568,6 +601,20 @@ function CardStyles({ brand, brandLight, accent, brandDeep, heroOverlay = 0.6 })
       background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.4));
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 8px 40px rgba(255,255,255,0.15));
+    }
+
+    /* HERO — logo_circle layout (cover photo + circular avatar) */
+    .hero-cover { position: absolute; inset: 0; overflow: hidden; }
+    .hero-cover-gradient { position: absolute; inset: 0;
+      background:
+        linear-gradient(180deg, rgba(5,8,16,${(0.25 * heroOverlay).toFixed(2)}) 0%, transparent 30%, transparent 50%, rgba(5,8,16,${(0.6 * heroOverlay + 0.1).toFixed(2)}) 80%, rgba(5,8,16,${(0.95 * heroOverlay + 0.05).toFixed(2)}) 100%);
+    }
+    .hero-avatar-wrap { position: absolute; left: 50%; transform: translateX(-50%); bottom: 140px; z-index: 5; }
+    .hero-avatar-ring { width: 136px; height: 136px; border-radius: 999px; padding: 4px;
+      box-shadow: 0 18px 40px -10px rgba(0,0,0,.55), 0 0 0 3px rgba(255,255,255,.12);
+    }
+    .hero-avatar { width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #0F172A;
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,.95);
     }
 
     /* CIRCULAR ACTIONS */
