@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   IdCard, QrCode, Copy, ExternalLink, Eye, Plus, Trash2, Loader2,
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
-  Image as ImageIcon, Upload, X as XIcon,
+  Image as ImageIcon, Upload, X as XIcon, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -118,6 +118,7 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
+          <ProfilePhotoUploader card={card} onChange={load} />
           <LogoUploader card={card} onChange={load} />
           <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
             <h3 className="font-heading font-bold text-base">Lo básico</h3>
@@ -131,6 +132,15 @@ export default function CardAdmin() {
             <div>
               <Label>Tagline (frase corta en inglés)</Label>
               <Input data-testid="card-tagline" value={card.tagline} onChange={(e) => update("tagline", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Trusted Roofing Experts in Houston" />
+            </div>
+            <div>
+              <Label>Tu rol / título (inglés)</Label>
+              <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
+            </div>
+            <div>
+              <Label>Sobre ti / About Me (inglés)</Label>
+              <Textarea data-testid="card-about" value={card.about_me || ""} onChange={(e) => update("about_me", e.target.value)} className="rounded-xl mt-1.5 min-h-[100px]" placeholder="With over 10 years of experience, we deliver quality work on every project..." />
+              <p className="text-[11px] text-slate-400 mt-1">Una breve descripción que aparece en tu tarjeta para que los clientes te conozcan.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -376,10 +386,39 @@ function StatTile({ label, value, accent }) {
 }
 
 function LogoUploader({ card, onChange }) {
+  return <AssetUploader card={card} onChange={onChange} kind="logo" />;
+}
+
+function ProfilePhotoUploader({ card, onChange }) {
+  return <AssetUploader card={card} onChange={onChange} kind="profile_photo" />;
+}
+
+function AssetUploader({ card, onChange, kind }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
-  const logoUrl = card.logo_photo_id
-    ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${card.logo_photo_id}`
+
+  const config = kind === "profile_photo"
+    ? {
+        title: "Foto del dueño",
+        endpoint: "/card/profile-photo",
+        idField: "profile_photo_id",
+        helper: "Foto tuya o del equipo. Vertical funciona mejor. Aparece como hero gigante en tu tarjeta. Máx 8MB.",
+        roundedClass: "rounded-3xl",
+        size: "w-24 h-32",
+        testid: "profile",
+      }
+    : {
+        title: "Logo del negocio",
+        endpoint: "/card/logo",
+        idField: "logo_photo_id",
+        helper: "PNG, JPEG o WEBP. Cuadrado se ve mejor. Máx 8MB.",
+        roundedClass: "rounded-2xl",
+        size: "w-20 h-20",
+        testid: "logo",
+      };
+
+  const url = card[config.idField]
+    ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${card[config.idField]}`
     : null;
 
   const handleFile = async (e) => {
@@ -389,11 +428,11 @@ function LogoUploader({ card, onChange }) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      await api.post("/card/logo", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Logo subido");
+      await api.post(config.endpoint, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success(`${config.title} subido`);
       onChange();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error subiendo logo");
+      toast.error(err?.response?.data?.detail || "Error subiendo imagen");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -401,48 +440,50 @@ function LogoUploader({ card, onChange }) {
   };
 
   const remove = async () => {
-    if (!window.confirm("¿Quitar logo?")) return;
-    await api.delete("/card/logo");
-    toast.success("Logo removido");
+    if (!window.confirm(`¿Quitar ${config.title.toLowerCase()}?`)) return;
+    await api.delete(config.endpoint);
+    toast.success("Removido");
     onChange();
   };
+
+  const Icon = kind === "profile_photo" ? Camera : ImageIcon;
 
   return (
     <Card className="card-elevated p-5 border-0 shadow-none">
       <h3 className="font-heading font-bold text-base mb-3 flex items-center gap-2">
-        <ImageIcon className="w-5 h-5 text-emerald-600" /> Logo del negocio
+        <Icon className="w-5 h-5 text-emerald-600" /> {config.title}
       </h3>
       <div className="flex items-center gap-4">
         <div className="relative">
-          {logoUrl ? (
+          {url ? (
             <img
-              src={logoUrl}
-              alt="logo"
-              data-testid="logo-preview"
-              className="w-20 h-20 rounded-2xl object-cover border border-slate-200 shadow-sm"
+              src={url}
+              alt={kind}
+              data-testid={`${config.testid}-preview`}
+              className={`${config.size} ${config.roundedClass} object-cover border border-slate-200 shadow-sm`}
             />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
-              <ImageIcon className="w-8 h-8" />
+            <div className={`${config.size} ${config.roundedClass} bg-slate-100 flex items-center justify-center text-slate-400`}>
+              <Icon className="w-8 h-8" />
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-500 mb-2">PNG, JPEG o WEBP. Cuadrado se ve mejor. Máx 8MB.</p>
+          <p className="text-xs text-slate-500 mb-2">{config.helper}</p>
           <div className="flex gap-2">
             <Button
-              data-testid="logo-upload-btn"
+              data-testid={`${config.testid}-upload-btn`}
               size="sm"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
               className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
-              {logoUrl ? "Cambiar" : "Subir"}
+              {url ? "Cambiar" : "Subir"}
             </Button>
-            {logoUrl && (
+            {url && (
               <Button
-                data-testid="logo-remove-btn"
+                data-testid={`${config.testid}-remove-btn`}
                 size="sm"
                 variant="outline"
                 onClick={remove}
