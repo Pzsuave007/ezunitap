@@ -5,29 +5,68 @@ const COLOR_PRIMARY = [30, 58, 138]; // #1E3A8A
 const COLOR_SECONDARY = [16, 185, 129]; // #10B981
 const COLOR_TEXT = [15, 23, 42];
 
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 const fmtMoney = (n) =>
   `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function header(doc, business, title, numberLabel, number, dateStr) {
+async function loadImageAsDataURL(url) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function header(doc, business, title, numberLabel, number, dateStr) {
   doc.setFillColor(...COLOR_PRIMARY);
-  doc.rect(0, 0, 210, 35, "F");
+  doc.rect(0, 0, 210, 38, "F");
+
+  // Logo on the left (if available)
+  let textX = 14;
+  if (business?.logo_photo_id) {
+    const dataUrl = await loadImageAsDataURL(`${API}/public/card/photo/${business.logo_photo_id}`);
+    if (dataUrl) {
+      try {
+        const fmt = dataUrl.startsWith("data:image/png") ? "PNG"
+          : dataUrl.startsWith("data:image/webp") ? "WEBP" : "JPEG";
+        // 18x18 mm rounded white background card for the logo
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(14, 9, 20, 20, 3, 3, "F");
+        doc.addImage(dataUrl, fmt, 15, 10, 18, 18);
+        textX = 38;
+      } catch (e) {
+        // ignore unsupported image formats
+      }
+    }
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text(business?.business_name || "Your Business", 14, 16);
+  doc.setFontSize(business?.logo_photo_id ? 18 : 22);
+  doc.text(business?.business_name || "Your Business", textX, 17);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  if (business?.business_email) doc.text(business.business_email, 14, 23);
-  if (business?.phone) doc.text(business.phone, 14, 28);
-  if (business?.business_address) doc.text(business.business_address, 14, 33);
+  doc.setFontSize(9);
+  let infoY = 23;
+  if (business?.business_email) { doc.text(business.business_email, textX, infoY); infoY += 4.5; }
+  if (business?.phone) { doc.text(business.phone, textX, infoY); infoY += 4.5; }
+  if (business?.business_address) { doc.text(business.business_address, textX, infoY); }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  doc.text(title.toUpperCase(), 196, 16, { align: "right" });
+  doc.text(title.toUpperCase(), 196, 17, { align: "right" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`${numberLabel}: ${number || ""}`, 196, 23, { align: "right" });
-  doc.text(`Date: ${dateStr}`, 196, 28, { align: "right" });
+  doc.setFontSize(9);
+  doc.text(`${numberLabel}: ${number || ""}`, 196, 24, { align: "right" });
+  doc.text(`Date: ${dateStr}`, 196, 29, { align: "right" });
 }
 
 function clientBlock(doc, client, y) {
@@ -140,18 +179,18 @@ export function generateQuotePDF(quote, business, client) {
   doc.save(`Quote-${quote.number || "draft"}.pdf`);
 }
 
-export function generateInvoicePDF(invoice, business, client) {
+export async function generateInvoicePDF(invoice, business, client) {
   const doc = new jsPDF();
   const dateStr = new Date(invoice.created_at || Date.now()).toLocaleDateString("en-US");
-  header(doc, business, "Invoice", "Invoice #", invoice.number, dateStr);
-  let y = clientBlock(doc, client, 48);
+  await header(doc, business, "Invoice", "Invoice #", invoice.number, dateStr);
+  let y = clientBlock(doc, client, 52);
   if (invoice.due_date) {
     doc.setFont("helvetica", "bold");
-    doc.text("Due Date:", 140, 48);
+    doc.text("Due Date:", 140, 52);
     doc.setFont("helvetica", "normal");
-    doc.text(new Date(invoice.due_date).toLocaleDateString("en-US"), 196, 48, { align: "right" });
+    doc.text(new Date(invoice.due_date).toLocaleDateString("en-US"), 196, 52, { align: "right" });
   }
-  y += 6;
+  y += 4;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);

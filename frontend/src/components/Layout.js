@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, Settings, Hammer, Sparkles, IdCard } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -8,14 +8,14 @@ const NAV = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true },
   { to: "/quotes", label: "Quotes", icon: FileText },
-  { to: "/invoices", label: "Invoices", icon: Receipt },
+  { to: "/ajustes", label: "Perfil", icon: UserIcon },
 ];
 
 const SIDEBAR_EXTRA = [
+  { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/trabajos", label: "Trabajos", icon: Briefcase },
   { to: "/mensajes", label: "Mensajes AI", icon: MessageSquare },
   { to: "/scope", label: "Scope of Work", icon: Sparkles },
-  { to: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
 export default function Layout() {

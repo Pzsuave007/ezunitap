@@ -261,6 +261,20 @@ async def _user_doc(user_id: str) -> dict:
     u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     if not u:
         raise HTTPException(status_code=404, detail="User not found")
+    # Attach card-related public-facing fields so frontend has them in one fetch
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0})
+    if card:
+        u["logo_photo_id"] = card.get("logo_photo_id")
+        u["profile_photo_id"] = card.get("profile_photo_id")
+        u["about_me"] = card.get("about_me", "")
+        u["role"] = card.get("role", "")
+        u["card_slug"] = card.get("slug", "")
+    else:
+        u["logo_photo_id"] = None
+        u["profile_photo_id"] = None
+        u["about_me"] = ""
+        u["role"] = ""
+        u["card_slug"] = None
     return u
 
 
