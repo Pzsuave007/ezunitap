@@ -53,6 +53,17 @@ Latino contractor/business owner (roofing, drywall, painting, etc.), non-technic
 - Frontend critical flow verified (login → dashboard → AI Quote Builder generates English quote from Spanish input)
 - Bug fixed: `load_dotenv` ordering so `EMERGENT_LLM_KEY` is loaded before `ai_service` module import
 
+### Smart Business Card System (Feb 2026)
+- Public premium digital card at `/c/:slug` (photo-first hero, NFT aesthetic)
+- Admin at `/tarjeta`: design, QR, reviews, leads, analytics
+- Lead capture form + AI chat assistant (GPT-5.2)
+- Profile photo + logo upload (Emergent Object Storage)
+- **Advanced color controls (Feb 24, 2026):**
+  - `brand_color` (free picker) + 8 curated brand+accent palettes (Midnight, Obsidian, Ember, Forest, Royal, Steel, Crimson, Slate)
+  - `accent_color` (free picker + 14 preset swatches) — drives CTAs, badges, accents
+  - `hero_overlay` 0-100 slider — controls darkness over hero photo for text legibility
+  - Verified end-to-end: PUT `/api/card/settings` persists, public `/api/public/card/:slug` returns fields, `SmartCard.js` applies via `CardStyles` (radial gradient, hero-gradient, mesh orbs)
+
 ## Test Credentials
 See `/app/memory/test_credentials.md`
 

@@ -27,6 +27,24 @@ const SERVICE_TEMPLATES = [
   { name: "Landscaping", icon: "🌿", description: "Lawn, design, maintenance." },
 ];
 
+// Curated brand + accent palettes (premium, hand-tuned, no muddy AI defaults).
+const BRAND_PRESETS = [
+  { name: "Midnight", brand: "#1E3A8A", accent: "#10B981" },
+  { name: "Obsidian", brand: "#0F172A", accent: "#F59E0B" },
+  { name: "Ember", brand: "#7C2D12", accent: "#F97316" },
+  { name: "Forest", brand: "#064E3B", accent: "#84CC16" },
+  { name: "Royal", brand: "#4C1D95", accent: "#F472B6" },
+  { name: "Steel", brand: "#334155", accent: "#22D3EE" },
+  { name: "Crimson", brand: "#7F1D1D", accent: "#FBBF24" },
+  { name: "Slate", brand: "#1F2937", accent: "#34D399" },
+];
+
+const ACCENT_PRESETS = [
+  "#10B981", "#34D399", "#22D3EE", "#0EA5E9", "#3B82F6", "#6366F1",
+  "#A855F7", "#F472B6", "#F43F5E", "#F97316", "#F59E0B", "#FBBF24",
+  "#84CC16", "#FFFFFF",
+];
+
 export default function CardAdmin() {
   const [tab, setTab] = useState("design");
   const [card, setCard] = useState(null);
@@ -166,6 +184,73 @@ export default function CardAdmin() {
                 <input type="color" data-testid="card-color" value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
                 <Input value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
               </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {BRAND_PRESETS.map((p) => {
+                  const active = (card.brand_color || "").toLowerCase() === p.brand.toLowerCase();
+                  return (
+                    <button
+                      key={p.name}
+                      type="button"
+                      data-testid={`brand-preset-${p.name.toLowerCase()}`}
+                      onClick={() => { update("brand_color", p.brand); update("accent_color", p.accent); }}
+                      className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border tap text-[11px] font-semibold transition-all ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"}`}
+                    >
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm" style={{ background: p.brand }} />
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm -ml-2" style={{ background: p.accent }} />
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Las paletas curadas combinan color de marca + acento que se ven premium.</p>
+            </div>
+
+            <div>
+              <Label>Color de acento</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                <input type="color" data-testid="card-accent-color" value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
+                <Input value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {ACCENT_PRESETS.map((c) => {
+                  const active = (card.accent_color || "").toLowerCase() === c.toLowerCase();
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      data-testid={`accent-preset-${c.replace("#", "")}`}
+                      onClick={() => update("accent_color", c)}
+                      style={{ background: c }}
+                      className={`w-8 h-8 rounded-full border-2 tap transition-transform ${active ? "border-slate-900 scale-110 ring-2 ring-offset-2 ring-slate-900" : "border-white shadow-sm hover:scale-105"}`}
+                      aria-label={`Accent ${c}`}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Se usa para botones, badges y los detalles brillantes de tu tarjeta.</p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>Oscuridad del hero</Label>
+                <span className="text-[11px] font-mono text-slate-500 tabular-nums">{card.hero_overlay ?? 60}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                data-testid="card-hero-overlay"
+                value={card.hero_overlay ?? 60}
+                onChange={(e) => update("hero_overlay", Number(e.target.value))}
+                className="w-full mt-2 accent-slate-900"
+              />
+              <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                <span>Foto clara</span>
+                <span>Texto legible</span>
+                <span>Muy oscuro</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Controla cuánto se oscurece tu foto de hero para que el texto blanco se lea bien.</p>
             </div>
           </Card>
 

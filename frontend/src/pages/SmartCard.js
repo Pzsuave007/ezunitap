@@ -155,7 +155,8 @@ export default function SmartCard() {
   const brand = card.brand_color || "#1E3A8A";
   const brandDeep = adjustColor(brand, -50);
   const brandLight = adjustColor(brand, 70);
-  const accent = "#10B981";
+  const accent = card.accent_color || "#10B981";
+  const heroOverlay = Math.max(0, Math.min(100, card.hero_overlay ?? 60)) / 100;
   const logoUrl = card.logo_photo_id ? `${API}/public/card/photo/${card.logo_photo_id}` : null;
   const profileUrl = card.profile_photo_id ? `${API}/public/card/photo/${card.profile_photo_id}` : null;
 
@@ -181,7 +182,7 @@ export default function SmartCard() {
       className="smartcard min-h-screen text-white relative overflow-x-hidden"
       style={{ background: `radial-gradient(ellipse at top, ${brandDeep} 0%, #050810 65%)` }}
     >
-      <CardStyles brand={brand} brandLight={brandLight} accent={accent} brandDeep={brandDeep} />
+      <CardStyles brand={brand} brandLight={brandLight} accent={accent} brandDeep={brandDeep} heroOverlay={heroOverlay} />
 
       {/* Mesh gradient orbs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
@@ -533,7 +534,7 @@ function QrModal({ url, brand, accent, businessName, onClose }) {
 }
 
 // ===================== Styles =====================
-function CardStyles({ brand, brandLight, accent, brandDeep }) {
+function CardStyles({ brand, brandLight, accent, brandDeep, heroOverlay = 0.6 }) {
   const css = `
     .smartcard { font-feature-settings: "ss01","cv11"; }
 
@@ -557,7 +558,7 @@ function CardStyles({ brand, brandLight, accent, brandDeep }) {
     .hero-photo { position: absolute; inset: 0; overflow: hidden; }
     .hero-gradient { position: absolute; inset: 0;
       background:
-        linear-gradient(180deg, transparent 0%, transparent 35%, rgba(5,8,16,0.4) 60%, rgba(5,8,16,0.95) 100%),
+        linear-gradient(180deg, transparent 0%, transparent ${Math.round(35 + (1 - heroOverlay) * 25)}%, rgba(5,8,16,${(0.4 * heroOverlay).toFixed(2)}) 60%, rgba(5,8,16,${(0.95 * heroOverlay + 0.05).toFixed(2)}) 100%),
         linear-gradient(180deg, ${brandDeep}40 0%, transparent 30%);
     }
     .hero-placeholder { position: absolute; inset: 0; display:flex; align-items: center; justify-content: center; }

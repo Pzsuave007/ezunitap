@@ -196,6 +196,8 @@ class CardSettingsIn(BaseModel):
     license_number: Optional[str] = ""
     rating: Optional[float] = 0.0
     brand_color: Optional[str] = "#1E3A8A"
+    accent_color: Optional[str] = "#10B981"
+    hero_overlay: Optional[int] = 60  # 0-100, darkness over hero photo
     services: List[CardService] = []
     hours: Optional[str] = ""  # e.g., "Mon-Fri 8am-6pm"
     whatsapp: Optional[str] = ""  # E.164 phone for WhatsApp link
@@ -927,6 +929,8 @@ async def _ensure_card(user_id: str) -> dict:
         "license_number": "",
         "rating": 0.0,
         "brand_color": "#1E3A8A",
+        "accent_color": "#10B981",
+        "hero_overlay": 60,
         "services": [],
         "hours": "",
         "whatsapp": user.get("phone", ""),
