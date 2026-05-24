@@ -1,0 +1,87 @@
+{
+  "theme": "Light",
+  "archetype": "Soft Utility (Archetype 3 adapted for outdoor/mobile use)",
+  "colors": {
+    "background": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "primary": "#1E3A8A",
+    "primary_hover": "#172554",
+    "secondary": "#10B981",
+    "secondary_hover": "#059669",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "accent_warning": "#F59E0B",
+    "accent_danger": "#EF4444",
+    "border": "#E2E8F0"
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "DM Sans",
+    "scale": {
+      "h1": "text-3xl font-bold tracking-tight",
+      "h2": "text-2xl font-bold tracking-tight",
+      "h3": "text-xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-slate-500",
+      "micro_label": "text-xs font-bold uppercase tracking-[0.2em]"
+    }
+  },
+  "layout_and_spacing": {
+    "philosophy": "Mobile-first, generous touch targets, card-based with distinct visual separation for outdoor readability.",
+    "spacing_scale": "Use p-4 to p-6 for containers. Emphasize vertical stacking and progressive disclosure.",
+    "button_heights": "h-14 for primary actions (thumb-friendly), h-10 for secondary.",
+    "border_radius": "rounded-2xl for main cards, rounded-xl for inner elements, rounded-full for pills and FABs."
+  },
+  "components": {
+    "buttons": "Large, full-width on mobile. Primary CTA uses Emerald green for high visibility outdoors. Dark blue for secondary actions.",
+    "cards": "White surface, 1px border of slate-200, subtle shadow-sm. active:scale-[0.98] transition-transform.",
+    "bottom_nav": "Fixed bottom navigation with icons (Dashboard, Clientes, Quotes, Invoices). Icon color slate-400 inactive, Dark blue active.",
+    "inputs": "h-14, rounded-xl, border-slate-300, focus:border-blue-900 focus:ring-blue-900.",
+    "badges": "Used for statuses. Draft (Gray), Sent (Blue), Approved/Paid (Green), Overdue (Red). rounded-full, px-3 py-1 text-xs font-semibold."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "stroke-width 2, clean, readable at small sizes."
+  },
+  "motion": {
+    "hover_states": "subtle opacity changes or slight upward translation (-translate-y-0.5) for cards.",
+    "tap_states": "active:scale-95 on all clickable mobile elements to provide instant tactile feedback.",
+    "transitions": "transition-all duration-200 ease-out"
+  },
+  "image_urls": [
+    {
+      "category": "login_hero",
+      "url": "https://static.prod-images.emergentagent.com/jobs/483e0bc6-f696-4694-9c37-5f18c220d311/images/f15f7c90fb2b58aeaa9615ac21f3bbbd91105f6428b524b84739a1c3a00dbee1.png",
+      "description": "Illustration of Latino contractor using app, flat design matching colors. Use for Login/Welcome screen."
+    },
+    {
+      "category": "app_background",
+      "url": "https://static.prod-images.emergentagent.com/jobs/483e0bc6-f696-4694-9c37-5f18c220d311/images/7a733b712a8e7fcee791847d2a6f25977469fedbee90968cef8344040ba7bc42.png",
+      "description": "Subtle abstract texture for app backgrounds or auth screens."
+    },
+    {
+      "category": "contractor_avatar_1",
+      "url": "https://images.unsplash.com/photo-1620082691363-8283e2f7bf61?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwzfHxjb250cmFjdG9yJTIwdXNpbmclMjBwaG9uZSUyMG91dGRvb3JzfGVufDB8fHx8MTc3OTYwNDE2NHww&ixlib=rb-4.1.0&q=85",
+      "description": "Photo of a contractor in a blue jacket/helmet, use for demo user profile avatar."
+    },
+    {
+      "category": "contractor_avatar_2",
+      "url": "https://images.unsplash.com/photo-1621905253185-95614217f357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwxfHxjb250cmFjdG9yJTIwdXNpbmclMjBwaG9uZSUyMG91dGRvb3JzfGVufDB8fHx8MTc3OTYwNDE2NHww&ixlib=rb-4.1.0&q=85",
+      "description": "Photo of a contractor holding a phone outdoors, use for onboarding or empty states."
+    }
+  ],
+  "accessibility": {
+    "contrast": "High contrast required for outdoor visibility in direct sunlight. Avoid low contrast grays on white.",
+    "touch_targets": "Minimum 48x48px for all interactable elements to support thick fingers."
+  },
+  "instructions_to_main_agent": [
+    "Build the application strictly mobile-first. Assume the vast majority of usage is on a smartphone.",
+    "The UI text must be in Spanish (for the business owner/dueño) but any generated output/documents/messages must be stored and generated in English.",
+    "Use lucide-react for all icons.",
+    "Implement a persistent bottom navigation bar on mobile view.",
+    "Do not use complex tables for lists. Use stacked cards (List Cards) with an Avatar/Icon + Title + Subtitle + Status Badge for Clients, Quotes, and Jobs.",
+    "When creating the AI Quote Builder, use a wizard interface or chat-like flow. Provide large, prominent buttons for 'Voice input' or 'Photo upload'.",
+    "Ensure data-testid attributes are included on every button, input, tab, and interactable card.",
+    "Use Shadcn UI components but heavily override their default classes (remove enterprise look) to use rounded-2xl corners, larger paddings, and the defined color palette."
+  ]
+}
