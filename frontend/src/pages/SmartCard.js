@@ -354,7 +354,19 @@ export default function SmartCard() {
                   onClick={() => track(slug, "service_click", { name: s.name })}
                   style={{ animationDelay: `${500 + i * 60}ms` }}
                 >
-                  <div className="text-2xl mb-2">{s.icon || "🔨"}</div>
+                  {s.icon ? (
+                    <div className="text-2xl mb-2 leading-none">{s.icon}</div>
+                  ) : (
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="font-heading text-xs font-bold tracking-[0.2em]"
+                        style={{ color: brandLight }}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
+                    </div>
+                  )}
                   <div className="font-heading font-bold text-sm tracking-tight leading-tight">{s.name}</div>
                   {s.description && <div className="text-[11px] text-white/55 mt-1 line-clamp-2 leading-snug">{s.description}</div>}
                   {s.starting_price && (

@@ -199,13 +199,13 @@ export default function CardAdmin() {
           <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-heading font-bold text-base">Servicios</h3>
-              <Button size="sm" data-testid="card-add-service" onClick={() => update("services", [...(card.services || []), { name: "", description: "", starting_price: "", icon: "🔨" }])} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" data-testid="card-add-service" onClick={() => update("services", [...(card.services || []), { name: "", description: "", starting_price: "", icon: "" }])} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="w-3 h-3 mr-1" /> Agregar
               </Button>
             </div>
             {(card.services || []).length === 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-slate-500">Plantillas rápidas:</p>
+                <p className="text-xs text-slate-500">Plantillas rápidas (toca para agregar):</p>
                 <div className="flex flex-wrap gap-2">
                   {SERVICE_TEMPLATES.map((s) => (
                     <button
@@ -221,25 +221,29 @@ export default function CardAdmin() {
             )}
             {(card.services || []).map((s, i) => (
               <div key={i} className="rounded-xl bg-slate-50 p-3 space-y-2">
-                <div className="grid grid-cols-12 gap-2">
-                  <Input value={s.icon} onChange={(e) => {
-                    const arr = [...card.services]; arr[i] = { ...arr[i], icon: e.target.value }; update("services", arr);
-                  }} placeholder="🔨" className="col-span-2 h-11 rounded-xl bg-white text-center" />
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold tracking-[0.18em] text-slate-400 w-6">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   <Input value={s.name} onChange={(e) => {
                     const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr);
-                  }} placeholder="Service name" className="col-span-10 h-11 rounded-xl bg-white" />
+                  }} placeholder="Service name (e.g., Roofing)" className="flex-1 h-11 rounded-xl bg-white" />
                 </div>
                 <Input value={s.description} onChange={(e) => {
                   const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr);
-                }} placeholder="Short description" className="h-11 rounded-xl bg-white" />
+                }} placeholder="Short description (English)" className="h-11 rounded-xl bg-white" />
                 <div className="flex gap-2">
                   <Input value={s.starting_price} onChange={(e) => {
                     const arr = [...card.services]; arr[i] = { ...arr[i], starting_price: e.target.value }; update("services", arr);
-                  }} placeholder="Starting at $..." className="h-11 rounded-xl bg-white flex-1" />
-                  <button type="button" onClick={() => update("services", card.services.filter((_, idx) => idx !== i))} className="w-11 h-11 rounded-xl bg-white border border-red-200 text-red-600 flex items-center justify-center">
+                  }} placeholder="Starting at $... (optional)" className="h-11 rounded-xl bg-white flex-1" />
+                  <Input value={s.icon} onChange={(e) => {
+                    const arr = [...card.services]; arr[i] = { ...arr[i], icon: e.target.value }; update("services", arr);
+                  }} placeholder="🔨 opt" className="w-20 h-11 rounded-xl bg-white text-center" maxLength={2} />
+                  <button type="button" onClick={() => update("services", card.services.filter((_, idx) => idx !== i))} className="w-11 h-11 rounded-xl bg-white border border-red-200 text-red-600 flex items-center justify-center flex-shrink-0">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-400 px-1">Si no pones emoji, mostramos un número elegante (01, 02…)</p>
               </div>
             ))}
           </Card>
