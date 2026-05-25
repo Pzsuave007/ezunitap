@@ -27,7 +27,7 @@ pip install \
     -r "$REPO/deploy/requirements.prod.txt"
 
 # -----------------------------------------------------------------------------
-# 2. Copy backend source into /opt/USER/backend (NEVER touch venv)
+# 2. Copy backend source into /opt/USER/backend (NEVER touch venv or .env)
 # -----------------------------------------------------------------------------
 echo ">>> Copy backend source → $PROD"
 rsync -a \
@@ -39,46 +39,28 @@ rsync -a \
     "$REPO/backend/" "$PROD/"
 
 # -----------------------------------------------------------------------------
-# 3. Build frontend ON THE SERVER (memory-safe flags)
+# 3. Deploy pre-built frontend (built in Emergent, committed to git)
 # -----------------------------------------------------------------------------
-echo ">>> Build frontend"
-cd "$REPO/frontend"
-
-# Write production .env so REACT_APP_BACKEND_URL is baked into the bundle
-cat > "$REPO/frontend/.env.production" <<EOF
-REACT_APP_BACKEND_URL=https://${DOMAIN}
-GENERATE_SOURCEMAP=false
-EOF
-
-# Install JS deps (Node 18 vs React 19 → ignore-engines)
-yarn install --ignore-engines --frozen-lockfile 2>&1 | tail -5
-
-# Build with memory cap (avoids OOM on small VPS) and no sourcemaps
-NODE_OPTIONS="--max-old-space-size=1536" \
-GENERATE_SOURCEMAP=false \
-INLINE_RUNTIME_CHUNK=false \
-    yarn build 2>&1 | tail -10
-
+echo ">>> Deploy frontend → $PH"
 if [ ! -f "$REPO/frontend/build/index.html" ]; then
-    echo "X yarn build did NOT produce index.html"
+    echo "X $REPO/frontend/build/index.html MISSING"
+    echo "  The build folder is not in the repo. In Emergent:"
+    echo "    1. cd /app/frontend && yarn build"
+    echo "    2. git add -f frontend/build/"
+    echo "    3. Save to GitHub"
     exit 1
 fi
 
-# -----------------------------------------------------------------------------
-# 4. Deploy build into public_html
-# -----------------------------------------------------------------------------
-echo ">>> Deploy frontend → $PH"
 mkdir -p "$PH"
 rm -rf "$PH/static" "$PH/index.html" "$PH/asset-manifest.json" "$PH/favicon.ico" "$PH/manifest.json" "$PH/robots.txt" "$PH/landing-portrait.jpg" "$PH/landing-yard.jpg"
 cp -r "$REPO/frontend/build/." "$PH/"
-
 cp "$REPO/deploy/htaccess" "$PH/.htaccess"
 
 find "$PH" -type f -exec chmod 644 {} \;
 find "$PH" -type d -exec chmod 755 {} \;
 
 # -----------------------------------------------------------------------------
-# 5. Start backend
+# 4. Start backend
 # -----------------------------------------------------------------------------
 echo ">>> Start backend on :$PORT"
 pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
@@ -101,7 +83,7 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 6. Personal restart script
+# 5. Personal restart script
 # -----------------------------------------------------------------------------
 cat > "/home/${CPANEL_USER}/restart.sh" <<EOF
 #!/bin/bash

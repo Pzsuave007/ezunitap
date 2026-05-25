@@ -8,8 +8,8 @@
 # testing
 /coverage
 
-# production
-/build
+# production (build/ IS committed for cPanel deploy — DO NOT ignore)
+# /build
 
 # misc
 .DS_Store

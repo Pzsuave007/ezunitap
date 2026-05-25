@@ -19,7 +19,7 @@ cd "$REPO"
 git fetch origin
 git reset --hard origin/main
 
-# 2. Update prod python deps if needed
+# 2. Update prod python deps
 if [ ! -f "$PROD/venv/bin/activate" ]; then
     echo "X venv missing — delete it and re-run deploy.sh:"
     echo "  rm -rf $PROD/venv && bash $REPO/deploy.sh"
@@ -39,34 +39,19 @@ rsync -a \
     --exclude 'backend.log' \
     "$REPO/backend/" "$PROD/"
 
-# 4. Rebuild frontend on server
-echo ">>> Rebuild frontend"
-cd "$REPO/frontend"
-cat > "$REPO/frontend/.env.production" <<EOF
-REACT_APP_BACKEND_URL=https://${DOMAIN}
-GENERATE_SOURCEMAP=false
-EOF
-
-yarn install --ignore-engines --frozen-lockfile 2>&1 | tail -5
-
-NODE_OPTIONS="--max-old-space-size=1536" \
-GENERATE_SOURCEMAP=false \
-INLINE_RUNTIME_CHUNK=false \
-    yarn build 2>&1 | tail -10
-
-if [ ! -f "$REPO/frontend/build/index.html" ]; then
-    echo "X yarn build failed"
-    exit 1
+# 4. Deploy pre-built frontend
+if [ -f "$REPO/frontend/build/index.html" ]; then
+    rm -rf "$PH/static" "$PH/index.html" "$PH/asset-manifest.json"
+    cp -r "$REPO/frontend/build/." "$PH/"
+    cp "$REPO/deploy/htaccess" "$PH/.htaccess"
+    find "$PH" -type f -exec chmod 644 {} \;
+    find "$PH" -type d -exec chmod 755 {} \;
+    echo "  ✅ frontend deployed"
+else
+    echo "  ⚠️  frontend/build missing — skipping frontend update"
 fi
 
-# 5. Deploy build
-rm -rf "$PH/static" "$PH/index.html" "$PH/asset-manifest.json"
-cp -r "$REPO/frontend/build/." "$PH/"
-cp "$REPO/deploy/htaccess" "$PH/.htaccess"
-find "$PH" -type f -exec chmod 644 {} \;
-find "$PH" -type d -exec chmod 755 {} \;
-
-# 6. Restart backend
+# 5. Restart backend
 pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
 sleep 1
 cd "$PROD"

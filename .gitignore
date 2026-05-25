@@ -25,15 +25,10 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 
-# Production builds
-/build
+# Production builds (frontend/build IS committed for cPanel deploy)
+# /build
 dist/
 dist
-
-# IMPORTANT: frontend/build IS COMMITTED for production cPanel deploy
-# (server has low RAM, can't yarn build there). Force-include it.
-!frontend/build/
-!frontend/build/**
 
 # Environment files (comprehensive coverage)
 
