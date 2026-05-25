@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
-  Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2,
+  Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
 } from "lucide-react";
 
 const FEATURES = [
@@ -447,18 +447,19 @@ function MiniStat({ label, value, accent }) {
 }
 
 function SmartCardPreview() {
-  // Logo + Avatar layout (same look as in CardAdmin live preview, but at landing scale).
-  const brand = "#1E3A8A";
-  const accent = "#10B981";
-  const brandDeep = "#0B1A4A";
-  // Cover photo — a contractor / construction work scene
-  const coverUrl = "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=80&auto=format&fit=crop";
-  const avatarUrl = "/landing-portrait.jpg";
+  // Logo + Avatar layout — Latino landscaper vibe.
+  const brand = "#15803D";        // landscaping green (forest)
+  const accent = "#FACC15";       // sunny yellow accent
+  const brandDeep = "#052E16";    // very dark green
+  // Cover photo — user's actual garden photo
+  const coverUrl = "/landing-yard.jpg";
+  // Avatar — Hispanic man with green cap (Unsplash, free license)
+  const avatarUrl = "https://images.unsplash.com/photo-1562925436-0a158efba8dc?w=400&q=80&auto=format&fit=crop&crop=faces";
 
   return (
     <div className="relative mx-auto max-w-xs lg:max-w-sm">
       {/* Phone body */}
-      <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-purple-900/30 relative border border-white/5">
+      <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-emerald-900/30 relative border border-white/5">
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-30" />
         <div
           className="w-full h-full rounded-[2.3rem] overflow-hidden relative flex flex-col"
@@ -479,8 +480,8 @@ function SmartCardPreview() {
           {/* Top bar — logo + ES pill */}
           <div className="absolute top-7 inset-x-5 flex items-center justify-between z-20">
             <div className="w-12 h-12 rounded-2xl bg-white shadow-lg p-2">
-              <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
-                <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="w-full h-full rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 flex items-center justify-center">
+                <Sprout className="w-5 h-5 text-white" strokeWidth={2.5} />
               </div>
             </div>
             <div className="px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white inline-flex items-center gap-1.5">
@@ -503,9 +504,9 @@ function SmartCardPreview() {
 
           {/* Bottom content */}
           <div className="mt-auto relative z-10 px-5 pb-5 text-white text-center">
-            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Uni2 Marketing</h3>
-            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Agency</h3>
-            <div className="text-base text-white/85 mt-2 drop-shadow">Paul Zacapantzi</div>
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">García</h3>
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Landscaping</h3>
+            <div className="text-base text-white/85 mt-2 drop-shadow">Carlos García · Owner</div>
 
             {/* Action buttons */}
             <div className="grid grid-cols-4 gap-2 mt-5 px-3 py-3 rounded-2xl backdrop-blur-md text-left"
@@ -542,7 +543,7 @@ function SmartCardPreview() {
                 Save Contact
               </div>
               <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: accent }}>
-                <Sparkles className="w-3.5 h-3.5 text-white" />
+                <Sparkles className="w-3.5 h-3.5 text-slate-900" />
               </div>
             </div>
           </div>
@@ -558,7 +559,7 @@ function SmartCardPreview() {
         </div>
       </div>
       <div className="hidden sm:flex absolute left-0 lg:-left-4 top-40 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
-        <Bot className="w-4 h-4 text-purple-600" />
+        <Bot className="w-4 h-4 text-emerald-600" />
         <div className="text-[11px]">
           <div className="font-bold leading-tight">AI respondió</div>
           <div className="text-slate-500">12 leads esta semana</div>
