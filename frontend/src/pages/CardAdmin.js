@@ -17,6 +17,7 @@ import {
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
   Image as ImageIcon, Upload, X as XIcon, Camera,
   Phone, MessageSquare, Send, Mail, Globe, Save,
+  Sprout, Hammer, PaintBucket, Wind, Wrench, Home,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -139,6 +140,24 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
+          <IndustryTemplatePicker card={card} onApply={async (tpl) => {
+            const payload = {
+              brand_color: tpl.brand,
+              accent_color: tpl.accent,
+              hero_layout: tpl.hero_layout || "logo_circle",
+            };
+            if (tpl.business_type && !card.business_type) payload.business_type = tpl.business_type;
+            try {
+              const { data } = await api.put("/card/settings", payload);
+              setCard(data);
+              toast.success(`Plantilla "${tpl.label}" aplicada`, {
+                description: tpl.hint,
+                duration: 4500,
+              });
+            } catch (err) {
+              toast.error(err?.response?.data?.detail || "Error aplicando plantilla");
+            }
+          }} />
           <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
           <CoverPhotoUploader card={card} onChange={load} />
           <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
@@ -485,6 +504,99 @@ function ProfilePhotoUploader({ card, onChange, heroLayout }) {
 
 function CoverPhotoUploader({ card, onChange }) {
   return <AssetUploader card={card} onChange={onChange} kind="cover" />;
+}
+
+// Industry templates — one-tap pre-fill of brand colors, layout and suggested next step.
+const INDUSTRY_TEMPLATES = [
+  { key: "landscaping", label: "Jardinería", Icon: Sprout,
+    brand: "#15803D", accent: "#FACC15", brandDeep: "#052E16",
+    business_type: "Landscaping",
+    hint: "Sube una foto de un jardín tuyo terminado como foto de fondo.",
+  },
+  { key: "construction", label: "Construcción", Icon: Hammer,
+    brand: "#B91C1C", accent: "#F59E0B", brandDeep: "#3F0A0A",
+    business_type: "Construction",
+    hint: "Sube una foto de una obra o casa que hayas construido.",
+  },
+  { key: "roofing", label: "Roofing", Icon: Home,
+    brand: "#475569", accent: "#F97316", brandDeep: "#0F172A",
+    business_type: "Roofing",
+    hint: "Una foto de un techo nuevo se ve perfecta como fondo.",
+  },
+  { key: "cleaning", label: "Limpieza", Icon: Sparkles,
+    brand: "#0E7490", accent: "#FBBF24", brandDeep: "#083344",
+    business_type: "Cleaning",
+    hint: "Sube una foto de una casa o cocina impecable después de limpiar.",
+  },
+  { key: "painting", label: "Pintura", Icon: PaintBucket,
+    brand: "#2563EB", accent: "#F472B6", brandDeep: "#0C1B4A",
+    business_type: "Painting",
+    hint: "Una foto de una pared o casa recién pintada se ve genial de fondo.",
+  },
+  { key: "hvac", label: "HVAC / AC", Icon: Wind,
+    brand: "#EA580C", accent: "#10B981", brandDeep: "#431407",
+    business_type: "HVAC",
+    hint: "Una foto de una unidad de AC nueva o instalada queda perfecto.",
+  },
+  { key: "plumbing", label: "Plomería", Icon: Wrench,
+    brand: "#1D4ED8", accent: "#FBBF24", brandDeep: "#172554",
+    business_type: "Plumbing",
+    hint: "Una foto del trabajo terminado (baño, lavabo, tubería) funciona bien.",
+  },
+];
+
+function IndustryTemplatePicker({ card, onApply }) {
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none">
+      <div className="flex items-baseline justify-between mb-1">
+        <h3 className="font-heading font-bold text-base">Plantillas por oficio</h3>
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Onboarding rápido</span>
+      </div>
+      <p className="text-xs text-slate-500 mb-3">Toca una plantilla y te aplicamos los colores y estilo. Luego solo subes fotos.</p>
+      <div className="-mx-1 px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 pb-1" style={{ minWidth: "max-content" }}>
+          {INDUSTRY_TEMPLATES.map((t) => {
+            const active =
+              (card.brand_color || "").toLowerCase() === t.brand.toLowerCase() &&
+              (card.accent_color || "").toLowerCase() === t.accent.toLowerCase();
+            return (
+              <button
+                key={t.key}
+                type="button"
+                data-testid={`template-${t.key}`}
+                onClick={() => onApply(t)}
+                className={`flex-shrink-0 w-24 rounded-2xl p-2 border-2 transition-all tap ${
+                  active ? "border-slate-900 bg-slate-50 shadow-sm" : "border-slate-100 bg-white hover:border-slate-300"
+                }`}
+              >
+                <div
+                  className="aspect-[3/4] rounded-xl flex items-center justify-center relative overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, ${t.brand} 0%, ${t.brandDeep} 100%)` }}
+                >
+                  <div className="absolute inset-0 opacity-30" style={{
+                    background: `radial-gradient(ellipse at top right, ${t.accent} 0%, transparent 60%)`,
+                  }} />
+                  <div className="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center shadow-lg relative z-10">
+                    <t.Icon className="w-5 h-5" style={{ color: t.brand }} strokeWidth={2.5} />
+                  </div>
+                  {active && (
+                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow">
+                      <BadgeCheck className="w-3 h-3 text-slate-900" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-[11px] font-bold text-slate-800 mt-1.5 text-center leading-tight">{t.label}</div>
+                <div className="flex items-center justify-center gap-0.5 mt-1">
+                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: t.brand }} />
+                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: t.accent }} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 function HeroLayoutPicker({ card, user, onChange }) {
