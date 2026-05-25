@@ -1,10 +1,9 @@
 """AI service: wraps LLM calls for quotes, messages, scope of work, photo analysis.
 
-Uses Emergent LLM Universal Key with OpenAI GPT-5.2 (text + vision) and Whisper (audio).
+Uses Emergent LLM Universal Key with OpenAI GPT-5.2 (text + vision).
 """
 from __future__ import annotations
 
-import io
 import json
 import logging
 import os
@@ -13,7 +12,6 @@ import uuid
 from typing import Optional
 
 from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
-from emergentintegrations.llm.openai import OpenAISpeechToText
 
 logger = logging.getLogger(__name__)
 
@@ -28,20 +26,6 @@ def _new_chat(system_message: str) -> LlmChat:
         session_id=str(uuid.uuid4()),
         system_message=system_message,
     ).with_model(MODEL_PROVIDER, MODEL_NAME)
-
-
-async def transcribe_audio(audio_bytes: bytes, filename: str, language: Optional[str] = None) -> str:
-    """Transcribe an audio blob to text using Whisper-1. Language is ISO 639-1 (e.g. 'es', 'en')
-    or None for auto-detect. Returns the transcribed text in the SAME language as the audio.
-    """
-    stt = OpenAISpeechToText(api_key=LLM_KEY)
-    buf = io.BytesIO(audio_bytes)
-    buf.name = filename or "audio.webm"
-    kwargs = {"file": buf, "model": "whisper-1", "response_format": "json"}
-    if language:
-        kwargs["language"] = language
-    response = await stt.transcribe(**kwargs)
-    return (response.text or "").strip()
 
 
 def _extract_json(text: str) -> dict:

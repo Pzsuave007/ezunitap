@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Camera, Loader2, ArrowLeft, Plus, Trash2, Wand2 } from "lucide-react";
-import VoiceDictate from "@/components/VoiceDictate";
 import { toast } from "sonner";
 
 const blankItem = () => ({ description: "", quantity: 1, unit: "ea", unit_price: 0, amount: 0 });
@@ -178,25 +177,15 @@ export default function QuoteBuilder() {
         {aiMode && (
           <>
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <Label>Describe el trabajo (en español) *</Label>
-                <VoiceDictate
-                  testid="quote-voice"
-                  size="sm"
-                  language="es"
-                  onTranscript={(text, { append }) =>
-                    setDescription((prev) => (append && prev ? prev.trimEnd() + " " : "") + text)
-                  }
-                />
-              </div>
+              <Label>Describe el trabajo (en español) *</Label>
               <Textarea
                 data-testid="quote-ai-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Ej: Voy a reparar drywall en una sala, son 3 paredes de 10x8, incluye material, textura y pintura blanca..."
-                className="rounded-xl min-h-[120px]"
+                className="rounded-xl mt-1.5 min-h-[120px]"
               />
-              <p className="text-xs text-slate-400 mt-1.5">Tip: Toca el micrófono y dicta en español — la AI escribe el quote en inglés.</p>
+              <p className="text-xs text-slate-400 mt-1.5">Tip: Mientras más detalles le des a la AI, mejor sale el quote.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Button

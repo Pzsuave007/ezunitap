@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Header, HTTPException, Query, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
@@ -906,36 +906,6 @@ async def ai_photo(payload: AIPhotoRequest, user_id: str = Depends(get_current_u
         logger.exception("AI photo failed")
         raise HTTPException(500, f"AI error: {e}")
     return data
-
-
-# ============================================================================
-# VOICE — Whisper transcription for hands-free quote / invoice / message input
-# ============================================================================
-ALLOWED_AUDIO_TYPES = {"audio/webm", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/m4a",
-                       "audio/x-m4a", "audio/wav", "audio/ogg"}
-MAX_AUDIO_BYTES = 25 * 1024 * 1024  # Whisper limit is 25MB
-
-
-@api_router.post("/voice/transcribe")
-async def voice_transcribe(
-    file: UploadFile = File(...),
-    language: Optional[str] = Form(None),  # "es", "en", or None for auto-detect
-    user_id: str = Depends(get_current_user_id),
-):
-    """Accept an audio recording and return the transcribed text. Defaults to auto-detect."""
-    raw = await file.read()
-    if not raw:
-        raise HTTPException(400, "Audio vacío")
-    if len(raw) > MAX_AUDIO_BYTES:
-        raise HTTPException(400, "Audio demasiado grande (máx 25MB)")
-    # Best-effort filename + content type check; whisper supports webm/mp3/mp4/m4a/wav/ogg/mpga.
-    name = file.filename or "voice.webm"
-    try:
-        text = await ai_service.transcribe_audio(raw, name, language=language)
-    except Exception as e:
-        logger.exception("voice transcribe failed")
-        raise HTTPException(500, f"Transcription error: {e}")
-    return {"text": text}
 
 
 # ============================================================================
