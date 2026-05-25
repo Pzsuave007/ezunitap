@@ -2,11 +2,11 @@
 # ============================================================================
 # Unitap — Bootstrap (ONE-TIME on a fresh server)
 # Run as ROOT:
-#   curl -sSL https://raw.githubusercontent.com/Pzsuave007/unitap/main/bootstrap.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/Pzsuave007/ezunitap/main/bootstrap.sh | bash
 # ============================================================================
 set -e
 
-REPO_URL="https://github.com/Pzsuave007/unitap.git"
+REPO_URL="https://github.com/Pzsuave007/ezunitap.git"
 CPANEL_USER="ezunitap"
 REPO="/home/${CPANEL_USER}/repo"
 

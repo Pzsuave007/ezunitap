@@ -6,7 +6,7 @@
 set -e
 
 # ============ 4 VARIABLES ============
-REPO_URL="https://github.com/Pzsuave007/unitap.git"
+REPO_URL="https://github.com/Pzsuave007/ezunitap.git"
 CPANEL_USER="ezunitap"
 PORT=8007
 DOMAIN="ezunitap.com"

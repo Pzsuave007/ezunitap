@@ -27,7 +27,7 @@
 git config --global --add safe.directory '*'
 
 # Bootstrap → clones repo + runs deploy.sh
-curl -sSL https://raw.githubusercontent.com/Pzsuave007/unitap/main/bootstrap.sh | bash
+curl -sSL https://raw.githubusercontent.com/Pzsuave007/ezunitap/main/bootstrap.sh | bash
 ```
 
 ### 3. In cPanel UI (3 clicks)
