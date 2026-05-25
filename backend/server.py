@@ -1610,12 +1610,48 @@ app.add_middleware(
 )
 
 
+async def _seed_admin_from_env(email_key: str, pw_key: str, biz_key: str, default_biz: str) -> None:
+    """Idempotent admin seed. Creates the user if it doesn't already exist."""
+    email = os.environ.get(email_key, "").strip().lower()
+    password = os.environ.get(pw_key, "").strip()
+    if not email or not password:
+        return
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        return
+    business_name = os.environ.get(biz_key, default_biz)
+    user = {
+        "id": _new_id(),
+        "email": email,
+        "password_hash": hash_password(password),
+        "business_name": business_name,
+        "owner_name": "",
+        "phone": "",
+        "business_address": "",
+        "business_email": email,
+        "created_at": _now_iso(),
+    }
+    await db.users.insert_one(user)
+    logger.info(f"Seeded admin user: {email}")
+
+
 @app.on_event("startup")
 async def startup():
     try:
         storage_service.init_storage_at_startup()
     except Exception as e:
         logger.error(f"Storage init at startup failed: {e}")
+    try:
+        await _seed_admin_from_env(
+            "SUPER_ADMIN_EMAIL", "SUPER_ADMIN_PASSWORD",
+            "SUPER_ADMIN_BUSINESS_NAME", "Unitap HQ",
+        )
+        await _seed_admin_from_env(
+            "ADMIN_EMAIL", "ADMIN_PASSWORD",
+            "ADMIN_BUSINESS_NAME", "Unitap Admin",
+        )
+    except Exception as e:
+        logger.error(f"Admin seed at startup failed: {e}")
 
 
 @app.on_event("shutdown")

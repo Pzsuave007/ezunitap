@@ -1,20 +1,21 @@
-# ServicioFlow AI - Product Requirements Document
+# Unitap (formerly ServicioFlow AI) — Product Requirements Document
 
 ## Original Problem Statement
-SaaS para dueños de negocios latinos de servicios (roofing, drywall, construction, cleaning, painting, concrete, landscaping). Interface en español para el dueño, pero quotes/invoices/mensajes al cliente en inglés. App simple, mobile-first, fácil de usar para personas no técnicas desde el celular.
+SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
 ## Architecture
-- **Backend**: FastAPI (port 8001) on `/api` prefix, MongoDB via motor (async)
-- **Frontend**: React (port 3000) + Tailwind + Shadcn UI components
-- **AI**: OpenAI GPT-5.2 (text + vision) via Emergent Universal Key (`emergentintegrations`)
-- **Storage**: Emergent Object Storage (abstracted in `storage_service.py` so user can swap to self-hosted later)
-- **Auth**: JWT (PyJWT) + bcrypt password hashing
+- **Backend**: FastAPI (port 8001 dev / 8007 prod) on `/api` prefix, MongoDB via motor (async)
+- **Frontend**: React 19 + Tailwind + Shadcn UI components
+- **AI**: OpenAI GPT-5.2 via Emergent Universal Key (`emergentintegrations`)
+- **Storage**: Emergent Object Storage (abstracted in `storage_service.py`)
+- **Auth**: JWT (PyJWT) Bearer token in localStorage + bcrypt password hashing
 - **PDF**: Client-side via `jspdf` + `jspdf-autotable`
+- **Production hosting**: GoDaddy VPS + cPanel + AlmaLinux + Apache + Python 3.9 + Node 18 + MongoDB local (mirrors La Campeona 880 AM proven pattern)
 
 ## User Persona
 Latino contractor/business owner (roofing, drywall, painting, etc.), non-technical, works mostly from a smartphone on-site. Speaks Spanish; clients speak English.
 
-## Core Requirements (Static)
+## Core Requirements
 1. UI 100% in Spanish, customer-facing docs 100% in English
 2. Mobile-first (large touch targets, bottom nav, single-column layouts)
 3. End-to-end flow: Add Client → AI Quote → Send → Convert to Invoice → Track Job → Request Review
@@ -23,78 +24,62 @@ Latino contractor/business owner (roofing, drywall, painting, etc.), non-technic
 6. AI Scope of Work
 7. PDF generation client-side for quotes & invoices
 8. Public share link for quotes (no auth)
+9. Smart Business Card System — Linktree-style premium digital card with industry templates
+10. Calendar with Day/Week/Month/List views + recurring jobs
 
-## What's Been Implemented (Feb 2026)
-### Backend (`/app/backend/`)
-- `auth_utils.py` — JWT (30-day) + bcrypt
-- `storage_service.py` — Pluggable storage (Emergent Object Storage default; abstract class ready for migration to self-hosted)
-- `ai_service.py` — GPT-5.2 wrappers: `generate_quote_from_text`, `generate_scope_of_work`, `generate_message`, `analyze_photo_for_quote`
-- `server.py` — full REST API:
-  - Auth: register, login, me (GET/PUT)
-  - Dashboard: `/dashboard/stats`
-  - Clients CRUD + history
-  - Quotes CRUD + status + convert-to-invoice + public share
-  - Invoices CRUD + status (mark paid auto-fills amount_paid) + public
-  - Jobs CRUD
-  - Messages: AI generate + save + list
-  - AI endpoints: `/ai/quote`, `/ai/scope`, `/ai/photo-quote`
-  - Photos: upload (multipart), list, file-fetch (with `?auth=` for `<img>` tags), soft delete
-  - Reminders CRUD
+## What's Been Implemented
+- Backend monolith `server.py` with auth, CRM, quotes, invoices, jobs, calendar, AI, cards, storage
+- Frontend SPA with Landing, Dashboard, CRM, Calendar, AI Quote/Invoice/Message, SmartCard, CardAdmin
+- Premium unauthenticated Landing Page with 5-trade rotating phone mockup carousel
+- Smart Card with brand/accent colors, hero layouts (large photo / cover+avatar), 1-tap industry templates
+- CardAdmin with live ScaledCanvas phone mockups in real-time
+- Complete rebrand from ServicioFlow AI → Unitap
+- **NEW (this session)**: Full production deployment system for self-hosted cPanel VPS
+  - `deploy.sh` (root, idempotent first-install / update detection)
+  - `bootstrap.sh` (one-line `curl | bash` fresh-server bootstrap)
+  - `deploy/install_server.sh`, `deploy/fix.sh`, `deploy/setup-autostart.sh`
+  - `deploy/htaccess` (Apache proxy `/api/*` → `127.0.0.1:8007` + SPA fallback)
+  - `deploy/requirements.prod.txt` (slim, Python 3.9 compatible, no pandas/numpy)
+  - `deploy/backend.env.production.example` with super-admin seed values
+  - Auto-seeded super admin on first startup (idempotent, reads `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` from env)
+  - Daily MongoDB backup at 3 AM (14-day retention)
+  - `@reboot` crontab so backend survives server reboots
+  - `frontend/build/` committed to git (server has low RAM, no yarn build there)
+  - Complete deploy README at `/app/deploy/README.md`
 
-### Frontend (`/app/frontend/src/`)
-- `context/AuthContext.js`, `lib/api.js` (axios + token), `lib/pdf.js` (jspdf)
-- `components/Layout.js` — sidebar (desktop) + bottom nav (mobile) + top header
-- `components/StatusBadge.js` — color-coded badges for quote/invoice/job
-- Pages: Login, Register, Dashboard, Clients, ClientDetail (tabs: Info/Quotes/Invoices/Messages/Photos), Quotes, QuoteBuilder (AI text + photo), QuoteDetail (edit, PDF, share, convert), Invoices, InvoiceDetail (edit, PDF, mark paid), Jobs (kanban-by-status), Messages (AI templates), Scope (AI), Settings, PublicQuote (no auth)
-- All UI in Spanish; documents/AI outputs in English
-
-### Verified by Testing Agent (Iteration 1, Feb 2026)
-- 39/39 backend tests pass
-- Frontend critical flow verified (login → dashboard → AI Quote Builder generates English quote from Spanish input)
-- Bug fixed: `load_dotenv` ordering so `EMERGENT_LLM_KEY` is loaded before `ai_service` module import
-
-### Smart Business Card System (Feb 2026)
-- Public premium digital card at `/c/:slug` (photo-first hero, NFT aesthetic)
-- Admin at `/tarjeta`: design, QR, reviews, leads, analytics
-- Lead capture form + AI chat assistant (GPT-5.2)
-- Profile photo + logo upload (Emergent Object Storage)
-- **Advanced color controls (Feb 24, 2026):**
-  - `brand_color` (free picker) + 8 curated brand+accent palettes (Midnight, Obsidian, Ember, Forest, Royal, Steel, Crimson, Slate)
-  - `accent_color` (free picker + 14 preset swatches) — drives CTAs, badges, accents
-  - `hero_overlay` 0-100 slider — controls darkness over hero photo for text legibility
-  - Verified end-to-end: PUT `/api/card/settings` persists, public `/api/public/card/:slug` returns fields, `SmartCard.js` applies via `CardStyles` (radial gradient, hero-gradient, mesh orbs)
-
-### Calendar / Agenda (Feb 24, 2026)
-- New `/calendario` page (4 views: Hoy / Semana / Mes / Lista), mobile-first
-- Job model extended: `start_date`, `end_date`, `start_time`, `end_time`, `all_day`, `address`, `recurrence`, `recurrence_days[]`, `recurrence_end_date`
-- 3 job modes in editor: **Una vez** (single day), **Proyecto** (multi-day range), **Recurrente** (weekly / biweekly / monthly with day-of-week picker)
-- Endpoint `GET /api/calendar/events?start=...&end=...` expands recurrences server-side and joins client name/phone/address
-- Event detail sheet with one-tap Call/WhatsApp to client
-- Bottom nav: "Agenda" replaced "Quotes" (Quotes moved to sidebar extras since calendar is daily-use for contractors)
-- Verified: single (1 day), project Mar 10-24 (15 days), weekly Mon+Thu Mar (9 occurrences), biweekly Wed Apr-May (5 occurrences) all expand correctly
-
-## Test Credentials
-See `/app/memory/test_credentials.md`
+## Production Deploy Variables
+| Item | Value |
+|------|-------|
+| cPanel user | `ezunitap` |
+| Backend port | `8007` |
+| Domain | `ezunitap.com` |
+| DB name | `unitap_prod` |
+| Repo path | `/home/ezunitap/repo` |
+| Backend prod path | `/opt/ezunitap/backend` |
+| Frontend served from | `/home/ezunitap/public_html` |
+| Backup path | `/home/ezunitap/backups` |
 
 ## Prioritized Backlog
-### P0 — Polish / Bug-class
-- Add atomic counter collection for quote/invoice numbering (current `count_documents` has a race under concurrent creates)
-- Split `server.py` into routers per resource (file is ~840 lines)
+### P0 — Deploy
+- [ ] User creates GitHub repo `unitap` and pushes via "Save to GitHub"
+- [ ] User SSH into VPS as root and runs `curl -sSL .../bootstrap.sh | bash`
+- [ ] Configure SSL + Force HTTPS + Apache mod_proxy in cPanel UI
+- [ ] Verify `https://ezunitap.com/api/` returns 200
 
-### P1 — High-value features
-- Stripe payment integration on invoices ("Pay Online" button is currently a placeholder)
-- Voice recording (currently user pastes transcription)
-- SMS / Email sending for quotes & invoices (currently share-link + PDF download only)
-- Calendar / scheduling for jobs
+### P1
+- [ ] Automated client reminders (SMS Twilio or Email Resend) 1 day before scheduled job
+- [ ] Auto-generate invoice when marking a recurring calendar visit as completed
+- [ ] Export Calendar to `.ics` format
 
-### P2 — Future planned (per spec)
-- WhatsApp share
-- Google Reviews integration
-- Employee management
-- Expense tracking
-- AI voice assistant
+### P2
+- [ ] AI Post Generator for social media (FB/IG caption, EN/ES + hashtags)
+- [ ] Portfolio image carousel on public Smart Card
+- [ ] "Solo Logo" 3rd hero layout for Smart Card
+- [ ] Stripe payments on invoices
+- [ ] Google Reviews API integration
 
-## Next Tasks
-- Stripe integration on Invoice "Pay Online"
-- Real voice input via OpenAI Whisper (already supported by Emergent key)
-- Push reminders to SMS/Email via Twilio + SendGrid
+### P3
+- [ ] Employee management & expense tracking
+
+### P4
+- [ ] Guided interactive onboarding tour
