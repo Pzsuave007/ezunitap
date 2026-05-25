@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import VoiceDictate from "@/components/VoiceDictate";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
@@ -203,8 +204,21 @@ export default function InvoiceDetail() {
         </div>
 
         <div>
-          <Label>Notes</Label>
-          <Textarea value={invoice.notes || ""} onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })} className="rounded-xl mt-1.5" />
+          <div className="flex items-center justify-between mb-1.5">
+            <Label>Notes</Label>
+            <VoiceDictate
+              testid="invoice-voice"
+              size="sm"
+              language="es"
+              onTranscript={(text, { append }) =>
+                setInvoice((prev) => ({
+                  ...prev,
+                  notes: ((append && prev.notes ? prev.notes.trimEnd() + " " : "") + text),
+                }))
+              }
+            />
+          </div>
+          <Textarea value={invoice.notes || ""} onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })} className="rounded-xl" placeholder="Notas para el cliente. Puedes dictar con el micrófono." />
         </div>
 
         <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm">
