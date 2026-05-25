@@ -2,6 +2,7 @@
  * Public landing page for ServicioFlow.
  * Spanish for the contractor (visitor); shows AI/CRM/Calendar/Smart Card features.
  */
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
@@ -446,42 +447,70 @@ function MiniStat({ label, value, accent }) {
   );
 }
 
-function SmartCardPreview() {
-  // Logo + Avatar layout — Latino landscaper vibe.
-  const brand = "#15803D";        // landscaping green (forest)
-  const accent = "#FACC15";       // sunny yellow accent
-  const brandDeep = "#052E16";    // very dark green
-  // Cover photo — user's actual garden photo
-  const coverUrl = "/landing-yard.jpg";
-  // Avatar — Hispanic man with green cap (Unsplash, free license)
-  const avatarUrl = "https://images.unsplash.com/photo-1562925436-0a158efba8dc?w=400&q=80&auto=format&fit=crop&crop=faces";
+// ---------- Card variants for the rotating mockup ----------
+const CARD_VARIANTS = [
+  {
+    key: "landscaping",
+    brand: "#15803D",
+    accent: "#FACC15",
+    brandDeep: "#052E16",
+    cover: "/landing-yard.jpg",
+    avatar: "https://images.unsplash.com/photo-1562925436-0a158efba8dc?w=400&q=80&auto=format&fit=crop&crop=faces",
+    businessNameTop: "García",
+    businessNameBot: "Landscaping",
+    role: "Carlos García · Owner",
+    Icon: Sprout,
+    logoFrom: "from-emerald-600",
+    logoTo: "to-emerald-900",
+    chipColor: "text-emerald-600",
+  },
+  {
+    key: "construction",
+    brand: "#B91C1C",
+    accent: "#F59E0B",
+    brandDeep: "#3F0A0A",
+    cover: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=900&q=80&auto=format&fit=crop",
+    avatar: "https://images.unsplash.com/photo-1606931169057-67d79ff54b67?w=400&q=80&auto=format&fit=crop&crop=faces",
+    businessNameTop: "Rivera",
+    businessNameBot: "Construction",
+    role: "Miguel Rivera · Owner",
+    Icon: Hammer,
+    logoFrom: "from-red-700",
+    logoTo: "to-red-950",
+    chipColor: "text-red-700",
+  },
+];
 
+function CardPhoneMockup({ variant, visible }) {
+  const v = variant;
   return (
-    <div className="relative mx-auto max-w-xs lg:max-w-sm">
-      {/* Phone body */}
-      <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-emerald-900/30 relative border border-white/5">
+    <div
+      className="absolute inset-0 transition-opacity duration-1000 ease-out"
+      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none" }}
+    >
+      <div className="aspect-[9/18] rounded-[3rem] bg-slate-950 p-3 shadow-2xl shadow-slate-900/40 relative border border-white/5">
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-30" />
         <div
           className="w-full h-full rounded-[2.3rem] overflow-hidden relative flex flex-col"
-          style={{ background: `radial-gradient(ellipse at top, ${brand} 0%, ${brandDeep} 80%)` }}
+          style={{ background: `radial-gradient(ellipse at top, ${v.brand} 0%, ${v.brandDeep} 80%)` }}
         >
-          {/* Cover image background */}
+          {/* Cover */}
           <div className="absolute inset-0">
-            <img src={coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={v.cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0" style={{
               background:
                 "linear-gradient(180deg, rgba(5,8,16,0.4) 0%, transparent 25%, transparent 55%, rgba(5,8,16,0.85) 88%, rgba(5,8,16,0.98) 100%)",
             }} />
             <div className="absolute inset-0 mix-blend-overlay opacity-40" style={{
-              background: `radial-gradient(ellipse at top, ${brand}99 0%, transparent 60%)`,
+              background: `radial-gradient(ellipse at top, ${v.brand}99 0%, transparent 60%)`,
             }} />
           </div>
 
-          {/* Top bar — logo + ES pill */}
+          {/* Top bar */}
           <div className="absolute top-7 inset-x-5 flex items-center justify-between z-20">
             <div className="w-12 h-12 rounded-2xl bg-white shadow-lg p-2">
-              <div className="w-full h-full rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 flex items-center justify-center">
-                <Sprout className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className={`w-full h-full rounded-xl bg-gradient-to-br ${v.logoFrom} ${v.logoTo} flex items-center justify-center`}>
+                <v.Icon className="w-5 h-5 text-white" strokeWidth={2.5} />
               </div>
             </div>
             <div className="px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white inline-flex items-center gap-1.5">
@@ -490,25 +519,22 @@ function SmartCardPreview() {
             </div>
           </div>
 
-          {/* Circular avatar centered */}
+          {/* Avatar */}
           <div className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 z-10">
-            <div
-              className="w-[124px] h-[124px] rounded-full p-[3px]"
-              style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}
-            >
+            <div className="w-[124px] h-[124px] rounded-full p-[3px]"
+                 style={{ background: `linear-gradient(135deg, ${v.brand}, ${v.accent})` }}>
               <div className="w-full h-full rounded-full bg-white p-[3px]">
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                <img src={v.avatar} alt="" className="w-full h-full object-cover rounded-full" />
               </div>
             </div>
           </div>
 
           {/* Bottom content */}
           <div className="mt-auto relative z-10 px-5 pb-5 text-white text-center">
-            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">García</h3>
-            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">Landscaping</h3>
-            <div className="text-base text-white/85 mt-2 drop-shadow">Carlos García · Owner</div>
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">{v.businessNameTop}</h3>
+            <h3 className="font-heading font-bold text-3xl leading-[1.05] drop-shadow-lg">{v.businessNameBot}</h3>
+            <div className="text-base text-white/85 mt-2 drop-shadow">{v.role}</div>
 
-            {/* Action buttons */}
             <div className="grid grid-cols-4 gap-2 mt-5 px-3 py-3 rounded-2xl backdrop-blur-md text-left"
                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               {[
@@ -518,10 +544,8 @@ function SmartCardPreview() {
                 { Icon: Mail, label: "Email" },
               ].map(({ Icon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-1">
-                  <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
-                    style={{ background: brand, boxShadow: `0 4px 12px ${brand}66` }}
-                  >
+                  <div className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
+                       style={{ background: v.brand, boxShadow: `0 4px 12px ${v.brand}66` }}>
                     <Icon className="w-5 h-5 text-white" strokeWidth={2.2} />
                   </div>
                   <div className="text-[10px] text-white/85 font-semibold">{label}</div>
@@ -529,7 +553,6 @@ function SmartCardPreview() {
               ))}
             </div>
 
-            {/* Save Contact bar */}
             <div className="mt-2 rounded-2xl px-3 py-2.5 flex items-center gap-2 backdrop-blur-md"
                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
@@ -542,15 +565,59 @@ function SmartCardPreview() {
                 <Save className="w-3.5 h-3.5" />
                 Save Contact
               </div>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: accent }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: v.accent }}>
                 <Sparkles className="w-3.5 h-3.5 text-slate-900" />
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Floating chips */}
+function SmartCardPreview() {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % CARD_VARIANTS.length), 5000);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  const active = CARD_VARIANTS[idx];
+
+  return (
+    <div
+      className="relative mx-auto max-w-xs lg:max-w-sm"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Two stacked phones — fade between them */}
+      <div className="relative aspect-[9/18]">
+        {CARD_VARIANTS.map((v, i) => (
+          <CardPhoneMockup key={v.key} variant={v} visible={i === idx} />
+        ))}
+      </div>
+
+      {/* Industry indicator dots */}
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+        {CARD_VARIANTS.map((v, i) => (
+          <button
+            key={v.key}
+            type="button"
+            onClick={() => setIdx(i)}
+            aria-label={`Show ${v.key} card`}
+            data-testid={`mockup-dot-${v.key}`}
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              i === idx ? "w-8 bg-white" : "w-1.5 bg-white/35 hover:bg-white/60"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Floating chips — adapt color to active variant */}
       <div className="hidden sm:flex absolute right-0 lg:-right-4 top-16 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
         <div className="text-[11px]">
@@ -559,7 +626,7 @@ function SmartCardPreview() {
         </div>
       </div>
       <div className="hidden sm:flex absolute left-0 lg:-left-4 top-40 bg-white rounded-2xl shadow-xl px-3 py-2 items-center gap-2 z-20">
-        <Bot className="w-4 h-4 text-emerald-600" />
+        <Bot className={`w-4 h-4 transition-colors duration-500 ${active.chipColor}`} />
         <div className="text-[11px]">
           <div className="font-bold leading-tight">AI respondió</div>
           <div className="text-slate-500">12 leads esta semana</div>
