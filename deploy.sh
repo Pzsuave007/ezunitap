@@ -21,8 +21,11 @@ git config --global --add safe.directory '*' 2>/dev/null || true
 
 as_user() { su -s /bin/bash -l "$CPANEL_USER" -c "$1"; }
 
-if [ ! -d "$PROD/venv" ]; then
+if [ ! -f "$PROD/venv/bin/activate" ]; then
     echo ">>> FIRST-TIME INSTALL for $CPANEL_USER on port $PORT"
+
+    # Clean any half-broken state
+    rm -rf "$PROD/venv"
 
     # Ensure repo exists
     if [ ! -d "$REPO/.git" ]; then

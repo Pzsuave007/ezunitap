@@ -24,6 +24,11 @@ git reset --hard origin/main
 # -----------------------------------------------------------------------------
 # 2. Update prod python deps (in case requirements.prod.txt changed)
 # -----------------------------------------------------------------------------
+if [ ! -f "$PROD/venv/bin/activate" ]; then
+    echo "  ⚠️  venv missing/corrupt — delete it and re-run deploy.sh:"
+    echo "      rm -rf $PROD/venv && bash $REPO/deploy.sh"
+    exit 1
+fi
 source "$PROD/venv/bin/activate"
 pip install \
     --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ \
