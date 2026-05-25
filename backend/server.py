@@ -1,4 +1,4 @@
-"""ServicioFlow AI - FastAPI backend.
+"""Unitap — FastAPI backend.
 
 Spanish-speaking Latino contractor SaaS.
 Interface in Spanish, AI-generated client documents in English.
@@ -37,7 +37,7 @@ app_name = os.environ.get("APP_NAME", "servicioflow")
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
-app = FastAPI(title="ServicioFlow AI")
+app = FastAPI(title="Unitap")
 api_router = APIRouter(prefix="/api")
 bearer = HTTPBearer(auto_error=False)
 
@@ -1593,7 +1593,7 @@ async def public_card_track(slug: str, payload: AnalyticsEventIn):
 # ============================================================================
 @api_router.get("/")
 async def root():
-    return {"app": "ServicioFlow AI", "ok": True}
+    return {"app": "Unitap", "ok": True}
 
 
 # ============================================================================

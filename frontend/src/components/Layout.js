@@ -38,8 +38,8 @@ export default function Layout() {
               <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <div className="font-heading font-bold text-lg leading-none">ServicioFlow</div>
-              <div className="text-xs text-slate-500 mt-0.5">AI para contratistas</div>
+              <div className="font-heading font-bold text-lg leading-none">Unitap</div>
+              <div className="text-xs text-slate-500 mt-0.5">Tu negocio en un tap</div>
             </div>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function Layout() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
               <Hammer className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-heading font-bold">ServicioFlow</span>
+            <span className="font-heading font-bold">Unitap</span>
           </div>
           <button
             data-testid="mobile-logout"

@@ -1,4 +1,4 @@
-"""End-to-end backend tests for ServicioFlow AI.
+"""End-to-end backend tests for Unitap.
 
 Tests every domain in order so resources build on each other:
 auth -> dashboard -> clients -> AI quote -> quotes -> invoices -> jobs

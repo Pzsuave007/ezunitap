@@ -1,5 +1,5 @@
 /**
- * Public landing page for ServicioFlow.
+ * Public landing page for Unitap.
  * Spanish for the contractor (visitor); shows AI/CRM/Calendar/Smart Card features.
  */
 import { useEffect, useState } from "react";
@@ -87,8 +87,8 @@ export default function Landing() {
               <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-none">
-              <div className="font-heading font-bold text-base">ServicioFlow</div>
-              <div className="text-[10px] text-slate-500">AI para contratistas</div>
+              <div className="font-heading font-bold text-base">Unitap</div>
+              <div className="text-[10px] text-slate-500">Tu negocio en un tap</div>
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
@@ -131,7 +131,7 @@ export default function Landing() {
               Cotiza, agenda y cobra <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">sin escribir inglés.</span>
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              ServicioFlow es la app todo-en-uno para contratistas latinos. Crea quotes profesionales con AI, organiza tu agenda diaria, comparte tu Tarjeta Inteligente y trabaja desde el celular en la obra.
+              Unitap es la app todo-en-uno para contratistas latinos. Crea quotes profesionales con AI, organiza tu agenda diaria, comparte tu Tarjeta Inteligente y trabaja desde el celular en la obra.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
@@ -303,7 +303,7 @@ export default function Landing() {
               Hecho específicamente para dueños de negocios latinos.
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Sabemos que tus clientes son americanos y tú piensas en español. Sabemos que cobras en cash o cheque. Sabemos que tu oficina es tu camioneta. ServicioFlow está diseñado para esa realidad.
+              Sabemos que tus clientes son americanos y tú piensas en español. Sabemos que cobras en cash o cheque. Sabemos que tu oficina es tu camioneta. Unitap está diseñado para esa realidad.
             </p>
             <ul className="mt-7 space-y-3">
               {[
@@ -364,10 +364,10 @@ export default function Landing() {
             <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
               <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-heading font-bold text-slate-900">ServicioFlow</span>
-            <span className="text-slate-400">— AI para contratistas latinos</span>
+            <span className="font-heading font-bold text-slate-900">Unitap</span>
+            <span className="text-slate-400">— Tu negocio en un tap · QR + NFC</span>
           </div>
-          <div className="text-xs">© {new Date().getFullYear()} ServicioFlow. Todos los derechos reservados.</div>
+          <div className="text-xs">© {new Date().getFullYear()} Unitap. Todos los derechos reservados.</div>
         </div>
       </footer>
     </div>
@@ -388,7 +388,7 @@ function PhoneMockup() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
               <Hammer className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-heading font-bold text-sm">ServicioFlow</span>
+            <span className="font-heading font-bold text-sm">Unitap</span>
             <div className="w-8" />
           </div>
           <div className="p-4 space-y-3">

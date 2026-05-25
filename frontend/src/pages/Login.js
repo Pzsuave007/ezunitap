@@ -62,7 +62,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
               <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-heading font-bold text-xl">ServicioFlow</span>
+            <span className="font-heading font-bold text-xl">Unitap</span>
           </div>
           <h2 className="font-heading text-3xl font-bold tracking-tight">Bienvenido de vuelta</h2>
           <p className="text-slate-500 mt-2">Inicia sesión para continuar</p>
