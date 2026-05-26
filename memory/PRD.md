@@ -85,4 +85,5 @@ Latino contractor/business owner (roofing, drywall, painting, etc.), non-technic
 - [x] ~~Guided interactive onboarding tour~~ → Implemented as WelcomeModal + SetupChecklist (Feb 2026)
 
 ## Recently Implemented
+- **Feb 2026** — Onboarding celebration: cuando los 5 pasos del checklist están done, dispara confeti + modal "¡Tu negocio está listo! 🎉" una sola vez (persiste `celebrated:true`). Files: `/app/frontend/src/components/OnboardingCelebration.js`, `Dashboard.js`, `/app/backend/server.py:1768-1817`. Tested 100% (15/15 backend + 7/7 frontend).
 - **Feb 2026** — Onboarding system: WelcomeModal greets new users + SetupChecklist (5 steps: business info, logo, smart card, first client, first quote) with auto-progress detection from DB. Endpoints `GET/PUT /api/onboarding/status` and `/api/onboarding/state`. Tested 100% pass (8/8 backend + 18/18 frontend assertions). Files: `/app/frontend/src/components/WelcomeModal.js`, `SetupChecklist.js`, `Dashboard.js`, `/app/backend/server.py:1773-1831`, `/app/backend/tests/test_onboarding.py`.
