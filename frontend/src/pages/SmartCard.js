@@ -31,7 +31,7 @@ const I18N = {
     requestQuote: "Request a Free Estimate", services: "Services",
     gallery: "Recent work", reviews: "Reviews", aboutMe: "About",
     licensed: "Licensed", insured: "Insured", verified: "Verified",
-    years: "Years Exp.", yearsLong: "years experience", projects: "Projects",
+    years: "Years of Experience", yearsLong: "years experience", projects: "Projects",
     askAnything: "Ask anything", placeholder: "Type your question…",
     quoteFormTitle: "Let's get started", yourName: "Your name",
     phone: "Phone", emailLabel: "Email", address: "Project address",
@@ -52,7 +52,7 @@ const I18N = {
     requestQuote: "Pedir Cotización Gratis", services: "Servicios",
     gallery: "Trabajos recientes", reviews: "Reseñas", aboutMe: "Sobre",
     licensed: "Con Licencia", insured: "Asegurado", verified: "Verificado",
-    years: "Años Exp.", yearsLong: "años de experiencia", projects: "Proyectos",
+    years: "Años de Experiencia", yearsLong: "años de experiencia", projects: "Proyectos",
     askAnything: "Pregunta lo que sea", placeholder: "Escribe tu pregunta…",
     quoteFormTitle: "Empecemos", yourName: "Tu nombre",
     phone: "Teléfono", emailLabel: "Email", address: "Dirección del proyecto",
@@ -502,7 +502,7 @@ export default function SmartCard() {
 const StatBox = ({ value, label }) => (
   <div className="stat-box">
     <div className="font-heading text-xl font-bold tracking-tight">{value}</div>
-    <div className="text-[9px] uppercase tracking-[0.2em] text-white/45 mt-0.5 font-bold">{label}</div>
+    <div className="text-[9px] uppercase tracking-[0.12em] leading-[1.1] text-white/45 mt-1 font-bold">{label}</div>
   </div>
 );
 
