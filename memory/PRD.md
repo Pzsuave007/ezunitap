@@ -82,4 +82,7 @@ Latino contractor/business owner (roofing, drywall, painting, etc.), non-technic
 - [ ] Employee management & expense tracking
 
 ### P4
-- [ ] Guided interactive onboarding tour
+- [x] ~~Guided interactive onboarding tour~~ → Implemented as WelcomeModal + SetupChecklist (Feb 2026)
+
+## Recently Implemented
+- **Feb 2026** — Onboarding system: WelcomeModal greets new users + SetupChecklist (5 steps: business info, logo, smart card, first client, first quote) with auto-progress detection from DB. Endpoints `GET/PUT /api/onboarding/status` and `/api/onboarding/state`. Tested 100% pass (8/8 backend + 18/18 frontend assertions). Files: `/app/frontend/src/components/WelcomeModal.js`, `SetupChecklist.js`, `Dashboard.js`, `/app/backend/server.py:1773-1831`, `/app/backend/tests/test_onboarding.py`.

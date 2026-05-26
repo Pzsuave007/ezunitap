@@ -19,7 +19,6 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success("¡Bienvenido!");
       navigate("/");
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error al iniciar sesión");

@@ -3,13 +3,14 @@
  * Polls /onboarding/status, auto-detects completed items, hides at 100%.
  */
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Check, ArrowRight, Sparkles, X } from "lucide-react";
 
 export default function SetupChecklist() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState(null);
   const [hiding, setHiding] = useState(false);
 
@@ -24,11 +25,16 @@ export default function SetupChecklist() {
 
   useEffect(() => {
     load();
-    // Re-check when window regains focus (after user comes back from completing a task)
+    // Re-check when window regains focus (user returns from another tab)
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [load]);
+
+  // Also refresh on SPA navigation back to dashboard (e.g. after completing a task)
+  useEffect(() => {
+    load();
+  }, [location.key, load]);
 
   const dismiss = async () => {
     setHiding(true);
