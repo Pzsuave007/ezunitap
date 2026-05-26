@@ -1763,6 +1763,76 @@ async def is_super_admin_check(user_id: str = Depends(get_current_user_id)):
 
 
 # ============================================================================
+# ONBOARDING — guides new users through setup
+# ============================================================================
+class OnboardingStateUpdate(BaseModel):
+    welcome_seen: Optional[bool] = None
+    dismissed: Optional[bool] = None
+
+
+@api_router.get("/onboarding/status")
+async def onboarding_status(user_id: str = Depends(get_current_user_id)):
+    """Returns checklist progress (auto-computed from real data) + persisted UI state."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u:
+        raise HTTPException(404, "User not found")
+
+    onb = u.get("onboarding_state") or {}
+    welcome_seen = bool(onb.get("welcome_seen"))
+    dismissed = bool(onb.get("dismissed"))
+
+    # Compute checklist items from real data
+    business_filled = bool(
+        (u.get("phone") or "").strip() and (u.get("business_address") or "").strip()
+    )
+    card = await db.card_settings.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    logo_uploaded = bool(card.get("logo_photo_id"))
+    card_created = bool(
+        (card.get("services") or []) or card.get("profile_photo_id") or card.get("cover_photo_id")
+    )
+    clients_count = await db.clients.count_documents({"user_id": user_id})
+    quotes_count = await db.quotes.count_documents({"user_id": user_id})
+
+    items = [
+        {"id": "business_info", "label": "Llena tu info de negocio", "minutes": 2, "done": business_filled, "path": "/ajustes"},
+        {"id": "logo", "label": "Sube tu logo", "minutes": 1, "done": logo_uploaded, "path": "/tarjeta"},
+        {"id": "smart_card", "label": "Crea tu Tarjeta Inteligente", "minutes": 3, "done": card_created, "path": "/tarjeta"},
+        {"id": "first_client", "label": "Agrega tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
+        {"id": "first_quote", "label": "Genera tu primer quote con AI", "minutes": 2, "done": quotes_count > 0, "path": "/quote/nuevo"},
+    ]
+    done_count = sum(1 for i in items if i["done"])
+    progress = int(done_count * 100 / len(items)) if items else 0
+    completed = done_count == len(items)
+
+    return {
+        "welcome_seen": welcome_seen,
+        "dismissed": dismissed,
+        "items": items,
+        "done_count": done_count,
+        "total": len(items),
+        "progress": progress,
+        "completed": completed,
+        "first_name": (u.get("owner_name") or u.get("business_name") or "").split(" ")[0],
+        "business_name": u.get("business_name", ""),
+    }
+
+
+@api_router.put("/onboarding/state")
+async def onboarding_set_state(
+    payload: OnboardingStateUpdate,
+    user_id: str = Depends(get_current_user_id),
+):
+    update = {}
+    for k, v in payload.model_dump().items():
+        if v is not None:
+            update[f"onboarding_state.{k}"] = v
+    if update:
+        await db.users.update_one({"id": user_id}, {"$set": update})
+    return {"ok": True}
+
+
+
+# ============================================================================
 # HEALTH
 # ============================================================================
 @api_router.get("/")
