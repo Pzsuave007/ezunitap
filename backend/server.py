@@ -1614,9 +1614,19 @@ def _is_super_admin(user_doc: dict) -> bool:
 
 async def _require_super_admin(user_id: str = Depends(get_current_user_id)) -> dict:
     u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
-    if not u or not _is_super_admin(u):
+    if not u:
         raise HTTPException(status_code=403, detail="Forbidden")
-    return u
+    # Direct match
+    if _is_super_admin(u):
+        return u
+    # Fallback: if THIS user's email matches the super-admin email (even with case/
+    # whitespace differences), trust it. Covers cases where there are duplicate
+    # user docs with the same email in the DB.
+    sa_email = (os.environ.get("SUPER_ADMIN_EMAIL", "") or "").strip().lower()
+    user_email = (u.get("email") or "").strip().lower()
+    if sa_email and user_email == sa_email:
+        return u
+    raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @api_router.post("/public/unitap/chat")

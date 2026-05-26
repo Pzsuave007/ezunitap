@@ -30,22 +30,31 @@ export default function AdminLeads() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
+  // Fast-path: trust the logged-in user's email (matches the sidebar logic)
+  const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com", "admin@ezunitap.com"];
+  const isSuperAdminByEmail = !!user?.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase());
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
+        // Try the backend check first (canonical), fall back to email check
         const { data } = await api.get("/auth/is-super-admin");
         if (!mounted) return;
-        setAllowed(!!data.is_super_admin);
-        if (data.is_super_admin) await loadLeads();
+        setAllowed(!!data.is_super_admin || isSuperAdminByEmail);
+        if (data.is_super_admin || isSuperAdminByEmail) await loadLeads();
       } catch {
-        if (mounted) setAllowed(false);
+        if (mounted) {
+          setAllowed(isSuperAdminByEmail);
+          if (isSuperAdminByEmail) await loadLeads();
+        }
       } finally {
         if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
 
   const loadLeads = async () => {
     try {
