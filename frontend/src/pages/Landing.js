@@ -9,10 +9,17 @@ import {
   Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
-  PaintBucket, Wind,
+  PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge,
 } from "lucide-react";
 
 const FEATURES = [
+  {
+    icon: Receipt,
+    title: "Quotes & Invoices en 1-Tap",
+    desc: "Convierte cualquier quote en invoice con un solo click. Descarga PDF profesional en inglés, mándalo por WhatsApp o email. El cliente lo paga, tú lo marcas pagado. Así de fácil.",
+    accent: "from-orange-500 to-red-600",
+    pill: "★ Lo más usado",
+  },
   {
     icon: Sparkles,
     title: "Quotes con AI",
@@ -21,11 +28,17 @@ const FEATURES = [
     pill: "GPT-5.2",
   },
   {
+    icon: LayoutDashboard,
+    title: "Control total del negocio",
+    desc: "Sabe AL DÍA: quién ya pagó, quién debe, quotes pendientes, trabajos en progreso. Tu dashboard te dice qué hacer hoy.",
+    accent: "from-violet-600 to-fuchsia-600",
+    pill: "Nuevo",
+  },
+  {
     icon: CalendarDays,
     title: "Agenda inteligente",
     desc: "Calendario con vista de día, semana, mes y lista. Soporta trabajos recurrentes (cleaning semanal, landscaping) y proyectos multi-día (roofing de 3 semanas).",
     accent: "from-blue-700 to-blue-900",
-    pill: "Nuevo",
   },
   {
     icon: IdCard,
@@ -33,12 +46,6 @@ const FEATURES = [
     desc: "Mini-sitio premium con QR. Tus clientes te ven, te llaman, te dejan reseña y piden quote desde el celular. Con AI chat 24/7.",
     accent: "from-purple-700 to-pink-600",
     pill: "Premium",
-  },
-  {
-    icon: Receipt,
-    title: "Invoices y PDFs",
-    desc: "Convierte el quote en invoice con un click. Descarga PDF, mándalo por WhatsApp o email. El cliente lo imprime si quiere.",
-    accent: "from-orange-500 to-red-600",
   },
   {
     icon: Users,
@@ -67,9 +74,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Agrega tu cliente", desc: "Nombre, teléfono, dirección. 30 segundos." },
-  { n: "02", title: "Crea el quote con AI", desc: "Descríbelo en español o sube fotos. La AI escribe el quote en inglés." },
-  { n: "03", title: "Manda y cobra", desc: "Comparte por WhatsApp, email o PDF. Convierte a invoice cuando aprueben." },
+  { n: "01", title: "Crea el quote con AI", desc: "Descríbelo en español o sube fotos. La AI escribe el quote profesional en inglés en 10 segundos." },
+  { n: "02", title: "Manda, aprueban → 1-tap a Invoice", desc: "Comparte por WhatsApp, email o PDF. Cuando aprueben, conviertes el quote en invoice con un solo click." },
+  { n: "03", title: "Cobra y lleva el control", desc: "El cliente paga, marcas el invoice como pagado. Tu dashboard te muestra todo: cuánto ganaste, qué falta cobrar, qué quotes están pendientes." },
 ];
 
 const SERVICES = [
@@ -94,6 +101,7 @@ export default function Landing() {
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
+            <a href="#invoices" className="hover:text-slate-900 tap">Invoices</a>
             <a href="#features" className="hover:text-slate-900 tap">Features</a>
             <a href="#how" className="hover:text-slate-900 tap">Cómo funciona</a>
             <a href="#card" className="hover:text-slate-900 tap">Tarjeta</a>
@@ -127,13 +135,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6">
-              <Languages className="w-3.5 h-3.5" /> Tú en español. Tu cliente en inglés.
+              <Receipt className="w-3.5 h-3.5" /> Quotes • Invoices • Control total — en inglés
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Cotiza, agenda y cobra <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">sin escribir inglés.</span>
+              Cotiza, factura y cobra <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">sin escribir inglés.</span>
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Unitap es la app todo-en-uno para contratistas latinos. Crea quotes profesionales con AI, organiza tu agenda diaria, comparte tu Tarjeta Inteligente y trabaja desde el celular en la obra.
+              Unitap es la app todo-en-uno para contratistas latinos. <strong className="text-slate-900">Crea quotes e invoices profesionales en inglés con AI,</strong> lleva el control de quién te pagó, quién debe, y maneja todo tu negocio desde el celular.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
@@ -179,13 +187,144 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ====== INVOICES & BUSINESS CONTROL — featured section ====== */}
+      <section id="invoices" className="py-20 lg:py-28 relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 text-white">
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+          backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)",
+          backgroundSize: "32px 32px"
+        }} />
+
+        <div className="max-w-7xl mx-auto px-5 lg:px-8 relative">
+          <div className="grid lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-6">
+                <Receipt className="w-3.5 h-3.5" /> El corazón de tu negocio
+              </div>
+              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
+                De <span className="text-emerald-400">quote</span> a <span className="text-emerald-400">invoice</span> a <span className="text-emerald-400">cobrado</span> — en un día.
+              </h2>
+              <p className="mt-6 text-lg text-slate-300 leading-relaxed">
+                Olvídate de Word, de plantillas viejas, de cobrar tarde. Unitap te lleva paso a paso desde la cotización hasta el dinero en tu cuenta.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                {[
+                  { icon: FileText, h: "Quote profesional en 10 segundos", p: "AI escribe líneas detalladas, precios, scope of work — en inglés perfecto." },
+                  { icon: Receipt, h: "Invoice con 1-click", p: "Cuando el cliente aprueba, conviertes el quote en invoice sin re-escribir nada. PDF listo para mandar." },
+                  { icon: DollarSign, h: "Sabe quién te pagó y quién debe", p: "Marca invoices como pagadas. Ve cuánto te deben, qué está vencido, cuánto facturaste este mes." },
+                  { icon: TrendingUp, h: "Tu negocio en números", p: "Dashboard con totales de quotes pendientes, invoices cobradas, trabajos abiertos. Ya no adivinas — sabes." },
+                ].map((it) => (
+                  <div key={it.h} className="flex gap-4">
+                    <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                      <it.icon className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-base mb-0.5">{it.h}</h3>
+                      <p className="text-slate-400 text-sm leading-relaxed">{it.p}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-10">
+                <Link
+                  to="/register"
+                  data-testid="invoices-register"
+                  className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-base shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all tap"
+                >
+                  Empieza a facturar gratis <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Visual: stacked mockup cards of quote / invoice / paid */}
+            <div className="lg:col-span-6 relative">
+              <div className="relative max-w-md mx-auto lg:ml-auto space-y-4">
+                {/* Quote card */}
+                <div className="rounded-2xl bg-white text-slate-900 p-5 shadow-2xl shadow-blue-900/20 transform lg:-rotate-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-blue-700" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Quote #1024</div>
+                        <div className="text-sm font-bold">Mike's Bakery — Roof Repair</div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase">Sent</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed">"Replace 8 damaged shingles, seal around chimney, clean gutters. Materials + 4 hours labor."</div>
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500">Total</span>
+                    <span className="font-bold text-lg text-slate-900">$1,485.00</span>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-center text-emerald-400 text-2xl font-bold">↓</div>
+
+                {/* Invoice card */}
+                <div className="rounded-2xl bg-white text-slate-900 p-5 shadow-2xl shadow-emerald-900/20 transform lg:rotate-2 lg:translate-x-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                        <Receipt className="w-4 h-4 text-emerald-700" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Invoice #2024-0118</div>
+                        <div className="text-sm font-bold">Mike's Bakery</div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">✓ Paid</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-[11px]">
+                    <div>
+                      <div className="text-slate-400">Issued</div>
+                      <div className="font-semibold text-slate-700">Jan 15, 2026</div>
+                    </div>
+                    <div>
+                      <div className="text-slate-400">Paid on</div>
+                      <div className="font-semibold text-emerald-700">Jan 18, 2026</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500">Paid in full</span>
+                    <span className="font-bold text-lg text-emerald-700">$1,485.00</span>
+                  </div>
+                </div>
+
+                {/* Dashboard mini */}
+                <div className="mt-6 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 p-5">
+                  <div className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-3">Este mes</div>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-emerald-400">$8,420</div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Cobrado</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-amber-400">$2,150</div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Por cobrar</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-white">12</div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Quotes activos</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ====== FEATURES ====== */}
       <section id="features" className="py-20 lg:py-28 bg-slate-50">
         <div className="max-w-7xl mx-auto px-5 lg:px-8">
           <div className="max-w-2xl mb-14">
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Todo lo que necesitas</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Una app, ocho herramientas que tu negocio necesita todos los días.
+              Una app, nueve herramientas que tu negocio necesita todos los días.
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
               Reemplaza WhatsApp, Excel, Google Calendar, Word y tres apps más. Todo conectado, todo en español para ti.
