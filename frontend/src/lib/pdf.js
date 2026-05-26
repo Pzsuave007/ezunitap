@@ -86,10 +86,10 @@ function clientBlock(doc, client, y) {
   return y + 6 + lines.length * 5;
 }
 
-export function generateQuotePDF(quote, business, client) {
+export async function generateQuotePDF(quote, business, client) {
   const doc = new jsPDF();
   const dateStr = new Date(quote.created_at || Date.now()).toLocaleDateString("en-US");
-  header(doc, business, "Quote", "Quote #", quote.number, dateStr);
+  await header(doc, business, "Quote", "Quote #", quote.number, dateStr);
   let y = clientBlock(doc, client, 48);
   y += 6;
 

@@ -25,8 +25,15 @@ export default function QuoteDetail() {
     try {
       const q = await api.get(`/quotes/${id}`);
       setQuote(q.data);
-      const c = await api.get(`/clients/${q.data.client_id}`);
-      setClient(c.data);
+      // Client fetch is best-effort: if client was deleted, we still show the quote
+      if (q.data.client_id) {
+        try {
+          const c = await api.get(`/clients/${q.data.client_id}`);
+          setClient(c.data);
+        } catch {
+          setClient(null);
+        }
+      }
     } catch {
       toast.error("Quote no encontrado");
       navigate("/quotes");
