@@ -1768,6 +1768,7 @@ async def is_super_admin_check(user_id: str = Depends(get_current_user_id)):
 class OnboardingStateUpdate(BaseModel):
     welcome_seen: Optional[bool] = None
     dismissed: Optional[bool] = None
+    celebrated: Optional[bool] = None
 
 
 @api_router.get("/onboarding/status")
@@ -1780,6 +1781,7 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     onb = u.get("onboarding_state") or {}
     welcome_seen = bool(onb.get("welcome_seen"))
     dismissed = bool(onb.get("dismissed"))
+    celebrated = bool(onb.get("celebrated"))
 
     # Compute checklist items from real data
     business_filled = bool(
@@ -1807,6 +1809,7 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     return {
         "welcome_seen": welcome_seen,
         "dismissed": dismissed,
+        "celebrated": celebrated,
         "items": items,
         "done_count": done_count,
         "total": len(items),

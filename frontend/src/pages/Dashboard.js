@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
+import OnboardingCelebration from "@/components/OnboardingCelebration";
 
 const StatCard = ({ icon: Icon, label, value, accent, testid }) => (
   <Card data-testid={testid} className="card-elevated p-4 lg:p-5 border-0 shadow-none">
@@ -79,6 +80,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <WelcomeModal />
+      <OnboardingCelebration />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm text-slate-500">{greeting()},</div>
