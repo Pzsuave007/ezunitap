@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const blank = () => ({
@@ -38,6 +38,36 @@ export default function InvoiceDetail() {
   const [invoice, setInvoice] = useState(blank());
   const [client, setClient] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [aiDescription, setAiDescription] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!aiDescription.trim()) return toast.error("Escribe una descripción primero");
+    setAiLoading(true);
+    try {
+      const { data } = await api.post("/ai/quote", { description_es: aiDescription });
+      const lineItems = (data.line_items || []).map((li) => ({
+        description: li.description || "",
+        quantity: Number(li.quantity) || 1,
+        unit: li.unit || "ea",
+        unit_price: Number(li.unit_price) || 0,
+        amount: Number(li.amount) || (Number(li.quantity) || 1) * (Number(li.unit_price) || 0),
+      }));
+      const next = {
+        ...invoice,
+        job_title: data.job_title || invoice.job_title,
+        line_items: lineItems,
+        tax_rate: Number(data.tax_rate) || invoice.tax_rate,
+        notes: data.notes || invoice.notes,
+      };
+      recompute(next);
+      toast.success("¡Invoice generado con AI en inglés!");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error de AI");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
@@ -108,6 +138,37 @@ export default function InvoiceDetail() {
       <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-sm text-slate-600 tap" data-testid="back-invoices">
         <ArrowLeft className="w-4 h-4" /> Invoices
       </button>
+
+      {/* AI Generation (only for new invoices) */}
+      {isNew && (
+        <Card className="card-elevated p-5 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white shadow-none">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <Label className="text-base font-bold">Generar Invoice con AI</Label>
+              <p className="text-[11px] text-slate-500">Describe el trabajo en español — la IA lo traduce a inglés profesional para tu cliente.</p>
+            </div>
+          </div>
+          <Textarea
+            data-testid="inv-ai-description"
+            value={aiDescription}
+            onChange={(e) => setAiDescription(e.target.value)}
+            className="rounded-xl min-h-[100px] bg-white"
+            placeholder="Ej: Reparé el techo de Carlos, cambié 8 tejas, sellé alrededor de la chimenea. 3 horas de trabajo. Material costó $120."
+          />
+          <Button
+            data-testid="inv-ai-generate"
+            onClick={generateWithAI}
+            disabled={aiLoading || !aiDescription.trim()}
+            className="mt-3 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 w-full gap-2"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {aiLoading ? "Generando..." : "Generar con AI (en inglés)"}
+          </Button>
+        </Card>
+      )}
 
       <Card className="card-elevated p-5 border-0 shadow-none">
         <div className="flex items-start justify-between gap-3">
