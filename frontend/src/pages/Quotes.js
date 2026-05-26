@@ -4,7 +4,8 @@ import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge, { QUOTE_STATUSES } from "@/components/StatusBadge";
-import { Sparkles, ChevronRight, FileText } from "lucide-react";
+import { Sparkles, ChevronRight, FileText, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Quotes() {
   const navigate = useNavigate();
@@ -23,6 +24,18 @@ export default function Quotes() {
   }, []);
 
   const list = filter === "all" ? quotes : quotes.filter((q) => q.status === filter);
+
+  const deleteQuote = async (e, q) => {
+    e.stopPropagation();
+    if (!window.confirm(`¿Borrar el quote ${q.number}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/quotes/${q.id}`);
+      setQuotes((qs) => qs.filter((x) => x.id !== q.id));
+      toast.success("Quote borrado");
+    } catch {
+      toast.error("Error al borrar");
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -83,7 +96,17 @@ export default function Quotes() {
                     {clients[q.client_id]?.name || "Cliente"} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-1">
+                  <button
+                    data-testid={`quote-delete-${q.id}`}
+                    onClick={(e) => deleteQuote(e, q)}
+                    aria-label="Borrar quote"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
               </div>
             </Card>
           ))}

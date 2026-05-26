@@ -129,8 +129,15 @@ export default function InvoiceDetail() {
 
   const downloadPDF = async () => {
     let c = client;
-    if (!c) c = (await api.get(`/clients/${invoice.client_id}`)).data;
-    generateInvoicePDF(invoice, user, c);
+    if (!c && invoice.client_id) {
+      try {
+        c = (await api.get(`/clients/${invoice.client_id}`)).data;
+      } catch { c = null; }
+    }
+    // Fetch card settings to get logo_photo_id, then merge into user
+    let cardSettings = null;
+    try { cardSettings = (await api.get("/card/settings")).data; } catch {}
+    generateInvoicePDF(invoice, { ...user, logo_photo_id: cardSettings?.logo_photo_id }, c);
   };
 
   return (

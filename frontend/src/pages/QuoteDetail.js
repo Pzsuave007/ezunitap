@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateQuotePDF } from "@/lib/pdf";
-import { ArrowLeft, Download, Share2, FileDown, MoreVertical, Loader2, Receipt } from "lucide-react";
+import { ArrowLeft, Download, Share2, FileDown, MoreVertical, Loader2, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function QuoteDetail() {
@@ -19,12 +19,17 @@ export default function QuoteDetail() {
   const { user } = useAuth();
   const [quote, setQuote] = useState(null);
   const [client, setClient] = useState(null);
+  const [card, setCard] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
     try {
-      const q = await api.get(`/quotes/${id}`);
+      const [q, cardRes] = await Promise.all([
+        api.get(`/quotes/${id}`),
+        api.get("/card/settings").catch(() => ({ data: null })),
+      ]);
       setQuote(q.data);
+      setCard(cardRes.data);
       // Client fetch is best-effort: if client was deleted, we still show the quote
       if (q.data.client_id) {
         try {
@@ -66,7 +71,18 @@ export default function QuoteDetail() {
     navigate(`/invoices/${data.id}`);
   };
 
-  const downloadPDF = () => generateQuotePDF(quote, user, client);
+  const downloadPDF = () => generateQuotePDF(quote, { ...user, logo_photo_id: card?.logo_photo_id }, client);
+
+  const deleteQuote = async () => {
+    if (!window.confirm(`¿Borrar el quote ${quote.number}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/quotes/${id}`);
+      toast.success("Quote borrado");
+      navigate("/quotes");
+    } catch {
+      toast.error("Error al borrar");
+    }
+  };
 
   const shareLink = async () => {
     const url = `${window.location.origin}/p/quote/${quote.id}`;
@@ -105,6 +121,13 @@ export default function QuoteDetail() {
               <DropdownMenuItem onClick={() => setStatus("sent")} data-testid="mark-sent">Marcar Enviado</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatus("approved")} data-testid="mark-approved">Marcar Aprobado</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatus("declined")}>Marcar Rechazado</DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="quote-delete"
+                onClick={deleteQuote}
+                className="text-red-600 focus:text-red-700 focus:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Borrar quote
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
