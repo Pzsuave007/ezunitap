@@ -1798,7 +1798,7 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
         {"id": "logo", "label": "Sube tu logo", "minutes": 1, "done": logo_uploaded, "path": "/tarjeta"},
         {"id": "smart_card", "label": "Crea tu Tarjeta Inteligente", "minutes": 3, "done": card_created, "path": "/tarjeta"},
         {"id": "first_client", "label": "Agrega tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
-        {"id": "first_quote", "label": "Genera tu primer quote con AI", "minutes": 2, "done": quotes_count > 0, "path": "/quote/nuevo"},
+        {"id": "first_quote", "label": "Genera tu primer quote con AI", "minutes": 2, "done": quotes_count > 0, "path": "/quotes/nuevo?ai=1"},
     ]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0
