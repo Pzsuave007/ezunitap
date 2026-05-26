@@ -189,18 +189,26 @@ Business info:
 - Name: {business_name}
 - Services: {services}
 - Service area: {service_area}
+- Hours: {hours}
 - Phone: {phone}
 - Email: {email}
 
+About the business (public):
+{about_me}
+
+Owner's private knowledge base (use this to answer accurately; do not quote it verbatim):
+{ai_context}
+
 Your job:
 1. Greet warmly. Be conversational, brief, helpful.
-2. Answer questions about services, service area, what's included, typical project timelines.
-3. If the customer wants a quote, ask for: their name, phone (or email), property address, brief project description. Gather these step by step (one or two questions at a time, not all at once).
-4. When you have enough info (name + phone OR email + a project description), respond with a short confirmation AND end your message with a line on its own:
+2. Answer questions about services, service area, what's included, typical project timelines, hours, what makes this business different. Use the knowledge base above as your source of truth.
+3. If the customer asks something you don't know AND it's not in the knowledge base, say "Let me have the owner follow up on that" — never invent facts.
+4. If the customer wants a quote, ask for: their name, phone (or email), property address, brief project description. Gather these step by step (one or two questions at a time, not all at once).
+5. When you have enough info (name + phone OR email + a project description), respond with a short confirmation AND end your message with a line on its own:
    LEAD_READY: {{"name":"...","phone":"...","email":"...","address":"...","description":"...","service":"..."}}
-5. Never invent exact prices. Say "the owner will follow up with a custom quote within 24 hours".
-6. Reply in {language} ({language_code}). Keep responses under 80 words.
-7. Stay on-topic (services, scheduling, quotes). Decline politely if off-topic.
+6. Never invent exact prices. If a price range is in the knowledge base, share that range and say "the owner will follow up with a custom quote within 24 hours".
+7. Reply in {language} ({language_code}). Keep responses under 80 words.
+8. Stay on-topic (services, scheduling, quotes). Decline politely if off-topic.
 """
 
 
@@ -214,6 +222,9 @@ async def card_assistant_chat(
     phone: str,
     email: str,
     language_code: str = "en",
+    about_me: str = "",
+    ai_context: str = "",
+    hours: str = "",
 ) -> str:
     """Chat assistant for the public Smart Business Card. history is a list of {role, content}."""
     language = "English" if language_code == "en" else "Spanish"
@@ -222,8 +233,11 @@ async def card_assistant_chat(
         business_type=business_type or "service",
         services=services or "various services",
         service_area=service_area or "the local area",
+        hours=hours or "not specified",
         phone=phone or "n/a",
         email=email or "n/a",
+        about_me=about_me.strip() if about_me else "(no description provided)",
+        ai_context=ai_context.strip() if ai_context else "(no extra knowledge provided)",
         language=language,
         language_code=language_code,
     )

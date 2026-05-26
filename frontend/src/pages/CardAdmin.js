@@ -16,7 +16,7 @@ import {
   IdCard, QrCode, Copy, ExternalLink, Eye, Plus, Trash2, Loader2,
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
   Image as ImageIcon, Upload, X as XIcon, Camera,
-  Phone, MessageSquare, Send, Mail, Globe, Save,
+  Phone, MessageSquare, Send, Mail, Globe, Save, Brain,
   Sprout, Hammer, PaintBucket, Wind, Wrench, Home,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -201,6 +201,29 @@ export default function CardAdmin() {
             <div>
               <Label>Horario</Label>
               <Input data-testid="card-hours" value={card.hours} onChange={(e) => update("hours", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Mon-Fri 8am-6pm" />
+            </div>
+
+            {/* AI Knowledge Base — private, only fed to the chat AI */}
+            <div className="rounded-2xl border-2 border-violet-200 bg-violet-50/50 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <Label className="text-base font-bold">Base de conocimiento de la IA</Label>
+                  <p className="text-[11px] text-slate-500">Privado — solo lo lee la IA del chat, los clientes NO lo ven.</p>
+                </div>
+              </div>
+              <Textarea
+                data-testid="card-ai-context"
+                value={card.ai_context || ""}
+                onChange={(e) => update("ai_context", e.target.value)}
+                className="rounded-xl min-h-[180px] bg-white"
+                placeholder={`Escribe TODO lo que la IA debe saber sobre tu negocio. Ejemplos:\n\n- Áreas que cubrimos: Houston, Sugar Land, Katy, Pearland\n- Horario: lunes a sábado 7am-6pm, cerrado domingos\n- Cotización GRATIS y sin compromiso\n- Garantía: 5 años en techos nuevos, 1 año en reparaciones\n- Aceptamos efectivo, cheque y tarjetas (Visa/MC/Amex)\n- Rangos de precio: reparación de gotera desde $300, techo completo desde $5,000\n- Marcas que usamos: GAF, Owens Corning, CertainTeed\n- Tenemos seguro de $1M de responsabilidad civil\n- El dueño Juan tiene 25 años de experiencia\n- Ofrecemos planes de pago a 0% por 6 meses con buen crédito\n- Lo que nos hace diferentes: limpieza total al terminar, supervisor bilingüe en cada obra`}
+              />
+              <p className="text-[11px] text-slate-500">
+                💡 Mientras más detalles le des, mejor responderá la IA. Incluye: áreas que cubres, garantías, formas de pago, rangos de precio, qué te hace diferente, certificaciones, y cualquier dato que un cliente pregunte seguido.
+              </p>
             </div>
             <div>
               <Label>Color de marca</Label>

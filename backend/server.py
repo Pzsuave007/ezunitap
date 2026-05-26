@@ -224,6 +224,8 @@ class CardSettingsIn(BaseModel):
     # "photo" = full-bleed portrait (premium / personal). "logo_circle" = work/cover
     # photo as background + small circular avatar (for people who prefer not to be on full display).
     hero_layout: Optional[str] = "photo"  # "photo" | "logo_circle"
+    # Private AI knowledge base (NOT shown to customers, only fed to the chat AI)
+    ai_context: Optional[str] = ""
 
 
 class CardLeadIn(BaseModel):
@@ -1471,6 +1473,9 @@ async def public_card_chat(slug: str, payload: CardChatIn):
             phone=user.get("phone", ""),
             email=user.get("business_email") or user.get("email", ""),
             language_code=(payload.language or "en"),
+            about_me=card.get("about_me", ""),
+            ai_context=card.get("ai_context", ""),
+            hours=card.get("hours", ""),
         )
     except Exception as e:
         logger.exception("Card chat failed")
