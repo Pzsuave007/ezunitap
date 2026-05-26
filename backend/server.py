@@ -1515,59 +1515,85 @@ async def public_card_chat(slug: str, payload: CardChatIn):
 
     lead_id = None
     if lead_payload and lead_payload.get("name"):
-        lead = {
-            "id": _new_id(),
+        # ANTI-DUPLICATE: don't create another lead/client/job if this session already has one.
+        # Instead, update the existing lead with any new info the AI provided.
+        existing_lead = await db.card_leads.find_one({
             "card_id": card["id"],
-            "user_id": card["user_id"],
-            "name": lead_payload.get("name", ""),
-            "phone": lead_payload.get("phone", ""),
-            "email": lead_payload.get("email", ""),
-            "address": lead_payload.get("address", ""),
-            "service": lead_payload.get("service", ""),
-            "description": lead_payload.get("description", ""),
-            "preferred_contact": "phone",
-            "photo_path": None,
-            "status": "new",
-            "source": "ai_chat",
-            "created_at": now,
-        }
-        await db.card_leads.insert_one(lead)
-        # Create client + job too
-        client_doc = {
-            "id": _new_id(),
-            "user_id": card["user_id"],
-            "name": lead["name"],
-            "phone": lead["phone"],
-            "email": lead["email"],
-            "address": lead["address"],
-            "job_type": lead["service"],
-            "notes": f"[AI Chat Lead]\n{lead['description']}",
-            "created_at": now,
-        }
-        await db.clients.insert_one(client_doc)
-        job_doc = {
-            "id": _new_id(),
-            "user_id": card["user_id"],
-            "client_id": client_doc["id"],
-            "title": lead["service"] or "New Lead (AI Chat)",
-            "quote_id": None,
-            "invoice_id": None,
-            "status": "new_lead",
-            "scheduled_date": None,
-            "notes": lead["description"],
-            "created_at": now,
-            "updated_at": now,
-        }
-        await db.jobs.insert_one(job_doc)
-        await db.card_events.insert_one({
-            "id": _new_id(),
-            "card_id": card["id"],
-            "user_id": card["user_id"],
-            "event": "quote_request",
-            "meta": {"via": "ai_chat"},
-            "created_at": now,
+            "session_id": payload.session_id,
         })
-        lead_id = lead["id"]
+        if existing_lead:
+            # Merge any non-empty fields from the latest LEAD_READY
+            updates = {}
+            for k in ("name", "phone", "email", "address", "service", "description"):
+                v = (lead_payload.get(k) or "").strip()
+                if v and v != (existing_lead.get(k) or ""):
+                    updates[k] = v
+            if updates:
+                await db.card_leads.update_one({"id": existing_lead["id"]}, {"$set": updates})
+                # Also update the client + job notes
+                if existing_lead.get("client_id"):
+                    client_updates = {k: v for k, v in updates.items() if k in ("name", "phone", "email", "address")}
+                    if updates.get("service"):
+                        client_updates["job_type"] = updates["service"]
+                    if client_updates:
+                        await db.clients.update_one({"id": existing_lead["client_id"]}, {"$set": client_updates})
+            lead_id = existing_lead["id"]
+        else:
+            lead = {
+                "id": _new_id(),
+                "card_id": card["id"],
+                "user_id": card["user_id"],
+                "session_id": payload.session_id,
+                "name": lead_payload.get("name", ""),
+                "phone": lead_payload.get("phone", ""),
+                "email": lead_payload.get("email", ""),
+                "address": lead_payload.get("address", ""),
+                "service": lead_payload.get("service", ""),
+                "description": lead_payload.get("description", ""),
+                "preferred_contact": "phone",
+                "photo_path": None,
+                "status": "new",
+                "source": "ai_chat",
+                "created_at": now,
+            }
+            # Create client + job too
+            client_doc = {
+                "id": _new_id(),
+                "user_id": card["user_id"],
+                "name": lead["name"],
+                "phone": lead["phone"],
+                "email": lead["email"],
+                "address": lead["address"],
+                "job_type": lead["service"],
+                "notes": f"[AI Chat Lead]\n{lead['description']}",
+                "created_at": now,
+            }
+            await db.clients.insert_one(client_doc)
+            lead["client_id"] = client_doc["id"]
+            await db.card_leads.insert_one(lead)
+            job_doc = {
+                "id": _new_id(),
+                "user_id": card["user_id"],
+                "client_id": client_doc["id"],
+                "title": lead["service"] or "New Lead (AI Chat)",
+                "quote_id": None,
+                "invoice_id": None,
+                "status": "new_lead",
+                "scheduled_date": None,
+                "notes": lead["description"],
+                "created_at": now,
+                "updated_at": now,
+            }
+            await db.jobs.insert_one(job_doc)
+            await db.card_events.insert_one({
+                "id": _new_id(),
+                "card_id": card["id"],
+                "user_id": card["user_id"],
+                "event": "quote_request",
+                "meta": {"via": "ai_chat"},
+                "created_at": now,
+            })
+            lead_id = lead["id"]
 
     return {"reply": visible_reply, "lead_created": bool(lead_id)}
 
