@@ -1594,6 +1594,139 @@ async def public_card_track(slug: str, payload: AnalyticsEventIn):
 
 
 # ============================================================================
+# UNITAP PLATFORM CHAT + ADMIN LEADS (super-admin only follow-up)
+# ============================================================================
+class PlatformChatIn(BaseModel):
+    session_id: str
+    message: str
+    language: Optional[str] = "es"
+
+
+class PlatformLeadUpdate(BaseModel):
+    status: Optional[str] = None  # new | contacted | converted | dismissed
+    notes: Optional[str] = None
+
+
+def _is_super_admin(user_doc: dict) -> bool:
+    sa_email = (os.environ.get("SUPER_ADMIN_EMAIL", "") or "").strip().lower()
+    return bool(sa_email) and user_doc.get("email", "").lower() == sa_email
+
+
+async def _require_super_admin(user_id: str = Depends(get_current_user_id)) -> dict:
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u or not _is_super_admin(u):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return u
+
+
+@api_router.post("/public/unitap/chat")
+async def unitap_platform_chat(payload: PlatformChatIn):
+    import re as _re
+    import json as _json
+    history_docs = await db.platform_chat_turns.find(
+        {"session_id": payload.session_id},
+        {"_id": 0},
+    ).sort("created_at", 1).to_list(50)
+    history = [{"role": d["role"], "content": d["content"]} for d in history_docs]
+    try:
+        reply = await ai_service.unitap_assistant_chat(
+            history=history,
+            user_message=payload.message,
+            language_code=(payload.language or "es"),
+        )
+    except Exception as e:
+        logger.exception("Unitap chat failed")
+        raise HTTPException(500, f"AI error: {e}")
+
+    now = _now_iso()
+    await db.platform_chat_turns.insert_one({
+        "id": _new_id(),
+        "session_id": payload.session_id,
+        "role": "user",
+        "content": payload.message,
+        "created_at": now,
+    })
+    await db.platform_chat_turns.insert_one({
+        "id": _new_id(),
+        "session_id": payload.session_id,
+        "role": "assistant",
+        "content": reply,
+        "created_at": now,
+    })
+
+    # Detect LEAD_READY and persist platform_lead
+    m = _re.search(r"LEAD_READY:\s*(\{.*?\})", reply, _re.DOTALL)
+    if m:
+        try:
+            data = _json.loads(m.group(1))
+        except Exception:
+            data = {}
+        if data.get("name") and (data.get("phone") or data.get("email")):
+            # Avoid duplicates per session
+            existing = await db.platform_leads.find_one({"session_id": payload.session_id})
+            if not existing:
+                await db.platform_leads.insert_one({
+                    "id": _new_id(),
+                    "session_id": payload.session_id,
+                    "name": (data.get("name") or "").strip(),
+                    "phone": (data.get("phone") or "").strip(),
+                    "email": (data.get("email") or "").strip().lower(),
+                    "trade": (data.get("trade") or "").strip(),
+                    "interest": (data.get("interest") or "").strip(),
+                    "language": (data.get("language") or payload.language or "es"),
+                    "status": "new",
+                    "notes": "",
+                    "created_at": now,
+                    "contacted_at": None,
+                })
+    # Strip LEAD_READY line from the reply shown to user
+    clean_reply = _re.sub(r"\n?LEAD_READY:\s*\{.*?\}\s*$", "", reply, flags=_re.DOTALL).strip()
+    return {"reply": clean_reply}
+
+
+@api_router.get("/admin/platform-leads")
+async def admin_list_platform_leads(_admin: dict = Depends(_require_super_admin)):
+    docs = await db.platform_leads.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {"leads": docs, "total": len(docs)}
+
+
+@api_router.put("/admin/platform-leads/{lead_id}")
+async def admin_update_platform_lead(
+    lead_id: str,
+    payload: PlatformLeadUpdate,
+    _admin: dict = Depends(_require_super_admin),
+):
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if "status" in update and update["status"] == "contacted":
+        update["contacted_at"] = _now_iso()
+    if not update:
+        return {"ok": True}
+    res = await db.platform_leads.update_one({"id": lead_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Lead not found")
+    doc = await db.platform_leads.find_one({"id": lead_id}, {"_id": 0})
+    return {"ok": True, "lead": doc}
+
+
+@api_router.delete("/admin/platform-leads/{lead_id}")
+async def admin_delete_platform_lead(
+    lead_id: str,
+    _admin: dict = Depends(_require_super_admin),
+):
+    res = await db.platform_leads.delete_one({"id": lead_id})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Lead not found")
+    return {"ok": True}
+
+
+@api_router.get("/auth/is-super-admin")
+async def is_super_admin_check(user_id: str = Depends(get_current_user_id)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return {"is_super_admin": bool(u) and _is_super_admin(u)}
+
+
+
+# ============================================================================
 # HEALTH
 # ============================================================================
 @api_router.get("/")

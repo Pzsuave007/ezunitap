@@ -21,6 +21,7 @@ import PublicQuote from "@/pages/PublicQuote";
 import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
 import Landing from "@/pages/Landing";
+import AdminLeads from "@/pages/AdminLeads";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -81,6 +82,7 @@ function App() {
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />
+              <Route path="/admin/leads" element={<AdminLeads />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import PlatformChat from "@/components/PlatformChat";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
@@ -79,6 +80,7 @@ const SERVICES = [
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
+      <PlatformChat />
       {/* Top nav */}
       <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">

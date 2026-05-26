@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, Inbox } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
@@ -22,6 +24,25 @@ const SIDEBAR_EXTRA = [
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await api.get("/auth/is-super-admin");
+        if (mounted) setIsSuperAdmin(!!data.is_super_admin);
+      } catch {
+        if (mounted) setIsSuperAdmin(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const sidebarExtra = [
+    ...SIDEBAR_EXTRA,
+    ...(isSuperAdmin ? [{ to: "/admin/leads", label: "Leads (admin)", icon: Inbox }] : []),
+  ];
 
   const handleLogout = () => {
     logout();
@@ -62,7 +83,7 @@ export default function Layout() {
             </NavLink>
           ))}
           <div className="h-px bg-slate-100 my-2" />
-          {SIDEBAR_EXTRA.map((n) => (
+          {sidebarExtra.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
