@@ -53,7 +53,8 @@ fi
 
 # 5. Restart backend
 pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
-sleep 1
+fuser -k "${PORT}/tcp" 2>/dev/null || true
+sleep 2
 cd "$PROD"
 nohup "$PROD/venv/bin/uvicorn" server:app \
     --host 127.0.0.1 --port "$PORT" --workers 1 \

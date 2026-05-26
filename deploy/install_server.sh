@@ -64,7 +64,8 @@ find "$PH" -type d -exec chmod 755 {} \;
 # -----------------------------------------------------------------------------
 echo ">>> Start backend on :$PORT"
 pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
-sleep 1
+fuser -k "${PORT}/tcp" 2>/dev/null || true
+sleep 2
 
 cd "$PROD"
 nohup "$PROD/venv/bin/uvicorn" server:app \
@@ -88,7 +89,8 @@ fi
 cat > "/home/${CPANEL_USER}/restart.sh" <<EOF
 #!/bin/bash
 pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
-sleep 1
+fuser -k "${PORT}/tcp" 2>/dev/null || true
+sleep 2
 cd ${PROD}
 nohup ${PROD}/venv/bin/uvicorn server:app --host 127.0.0.1 --port ${PORT} --workers 1 > ${PROD}/backend.log 2>&1 &
 sleep 2
