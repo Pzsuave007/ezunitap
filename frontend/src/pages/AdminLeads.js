@@ -31,7 +31,7 @@ export default function AdminLeads() {
   const [filter, setFilter] = useState("all");
 
   // Fast-path: trust the logged-in user's email (matches the sidebar logic)
-  const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com", "admin@ezunitap.com"];
+  const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com"];
   const isSuperAdminByEmail = !!user?.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase());
 
   useEffect(() => {

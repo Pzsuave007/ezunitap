@@ -27,7 +27,7 @@ export default function Layout() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Fast path: check email locally (works immediately even before API responds)
-  const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com", "admin@ezunitap.com"];
+  const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com"];
   const isSuperAdminByEmail = !!user?.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase());
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function Layout() {
 
   const sidebarExtra = [
     ...SIDEBAR_EXTRA,
-    ...(showAdminLink ? [{ to: "/admin/leads", label: "Leads (admin)", icon: Inbox }] : []),
+    ...(showAdminLink ? [{ to: "/admin/leads", label: "Admin", icon: Inbox }] : []),
   ];
 
   const handleLogout = () => {
