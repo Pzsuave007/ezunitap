@@ -64,9 +64,15 @@ sleep 4
 if curl -sf "http://127.0.0.1:${PORT}/api/" >/dev/null; then
     echo "  ✅ Backend restarted on :${PORT}"
 else
-    echo "  ❌ Backend failed — see $PROD/backend.log"
-    tail -n 40 "$PROD/backend.log"
-    exit 1
+    # Give it a few more seconds — first request can be slow
+    sleep 6
+    if curl -sf "http://127.0.0.1:${PORT}/api/" >/dev/null; then
+        echo "  ✅ Backend restarted on :${PORT} (slow start)"
+    else
+        echo "  ❌ Backend failed — see $PROD/backend.log"
+        tail -n 40 "$PROD/backend.log"
+        exit 1
+    fi
 fi
 
 echo ">>> fix.sh DONE"
