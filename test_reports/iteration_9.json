@@ -1,0 +1,52 @@
+{
+  "summary": "Phase 1 Stripe Subscriptions tested end-to-end. 12/14 backend tests pass; frontend fully verified (pricing page, paywall, trial banner, settings, sidebar, checkout redirect to checkout.stripe.com). Two backend bugs found: (1) /api/payments/status/{session_id} 500 due to invalid Stripe expand 'shipping_details'; (2) /api/payments/portal returns 500 (not 400) when user has a stale stripe_customer_id that no longer exists in Stripe.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/payments/status/{session_id}",
+        "issue": "Returns 500: 'This property cannot be expanded (shipping_details).' — The Stripe Checkout Session retrieval in payments_service.get_checkout_status() and handle_webhook_event() uses expand=['subscription','customer','shipping_details']. The Emergent Stripe proxy / current Stripe API version rejects expanding 'shipping_details'. This will BREAK the /pago/exito post-checkout polling flow that the frontend uses after Stripe redirect. Fix: remove 'shipping_details' from the expand list — shipping data is already returned at the top level of the session object (session.shipping_details / session.shipping). Both locations need the fix: payments_service.py line ~277 and line ~371.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/payments/portal",
+        "issue": "When the user document has a stripe_customer_id that no longer exists in the Stripe account (e.g. stale from a previous test environment — observed value 'cus_UaxotfKZ0015XB'), the endpoint returns 500 ('No such customer') instead of the intended helpful Spanish 400. The current guard only catches the case where stripe_customer_id is None/empty. Recommend: wrap stripe.billing_portal.Session.create in try/except stripe.error.InvalidRequestError and, if the customer is missing, clear the user's stale stripe_customer_id and return a 400 with a Spanish-friendly message."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/precios (when navigated from /tarjeta paywall)",
+        "issues": ["TrialBanner still appears on top of the pricing page. Minor UX nit — banner CTA ('Ver planes') is redundant on the very page the user just arrived at. Consider hiding TrialBanner on /precios."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_payments.py",
+    "/app/test_reports/pytest/payments_results.xml"
+  ],
+  "action_items": [
+    "Fix /api/payments/status — remove 'shipping_details' from Stripe expand (payments_service.py ~lines 277 and 371). HIGH priority: blocks post-checkout success polling.",
+    "Harden /api/payments/portal against stale stripe_customer_id (catch InvalidRequestError, clear field, return Spanish 400).",
+    "Optional UX: hide TrialBanner on /precios route."
+  ],
+  "critical_code_review_comments": [
+    "payments_service.py uses expand=['subscription','customer','shipping_details'] in two places — 'shipping_details' is not a valid expand path on the current Stripe API (it's a top-level field, not a reference). This is the root cause of the /payments/status 500.",
+    "create_checkout_session() does NOT pass the existing user.stripe_customer_id even when present — only customer_email. Per comment this is intentional for the Emergent proxy. OK but means a user that already has a stripe_customer_id from a prior canceled subscription will get a NEW customer at next checkout (orphaning the prior cus_*).",
+    "/api/payments/portal trusts a stale stripe_customer_id without verifying it exists; should defensively re-create or clear on Stripe InvalidRequestError.",
+    "Webhook endpoint runs without signature verification when STRIPE_WEBHOOK_SECRET is empty — fine for dev but make sure production deploy sets the secret (currently empty in /app/backend/.env).",
+    "server.py is 2358 lines — should be split into routers per domain (payments, auth, clients, etc.) for maintainability."
+  ],
+  "updated_files": ["/app/backend/tests/test_payments.py"],
+  "success_rate": {"backend": "86% (12/14)", "frontend": "100% (all flows verified)"},
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (working)",
+  "seed_data_creation": "Created one TEST_stripe_<uuid>@example.com user during register-trial test (subscription_status='trialing', trial_ends_at ~14d). Plus 3 Stripe Checkout sessions in test mode (pro_monthly, pro_yearly, founder) — these are sandbox sessions, no real charges.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 3 plans + checkout creation work (URLs start with https://checkout.stripe.com/). Frontend integration is solid: /precios shows all 3 cards with correct prices and CTAs; /tarjeta gates Smart Card behind SmartCardPaywall ('Activa tu Tarjeta Inteligente'); TrialBanner shows '14 días restantes de tu prueba gratis' across authenticated pages with Ver planes button + an X dismiss icon; /ajustes shows SubscriptionSection with 'Ver planes y suscribirse'; Sidebar 'Suscripción' link present and active on /precios. Two backend bugs remain — the /payments/status one is the critical one because it will fail the post-checkout success page polling.",
+  "rca_of_the_issue": "Bug 1 (status 500): Stripe SDK call stripe.checkout.Session.retrieve(session_id, expand=['subscription','customer','shipping_details']) is rejected by Stripe (or the Emergent proxy) because 'shipping_details' is a direct field on Checkout Session and cannot be expanded. Reproduction: POST /api/payments/checkout -> capture session_id -> GET /api/payments/status/<session_id> -> 500. Mitigation: change expand list to ['subscription','customer'] only — shipping_details is auto-returned on the session. Bug 2 (portal 500): The test user document has a stale stripe_customer_id from a previous Stripe test mode that no longer exists in the current Stripe account. Stripe returns 'No such customer' which propagates as 500. Mitigation: in payments_portal endpoint, wrap stripe call in try/except for InvalidRequestError where err.code == 'resource_missing'; clear the field and return 400 with the existing Spanish message."
+}

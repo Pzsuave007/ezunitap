@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
+import SmartCardPaywall from "@/components/SmartCardPaywall";
 
 const SERVICE_TEMPLATES = [
   { name: "Roofing", icon: "🏠", description: "Repairs, replacements, inspections." },
@@ -102,6 +103,25 @@ export default function CardAdmin() {
   };
 
   if (!card) return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+
+  // Paywall: Smart Card is gated until the user has a PAID subscription
+  // (post-trial). Per user requirement: trial unlocks everything except the
+  // Smart Card / physical NFC card.
+  if (!user?.smart_card_unlocked) {
+    return (
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
+              <IdCard className="w-7 h-7 text-emerald-600" /> Tarjeta Inteligente
+            </h1>
+            <p className="text-slate-500 mt-1">Tu mini-sitio profesional que captura leads automáticamente.</p>
+          </div>
+        </div>
+        <SmartCardPaywall user={user} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

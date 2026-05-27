@@ -26,6 +26,8 @@ import Agreements from "@/pages/Agreements";
 import AgreementBuilder from "@/pages/AgreementBuilder";
 import AgreementDetail from "@/pages/AgreementDetail";
 import PublicAgreement from "@/pages/PublicAgreement";
+import Pricing from "@/pages/Pricing";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -70,6 +72,7 @@ function App() {
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/c/:slug" element={<SmartCard />} />
+            <Route path="/pago/exito" element={<PaymentSuccess />} />
 
             <Route element={<HomeOrAuth />}>
               <Route path="/" element={<Dashboard />} />
@@ -90,6 +93,7 @@ function App() {
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />
+              <Route path="/precios" element={<Pricing />} />
               <Route path="/admin/leads" element={<AdminLeads />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

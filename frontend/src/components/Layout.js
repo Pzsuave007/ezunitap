@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, Inbox, FileSignature } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, Inbox, FileSignature, CreditCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import TrialBanner from "@/components/TrialBanner";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
@@ -20,6 +21,7 @@ const SIDEBAR_EXTRA = [
   { to: "/trabajos", label: "Trabajos", icon: Briefcase },
   { to: "/mensajes", label: "Mensajes AI", icon: MessageSquare },
   { to: "/scope", label: "Scope of Work", icon: Sparkles },
+  { to: "/precios", label: "Suscripción", icon: CreditCard },
 ];
 
 export default function Layout() {
@@ -145,6 +147,7 @@ export default function Layout() {
       {/* Main content */}
       <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-safe lg:pb-0 min-h-screen overflow-x-hidden">
         <div className="max-w-5xl mx-auto px-4 lg:px-8 py-4 lg:py-8">
+          <TrialBanner />
           <Outlet />
         </div>
       </main>

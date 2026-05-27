@@ -25,7 +25,9 @@ load_dotenv(ROOT_DIR / ".env")
 
 import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY is set)
 import storage_service  # noqa: E402
+import payments_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
+from fastapi import Request  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -74,6 +76,15 @@ class UserOut(BaseModel):
     phone: str
     business_address: Optional[str] = ""
     business_email: Optional[str] = ""
+    # Subscription / trial state
+    plan_type: Optional[str] = None
+    subscription_status: Optional[str] = None
+    trial_ends_at: Optional[int] = None
+    current_period_end: Optional[int] = None
+    cancel_at_period_end: Optional[bool] = False
+    stripe_customer_id: Optional[str] = None
+    shipping_address: Optional[dict] = None
+    card_shipping_status: Optional[str] = None
 
 
 class BusinessUpdate(BaseModel):
@@ -82,6 +93,12 @@ class BusinessUpdate(BaseModel):
     phone: Optional[str] = None
     business_address: Optional[str] = None
     business_email: Optional[str] = None
+    shipping_address: Optional[dict] = None
+
+
+class CheckoutCreateIn(BaseModel):
+    plan_id: str
+    origin_url: str
 
 
 class ClientIn(BaseModel):
@@ -317,6 +334,17 @@ async def _user_doc(user_id: str) -> dict:
         u["about_me"] = ""
         u["role"] = ""
         u["card_slug"] = None
+    # Surface subscription-related fields (already on user doc; ensure present)
+    u.setdefault("plan_type", None)
+    u.setdefault("subscription_status", None)
+    u.setdefault("trial_ends_at", None)
+    u.setdefault("current_period_end", None)
+    u.setdefault("cancel_at_period_end", False)
+    u.setdefault("shipping_address", None)
+    u.setdefault("card_shipping_status", None)
+    # Compute derived flags for UI consumption
+    u["smart_card_unlocked"] = payments_service.has_paid_subscription(u)
+    u["subscription_active"] = payments_service.subscription_is_active(u)
     return u
 
 
@@ -328,6 +356,9 @@ async def register(payload: RegisterIn):
     existing = await db.users.find_one({"email": payload.email.lower()})
     if existing:
         raise HTTPException(status_code=400, detail="Email ya registrado")
+    import time as _time
+    now_ts = int(_time.time())
+    trial_ends_at = now_ts + 14 * 24 * 3600  # 14-day local trial
     user = {
         "id": _new_id(),
         "email": payload.email.lower(),
@@ -338,20 +369,22 @@ async def register(payload: RegisterIn):
         "business_address": "",
         "business_email": payload.email.lower(),
         "created_at": _now_iso(),
+        # Subscription state — local 14-day trial begins on signup.
+        # Smart Card stays locked until a paid subscription (post-Stripe-trial).
+        "plan_type": None,
+        "subscription_status": "trialing",
+        "trial_ends_at": trial_ends_at,
+        "current_period_end": None,
+        "stripe_customer_id": None,
+        "stripe_subscription_id": None,
+        "shipping_address": None,
+        "card_shipping_status": None,
     }
     await db.users.insert_one(user)
     token = create_token(user["id"])
     return {
         "token": token,
-        "user": UserOut(
-            id=user["id"],
-            email=user["email"],
-            business_name=user["business_name"],
-            owner_name=user["owner_name"],
-            phone=user["phone"],
-            business_address=user["business_address"],
-            business_email=user["business_email"],
-        ).model_dump(),
+        "user": await _user_doc(user["id"]),
     }
 
 
@@ -363,15 +396,7 @@ async def login(payload: LoginIn):
     token = create_token(u["id"])
     return {
         "token": token,
-        "user": UserOut(
-            id=u["id"],
-            email=u["email"],
-            business_name=u.get("business_name", ""),
-            owner_name=u.get("owner_name", ""),
-            phone=u.get("phone", ""),
-            business_address=u.get("business_address", ""),
-            business_email=u.get("business_email", u["email"]),
-        ).model_dump(),
+        "user": await _user_doc(u["id"]),
     }
 
 
@@ -2148,6 +2173,105 @@ async def onboarding_set_state(
 
 
 
+
+
+# ============================================================================
+# PAYMENTS / STRIPE SUBSCRIPTIONS
+# ============================================================================
+@api_router.get("/payments/plans")
+async def payments_plans():
+    """Public — list of subscription plans for the pricing page."""
+    return {"plans": payments_service.list_plans()}
+
+
+@api_router.post("/payments/checkout")
+async def payments_checkout(
+    payload: CheckoutCreateIn,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Create a Stripe Checkout Session for a subscription (14-day trial)."""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not payments_service.get_plan(payload.plan_id):
+        raise HTTPException(status_code=400, detail="Plan inválido")
+    # Build dynamic success / cancel URLs from frontend origin (per playbook).
+    origin = payload.origin_url.rstrip("/")
+    success_url = f"{origin}/pago/exito?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/precios?cancelled=1"
+    try:
+        result = await payments_service.create_checkout_session(
+            db, user, payload.plan_id, success_url, cancel_url,
+        )
+    except Exception as e:
+        logger.exception("Stripe checkout creation failed")
+        raise HTTPException(status_code=500, detail=f"Error al crear sesión de pago: {e}")
+    return result
+
+
+@api_router.get("/payments/status/{session_id}")
+async def payments_status(session_id: str, user_id: str = Depends(get_current_user_id)):
+    """Poll the current status of a Checkout Session (used after redirect)."""
+    try:
+        return await payments_service.get_checkout_status(db, session_id)
+    except Exception as e:
+        logger.exception("Stripe status fetch failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/payments/subscription")
+async def payments_subscription(user_id: str = Depends(get_current_user_id)):
+    """Return current user's subscription summary."""
+    u = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "password_hash": 0},
+    )
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {
+        "plan_type": u.get("plan_type"),
+        "subscription_status": u.get("subscription_status"),
+        "trial_ends_at": u.get("trial_ends_at"),
+        "current_period_end": u.get("current_period_end"),
+        "cancel_at_period_end": u.get("cancel_at_period_end", False),
+        "stripe_customer_id": u.get("stripe_customer_id"),
+        "shipping_address": u.get("shipping_address"),
+        "card_shipping_status": u.get("card_shipping_status"),
+        "smart_card_unlocked": payments_service.has_paid_subscription(u),
+        "subscription_active": payments_service.subscription_is_active(u),
+    }
+
+
+@api_router.post("/payments/portal")
+async def payments_portal(
+    payload: dict,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Create a Stripe Customer Portal session for self-service management."""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not user.get("stripe_customer_id"):
+        raise HTTPException(
+            status_code=400,
+            detail="Aún no tienes una suscripción. Suscríbete primero.",
+        )
+    return_url = (payload.get("origin_url") or "").rstrip("/") + "/ajustes"
+    try:
+        return await payments_service.create_portal_session(db, user, return_url)
+    except Exception as e:
+        logger.exception("Stripe portal session creation failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Stripe webhook receiver. Updates user subscription state on events."""
+    payload = await request.body()
+    sig_header = request.headers.get("Stripe-Signature", "")
+    return await payments_service.handle_webhook_event(db, payload, sig_header)
+
+
 # ============================================================================
 # HEALTH
 # ============================================================================
@@ -2212,6 +2336,20 @@ async def startup():
         )
     except Exception as e:
         logger.error(f"Admin seed at startup failed: {e}")
+    # Backfill: existing users (pre-Stripe rollout) get a fresh 14-day local
+    # trial so they can keep exploring before being asked to subscribe.
+    try:
+        import time as _t
+        trial_ts = int(_t.time()) + 14 * 24 * 3600
+        await db.users.update_many(
+            {"subscription_status": {"$in": [None, ""]}},
+            {"$set": {
+                "subscription_status": "trialing",
+                "trial_ends_at": trial_ts,
+            }},
+        )
+    except Exception as e:
+        logger.error(f"Trial backfill failed: {e}")
 
 
 @app.on_event("shutdown")

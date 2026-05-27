@@ -18,6 +18,7 @@ import {
   Loader2, Upload, X as XIcon, LogOut, IdCard, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import SubscriptionSection from "@/components/SubscriptionSection";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -235,6 +236,8 @@ export default function Profile() {
       >
         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar todo"}
       </Button>
+
+      <SubscriptionSection />
 
       {/* Quick links */}
       <Card className="card-elevated p-5 border-0 shadow-none">
