@@ -76,15 +76,13 @@ class TestOnboardingStatus:
         r = requests.get(f"{BASE_URL}/api/onboarding/status", headers=auth_headers, timeout=10)
         data = r.json()
         ids = [it["id"] for it in data["items"]]
-        assert ids == ["business_info", "smart_card", "first_client", "first_quote"]
+        assert ids == ["business_info", "smart_card"]
         # total must match items length
-        assert data["total"] == len(data["items"]) == 4
+        assert data["total"] == len(data["items"]) == 2
         # Per-item shape & expected paths
         expected_paths = {
             "business_info": "/ajustes",
             "smart_card": "/tarjeta",
-            "first_client": "/clientes",
-            "first_quote": "/quotes/nuevo?ai=1",
         }
         for it in data["items"]:
             for k in ("id", "label", "minutes", "done", "path"):

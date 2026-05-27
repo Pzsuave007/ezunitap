@@ -2094,15 +2094,14 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     dismissed = bool(onb.get("dismissed"))
     celebrated = bool(onb.get("celebrated"))
 
-    # Compute checklist items from real data
+    # Compute checklist items from real data. Only ACCOUNT SETUP items —
+    # actions like "create a client" or "make a quote" are work, not setup.
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
-    # Business info: phone + address + logo (all set from Settings in one screen)
     business_filled = bool(
         (u.get("phone") or "").strip()
         and (u.get("business_address") or "").strip()
         and card.get("logo_photo_id")
     )
-    # Smart Card: any meaningful customization beyond the auto-created default doc
     card_created = bool(
         card.get("profile_photo_id")
         or card.get("cover_photo_id")
@@ -2111,14 +2110,10 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
         or (card.get("tagline") or "").strip()
         or (card.get("business_type") or "").strip()
     )
-    clients_count = await db.clients.count_documents({"user_id": user_id})
-    quotes_count = await db.quotes.count_documents({"user_id": user_id})
 
     items = [
         {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes"},
         {"id": "smart_card", "label": "Crea tu Tarjeta Inteligente", "minutes": 3, "done": card_created, "path": "/tarjeta"},
-        {"id": "first_client", "label": "Agrega tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
-        {"id": "first_quote", "label": "Genera tu primer quote con AI", "minutes": 2, "done": quotes_count > 0, "path": "/quotes/nuevo?ai=1"},
     ]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0
