@@ -2230,6 +2230,17 @@ class CompGrantIn(BaseModel):
     note: Optional[str] = ""
 
 
+class AdminCreateUserIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+    business_name: str
+    owner_name: Optional[str] = ""
+    phone: Optional[str] = ""
+    grant_comp: bool = False
+    comp_duration_days: Optional[int] = None
+    comp_note: Optional[str] = ""
+
+
 def _short_token() -> str:
     import secrets
     return secrets.token_urlsafe(16)
@@ -2366,6 +2377,97 @@ async def admin_revoke_comp(
         }},
     )
     return {"ok": True}
+
+
+@api_router.post("/admin/users")
+async def admin_create_user(
+    payload: AdminCreateUserIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Manually create a user account from the admin panel.
+
+    Optionally grants comp (free) access immediately so you can hand the
+    account to a friend / tester pre-activated.
+    """
+    existing = await db.users.find_one({"email": payload.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email ya registrado")
+    import time as _time
+    now_ts = int(_time.time())
+    trial_ends_at = now_ts + 14 * 24 * 3600
+    user = {
+        "id": _new_id(),
+        "email": payload.email.lower(),
+        "password_hash": hash_password(payload.password),
+        "business_name": payload.business_name,
+        "owner_name": payload.owner_name or "",
+        "phone": payload.phone or "",
+        "business_address": "",
+        "business_email": payload.email.lower(),
+        "created_at": _now_iso(),
+        "plan_type": None,
+        "subscription_status": "trialing",
+        "trial_ends_at": trial_ends_at,
+        "current_period_end": None,
+        "stripe_customer_id": None,
+        "stripe_subscription_id": None,
+        "shipping_address": None,
+        "card_shipping_status": None,
+        "is_comp": False,
+        "comp_note": None,
+        "comp_expires_at": None,
+        "comp_granted_by": None,
+        "created_by_admin": admin["id"],
+    }
+    if payload.grant_comp:
+        comp_expires = None
+        if payload.comp_duration_days:
+            comp_expires = now_ts + payload.comp_duration_days * 24 * 3600
+        user.update({
+            "is_comp": True,
+            "comp_note": payload.comp_note or "Creada por admin",
+            "comp_expires_at": comp_expires,
+            "comp_granted_by": admin["id"],
+            "comp_granted_at": _now_iso(),
+            "plan_type": "comp",
+            "subscription_status": "active",
+        })
+    await db.users.insert_one(user)
+    return {"ok": True, "user_id": user["id"], "is_comp": user["is_comp"]}
+
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(
+    user_id: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Permanently delete a user account.
+
+    Cannot delete yourself. Cascades to delete their cards, clients, quotes,
+    invoices, agreements, jobs, calendar events, and onboarding state so the
+    DB doesn't accumulate orphans.
+    """
+    if user_id == admin["id"]:
+        raise HTTPException(
+            status_code=400,
+            detail="No puedes eliminar tu propia cuenta de admin",
+        )
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    # Cascade delete owned records.
+    collections = [
+        "cards", "clients", "quotes", "invoices", "agreements",
+        "jobs", "calendar_events", "messages", "scope_drafts",
+        "onboarding_state", "payment_transactions",
+    ]
+    for c in collections:
+        try:
+            await db[c].delete_many({"user_id": user_id})
+        except Exception as e:
+            logger.warning(f"Cascade delete on {c} failed: {e}")
+    await db.users.delete_one({"id": user_id})
+    return {"ok": True, "deleted_user_email": u.get("email")}
 
 
 # ============================================================================

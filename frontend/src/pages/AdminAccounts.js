@@ -15,10 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Gift, Loader2, Copy, Check, Plus, Trash2, Users, Link as LinkIcon,
-  X, Sparkles, AlertCircle, Calendar,
+  X, Sparkles, AlertCircle, Calendar, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminTabs from "@/components/AdminTabs";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function formatDate(ts) {
   if (!ts) return "—";
@@ -386,10 +391,12 @@ function InvitesTab({ onForbidden }) {
 }
 
 function UsersTab({ onForbidden }) {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [grantingId, setGrantingId] = useState(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -444,6 +451,32 @@ function UsersTab({ onForbidden }) {
     }
   };
 
+  const deleteUser = async (u) => {
+    const confirmMsg =
+      `⚠️ ¿Eliminar PERMANENTEMENTE a ${u.email}?\n\n` +
+      `Esto borra su cuenta, clientes, quotes, invoices, contratos, trabajos y agenda.\n\n` +
+      `Esta acción NO se puede deshacer.`;
+    if (!window.confirm(confirmMsg)) return;
+    const typed = window.prompt(
+      `Para confirmar, escribe el email exacto:\n${u.email}`,
+      ""
+    );
+    if (typed !== u.email) {
+      if (typed !== null) toast.error("Email no coincide. Cancelado.");
+      return;
+    }
+    setGrantingId(u.id);
+    try {
+      await api.delete(`/admin/users/${u.id}`);
+      toast.success(`Cuenta de ${u.email} eliminada`);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error al eliminar");
+    } finally {
+      setGrantingId(null);
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
@@ -458,17 +491,26 @@ function UsersTab({ onForbidden }) {
   return (
     <div className="space-y-4">
       <Card className="p-5">
-        <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
           <h3 className="font-heading font-bold text-base">
             Usuarios ({users.length})
           </h3>
-          <Input
-            data-testid="users-search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar email o negocio..."
-            className="max-w-xs h-9"
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input
+              data-testid="users-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar email o negocio..."
+              className="max-w-xs h-9"
+            />
+            <Button
+              data-testid="add-user-btn"
+              onClick={() => setCreateOpen(true)}
+              className="h-9 bg-blue-900 hover:bg-blue-950 text-white"
+            >
+              <UserPlus className="w-4 h-4 mr-1.5" /> Agregar usuario
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -481,85 +523,345 @@ function UsersTab({ onForbidden }) {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((u) => (
-              <div
-                key={u.id}
-                data-testid={`user-row-${u.id}`}
-                className="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm truncate">
-                      {u.business_name || u.owner_name || "—"}
-                    </span>
-                    {u.is_comp && (
-                      <span className="text-[10px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5" /> Gratis
+            {filtered.map((u) => {
+              const isSelf = u.id === currentUser?.id;
+              return (
+                <div
+                  key={u.id}
+                  data-testid={`user-row-${u.id}`}
+                  className="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm truncate">
+                        {u.business_name || u.owner_name || "—"}
                       </span>
-                    )}
-                    {u.subscription_status === "active" && !u.is_comp && (
-                      <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                        Pagado
-                      </span>
-                    )}
-                    {u.subscription_status === "trialing" && !u.is_comp && (
-                      <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                        Trial
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-500 truncate">
-                    {u.email}
-                  </div>
-                  {u.comp_note && (
-                    <div className="text-[10px] text-amber-700 italic mt-0.5">
-                      "{u.comp_note}"
-                      {u.comp_expires_at && (
-                        <> · expira {formatDate(u.comp_expires_at)}</>
+                      {isSelf && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                          Tú
+                        </span>
+                      )}
+                      {u.is_comp && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" /> Gratis
+                        </span>
+                      )}
+                      {u.subscription_status === "active" && !u.is_comp && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          Pagado
+                        </span>
+                      )}
+                      {u.subscription_status === "trialing" && !u.is_comp && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                          Trial
+                        </span>
                       )}
                     </div>
-                  )}
-                </div>
+                    <div className="text-xs text-slate-500 truncate">
+                      {u.email}
+                    </div>
+                    {u.comp_note && (
+                      <div className="text-[10px] text-amber-700 italic mt-0.5">
+                        "{u.comp_note}"
+                        {u.comp_expires_at && (
+                          <> · expira {formatDate(u.comp_expires_at)}</>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="flex-none">
-                  {u.is_comp ? (
-                    <Button
-                      data-testid={`revoke-user-${u.id}`}
-                      onClick={() => revoke(u.id)}
-                      disabled={grantingId === u.id}
-                      variant="outline"
-                      size="sm"
-                      className="h-9"
-                    >
-                      {grantingId === u.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <X className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      Revocar
-                    </Button>
-                  ) : (
-                    <Button
-                      data-testid={`grant-user-${u.id}`}
-                      onClick={() => grant(u.id)}
-                      disabled={grantingId === u.id}
-                      size="sm"
-                      className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      {grantingId === u.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Gift className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      Regalar
-                    </Button>
-                  )}
+                  <div className="flex-none flex items-center gap-1">
+                    {u.is_comp ? (
+                      <Button
+                        data-testid={`revoke-user-${u.id}`}
+                        onClick={() => revoke(u.id)}
+                        disabled={grantingId === u.id}
+                        variant="outline"
+                        size="sm"
+                        className="h-9"
+                      >
+                        {grantingId === u.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <X className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        Revocar
+                      </Button>
+                    ) : (
+                      <Button
+                        data-testid={`grant-user-${u.id}`}
+                        onClick={() => grant(u.id)}
+                        disabled={grantingId === u.id}
+                        size="sm"
+                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {grantingId === u.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Gift className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        Regalar
+                      </Button>
+                    )}
+                    {!isSelf && (
+                      <Button
+                        data-testid={`delete-user-${u.id}`}
+                        onClick={() => deleteUser(u)}
+                        disabled={grantingId === u.id}
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Eliminar cuenta"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>
+
+      <CreateUserDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={async () => {
+          setCreateOpen(false);
+          await load();
+        }}
+      />
     </div>
+  );
+}
+
+function CreateUserDialog({ open, onClose, onCreated }) {
+  const empty = {
+    email: "",
+    password: "",
+    business_name: "",
+    owner_name: "",
+    phone: "",
+    grant_comp: false,
+    comp_duration_days: "",
+    comp_note: "",
+  };
+  const [form, setForm] = useState(empty);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) setForm(empty);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const set = (k) => (e) =>
+    setForm({ ...form, [k]: e?.target ? e.target.value : e });
+
+  const submit = async (e) => {
+    e?.preventDefault?.();
+    if (!form.email || !form.password || !form.business_name) {
+      toast.error("Email, contraseña y nombre del negocio son obligatorios");
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const body = {
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        business_name: form.business_name.trim(),
+        owner_name: form.owner_name.trim() || "",
+        phone: form.phone.trim() || "",
+        grant_comp: !!form.grant_comp,
+      };
+      if (form.grant_comp) {
+        body.comp_note = form.comp_note || "";
+        if (form.comp_duration_days)
+          body.comp_duration_days = Number(form.comp_duration_days);
+      }
+      await api.post("/admin/users", body);
+      toast.success(
+        form.grant_comp
+          ? "Usuario creado con acceso gratis 🎁"
+          : "Usuario creado"
+      );
+      await onCreated();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error al crear usuario");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-heading flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-blue-900" />
+            Agregar usuario
+          </DialogTitle>
+          <DialogDescription>
+            Crea una cuenta manualmente. Marca la opción de "regalar acceso" si
+            quieres que entre sin pagar.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-slate-600">
+              Email *
+            </label>
+            <Input
+              data-testid="create-user-email"
+              type="email"
+              value={form.email}
+              onChange={set("email")}
+              placeholder="amigo@ejemplo.com"
+              required
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600">
+              Contraseña * (mínimo 6 caracteres)
+            </label>
+            <Input
+              data-testid="create-user-password"
+              type="text"
+              value={form.password}
+              onChange={set("password")}
+              placeholder="Compártela con el usuario"
+              required
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600">
+              Nombre del negocio *
+            </label>
+            <Input
+              data-testid="create-user-business"
+              value={form.business_name}
+              onChange={set("business_name")}
+              placeholder="Ej: Plomería Ramirez"
+              required
+              className="mt-1"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-slate-600">
+                Nombre del dueño
+              </label>
+              <Input
+                data-testid="create-user-owner"
+                value={form.owner_name}
+                onChange={set("owner_name")}
+                placeholder="Opcional"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">
+                Teléfono
+              </label>
+              <Input
+                data-testid="create-user-phone"
+                value={form.phone}
+                onChange={set("phone")}
+                placeholder="Opcional"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <Checkbox
+                data-testid="create-user-grant-comp"
+                checked={form.grant_comp}
+                onCheckedChange={(v) => setForm({ ...form, grant_comp: !!v })}
+                className="mt-0.5"
+              />
+              <div>
+                <div className="text-sm font-semibold text-amber-900 flex items-center gap-1">
+                  <Gift className="w-3.5 h-3.5" /> Regalar acceso gratis
+                </div>
+                <div className="text-[11px] text-amber-800">
+                  Activa la cuenta como gratis sin necesidad de pago.
+                </div>
+              </div>
+            </label>
+
+            {form.grant_comp && (
+              <div className="space-y-2 pl-6">
+                <div>
+                  <label className="text-xs font-semibold text-amber-900">
+                    Duración
+                  </label>
+                  <select
+                    data-testid="create-user-comp-duration"
+                    value={form.comp_duration_days}
+                    onChange={set("comp_duration_days")}
+                    className="mt-1 w-full h-9 px-2 rounded-md border border-amber-200 text-sm bg-white"
+                  >
+                    <option value="">Indefinido</option>
+                    <option value={30}>30 días</option>
+                    <option value={90}>90 días</option>
+                    <option value={180}>6 meses</option>
+                    <option value={365}>1 año</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-amber-900">
+                    Nota interna
+                  </label>
+                  <Input
+                    data-testid="create-user-comp-note"
+                    value={form.comp_note}
+                    onChange={set("comp_note")}
+                    placeholder="Ej: Beta tester"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={submitting}
+              data-testid="create-user-cancel"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting}
+              data-testid="create-user-submit"
+              className="bg-blue-900 hover:bg-blue-950 text-white"
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <UserPlus className="w-4 h-4 mr-2" />
+              )}
+              Crear cuenta
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
