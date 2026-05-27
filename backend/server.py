@@ -140,6 +140,7 @@ class QuoteIn(BaseModel):
 class InvoiceIn(BaseModel):
     client_id: str
     quote_id: Optional[str] = None
+    agreement_id: Optional[str] = None
     job_title: str
     line_items: List[LineItem] = []
     subtotal: float = 0
@@ -147,8 +148,11 @@ class InvoiceIn(BaseModel):
     tax_amount: float = 0
     total: float = 0
     amount_paid: float = 0
+    deposit_amount: float = 0  # Deposit due upfront (copied from quote/agreement)
+    deposit_paid: bool = False
     due_date: Optional[str] = None
     notes: Optional[str] = ""
+    agreement_terms: Optional[dict] = None  # Snapshot of signed agreement clauses
     status: str = "draft"  # draft, sent, paid, partial, overdue
 
 
@@ -747,11 +751,35 @@ async def list_invoices(user_id: str = Depends(get_current_user_id), status: Opt
 @api_router.post("/invoices")
 async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_user_id)):
     count = await db.invoices.count_documents({"user_id": user_id})
+    data = payload.model_dump()
+    # Auto-pull deposit and agreement terms if quote/agreement linked and the
+    # caller didn't override them — keeps invoices consistent with what the
+    # client already saw and signed.
+    if payload.quote_id and not data.get("deposit_amount"):
+        q = await db.quotes.find_one(
+            {"id": payload.quote_id, "user_id": user_id}, {"_id": 0}
+        )
+        if q:
+            data["deposit_amount"] = float(q.get("deposit_amount") or 0)
+    if payload.agreement_id and not data.get("agreement_terms"):
+        a = await db.agreements.find_one(
+            {"id": payload.agreement_id, "user_id": user_id}, {"_id": 0}
+        )
+        if a:
+            data["agreement_terms"] = {
+                "title": a.get("title", ""),
+                "sections": a.get("sections", {}),
+                "deposit": float(a.get("deposit") or 0),
+                "signer_name": a.get("signer_name", ""),
+                "signed_at": a.get("signed_at"),
+            }
+            if not data.get("deposit_amount"):
+                data["deposit_amount"] = float(a.get("deposit") or 0)
     doc = {
         "id": _new_id(),
         "user_id": user_id,
         "number": f"INV-{2000 + count + 1}",
-        **payload.model_dump(),
+        **data,
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -764,6 +792,44 @@ async def get_invoice(invoice_id: str, user_id: str = Depends(get_current_user_i
     doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Invoice no encontrado")
+    # Lazy backfill: invoices created before deposit/agreement-terms support
+    # get those fields populated on first read so the UI shows them.
+    backfill = {}
+    if not doc.get("deposit_amount") and doc.get("quote_id"):
+        q = await db.quotes.find_one(
+            {"id": doc["quote_id"], "user_id": user_id}, {"_id": 0}
+        )
+        if q and float(q.get("deposit_amount") or 0) > 0:
+            backfill["deposit_amount"] = float(q.get("deposit_amount"))
+    if not doc.get("agreement_terms"):
+        # Try linked agreement first, then any agreement on the same quote.
+        a = None
+        if doc.get("agreement_id"):
+            a = await db.agreements.find_one(
+                {"id": doc["agreement_id"], "user_id": user_id}, {"_id": 0}
+            )
+        if not a and doc.get("quote_id"):
+            a = await db.agreements.find_one(
+                {"quote_id": doc["quote_id"], "user_id": user_id}, {"_id": 0}
+            )
+        if a:
+            backfill["agreement_id"] = a["id"]
+            backfill["agreement_terms"] = {
+                "title": a.get("title", ""),
+                "sections": a.get("sections", {}),
+                "deposit": float(a.get("deposit") or 0),
+                "signer_name": a.get("signer_name", ""),
+                "signed_at": a.get("signed_at"),
+            }
+            if not backfill.get("deposit_amount") and not doc.get("deposit_amount"):
+                backfill["deposit_amount"] = float(a.get("deposit") or 0)
+    if backfill:
+        backfill["updated_at"] = _now_iso()
+        await db.invoices.update_one(
+            {"id": invoice_id, "user_id": user_id},
+            {"$set": backfill},
+        )
+        doc.update(backfill)
     return doc
 
 
@@ -2157,6 +2223,12 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
                 )
                 if q:
                     count = await db.invoices.count_documents({"user_id": a["user_id"]})
+                    # Pull deposit from quote first, fall back to agreement.
+                    deposit_amount = float(
+                        q.get("deposit_amount")
+                        or a.get("deposit")
+                        or 0
+                    )
                     inv = {
                         "id": _new_id(),
                         "user_id": a["user_id"],
@@ -2171,8 +2243,21 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
                         "tax_amount": q.get("tax_amount", 0),
                         "total": q.get("total", 0),
                         "amount_paid": 0,
+                        "deposit_amount": deposit_amount,
+                        "deposit_paid": False,
                         "due_date": None,
                         "notes": q.get("notes", ""),
+                        # Snapshot the signed agreement clauses so the invoice
+                        # carries the same terms (deposit, scope, payment
+                        # terms, warranty, change-order, etc.) the client
+                        # already accepted.
+                        "agreement_terms": {
+                            "title": a.get("title", ""),
+                            "sections": a.get("sections", {}),
+                            "deposit": float(a.get("deposit") or 0),
+                            "signer_name": a.get("signer_name", ""),
+                            "signed_at": a.get("signed_at"),
+                        },
                         "status": "draft",
                         "created_at": _now_iso(),
                         "updated_at": _now_iso(),

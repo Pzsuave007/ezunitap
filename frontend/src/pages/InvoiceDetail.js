@@ -16,6 +16,8 @@ import { toast } from "sonner";
 
 const blank = () => ({
   client_id: "",
+  quote_id: null,
+  agreement_id: null,
   job_title: "",
   line_items: [],
   subtotal: 0,
@@ -23,8 +25,11 @@ const blank = () => ({
   tax_amount: 0,
   total: 0,
   amount_paid: 0,
+  deposit_amount: 0,
+  deposit_paid: false,
   due_date: "",
   notes: "",
+  agreement_terms: null,
   status: "draft",
 });
 
@@ -263,10 +268,24 @@ export default function InvoiceDetail() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Tax Rate (%)</Label>
             <Input type="number" step="0.01" value={invoice.tax_rate} onChange={(e) => recompute({ ...invoice, tax_rate: Number(e.target.value) || 0 })} className="h-12 rounded-xl mt-1.5" />
+          </div>
+          <div>
+            <Label>Deposit / Down payment ($)</Label>
+            <Input
+              data-testid="invoice-deposit"
+              type="number"
+              step="0.01"
+              value={invoice.deposit_amount || 0}
+              onChange={(e) => setInvoice({ ...invoice, deposit_amount: Number(e.target.value) || 0 })}
+              className="h-12 rounded-xl mt-1.5"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Cantidad solicitada antes de empezar el trabajo.
+            </p>
           </div>
         </div>
 
@@ -279,13 +298,92 @@ export default function InvoiceDetail() {
           <div className="flex justify-between"><span className="text-slate-600">Subtotal</span><span className="font-semibold">${invoice.subtotal.toFixed(2)}</span></div>
           <div className="flex justify-between"><span className="text-slate-600">Tax</span><span className="font-semibold">${invoice.tax_amount.toFixed(2)}</span></div>
           <div className="flex justify-between text-lg pt-2 border-t border-slate-200 mt-2"><span className="font-heading font-bold">TOTAL</span><span className="font-heading font-bold">${invoice.total.toFixed(2)}</span></div>
+          {invoice.deposit_amount > 0 && (
+            <div className="flex justify-between text-amber-700 pt-2 border-t border-slate-200 mt-2" data-testid="deposit-row">
+              <span className="font-semibold">Deposit due upfront</span>
+              <span className="font-bold">${Number(invoice.deposit_amount).toFixed(2)}</span>
+            </div>
+          )}
+          {invoice.deposit_amount > 0 && (
+            <div className="flex justify-between text-slate-700">
+              <span>Balance after deposit</span>
+              <span className="font-semibold">${Math.max(0, invoice.total - Number(invoice.deposit_amount)).toFixed(2)}</span>
+            </div>
+          )}
           {invoice.amount_paid > 0 && <div className="flex justify-between text-emerald-700"><span>Paid</span><span className="font-semibold">${invoice.amount_paid.toFixed(2)}</span></div>}
         </div>
+
+        {invoice.agreement_terms && (
+          <AgreementTermsBlock terms={invoice.agreement_terms} depositAmount={invoice.deposit_amount} />
+        )}
 
         <Button data-testid="save-invoice" onClick={save} disabled={saving} className="w-full h-14 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold">
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? "Crear invoice" : "Guardar cambios")}
         </Button>
       </Card>
+    </div>
+  );
+}
+
+function AgreementTermsBlock({ terms, depositAmount }) {
+  if (!terms) return null;
+  const sec = terms.sections || {};
+  const sections = [
+    { key: "what_is_included", label: "What is included", items: sec.what_is_included },
+    { key: "what_is_not_included", label: "What is not included", items: sec.what_is_not_included },
+    { key: "materials", label: "Materials", items: sec.materials },
+  ];
+  const rows = [
+    { label: "Payment terms", value: sec.payment_terms },
+    { label: "Timeline", value: sec.timeline },
+    { label: "Warranty", value: sec.warranty_notes },
+    { label: "Change order policy", value: sec.change_order_note },
+  ];
+  return (
+    <div
+      data-testid="agreement-terms-block"
+      className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+          Signed agreement terms
+        </span>
+        {terms.signer_name && (
+          <span className="text-xs text-emerald-900">
+            Signed by {terms.signer_name}
+            {terms.signed_at ? ` on ${new Date(terms.signed_at).toLocaleDateString("en-US")}` : ""}
+          </span>
+        )}
+      </div>
+      {depositAmount > 0 && (
+        <div className="text-sm bg-white rounded-lg p-3 border border-emerald-100">
+          <span className="font-bold">Deposit required: </span>
+          <span className="font-mono">${Number(depositAmount).toFixed(2)}</span>
+          <span className="text-slate-500"> — due before work begins, per signed agreement.</span>
+        </div>
+      )}
+      {sections.map((s) =>
+        s.items?.length ? (
+          <div key={s.key}>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-1">
+              {s.label}
+            </div>
+            <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
+              {s.items.map((it, i) => <li key={i}>{it}</li>)}
+            </ul>
+          </div>
+        ) : null
+      )}
+      {rows.map((r) =>
+        r.value ? (
+          <div key={r.label}>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-0.5">
+              {r.label}
+            </div>
+            <div className="text-xs text-slate-700">{r.value}</div>
+          </div>
+        ) : null
+      )}
     </div>
   );
 }

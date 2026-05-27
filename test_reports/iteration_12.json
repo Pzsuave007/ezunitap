@@ -1,0 +1,52 @@
+{
+  "summary": "Tested the bug fix for deposit_amount + agreement_terms propagation across quote → agreement → invoice. Backend: 9/10 pytest cases pass (test_invoice_deposit_terms.py). The lazy backfill on GET works (deposit from quote, agreement_terms by quote_id when agreement_id absent, idempotent — second GET does not bump updated_at). POST /api/invoices auto-pulls deposit from quote_id and full agreement_terms snapshot from agreement_id. PUT /api/invoices preserves both fields on FE re-save. Seeded invoice 02a859a1 carries both deposit_amount=1500 and full agreement_terms (verified via API + UI). Orphan invoice 0a75ae50 (linked quote deleted) returns 200 without crash. ONE BUG FOUND: auto-invoice created by POST /api/public/agreements/{id}/sign carries agreement_terms but with signer_name=null and signed_at=null because the agreement doc is loaded BEFORE the signing update_one. Frontend: InvoiceDetail renders the deposit input ($1500), orange 'Deposit due upfront' row, 'Balance after deposit' ($2840), and green 'Signed agreement terms' block with all 7 sections (what_is_included, what_is_not_included, materials, payment_terms, timeline, warranty, change_order_note). The /invoices/nuevo route still works. No regressions to iteration_11 navigation.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/public/agreements/{id}/sign",
+        "issue": "Auto-invoice's agreement_terms.signer_name and agreement_terms.signed_at are null. Root cause in server.py public_sign_agreement (~line 2191): the `a` dict is read BEFORE the update_one that sets signer_name/signed_at, then lines 2258-2259 use `a.get('signer_name')` and `a.get('signed_at')` which are still None at that point. Sections + deposit DO snapshot correctly. Fix: use the local `signer_name` variable from payload and the same timestamp used in the update_one (or re-fetch the agreement after update). Impact: FE 'Signed agreement terms' block won't show 'Signed by X on date' for invoices created via the sign endpoint (works fine for seeded/manual invoices)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "InvoiceDetail (all)",
+        "issues": [
+          "Pre-existing (carried from iter10/11): TrialBanner '14 días restantes' still shows for super-admin/is_comp accounts. Not a regression."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_invoice_deposit_terms.py",
+    "/app/test_reports/pytest/invoice_deposit_terms_results.xml"
+  ],
+  "action_items": [
+    "Fix server.py public_sign_agreement (~line 2254-2260): set agreement_terms.signer_name = signer_name (the local var) and agreement_terms.signed_at = the same _now_iso() timestamp persisted in the update_one. Suggested fix: capture `signed_at_iso = _now_iso()`, use it in both update_one and in the agreement_terms snapshot dict; use `signer_name` local variable instead of `a.get('signer_name')`."
+  ],
+  "critical_code_review_comments": [
+    "public_sign_agreement uses a stale `a` dict for the agreement_terms snapshot — see action item above. This is the only real defect in this iteration.",
+    "create_invoice auto-pull logic uses `not data.get('deposit_amount')` which treats 0 and missing as the same. Acceptable for this domain (zero-deposit jobs would still auto-pull from quote — and frontend submits Number(...) || 0 → likely 0 when blank, so this is correct).",
+    "Lazy backfill in get_invoice persists with $set on update_one — good. Idempotent because the `not doc.get(...)` guards skip already-populated fields. Verified.",
+    "Cross-tenant safety: get_invoice scopes by user_id on both invoice and backfill agreement/quote lookups. Good.",
+    "InvoiceDetail.js (389 lines) is fine; below the 700-line split threshold. AgreementTermsBlock cleanly rendered after main export.",
+    "Minor: AgreementTermsBlock signer line only renders when terms.signer_name truthy — so the null signer_name bug above won't crash the UI, just silently hides the 'Signed by ... on ...' caption."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_invoice_deposit_terms.py (new — 10 pytest cases, 9 pass, 1 reveals server bug)"
+  ],
+  "success_rate": {
+    "backend": "90% (9/10)",
+    "frontend": "100% (deposit input, deposit row, balance row, agreement terms block, seeded + orphan + nuevo routes all verified)"
+  },
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super-admin) works.",
+  "seed_data_creation": "Created 1 TEST_DepositTerms_<hex> client + ~6 TEST_ quotes + ~5 TEST_ agreements + ~7 TEST_ invoices during pytest run. Module fixture deletes them on teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pytest file /app/backend/tests/test_invoice_deposit_terms.py — re-run after fixing public_sign_agreement to confirm test_sign_creates_invoice_with_deposit_and_terms turns green. Seeded invoice 02a859a1 has full deposit+terms; INV-2002 (0a75ae50) is the orphan with deleted quote. data-testids used on InvoiceDetail: 'invoice-deposit', 'deposit-row', 'agreement-terms-block', 'save-invoice'. The 'invoice-deposit' input value is rendered as the raw number (1500, not 1500.00). Sign-endpoint auto-invoice idempotency uses (user_id, quote_id) lookup, so re-signing won't dup.",
+  "rca_of_the_issue": "BUG RCA — auto-invoice missing signer_name/signed_at in agreement_terms: In server.py public_sign_agreement (~line 2189-2270), the agreement is fetched at line 2191 BEFORE the signing fields are persisted by update_one (lines 2203-2213). Then at lines 2254-2260 the agreement_terms snapshot dict is built using `a.get('signer_name')` and `a.get('signed_at')` — both still None because `a` is the pre-update version. Reproduction: create quote with deposit, create agreement linked to quote, POST /api/public/agreements/{id}/sign with signer_name='Anyone' → GET the auto-invoice → agreement_terms.signer_name and .signed_at are null while sections + deposit are correct. Mitigation: store the iso timestamp once (signed_at_iso = _now_iso()), use it in both the update_one and the agreement_terms dict, and use the local `signer_name` variable (already validated above as required) for agreement_terms.signer_name. Estimated fix: 4 lines."
+}
