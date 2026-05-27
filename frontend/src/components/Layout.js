@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import TrialBanner from "@/components/TrialBanner";
 
+// Mobile bottom nav — 5 essential items only.
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
@@ -14,13 +15,22 @@ const NAV = [
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
 ];
 
-const SIDEBAR_EXTRA = [
+// Desktop sidebar — follows the business flow:
+//   Quote → Contrato → Invoice → Agenda → Trabajo
+// Scope of Work and Mensajes AI moved INTO the client profile (per-client).
+const FLOW = [
+  { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
+  { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/quotes", label: "Quotes", icon: FileText },
-  { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/contratos", label: "Contratos", icon: FileSignature },
+  { to: "/invoices", label: "Invoices", icon: Receipt },
+  { to: "/calendario", label: "Agenda", icon: CalendarDays },
   { to: "/trabajos", label: "Trabajos", icon: Briefcase },
-  { to: "/mensajes", label: "Mensajes AI", icon: MessageSquare },
-  { to: "/scope", label: "Scope of Work", icon: Sparkles },
+];
+
+const ACCOUNT = [
+  { to: "/tarjeta", label: "Tarjeta", icon: IdCard },
+  { to: "/ajustes", label: "Perfil", icon: UserIcon },
   { to: "/precios", label: "Suscripción", icon: CreditCard },
 ];
 
@@ -48,8 +58,8 @@ export default function Layout() {
 
   const showAdminLink = isSuperAdmin || isSuperAdminByEmail;
 
-  const sidebarExtra = [
-    ...SIDEBAR_EXTRA,
+  const accountItems = [
+    ...ACCOUNT,
     ...(showAdminLink ? [
       { to: "/admin/cuentas", label: "Admin", icon: ShieldCheck },
     ] : []),
@@ -77,7 +87,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV.map((n) => (
+          {FLOW.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
@@ -94,7 +104,7 @@ export default function Layout() {
             </NavLink>
           ))}
           <div className="h-px bg-slate-100 my-2" />
-          {sidebarExtra.map((n) => (
+          {accountItems.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}

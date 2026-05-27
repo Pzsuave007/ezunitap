@@ -538,7 +538,17 @@ async def client_history(client_id: str, user_id: str = Depends(get_current_user
     messages = await db.messages.find({"user_id": user_id, "client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
     photos = await db.photos.find({"user_id": user_id, "client_id": client_id, "is_deleted": False}, {"_id": 0}).sort("created_at", -1).to_list(500)
     jobs = await db.jobs.find({"user_id": user_id, "client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return {"quotes": quotes, "invoices": invoices, "messages": messages, "photos": photos, "jobs": jobs}
+    agreements = await db.agreements.find({"user_id": user_id, "client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    scopes = await db.scope_drafts.find({"user_id": user_id, "client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {
+        "quotes": quotes,
+        "invoices": invoices,
+        "messages": messages,
+        "photos": photos,
+        "jobs": jobs,
+        "agreements": agreements,
+        "scopes": scopes,
+    }
 
 
 # ============================================================================
@@ -775,12 +785,49 @@ async def set_invoice_status(invoice_id: str, status: str, user_id: str = Depend
     if status not in valid:
         raise HTTPException(400, "Status inválido")
     update = {"status": status, "updated_at": _now_iso()}
+    auto_created_job_id = None
     if status == "paid":
-        doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
-        if doc:
-            update["amount_paid"] = doc.get("total", 0)
+        inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+        if inv:
+            update["amount_paid"] = inv.get("total", 0)
+            # Auto-create a Job for this client (business flow: post-payment
+            # the work starts). Skip if a job already exists for this invoice.
+            existing_job = await db.jobs.find_one({
+                "user_id": user_id,
+                "invoice_id": invoice_id,
+            })
+            if not existing_job and inv.get("client_id"):
+                client = await db.clients.find_one(
+                    {"id": inv["client_id"], "user_id": user_id}, {"_id": 0}
+                ) or {}
+                job_doc = {
+                    "id": _new_id(),
+                    "user_id": user_id,
+                    "client_id": inv["client_id"],
+                    "title": inv.get("job_title") or "Trabajo",
+                    "quote_id": inv.get("quote_id"),
+                    "invoice_id": invoice_id,
+                    "status": "approved",  # paid → ready to schedule
+                    "scheduled_date": None,
+                    "end_date": None,
+                    "start_time": "",
+                    "end_time": "",
+                    "all_day": False,
+                    "address": client.get("address") or "",
+                    "recurrence": "none",
+                    "recurrence_days": [],
+                    "recurrence_end_date": None,
+                    "notes": "Auto-creado al marcar invoice como pagado",
+                    "created_at": _now_iso(),
+                    "updated_at": _now_iso(),
+                    "auto_created": True,
+                }
+                await db.jobs.insert_one(job_doc)
+                auto_created_job_id = job_doc["id"]
     await db.invoices.update_one({"id": invoice_id, "user_id": user_id}, {"$set": update})
     doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if auto_created_job_id:
+        doc["auto_created_job_id"] = auto_created_job_id
     return doc
 
 

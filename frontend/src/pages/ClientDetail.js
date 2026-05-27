@@ -11,19 +11,22 @@ import StatusBadge from "@/components/StatusBadge";
 import {
   ArrowLeft, Phone, Mail, MapPin, FileText, Receipt,
   MessageSquare, Camera, Sparkles, Plus, Trash2, Loader2,
+  FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
+import ClientScopeDialog from "@/components/ClientScopeDialog";
 
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInput = useRef(null);
   const [client, setClient] = useState(null);
-  const [history, setHistory] = useState({ quotes: [], invoices: [], messages: [], photos: [], jobs: [] });
+  const [history, setHistory] = useState({ quotes: [], invoices: [], messages: [], photos: [], jobs: [], agreements: [], scopes: [] });
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [photoLabel, setPhotoLabel] = useState("during");
+  const [scopeOpen, setScopeOpen] = useState(false);
 
   const token = localStorage.getItem("sf_token");
 
@@ -103,13 +106,21 @@ export default function ClientDetail() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-5">
           <Button
             data-testid="client-create-quote"
             onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)}
             className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm"
           >
             <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" /> Quote AI
+          </Button>
+          <Button
+            data-testid="client-create-contract"
+            onClick={() => navigate(`/contratos/nuevo?client_id=${id}`)}
+            variant="outline"
+            className="h-12 rounded-xl border-slate-200 text-sm"
+          >
+            <FileSignature className="w-4 h-4 mr-1 flex-shrink-0" /> Contrato
           </Button>
           <Button
             data-testid="client-create-invoice"
@@ -126,6 +137,14 @@ export default function ClientDetail() {
             className="h-12 rounded-xl border-slate-200 text-sm"
           >
             <MessageSquare className="w-4 h-4 mr-1 flex-shrink-0" /> Mensaje
+          </Button>
+          <Button
+            data-testid="client-generate-scope"
+            onClick={() => setScopeOpen(true)}
+            variant="outline"
+            className="h-12 rounded-xl border-slate-200 text-sm"
+          >
+            <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" /> Scope
           </Button>
           <Button
             data-testid="client-upload-photo"
@@ -155,11 +174,15 @@ export default function ClientDetail() {
       </Card>
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid grid-cols-5 rounded-xl bg-slate-100 p-1 h-auto gap-0.5">
+        <TabsList className="grid grid-cols-6 rounded-xl bg-slate-100 p-1 h-auto gap-0.5">
           <TabsTrigger value="info" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-info">Info</TabsTrigger>
           <TabsTrigger value="quotes" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-quotes">
             <span className="hidden lg:inline">Quotes ({history.quotes.length})</span>
             <span className="lg:hidden">Quotes·{history.quotes.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="agreements" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-agreements">
+            <span className="hidden lg:inline">Contratos ({history.agreements.length})</span>
+            <span className="lg:hidden">Cont·{history.agreements.length}</span>
           </TabsTrigger>
           <TabsTrigger value="invoices" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-invoices">
             <span className="hidden lg:inline">Invoices ({history.invoices.length})</span>
@@ -231,6 +254,34 @@ export default function ClientDetail() {
           ))}
         </TabsContent>
 
+        <TabsContent value="agreements" className="mt-4 space-y-2">
+          {history.agreements.length === 0 ? <EmptyHist label="contratos" /> : history.agreements.map((a) => (
+            <Card
+              key={a.id}
+              data-testid={`agreement-card-${a.id}`}
+              onClick={() => navigate(`/contratos/${a.id}`)}
+              className="card-elevated p-4 border-0 shadow-none cursor-pointer"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold truncate">{a.title || a.job_title || "Contrato"}</div>
+                  <div className="text-xs text-slate-500">{new Date(a.created_at).toLocaleDateString("es")}</div>
+                </div>
+                <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${
+                  a.status === "signed" ? "bg-emerald-100 text-emerald-800" :
+                  a.status === "sent" ? "bg-blue-100 text-blue-800" :
+                  a.status === "draft" ? "bg-slate-100 text-slate-600" :
+                  "bg-amber-100 text-amber-800"
+                }`}>
+                  {a.status === "signed" ? "Firmado" :
+                   a.status === "sent" ? "Enviado" :
+                   a.status === "draft" ? "Borrador" : a.status}
+                </span>
+              </div>
+            </Card>
+          ))}
+        </TabsContent>
+
         <TabsContent value="invoices" className="mt-4 space-y-2">
           {history.invoices.length === 0 ? <EmptyHist label="invoices" /> : history.invoices.map((i) => (
             <Card key={i.id} onClick={() => navigate(`/invoices/${i.id}`)} className="card-elevated p-4 border-0 shadow-none cursor-pointer">
@@ -280,6 +331,11 @@ export default function ClientDetail() {
           )}
         </TabsContent>
       </Tabs>
+      <ClientScopeDialog
+        open={scopeOpen}
+        onClose={() => setScopeOpen(false)}
+        client={client}
+      />
     </div>
   );
 }

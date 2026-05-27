@@ -1,0 +1,48 @@
+{
+  "summary": "Navigation simplification + invoice-paid auto-job creation tested end-to-end. Backend: 7/7 new pytest cases pass (test_nav_and_autojob.py) covering /api/clients/{id}/history extended fields (agreements + scopes arrays), invoice status=paid auto-creating an approved Job (with auto_created=true, invoice_id linked, 'Auto-creado al marcar invoice como pagado' notes), idempotency of paid -> only one job per invoice, status=sent/draft/partial/overdue NOT creating jobs, and the auto job surfacing in client history.jobs. Frontend: sidebar reorganized correctly (Inicio, Clientes, Quotes, Contratos, Invoices, Agenda, Trabajos, separator, Tarjeta, Perfil, Suscripción, Admin) with 'Mensajes AI' and 'Scope of Work' removed. /scope and /mensajes routes still load directly via URL (SPA renders). ClientDetail shows the 6 action buttons (Quote AI, Contrato, Invoice, Mensaje, Scope, Foto) and 6 tabs (Info, Quotes, Contratos, Invoices, Mensajes, Fotos) each with counters. Contrato button navigates to /contratos/nuevo?client_id={id}. Scope button opens the ClientScopeDialog with prefilled textarea + Generar Scope of Work button. Contratos tab shows agreements (empty state correct for fresh client). No regressions found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "ClientDetail (any screen) for super-admin pzsuave007",
+        "issues": [
+          "Pre-existing (from iteration 10): TrialBanner '14 días restantes de tu prueba gratis' still shows for super-admin / comp accounts. Not a regression in this iteration but still unfixed."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_nav_and_autojob.py",
+    "/app/test_reports/pytest/iter11_results.xml"
+  ],
+  "action_items": [
+    "(Optional) The Scope dialog prefill is empty when the client has no job_type / notes — UX-wise this is fine but consider showing a placeholder hint like 'Describe el trabajo que harás para este cliente' (already exists as placeholder, just confirming).",
+    "(Carried from iter10) Hide TrialBanner when user.is_comp === true."
+  ],
+  "critical_code_review_comments": [
+    "server.py set_invoice_status (lines 782-831) correctly handles idempotency via existing_job lookup on invoice_id. Good.",
+    "Idempotent second-call returns auto_created_job_id=None (key absent). Frontend should treat absence-of-key the same as null — not a bug, but a 'job_created_at': existed=true marker could make telemetry cleaner.",
+    "client_history endpoint at server.py:534-551 fetches 7 collections in series (await one after another). Consider asyncio.gather for parallel fetches — minor performance optimization (would shave ~50-150ms on slow networks). Not blocking.",
+    "ClientScopeDialog prefill uses client.job_type + client.notes joined with '. '. If both are empty (e.g. Smoke Test Client), input stays blank — fine, placeholder kicks in. Verified.",
+    "Auto-created Job has scheduled_date=None and status='approved'. Make sure the Agenda/Trabajos UI surfaces 'approved' jobs without a scheduled_date so users can schedule them later — not retested here.",
+    "Auto-job stores client address snapshot at creation time. If the client later moves, the job's address will be stale — acceptable trade-off but worth noting."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_nav_and_autojob.py (new, 7 pytest cases, all pass)"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7)",
+    "frontend": "100% (sidebar, routes, buttons, tabs, scope dialog, contrato nav all verified)"
+  },
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super-admin) works.",
+  "seed_data_creation": "Created 1 TEST_Iter11_<ts> client + 5 TEST_ invoices via API during pytest run. Module fixture deletes the client after the run. Some invoices may remain orphan-attached to deleted client — minor leftover, identifiable by 'TEST_' prefix on job_title.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Sidebar 'Admin' link's data-testid is 'nav-admin/cuentas' (because to='/admin/cuentas' and replace('/', '') only replaces FIRST slash). Slightly ugly but consistent. Login token stored in localStorage as 'sf_token'. POST /api/invoices/{id}/status uses query param (?status=paid) not JSON body. Auto-job idempotency is checked by (user_id, invoice_id) tuple in db.jobs — so deleting the job and re-marking paid will create a new job (acceptable). ClientScopeDialog data-testids: 'client-scope-input', 'client-scope-generate', 'client-scope-copy'.",
+  "rca_of_the_issue": "N/A — no defects identified in this iteration. Feature works as specified."
+}
