@@ -1,0 +1,63 @@
+{
+  "summary": "Re-validation of Tours after 2 fixes (beacon auto-click workaround + Messages/Scope last step targeting body). The beacon-visibility fix WORKS (0 beacons visible after opening any tour, tooltip appears directly), BUT it introduced a CRITICAL REGRESSION: clicking 'Siguiente' once now closes the tour ENTIRELY for every single tour, including the 8 tours that walked end-to-end in iteration 6 (dashboard, clients, quotes, invoices, agreements, jobs, calendar, card) plus messages and scope. Tours can no longer be walked past step 1. The Messages/Scope target='body' fix cannot be validated because we never reach the last step. Net result: tour system is WORSE than iter6 — went from 8/10 tours passing to 0/10 passing end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TourButton.js handleStartTour beacon-click workaround",
+        "issue": "CRITICAL REGRESSION. The setTimeout(() => beacon.click(), 120) auto-click of the react-joyride beacon now causes every tour to terminate after the user clicks 'Siguiente' a SINGLE time. Confirmed across 5 distinct tours (clients=2 steps, quotes=3, dashboard=6, messages=4, scope=3): step 1 renders correctly, portal contains ['Siguiente'(vis=True), ''(vis=True)] buttons; after clicking Siguiente the portal collapses to a single empty residual div (same shape seen on STATUS.FINISHED/SKIPPED in iter6). MutationObserver trail proves the portal goes from children=2 (with tooltip text) to children=1 (empty) within ~500ms of the Siguiente click — i.e., react-joyride fires a finish/skip status. Root cause hypothesis: the programmatic beacon.click() fires a STEP_AFTER event that our controlled-stepIndex callback advances on, and the next user Siguiente click is then misaligned with joyride's internal index, triggering an early STATUS.FINISHED. Suggested fix: remove the click-the-beacon hack; instead, force-skip beacons via either (a) <Joyride disableBeacon /> at the ROOT (component-level prop) — react-joyride v3 reads it once at startup; or (b) set initial stepIndex via joyride props with action ACTIONS.START and avoid mounting beacons by using `run` + non-controlled stepIndex. Do NOT click the beacon programmatically.",
+        "selector": "[data-testid^=\"tour-btn-\"]",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "TourButton tooltip — Saltar tour label",
+        "issue": "Still NOT rendered (carry-over from iter6). Portal buttons after open are only ['Siguiente', ''] where '' is the ✕ close icon. The localized 'Saltar tour' text button requested in spec is absent despite showSkipButton=true and locale.skip='Saltar tour'. Need explicit display/padding in tourStyles.buttonSkip.",
+        "selector": "#react-joyride-portal button",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "Messages/Scope target='body' fix",
+        "issue": "UNVERIFIED. Cannot validate that Messages step 4 / Scope step 3 now reach '¡Listo!' because the tour closes after the first Siguiente click (CRITICAL bug above). Once the beacon workaround is corrected, this fix needs re-testing.",
+        "selector": "n/a",
+        "priority": "BLOCKED-BY-CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tour_validation_matrix": {
+    "dashboard":  {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": false, "listo_reached": false, "note": "REGRESSION vs iter6 (was 6/6 ¡Listo!)"},
+    "clients":    {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": false, "listo_reached": false, "note": "REGRESSION vs iter6 (was 2/2 ¡Listo!)"},
+    "quotes":     {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": false, "listo_reached": false, "note": "REGRESSION vs iter6 (was 3/3 ¡Listo!)"},
+    "invoices":   {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": "not-walked", "listo_reached": false, "note": "open+close only; same regression expected"},
+    "agreements": {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": "not-walked", "listo_reached": false},
+    "jobs":       {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": "not-walked", "listo_reached": false},
+    "calendar":   {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": "not-walked", "listo_reached": false},
+    "card":       {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": "not-walked", "listo_reached": false},
+    "messages":   {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": false, "listo_reached": false, "note": "Cannot validate target=body fix because tour closes at step 2"},
+    "scope":      {"opened": true, "beacon_visible_on_open": 0, "step1_renders": true, "siguiente_advances": false, "listo_reached": false, "note": "Cannot validate target=body fix because tour closes at step 2"}
+  },
+  "test_report_links": [],
+  "action_items": [
+    "REMOVE the beacon.click() programmatic hack in TourButton.js handleStartTour. It is the root cause of the regression — clicking the beacon emits joyride lifecycle events that desynchronize with the controlled stepIndex callback and trigger an early STATUS.FINISHED on the first user Siguiente click.",
+    "Replace with one of: (a) move disableBeacon from each step into the <Joyride disableBeacon ... /> root prop so v3 honors it globally; or (b) leave stepIndex uncontrolled (drop the prop and callback advancing logic) so joyride manages step transitions itself and the beacon is naturally bypassed in continuous mode; or (c) bump react-joyride to a version where per-step disableBeacon works (check v3.2+ release notes).",
+    "After fixing the regression, re-validate the Messages step 4 / Scope step 3 target='body' change — this fix could not be verified in this iteration.",
+    "Still pending from iter6: render the 'Saltar tour' text button (currently only ✕ icon). Add explicit buttonSkip styles with display:'inline-flex' and padding."
+  ],
+  "critical_code_review_comments": [
+    "TourButton.js setTimeout-based beacon click is a fragile workaround that fights react-joyride's state machine. Any DOM-event driven 'fix' that races with the library's own event lifecycle will regress on every joyride minor update.",
+    "Mixing controlled stepIndex prop with callback-based advancement is OK in joyride v3 only if the callback ignores events that the library itself originates (UPDATE, BEACON). Current handleCallback advances on ANY STEP_AFTER, including beacon-triggered ones, hence the desync.",
+    "Consider letting joyride manage stepIndex internally (drop the prop). The only reason to control stepIndex is jumping/branching, which this app doesn't do."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only review)",
+    "frontend": "0% — beacon fix succeeded (10/10 no beacon visible) BUT broke walking of every tour (0/10 reach ¡Listo!)"
+  },
+  "test_credentials": "Super Admin used: pzsuave007@gmail.com / Uni2mkt007! — login OK",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "react-joyride v3.1.0 details: portal id='react-joyride-portal'. After open, portal has children=2 with text + buttons ['Siguiente','']. After tour ends (STATUS.FINISHED/SKIPPED), portal collapses to children=1 with empty text and no buttons. To validate: open tour, find 'Siguiente' in portal, click, wait 700ms, look for 'Siguiente' or '¡Listo!'. If portal collapses to empty after first Siguiente click — that's the iter7 regression. Tour-btn data-testids are tour-btn-{key} where key in {dashboard,clients,quotes,invoices,agreements,jobs,calendar,card,messages,scope}. Pages: /, /clientes, /quotes, /invoices, /contratos, /trabajos, /calendario, /tarjeta, /mensajes, /scope. Backend onboarding tests at /app/backend/tests/test_onboarding.py — not touched this iter (backend not in scope).",
+  "rca of the issue": "Root cause of iter7 regression: TourButton.js handleStartTour does setTimeout(()=>document.querySelector('.react-joyride__beacon').click(), 120). In react-joyride v3, programmatic beacon click triggers an internal STEP_AFTER (or equivalent action) event for index=0. Our handleCallback responds to STEP_AFTER by advancing the controlled stepIndex (0→1). But joyride visually keeps showing step 0's tooltip (because beacon→tooltip is the SAME step in joyride semantics). When the user then clicks 'Siguiente', joyride fires STEP_AFTER for what it considers step 0 again (or step 1 depending on its internal counter) — combined with our advancing callback, the index either skips ahead or matches the steps.length condition that fires STATUS.FINISHED. Net effect: tour closes after one Siguiente click for EVERY tour regardless of step count. Mitigation: remove the programmatic beacon click entirely and either (a) set disableBeacon as a top-level <Joyride disableBeacon> prop (react-joyride v3 reads root-level disableBeacon at startup and forces all steps tooltip-first) or (b) drop the controlled stepIndex prop+callback advance and let joyride manage step transitions itself."
+}

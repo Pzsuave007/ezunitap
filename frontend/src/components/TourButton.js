@@ -5,8 +5,8 @@
  * Usage:
  *   <TourButton tourKey="dashboard" />
  */
-import { useState } from "react";
-import { Joyride, STATUS } from "react-joyride";
+import { useEffect, useState } from "react";
+import { Joyride, STATUS, EVENTS, ACTIONS } from "react-joyride";
 import { HelpCircle } from "lucide-react";
 import { TOURS } from "@/lib/tours";
 
@@ -61,12 +61,40 @@ const tourStyles = {
 
 export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
   const [run, setRun] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   const steps = TOURS[tourKey] || [];
 
+  // When the tour starts, ensure we start at step 0
+  useEffect(() => {
+    if (run) setStepIndex(0);
+  }, [run]);
+
+  const handleStartTour = () => {
+    setRun(true);
+    // Workaround for react-joyride v3 quirk: the first-step beacon ignores
+    // `disableBeacon`. We programmatically click it after it mounts so the
+    // tooltip appears directly, just like the user expects.
+    const tryClickBeacon = (attempts = 0) => {
+      const beacon = document.querySelector(".react-joyride__beacon");
+      if (beacon) {
+        beacon.click();
+      } else if (attempts < 8) {
+        setTimeout(() => tryClickBeacon(attempts + 1), 80);
+      }
+    };
+    setTimeout(() => tryClickBeacon(), 120);
+  };
+
   const handleCallback = (data) => {
-    const { status } = data;
+    const { status, type, action, index } = data;
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
       setRun(false);
+      setStepIndex(0);
+      return;
+    }
+    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+      const next = index + (action === ACTIONS.PREV ? -1 : 1);
+      setStepIndex(next);
     }
   };
 
@@ -76,7 +104,7 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
     <>
       <button
         data-testid={`tour-btn-${tourKey}`}
-        onClick={() => setRun(true)}
+        onClick={handleStartTour}
         className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors whitespace-nowrap"
         aria-label="Ver tour de esta sección"
       >
@@ -86,11 +114,14 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
       <Joyride
         steps={steps}
         run={run}
+        stepIndex={stepIndex}
         continuous
         showProgress
         showSkipButton
         scrollToFirstStep
         disableScrolling={false}
+        spotlightClicks={false}
+        disableBeacon
         callback={handleCallback}
         locale={tourLocale}
         styles={tourStyles}

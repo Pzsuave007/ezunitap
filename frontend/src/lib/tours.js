@@ -186,13 +186,13 @@ export const TOURS = {
     },
     {
       target: SELECTOR("msg-generate"),
-      content: "Toca aquí y la AI te genera el mensaje completo en inglés — listo para copiar y pegar en WhatsApp/SMS/email. Suena profesional sin que tengas que pensar en cómo escribirlo.",
+      content: "Toca aquí y la AI te genera el mensaje completo en inglés — listo para copiar y pegar en WhatsApp/SMS/email.",
       placement: "top",
     },
     {
-      target: SELECTOR("msg-copy"),
-      content: "Cuando ya esté listo, copia con un toque y mándalo desde tu app de WhatsApp/SMS/email favorita. Así no dependes de nuestros servicios para mandar.",
-      placement: "top",
+      target: "body",
+      content: "Cuando el mensaje esté generado, aparece un botón 'Copiar' debajo. Cópialo y pégalo desde tu app de WhatsApp/SMS/email — así no dependes de nuestros servicios para mandar. ¡Tu app de WhatsApp habitual!",
+      placement: "center",
     },
   ],
 
@@ -209,9 +209,9 @@ export const TOURS = {
       placement: "top",
     },
     {
-      target: SELECTOR("scope-copy"),
-      content: "Copia el scope generado y pégalo donde lo necesites — en el campo de notas del quote, en un email al cliente, o en el contrato.",
-      placement: "top",
+      target: "body",
+      content: "Cuando se genere el scope, aparece un botón 'Copiar'. Pégalo donde lo necesites — en las notas del quote, en un email al cliente, o en el contrato.",
+      placement: "center",
     },
   ],
 };
