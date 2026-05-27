@@ -1,104 +1,221 @@
 /**
- * TourButton — small floating "¿Cómo funciona?" button + react-joyride overlay.
- * Drop this at the top of any page and pass a tourKey from TOURS.
- *
- * Usage:
- *   <TourButton tourKey="dashboard" />
+ * TourButton — Custom built-from-scratch guided tour.
+ * No external library. The tooltip is fixed at the bottom of the viewport
+ * (always visible regardless of target position) and a spotlight ring
+ * highlights the current target. Bulletproof on any page length.
  */
-import { useState } from "react";
-import { Joyride, STATUS } from "react-joyride";
-import { HelpCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { HelpCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { TOURS } from "@/lib/tours";
 
-const tourLocale = {
-  back: "Atrás",
-  close: "Cerrar",
-  last: "¡Listo!",
-  next: "Siguiente",
-  open: "Abrir tour",
-  skip: "Saltar tour",
-};
+function getTargetRect(selector) {
+  if (!selector || selector === "body") return null;
+  try {
+    const el = document.querySelector(selector);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      top: r.top + window.scrollY,
+      left: r.left + window.scrollX,
+      width: r.width,
+      height: r.height,
+    };
+  } catch {
+    return null;
+  }
+}
 
-const tourStyles = {
-  options: {
-    primaryColor: "#10b981",
-    textColor: "#0f172a",
-    backgroundColor: "#ffffff",
-    arrowColor: "#ffffff",
-    overlayColor: "rgba(15, 23, 42, 0.6)",
-    zIndex: 10000,
-    width: 360,
-  },
-  buttonNext: {
-    backgroundColor: "#10b981",
-    fontWeight: 700,
-    padding: "10px 18px",
-    borderRadius: "12px",
-    fontSize: "14px",
-  },
-  buttonBack: {
-    color: "#475569",
-    fontWeight: 600,
-    marginRight: 12,
-    fontSize: "14px",
-  },
-  buttonSkip: {
-    color: "#64748b",
-    fontWeight: 600,
-    fontSize: "12px",
-    padding: "8px 12px",
-    display: "inline-block",
-  },
-  tooltip: {
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 24px 60px rgba(15, 23, 42, 0.18)",
-  },
-  tooltipContent: {
-    fontSize: "14px",
-    lineHeight: "1.55",
-    padding: "0 0 4px 0",
-  },
-};
+function Spotlight({ rect }) {
+  if (!rect) {
+    return <div className="fixed inset-0 bg-slate-900/65 z-[9998] pointer-events-none" />;
+  }
+  // Clip-path with a rectangular hole at the target's viewport coordinates
+  const top = rect.top - window.scrollY - 8;
+  const left = rect.left - window.scrollX - 8;
+  const w = rect.width + 16;
+  const h = rect.height + 16;
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 z-[9998] pointer-events-none transition-all duration-300"
+        style={{
+          background: `rgba(15, 23, 42, 0.65)`,
+          clipPath: `polygon(
+            0% 0%, 0% 100%, ${left}px 100%,
+            ${left}px ${top}px,
+            ${left + w}px ${top}px,
+            ${left + w}px ${top + h}px,
+            ${left}px ${top + h}px,
+            ${left}px 100%,
+            100% 100%, 100% 0%
+          )`,
+        }}
+      />
+      {/* Ring around the target */}
+      <div
+        className="fixed pointer-events-none z-[9999] rounded-xl ring-4 ring-emerald-400/80 ring-offset-2 ring-offset-emerald-50/40 transition-all duration-300"
+        style={{ top: `${top}px`, left: `${left}px`, width: `${w}px`, height: `${h}px` }}
+      />
+    </>
+  );
+}
 
 export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
   const [run, setRun] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [rect, setRect] = useState(null);
+  const rafRef = useRef(null);
   const steps = TOURS[tourKey] || [];
+  const current = steps[stepIndex];
 
-  const handleCallback = (data) => {
-    const { status } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-      setRun(false);
+  // Continuously recompute target rect (handles layout shifts, scroll, resize)
+  useEffect(() => {
+    if (!run || !current) return undefined;
+    const loop = () => {
+      const r = getTargetRect(current.target);
+      setRect((prev) => {
+        if (!prev && !r) return prev;
+        if (prev && r && prev.top === r.top && prev.left === r.left && prev.width === r.width && prev.height === r.height) return prev;
+        return r;
+      });
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [run, current]);
+
+  // Scroll the target into view whenever the step changes
+  useEffect(() => {
+    if (!run || !current) return;
+    if (!current.target || current.target === "body") return;
+    try {
+      const el = document.querySelector(current.target);
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+      }
+    } catch {
+      /* ignore */
     }
-  };
+  }, [run, stepIndex, current]);
+
+  // Block body scroll while tour is running? No — we WANT user to see scroll.
+
+  const start = useCallback(() => {
+    setStepIndex(0);
+    setRect(null);
+    setRun(true);
+  }, []);
+
+  const close = useCallback(() => {
+    setRun(false);
+    setStepIndex(0);
+    setRect(null);
+  }, []);
+
+  const next = useCallback(() => {
+    if (stepIndex >= steps.length - 1) {
+      close();
+    } else {
+      setStepIndex((i) => i + 1);
+    }
+  }, [stepIndex, steps.length, close]);
+
+  const back = useCallback(() => {
+    if (stepIndex > 0) setStepIndex((i) => i - 1);
+  }, [stepIndex]);
 
   if (steps.length === 0) return null;
+
+  const total = steps.length;
+  const isLast = stepIndex === total - 1;
+  const isFirst = stepIndex === 0;
 
   return (
     <>
       <button
         data-testid={`tour-btn-${tourKey}`}
-        onClick={() => setRun(true)}
+        onClick={start}
         className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors whitespace-nowrap"
         aria-label="Ver tour de esta sección"
       >
         <HelpCircle className="w-3.5 h-3.5" />
         {label}
       </button>
-      <Joyride
-        steps={steps}
-        run={run}
-        continuous
-        showProgress
-        showSkipButton
-        scrollToFirstStep
-        disableScrolling={false}
-        spotlightClicks={false}
-        disableBeacon
-        callback={handleCallback}
-        locale={tourLocale}
-        styles={tourStyles}
-      />
+
+      {run && current && (
+        <>
+          <Spotlight rect={rect} />
+
+          {/* Tooltip — fixed at bottom of viewport, ALWAYS visible */}
+          <div
+            data-testid="custom-tour-tooltip"
+            className="fixed left-1/2 -translate-x-1/2 z-[10000] w-[min(420px,calc(100vw-24px))] animate-in slide-in-from-bottom-5 duration-300"
+            style={{ bottom: "16px" }}
+          >
+            <div className="rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+              {/* Progress bar */}
+              <div className="h-1 bg-slate-100">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${((stepIndex + 1) / total) * 100}%` }}
+                />
+              </div>
+
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                    Paso {stepIndex + 1} de {total}
+                  </span>
+                  <button
+                    data-testid="custom-tour-close"
+                    onClick={close}
+                    aria-label="Cerrar tour"
+                    className="text-slate-400 hover:text-slate-700 p-1 -mr-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+                  {current.content}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between mt-5 gap-2">
+                  <button
+                    data-testid="custom-tour-back"
+                    onClick={back}
+                    disabled={isFirst}
+                    className="inline-flex items-center gap-1 h-10 px-3 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Atrás
+                  </button>
+                  <button
+                    data-testid="custom-tour-skip"
+                    onClick={close}
+                    className="text-xs text-slate-500 hover:text-slate-800 font-medium"
+                  >
+                    Saltar tour
+                  </button>
+                  <button
+                    data-testid="custom-tour-next"
+                    onClick={next}
+                    className="inline-flex items-center gap-1 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm"
+                  >
+                    {isLast ? "¡Listo!" : "Siguiente"}
+                    {!isLast && <ChevronRight className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
