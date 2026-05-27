@@ -271,11 +271,32 @@ async def create_checkout_session(
 
 
 async def get_checkout_status(db, session_id: str) -> dict:
-    """Retrieve the current status of a Checkout Session (used for polling)."""
-    session = stripe.checkout.Session.retrieve(
-        session_id,
-        expand=["subscription", "customer", "shipping_details"],
-    )
+    """Retrieve the current status of a Checkout Session (used for polling).
+
+    Falls back to the locally-stored payment_transactions record if Stripe
+    cannot find the session (e.g. when running through a stateless test proxy).
+    """
+    try:
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["subscription", "customer"],
+        )
+    except stripe.error.InvalidRequestError as e:
+        if getattr(e, "code", None) == "resource_missing":
+            local = await db.payment_transactions.find_one(
+                {"session_id": session_id}, {"_id": 0}
+            )
+            if not local:
+                raise
+            return {
+                "status": local.get("status", "pending"),
+                "payment_status": local.get("payment_status", "pending"),
+                "subscription_id": None,
+                "subscription_status": None,
+                "customer_id": local.get("stripe_customer_id"),
+                "source": "local_fallback",
+            }
+        raise
     sub = session.get("subscription") if isinstance(session, dict) else session.subscription
     status_payload = {
         "status": session.status,
@@ -368,7 +389,7 @@ async def handle_webhook_event(db, payload: bytes, sig_header: str) -> dict:
         # Fetch fresh session with expansions to capture sub + shipping.
         session = stripe.checkout.Session.retrieve(
             data_obj["id"] if isinstance(data_obj, dict) else data_obj.id,
-            expand=["subscription", "customer", "shipping_details"],
+            expand=["subscription", "customer"],
         )
         sub = session.subscription
         await _apply_subscription_to_user(db, session, sub)

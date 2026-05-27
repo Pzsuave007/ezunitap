@@ -2259,6 +2259,19 @@ async def payments_portal(
     return_url = (payload.get("origin_url") or "").rstrip("/") + "/ajustes"
     try:
         return await payments_service.create_portal_session(db, user, return_url)
+    except payments_service.stripe.error.InvalidRequestError as e:
+        # Stale stripe_customer_id (deleted in Stripe). Clear it and inform user.
+        if getattr(e, "code", None) == "resource_missing":
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": {"stripe_customer_id": None}},
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Aún no tienes una suscripción. Suscríbete primero.",
+            )
+        logger.exception("Stripe portal session creation failed (InvalidRequest)")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Stripe portal session creation failed")
         raise HTTPException(status_code=500, detail=str(e))

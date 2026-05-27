@@ -5,7 +5,7 @@
  * Hidden when subscription is `active` (paid post-trial).
  */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Clock, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -15,9 +15,12 @@ function daysLeft(ts) {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
+const HIDE_ON_PATHS = ["/precios", "/pago/exito"];
+
 export default function TrialBanner() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function TrialBanner() {
 
   if (!user) return null;
   if (dismissed) return null;
+  if (HIDE_ON_PATHS.includes(location.pathname)) return null;
   const status = user.subscription_status;
   // Show only for trialing users WITHOUT a paid subscription. If they're
   // already active/past_due (paid), hide.
