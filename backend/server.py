@@ -61,6 +61,7 @@ class RegisterIn(BaseModel):
     business_name: str
     owner_name: Optional[str] = ""
     phone: Optional[str] = ""
+    invite_token: Optional[str] = None
 
 
 class LoginIn(BaseModel):
@@ -359,6 +360,22 @@ async def register(payload: RegisterIn):
     import time as _time
     now_ts = int(_time.time())
     trial_ends_at = now_ts + 14 * 24 * 3600  # 14-day local trial
+
+    # Process invite token if provided (grants comp access on signup).
+    invite = None
+    if payload.invite_token:
+        invite = await db.comp_invites.find_one({
+            "token": payload.invite_token,
+            "status": "active",
+        })
+        if invite:
+            # If invite is restricted to a specific email, enforce it.
+            if invite.get("email") and invite["email"].lower() != payload.email.lower():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Esta invitación es para otro email",
+                )
+
     user = {
         "id": _new_id(),
         "email": payload.email.lower(),
@@ -369,8 +386,6 @@ async def register(payload: RegisterIn):
         "business_address": "",
         "business_email": payload.email.lower(),
         "created_at": _now_iso(),
-        # Subscription state — local 14-day trial begins on signup.
-        # Smart Card stays locked until a paid subscription (post-Stripe-trial).
         "plan_type": None,
         "subscription_status": "trialing",
         "trial_ends_at": trial_ends_at,
@@ -379,8 +394,34 @@ async def register(payload: RegisterIn):
         "stripe_subscription_id": None,
         "shipping_address": None,
         "card_shipping_status": None,
+        "is_comp": False,
+        "comp_note": None,
+        "comp_expires_at": None,
+        "comp_granted_by": None,
     }
+
+    # Apply invite comp access if valid.
+    if invite:
+        user["is_comp"] = True
+        user["comp_note"] = invite.get("note") or "Invitado por admin"
+        user["comp_expires_at"] = invite.get("comp_expires_at")
+        user["comp_granted_by"] = invite.get("created_by")
+        user["plan_type"] = "comp"
+        user["subscription_status"] = "active"  # show as active for UI
+
     await db.users.insert_one(user)
+
+    # Mark invite as used.
+    if invite:
+        await db.comp_invites.update_one(
+            {"id": invite["id"]},
+            {"$set": {
+                "status": "used",
+                "used_by_user_id": user["id"],
+                "used_at": _now_iso(),
+            }},
+        )
+
     token = create_token(user["id"])
     return {
         "token": token,
@@ -2173,6 +2214,158 @@ async def onboarding_set_state(
 
 
 
+
+
+# ============================================================================
+# ADMIN — COMPLIMENTARY ACCOUNTS (free access for friends, testers, reviewers)
+# ============================================================================
+class CompInviteIn(BaseModel):
+    email: Optional[str] = None  # Optional restriction
+    duration_days: Optional[int] = None  # None = indefinite
+    note: Optional[str] = ""
+
+
+class CompGrantIn(BaseModel):
+    duration_days: Optional[int] = None  # None = indefinite
+    note: Optional[str] = ""
+
+
+def _short_token() -> str:
+    import secrets
+    return secrets.token_urlsafe(16)
+
+
+@api_router.post("/admin/comp-invites")
+async def admin_create_comp_invite(
+    payload: CompInviteIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Create a single-use invite link that grants comp access on signup."""
+    import time as _time
+    now_ts = int(_time.time())
+    comp_expires = None
+    if payload.duration_days:
+        comp_expires = now_ts + payload.duration_days * 24 * 3600
+    invite = {
+        "id": _new_id(),
+        "token": _short_token(),
+        "email": (payload.email or "").lower() or None,
+        "note": payload.note or "",
+        "duration_days": payload.duration_days,
+        "comp_expires_at": comp_expires,
+        "status": "active",
+        "created_by": admin["id"],
+        "created_by_email": admin["email"],
+        "created_at": _now_iso(),
+        "used_by_user_id": None,
+        "used_at": None,
+    }
+    await db.comp_invites.insert_one(invite)
+    invite.pop("_id", None)
+    return invite
+
+
+@api_router.get("/admin/comp-invites")
+async def admin_list_comp_invites(admin: dict = Depends(_require_super_admin)):
+    items = await db.comp_invites.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    return {"invites": items}
+
+
+@api_router.delete("/admin/comp-invites/{invite_id}")
+async def admin_revoke_comp_invite(
+    invite_id: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    res = await db.comp_invites.update_one(
+        {"id": invite_id, "status": "active"},
+        {"$set": {"status": "revoked", "revoked_at": _now_iso()}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada o ya usada")
+    return {"ok": True}
+
+
+@api_router.get("/admin/users")
+async def admin_list_users(admin: dict = Depends(_require_super_admin)):
+    """List all users with their subscription/comp state for admin management."""
+    users = await db.users.find(
+        {}, {"_id": 0, "password_hash": 0}
+    ).sort("created_at", -1).to_list(1000)
+    # Slim each user down for the table.
+    out = []
+    for u in users:
+        out.append({
+            "id": u.get("id"),
+            "email": u.get("email"),
+            "business_name": u.get("business_name", ""),
+            "owner_name": u.get("owner_name", ""),
+            "phone": u.get("phone", ""),
+            "created_at": u.get("created_at"),
+            "subscription_status": u.get("subscription_status"),
+            "plan_type": u.get("plan_type"),
+            "trial_ends_at": u.get("trial_ends_at"),
+            "current_period_end": u.get("current_period_end"),
+            "is_comp": bool(u.get("is_comp")),
+            "comp_note": u.get("comp_note"),
+            "comp_expires_at": u.get("comp_expires_at"),
+        })
+    return {"users": out}
+
+
+@api_router.post("/admin/users/{user_id}/grant-comp")
+async def admin_grant_comp(
+    user_id: str,
+    payload: CompGrantIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    import time as _time
+    comp_expires = None
+    if payload.duration_days:
+        comp_expires = int(_time.time()) + payload.duration_days * 24 * 3600
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "is_comp": True,
+            "comp_note": payload.note or "",
+            "comp_expires_at": comp_expires,
+            "comp_granted_by": admin["id"],
+            "comp_granted_at": _now_iso(),
+            "plan_type": "comp",
+            "subscription_status": "active",
+        }},
+    )
+    return {"ok": True, "user_id": user_id, "comp_expires_at": comp_expires}
+
+
+@api_router.post("/admin/users/{user_id}/revoke-comp")
+async def admin_revoke_comp(
+    user_id: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    # If they have a real Stripe sub, fall back to that status; otherwise
+    # restore trialing.
+    new_status = "trialing"
+    new_plan = None
+    if u.get("stripe_subscription_id"):
+        new_status = u.get("subscription_status") if u.get("subscription_status") not in (None, "active", "trialing") else "active"
+        new_plan = u.get("plan_type") if u.get("plan_type") != "comp" else None
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "is_comp": False,
+            "subscription_status": new_status,
+            "plan_type": new_plan,
+        }},
+    )
+    return {"ok": True}
 
 
 # ============================================================================

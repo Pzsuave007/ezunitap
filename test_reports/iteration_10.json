@@ -1,0 +1,45 @@
+{
+  "summary": "Complimentary (comp) accounts feature tested end-to-end. Backend: 22/22 pytest tests pass covering CompInvite CRUD, register-with-invite (valid/used/revoked/invalid/email-restricted), admin grant-comp (with duration + indefinite), revoke-comp, and 403 gating on every admin endpoint. Frontend: /admin/cuentas page loads with both Invitaciones and Usuarios tabs, invite creation surfaces toast 'Invitación creada' and a new row appears in the list, Usuarios tab lists all users with Regalar/Revocar buttons reflecting their is_comp status. Register flow with ?invite=TOKEN renders the green 'Tienes una invitación!' banner; signup completes, /api/auth/me returns is_comp=true, plan_type='comp', subscription_status='active', smart_card_unlocked=true; /tarjeta route renders the full Smart Card editor (no paywall) for the comp user. No new bugs found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/register?invite=TOKEN",
+        "issues": [
+          "TrialBanner '14 días restantes de tu prueba gratis' still shows for a freshly comped user on /tarjeta and dashboard — comp accounts are not in trial, so banner copy is misleading. Should be hidden when is_comp=true or comp_expires_at exists."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_comp_invites.py",
+    "/app/test_reports/pytest/comp_invites_results.xml"
+  ],
+  "action_items": [
+    "(Minor UX) Hide TrialBanner when user.is_comp === true (comp users are not in trial). Currently the orange '14 días restantes' banner still appears for the freshly registered comp user.",
+    "(Optional) Consider showing a 'COMP'/'GRATIS' badge on the dashboard header so the comped user sees they have a complimentary account."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 2563 lines — still growing. Recommend extracting /admin/comp-invites and /admin/users routes into a dedicated router module (e.g. routers/admin_comp.py) before adding more admin features.",
+    "admin_revoke_comp logic at server.py:2357-2359 is hard to follow: 'new_status = u.get(subscription_status) if u.get(subscription_status) not in (None, active, trialing) else active' — the ternary inverts twice and the comment says 'restores their old status' but it actually overwrites with 'active' for already-active subs. Edge cases: a past_due Stripe user becoming comp then being revoked will end up status='past_due' which is OK; but a user whose Stripe sub was 'active' before becoming comp will simply remain 'active' (fine). Worth adding a unit test for the Stripe-sub branch — current test only covers the no-Stripe branch.",
+    "comp_expires_at is stored as a Unix epoch int in users (server.py:329) AND in comp_invites, but the admin/users list returns it as raw int with no formatting hint. AdminAccounts.js formats it via formatDate(ts*1000) which is correct, but the API contract should be documented.",
+    "RegisterIn.invite_token is silently ignored when the token is invalid/used (good UX), but no audit log entry is written. If abuse becomes a concern, consider logging failed invite_token attempts.",
+    "Comp invite tokens are 16 bytes urlsafe (≈22 chars) — sufficient entropy. Good.",
+    "/api/admin/comp-invites/{id} DELETE only flips status to 'revoked' if status='active'. A 'used' invite cannot be revoked which is correct — but the 404 message 'Invitación no encontrada o ya usada' is slightly misleading when the cause is 'already revoked'. Minor copy nit."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_comp_invites.py (new — 22 pytest cases)"
+  ],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "100% (all comp flows verified)"},
+  "test_credentials": "Super-admin: pzsuave007@gmail.com / Uni2mkt007! (working). Test users created during test run all prefixed with TEST_ in business_name or test_/TEST_ in email.",
+  "seed_data_creation": "Created ~10 throwaway users via POST /api/auth/register (emails: TEST_comp_*, TEST_invitee_*, TEST_matched_*, TEST_specific_*, test_signup_*@example.com) and ~10 comp_invites docs (8 active/used + 2 revoked). All test data is identifiable by TEST_ prefix or test_ prefix in emails. Users 19, invites ~11 in admin lists post-test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Comp accounts feature is solid end-to-end. Login token is stored under localStorage key 'sf_token' (NOT 'token') — important for any future browser automation. Dashboard route is '/' not '/dashboard' after login. Super-admin email is pzsuave007@gmail.com (was changed from demo@servicioflow.com in this iteration). Sidebar shows 'Cuentas gratis' link for super-admin (gated by /api/auth/is-super-admin). Invite link format: /register?invite=<token>. has_paid_subscription() and subscription_is_active() in payments_service.py correctly honor is_comp + comp_expires_at — verified via /tarjeta rendering the full Smart Card editor (no paywall) for a freshly-comped user. From iteration 9, two Stripe bugs may still be open: (1) /api/payments/status/{session_id} 500 due to 'shipping_details' expand, (2) /api/payments/portal 500 with stale stripe_customer_id — not retested this iteration since they're outside the comp scope.",
+  "rca_of_the_issue": "N/A — no bugs identified in this iteration. The only finding is a minor UX item (TrialBanner showing on comp accounts) which is a frontend copy/visibility issue, not a functional defect."
+}

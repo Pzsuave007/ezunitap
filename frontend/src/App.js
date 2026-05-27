@@ -28,6 +28,7 @@ import AgreementDetail from "@/pages/AgreementDetail";
 import PublicAgreement from "@/pages/PublicAgreement";
 import Pricing from "@/pages/Pricing";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import AdminAccounts from "@/pages/AdminAccounts";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -94,6 +95,7 @@ function App() {
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />
               <Route path="/precios" element={<Pricing />} />
+              <Route path="/admin/cuentas" element={<AdminAccounts />} />
               <Route path="/admin/leads" element={<AdminLeads />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

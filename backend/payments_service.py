@@ -464,6 +464,11 @@ async def create_portal_session(db, user: dict, return_url: str) -> dict:
 
 def subscription_is_active(user: dict) -> bool:
     """Return True if user has an active paid or trialing subscription."""
+    if user.get("is_comp"):
+        exp = user.get("comp_expires_at")
+        if exp and exp < int(__import__("time").time()):
+            return False
+        return True
     status = user.get("subscription_status")
     return status in ("active", "trialing", "past_due")
 
@@ -472,6 +477,13 @@ def has_paid_subscription(user: dict) -> bool:
     """Return True ONLY when the user is actively paying (NOT in trial).
 
     Used to gate the Smart Card feature per user choice: trial unlocks
-    everything *except* the Smart Card.
+    everything *except* the Smart Card. Also returns True for "comp"
+    (complimentary) accounts granted by an admin.
     """
+    if user.get("is_comp"):
+        # Comp account may have an expiry — respect it.
+        exp = user.get("comp_expires_at")
+        if exp and exp < int(__import__("time").time()):
+            return False
+        return True
     return user.get("subscription_status") in ("active", "past_due")

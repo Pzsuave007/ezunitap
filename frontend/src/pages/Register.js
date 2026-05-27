@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hammer, Loader2 } from "lucide-react";
+import { Hammer, Loader2, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const [params] = useSearchParams();
+  const inviteToken = params.get("invite") || "";
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",
@@ -29,8 +31,12 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await register(form);
-      toast.success("¡Cuenta creada! Bienvenido.");
+      await register({ ...form, invite_token: inviteToken || undefined });
+      toast.success(
+        inviteToken
+          ? "¡Cuenta creada con acceso gratis! 🎁"
+          : "¡Cuenta creada! Bienvenido."
+      );
       navigate("/");
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error al crear cuenta");
@@ -48,6 +54,22 @@ export default function Register() {
           </div>
           <span className="font-heading font-bold text-xl">Unitap</span>
         </div>
+
+        {inviteToken && (
+          <div
+            data-testid="invite-banner"
+            className="mb-5 p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-emerald-50 border border-amber-200 flex items-center gap-2"
+          >
+            <Gift className="w-5 h-5 text-amber-700 flex-none" />
+            <div className="text-xs text-amber-900">
+              <div className="font-semibold">¡Tienes una invitación!</div>
+              <div className="text-amber-800">
+                Al registrarte tendrás acceso gratis a todo Unitap.
+              </div>
+            </div>
+          </div>
+        )}
+
         <h2 className="font-heading text-3xl font-bold tracking-tight">Crea tu cuenta</h2>
         <p className="text-slate-500 mt-2 text-sm">Empieza gratis. Sin tarjeta requerida.</p>
 
