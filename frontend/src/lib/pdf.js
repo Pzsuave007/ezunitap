@@ -226,9 +226,19 @@ export async function generateInvoicePDF(invoice, business, client) {
   addRow("Subtotal", fmtMoney(invoice.subtotal));
   if (invoice.tax_amount) addRow(`Tax (${invoice.tax_rate || 0}%)`, fmtMoney(invoice.tax_amount));
   addRow("TOTAL", fmtMoney(invoice.total), true);
+
+  // Deposit + remaining balance — must match the public invoice page.
+  const deposit = Number(invoice.deposit_amount) || 0;
+  if (deposit > 0) {
+    doc.setTextColor(...COLOR_SECONDARY);
+    addRow("Deposit due upfront", fmtMoney(deposit), true);
+    doc.setTextColor(...COLOR_TEXT);
+    addRow("Balance after deposit", fmtMoney(Math.max(0, (invoice.total || 0) - deposit)));
+  }
+
   if (invoice.amount_paid) addRow("Paid", fmtMoney(invoice.amount_paid));
   const balance = (invoice.total || 0) - (invoice.amount_paid || 0);
-  if (balance > 0) {
+  if (balance > 0 && !deposit) {
     doc.setTextColor(...COLOR_SECONDARY);
     addRow("Balance Due", fmtMoney(balance), true);
     doc.setTextColor(...COLOR_TEXT);
@@ -242,6 +252,75 @@ export async function generateInvoicePDF(invoice, business, client) {
     doc.setFont("helvetica", "normal");
     const n = doc.splitTextToSize(invoice.notes, 180);
     doc.text(n, 14, y);
+    y += n.length * 5 + 4;
+  }
+
+  // Signed agreement terms — must match the public invoice page green block.
+  const terms = invoice.agreement_terms;
+  if (terms) {
+    if (y > 240) { doc.addPage(); y = 20; }
+    const sec = terms.sections || {};
+    // Green header bar
+    doc.setFillColor(16, 185, 129); // emerald-500
+    doc.rect(14, y, 182, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text("SIGNED AGREEMENT TERMS", 18, y + 5.5);
+    if (terms.signer_name) {
+      const signedLine = `Signed by ${terms.signer_name}${terms.signed_at ? ` on ${new Date(terms.signed_at).toLocaleDateString("en-US")}` : ""}`;
+      doc.setFontSize(8);
+      doc.text(signedLine, 192, y + 5.5, { align: "right" });
+    }
+    doc.setTextColor(...COLOR_TEXT);
+    y += 12;
+
+    if (deposit > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Deposit required:", 14, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${fmtMoney(deposit)} — due before work begins, per signed agreement.`, 50, y);
+      y += 7;
+    }
+
+    const listSection = (label, items) => {
+      if (!items?.length) return;
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(label.toUpperCase(), 14, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      for (const it of items) {
+        if (y > 280) { doc.addPage(); y = 20; }
+        const lines = doc.splitTextToSize(`• ${it}`, 178);
+        doc.text(lines, 16, y);
+        y += lines.length * 4.5;
+      }
+      y += 2;
+    };
+    const textSection = (label, value) => {
+      if (!value) return;
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(label.toUpperCase(), 14, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(value, 180);
+      doc.text(lines, 14, y);
+      y += lines.length * 4.5 + 2;
+    };
+
+    listSection("What is included", sec.what_is_included);
+    listSection("What is not included", sec.what_is_not_included);
+    listSection("Materials", sec.materials);
+    textSection("Payment terms", sec.payment_terms);
+    textSection("Timeline", sec.timeline);
+    textSection("Warranty", sec.warranty_notes);
+    textSection("Change order policy", sec.change_order_note);
   }
 
   doc.save(`Invoice-${invoice.number || "draft"}.pdf`);
