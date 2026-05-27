@@ -145,10 +145,15 @@ export const TOURS = {
 
   card: [
     {
+      target: SELECTOR("card-public-url"),
+      content: "¡Bienvenido a tu Tarjeta Inteligente! 💳 Esta es tu URL pública — la compartes por WhatsApp o con QR y tus clientes la guardan en su iPhone como un contacto. Es tu marketing pasivo 24/7.",
+      placement: "bottom",
+      disableBeacon: true,
+    },
+    {
       target: SELECTOR("card-businesstype"),
       content: "Empezamos con lo básico: dile a la AI a qué se dedica tu negocio (Roofing, Lawn Care, Cleaning, etc.). Esto entrena cómo se ve y cómo responde tu tarjeta.",
       placement: "bottom",
-      disableBeacon: true,
     },
     {
       target: SELECTOR("card-ai-context"),
@@ -157,18 +162,13 @@ export const TOURS = {
     },
     {
       target: SELECTOR("card-color"),
-      content: "Este es el color de tu marca. Cambia el header de tu tarjeta digital. Elige uno que te represente — verde, azul, lo que sea.",
+      content: "Este es el color de tu marca. Cambia el header de tu tarjeta digital. Elige uno que te represente.",
       placement: "bottom",
     },
     {
       target: SELECTOR("card-add-service"),
       content: "Agrega cada servicio que ofreces con precio (o 'Quote on request'). Los clientes los ven al abrir tu tarjeta. Esto te ahorra explicar lo mismo 100 veces por WhatsApp.",
       placement: "top",
-    },
-    {
-      target: SELECTOR("card-share"),
-      content: "Cuando termines, tu tarjeta vive en una URL pública. Compártela por WhatsApp con un toque, descarga el QR para imprimir en tu camioneta, o tus clientes la guardan en su iPhone como un contacto. Tu marketing pasivo 24/7. 📱",
-      placement: "bottom",
     },
   ],
 
