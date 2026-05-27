@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, FileSignature, CheckCircle2, Trash2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import SendDocumentDialog from "@/components/SendDocumentDialog";
 
 const STATUS_LABEL = { draft: "Borrador", sent: "Enviado", signed: "Firmado", declined: "Rechazado" };
 const STATUS_STYLES = {
@@ -17,9 +19,11 @@ const STATUS_STYLES = {
 export default function AgreementDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [a, setA] = useState(null);
   const [client, setClient] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -105,11 +109,21 @@ export default function AgreementDetail() {
 
       {/* Public link / share */}
       <Card className="card-elevated p-4 border-0 shadow-none">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Link para el cliente</div>
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Mandar al cliente</div>
         <div className="flex items-center gap-2 flex-wrap">
           <code data-testid="public-link" className="flex-1 min-w-0 truncate text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-mono">
             {publicLink}
           </code>
+          <Button
+            data-testid="send-agreement-btn"
+            onClick={() => {
+              if (a.status === "draft") markSent();
+              setSendOpen(true);
+            }}
+            className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Send className="w-4 h-4 mr-1" /> Mandar Contrato
+          </Button>
           <Button
             data-testid="copy-link-btn"
             onClick={copyLink}
@@ -118,20 +132,10 @@ export default function AgreementDetail() {
           >
             <Copy className="w-4 h-4 mr-1" /> Copiar
           </Button>
-          {a.status === "draft" && (
-            <Button
-              data-testid="mark-sent-btn"
-              onClick={markSent}
-              disabled={busy}
-              className="rounded-xl h-10 bg-blue-900 hover:bg-blue-950 text-white"
-            >
-              <Send className="w-4 h-4 mr-1" /> Marcar enviado
-            </Button>
-          )}
         </div>
         <p className="text-xs text-slate-500 mt-2">
-          Mándale este link al cliente por WhatsApp/SMS. Lo abre en su celular y firma con el dedo
-          o con un clic. Se queda registrado con fecha y hora.
+          Al apretar "Mandar Contrato" se abre la app de tu cliente (WhatsApp, SMS o email) con un mensaje listo.
+          Cuando lo firma, se registra con fecha y hora.
         </p>
       </Card>
 
@@ -179,6 +183,16 @@ export default function AgreementDetail() {
         <Field title="Dispute Resolution" text={sections.dispute_resolution} />
         <Section title="Industry-Specific Clauses" items={sections.industry_specific_clauses} />
       </Card>
+
+      <SendDocumentDialog
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        kind="agreement"
+        publicUrl={publicLink}
+        client={client}
+        businessName={user?.business_name}
+        jobTitle={a.title}
+      />
     </div>
   );
 }

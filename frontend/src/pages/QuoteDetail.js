@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateQuotePDF } from "@/lib/pdf";
-import { ArrowLeft, Download, Share2, FileDown, MoreVertical, Loader2, Receipt, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Send, FileDown, MoreVertical, Loader2, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import SendDocumentDialog from "@/components/SendDocumentDialog";
 
 export default function QuoteDetail() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function QuoteDetail() {
   const [client, setClient] = useState(null);
   const [card, setCard] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -84,14 +86,13 @@ export default function QuoteDetail() {
     }
   };
 
-  const shareLink = async () => {
-    const url = `${window.location.origin}/p/quote/${quote.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copiado al portapapeles");
-    } catch {
-      window.prompt("Link público:", url);
+  const openSend = () => {
+    // Auto-mark as 'sent' the first time the user opens the share dialog so
+    // the flow status reflects reality.
+    if (quote && quote.status === "draft") {
+      setStatus("sent");
     }
+    setSendOpen(true);
   };
 
   if (!quote) return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
@@ -136,8 +137,8 @@ export default function QuoteDetail() {
           <Button data-testid="download-pdf" onClick={downloadPDF} variant="outline" className="h-12 rounded-xl border-slate-200">
             <FileDown className="w-4 h-4 mr-1" /> PDF
           </Button>
-          <Button data-testid="share-link" onClick={shareLink} variant="outline" className="h-12 rounded-xl border-slate-200">
-            <Share2 className="w-4 h-4 mr-1" /> Compartir
+          <Button data-testid="share-link" onClick={openSend} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Send className="w-4 h-4 mr-1" /> Mandar Quote
           </Button>
           <Button
             data-testid="convert-invoice"
@@ -183,6 +184,16 @@ export default function QuoteDetail() {
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar cambios"}
         </Button>
       </Card>
+
+      <SendDocumentDialog
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        kind="quote"
+        publicUrl={`${window.location.origin}/p/quote/${quote.id}`}
+        client={client}
+        businessName={user?.business_name}
+        jobTitle={quote.job_title}
+      />
     </div>
   );
 }

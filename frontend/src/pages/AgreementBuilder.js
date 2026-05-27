@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,10 @@ import { toast } from "sonner";
 
 export default function AgreementBuilder() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [clients, setClients] = useState([]);
   const [clientId, setClientId] = useState("");
+  const [quoteId, setQuoteId] = useState("");
   const [description, setDescription] = useState("");
   const [total, setTotal] = useState("");
   const [deposit, setDeposit] = useState("");
@@ -24,6 +26,28 @@ export default function AgreementBuilder() {
         setClients(r.data);
       } catch (e) { console.error(e); }
     })();
+    const urlClient = params.get("client_id");
+    const urlQuote = params.get("quote_id");
+    if (urlClient) setClientId(urlClient);
+    if (urlQuote) {
+      setQuoteId(urlQuote);
+      // Pre-fill description, total, and deposit from the linked quote so the
+      // contract reflects exactly what the client already accepted.
+      (async () => {
+        try {
+          const { data: q } = await api.get(`/quotes/${urlQuote}`);
+          if (q) {
+            if (q.client_id && !urlClient) setClientId(q.client_id);
+            setDescription(
+              `${q.job_title}\n\n${(q.line_items || []).map((li) => `- ${li.description} (qty ${li.quantity})`).join("\n")}\n\n${q.notes || ""}`.trim()
+            );
+            if (q.total) setTotal(String(q.total));
+            if (q.deposit_amount) setDeposit(String(q.deposit_amount));
+          }
+        } catch { /* ignore */ }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generate = async () => {
@@ -53,6 +77,7 @@ export default function AgreementBuilder() {
     try {
       const { data } = await api.post("/agreements", {
         client_id: clientId,
+        quote_id: quoteId || null,
         title: sections.title || "Service Agreement",
         description_es: description,
         sections,

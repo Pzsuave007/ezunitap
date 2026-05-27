@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
+import ClientFlowNotices from "@/components/ClientFlowNotices";
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -105,6 +106,8 @@ export default function ClientDetail() {
             </div>
           </div>
         </div>
+
+        <ClientFlowNotices client={client} history={history} />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-5">
           <Button
