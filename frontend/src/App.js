@@ -29,6 +29,7 @@ import PublicAgreement from "@/pages/PublicAgreement";
 import Pricing from "@/pages/Pricing";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import AdminAccounts from "@/pages/AdminAccounts";
+import PublicInvoice from "@/pages/PublicInvoice";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -72,6 +73,7 @@ function App() {
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
+            <Route path="/p/invoice/:id" element={<PublicInvoice />} />
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
 

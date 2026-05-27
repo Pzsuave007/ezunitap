@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
+import SendDocumentDialog from "@/components/SendDocumentDialog";
 
 const blank = () => ({
   client_id: "",
@@ -45,6 +46,7 @@ export default function InvoiceDetail() {
   const [saving, setSaving] = useState(false);
   const [aiDescription, setAiDescription] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const generateWithAI = async () => {
     if (!aiDescription.trim()) return toast.error("Escribe una descripción primero");
@@ -210,11 +212,18 @@ export default function InvoiceDetail() {
 
         {!isNew && (
           <div className="grid grid-cols-2 gap-2 mt-5">
+            <Button
+              data-testid="inv-send"
+              onClick={() => {
+                if (invoice.status === "draft") setStatus("sent");
+                setSendOpen(true);
+              }}
+              className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Send className="w-4 h-4 mr-1" /> Mandar Invoice
+            </Button>
             <Button data-testid="inv-download-pdf" onClick={downloadPDF} variant="outline" className="h-12 rounded-xl border-slate-200">
               <FileDown className="w-4 h-4 mr-1" /> Descargar PDF
-            </Button>
-            <Button data-testid="inv-pay-online-soon" disabled variant="outline" className="h-12 rounded-xl border-slate-200 opacity-60">
-              Pay Online (próximamente)
             </Button>
           </div>
         )}
@@ -321,6 +330,18 @@ export default function InvoiceDetail() {
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? "Crear invoice" : "Guardar cambios")}
         </Button>
       </Card>
+
+      {!isNew && (
+        <SendDocumentDialog
+          open={sendOpen}
+          onClose={() => setSendOpen(false)}
+          kind="invoice"
+          publicUrl={`${window.location.origin}/p/invoice/${id}`}
+          client={client}
+          businessName={user?.business_name}
+          jobTitle={invoice.job_title}
+        />
+      )}
     </div>
   );
 }
