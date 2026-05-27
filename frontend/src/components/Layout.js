@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, Inbox, FileSignature, CreditCard, Gift } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -51,8 +51,7 @@ export default function Layout() {
   const sidebarExtra = [
     ...SIDEBAR_EXTRA,
     ...(showAdminLink ? [
-      { to: "/admin/cuentas", label: "Cuentas gratis", icon: Gift },
-      { to: "/admin/leads", label: "Admin Leads", icon: Inbox },
+      { to: "/admin/cuentas", label: "Admin", icon: ShieldCheck },
     ] : []),
   ];
 

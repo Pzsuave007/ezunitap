@@ -15,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Gift, Loader2, Copy, Check, Plus, Trash2, Users, Link as LinkIcon,
-  ShieldCheck, X, Sparkles, AlertCircle, Calendar,
+  X, Sparkles, AlertCircle, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
+import AdminTabs from "@/components/AdminTabs";
 
 function formatDate(ts) {
   if (!ts) return "—";
@@ -45,24 +46,24 @@ export default function AdminAccounts() {
 
   if (forbidden) {
     return (
-      <Card className="p-8 text-center">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-        <h2 className="font-heading text-xl font-bold mt-3">Acceso denegado</h2>
-        <p className="text-slate-500 mt-1 text-sm">
-          Esta sección es solo para el admin principal.
-        </p>
-      </Card>
+      <>
+        <AdminTabs />
+        <Card className="p-8 text-center">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+          <h2 className="font-heading text-xl font-bold mt-3">Acceso denegado</h2>
+          <p className="text-slate-500 mt-1 text-sm">
+            Esta sección es solo para el admin principal.
+          </p>
+        </Card>
+      </>
     );
   }
 
   return (
     <div className="space-y-6" data-testid="admin-accounts-page">
+      <AdminTabs />
       <div>
-        <div className="flex items-center gap-2 text-amber-700 text-xs font-bold uppercase tracking-wider">
-          <ShieldCheck className="w-4 h-4" />
-          Solo super-admin
-        </div>
-        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mt-1">
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">
           Cuentas gratis
         </h1>
         <p className="text-slate-500 mt-2 max-w-2xl">

@@ -15,6 +15,7 @@ import {
   Clock, UserCheck, Inbox, ShieldAlert, RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import AdminTabs from "@/components/AdminTabs";
 
 const STATUS_STYLES = {
   new: { label: "Nuevo", color: "bg-amber-100 text-amber-800 border-amber-200", icon: Clock },
@@ -94,6 +95,7 @@ export default function AdminLeads() {
   );
   if (!allowed) return (
     <div className="max-w-md mx-auto p-6">
+      <AdminTabs />
       <Card className="p-8 text-center border-red-200 bg-red-50">
         <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-3" />
         <h2 className="text-xl font-bold text-red-900 mb-2">Acceso restringido</h2>
@@ -113,6 +115,7 @@ export default function AdminLeads() {
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
+      <AdminTabs />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">Leads de Unitap</h1>
