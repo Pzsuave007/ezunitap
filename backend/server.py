@@ -2095,20 +2095,27 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     celebrated = bool(onb.get("celebrated"))
 
     # Compute checklist items from real data
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    # Business info: phone + address + logo (all set from Settings in one screen)
     business_filled = bool(
-        (u.get("phone") or "").strip() and (u.get("business_address") or "").strip()
+        (u.get("phone") or "").strip()
+        and (u.get("business_address") or "").strip()
+        and card.get("logo_photo_id")
     )
-    card = await db.card_settings.find_one({"user_id": user_id}, {"_id": 0}) or {}
-    logo_uploaded = bool(card.get("logo_photo_id"))
+    # Smart Card: any meaningful customization beyond the auto-created default doc
     card_created = bool(
-        (card.get("services") or []) or card.get("profile_photo_id") or card.get("cover_photo_id")
+        card.get("profile_photo_id")
+        or card.get("cover_photo_id")
+        or (card.get("services") or [])
+        or (card.get("about_me") or "").strip()
+        or (card.get("tagline") or "").strip()
+        or (card.get("business_type") or "").strip()
     )
     clients_count = await db.clients.count_documents({"user_id": user_id})
     quotes_count = await db.quotes.count_documents({"user_id": user_id})
 
     items = [
-        {"id": "business_info", "label": "Llena tu info de negocio", "minutes": 2, "done": business_filled, "path": "/ajustes"},
-        {"id": "logo", "label": "Sube tu logo", "minutes": 1, "done": logo_uploaded, "path": "/tarjeta"},
+        {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes"},
         {"id": "smart_card", "label": "Crea tu Tarjeta Inteligente", "minutes": 3, "done": card_created, "path": "/tarjeta"},
         {"id": "first_client", "label": "Agrega tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
         {"id": "first_quote", "label": "Genera tu primer quote con AI", "minutes": 2, "done": quotes_count > 0, "path": "/quotes/nuevo?ai=1"},
