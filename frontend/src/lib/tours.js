@@ -145,20 +145,10 @@ export const TOURS = {
 
   card: [
     {
-      target: SELECTOR("card-color"),
-      content: "Estos son los colores de tu marca. Cambian el header de tu tarjeta digital. Elige uno que te represente — verde, azul, lo que sea.",
+      target: SELECTOR("card-businesstype"),
+      content: "Empezamos con lo básico: dile a la AI a qué se dedica tu negocio (Roofing, Lawn Care, Cleaning, etc.). Esto entrena cómo se ve y cómo responde tu tarjeta.",
       placement: "bottom",
       disableBeacon: true,
-    },
-    {
-      target: SELECTOR("card-businesstype"),
-      content: "Llena bien estas secciones — son las que tus clientes leen cuando reciben tu tarjeta. Mientras más completo, más confianza les das.",
-      placement: "top",
-    },
-    {
-      target: SELECTOR("card-add-service"),
-      content: "Agrega cada servicio que ofreces con precio (o 'Quote on request'). Los clientes los ven al abrir tu tarjeta. Esto te ahorra explicar lo mismo 100 veces por WhatsApp.",
-      placement: "top",
     },
     {
       target: SELECTOR("card-ai-context"),
@@ -166,9 +156,19 @@ export const TOURS = {
       placement: "top",
     },
     {
-      target: "body",
-      content: "Cuando termines, tu tarjeta vive en una URL pública (tipo `ezunitap.com/c/tu-negocio`). La compartes por WhatsApp, le imprimes un QR para tu camioneta, o se la guardan en el iPhone como un contacto. Tu marketing pasivo 24/7.",
-      placement: "center",
+      target: SELECTOR("card-color"),
+      content: "Este es el color de tu marca. Cambia el header de tu tarjeta digital. Elige uno que te represente — verde, azul, lo que sea.",
+      placement: "bottom",
+    },
+    {
+      target: SELECTOR("card-add-service"),
+      content: "Agrega cada servicio que ofreces con precio (o 'Quote on request'). Los clientes los ven al abrir tu tarjeta. Esto te ahorra explicar lo mismo 100 veces por WhatsApp.",
+      placement: "top",
+    },
+    {
+      target: SELECTOR("card-share"),
+      content: "Cuando termines, tu tarjeta vive en una URL pública. Compártela por WhatsApp con un toque, descarga el QR para imprimir en tu camioneta, o tus clientes la guardan en su iPhone como un contacto. Tu marketing pasivo 24/7. 📱",
+      placement: "bottom",
     },
   ],
 
