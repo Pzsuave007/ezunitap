@@ -1970,6 +1970,9 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
         raise HTTPException(400, "Este contrato ya fue firmado.")
     if payload.method not in {"button", "drawn"}:
         raise HTTPException(400, "Método de firma inválido")
+    signer_name = (payload.signer_name or "").strip()
+    if not signer_name:
+        raise HTTPException(400, "Nombre del firmante requerido")
     if payload.method == "drawn" and not (payload.signature_image and payload.signature_image.startswith("data:image/")):
         raise HTTPException(400, "Firma requerida")
     await db.agreements.update_one(
@@ -1979,11 +1982,12 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
             "signed_at": _now_iso(),
             "signed_method": payload.method,
             "signature_image": payload.signature_image if payload.method == "drawn" else None,
-            "signer_name": (payload.signer_name or "").strip() or None,
+            "signer_name": signer_name,
             "updated_at": _now_iso(),
         }},
     )
-    return {"ok": True}
+    updated = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
+    return {"ok": True, "agreement": updated}
 
 
 
