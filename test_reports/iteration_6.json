@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 6 review: (A) onboarding reduced to 2 items (business_info + smart_card) — backend pytest 8/8 PASS. (B) Tour system with TourButton + react-joyride v3.1.0 on 10 pages — buttons render correctly with data-testid='tour-btn-<key>' on every page; tooltips render Spanish content, spotlight + Atrás/Siguiente/¡Listo! all functional; main page buttons remain clickable after tour close (no overlay regression). 8/10 tours complete fully end-to-end. Two issues: (1) react-joyride v3.1.0 IGNORES disableBeacon:true on step 0 — beacon appears first and user must click it to reveal the tooltip; (2) tours 'messages' and 'scope' target conditional UI elements (msg-copy, scope-copy) that only exist after the user generates a message/scope, so those final steps silently break.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TourButton (react-joyride v3.1.0)", "issue": "disableBeacon:true on first step is NOT honored — beacon is rendered for the very first step of every tour, forcing the user to click the pulsing dot before the tooltip appears. Confirmed across all 10 tours (dashboard, clients, quotes, invoices, agreements, jobs, calendar, card, messages, scope).", "selector": "button.react-joyride__beacon", "priority": "MEDIUM"},
+      {"component": "TourButton tooltip", "issue": "'Saltar tour' button is not rendered as a visible text button despite showSkipButton=true and locale.skip='Saltar tour'. Only the ✕ close icon is present in the tooltip. Users CAN close via ✕, but the localized 'Saltar tour' label requested in the spec is missing.", "selector": "#react-joyride-portal button", "priority": "MEDIUM"},
+      {"component": "Messages tour (lib/tours.js)", "issue": "Step 4 targets data-testid='msg-copy' which only exists AFTER the user clicks 'Generar' and the AI returns a message. With no generated message, the last tour step silently breaks (no tooltip, no ¡Listo!). steps_seen=4 but listo_clicked=false.", "selector": "[data-testid=\"msg-copy\"]", "priority": "MEDIUM"},
+      {"component": "Scope tour (lib/tours.js)", "issue": "Step 3 targets data-testid='scope-copy' which only exists after a scope is generated. Same silent-break behavior as messages tour. steps_seen=3 but listo_clicked=false.", "selector": "[data-testid=\"scope-copy\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tour_validation_matrix": {
+    "dashboard":  {"steps": "6/6", "listo": true, "main_btn_after": true},
+    "clients":    {"steps": "2/2", "listo": true, "main_btn_after": true},
+    "quotes":     {"steps": "3/3", "listo": true, "main_btn_after": true},
+    "invoices":   {"steps": "2/2", "listo": true, "main_btn_after": true},
+    "agreements": {"steps": "3/3", "listo": true, "main_btn_after": true},
+    "jobs":       {"steps": "2/2", "listo": true, "main_btn_after": true},
+    "calendar":   {"steps": "3/3", "listo": true, "main_btn_after": true},
+    "card":       {"steps": "5/5", "listo": true, "main_btn_after": true},
+    "messages":   {"steps": "4/4", "listo": false, "main_btn_after": true, "note": "msg-copy target absent until generation"},
+    "scope":      {"steps": "3/3", "listo": false, "main_btn_after": true, "note": "scope-copy target absent until generation"}
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_onboarding.py",
+    "/app/test_reports/pytest/onboarding_iter6_results.xml"
+  ],
+  "action_items": [
+    "Force the first tooltip to render without beacon. In TourButton.js pass disableBeacon at the top-level <Joyride disableBeacon /> prop (component-level), not just per-step — react-joyride v3 reads disableBeacon from joyride props at startup. Alternatively, programmatically advance past beacon by setting stepIndex when starting the tour.",
+    "Render 'Saltar tour' visibly: in v3, the skip button is hidden when buttonSkip styles don't include explicit display/padding. Add buttonSkip: { display: 'inline-flex', padding: '6px 10px' } to tourStyles, or check that locale.skip is being passed (it is). Verify with showSkipButton at the Joyride root level (it is, line 91 of TourButton.js).",
+    "For 'messages' and 'scope' tours: either (a) remove the final step that depends on a conditional element, (b) seed a sample/placeholder element with the target testid that's always present, or (c) split the tour into 'before generation' and 'after generation' so the steps shown match what is on screen."
+  ],
+  "critical_code_review_comments": [
+    "TourButton.js renders <Joyride> on EVERY page even when run=false, instantiating a portal listener on every navigation. Cheap, but lazy mounting (only mount when run becomes true) would be cleaner.",
+    "lib/tours.js uses placement:'center' with target:'body' as filler for steps that have no specific anchor (clients[1], quotes[2], invoices[1], agreements[1], agreements[2], jobs[1], calendar[2], card[4]). This is fine but a step that anchors to body provides no spotlight value. Consider styling these as 'tip' steps with no overlay tint.",
+    "Tour step content in lib/tours.js is hard-coded Spanish. If you later add i18n, factor this into translation strings rather than inline literals.",
+    "No analytics callback is wired — would be valuable to know which tours users complete vs skip. Hook into handleCallback (already in TourButton.js) to fire a backend event on STATUS.FINISHED / STATUS.SKIPPED."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (8/8 onboarding tests)",
+    "frontend": "80% (8/10 tours complete end-to-end; 2 break on conditional final-step target)"
+  },
+  "test_credentials": "Super Admin: pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None — purely UI tour validation, no data created or modified.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Tour overlay class names in react-joyride v3.1.0: floater wrapper = '.react-joyride__floater', tooltip body lives in '#react-joyride-portal', beacon button = 'button.react-joyride__beacon' (data-test-id='button-beacon'). To open a tour in Playwright you MUST click the beacon FIRST (disableBeacon:true is ignored). Buttons inside tooltip are queried via '#react-joyride-portal button' with text 'Siguiente' / 'Atrás' / '¡Listo!' / '' (last empty is ✕ close). After ¡Listo! or ✕, the portal still leaves a small style+empty div behind (children<=3). Backend onboarding test file is canonical at /app/backend/tests/test_onboarding.py; do not regenerate.",
+  "rca of the issue": "react-joyride v3.x changed disableBeacon semantics — per-step disableBeacon flag is only respected when there is no preceding step OR when the Joyride root-level disableBeacon prop is also set. Setting it once at root or programmatically advancing past the beacon resolves the UX hiccup. For 'Saltar tour' missing: the styles object overrides default skip-button display; explicit display:'inline-flex' restores it. For messages/scope tours breaking: spec listed steps targeting elements that are conditionally rendered (msg-copy, scope-copy appear only after AI generation) — author needs to align tour steps with always-present DOM nodes."
+}

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import StatusBadge, { JOB_STATUSES } from "@/components/StatusBadge";
 import { Plus, Briefcase, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 const labelFor = (s) => ({
   new_lead: "Nuevo Lead", estimate_sent: "Quote enviado", approved: "Aprobado",
@@ -66,9 +67,12 @@ export default function Jobs() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Trabajos</h1>
           <p className="text-slate-500 mt-1">{jobs.length} en total</p>
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-job-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5">
-          <Plus className="w-4 h-4 mr-1" /> Nuevo
-        </Button>
+        <div className="flex items-center gap-2">
+          <TourButton tourKey="jobs" />
+          <Button onClick={() => setOpen(true)} data-testid="new-job-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5">
+            <Plus className="w-4 h-4 mr-1" /> Nuevo
+          </Button>
+        </div>
       </div>
 
       {jobs.length === 0 ? (

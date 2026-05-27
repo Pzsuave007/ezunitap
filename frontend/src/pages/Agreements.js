@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileSignature, Plus, ChevronRight, Trash2, CheckCircle2, Clock, FileX } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 const STATUSES = ["draft", "sent", "signed", "declined"];
 const STATUS_LABEL = { draft: "Borrador", sent: "Enviado", signed: "Firmado", declined: "Rechazado" };
@@ -57,13 +58,16 @@ export default function Agreements() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Contratos</h1>
           <p className="text-slate-500 mt-1">{list.length} en total · firmas digitales legalmente vinculantes</p>
         </div>
-        <Button
-          data-testid="new-agreement-btn"
-          onClick={() => navigate("/contratos/nuevo")}
-          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Nuevo con AI
-        </Button>
+        <div className="flex items-center gap-2">
+          <TourButton tourKey="agreements" />
+          <Button
+            data-testid="new-agreement-btn"
+            onClick={() => navigate("/contratos/nuevo")}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Nuevo con AI
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">

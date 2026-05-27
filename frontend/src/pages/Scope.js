@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 export default function Scope() {
   const [description, setDescription] = useState("");
@@ -50,11 +51,14 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Sparkles className="w-7 h-7 text-emerald-600" /> Scope of Work AI
-        </h1>
-        <p className="text-slate-500 mt-1">Genera un scope profesional en inglés desde tu descripción en español.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Sparkles className="w-7 h-7 text-emerald-600" /> Scope of Work AI
+          </h1>
+          <p className="text-slate-500 mt-1">Genera un scope profesional en inglés desde tu descripción en español.</p>
+        </div>
+        <TourButton tourKey="scope" />
       </div>
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">

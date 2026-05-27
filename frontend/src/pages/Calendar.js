@@ -19,6 +19,7 @@ import {
   Phone, MessageCircle, Repeat, Briefcase, ListChecks, Pencil, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 const VIEWS = [
   { key: "day", label: "Hoy" },
@@ -232,9 +233,12 @@ export default function Calendar() {
             )}
           </p>
         </div>
-        <Button data-testid="new-event-btn" onClick={() => startNew()} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11 px-4">
-          <Plus className="w-4 h-4 mr-1" /> Nuevo
-        </Button>
+        <div className="flex items-center gap-2">
+          <TourButton tourKey="calendar" />
+          <Button data-testid="new-event-btn" onClick={() => startNew()} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11 px-4">
+            <Plus className="w-4 h-4 mr-1" /> Nuevo
+          </Button>
+        </div>
       </div>
 
       {/* View switcher */}

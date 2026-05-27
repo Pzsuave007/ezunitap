@@ -12,6 +12,7 @@ import {
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
+import TourButton from "@/components/TourButton";
 
 const StatCard = ({ icon: Icon, label, value, accent, testid }) => (
   <Card data-testid={testid} className="card-elevated p-4 lg:p-5 border-0 shadow-none">
@@ -104,6 +105,10 @@ export default function Dashboard() {
         >
           <SettingsIcon className="w-5 h-5" />
         </button>
+      </div>
+
+      <div className="flex justify-end -mt-3">
+        <TourButton tourKey="dashboard" />
       </div>
 
       {/* Quick Actions */}

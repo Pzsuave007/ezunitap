@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge, { INVOICE_STATUSES } from "@/components/StatusBadge";
 import { ChevronRight, Plus, Receipt } from "lucide-react";
+import TourButton from "@/components/TourButton";
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -32,13 +33,16 @@ export default function Invoices() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Invoices</h1>
           <p className="text-slate-500 mt-1">{invoices.length} en total</p>
         </div>
-        <Button
-          data-testid="new-invoice-btn"
-          onClick={() => navigate("/invoices/nuevo")}
-          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Nuevo
-        </Button>
+        <div className="flex items-center gap-2">
+          <TourButton tourKey="invoices" />
+          <Button
+            data-testid="new-invoice-btn"
+            onClick={() => navigate("/invoices/nuevo")}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Nuevo
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">

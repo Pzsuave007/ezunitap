@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import StatusBadge, { QUOTE_STATUSES } from "@/components/StatusBadge";
 import { Sparkles, ChevronRight, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 export default function Quotes() {
   const navigate = useNavigate();
@@ -44,13 +45,16 @@ export default function Quotes() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Quotes</h1>
           <p className="text-slate-500 mt-1">{quotes.length} en total</p>
         </div>
-        <Button
-          data-testid="new-quote-btn"
-          onClick={() => navigate("/quotes/nuevo?ai=1")}
-          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
-        >
-          <Sparkles className="w-4 h-4 mr-1" /> Nuevo con AI
-        </Button>
+        <div className="flex items-center gap-2">
+          <TourButton tourKey="quotes" />
+          <Button
+            data-testid="new-quote-btn"
+            onClick={() => navigate("/quotes/nuevo?ai=1")}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
+          >
+            <Sparkles className="w-4 h-4 mr-1" /> Nuevo con AI
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">

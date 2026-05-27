@@ -20,6 +20,7 @@ import {
   Sprout, Hammer, PaintBucket, Wind, Wrench, Home,
 } from "lucide-react";
 import { toast } from "sonner";
+import TourButton from "@/components/TourButton";
 
 const SERVICE_TEMPLATES = [
   { name: "Roofing", icon: "🏠", description: "Repairs, replacements, inspections." },
@@ -104,11 +105,14 @@ export default function CardAdmin() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-          <IdCard className="w-7 h-7 text-emerald-600" /> Tarjeta Inteligente
-        </h1>
-        <p className="text-slate-500 mt-1">Tu mini-sitio profesional que captura leads automáticamente.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
+            <IdCard className="w-7 h-7 text-emerald-600" /> Tarjeta Inteligente
+          </h1>
+          <p className="text-slate-500 mt-1">Tu mini-sitio profesional que captura leads automáticamente.</p>
+        </div>
+        <TourButton tourKey="card" />
       </div>
 
       {/* Quick share strip */}
