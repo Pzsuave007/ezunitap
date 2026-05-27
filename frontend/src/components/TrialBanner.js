@@ -31,9 +31,11 @@ export default function TrialBanner() {
   if (!user) return null;
   if (dismissed) return null;
   if (HIDE_ON_PATHS.includes(location.pathname)) return null;
+  // Comp (complimentary) users are not in trial — hide the banner.
+  if (user.is_comp) return null;
+  // Paid users — hide.
+  if (user.subscription_status === "active" || user.subscription_status === "past_due") return null;
   const status = user.subscription_status;
-  // Show only for trialing users WITHOUT a paid subscription. If they're
-  // already active/past_due (paid), hide.
   if (status === "active" || status === "past_due") return null;
   if (!status) return null; // no trial set up either
 
