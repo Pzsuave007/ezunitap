@@ -1,0 +1,34 @@
+{
+  "summary": "End-to-end testing of the new AI Service Agreement feature. Backend pytest suite (10 tests) passes 100% covering AI generation with all required section keys, CRUD with SA-XXXX numbering and user scoping, public unauth fetch, public sign for both 'button' and 'drawn' methods (with validation that 'drawn' requires a data:image/ payload, invalid methods are rejected, and a signed agreement cannot be re-signed), and the auto-create-on-quote-approval trigger including idempotency (no duplicate on re-approval). Frontend Playwright run validated: sidebar 'Contratos' entry navigates to /contratos, all 5 filters render, new-agreement-btn opens /contratos/nuevo, the AI builder generates the live preview (~10s), agreement-save-btn creates the doc and navigates to /contratos/:id where copy-link-btn and mark-sent-btn are visible, and the public /p/agreement/:id page exposes both 'choose-drawn' and 'choose-button' with a signer-name-input, and the 'I Accept' flow shows the green 'public-signed-block' (Agreement Signed) after submit.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_agreements.py",
+    "/app/test_reports/pytest/agreements_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now 2132 lines — should be split into routers/modules (agreements, cards, onboarding, etc.) for maintainability.",
+    "PublicSignRequest does not require signer_name; agreements can be signed with an empty signer. Consider requiring a non-empty signer_name on the backend (frontend already enforces it).",
+    "Auto-agreement creation on quote approval runs synchronously inside the status endpoint (5–15s blocking call to GPT-5.2). Consider moving to a BackgroundTask so the quote status response returns immediately.",
+    "public_sign_agreement returns only {ok: true}; returning the updated agreement (or at least signed_at) would help the frontend without an extra fetch.",
+    "ai/agreement endpoint has no input length / rate limiting — long description_es payloads will be passed straight to the LLM."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_agreements.py"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% of executed flows"},
+  "test_credentials": "Super Admin: pzsuave007@gmail.com / Uni2mkt007! (the account had 0 clients/quotes in DB at test time despite the request note — created a TEST_ client via API to drive the FE builder flow; cleaned up afterward).",
+  "seed_data_creation": "Created (and deleted at end): TEST_FE_Client_AgreementUI client + the agreement it produced; pytest fixtures created and cleaned up additional TEST_ clients/agreements/quote.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Service Agreements feature is fully functional end-to-end. Backend: /api/agreements CRUD, /api/ai/agreement, /api/public/agreements/:id (GET + sign), and auto-create on /api/quotes/:id/status?status=approved (idempotent) all verified. Frontend testids in use: new-agreement-btn, filter-{all|draft|sent|signed|declined}, agreement-row-*, delete-agreement-*, agreement-client-select, agreement-description, agreement-total, agreement-deposit, agreement-generate-btn, agreement-preview, agreement-save-btn, copy-link-btn, mark-sent-btn, choose-drawn, choose-button, signature-pad-canvas, signer-name-input, submit-drawn, submit-button, public-signed-block. Note: super admin DB starts with 0 clients — seed a client first when re-running FE tests.",
+  "rca of the issue": "N/A — no functional issues found."
+}

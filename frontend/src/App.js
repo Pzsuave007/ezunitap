@@ -22,6 +22,10 @@ import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
 import Landing from "@/pages/Landing";
 import AdminLeads from "@/pages/AdminLeads";
+import Agreements from "@/pages/Agreements";
+import AgreementBuilder from "@/pages/AgreementBuilder";
+import AgreementDetail from "@/pages/AgreementDetail";
+import PublicAgreement from "@/pages/PublicAgreement";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -64,6 +68,7 @@ function App() {
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
+            <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/c/:slug" element={<SmartCard />} />
 
             <Route element={<HomeOrAuth />}>
@@ -76,6 +81,9 @@ function App() {
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/invoices/nuevo" element={<InvoiceDetail />} />
               <Route path="/invoices/:id" element={<InvoiceDetail />} />
+              <Route path="/contratos" element={<Agreements />} />
+              <Route path="/contratos/nuevo" element={<AgreementBuilder />} />
+              <Route path="/contratos/:id" element={<AgreementDetail />} />
               <Route path="/trabajos" element={<Jobs />} />
               <Route path="/calendario" element={<Calendar />} />
               <Route path="/tarjeta" element={<CardAdmin />} />

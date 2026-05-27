@@ -320,3 +320,63 @@ async def unitap_assistant_chat(
             await chat.send_message(UserMessage(text=content))
     response = await chat.send_message(UserMessage(text=user_message))
     return (response or "").strip()
+
+
+# ============================================================================
+# Service Agreement Generator (legal-style contract in English)
+# ============================================================================
+AGREEMENT_SYSTEM = """You are a paralegal-grade assistant for U.S. service contractors.
+You produce a customer-ready Service Agreement in ENGLISH based on a brief Spanish description
+from a Latino business owner. The agreement must read as a clean, plain-English legal document
+appropriate for U.S. residential / small commercial clients.
+
+Output ONLY valid JSON with this exact schema (no markdown, no commentary):
+{
+  "title": "Service Agreement — <Service Type>",
+  "preamble": "1-2 sentence opener naming both parties and effective date language.",
+  "services_included": ["specific bullet 1", "specific bullet 2", "..."],
+  "services_excluded": ["clear out-of-scope item 1", "..."],
+  "schedule": "Brief paragraph: timeline, start/end, recurrence if any.",
+  "pricing": "Plain-English pricing summary: total, deposit, payment schedule, accepted methods.",
+  "payment_terms": "Late fee policy, NSF fee policy, when payment is due.",
+  "cancellation_policy": "Notice required, refund logic, no-show fees.",
+  "client_responsibilities": ["water access", "clear work area", "..."],
+  "warranty": "Plain-English warranty / guarantee language.",
+  "liability_and_indemnity": "Plain-English liability limitation + indemnification clause. NOT legal advice — practical contractor protection.",
+  "insurance_statement": "1 sentence: contractor carries general liability insurance (placeholder amount if not provided).",
+  "change_orders": "Any changes to scope require written approval and may incur additional charges.",
+  "dispute_resolution": "Mediation / small claims / governing law clause.",
+  "signatures_note": "Reminder that both parties sign electronically below.",
+  "industry_specific_clauses": ["Any clauses specific to the trade described — e.g. for lawn care: 'sprinkler heads visible to be flagged by client'; for painting: 'lead-safe practices for pre-1978 homes'."]
+}
+
+Rules:
+- ALL client-facing strings MUST be in English.
+- Use the contractor's business name and the client's name where appropriate (placeholders {{BUSINESS_NAME}} and {{CLIENT_NAME}} are acceptable if not supplied).
+- Stay plain-English. No "WHEREAS" or "HEREINAFTER" jargon.
+- This is NOT a substitute for legal advice; do NOT make any disclaimer beyond what's in the JSON.
+- Adapt clauses to the trade implied by the description. (Lawn care, cleaning, painting, plumbing, electrical, handyman, HVAC, etc.)
+- Return ONLY the JSON, nothing else.
+"""
+
+
+async def generate_service_agreement(
+    description_es: str,
+    business_name: str = "",
+    client_name: str = "",
+    total: float = 0,
+    deposit: float = 0,
+) -> dict:
+    chat = _new_chat(AGREEMENT_SYSTEM)
+    ctx = (
+        f"Business name: {business_name or '(not provided)'}\n"
+        f"Client name: {client_name or '(not provided)'}\n"
+        f"Project total (USD): {total or 'not specified'}\n"
+        f"Deposit (USD): {deposit or 'not specified'}\n"
+        f"Service description (Spanish):\n{description_es}"
+    )
+    response = await chat.send_message(UserMessage(text=ctx))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not produce a valid service agreement. Try again.")
+    return data

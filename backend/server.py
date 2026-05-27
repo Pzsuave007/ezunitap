@@ -173,6 +173,31 @@ class AIPhotoRequest(BaseModel):
     extra_note_es: Optional[str] = ""
 
 
+class AIAgreementRequest(BaseModel):
+    description_es: str
+    client_id: Optional[str] = None
+    quote_id: Optional[str] = None
+    total: Optional[float] = 0
+    deposit: Optional[float] = 0
+
+
+class AgreementIn(BaseModel):
+    client_id: str
+    quote_id: Optional[str] = None
+    title: str
+    description_es: Optional[str] = ""
+    sections: dict = {}  # AI-generated structured content
+    total: float = 0
+    deposit: float = 0
+    status: str = "draft"  # draft, sent, signed, declined
+    # Signature fields (set when client signs publicly)
+    signed_at: Optional[str] = None
+    signed_method: Optional[str] = None  # "drawn" | "button"
+    signature_image: Optional[str] = None  # base64 data URL
+    signer_name: Optional[str] = None
+    signer_ip: Optional[str] = None
+
+
 class ReminderIn(BaseModel):
     title: str
     type: str  # quote_follow_up, invoice_payment, job_scheduled, review_request
@@ -508,6 +533,30 @@ async def set_quote_status(quote_id: str, status: str, user_id: str = Depends(ge
         {"$set": {"status": status, "updated_at": _now_iso()}},
     )
     doc = await db.quotes.find_one({"id": quote_id, "user_id": user_id}, {"_id": 0})
+    # Auto-create a Service Agreement when quote moves to "approved" (only once per quote)
+    if doc and status == "approved":
+        existing = await db.agreements.find_one(
+            {"user_id": user_id, "quote_id": quote_id}, {"_id": 0, "id": 1}
+        )
+        if not existing:
+            try:
+                desc_parts = [doc.get("job_title", "")]
+                if doc.get("description"):
+                    desc_parts.append(doc["description"])
+                if doc.get("scope_of_work"):
+                    desc_parts.append("Scope: " + "; ".join(doc["scope_of_work"]))
+                description_es = "\n".join([p for p in desc_parts if p])
+                await _build_agreement_from_quote_and_desc(
+                    user_id=user_id,
+                    client_id=doc["client_id"],
+                    quote_id=quote_id,
+                    description_es=description_es,
+                    total=float(doc.get("total") or 0),
+                    deposit=float(doc.get("deposit_amount") or 0),
+                )
+            except Exception as e:
+                logger.exception(f"Auto-agreement on quote approval failed: {e}")
+                # Don't break status update on AI failure
     return doc
 
 
@@ -1759,6 +1808,182 @@ async def admin_delete_platform_lead(
 async def is_super_admin_check(user_id: str = Depends(get_current_user_id)):
     u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     return {"is_super_admin": bool(u) and _is_super_admin(u)}
+
+
+
+# ============================================================================
+# SERVICE AGREEMENTS — AI-generated contracts with digital signature
+# ============================================================================
+async def _build_agreement_from_quote_and_desc(
+    user_id: str,
+    client_id: str,
+    quote_id: Optional[str],
+    description_es: str,
+    total: float = 0,
+    deposit: float = 0,
+) -> dict:
+    """Generates AI agreement content + creates the DB doc. Returns the doc (no _id)."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    client_doc = await db.clients.find_one({"id": client_id, "user_id": user_id}, {"_id": 0}) or {}
+    business_name = user.get("business_name") or user.get("owner_name") or ""
+    client_name = client_doc.get("name") or ""
+    sections = await ai_service.generate_service_agreement(
+        description_es=description_es or "",
+        business_name=business_name,
+        client_name=client_name,
+        total=total,
+        deposit=deposit,
+    )
+    count = await db.agreements.count_documents({"user_id": user_id})
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "number": f"SA-{3000 + count + 1}",
+        "client_id": client_id,
+        "quote_id": quote_id,
+        "title": sections.get("title") or "Service Agreement",
+        "description_es": description_es or "",
+        "sections": sections,
+        "total": float(total or 0),
+        "deposit": float(deposit or 0),
+        "status": "draft",
+        "signed_at": None,
+        "signed_method": None,
+        "signature_image": None,
+        "signer_name": None,
+        "signer_ip": None,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.agreements.insert_one(doc)
+    return _strip_id(doc)
+
+
+@api_router.post("/ai/agreement")
+async def ai_generate_agreement(payload: AIAgreementRequest, user_id: str = Depends(get_current_user_id)):
+    """Generate agreement content only (no DB write). Used by the create form for live preview."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    business_name = user.get("business_name") or user.get("owner_name") or ""
+    client_name = ""
+    if payload.client_id:
+        c = await db.clients.find_one({"id": payload.client_id, "user_id": user_id}, {"_id": 0}) or {}
+        client_name = c.get("name") or ""
+    try:
+        sections = await ai_service.generate_service_agreement(
+            description_es=payload.description_es,
+            business_name=business_name,
+            client_name=client_name,
+            total=payload.total or 0,
+            deposit=payload.deposit or 0,
+        )
+    except Exception as e:
+        logger.exception("AI agreement failed")
+        raise HTTPException(500, f"AI error: {e}")
+    return sections
+
+
+@api_router.get("/agreements")
+async def list_agreements(user_id: str = Depends(get_current_user_id), status: Optional[str] = None):
+    q = {"user_id": user_id}
+    if status:
+        q["status"] = status
+    docs = await db.agreements.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return docs
+
+
+@api_router.post("/agreements")
+async def create_agreement(payload: AgreementIn, user_id: str = Depends(get_current_user_id)):
+    count = await db.agreements.count_documents({"user_id": user_id})
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "number": f"SA-{3000 + count + 1}",
+        **payload.model_dump(),
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.agreements.insert_one(doc)
+    return _strip_id(doc)
+
+
+@api_router.get("/agreements/{agreement_id}")
+async def get_agreement(agreement_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.agreements.find_one({"id": agreement_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Contrato no encontrado")
+    return doc
+
+
+@api_router.put("/agreements/{agreement_id}")
+async def update_agreement(agreement_id: str, payload: AgreementIn, user_id: str = Depends(get_current_user_id)):
+    await db.agreements.update_one(
+        {"id": agreement_id, "user_id": user_id},
+        {"$set": {**payload.model_dump(), "updated_at": _now_iso()}},
+    )
+    doc = await db.agreements.find_one({"id": agreement_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Contrato no encontrado")
+    return doc
+
+
+@api_router.delete("/agreements/{agreement_id}")
+async def delete_agreement(agreement_id: str, user_id: str = Depends(get_current_user_id)):
+    await db.agreements.delete_one({"id": agreement_id, "user_id": user_id})
+    return {"ok": True}
+
+
+# Public (no auth) — client receives a link and signs
+@api_router.get("/public/agreements/{agreement_id}")
+async def public_get_agreement(agreement_id: str):
+    a = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
+    if not a:
+        raise HTTPException(404, "Not found")
+    user = await db.users.find_one({"id": a["user_id"]}, {"_id": 0, "password_hash": 0}) or {}
+    client_doc = await db.clients.find_one({"id": a["client_id"]}, {"_id": 0}) or {}
+    business = {
+        "business_name": user.get("business_name", ""),
+        "business_email": user.get("business_email", "") or user.get("email", ""),
+        "phone": user.get("phone", ""),
+        "business_address": user.get("business_address", ""),
+    }
+    client = {
+        "name": client_doc.get("name", ""),
+        "email": client_doc.get("email", ""),
+        "phone": client_doc.get("phone", ""),
+        "address": client_doc.get("address", ""),
+    }
+    return {"agreement": a, "business": business, "client": client}
+
+
+class PublicSignRequest(BaseModel):
+    method: str = "button"  # "button" | "drawn"
+    signature_image: Optional[str] = None  # required when method == "drawn" (data URL)
+    signer_name: Optional[str] = None
+
+
+@api_router.post("/public/agreements/{agreement_id}/sign")
+async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
+    a = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
+    if not a:
+        raise HTTPException(404, "Not found")
+    if a.get("status") == "signed":
+        raise HTTPException(400, "Este contrato ya fue firmado.")
+    if payload.method not in {"button", "drawn"}:
+        raise HTTPException(400, "Método de firma inválido")
+    if payload.method == "drawn" and not (payload.signature_image and payload.signature_image.startswith("data:image/")):
+        raise HTTPException(400, "Firma requerida")
+    await db.agreements.update_one(
+        {"id": agreement_id},
+        {"$set": {
+            "status": "signed",
+            "signed_at": _now_iso(),
+            "signed_method": payload.method,
+            "signature_image": payload.signature_image if payload.method == "drawn" else None,
+            "signer_name": (payload.signer_name or "").strip() or None,
+            "updated_at": _now_iso(),
+        }},
+    )
+    return {"ok": True}
 
 
 
