@@ -25,20 +25,23 @@ const KIND_LABELS = {
   quote: {
     title: "Mandar Quote",
     description: "Envía el quote al cliente para que lo revise y lo acepte.",
-    short: "tu quote",
     cta: "Quote",
+    enShort: "your quote",
+    enAction: "Please review and let me know if you have any questions",
   },
   agreement: {
     title: "Mandar Contrato",
     description: "Envía el contrato al cliente para que lo firme.",
-    short: "tu contrato",
-    cta: "Contrato",
+    cta: "Service Agreement",
+    enShort: "your service agreement",
+    enAction: "Please review and sign at the link below",
   },
   invoice: {
     title: "Mandar Invoice",
     description: "Envía el invoice al cliente para que vea el monto a pagar.",
-    short: "tu invoice",
     cta: "Invoice",
+    enShort: "your invoice",
+    enAction: "You can review, download, or print it from the link below",
   },
 };
 
@@ -66,19 +69,23 @@ export default function SendDocumentDialog({
   const phone = cleanPhone(client?.phone);
   const email = client?.email || "";
 
+  // Client-facing message — ALWAYS in English (the app UI is in Spanish
+  // but all customer communication must be in English).
   const message = useMemo(() => {
-    const greet = clientName ? `Hola ${clientName.split(" ")[0]},` : "¡Hola!";
-    const job = jobTitle ? ` para ${jobTitle}` : "";
+    const firstName = clientName ? clientName.split(" ")[0] : "";
+    const greet = firstName ? `Hi ${firstName},` : "Hi,";
+    const job = jobTitle ? ` for ${jobTitle}` : "";
     const biz = businessName ? `\n\n— ${businessName}` : "";
-    return `${greet}\n\nTe mando ${meta.short}${job}. Por favor revísalo y avísame si tienes alguna pregunta:\n\n${publicUrl}${biz}`;
-  }, [clientName, jobTitle, businessName, meta.short, publicUrl]);
+    return `${greet}\n\nHere is ${meta.enShort}${job}. ${meta.enAction}:\n\n${publicUrl}${biz}`;
+  }, [clientName, jobTitle, businessName, meta.enShort, meta.enAction, publicUrl]);
 
   const messageShort = useMemo(() => {
-    const greet = clientName ? `Hola ${clientName.split(" ")[0]},` : "¡Hola!";
-    return `${greet} aquí está ${meta.short}: ${publicUrl}`;
-  }, [clientName, meta.short, publicUrl]);
+    const firstName = clientName ? clientName.split(" ")[0] : "";
+    const greet = firstName ? `Hi ${firstName},` : "Hi,";
+    return `${greet} here is ${meta.enShort}: ${publicUrl}`;
+  }, [clientName, meta.enShort, publicUrl]);
 
-  const emailSubject = `${meta.cta}${jobTitle ? ` - ${jobTitle}` : ""}${businessName ? ` (${businessName})` : ""}`;
+  const emailSubject = `${meta.cta}${jobTitle ? ` - ${jobTitle}` : ""}${businessName ? ` from ${businessName}` : ""}`;
 
   const openWhatsApp = () => {
     const text = encodeURIComponent(message);
@@ -199,7 +206,7 @@ export default function SendDocumentDialog({
 
           <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
             <div className="font-semibold text-slate-600 mb-1">
-              Mensaje pre-llenado:
+              Mensaje (en inglés, listo para mandar):
             </div>
             <div className="text-slate-500 whitespace-pre-line">{message}</div>
           </div>
