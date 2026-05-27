@@ -92,7 +92,6 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
         showProgress
         showSkipButton
         scrollToFirstStep
-        scrollOffset={140}
         disableScrolling={false}
         spotlightClicks={false}
         disableBeacon
