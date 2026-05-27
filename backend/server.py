@@ -2200,15 +2200,16 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
         raise HTTPException(400, "Nombre del firmante requerido")
     if payload.method == "drawn" and not (payload.signature_image and payload.signature_image.startswith("data:image/")):
         raise HTTPException(400, "Firma requerida")
+    signed_at_iso = _now_iso()
     await db.agreements.update_one(
         {"id": agreement_id},
         {"$set": {
             "status": "signed",
-            "signed_at": _now_iso(),
+            "signed_at": signed_at_iso,
             "signed_method": payload.method,
             "signature_image": payload.signature_image if payload.method == "drawn" else None,
             "signer_name": signer_name,
-            "updated_at": _now_iso(),
+            "updated_at": signed_at_iso,
         }},
     )
     # Auto-create a draft invoice from the linked quote (if any) — idempotent.
@@ -2255,8 +2256,8 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
                             "title": a.get("title", ""),
                             "sections": a.get("sections", {}),
                             "deposit": float(a.get("deposit") or 0),
-                            "signer_name": a.get("signer_name", ""),
-                            "signed_at": a.get("signed_at"),
+                            "signer_name": signer_name,
+                            "signed_at": signed_at_iso,
                         },
                         "status": "draft",
                         "created_at": _now_iso(),
