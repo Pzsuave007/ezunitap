@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, File, Header, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, File, Header, HTTPException, Query, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
@@ -611,10 +611,10 @@ async def public_quote(quote_id: str):
 
 
 # Public quote acceptance (no auth) — client clicks "Accept this Quote" from the share link.
-# Marks the quote as approved (which triggers auto-agreement creation via the same logic
-# used in the authenticated set_quote_status endpoint).
+# Marks the quote as approved instantly and schedules agreement creation in the background
+# so the client gets immediate feedback (the contractor reviews/sends the agreement later).
 @api_router.post("/public/quotes/{quote_id}/accept")
-async def public_accept_quote(quote_id: str):
+async def public_accept_quote(quote_id: str, background_tasks: BackgroundTasks):
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
         raise HTTPException(404, "Not found")
@@ -626,30 +626,34 @@ async def public_accept_quote(quote_id: str):
         {"id": quote_id},
         {"$set": {"status": "approved", "approved_at": _now_iso(), "updated_at": _now_iso()}},
     )
-    # Auto-create the service agreement (same trigger as set_quote_status)
+    # Schedule auto-agreement creation in the background — the client doesn't wait for AI.
     existing = await db.agreements.find_one(
         {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
     )
     if not existing:
-        try:
-            desc_parts = [q.get("job_title", "")]
-            if q.get("description"):
-                desc_parts.append(q["description"])
-            if q.get("scope_of_work"):
-                desc_parts.append("Scope: " + "; ".join(q["scope_of_work"]))
-            description_es = "\n".join([p for p in desc_parts if p])
-            await _build_agreement_from_quote_and_desc(
-                user_id=q["user_id"],
-                client_id=q["client_id"],
-                quote_id=quote_id,
-                description_es=description_es,
-                total=float(q.get("total") or 0),
-                deposit=float(q.get("deposit_amount") or 0),
-            )
-        except Exception as e:
-            logger.exception(f"Auto-agreement on public accept failed: {e}")
-            # Don't break the acceptance on AI failure
+        background_tasks.add_task(_auto_create_agreement_from_quote, q)
     return {"ok": True}
+
+
+async def _auto_create_agreement_from_quote(quote: dict):
+    """Background task: builds the AI agreement after a quote is approved."""
+    try:
+        desc_parts = [quote.get("job_title", "")]
+        if quote.get("description"):
+            desc_parts.append(quote["description"])
+        if quote.get("scope_of_work"):
+            desc_parts.append("Scope: " + "; ".join(quote["scope_of_work"]))
+        description_es = "\n".join([p for p in desc_parts if p])
+        await _build_agreement_from_quote_and_desc(
+            user_id=quote["user_id"],
+            client_id=quote["client_id"],
+            quote_id=quote["id"],
+            description_es=description_es,
+            total=float(quote.get("total") or 0),
+            deposit=float(quote.get("deposit_amount") or 0),
+        )
+    except Exception as e:
+        logger.exception(f"Background auto-agreement failed for quote {quote.get('id')}: {e}")
 
 
 # ============================================================================
