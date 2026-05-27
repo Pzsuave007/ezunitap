@@ -1,0 +1,27 @@
+{
+  "summary": "Validated the closing of the two automatic-flow gaps: (A) public quote acceptance with auto-agreement creation, and (B) auto-invoice (draft) creation on public agreement signing when a quote_id is linked. Backend: 8/8 pytest tests pass (test_public_accept_and_auto_invoice.py) covering happy path, idempotency, status rejections (declined/converted), 404 path, regression of auth /quotes/:id/status?status=approved (still creates SA-), auto-invoice on sign with line-items copied + quote_id + agreement_id, sign-twice rejection (no duplicate invoice), and no-invoice creation when agreement has no quote_id. Frontend E2E: full pipeline executed against the public URL — quote share link → Accept this Quote → confirm() auto-accepted → green Quote Accepted block → reload still shows Accepted block (no button) → auto-created agreement /p/agreement/:id → button-method sign → public-signed-block → draft invoice INV-#### auto-created with quote_id+agreement_id linkage. All TEST_ artifacts cleaned up.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_public_accept_and_auto_invoice.py",
+    "/app/test_reports/pytest/public_accept_invoice_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "public_accept_quote runs auto-agreement creation synchronously (AI call ~10–30s). The Accept button on /p/quote/:id therefore hangs in spinner state for the full duration before the green block appears. Consider moving the agreement build to a BackgroundTask and returning 202 immediately; the public page can poll or just display Accepted optimistically (status is already flipped at the start of the handler).",
+    "server.py is now 2214 lines — the iteration_4 recommendation to split into routers still stands; the new public_accept_quote and auto-invoice logic inside public_sign_agreement compound the bloat.",
+    "Auto-invoice block inside public_sign_agreement is ~30 lines of business logic embedded in an API handler. Extract to a `_build_invoice_from_quote(user_id, quote, agreement_id)` helper for testability and reuse.",
+    "Invoice numbering uses `INV-{2000 + count + 1}` where count = total invoices for the user. Concurrent signings for the same user could race and produce duplicate numbers — consider an atomic counter or unique index.",
+    "public_accept_quote silently swallows AI agreement failures (returns ok:true even if agreement was not created). UI then will never see the agreement. Acceptable for resilience, but log severity/alerting should ensure these failures are surfaced."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_public_accept_and_auto_invoice.py"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100% of executed flows"},
+  "test_credentials": "Super Admin: pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "Per-test TEST_ clients/quotes/agreements/invoices were created via fixtures and deleted in teardown. The E2E Playwright run also created and deleted: TEST_FE_AcceptClient_*, its quote, its auto-agreement, and its auto-invoice (INV-2003).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Closes loop on public client-side quote acceptance + auto-invoice on signing. Endpoints: POST /api/public/quotes/:id/accept (no auth) returns {ok:true} or {ok:true, already_approved:true}, rejects declined/converted (400) and missing (404). POST /api/public/agreements/:id/sign now also returns {ok:true, agreement:<updated>} and triggers a draft invoice with copied line_items when agreement.quote_id is set; idempotent via existing-invoice check on (user_id, quote_id). Frontend testids: accept-quote-btn, quote-accept-block, quote-accepted-block. NOTE: the public-accept handler is synchronous w/ AI (~10–30s) — use timeout >=60s when waiting for the green Quote Accepted block in Playwright.",
+  "rca of the issue": "N/A — all flows behave as designed. Sole UX caveat is the ~10–30s spinner during public quote accept due to synchronous AI agreement generation; recommendation captured in code-review comments."
+}

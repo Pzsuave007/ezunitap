@@ -610,6 +610,48 @@ async def public_quote(quote_id: str):
     return {"quote": q, "business": user, "client": client_doc}
 
 
+# Public quote acceptance (no auth) — client clicks "Accept this Quote" from the share link.
+# Marks the quote as approved (which triggers auto-agreement creation via the same logic
+# used in the authenticated set_quote_status endpoint).
+@api_router.post("/public/quotes/{quote_id}/accept")
+async def public_accept_quote(quote_id: str):
+    q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
+    if not q:
+        raise HTTPException(404, "Not found")
+    if q.get("status") == "approved":
+        return {"ok": True, "already_approved": True}
+    if q.get("status") in ("declined", "converted"):
+        raise HTTPException(400, "Quote no se puede aceptar en este estado")
+    await db.quotes.update_one(
+        {"id": quote_id},
+        {"$set": {"status": "approved", "approved_at": _now_iso(), "updated_at": _now_iso()}},
+    )
+    # Auto-create the service agreement (same trigger as set_quote_status)
+    existing = await db.agreements.find_one(
+        {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
+    )
+    if not existing:
+        try:
+            desc_parts = [q.get("job_title", "")]
+            if q.get("description"):
+                desc_parts.append(q["description"])
+            if q.get("scope_of_work"):
+                desc_parts.append("Scope: " + "; ".join(q["scope_of_work"]))
+            description_es = "\n".join([p for p in desc_parts if p])
+            await _build_agreement_from_quote_and_desc(
+                user_id=q["user_id"],
+                client_id=q["client_id"],
+                quote_id=quote_id,
+                description_es=description_es,
+                total=float(q.get("total") or 0),
+                deposit=float(q.get("deposit_amount") or 0),
+            )
+        except Exception as e:
+            logger.exception(f"Auto-agreement on public accept failed: {e}")
+            # Don't break the acceptance on AI failure
+    return {"ok": True}
+
+
 # ============================================================================
 # INVOICES CRUD
 # ============================================================================
@@ -1986,6 +2028,42 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
             "updated_at": _now_iso(),
         }},
     )
+    # Auto-create a draft invoice from the linked quote (if any) — idempotent.
+    if a.get("quote_id"):
+        existing_inv = await db.invoices.find_one(
+            {"user_id": a["user_id"], "quote_id": a["quote_id"]}, {"_id": 0, "id": 1}
+        )
+        if not existing_inv:
+            try:
+                q = await db.quotes.find_one(
+                    {"id": a["quote_id"], "user_id": a["user_id"]}, {"_id": 0}
+                )
+                if q:
+                    count = await db.invoices.count_documents({"user_id": a["user_id"]})
+                    inv = {
+                        "id": _new_id(),
+                        "user_id": a["user_id"],
+                        "number": f"INV-{2000 + count + 1}",
+                        "client_id": q["client_id"],
+                        "quote_id": q["id"],
+                        "agreement_id": agreement_id,
+                        "job_title": q.get("job_title", ""),
+                        "line_items": q.get("line_items", []),
+                        "subtotal": q.get("subtotal", 0),
+                        "tax_rate": q.get("tax_rate", 0),
+                        "tax_amount": q.get("tax_amount", 0),
+                        "total": q.get("total", 0),
+                        "amount_paid": 0,
+                        "due_date": None,
+                        "notes": q.get("notes", ""),
+                        "status": "draft",
+                        "created_at": _now_iso(),
+                        "updated_at": _now_iso(),
+                    }
+                    await db.invoices.insert_one(inv)
+            except Exception as e:
+                logger.exception(f"Auto-invoice on agreement sign failed: {e}")
+                # Don't break the signing on invoice failure
     updated = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
     return {"ok": True, "agreement": updated}
 

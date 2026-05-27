@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
-import { Loader2, Hammer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Hammer, CheckCircle2 } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -13,10 +14,32 @@ export default function PublicQuote() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API}/public/quotes/${id}`).then((r) => setData(r.data)).catch(() => setErr(true));
+    axios.get(`${API}/public/quotes/${id}`)
+      .then((r) => {
+        setData(r.data);
+        if (r.data?.quote?.status === "approved" || r.data?.quote?.status === "converted") {
+          setAccepted(true);
+        }
+      })
+      .catch(() => setErr(true));
   }, [id]);
+
+  const accept = async () => {
+    if (!window.confirm("By clicking Accept, you approve this quote and authorize the contractor to begin work. Continue?")) return;
+    setAccepting(true);
+    try {
+      await axios.post(`${API}/public/quotes/${id}/accept`);
+      setAccepted(true);
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Could not accept this quote. Please try again.");
+    } finally {
+      setAccepting(false);
+    }
+  };
 
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">Quote not found.</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
@@ -115,6 +138,35 @@ export default function PublicQuote() {
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Notes</div>
                 <div className="text-sm whitespace-pre-wrap">{quote.notes}</div>
+              </div>
+            )}
+
+            {/* Accept block */}
+            {accepted ? (
+              <div data-testid="quote-accepted-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-5 text-center">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
+                <div className="font-heading text-xl font-bold text-emerald-800">Quote Accepted</div>
+                <p className="text-sm text-emerald-700 mt-1">
+                  Thank you! {business?.business_name || "The contractor"} will follow up with a service agreement
+                  to sign and confirm the project details.
+                </p>
+              </div>
+            ) : (
+              <div data-testid="quote-accept-block" className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
+                <div className="text-center">
+                  <h3 className="font-heading text-lg font-bold text-slate-900">Ready to move forward?</h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Accepting this quote lets {business?.business_name || "the contractor"} prepare the service agreement.
+                  </p>
+                </div>
+                <Button
+                  data-testid="accept-quote-btn"
+                  onClick={accept}
+                  disabled={accepting}
+                  className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
+                >
+                  {accepting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5 mr-2" /> Accept this Quote</>}
+                </Button>
               </div>
             )}
           </div>
