@@ -1,0 +1,64 @@
+{
+  "summary": "Iter8 re-validation of Tours. CRITICAL BLOCKER discovered first: TourButton.js had `import Joyride, { STATUS } from 'react-joyride'` but react-joyride 3.1.0 exposes Joyride only as a NAMED export — frontend would not compile at all (webpack error visible as red 'Compiled with problems' overlay). Applied 1-line testing-agent fix: changed to `import { Joyride, STATUS }`. After that fix, ALL 10 tours walk end-to-end to '¡Listo!' (10/10, BEST result yet — iter6 was 8/10, iter7 was 0/10). The Messages/Scope target='body' fix is now CONFIRMED working: messages reaches step 4 ¡Listo! and scope reaches step 3 ¡Listo!. The iter7 regression (Siguiente closing tour prematurely) is FULLY RESOLVED. Two remaining non-blocking issues: (a) beacon still appears on step 0 of every tour despite root-level disableBeacon — spec said this is non-critical; (b) 'Saltar tour' text button still NOT rendered (only the ✕ Cerrar icon), the display:'inline-block' added to buttonSkip in tourStyles did not surface the skip button.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TourButton.js import statement",
+        "issue": "BLOCKER (now fixed by testing agent). `import Joyride, { STATUS } from 'react-joyride'` fails because react-joyride 3.1.0's package only exposes Joyride as a NAMED export (per dist/index.d.mts). Webpack overlay 'Compiled with problems' was visible on every page, app effectively unusable until import was fixed to `import { Joyride, STATUS } from 'react-joyride'`. Testing agent applied the fix to unblock validation.",
+        "selector": "n/a (compile-time)",
+        "priority": "CRITICAL-FIXED"
+      },
+      {
+        "component": "TourButton tooltip — Saltar tour label",
+        "issue": "Still NOT rendered as visible button. Portal buttons across all 10 tours are exactly: step0=['Siguiente','Cerrar'], stepN-1=['Atrás','¡Listo!','Cerrar'], middle=['Atrás','Siguiente','Cerrar']. 'Saltar tour' / [data-action='skip'] button is absent. The display:'inline-block' added to tourStyles.buttonSkip did not surface the button. Likely react-joyride v3.1.0 needs a different prop pattern (e.g., explicit visibility on buttonSkip, or hideCloseButton:false + locale.skip, or fontSize+lineHeight to avoid zero-height collapse).",
+        "selector": "#react-joyride-portal button[data-action='skip']",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "TourButton — beacon on step 0",
+        "issue": "Root-level <Joyride disableBeacon /> prop is NOT honored by react-joyride 3.1.0 — beacon (.react-joyride__beacon) is visible on the first step of every tour and user must click it once to reveal the tooltip. Per main agent spec this is acceptable ('beacon puede o no aparecer, no es crítico'). Documented for awareness.",
+        "selector": ".react-joyride__beacon",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tour_validation_matrix": {
+    "dashboard":  {"opened": true, "beacon_on_open": true, "steps_seen": 6, "expected_steps": 6, "listo": true, "skip_visible": false},
+    "clients":    {"opened": true, "beacon_on_open": true, "steps_seen": 2, "expected_steps": 2, "listo": true, "skip_visible": false},
+    "quotes":     {"opened": true, "beacon_on_open": true, "steps_seen": 3, "expected_steps": 3, "listo": true, "skip_visible": false},
+    "invoices":   {"opened": true, "beacon_on_open": true, "steps_seen": 2, "expected_steps": 2, "listo": true, "skip_visible": false},
+    "agreements": {"opened": true, "beacon_on_open": true, "steps_seen": 3, "expected_steps": 3, "listo": true, "skip_visible": false},
+    "jobs":       {"opened": true, "beacon_on_open": true, "steps_seen": 2, "expected_steps": 2, "listo": true, "skip_visible": false},
+    "calendar":   {"opened": true, "beacon_on_open": true, "steps_seen": 3, "expected_steps": 3, "listo": true, "skip_visible": false},
+    "card":       {"opened": true, "beacon_on_open": true, "steps_seen": 5, "expected_steps": 5, "listo": true, "skip_visible": false},
+    "messages":   {"opened": true, "beacon_on_open": true, "steps_seen": 4, "expected_steps": 4, "listo": true, "skip_visible": false, "note": "target='body' fix on step 4 CONFIRMED working — reaches ¡Listo!"},
+    "scope":      {"opened": true, "beacon_on_open": true, "steps_seen": 3, "expected_steps": 3, "listo": true, "skip_visible": false, "note": "target='body' fix on step 3 CONFIRMED working — reaches ¡Listo!"}
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Validate / commit the import fix made by testing agent in /app/frontend/src/components/TourButton.js line 9: `import { Joyride, STATUS } from 'react-joyride'` (named export — Joyride 3.x dropped default).",
+    "(Optional) Surface the 'Saltar tour' button — current tourStyles.buttonSkip { display:'inline-block' } is insufficient. Try: buttonSkip:{ display:'inline-flex', padding:'8px 12px', visibility:'visible', position:'static', color:'#64748b', fontSize:'12px', fontWeight:600 } + verify the joyride Tooltip component actually requests the skip button — in react-joyride v3 the skip slot may need locale.skip non-empty AND showSkipButton at root (already set) AND the tooltip footer not hidden. Alternatively keep only the ✕ Cerrar button as the skip affordance and remove the requirement.",
+    "(Optional / nice-to-have) The first-step beacon is still visible; if main agent wants to suppress entirely, programmatically start with run:true + advance through ORIGIN.BEACON in handleCallback by ignoring it, or upgrade react-joyride to a version where root disableBeacon is honored. Not blocking per current spec."
+  ],
+  "critical_code_review_comments": [
+    "TourButton.js: import statement must use named export for react-joyride 3.x. This was the root cause of the iter8 regression — a one-line bug that prevents the entire SPA from compiling.",
+    "lib/tours.js Messages step 4 and Scope step 3 changes (target:'body', placement:'center') are correct and validated end-to-end.",
+    "Recommendation: add a CI smoke test that simply boots the frontend dev server and asserts the webpack overlay isn't present. This would have caught the iter8 import bug instantly."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/TourButton.js (line 9: changed default import to named import — testing-agent allowed standard import fix)"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only review)",
+    "frontend": "100% tours reach ¡Listo! (10/10) AFTER applying import fix. Skip-button rendering remains a medium-priority gap. Beacon visibility on step 0 documented as low priority per spec."
+  },
+  "test_credentials": "Super Admin: pzsuave007@gmail.com / Uni2mkt007! — login OK",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "react-joyride 3.1.0 named export: `import { Joyride, STATUS, ACTIONS, EVENTS, LIFECYCLE, ORIGIN, PORTAL_ELEMENT_ID, defaultLocale, defaultOptions, useJoyride } from 'react-joyride'`. NO default export. Always verify with `grep -E '^export' /app/frontend/node_modules/react-joyride/dist/index.d.mts`. To walk a tour in Playwright: click `[data-testid=\"tour-btn-{key}\"]`, then click `.react-joyride__beacon` if visible (still appears in v3.1.0 despite root disableBeacon), then loop reading `#react-joyride-portal` button texts ('Siguiente'/'Atrás'/'¡Listo!'/'Cerrar') and clicking forward. All 10 tour keys validated: dashboard, clients, quotes, invoices, agreements, jobs, calendar, card, messages, scope. Pages: /, /clientes, /quotes, /invoices, /contratos, /trabajos, /calendario, /tarjeta, /mensajes, /scope.",
+  "rca of the issue": "Iter8 introduced a CRITICAL import regression: TourButton.js was authored with `import Joyride, { STATUS } from 'react-joyride'` which assumes Joyride is a default export. react-joyride 3.x (3.1.0 installed) made Joyride a NAMED-only export — per its dist/index.d.mts the exports are { ACTIONS, EVENTS, Joyride, LIFECYCLE, ORIGIN, PORTAL_ELEMENT_ID, STATUS, defaultLocale, defaultOptions, useJoyride } with no default. Webpack threw `export 'default' (imported as 'Joyride') was not found in 'react-joyride'` and refused to compile any page (red error overlay). Mitigation applied by testing agent: changed line 9 to `import { Joyride, STATUS } from 'react-joyride'`. After this fix the iter7 regression (beacon-click hack desync) was confirmed already reverted and all 10 tours walk end-to-end with the Messages/Scope target='body' fix verified."
+}
