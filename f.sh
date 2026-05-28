@@ -65,9 +65,11 @@ echo "   Backend code synced"
 
 echo ">> 4. Syncing frontend build from $REPO_DIR/frontend/build → $WEB_DIR"
 if [[ -d "$REPO_DIR/frontend/build" ]]; then
-  rsync -a --delete "$REPO_DIR/frontend/build/" "$WEB_DIR/"
-  chown -R "$APP_USER:$APP_USER" "$WEB_DIR"
-  echo "   Frontend build synced"
+  # IMPORTANT: NO --delete here. public_html contains keys.txt and other
+  # user files that MUST NOT be touched. We only overlay the React build.
+  rsync -a "$REPO_DIR/frontend/build/" "$WEB_DIR/"
+  chown -R "$APP_USER:$APP_USER" "$WEB_DIR" 2>/dev/null || true
+  echo "   Frontend build synced (additive — kept keys.txt and other files)"
 else
   echo "   [skip] frontend/build/ not found"
 fi
