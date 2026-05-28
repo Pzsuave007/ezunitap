@@ -1,0 +1,42 @@
+{
+  "summary": "Phase-2 backend verification: real Stripe Test API key (sk_test_...) + admin NFC-card shipment endpoints. 17/17 pytest cases pass. Created /app/backend/tests/test_stripe_shipments.py covering all 7 review items: plans, checkout (cs_test_), webhook signature validation, admin/shipments list+filter, admin/shipments POST update (incl. auto-timestamps + 400/403/404), admin/users field surface, and payments/subscription field surface.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_stripe_shipments.py",
+    "/app/test_reports/pytest/stripe_shipments_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "POST /api/admin/shipments/{user_id} cannot CLEAR card_tracking_number / card_shipping_note independently of status. Sending an empty string converts to None (good), but if a caller wants to keep status pending and only clear a tracking number they must still send status. Acceptable since the endpoint is admin-only and Spanish UI just sends the full row, but worth a comment.",
+    "admin_update_shipment never re-validates the user is a shipment candidate (no shipping_address + no prior card_shipping_status). An admin could mark a user as 'shipped' without an address. Considered intentional since super-admin can override, but the shipments list query still includes such users via the card_shipping_status branch.",
+    "GET /api/admin/shipments sorts in-memory after the Mongo sort. If the user base grows >2000 the to_list(2000) limit will silently truncate. Add pagination or raise the cap before public launch.",
+    "/api/webhook/stripe correctly returns 200 {received:false, error:'No signatures found...'} for bad signatures and does NOT 500 — verified by curl. payments_service.handle_webhook_event swallows the SignatureVerificationError safely.",
+    "Checkout endpoint correctly returns cs_test_... session_id with the real Stripe Test key (verified test_checkout_pro_monthly_real_stripe). origin_url is honored: success_url and cancel_url derived from payload (good per playbook).",
+    "Plans payload now includes ships_card=true and trial_period_days=14 on all 3 plans (pro_monthly, pro_yearly, founder). Verified.",
+    "GET /api/admin/users exposes all 6 new shipment keys on every row even when null (shipping_address, card_shipping_status, card_shipped_at, card_delivered_at, card_tracking_number, card_shipping_note). Verified.",
+    "GET /api/payments/subscription includes shipping_address + card_shipping_status. Verified.",
+    "Non-super-admin gets 403 on GET /api/admin/shipments and POST /api/admin/shipments/{id} (newly-registered TEST_nonadmin user). Verified.",
+    "Cleanup: admin user (id=13d02667-2685-46ac-846a-5362ad569f1f) had all card_shipping_* and shipping_address fields $unset via mongosh after the test class to restore demo state — final mongosh check shows only {email} remaining."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_stripe_shipments.py (new — 17 pytest cases covering Stripe checkout + shipments admin)"
+  ],
+  "success_rate": {
+    "backend": "100% (17/17)",
+    "frontend": "not tested (backend-only per request)"
+  },
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super-admin) works. TEST_nonadmin_<hex>@example.com / TestPass123! used for 403 verification (created at test runtime, leaves a single test user row per run — safe to ignore).",
+  "seed_data_creation": "Per test run: one TEST_nonadmin_<hex>@example.com user is registered (used to verify 403 paths). Admin user's card_shipping_* + shipping_address fields were set then $unset via mongosh after the run. Net DB delta: +1 TEST_ user per run, 0 mutations to demo data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reusable suite: pytest /app/backend/tests/test_stripe_shipments.py — completes in ~3s, exercises real Stripe sk_test_ key (so each run creates throw-away cs_test_ sessions in your Stripe dashboard — that's expected). Webhook test uses raw requests.post with bogus Stripe-Signature header (not the session fixture) to ensure exact 200/{received:false,error:...} contract. Cleanup of admin user after class is best-effort via the API; for hard cleanup of card_shipping_* fields use the mongosh $unset command in this iteration's RCA section. Next iteration can add real Stripe webhook event simulation using stripe.Webhook.construct_event with the actual STRIPE_WEBHOOK_SECRET to verify checkout.session.completed correctly persists shipping_address on the user doc.",
+  "rca_of_the_issue": "No bugs found. Reference cleanup snippet for ad-hoc admin shipment state reset: mongosh \"mongodb://localhost:27017/servicioflow_db\" --quiet --eval 'db.users.updateOne({id:\"13d02667-2685-46ac-846a-5362ad569f1f\"},{$unset:{card_shipping_status:\"\",card_shipped_at:\"\",card_delivered_at:\"\",card_tracking_number:\"\",card_shipping_note:\"\",shipping_address:\"\"}});'"
+}

@@ -2454,8 +2454,102 @@ async def admin_list_users(admin: dict = Depends(_require_super_admin)):
             "is_comp": bool(u.get("is_comp")),
             "comp_note": u.get("comp_note"),
             "comp_expires_at": u.get("comp_expires_at"),
+            "shipping_address": u.get("shipping_address"),
+            "card_shipping_status": u.get("card_shipping_status"),
+            "card_shipped_at": u.get("card_shipped_at"),
+            "card_delivered_at": u.get("card_delivered_at"),
+            "card_tracking_number": u.get("card_tracking_number"),
+            "card_shipping_note": u.get("card_shipping_note"),
         })
     return {"users": out}
+
+
+# ============================================================================
+# ADMIN — NFC CARD SHIPMENTS (Phase 2)
+# ============================================================================
+@api_router.get("/admin/shipments")
+async def admin_list_shipments(
+    status: Optional[str] = None,
+    admin: dict = Depends(_require_super_admin),
+):
+    """List users that need (or have already received) their NFC card.
+
+    A user becomes a shipment candidate when:
+      - they have a `shipping_address` on file (collected via Stripe Checkout), OR
+      - their `card_shipping_status` is set (pending/shipped/delivered).
+
+    Optional `status` filter: pending | shipped | delivered | all
+    """
+    query: dict = {
+        "$or": [
+            {"shipping_address": {"$exists": True, "$ne": None}},
+            {"card_shipping_status": {"$exists": True, "$ne": None}},
+        ]
+    }
+    if status and status != "all":
+        query = {"$and": [query, {"card_shipping_status": status}]}
+    docs = await db.users.find(
+        query, {"_id": 0, "password_hash": 0}
+    ).sort("card_shipping_status", 1).to_list(2000)
+    out = []
+    for u in docs:
+        out.append({
+            "id": u.get("id"),
+            "email": u.get("email"),
+            "business_name": u.get("business_name", ""),
+            "owner_name": u.get("owner_name", ""),
+            "phone": u.get("phone", ""),
+            "subscription_status": u.get("subscription_status"),
+            "plan_type": u.get("plan_type"),
+            "is_comp": bool(u.get("is_comp")),
+            "shipping_address": u.get("shipping_address"),
+            "card_shipping_status": u.get("card_shipping_status") or "pending",
+            "card_shipped_at": u.get("card_shipped_at"),
+            "card_delivered_at": u.get("card_delivered_at"),
+            "card_tracking_number": u.get("card_tracking_number"),
+            "card_shipping_note": u.get("card_shipping_note"),
+            "created_at": u.get("created_at"),
+        })
+    # Sort: pending first, then shipped, then delivered.
+    order = {"pending": 0, "shipped": 1, "delivered": 2}
+    out.sort(key=lambda r: order.get(r.get("card_shipping_status") or "pending", 9))
+    return {"shipments": out}
+
+
+class ShipmentUpdateIn(BaseModel):
+    status: str  # pending | shipped | delivered
+    tracking_number: Optional[str] = None
+    note: Optional[str] = None
+
+
+@api_router.post("/admin/shipments/{user_id}")
+async def admin_update_shipment(
+    user_id: str,
+    payload: ShipmentUpdateIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Update an NFC-card shipment status for a user."""
+    if payload.status not in {"pending", "shipped", "delivered"}:
+        raise HTTPException(status_code=400, detail="status inválido")
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    import time as _t
+    now_ts = int(_t.time())
+    update: dict = {"card_shipping_status": payload.status}
+    if payload.tracking_number is not None:
+        update["card_tracking_number"] = payload.tracking_number.strip() or None
+    if payload.note is not None:
+        update["card_shipping_note"] = payload.note.strip() or None
+    if payload.status == "shipped" and not u.get("card_shipped_at"):
+        update["card_shipped_at"] = now_ts
+    if payload.status == "delivered" and not u.get("card_delivered_at"):
+        update["card_delivered_at"] = now_ts
+        # If we never recorded a ship date, fill it now too.
+        if not u.get("card_shipped_at"):
+            update["card_shipped_at"] = now_ts
+    await db.users.update_one({"id": user_id}, {"$set": update})
+    return {"ok": True, "user_id": user_id, **update}
 
 
 @api_router.post("/admin/users/{user_id}/grant-comp")
