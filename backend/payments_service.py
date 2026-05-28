@@ -521,11 +521,14 @@ def subscription_is_active(user: dict) -> bool:
 
 
 def has_paid_subscription(user: dict) -> bool:
-    """Return True ONLY when the user is actively paying (NOT in trial).
+    """Return True when the user has paid Pro access — including the 14-day
+    trial (since the user already entered a card and authorized billing).
 
-    Used to gate the Smart Card feature per user choice: trial unlocks
-    everything *except* the Smart Card. Also returns True for "comp"
-    (complimentary) accounts granted by an admin.
+    The digital Smart Card is unlocked during trial. The physical NFC card
+    is gated separately by `card_shipping_status` and is only mailed once
+    the trial converts (`subscription_status == "active"`).
+
+    Also returns True for "comp" (complimentary) accounts granted by an admin.
     """
     if user.get("is_comp"):
         # Comp account may have an expiry — respect it.
@@ -533,4 +536,5 @@ def has_paid_subscription(user: dict) -> bool:
         if exp and exp < int(__import__("time").time()):
             return False
         return True
-    return user.get("subscription_status") in ("active", "past_due")
+    # Real paying users — trialing IS paying (Stripe holds card on file).
+    return user.get("subscription_status") in ("active", "trialing", "past_due")
