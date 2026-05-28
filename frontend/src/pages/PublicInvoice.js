@@ -165,37 +165,36 @@ export default function PublicInvoice() {
             )}
 
             {terms && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3 print:border-slate-300 print:bg-white">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
-                    Signed agreement terms
-                  </span>
-                  {terms.signer_name && (
-                    <span className="text-xs text-emerald-900">
-                      Signed by {terms.signer_name}
-                      {terms.signed_at ? ` on ${fmtDate(terms.signed_at)}` : ""}
-                    </span>
-                  )}
-                </div>
-                {dep > 0 && (
-                  <div className="text-sm bg-white rounded-lg p-3 border border-emerald-100 print:bg-slate-50">
-                    <span className="font-bold">Deposit required: </span>
-                    <span className="font-mono">{fmtMoney(dep)}</span>
-                    <span className="text-slate-500"> — due before work begins, per signed agreement.</span>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 print:border-slate-300 print:bg-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-none print:bg-emerald-700">
+                    <span className="text-white text-lg">✓</span>
                   </div>
-                )}
-                {listAgreementClauses(sections).map((c) => (
-                  <div key={c.label}>
-                    <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-0.5">{c.label}</div>
-                    {c.kind === "list" ? (
-                      <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
-                        {c.value.map((it, i) => <li key={i}>{it}</li>)}
-                      </ul>
-                    ) : (
-                      <div className="text-xs text-slate-700 whitespace-pre-line">{c.value}</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-emerald-900 text-sm">
+                      Per signed Service Agreement
+                    </div>
+                    <div className="text-xs text-emerald-800 mt-0.5">
+                      {terms.signer_name && <>Signed by <strong>{terms.signer_name}</strong></>}
+                      {terms.signed_at && <> on <strong>{fmtDate(terms.signed_at)}</strong></>}
+                    </div>
+                    {dep > 0 && (
+                      <div className="text-xs text-emerald-800 mt-1">
+                        Deposit required: <strong>{fmtMoney(dep)}</strong> due before work begins.
+                      </div>
+                    )}
+                    {invoice.agreement_id && (
+                      <a
+                        href={`/p/agreement/${invoice.agreement_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block text-xs font-semibold text-emerald-700 hover:text-emerald-900 mt-2 underline print:hidden"
+                      >
+                        View signed agreement →
+                      </a>
                     )}
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>

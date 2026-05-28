@@ -260,62 +260,41 @@ export async function generateInvoicePDF(invoice, business, client) {
     y += n.length * 5 + 4;
   }
 
-  // Signed agreement terms — must match the public invoice page green block.
+  // Reference to the signed agreement — short summary only. The client
+  // already has the full signed agreement (separate PDF), so duplicating
+  // every clause here would clutter the invoice.
   const terms = invoice.agreement_terms;
   if (terms) {
-    if (y > 240) { doc.addPage(); y = 20; }
-    const sec = terms.sections || {};
-    // Green header bar
+    if (y > 250) { doc.addPage(); y = 20; }
     doc.setFillColor(16, 185, 129); // emerald-500
     doc.rect(14, y, 182, 8, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
-    doc.text("SIGNED AGREEMENT TERMS", 18, y + 5.5);
-    if (terms.signer_name) {
-      const signedLine = `Signed by ${terms.signer_name}${terms.signed_at ? ` on ${new Date(terms.signed_at).toLocaleDateString("en-US")}` : ""}`;
-      doc.setFontSize(8);
-      doc.text(signedLine, 192, y + 5.5, { align: "right" });
-    }
+    doc.text("PER SIGNED SERVICE AGREEMENT", 18, y + 5.5);
     doc.setTextColor(...COLOR_TEXT);
-    y += 12;
+    y += 13;
 
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    if (terms.signer_name) {
+      const line = `Signed by ${terms.signer_name}${terms.signed_at ? ` on ${new Date(terms.signed_at).toLocaleDateString("en-US")}` : ""}.`;
+      doc.text(line, 14, y);
+      y += 6;
+    }
     if (deposit > 0) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("Deposit required:", 14, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${fmtMoney(deposit)} — due before work begins, per signed agreement.`, 50, y);
-      y += 7;
+      doc.text(`Deposit required: ${fmtMoney(deposit)} due before work begins.`, 14, y);
+      y += 6;
     }
-
-    // Use the shared agreement-clause renderer (supports both schemas).
-    const clauses = listAgreementClauses(sec);
-    for (const c of clauses) {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text(c.label.toUpperCase(), 14, y);
-      y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      if (c.kind === "list") {
-        for (const it of c.value) {
-          if (y > 280) { doc.addPage(); y = 20; }
-          const lines = doc.splitTextToSize(`• ${it}`, 178);
-          doc.text(lines, 16, y);
-          y += lines.length * 4.5;
-        }
-      } else {
-        const lines = doc.splitTextToSize(c.value, 180);
-        for (const line of lines) {
-          if (y > 285) { doc.addPage(); y = 20; }
-          doc.text(line, 14, y);
-          y += 4.5;
-        }
-      }
-      y += 2;
-    }
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      "Full terms are in the Service Agreement signed by the client.",
+      14, y
+    );
+    doc.setTextColor(...COLOR_TEXT);
+    y += 6;
   }
 
   doc.save(`Invoice-${invoice.number || "draft"}.pdf`);

@@ -341,7 +341,11 @@ export default function InvoiceDetail() {
         </div>
 
         {invoice.agreement_terms && (
-          <AgreementTermsBlock terms={invoice.agreement_terms} depositAmount={invoice.deposit_amount} />
+          <AgreementTermsBlock
+            terms={invoice.agreement_terms}
+            depositAmount={invoice.deposit_amount}
+            agreementId={invoice.agreement_id}
+          />
         )}
 
         <Button data-testid="save-invoice" onClick={save} disabled={saving} className="w-full h-14 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold">
@@ -526,46 +530,47 @@ function PaymentStatusCard({ invoice, onChange, onPersist }) {
   );
 }
 
-function AgreementTermsBlock({ terms, depositAmount }) {
+function AgreementTermsBlock({ terms, depositAmount, agreementId }) {
   if (!terms) return null;
-  const clauses = listAgreementClauses(terms.sections);
+  const signedDate = terms.signed_at
+    ? new Date(terms.signed_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : null;
+  const publicUrl = agreementId ? `${window.location.origin}/p/agreement/${agreementId}` : null;
   return (
     <div
       data-testid="agreement-terms-block"
-      className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3"
+      className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
     >
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
-          Signed agreement terms
-        </span>
-        {terms.signer_name && (
-          <span className="text-xs text-emerald-900">
-            Signed by {terms.signer_name}
-            {terms.signed_at ? ` on ${new Date(terms.signed_at).toLocaleDateString("en-US")}` : ""}
-          </span>
-        )}
-      </div>
-      {depositAmount > 0 && (
-        <div className="text-sm bg-white rounded-lg p-3 border border-emerald-100">
-          <span className="font-bold">Deposit required: </span>
-          <span className="font-mono">${Number(depositAmount).toFixed(2)}</span>
-          <span className="text-slate-500"> — due before work begins, per signed agreement.</span>
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-none">
+          <Check className="w-5 h-5 text-white" />
         </div>
-      )}
-      {clauses.map((c) => (
-        <div key={c.label}>
-          <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-1">
-            {c.label}
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-emerald-900 text-sm">
+            Per signed Service Agreement
           </div>
-          {c.kind === "list" ? (
-            <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
-              {c.value.map((it, i) => <li key={i}>{it}</li>)}
-            </ul>
-          ) : (
-            <div className="text-xs text-slate-700 whitespace-pre-line">{c.value}</div>
+          <div className="text-xs text-emerald-800 mt-0.5">
+            {terms.signer_name && <>Signed by <strong>{terms.signer_name}</strong></>}
+            {signedDate && <> on <strong>{signedDate}</strong></>}
+          </div>
+          {depositAmount > 0 && (
+            <div className="text-xs text-emerald-800 mt-1">
+              Deposit required: <strong>${Number(depositAmount).toFixed(2)}</strong> due before work begins.
+            </div>
+          )}
+          {publicUrl && (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs font-semibold text-emerald-700 hover:text-emerald-900 mt-2 underline"
+              data-testid="view-agreement-link"
+            >
+              View signed agreement →
+            </a>
           )}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
