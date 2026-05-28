@@ -31,7 +31,7 @@ const FLOW = [
 const ACCOUNT = [
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard },
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
-  { to: "/precios", label: "Suscripción", icon: CreditCard },
+  { to: "/ajustes#suscripcion", label: "Suscripción", icon: CreditCard },
 ];
 
 export default function Layout() {

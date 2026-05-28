@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,21 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 export default function Profile() {
   const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Scroll to hash anchor (e.g. #suscripcion) on mount.
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace("#", "");
+      // Wait for content to render then scroll.
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    }
+  }, [location.hash]);
 
   const load = async () => {
     await refreshUser();
@@ -237,7 +250,9 @@ export default function Profile() {
         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar todo"}
       </Button>
 
-      <SubscriptionSection />
+      <div id="suscripcion" className="scroll-mt-20">
+        <SubscriptionSection />
+      </div>
 
       {/* Quick links */}
       <Card className="card-elevated p-5 border-0 shadow-none">

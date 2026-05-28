@@ -305,20 +305,21 @@ async def get_checkout_status(db, session_id: str) -> dict:
         "subscription_status": (sub.status if sub and not isinstance(sub, str) else None),
         "customer_id": session.customer if isinstance(session.customer, str) else (session.customer.id if session.customer else None),
     }
-    # Update payment_transactions only if not already complete (idempotent).
-    existing = await db.payment_transactions.find_one({"session_id": session_id})
-    if existing and existing.get("payment_status") != "complete":
-        if session.status == "complete":
-            await db.payment_transactions.update_one(
-                {"session_id": session_id},
-                {"$set": {"status": "complete", "payment_status": "complete"}},
-            )
-            await _apply_subscription_to_user(db, session, sub)
-        elif session.status == "expired":
-            await db.payment_transactions.update_one(
-                {"session_id": session_id},
-                {"$set": {"status": "expired", "payment_status": "expired"}},
-            )
+    # Update payment_transactions and re-apply subscription. Calling
+    # _apply_subscription_to_user is idempotent ($set with same data) so we
+    # ALWAYS run it on `complete` — this lets old transactions backfill
+    # missing shipping_address / stripe_customer_id after bug fixes.
+    if session.status == "complete":
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"status": "complete", "payment_status": "complete"}},
+        )
+        await _apply_subscription_to_user(db, session, sub)
+    elif session.status == "expired":
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"status": "expired", "payment_status": "expired"}},
+        )
     return status_payload
 
 
@@ -337,15 +338,41 @@ async def _apply_subscription_to_user(db, session, subscription) -> None:
             subscription.status if subscription and not isinstance(subscription, str) else "active"
         ),
     }
+    # Persist stripe_customer_id so the Customer Portal can open later.
+    try:
+        customer = session.customer if not isinstance(session, dict) else session.get("customer")
+        if customer:
+            update["stripe_customer_id"] = (
+                customer if isinstance(customer, str)
+                else (customer.id if hasattr(customer, "id") else customer.get("id"))
+            )
+    except Exception:
+        pass
     if subscription and not isinstance(subscription, str):
         if getattr(subscription, "trial_end", None):
             update["trial_ends_at"] = subscription.trial_end
         if getattr(subscription, "current_period_end", None):
             update["current_period_end"] = subscription.current_period_end
     # Capture shipping address from checkout (if collected).
+    # Stripe API 2025-02-24+: `session.shipping_details` was moved to
+    # `session.collected_information.shipping_details`. Try the new field
+    # first, fall back to the legacy one for older API versions.
     shipping = None
     try:
-        shipping = session.shipping_details or session.get("shipping_details") if isinstance(session, dict) else session.shipping_details
+        collected = (
+            getattr(session, "collected_information", None)
+            or (session.get("collected_information") if isinstance(session, dict) else None)
+        )
+        if collected:
+            shipping = (
+                getattr(collected, "shipping_details", None)
+                or (collected.get("shipping_details") if isinstance(collected, dict) else None)
+            )
+        if not shipping:
+            shipping = (
+                getattr(session, "shipping_details", None)
+                or (session.get("shipping_details") if isinstance(session, dict) else None)
+            )
     except Exception:
         shipping = None
     if shipping:
