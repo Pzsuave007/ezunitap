@@ -9,7 +9,7 @@ import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Sparkles, Clock, Crown, Loader2, ExternalLink, ShieldCheck,
+  CreditCard, Sparkles, Clock, Crown, Loader2, ExternalLink, ShieldCheck, Gift,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,8 +85,56 @@ export default function SubscriptionSection() {
   }
 
   const status = sub?.subscription_status;
-  const isPaid = status === "active" || status === "past_due";
-  const isTrialing = status === "trialing";
+  const isComp = !!sub?.is_comp;
+  const hasStripeCustomer = !!sub?.stripe_customer_id;
+  // Only "real" paid users have a stripe_customer_id. Comp users may have
+  // subscription_status="active" but no Stripe link, so the Customer Portal
+  // doesn't apply to them.
+  const isPaid = (status === "active" || status === "past_due") && hasStripeCustomer;
+  const isTrialing = status === "trialing" && hasStripeCustomer;
+
+  // Comp (courtesy) accounts: hand-picked free Pro access.
+  if (isComp && !hasStripeCustomer) {
+    return (
+      <Card
+        className="card-elevated p-5 border-0 shadow-none space-y-4"
+        data-testid="subscription-section"
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <CreditCard className="w-5 h-5 text-blue-900" />
+          <h3 className="font-heading font-bold text-base">Suscripción</h3>
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+            <Gift className="w-3 h-3" /> Cortesía
+          </span>
+        </div>
+        <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+          <div className="flex items-start gap-2">
+            <Crown className="w-5 h-5 text-amber-600 mt-0.5 flex-none" />
+            <div>
+              <div className="font-semibold text-sm text-amber-900">
+                Acceso PRO de cortesía
+              </div>
+              <div className="text-xs text-amber-800 mt-1">
+                Tienes acceso completo sin costo
+                {sub?.comp_note ? ` — "${sub.comp_note}"` : ""}.
+                No tienes una suscripción de Stripe asociada, así que el portal
+                de gestión no aplica para ti.
+              </div>
+              {sub?.comp_expires_at && (
+                <div className="text-[11px] text-amber-700 mt-2 italic">
+                  Acceso hasta: {formatDate(sub.comp_expires_at)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 text-xs text-slate-600">
+          <strong>Para probar el flujo de pago real:</strong> regístrate con
+          otro email (no comp) y ve a <em>/precios</em>.
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card

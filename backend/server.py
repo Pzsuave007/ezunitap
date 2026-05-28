@@ -2759,6 +2759,9 @@ async def payments_subscription(user_id: str = Depends(get_current_user_id)):
         "stripe_customer_id": u.get("stripe_customer_id"),
         "shipping_address": u.get("shipping_address"),
         "card_shipping_status": u.get("card_shipping_status"),
+        "is_comp": bool(u.get("is_comp")),
+        "comp_note": u.get("comp_note"),
+        "comp_expires_at": u.get("comp_expires_at"),
         "smart_card_unlocked": payments_service.has_paid_subscription(u),
         "subscription_active": payments_service.subscription_is_active(u),
     }
