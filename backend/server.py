@@ -2836,6 +2836,35 @@ async def admin_delete_user(
     return {"ok": True, "deleted_user_email": u.get("email")}
 
 
+@api_router.post("/admin/users/{user_id}/impersonate")
+async def admin_impersonate_user(
+    user_id: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Generate a JWT for another user so the super-admin can log in as them
+    to help with onboarding, NFC card setup, or troubleshooting.
+
+    The returned token works exactly like a normal login token. The frontend
+    is responsible for storing the admin's own token separately so the user
+    can return to their own session.
+    """
+    if user_id == admin["id"]:
+        raise HTTPException(
+            status_code=400, detail="Ya estás logueado como ti mismo"
+        )
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    token = create_token(u["id"])
+    logger.info(
+        f"[IMPERSONATE] admin={admin.get('email')} -> user={u.get('email')} ({user_id})"
+    )
+    return {
+        "token": token,
+        "user": await _user_doc(u["id"]),
+    }
+
+
 # ============================================================================
 # PAYMENTS / STRIPE SUBSCRIPTIONS
 # ============================================================================
