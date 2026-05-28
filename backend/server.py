@@ -2465,6 +2465,145 @@ async def admin_list_users(admin: dict = Depends(_require_super_admin)):
 
 
 # ============================================================================
+# ADMIN — BUSINESS METRICS DASHBOARD
+# ============================================================================
+@api_router.get("/admin/metrics")
+async def admin_metrics(admin: dict = Depends(_require_super_admin)):
+    """Aggregate metrics for the super-admin dashboard.
+
+    Returns counts by subscription state, MRR estimate, and recent growth.
+    """
+    import time as _t
+    now = int(_t.time())
+    one_day = 86400
+
+    users = await db.users.find(
+        {}, {"_id": 0, "password_hash": 0}
+    ).to_list(5000)
+
+    # Pricing (dollars/month, normalised). Yearly plans → annual / 12.
+    PLAN_MRR = {
+        "pro_monthly": 49.0,
+        "pro_yearly":  390.0 / 12.0,   # 32.5
+        "founder":     290.0 / 12.0,   # 24.17 (one-time but tracked monthly-equivalent)
+    }
+
+    buckets = {
+        "total": 0,
+        "trialing": 0,
+        "active": 0,
+        "past_due": 0,
+        "canceled": 0,
+        "comp": 0,
+        "no_subscription": 0,
+        "new_last_7d": 0,
+        "new_last_30d": 0,
+    }
+    mrr_cents = 0
+    plan_breakdown: dict = {}
+    recent_signups = []
+    trial_expiring_soon = []  # trials ending within next 3 days
+
+    for u in users:
+        buckets["total"] += 1
+        status = u.get("subscription_status") or "none"
+        is_comp = bool(u.get("is_comp"))
+        plan = u.get("plan_type") or "—"
+        created = u.get("created_at")
+        created_ts = None
+        if isinstance(created, str):
+            try:
+                created_ts = int(datetime.fromisoformat(created.replace("Z", "+00:00")).timestamp())
+            except Exception:
+                created_ts = None
+        elif isinstance(created, (int, float)):
+            created_ts = int(created)
+
+        # Recency
+        if created_ts:
+            age = now - created_ts
+            if age <= 7 * one_day:
+                buckets["new_last_7d"] += 1
+            if age <= 30 * one_day:
+                buckets["new_last_30d"] += 1
+
+        # Bucket priority: comp > status
+        if is_comp:
+            buckets["comp"] += 1
+        elif status == "trialing":
+            buckets["trialing"] += 1
+        elif status == "active":
+            buckets["active"] += 1
+            mrr_cents += int(PLAN_MRR.get(plan, 0) * 100)
+        elif status == "past_due":
+            buckets["past_due"] += 1
+            mrr_cents += int(PLAN_MRR.get(plan, 0) * 100)
+        elif status in ("canceled", "cancelled"):
+            buckets["canceled"] += 1
+        else:
+            buckets["no_subscription"] += 1
+
+        # Plan breakdown (paying only)
+        if status in ("active", "past_due") and not is_comp:
+            plan_breakdown[plan] = plan_breakdown.get(plan, 0) + 1
+
+        # Recent signups (last 10, newest first)
+        if created_ts:
+            recent_signups.append({
+                "id": u.get("id"),
+                "email": u.get("email"),
+                "business_name": u.get("business_name", ""),
+                "created_at": u.get("created_at"),
+                "subscription_status": status if not is_comp else "comp",
+                "plan_type": plan,
+            })
+
+        # Trials expiring soon
+        trial_end = u.get("trial_ends_at")
+        if status == "trialing" and isinstance(trial_end, (int, float)):
+            days_left = (int(trial_end) - now) / one_day
+            if 0 < days_left <= 3:
+                trial_expiring_soon.append({
+                    "id": u.get("id"),
+                    "email": u.get("email"),
+                    "business_name": u.get("business_name", ""),
+                    "trial_ends_at": int(trial_end),
+                    "days_left": round(days_left, 1),
+                })
+
+    # Sort recent signups by created_at desc, take 10
+    def _ts(s):
+        c = s.get("created_at")
+        if isinstance(c, str):
+            try:
+                return datetime.fromisoformat(c.replace("Z", "+00:00")).timestamp()
+            except Exception:
+                return 0
+        if isinstance(c, (int, float)):
+            return c
+        return 0
+    recent_signups.sort(key=_ts, reverse=True)
+    trial_expiring_soon.sort(key=lambda x: x["trial_ends_at"])
+
+    # Pending shipments count
+    pending_shipments = await db.users.count_documents({
+        "card_shipping_status": "pending",
+    })
+
+    return {
+        "counts": buckets,
+        "mrr_usd": round(mrr_cents / 100.0, 2),
+        "arr_usd": round(mrr_cents / 100.0 * 12.0, 2),
+        "paying_users": buckets["active"] + buckets["past_due"],
+        "plan_breakdown": plan_breakdown,
+        "recent_signups": recent_signups[:10],
+        "trial_expiring_soon": trial_expiring_soon[:20],
+        "pending_shipments": pending_shipments,
+        "generated_at": now,
+    }
+
+
+# ============================================================================
 # ADMIN — NFC CARD SHIPMENTS (Phase 2)
 # ============================================================================
 @api_router.get("/admin/shipments")
