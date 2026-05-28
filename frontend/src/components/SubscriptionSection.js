@@ -147,33 +147,56 @@ export default function SubscriptionSection() {
         )}
         {isTrialing && (
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
-            <Sparkles className="w-3 h-3" /> Trial
+            <Sparkles className="w-3 h-3" /> Trial · {PLAN_LABELS[sub.plan_type] || "Pro"}
           </span>
         )}
       </div>
 
-      {isPaid && (
+      {/* Active subscriber UI — applies to both paid (active/past_due) AND
+          trialing users, because in our flow every trial requires a card on
+          file via Stripe Checkout (so they ARE subscribers). */}
+      {(isPaid || isTrialing) && (
         <>
+          {isTrialing && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-2">
+                <Clock className="w-4 h-4 text-amber-700 mt-0.5 flex-none" />
+                <div className="text-sm text-amber-900">
+                  <div className="font-semibold">
+                    {daysLeft(sub.trial_ends_at)} días gratis restantes
+                  </div>
+                  <div className="text-amber-800 text-xs mt-1">
+                    Tu primer cobro será el {formatDate(sub.trial_ends_at)}.
+                    Puedes cancelar en cualquier momento desde el portal.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
                 Estado
               </div>
-              <div className="text-sm font-semibold mt-1 capitalize">
-                {status === "active" ? "Activa" : "Pago pendiente"}
+              <div className="text-sm font-semibold mt-1">
+                {status === "trialing" ? "En prueba" :
+                 status === "active" ? "Activa" :
+                 "Pago pendiente"}
               </div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Próxima renovación
+                {isTrialing ? "Primer cobro" : "Próxima renovación"}
               </div>
               <div className="text-sm font-semibold mt-1">
-                {formatDate(sub.current_period_end)}
+                {formatDate(sub.trial_ends_at || sub.current_period_end)}
               </div>
             </div>
           </div>
+
           {sub.shipping_address && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
               <div className="font-semibold mb-1 flex items-center gap-1">
                 📦 Dirección de envío de tu tarjeta NFC
               </div>
@@ -186,8 +209,12 @@ export default function SubscriptionSection() {
                 <br />
                 {sub.shipping_address.country}
               </div>
+              <div className="text-[11px] mt-2 italic opacity-80">
+                Te enviaremos tu tarjeta NFC física a esta dirección.
+              </div>
             </div>
           )}
+
           <Button
             data-testid="open-portal"
             onClick={openPortal}
@@ -201,33 +228,6 @@ export default function SubscriptionSection() {
               <ExternalLink className="w-4 h-4 mr-2" />
             )}
             Gestionar suscripción
-          </Button>
-        </>
-      )}
-
-      {isTrialing && (
-        <>
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
-            <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-amber-700 mt-0.5 flex-none" />
-              <div className="text-sm text-amber-900">
-                <div className="font-semibold">
-                  {daysLeft(sub.trial_ends_at)} días restantes de tu prueba
-                </div>
-                <div className="text-amber-800 text-xs mt-1">
-                  Termina el {formatDate(sub.trial_ends_at)}. Suscríbete para
-                  activar la Tarjeta NFC física y mantener todas las funciones.
-                </div>
-              </div>
-            </div>
-          </div>
-          <Button
-            data-testid="goto-pricing"
-            onClick={() => navigate("/precios")}
-            className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-          >
-            <ShieldCheck className="w-4 h-4 mr-2" />
-            Ver planes y suscribirse
           </Button>
         </>
       )}

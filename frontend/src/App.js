@@ -32,6 +32,7 @@ import AdminAccounts from "@/pages/AdminAccounts";
 import AdminMetrics from "@/pages/AdminMetrics";
 import AdminShipments from "@/pages/AdminShipments";
 import PublicInvoice from "@/pages/PublicInvoice";
+import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -78,6 +79,8 @@ function App() {
             <Route path="/p/invoice/:id" element={<PublicInvoice />} />
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
+            <Route path="/terminos" element={<TermsPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
 
             <Route element={<HomeOrAuth />}>
               <Route path="/" element={<Dashboard />} />

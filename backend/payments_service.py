@@ -410,7 +410,41 @@ async def _apply_subscription_to_user(db, session, subscription) -> None:
             }
             # Mark card as needing to ship (admin will fulfill).
             update["card_shipping_status"] = "pending"
+    # Track whether this is the first time we apply (new sub) vs a backfill.
+    existing_user = await db.users.find_one({"id": user_id})
+    was_new_sub = not (existing_user or {}).get("stripe_subscription_id")
+
     await db.users.update_one({"id": user_id}, {"$set": update})
+
+    # Owner notification — only on the FIRST successful apply for this user.
+    if was_new_sub:
+        try:
+            from email_service import (
+                notify_owner,
+                render_new_subscription_email,
+            )
+            plan_labels = {
+                "pro_monthly": "Pro Mensual ($49/mes)",
+                "pro_yearly":  "Pro Anual ($390/año)",
+                "founder":     "Founder Deal ($290/año)",
+            }
+            updated = await db.users.find_one({"id": user_id}) or {}
+            trial_end = updated.get("trial_ends_at")
+            import time as _t
+            trial_days = max(0, int((trial_end - int(_t.time())) / 86400)) if trial_end else 14
+            html = render_new_subscription_email(
+                business_name=updated.get("business_name") or "",
+                user_email=updated.get("email") or "",
+                plan_label=plan_labels.get(plan_id, plan_id or "Pro"),
+                trial_days=trial_days,
+                shipping_address=updated.get("shipping_address"),
+            )
+            await notify_owner(
+                subject=f"🎉 Nueva suscripción — {updated.get('email')}",
+                html=html,
+            )
+        except Exception as e:
+            logger.error(f"Owner notification failed (non-fatal): {e!r}")
 
 
 async def handle_webhook_event(db, payload: bytes, sig_header: str) -> dict:

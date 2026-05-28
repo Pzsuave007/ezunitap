@@ -137,6 +137,12 @@ export default function Register() {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Crear cuenta"}
           </Button>
+          <p className="text-[11px] text-slate-500 text-center mt-1">
+            Al crear una cuenta aceptas nuestros{" "}
+            <Link to="/terminos" className="underline hover:text-slate-700">Términos</Link>
+            {" "}y{" "}
+            <Link to="/privacidad" className="underline hover:text-slate-700">Política de Privacidad</Link>.
+          </p>
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-600">
