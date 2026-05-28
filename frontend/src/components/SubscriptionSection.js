@@ -128,10 +128,6 @@ export default function SubscriptionSection() {
             </div>
           </div>
         </div>
-        <div className="p-3 rounded-xl bg-slate-50 text-xs text-slate-600">
-          <strong>Para probar el flujo de pago real:</strong> regístrate con
-          otro email (no comp) y ve a <em>/precios</em>.
-        </div>
       </Card>
     );
   }
