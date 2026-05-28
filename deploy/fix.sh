@@ -20,8 +20,8 @@ echo ">>> [user=$CPANEL_USER] fix.sh starting..."
 #      STRIPE_WEBHOOK_SECRET=whsec_...
 KEYS_FILE="$PH/keys.txt"
 if [ -f "$KEYS_FILE" ]; then
-    echo ">>> Loading Stripe keys from $KEYS_FILE"
-    for VAR in STRIPE_API_KEY STRIPE_WEBHOOK_SECRET; do
+    echo ">>> Loading keys from $KEYS_FILE"
+    for VAR in STRIPE_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY OWNER_EMAIL SENDER_EMAIL; do
         VAL=$(grep -E "^${VAR}=" "$KEYS_FILE" | head -1 | sed "s|^${VAR}=||; s|^\"||; s|\"$||" | tr -d '\r\n')
         if [ -n "$VAL" ]; then
             if grep -q "^${VAR}=" "$PROD/.env"; then
