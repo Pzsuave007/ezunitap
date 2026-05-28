@@ -21,7 +21,7 @@ echo ">>> [user=$CPANEL_USER] fix.sh starting..."
 KEYS_FILE="$PH/keys.txt"
 if [ -f "$KEYS_FILE" ]; then
     echo ">>> Loading keys from $KEYS_FILE"
-    for VAR in STRIPE_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY OWNER_EMAIL SENDER_EMAIL; do
+    for VAR in STRIPE_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY OWNER_EMAIL SENDER_EMAIL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASSWORD SMTP_SECURITY; do
         VAL=$(grep -E "^${VAR}=" "$KEYS_FILE" | head -1 | sed "s|^${VAR}=||; s|^\"||; s|\"$||" | tr -d '\r\n')
         if [ -n "$VAL" ]; then
             if grep -q "^${VAR}=" "$PROD/.env"; then

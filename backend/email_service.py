@@ -1,19 +1,80 @@
-"""Lightweight email notifier using Resend.
+"""Lightweight email notifier with two backends: SMTP (preferred for self-hosted
+servers) and Resend (cloud service).
+
+Backend selection (in order):
+  1. If SMTP_HOST is set in env  → use plain SMTP (your VPS / cPanel email)
+  2. Else if RESEND_API_KEY is set → use Resend API
+  3. Else → log and skip (dev/preview environments)
 
 Used to notify the SaaS owner when business events occur (new subscription,
-trial expiring, payment failed). Falls back to a no-op log if RESEND_API_KEY
-or OWNER_EMAIL is not configured — so dev/preview envs don't require setup.
+trial expiring, payment failed). Never raises — emails are best-effort.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
+def _owner_email() -> Optional[str]:
+    return os.environ.get("OWNER_EMAIL", "").strip() or None
+
+
+def _sender_email() -> str:
+    return os.environ.get("SENDER_EMAIL", "Unitap <onboarding@resend.dev>").strip()
+
+
+# ---- SMTP backend (preferred for self-hosted) -----------------------------
+def _smtp_config():
+    """Return SMTP settings dict if configured, else None."""
+    host = os.environ.get("SMTP_HOST", "").strip()
+    if not host:
+        return None
+    return {
+        "host": host,
+        "port": int(os.environ.get("SMTP_PORT", "587")),
+        "user": os.environ.get("SMTP_USER", "").strip(),
+        "password": os.environ.get("SMTP_PASSWORD", "").strip(),
+        # ssl = port 465 (implicit TLS), tls = port 587 (STARTTLS), none = plain
+        "security": os.environ.get("SMTP_SECURITY", "tls").strip().lower(),
+    }
+
+
+def _send_smtp_sync(cfg: dict, sender: str, to: str, subject: str, html: str) -> str:
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to
+    msg.attach(MIMEText(html, "html", "utf-8"))
+
+    if cfg["security"] == "ssl":
+        server = smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=15)
+    else:
+        server = smtplib.SMTP(cfg["host"], cfg["port"], timeout=15)
+        server.ehlo()
+        if cfg["security"] == "tls":
+            server.starttls()
+            server.ehlo()
+    try:
+        if cfg["user"] and cfg["password"]:
+            server.login(cfg["user"], cfg["password"])
+        from_addr = sender.split("<")[-1].rstrip(">").strip()
+        server.sendmail(from_addr, [to], msg.as_string())
+    finally:
+        try:
+            server.quit()
+        except Exception:
+            pass
+    return "smtp-ok"
+
+
+# ---- Resend backend (fallback) --------------------------------------------
 def _resend_client():
     api_key = os.environ.get("RESEND_API_KEY", "").strip()
     if not api_key:
@@ -23,40 +84,52 @@ def _resend_client():
         resend.api_key = api_key
         return resend
     except ImportError:
-        logger.warning("resend package not installed — skipping email")
+        logger.warning("resend package not installed")
         return None
 
 
-def _owner_email() -> Optional[str]:
-    return os.environ.get("OWNER_EMAIL", "").strip() or None
-
-
-def _sender_email() -> str:
-    # Resend's default sandbox sender. Owner can override via env.
-    return os.environ.get("SENDER_EMAIL", "Unitap <onboarding@resend.dev>").strip()
-
-
-async def notify_owner(subject: str, html: str) -> None:
-    """Fire-and-forget email to the owner. Never raises.
-
-    Safe to call from inside webhook handlers or BackgroundTasks.
-    """
-    owner = _owner_email()
-    client = _resend_client()
-    if not owner or not client:
-        logger.info(f"[email skipped — missing config] {subject}")
-        return
-    params = {
-        "from": _sender_email(),
-        "to": [owner],
+def _send_resend_sync(client, sender: str, to: str, subject: str, html: str) -> str:
+    result = client.Emails.send({
+        "from": sender,
+        "to": [to],
         "subject": subject,
         "html": html,
-    }
-    try:
-        result = await asyncio.to_thread(client.Emails.send, params)
-        logger.info(f"[email sent] id={result.get('id')} subject={subject!r}")
-    except Exception as e:
-        logger.error(f"[email failed] {e!r} — subject={subject!r}")
+    })
+    return result.get("id", "resend-ok")
+
+
+# ---- Public API ------------------------------------------------------------
+async def notify_owner(subject: str, html: str) -> None:
+    """Fire-and-forget email to the owner. Never raises."""
+    owner = _owner_email()
+    if not owner:
+        logger.info(f"[email skipped — OWNER_EMAIL not set] {subject}")
+        return
+
+    sender = _sender_email()
+    smtp = _smtp_config()
+    if smtp:
+        try:
+            backend_id = await asyncio.to_thread(
+                _send_smtp_sync, smtp, sender, owner, subject, html
+            )
+            logger.info(f"[email sent via SMTP] {backend_id} subject={subject!r}")
+            return
+        except Exception as e:
+            logger.error(f"[SMTP send failed] {e!r} — will try Resend if configured")
+
+    client = _resend_client()
+    if client:
+        try:
+            email_id = await asyncio.to_thread(
+                _send_resend_sync, client, sender, owner, subject, html
+            )
+            logger.info(f"[email sent via Resend] id={email_id} subject={subject!r}")
+            return
+        except Exception as e:
+            logger.error(f"[Resend send failed] {e!r}")
+
+    logger.info(f"[email skipped — no backend configured] {subject}")
 
 
 def render_new_subscription_email(
@@ -84,7 +157,7 @@ def render_new_subscription_email(
             'border-left:4px solid #f59e0b;border-radius:8px;">'
             '<div style="font-weight:bold;color:#78350f;margin-bottom:6px;">'
             '📦 Dirección de envío NFC</div>'
-            f'<div style="color:#92400e;line-height:1.5;">{"<br>".join(l for l in addr_lines if l)}</div>'
+            f'<div style="color:#92400e;line-height:1.5;">{"<br>".join(x for x in addr_lines if x)}</div>'
             "</td></tr>"
         )
     return f"""
