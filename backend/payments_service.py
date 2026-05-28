@@ -323,10 +323,30 @@ async def get_checkout_status(db, session_id: str) -> dict:
     return status_payload
 
 
+def _md(session, key):
+    """Safely read a metadata key from a Stripe Session across SDK versions.
+
+    In some Stripe SDK versions `session.metadata` is a `StripeObject` that
+    does NOT expose `.get()` (only `__getitem__`), so the standard
+    `(session.metadata or {}).get(key)` raises AttributeError. Convert
+    defensively.
+    """
+    md = getattr(session, "metadata", None)
+    if md is None:
+        return None
+    try:
+        return dict(md).get(key)
+    except Exception:
+        try:
+            return md[key]
+        except Exception:
+            return None
+
+
 async def _apply_subscription_to_user(db, session, subscription) -> None:
     """Persist subscription details onto the user document."""
-    user_id = (session.metadata or {}).get("user_id")
-    plan_id = (session.metadata or {}).get("plan_id")
+    user_id = _md(session, "user_id")
+    plan_id = _md(session, "plan_id")
     if not user_id:
         return
     update: dict = {
