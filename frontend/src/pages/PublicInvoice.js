@@ -9,7 +9,7 @@ import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Hammer, FileDown, Printer, MapPin, Phone, Mail } from "lucide-react";
-import { generateInvoicePDF } from "@/lib/pdf";
+import { generateInvoicePDF, listAgreementClauses } from "@/lib/pdf";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -184,29 +184,18 @@ export default function PublicInvoice() {
                     <span className="text-slate-500"> — due before work begins, per signed agreement.</span>
                   </div>
                 )}
-                {[
-                  ["What is included", sections.what_is_included],
-                  ["What is not included", sections.what_is_not_included],
-                  ["Materials", sections.materials],
-                ].map(([label, items]) => items?.length ? (
-                  <div key={label}>
-                    <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-1">{label}</div>
-                    <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
-                      {items.map((it, i) => <li key={i}>{it}</li>)}
-                    </ul>
+                {listAgreementClauses(sections).map((c) => (
+                  <div key={c.label}>
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-0.5">{c.label}</div>
+                    {c.kind === "list" ? (
+                      <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
+                        {c.value.map((it, i) => <li key={i}>{it}</li>)}
+                      </ul>
+                    ) : (
+                      <div className="text-xs text-slate-700 whitespace-pre-line">{c.value}</div>
+                    )}
                   </div>
-                ) : null)}
-                {[
-                  ["Payment terms", sections.payment_terms],
-                  ["Timeline", sections.timeline],
-                  ["Warranty", sections.warranty_notes],
-                  ["Change order policy", sections.change_order_note],
-                ].map(([label, v]) => v ? (
-                  <div key={label}>
-                    <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-0.5">{label}</div>
-                    <div className="text-xs text-slate-700">{v}</div>
-                  </div>
-                ) : null)}
+                ))}
               </div>
             )}
           </div>

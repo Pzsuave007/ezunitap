@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Hammer, CheckCircle2 } from "lucide-react";
+import { Loader2, Hammer, CheckCircle2, FileDown, Printer } from "lucide-react";
+import { generateQuotePDF } from "@/lib/pdf";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -47,9 +48,26 @@ export default function PublicQuote() {
   const { quote, business, client } = data;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 lg:p-10">
+    <div className="min-h-screen bg-slate-50 p-4 lg:p-10 print:p-0 print:bg-white">
       <div className="max-w-3xl mx-auto">
-        <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-end gap-2 mb-4 print:hidden">
+          <Button
+            onClick={() => generateQuotePDF(quote, business, client)}
+            variant="outline"
+            className="rounded-xl"
+            data-testid="public-quote-download-pdf"
+          >
+            <FileDown className="w-4 h-4 mr-1" /> Download PDF
+          </Button>
+          <Button
+            onClick={() => window.print()}
+            className="rounded-xl bg-blue-900 hover:bg-blue-950 text-white"
+            data-testid="public-quote-print"
+          >
+            <Printer className="w-4 h-4 mr-1" /> Print
+          </Button>
+        </div>
+        <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden print:shadow-none print:border-0">
           <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-6">
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div>

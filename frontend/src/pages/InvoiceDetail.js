@@ -14,6 +14,7 @@ import { generateInvoicePDF } from "@/lib/pdf";
 import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
+import { listAgreementClauses } from "@/lib/pdf";
 
 const blank = () => ({
   client_id: "",
@@ -348,18 +349,7 @@ export default function InvoiceDetail() {
 
 function AgreementTermsBlock({ terms, depositAmount }) {
   if (!terms) return null;
-  const sec = terms.sections || {};
-  const sections = [
-    { key: "what_is_included", label: "What is included", items: sec.what_is_included },
-    { key: "what_is_not_included", label: "What is not included", items: sec.what_is_not_included },
-    { key: "materials", label: "Materials", items: sec.materials },
-  ];
-  const rows = [
-    { label: "Payment terms", value: sec.payment_terms },
-    { label: "Timeline", value: sec.timeline },
-    { label: "Warranty", value: sec.warranty_notes },
-    { label: "Change order policy", value: sec.change_order_note },
-  ];
+  const clauses = listAgreementClauses(terms.sections);
   return (
     <div
       data-testid="agreement-terms-block"
@@ -383,28 +373,20 @@ function AgreementTermsBlock({ terms, depositAmount }) {
           <span className="text-slate-500"> — due before work begins, per signed agreement.</span>
         </div>
       )}
-      {sections.map((s) =>
-        s.items?.length ? (
-          <div key={s.key}>
-            <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-1">
-              {s.label}
-            </div>
+      {clauses.map((c) => (
+        <div key={c.label}>
+          <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-1">
+            {c.label}
+          </div>
+          {c.kind === "list" ? (
             <ul className="list-disc ml-5 space-y-0.5 text-xs text-slate-700">
-              {s.items.map((it, i) => <li key={i}>{it}</li>)}
+              {c.value.map((it, i) => <li key={i}>{it}</li>)}
             </ul>
-          </div>
-        ) : null
-      )}
-      {rows.map((r) =>
-        r.value ? (
-          <div key={r.label}>
-            <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-900 mb-0.5">
-              {r.label}
-            </div>
-            <div className="text-xs text-slate-700">{r.value}</div>
-          </div>
-        ) : null
-      )}
+          ) : (
+            <div className="text-xs text-slate-700 whitespace-pre-line">{c.value}</div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

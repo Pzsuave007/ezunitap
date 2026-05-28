@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy, FileSignature, CheckCircle2, Trash2, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, FileSignature, CheckCircle2, Trash2, Send, Loader2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
+import { generateAgreementPDF } from "@/lib/pdf";
 
 const STATUS_LABEL = { draft: "Borrador", sent: "Enviado", signed: "Firmado", declined: "Rechazado" };
 const STATUS_STYLES = {
@@ -123,6 +124,14 @@ export default function AgreementDetail() {
             className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <Send className="w-4 h-4 mr-1" /> Mandar Contrato
+          </Button>
+          <Button
+            data-testid="agreement-download-pdf"
+            onClick={() => generateAgreementPDF(a, user || {}, client || {})}
+            variant="outline"
+            className="rounded-xl h-10"
+          >
+            <FileDown className="w-4 h-4 mr-1" /> PDF
           </Button>
           <Button
             data-testid="copy-link-btn"

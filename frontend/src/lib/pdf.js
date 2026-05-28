@@ -154,8 +154,13 @@ export async function generateQuotePDF(quote, business, client) {
   addRow("Subtotal", fmtMoney(quote.subtotal));
   if (quote.tax_amount) addRow(`Tax (${quote.tax_rate || 0}%)`, fmtMoney(quote.tax_amount));
   addRow("TOTAL", fmtMoney(quote.total), true);
-  if (quote.deposit_amount)
-    addRow("Deposit Required", fmtMoney(quote.deposit_amount));
+  const qDeposit = Number(quote.deposit_amount) || 0;
+  if (qDeposit > 0) {
+    doc.setTextColor(...COLOR_SECONDARY);
+    addRow("Deposit due upfront", fmtMoney(qDeposit), true);
+    doc.setTextColor(...COLOR_TEXT);
+    addRow("Balance after deposit", fmtMoney(Math.max(0, (quote.total || 0) - qDeposit)));
+  }
 
   y += 4;
   if (quote.payment_terms) {
@@ -284,44 +289,162 @@ export async function generateInvoicePDF(invoice, business, client) {
       y += 7;
     }
 
-    const listSection = (label, items) => {
-      if (!items?.length) return;
+    // Use the shared agreement-clause renderer (supports both schemas).
+    const clauses = listAgreementClauses(sec);
+    for (const c of clauses) {
       if (y > 270) { doc.addPage(); y = 20; }
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.text(label.toUpperCase(), 14, y);
+      doc.text(c.label.toUpperCase(), 14, y);
       y += 5;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      for (const it of items) {
+      if (c.kind === "list") {
+        for (const it of c.value) {
+          if (y > 280) { doc.addPage(); y = 20; }
+          const lines = doc.splitTextToSize(`• ${it}`, 178);
+          doc.text(lines, 16, y);
+          y += lines.length * 4.5;
+        }
+      } else {
+        const lines = doc.splitTextToSize(c.value, 180);
+        for (const line of lines) {
+          if (y > 285) { doc.addPage(); y = 20; }
+          doc.text(line, 14, y);
+          y += 4.5;
+        }
+      }
+      y += 2;
+    }
+  }
+
+  doc.save(`Invoice-${invoice.number || "draft"}.pdf`);
+}
+
+// --- Agreement section helpers (shared by Agreement PDF + Invoice's snapshot)
+
+/**
+ * Returns an ordered array of {kind, label, value} describing every
+ * non-empty clause in an `agreement.sections` object.
+ *
+ * Supports BOTH the full AI-generated agreement schema (services_included,
+ * schedule, pricing, cancellation_policy, etc.) AND the simpler scope-style
+ * schema (what_is_included, materials, timeline, warranty_notes,
+ * change_order_note) that older agreements used.
+ */
+export function listAgreementClauses(sections) {
+  const s = sections || {};
+  const out = [];
+  const push = (kind, label, value) => {
+    if (kind === "list" ? value?.length : value) out.push({ kind, label, value });
+  };
+  // Preamble first if present
+  push("text", "Preamble", s.preamble);
+  // Lists
+  push("list", "Services Included", s.services_included || s.what_is_included);
+  push("list", "Services Excluded", s.services_excluded || s.what_is_not_included);
+  push("list", "Materials", s.materials);
+  // Texts
+  push("text", "Schedule", s.schedule || s.timeline);
+  push("text", "Pricing", s.pricing);
+  push("text", "Payment Terms", s.payment_terms);
+  push("text", "Cancellation Policy", s.cancellation_policy);
+  push("list", "Client Responsibilities", s.client_responsibilities);
+  push("text", "Warranty", s.warranty || s.warranty_notes);
+  push("text", "Liability & Indemnity", s.liability_and_indemnity);
+  push("text", "Insurance", s.insurance_statement);
+  push("text", "Change Orders", s.change_orders || s.change_order_note);
+  push("text", "Dispute Resolution", s.dispute_resolution);
+  push("list", "Industry-Specific Clauses", s.industry_specific_clauses);
+  return out;
+}
+
+export async function generateAgreementPDF(agreement, business, client) {
+  const doc = new jsPDF();
+  const dateStr = new Date(agreement.created_at || Date.now()).toLocaleDateString("en-US");
+  await header(doc, business, "Service Agreement", "Agreement #", agreement.id?.slice(0, 8) || "—", dateStr);
+  let y = clientBlock(doc, client, 52);
+  y += 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...COLOR_TEXT);
+  doc.text(agreement.title || "Service Agreement", 14, y);
+  y += 7;
+
+  // Totals + deposit summary
+  const total = Number(agreement.total) || 0;
+  const deposit = Number(agreement.deposit) || 0;
+  if (total > 0 || deposit > 0) {
+    const labelX = 140, valueX = 196;
+    const addRow = (label, val, bold = false, color = null) => {
+      if (color) doc.setTextColor(...color);
+      else doc.setTextColor(...COLOR_TEXT);
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(10);
+      doc.text(label, labelX, y);
+      doc.text(val, valueX, y, { align: "right" });
+      doc.setTextColor(...COLOR_TEXT);
+      y += 6;
+    };
+    if (total > 0) addRow("TOTAL", fmtMoney(total), true);
+    if (deposit > 0) {
+      addRow("Deposit due upfront", fmtMoney(deposit), true, COLOR_SECONDARY);
+      addRow("Balance after deposit", fmtMoney(Math.max(0, total - deposit)));
+    }
+    y += 2;
+  }
+
+  // Render all clauses dynamically (supports both schemas)
+  const clauses = listAgreementClauses(agreement.sections);
+  doc.setFontSize(10);
+  for (const c of clauses) {
+    if (y > 268) { doc.addPage(); y = 20; }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(c.label.toUpperCase(), 14, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    if (c.kind === "list") {
+      for (const it of c.value) {
         if (y > 280) { doc.addPage(); y = 20; }
         const lines = doc.splitTextToSize(`• ${it}`, 178);
         doc.text(lines, 16, y);
         y += lines.length * 4.5;
       }
-      y += 2;
-    };
-    const textSection = (label, value) => {
-      if (!value) return;
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text(label.toUpperCase(), 14, y);
-      y += 5;
-      doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(value, 180);
-      doc.text(lines, 14, y);
-      y += lines.length * 4.5 + 2;
-    };
-
-    listSection("What is included", sec.what_is_included);
-    listSection("What is not included", sec.what_is_not_included);
-    listSection("Materials", sec.materials);
-    textSection("Payment terms", sec.payment_terms);
-    textSection("Timeline", sec.timeline);
-    textSection("Warranty", sec.warranty_notes);
-    textSection("Change order policy", sec.change_order_note);
+    } else {
+      const lines = doc.splitTextToSize(c.value, 180);
+      // Wrap-aware page break
+      for (const line of lines) {
+        if (y > 285) { doc.addPage(); y = 20; }
+        doc.text(line, 14, y);
+        y += 4.5;
+      }
+    }
+    y += 3;
   }
 
-  doc.save(`Invoice-${invoice.number || "draft"}.pdf`);
+  // Signature block
+  if (y > 250) { doc.addPage(); y = 20; }
+  y += 6;
+  doc.setDrawColor(...COLOR_PRIMARY);
+  doc.line(14, y, 90, y);
+  doc.line(110, y, 196, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("Client Signature", 14, y + 5);
+  doc.text("Date", 110, y + 5);
+  if (agreement.status === "signed") {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...COLOR_SECONDARY);
+    doc.text(agreement.signer_name || "—", 14, y - 2);
+    if (agreement.signed_at) {
+      doc.text(new Date(agreement.signed_at).toLocaleDateString("en-US"), 110, y - 2);
+    }
+    doc.setTextColor(...COLOR_TEXT);
+  }
+
+  doc.save(`Agreement-${(agreement.id || "draft").slice(0, 8)}.pdf`);
 }
