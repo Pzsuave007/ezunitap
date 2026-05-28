@@ -2,13 +2,21 @@
 
 ## 🚨 CRITICAL DEPLOY RULE — DO NOT SKIP 🚨
 **EVERY time the frontend changes (any file under `/app/frontend/src/`), the agent MUST:**
-1. Run `cd /app/frontend && rm -rf build && yarn build` (with `REACT_APP_BACKEND_URL=https://ezunitap.com` from `.env.production`)
-2. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
-3. **Explicitly commit it** (Emergent auto-commit ONLY commits already-tracked files; `frontend/build/` may be untracked after a clean): `git commit -m "Build frontend: <change summary>"`
-4. Verify with `git ls-files frontend/build/static/js/main.*.js` — must show the new hashed bundle.
+1. **ALWAYS run build with the env var EXPLICITLY** — NEVER rely on `.env.production` alone:
+   ```
+   cd /app/frontend && rm -rf build && REACT_APP_BACKEND_URL=https://ezunitap.com yarn build
+   ```
+   ⚠️ A plain `yarn build` quietly bakes the **preview URL** from `.env` instead of `.env.production`. This DID happen once (May 2026) and shipped a build that called Emergent's backend from `ezunitap.com`, showing fake test data instead of real production data. NEVER again.
+2. **Verify the build was bundled with the correct URL** before commit:
+   ```
+   grep -oE "https://(ezunitap\.com|unitap-staging[^\"',]*)" /app/frontend/build/static/js/main.*.js | sort -u
+   ```
+   Must show ONLY `https://ezunitap.com`. If `unitap-staging-*.preview.emergentagent.com` appears, the build is WRONG — rebuild.
+3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
+4. **Explicitly commit it** (Emergent auto-commit ONLY commits already-tracked files; `frontend/build/` may be untracked after a clean): `git commit -m "Build frontend: <change summary>"`
 5. Tell the user to **"Save to GitHub"** in chat input + `git pull` + `cp -r frontend/build/. /home/ezunitap/public_html/` on the VPS.
 
-**Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git. If `frontend/build/` is missing from the commit, the production site stays on the old bundle even after `git pull`. This happened once (Feb 2026) — never let it happen again.
+**Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
