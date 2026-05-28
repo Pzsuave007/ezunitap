@@ -143,7 +143,7 @@ export async function generateQuotePDF(quote, business, client) {
   // Totals
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const labelX = 140;
+  const labelX = 130;
   const valueX = 196;
   const addRow = (label, val, bold = false) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
@@ -157,9 +157,9 @@ export async function generateQuotePDF(quote, business, client) {
   const qDeposit = Number(quote.deposit_amount) || 0;
   if (qDeposit > 0) {
     doc.setTextColor(...COLOR_SECONDARY);
-    addRow("Deposit due upfront", fmtMoney(qDeposit), true);
+    addRow("Deposit upfront", fmtMoney(qDeposit), true);
     doc.setTextColor(...COLOR_TEXT);
-    addRow("Balance after deposit", fmtMoney(Math.max(0, (quote.total || 0) - qDeposit)));
+    addRow("Balance after dep.", fmtMoney(Math.max(0, (quote.total || 0) - qDeposit)));
   }
 
   y += 4;
@@ -221,7 +221,7 @@ export async function generateInvoicePDF(invoice, business, client) {
     y = doc.lastAutoTable.finalY + 4;
   }
 
-  const labelX = 140, valueX = 196;
+  const labelX = 130, valueX = 196;
   const addRow = (label, val, bold = false) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.text(label, labelX, y);
@@ -236,9 +236,9 @@ export async function generateInvoicePDF(invoice, business, client) {
   const deposit = Number(invoice.deposit_amount) || 0;
   if (deposit > 0) {
     doc.setTextColor(...COLOR_SECONDARY);
-    addRow("Deposit due upfront", fmtMoney(deposit), true);
+    addRow("Deposit upfront", fmtMoney(deposit), true);
     doc.setTextColor(...COLOR_TEXT);
-    addRow("Balance after deposit", fmtMoney(Math.max(0, (invoice.total || 0) - deposit)));
+    addRow("Balance after dep.", fmtMoney(Math.max(0, (invoice.total || 0) - deposit)));
   }
 
   if (invoice.amount_paid) addRow("Paid", fmtMoney(invoice.amount_paid));
@@ -376,7 +376,7 @@ export async function generateAgreementPDF(agreement, business, client) {
   const total = Number(agreement.total) || 0;
   const deposit = Number(agreement.deposit) || 0;
   if (total > 0 || deposit > 0) {
-    const labelX = 140, valueX = 196;
+    const labelX = 130, valueX = 196;
     const addRow = (label, val, bold = false, color = null) => {
       if (color) doc.setTextColor(...color);
       else doc.setTextColor(...COLOR_TEXT);
@@ -389,8 +389,8 @@ export async function generateAgreementPDF(agreement, business, client) {
     };
     if (total > 0) addRow("TOTAL", fmtMoney(total), true);
     if (deposit > 0) {
-      addRow("Deposit due upfront", fmtMoney(deposit), true, COLOR_SECONDARY);
-      addRow("Balance after deposit", fmtMoney(Math.max(0, total - deposit)));
+      addRow("Deposit upfront", fmtMoney(deposit), true, COLOR_SECONDARY);
+      addRow("Balance after dep.", fmtMoney(Math.max(0, total - deposit)));
     }
     y += 2;
   }

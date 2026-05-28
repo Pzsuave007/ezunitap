@@ -230,6 +230,23 @@ export default function InvoiceDetail() {
         )}
       </Card>
 
+      {!isNew && (
+        <PaymentStatusCard
+          invoice={invoice}
+          onChange={(patch) => {
+            setInvoice({ ...invoice, ...patch });
+          }}
+          onPersist={async (patch) => {
+            try {
+              await api.put(`/invoices/${id}`, { ...invoice, ...patch });
+              toast.success("Estado actualizado");
+            } catch {
+              toast.error("Error al actualizar estado");
+            }
+          }}
+        />
+      )}
+
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div>
           <Label>Cliente</Label>
@@ -344,6 +361,168 @@ export default function InvoiceDetail() {
         />
       )}
     </div>
+  );
+}
+
+function PaymentStatusCard({ invoice, onChange, onPersist }) {
+  const total = Number(invoice.total) || 0;
+  const paid = Number(invoice.amount_paid) || 0;
+  const deposit = Number(invoice.deposit_amount) || 0;
+  const remaining = Math.max(0, total - paid);
+  const status = invoice.status;
+
+  const setStatus = async (next, amountPaid = null) => {
+    const patch = { status: next };
+    if (amountPaid !== null) patch.amount_paid = amountPaid;
+    if (next === "paid") patch.amount_paid = total;
+    if (next === "draft" || next === "sent" || next === "overdue") {
+      // Resetting to unpaid clears recorded paid amount.
+      if (amountPaid === null) patch.amount_paid = 0;
+    }
+    onChange(patch);
+    await onPersist(patch);
+  };
+
+  const onPartial = async () => {
+    const input = window.prompt(
+      `¿Cuánto pagó? (de $${total.toFixed(2)})`,
+      String(paid || deposit || ""),
+    );
+    if (input === null) return;
+    const amt = Number(input);
+    if (isNaN(amt) || amt < 0) {
+      toast.error("Monto inválido");
+      return;
+    }
+    if (amt >= total) {
+      await setStatus("paid", total);
+    } else {
+      await setStatus("partial", amt);
+    }
+  };
+
+  const Pill = ({ value, label, color, testid, onClick, disabled }) => {
+    const active = status === value;
+    return (
+      <button
+        data-testid={testid}
+        onClick={onClick}
+        disabled={disabled}
+        className={`relative p-3 rounded-2xl border-2 text-center transition ${
+          active
+            ? `${color.activeBg} ${color.activeBorder} ${color.activeText} shadow-md`
+            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {active && (
+          <Check className="absolute top-1.5 right-1.5 w-3.5 h-3.5" />
+        )}
+        <div className="text-xl">{color.icon}</div>
+        <div className="font-bold text-xs mt-1">{label}</div>
+      </button>
+    );
+  };
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none" data-testid="payment-status-card">
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div>
+          <h3 className="font-heading font-bold text-base">Estado de pago</h3>
+          <p className="text-xs text-slate-500">Marca cómo va el pago de este invoice.</p>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+            Pendiente
+          </div>
+          <div className="font-heading font-bold text-xl text-slate-900">
+            ${remaining.toFixed(2)}
+          </div>
+          {paid > 0 && (
+            <div className="text-[10px] text-emerald-700">
+              Pagado ${paid.toFixed(2)} de ${total.toFixed(2)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        <Pill
+          value="sent"
+          label="No pagado"
+          testid="status-unpaid"
+          onClick={() => setStatus("sent")}
+          color={{
+            icon: "⚪",
+            activeBg: "bg-slate-100",
+            activeBorder: "border-slate-400",
+            activeText: "text-slate-900",
+          }}
+        />
+        <Pill
+          value="partial"
+          label="Pago parcial"
+          testid="status-partial"
+          onClick={onPartial}
+          color={{
+            icon: "🟡",
+            activeBg: "bg-amber-100",
+            activeBorder: "border-amber-500",
+            activeText: "text-amber-900",
+          }}
+        />
+        <Pill
+          value="paid"
+          label="Pagado todo"
+          testid="status-paid"
+          onClick={() => setStatus("paid")}
+          color={{
+            icon: "✅",
+            activeBg: "bg-emerald-100",
+            activeBorder: "border-emerald-500",
+            activeText: "text-emerald-900",
+          }}
+        />
+        <Pill
+          value="overdue"
+          label="Atrasado"
+          testid="status-overdue"
+          onClick={() => setStatus("overdue")}
+          color={{
+            icon: "🔴",
+            activeBg: "bg-red-100",
+            activeBorder: "border-red-500",
+            activeText: "text-red-900",
+          }}
+        />
+      </div>
+
+      {status === "partial" && paid > 0 && (
+        <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2">
+          <div className="text-sm">
+            <div className="font-semibold text-amber-900">
+              Pago parcial: ${paid.toFixed(2)}
+            </div>
+            <div className="text-xs text-amber-800">
+              Falta cobrar ${remaining.toFixed(2)}
+            </div>
+          </div>
+          <Button
+            data-testid="add-payment"
+            size="sm"
+            onClick={onPartial}
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            Agregar pago
+          </Button>
+        </div>
+      )}
+
+      {status === "paid" && (
+        <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
+          <Check className="w-4 h-4" /> Invoice pagado completo. Se creó un Trabajo automáticamente.
+        </div>
+      )}
+    </Card>
   );
 }
 
