@@ -1,5 +1,15 @@
 # Unitap (formerly ServicioFlow AI) — Product Requirements Document
 
+## 🚨 CRITICAL DEPLOY RULE — DO NOT SKIP 🚨
+**EVERY time the frontend changes (any file under `/app/frontend/src/`), the agent MUST:**
+1. Run `cd /app/frontend && rm -rf build && yarn build` (with `REACT_APP_BACKEND_URL=https://ezunitap.com` from `.env.production`)
+2. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
+3. **Explicitly commit it** (Emergent auto-commit ONLY commits already-tracked files; `frontend/build/` may be untracked after a clean): `git commit -m "Build frontend: <change summary>"`
+4. Verify with `git ls-files frontend/build/static/js/main.*.js` — must show the new hashed bundle.
+5. Tell the user to **"Save to GitHub"** in chat input + `git pull` + `cp -r frontend/build/. /home/ezunitap/public_html/` on the VPS.
+
+**Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git. If `frontend/build/` is missing from the commit, the production site stays on the old bundle even after `git pull`. This happened once (Feb 2026) — never let it happen again.
+
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
