@@ -14,6 +14,26 @@ PH="/home/${CPANEL_USER}/public_html"
 
 echo ">>> [user=$CPANEL_USER] fix.sh starting..."
 
+# 0. Load Stripe keys from /home/<user>/public_html/keys.txt (if present)
+#    Keeps secrets OUT of the repo. Format (two lines, no quotes):
+#      STRIPE_API_KEY=sk_test_...
+#      STRIPE_WEBHOOK_SECRET=whsec_...
+KEYS_FILE="$PH/keys.txt"
+if [ -f "$KEYS_FILE" ]; then
+    echo ">>> Loading Stripe keys from $KEYS_FILE"
+    for VAR in STRIPE_API_KEY STRIPE_WEBHOOK_SECRET; do
+        VAL=$(grep -E "^${VAR}=" "$KEYS_FILE" | head -1 | sed "s|^${VAR}=||; s|^\"||; s|\"$||" | tr -d '\r\n')
+        if [ -n "$VAL" ]; then
+            if grep -q "^${VAR}=" "$PROD/.env"; then
+                sed -i "s|^${VAR}=.*|${VAR}=${VAL}|" "$PROD/.env"
+            else
+                echo "${VAR}=${VAL}" >> "$PROD/.env"
+            fi
+            echo "  ${VAR} updated (${#VAL} chars)"
+        fi
+    done
+fi
+
 # 1. Pull latest
 cd "$REPO"
 git fetch origin
