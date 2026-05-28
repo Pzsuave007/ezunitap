@@ -135,6 +135,17 @@ export default function InvoiceDetail() {
     toast.success("Estado actualizado");
   };
 
+  const deleteInvoice = async () => {
+    if (!window.confirm(`¿Borrar el invoice ${invoice.number}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/invoices/${id}`);
+      toast.success("Invoice borrado");
+      navigate("/invoices");
+    } catch {
+      toast.error("Error al borrar");
+    }
+  };
+
   const downloadPDF = async () => {
     let c = client;
     if (!c && invoice.client_id) {
@@ -206,6 +217,13 @@ export default function InvoiceDetail() {
                 <DropdownMenuItem onClick={() => setStatus("paid")} data-testid="mark-paid"><Check className="w-3 h-3 mr-1" /> Marcar Pagado</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatus("partial")}>Pago parcial</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatus("overdue")}>Atrasado</DropdownMenuItem>
+                <DropdownMenuItem
+                  data-testid="invoice-delete"
+                  onClick={deleteInvoice}
+                  className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Borrar invoice
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

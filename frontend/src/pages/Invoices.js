@@ -4,8 +4,9 @@ import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge, { INVOICE_STATUSES } from "@/components/StatusBadge";
-import { ChevronRight, Plus, Receipt } from "lucide-react";
+import { ChevronRight, Plus, Receipt, Trash2 } from "lucide-react";
 import TourButton from "@/components/TourButton";
+import { toast } from "sonner";
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -25,6 +26,18 @@ export default function Invoices() {
 
   const list = filter === "all" ? invoices : invoices.filter((q) => q.status === filter);
   const labelFor = (s) => ({ draft: "Borrador", sent: "Enviado", paid: "Pagado", partial: "Parcial", overdue: "Atrasado" }[s] || s);
+
+  const deleteInvoice = async (e, inv) => {
+    e.stopPropagation();
+    if (!window.confirm(`¿Borrar el invoice ${inv.number}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/invoices/${inv.id}`);
+      setInvoices((xs) => xs.filter((x) => x.id !== inv.id));
+      toast.success("Invoice borrado");
+    } catch {
+      toast.error("Error al borrar");
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -86,7 +99,17 @@ export default function Invoices() {
                     {clients[q.client_id]?.name || "Cliente"} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-1">
+                  <button
+                    data-testid={`invoice-delete-${q.id}`}
+                    onClick={(e) => deleteInvoice(e, q)}
+                    aria-label="Borrar invoice"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
               </div>
             </Card>
           ))}
