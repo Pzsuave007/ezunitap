@@ -70,19 +70,12 @@ export default function TrialBanner() {
         <Package className="w-5 h-5 text-emerald-700 flex-none" />
         <div className="flex-1 text-sm">
           <span className="font-semibold text-emerald-900">
-            Tu prueba activa — primer cobro en {left} {left === 1 ? "día" : "días"}.
+            ¡Bienvenido a Pro!
           </span>{" "}
           <span className="text-emerald-800">
             Tu tarjeta NFC física ya está en cola para envío.
           </span>
         </div>
-        <button
-          data-testid="trial-banner-manage"
-          onClick={() => navigate("/ajustes#suscripcion")}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-        >
-          Gestionar
-        </button>
         <button
           data-testid="trial-banner-dismiss"
           onClick={dismiss}

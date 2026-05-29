@@ -146,8 +146,8 @@ export default function SubscriptionSection() {
           </span>
         )}
         {isTrialing && (
-          <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
-            <Sparkles className="w-3 h-3" /> Trial · {PLAN_LABELS[sub.plan_type] || "Pro"}
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+            <Crown className="w-3 h-3" /> {PLAN_LABELS[sub.plan_type] || "Pro"}
           </span>
         )}
       </div>
@@ -158,16 +158,16 @@ export default function SubscriptionSection() {
       {(isPaid || isTrialing) && (
         <>
           {isTrialing && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
               <div className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-amber-700 mt-0.5 flex-none" />
-                <div className="text-sm text-amber-900">
+                <Sparkles className="w-4 h-4 text-emerald-700 mt-0.5 flex-none" />
+                <div className="text-sm text-emerald-900">
                   <div className="font-semibold">
-                    {daysLeft(sub.trial_ends_at)} días gratis restantes
+                    Plan activo · Pro
                   </div>
-                  <div className="text-amber-800 text-xs mt-1">
-                    Tu primer cobro será el {formatDate(sub.trial_ends_at)}.
-                    Puedes cancelar en cualquier momento desde el portal.
+                  <div className="text-emerald-800 text-xs mt-1">
+                    Tienes todas las funciones Pro desbloqueadas. Puedes
+                    gestionar o cancelar en cualquier momento desde el portal.
                   </div>
                 </div>
               </div>
@@ -180,14 +180,14 @@ export default function SubscriptionSection() {
                 Estado
               </div>
               <div className="text-sm font-semibold mt-1">
-                {status === "trialing" ? "En prueba" :
+                {status === "trialing" ? "Activa" :
                  status === "active" ? "Activa" :
                  "Pago pendiente"}
               </div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                {isTrialing ? "Primer cobro" : "Próxima renovación"}
+                Próxima renovación
               </div>
               <div className="text-sm font-semibold mt-1">
                 {formatDate(sub.trial_ends_at || sub.current_period_end)}
