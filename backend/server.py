@@ -345,6 +345,7 @@ async def _user_doc(user_id: str) -> dict:
     u.setdefault("trial_ends_at", None)
     u.setdefault("current_period_end", None)
     u.setdefault("cancel_at_period_end", False)
+    u.setdefault("stripe_customer_id", None)
     u.setdefault("shipping_address", None)
     u.setdefault("card_shipping_status", None)
     # Compute derived flags for UI consumption
