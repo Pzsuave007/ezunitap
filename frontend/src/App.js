@@ -29,8 +29,10 @@ import PublicAgreement from "@/pages/PublicAgreement";
 import Pricing from "@/pages/Pricing";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import AdminAccounts from "@/pages/AdminAccounts";
+import AdminMessages from "@/pages/AdminMessages";
 import AdminMetrics from "@/pages/AdminMetrics";
 import AdminShipments from "@/pages/AdminShipments";
+import NotificationsInbox from "@/pages/NotificationsInbox";
 import PublicInvoice from "@/pages/PublicInvoice";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import { Loader2 } from "lucide-react";
@@ -103,9 +105,11 @@ function App() {
               <Route path="/ajustes" element={<Settings />} />
               <Route path="/precios" element={<Pricing />} />
               <Route path="/admin/metricas" element={<AdminMetrics />} />
+              <Route path="/admin/mensajes" element={<AdminMessages />} />
               <Route path="/admin/cuentas" element={<AdminAccounts />} />
               <Route path="/admin/envios" element={<AdminShipments />} />
               <Route path="/admin/leads" element={<AdminLeads />} />
+              <Route path="/notificaciones" element={<NotificationsInbox />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

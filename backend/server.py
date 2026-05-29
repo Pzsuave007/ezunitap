@@ -2689,7 +2689,288 @@ async def admin_update_shipment(
         if not u.get("card_shipped_at"):
             update["card_shipped_at"] = now_ts
     await db.users.update_one({"id": user_id}, {"$set": update})
+
+    # Auto-create an in-app notification when status changes to a milestone.
+    try:
+        if payload.status == "shipped" and u.get("card_shipping_status") != "shipped":
+            track = (payload.tracking_number or "").strip()
+            track_text = f" Tu número de tracking: <strong>{track}</strong>." if track else ""
+            await _create_notification(
+                user_id=user_id,
+                title="📦 ¡Tu tarjeta NFC fue enviada!",
+                body=(
+                    f"Ya enviamos tu tarjeta NFC física a la dirección que registraste.{track_text} "
+                    "Te llegará en los próximos 5-10 días hábiles."
+                ),
+                kind="success",
+                action_url="/tarjeta",
+                action_label="Ver mi tarjeta",
+            )
+        elif payload.status == "delivered" and u.get("card_shipping_status") != "delivered":
+            await _create_notification(
+                user_id=user_id,
+                title="🎉 Tu tarjeta NFC llegó",
+                body=(
+                    "Acerca un teléfono a la tarjeta y comparte tu Smart Card al instante. "
+                    "Si tu cliente la escanea, recibes una reseña en Google automáticamente."
+                ),
+                kind="success",
+                action_url="/tarjeta",
+                action_label="Ver mi tarjeta",
+            )
+    except Exception as e:
+        logger.error(f"Notification auto-create failed (non-fatal): {e!r}")
+
     return {"ok": True, "user_id": user_id, **update}
+
+
+# ============================================================================
+# IN-APP NOTIFICATIONS / MESSAGES
+# ============================================================================
+NOTIF_KINDS = {"info", "success", "warning", "announcement"}
+
+SEGMENTS = {
+    "all":                "Todos los usuarios",
+    "user":               "Un usuario específico",
+    "trial":              "Todos en trial",
+    "trial_expiring_3d":  "Trials que vencen en ≤ 3 días",
+    "active":             "Pagando activamente",
+    "pro_monthly":        "Plan Pro Mensual",
+    "pro_yearly":         "Plan Pro Anual",
+    "founder":            "Plan Founder",
+    "comp":               "Cuentas cortesía",
+    "ship_pending":       "Envíos NFC pendientes",
+    "ship_shipped":       "Envíos NFC enviados",
+}
+
+
+async def _resolve_segment(segment: str, user_id: Optional[str]) -> list[str]:
+    """Translate a segment name into a list of user_ids to target."""
+    import time as _t
+    now = int(_t.time())
+    q: dict = {}
+    if segment == "user":
+        return [user_id] if user_id else []
+    if segment == "all":
+        q = {}
+    elif segment == "trial":
+        q = {"subscription_status": "trialing", "is_comp": {"$ne": True}}
+    elif segment == "trial_expiring_3d":
+        q = {
+            "subscription_status": "trialing",
+            "is_comp": {"$ne": True},
+            "trial_ends_at": {"$gt": now, "$lt": now + 3 * 86400},
+        }
+    elif segment == "active":
+        q = {"subscription_status": "active"}
+    elif segment in ("pro_monthly", "pro_yearly", "founder"):
+        q = {"plan_type": segment, "is_comp": {"$ne": True}}
+    elif segment == "comp":
+        q = {"is_comp": True}
+    elif segment == "ship_pending":
+        q = {"card_shipping_status": "pending"}
+    elif segment == "ship_shipped":
+        q = {"card_shipping_status": "shipped"}
+    else:
+        return []
+    cursor = db.users.find(q, {"_id": 0, "id": 1})
+    return [u["id"] async for u in cursor]
+
+
+async def _create_notification(
+    *,
+    user_id: Optional[str],
+    title: str,
+    body: str,
+    kind: str = "info",
+    action_url: Optional[str] = None,
+    action_label: Optional[str] = None,
+    created_by: Optional[str] = None,
+    segment: str = "user",
+) -> dict:
+    """Insert a notification document. `user_id=None` means broadcast to all."""
+    import time as _t
+    if kind not in NOTIF_KINDS:
+        kind = "info"
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,           # None for broadcast
+        "segment": segment,
+        "title": title.strip(),
+        "body": body.strip(),
+        "kind": kind,
+        "action_url": (action_url or "").strip() or None,
+        "action_label": (action_label or "").strip() or None,
+        "created_at": int(_t.time()),
+        "created_by": created_by,
+        "dismissed_by": [],
+    }
+    await db.notifications.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/notifications")
+async def list_user_notifications(user_id: str = Depends(get_current_user_id)):
+    """Active notifications for the logged-in user (targeted + broadcast that
+    they haven't dismissed). Newest first."""
+    uid = user_id
+    cur = db.notifications.find(
+        {
+            "$or": [{"user_id": uid}, {"user_id": None}],
+            "dismissed_by": {"$nin": [uid]},
+        },
+        {"_id": 0},
+    ).sort("created_at", -1).limit(50)
+    items = await cur.to_list(50)
+    return {"notifications": items}
+
+
+@api_router.post("/notifications/{notif_id}/dismiss")
+async def dismiss_notification(notif_id: str, user_id: str = Depends(get_current_user_id)):
+    res = await db.notifications.update_one(
+        {"id": notif_id},
+        {"$addToSet": {"dismissed_by": user_id}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
+    return {"ok": True}
+
+
+class NotificationCreateIn(BaseModel):
+    title: str
+    body: str
+    kind: str = "info"            # info | success | warning | announcement
+    segment: str = "all"          # see SEGMENTS dict
+    user_id: Optional[str] = None # required when segment="user"
+    action_url: Optional[str] = ""
+    action_label: Optional[str] = ""
+
+
+@api_router.get("/admin/notifications")
+async def admin_list_notifications(admin: dict = Depends(_require_super_admin)):
+    """All notifications, newest first. Augment with recipient count + read
+    count so admin can see how many people have seen each message."""
+    docs = await db.notifications.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).limit(200).to_list(200)
+    # Cache user lookups for performance
+    users = {}
+    if any(d.get("user_id") for d in docs):
+        ids = [d["user_id"] for d in docs if d.get("user_id")]
+        async for u in db.users.find(
+            {"id": {"$in": ids}}, {"_id": 0, "id": 1, "email": 1, "business_name": 1}
+        ):
+            users[u["id"]] = u
+    out = []
+    for d in docs:
+        d["recipient_email"] = (
+            users.get(d.get("user_id"), {}).get("email") if d.get("user_id") else None
+        )
+        d["recipient_business"] = (
+            users.get(d.get("user_id"), {}).get("business_name") if d.get("user_id") else None
+        )
+        d["dismissed_count"] = len(d.get("dismissed_by", []))
+        out.append(d)
+    return {
+        "notifications": out,
+        "segments": SEGMENTS,
+    }
+
+
+@api_router.post("/admin/notifications")
+async def admin_create_notification(
+    payload: NotificationCreateIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Create one or many notifications based on segment.
+
+    - segment="user"  → single doc with that user_id
+    - segment="all"   → single broadcast doc (user_id=None)
+    - other segments  → one doc per matched user (so each user can dismiss
+                        independently). For very large segments we may
+                        choose later to use the broadcast doc with a
+                        segment filter, but per-user is simpler/safer now.
+    """
+    title = payload.title.strip()
+    body = payload.body.strip()
+    if not title or not body:
+        raise HTTPException(status_code=400, detail="Título y cuerpo son obligatorios")
+    if payload.segment not in SEGMENTS:
+        raise HTTPException(status_code=400, detail="Segmento inválido")
+    if payload.kind not in NOTIF_KINDS:
+        raise HTTPException(status_code=400, detail="Tipo inválido")
+
+    if payload.segment == "user":
+        if not payload.user_id:
+            raise HTTPException(status_code=400, detail="user_id requerido para segmento 'user'")
+        doc = await _create_notification(
+            user_id=payload.user_id,
+            title=title, body=body, kind=payload.kind,
+            action_url=payload.action_url, action_label=payload.action_label,
+            created_by=admin["id"], segment="user",
+        )
+        return {"created": 1, "notifications": [doc]}
+
+    if payload.segment == "all":
+        doc = await _create_notification(
+            user_id=None,
+            title=title, body=body, kind=payload.kind,
+            action_url=payload.action_url, action_label=payload.action_label,
+            created_by=admin["id"], segment="all",
+        )
+        return {"created": 1, "notifications": [doc], "estimated_reach": "broadcast"}
+
+    # Segmented: create one notif per matched user so each user can dismiss
+    user_ids = await _resolve_segment(payload.segment, None)
+    if not user_ids:
+        raise HTTPException(status_code=400, detail="El segmento no tiene usuarios")
+    created = []
+    for uid in user_ids:
+        doc = await _create_notification(
+            user_id=uid,
+            title=title, body=body, kind=payload.kind,
+            action_url=payload.action_url, action_label=payload.action_label,
+            created_by=admin["id"], segment=payload.segment,
+        )
+        created.append(doc)
+    return {"created": len(created), "notifications": created[:3]}
+
+
+@api_router.delete("/admin/notifications/{notif_id}")
+async def admin_delete_notification(
+    notif_id: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    res = await db.notifications.delete_one({"id": notif_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
+    return {"ok": True}
+
+
+@api_router.get("/admin/segments/preview")
+async def admin_segment_preview(
+    segment: str,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Return count + sample of users a segment will hit (for preview before
+    sending a bulk message)."""
+    if segment not in SEGMENTS:
+        raise HTTPException(status_code=400, detail="Segmento inválido")
+    if segment == "user":
+        return {"count": 0, "sample": [], "label": SEGMENTS[segment]}
+    if segment == "all":
+        total = await db.users.count_documents({})
+        return {"count": total, "sample": [], "label": SEGMENTS[segment]}
+    uids = await _resolve_segment(segment, None)
+    sample = []
+    if uids:
+        async for u in db.users.find(
+            {"id": {"$in": uids[:5]}},
+            {"_id": 0, "id": 1, "email": 1, "business_name": 1},
+        ):
+            sample.append(u)
+    return {"count": len(uids), "sample": sample, "label": SEGMENTS[segment]}
 
 
 @api_router.post("/admin/users/{user_id}/grant-comp")

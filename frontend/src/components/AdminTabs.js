@@ -4,10 +4,11 @@
  * between sub-sections (Cuentas gratis, Leads, etc.) without clutter.
  */
 import { NavLink } from "react-router-dom";
-import { Gift, Inbox, ShieldCheck, Package, BarChart3 } from "lucide-react";
+import { Gift, Inbox, ShieldCheck, Package, BarChart3, MessageSquare } from "lucide-react";
 
 const TABS = [
   { to: "/admin/metricas", label: "Métricas", icon: BarChart3 },
+  { to: "/admin/mensajes", label: "Mensajes", icon: MessageSquare },
   { to: "/admin/cuentas", label: "Cuentas gratis", icon: Gift },
   { to: "/admin/leads", label: "Leads", icon: Inbox },
   { to: "/admin/envios", label: "Envíos NFC", icon: Package },

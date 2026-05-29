@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import TrialBanner from "@/components/TrialBanner";
+import NotificationBanner from "@/components/NotificationBanner";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 
 // Mobile bottom nav — 5 essential items only.
@@ -161,6 +162,7 @@ export default function Layout() {
       <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-safe lg:pb-0 min-h-screen overflow-x-hidden">
         <div className="max-w-5xl mx-auto px-4 lg:px-8 py-4 lg:py-8">
           <ImpersonationBanner />
+          <NotificationBanner />
           <TrialBanner />
           <Outlet />
         </div>
