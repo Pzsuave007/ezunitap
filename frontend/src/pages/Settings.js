@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
+import PaymentMethodsSection from "@/components/PaymentMethodsSection";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -252,6 +253,9 @@ export default function Profile() {
 
       <div id="suscripcion" className="scroll-mt-20">
         <SubscriptionSection />
+      </div>
+      <div id="pagos" className="scroll-mt-20">
+        <PaymentMethodsSection />
       </div>
 
       {/* Quick links */}

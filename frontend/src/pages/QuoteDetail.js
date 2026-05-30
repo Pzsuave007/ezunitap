@@ -173,6 +173,56 @@ export default function QuoteDetail() {
           <Textarea value={quote.notes || ""} onChange={(e) => setQuote({ ...quote, notes: e.target.value })} className="rounded-xl mt-1.5" />
         </div>
 
+        {/* Embedded mini-agreement — when present + require_signature=true, the
+            public quote page asks the client to sign and auto-creates the
+            invoice on accept. Saves a step vs. sending a separate Agreement. */}
+        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <Label className="text-emerald-900 font-bold text-base">
+                Términos cortos del trabajo
+              </Label>
+              <p className="text-xs text-emerald-700/80 mt-0.5">
+                Acuerdo simple embebido — al activar firma, el cliente acepta
+                el quote y firma todo en un paso (sin acuerdo separado).
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                data-testid="require-sig"
+                checked={!!quote.require_signature}
+                onChange={(e) => setQuote({ ...quote, require_signature: e.target.checked })}
+                className="w-4 h-4 accent-emerald-600"
+              />
+              <span className="font-semibold text-emerald-900">Pedir firma</span>
+            </label>
+          </div>
+
+          {[
+            { k: "what_is_included",     label: "Qué incluye",          ph: "Materiales, mano de obra, limpieza..." },
+            { k: "what_is_not_included", label: "Qué NO incluye",       ph: "Permisos, demolición, etc." },
+            { k: "payment_terms",        label: "Forma de pago",        ph: "50% al inicio, 50% al terminar" },
+            { k: "warranty",             label: "Garantía",             ph: "1 año en mano de obra" },
+            { k: "change_order_note",    label: "Cambios al proyecto",  ph: "Cualquier cambio se cotizará por separado" },
+          ].map(({ k, label, ph }) => (
+            <div key={k}>
+              <Label className="text-xs text-slate-600">{label}</Label>
+              <Textarea
+                data-testid={`terms-${k}`}
+                value={(quote.terms || {})[k] || ""}
+                onChange={(e) => setQuote({
+                  ...quote,
+                  terms: { ...(quote.terms || {}), [k]: e.target.value },
+                })}
+                placeholder={ph}
+                rows={2}
+                className="rounded-lg mt-1 text-sm bg-white"
+              />
+            </div>
+          ))}
+        </div>
+
         <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm">
           <div className="flex justify-between"><span className="text-slate-600">Subtotal</span><span className="font-semibold">${quote.subtotal?.toFixed(2)}</span></div>
           <div className="flex justify-between"><span className="text-slate-600">Tax</span><span className="font-semibold">${quote.tax_amount?.toFixed(2)}</span></div>

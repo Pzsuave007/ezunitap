@@ -119,6 +119,14 @@ class LineItem(BaseModel):
     amount: float = 0
 
 
+class QuoteTerms(BaseModel):
+    what_is_included: Optional[str] = ""
+    what_is_not_included: Optional[str] = ""
+    payment_terms: Optional[str] = ""
+    warranty: Optional[str] = ""
+    change_order_note: Optional[str] = ""
+
+
 class QuoteIn(BaseModel):
     client_id: str
     job_title: str
@@ -135,6 +143,11 @@ class QuoteIn(BaseModel):
     payment_terms: Optional[str] = ""
     notes: Optional[str] = ""
     status: str = "draft"  # draft, sent, approved, declined, converted
+    # Embedded short agreement (5 clauses) so clients can accept+sign in one
+    # step. Optional — when present, the public quote page asks for signature
+    # and the accept flow auto-generates an Agreement + Invoice.
+    terms: Optional[QuoteTerms] = None
+    require_signature: bool = False
 
 
 class InvoiceIn(BaseModel):
@@ -716,6 +729,140 @@ async def public_accept_quote(quote_id: str, background_tasks: BackgroundTasks):
     return {"ok": True}
 
 
+# Public quote accept-and-sign — client accepts the quote AND signs the embedded
+# short agreement in one step. Synchronously creates: (1) Agreement snapshot,
+# (2) Invoice. Used when the quote was created with `require_signature=True`.
+class PublicAcceptSignIn(BaseModel):
+    signer_name: str
+    signature: Optional[str] = ""   # data URL for drawn signature, optional
+
+
+@api_router.post("/public/quotes/{quote_id}/accept-and-sign")
+async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignIn):
+    q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
+    if not q:
+        raise HTTPException(404, "Quote no encontrado")
+    if q.get("status") in ("declined",):
+        raise HTTPException(400, "Quote rechazado")
+    signer = (payload.signer_name or "").strip()
+    if len(signer) < 2:
+        raise HTTPException(400, "Por favor ingresa tu nombre completo para firmar")
+
+    now_iso = _now_iso()
+    # Mark quote as approved + signed.
+    await db.quotes.update_one(
+        {"id": quote_id},
+        {"$set": {
+            "status": "approved",
+            "approved_at": now_iso,
+            "signer_name": signer,
+            "signed_at_iso": now_iso,
+            "updated_at": now_iso,
+        }},
+    )
+
+    # Build agreement snapshot from the quote's embedded terms.
+    terms = q.get("terms") or {}
+    agreement_doc = {
+        "id": _new_id(),
+        "user_id": q["user_id"],
+        "client_id": q["client_id"],
+        "quote_id": quote_id,
+        "client_name": q.get("client_name", ""),
+        "title": f"Service Agreement — {q.get('job_title','')}",
+        "deposit_amount": float(q.get("deposit_amount") or 0),
+        "sections": {
+            "what_is_included":       terms.get("what_is_included", ""),
+            "what_is_not_included":   terms.get("what_is_not_included", ""),
+            "payment_terms":          terms.get("payment_terms", ""),
+            "warranty":               terms.get("warranty", ""),
+            "change_order_note":      terms.get("change_order_note", ""),
+        },
+        "status": "signed",
+        "signer_name": signer,
+        "signed_at_iso": now_iso,
+        "signature_data": payload.signature or "",
+        "created_at": now_iso,
+        "updated_at": now_iso,
+    }
+    # If an agreement already exists (re-sign), reuse the ID idempotently.
+    existing_agree = await db.agreements.find_one(
+        {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
+    )
+    if existing_agree:
+        agreement_doc["id"] = existing_agree["id"]
+        await db.agreements.update_one(
+            {"id": agreement_doc["id"]}, {"$set": agreement_doc}
+        )
+    else:
+        await db.agreements.insert_one(dict(agreement_doc))
+
+    # Auto-create invoice (or reuse if already there).
+    existing_inv = await db.invoices.find_one(
+        {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
+    )
+    invoice_id = existing_inv["id"] if existing_inv else None
+    if not invoice_id:
+        inv_count = await db.invoices.count_documents({"user_id": q["user_id"]})
+        invoice_doc = {
+            "id": _new_id(),
+            "user_id": q["user_id"],
+            "client_id": q["client_id"],
+            "quote_id": quote_id,
+            "agreement_id": agreement_doc["id"],
+            "client_name": q.get("client_name", ""),
+            "job_title": q.get("job_title", ""),
+            "line_items": q.get("line_items", []),
+            "subtotal": q.get("subtotal", 0),
+            "tax_rate": q.get("tax_rate", 0),
+            "tax_amount": q.get("tax_amount", 0),
+            "total": q.get("total", 0),
+            "deposit_amount": q.get("deposit_amount", 0),
+            "agreement_terms": {
+                "title": agreement_doc["title"],
+                "sections": agreement_doc["sections"],
+                "deposit": agreement_doc["deposit_amount"],
+                "signer_name": signer,
+                "signed_at": now_iso,
+            },
+            "number": f"INV-{2000 + inv_count + 1}",
+            "status": "draft",
+            "due_date": None,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+        }
+        await db.invoices.insert_one(dict(invoice_doc))
+        invoice_id = invoice_doc["id"]
+
+    # Mark quote as converted now that an invoice exists.
+    await db.quotes.update_one(
+        {"id": quote_id},
+        {"$set": {"status": "converted", "invoice_id": invoice_id, "updated_at": now_iso}},
+    )
+
+    # Notify the contractor.
+    try:
+        await _create_notification(
+            user_id=q["user_id"],
+            title="✍️ Cliente aceptó y firmó tu quote",
+            body=(
+                f"{signer} aceptó el quote y firmó el acuerdo. "
+                f"Ya creamos el invoice automáticamente — listo para enviarlo."
+            ),
+            kind="success",
+            action_url=f"/invoices/{invoice_id}",
+            action_label="Ver invoice",
+        )
+    except Exception as e:
+        logger.error(f"accept-and-sign notif failed: {e!r}")
+
+    return {
+        "ok": True,
+        "agreement_id": agreement_doc["id"],
+        "invoice_id": invoice_id,
+    }
+
+
 async def _auto_create_agreement_from_quote(quote: dict):
     """Background task: builds the AI agreement after a quote is approved."""
     try:
@@ -911,7 +1058,107 @@ async def public_invoice(invoice_id: str):
         raise HTTPException(404, "Not found")
     user = await db.users.find_one({"id": inv["user_id"]}, {"_id": 0, "password_hash": 0})
     client_doc = await db.clients.find_one({"id": inv["client_id"]}, {"_id": 0})
-    return {"invoice": inv, "business": user, "client": client_doc}
+    # Surface the owner's payment methods so the public invoice page can
+    # render pay-by-app buttons.
+    payment_methods = (user or {}).get("payment_methods") or {}
+    return {
+        "invoice": inv,
+        "business": user,
+        "client": client_doc,
+        "payment_methods": payment_methods,
+    }
+
+
+# ============================================================================
+# PAYMENT METHODS — owner-configured payment links shown on public invoices
+# ============================================================================
+PAYMENT_METHOD_KEYS = ("venmo", "paypal", "cashapp", "zelle", "cash", "check")
+
+
+def _normalize_payment_methods(pm: dict) -> dict:
+    """Validate/normalize the payment_methods dict from the user."""
+    out: dict = {}
+    if not isinstance(pm, dict):
+        return out
+    for k in PAYMENT_METHOD_KEYS:
+        entry = pm.get(k) or {}
+        out[k] = {
+            "enabled": bool(entry.get("enabled")),
+            "value": (entry.get("value") or "").strip(),
+            "note": (entry.get("note") or "").strip(),
+        }
+    return out
+
+
+@api_router.get("/payment-methods")
+async def get_payment_methods(user_id: str = Depends(get_current_user_id)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "payment_methods": 1})
+    return {"payment_methods": _normalize_payment_methods((u or {}).get("payment_methods") or {})}
+
+
+class PaymentMethodsIn(BaseModel):
+    payment_methods: dict
+
+
+@api_router.put("/payment-methods")
+async def set_payment_methods(
+    payload: PaymentMethodsIn,
+    user_id: str = Depends(get_current_user_id),
+):
+    pm = _normalize_payment_methods(payload.payment_methods)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"payment_methods": pm}},
+    )
+    return {"payment_methods": pm}
+
+
+class PublicMarkPaidIn(BaseModel):
+    method: str = ""           # which method the client used to pay
+    payer_name: str = ""       # optional, client may type their name
+    note: str = ""
+
+
+@api_router.post("/public/invoices/{invoice_id}/mark-paid-notice")
+async def public_mark_paid_notice(invoice_id: str, payload: PublicMarkPaidIn):
+    """Public endpoint — client clicks 'I've paid' on the invoice page.
+    Does NOT auto-mark as paid (to prevent abuse). Creates an in-app
+    notification for the owner to verify and approve manually.
+    """
+    inv = await db.invoices.find_one({"id": invoice_id})
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    user_id = inv.get("user_id")
+    if not user_id:
+        raise HTTPException(404, "Invoice has no owner")
+    method = (payload.method or "").strip()[:20]
+    payer = (payload.payer_name or "").strip()[:80]
+    note = (payload.note or "").strip()[:300]
+    method_label = {
+        "venmo": "Venmo", "paypal": "PayPal", "cashapp": "Cash App",
+        "zelle": "Zelle", "cash": "Efectivo", "check": "Cheque",
+        "other": "Otro método",
+    }.get(method, method or "Otro método")
+    body = (
+        f"{payer or 'Tu cliente'} marcó como pagado el invoice "
+        f"<strong>{inv.get('number','')}</strong> vía "
+        f"<strong>{method_label}</strong>. Confirma que recibiste el pago y "
+        "márcalo como pagado en la app."
+    )
+    if note:
+        body += f' Nota del cliente: "{note}"'
+    try:
+        await _create_notification(
+            user_id=user_id,
+            title="💰 Cliente reporta pago de invoice",
+            body=body,
+            kind="success",
+            action_url=f"/invoices/{invoice_id}",
+            action_label="Ver invoice",
+        )
+    except Exception as e:
+        logger.error(f"mark-paid-notice notif failed: {e!r}")
+    return {"ok": True}
 
 
 # ============================================================================

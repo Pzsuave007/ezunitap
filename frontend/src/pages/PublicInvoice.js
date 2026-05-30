@@ -41,7 +41,7 @@ export default function PublicInvoice() {
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">Invoice not found.</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
-  const { invoice, business, client } = data;
+  const { invoice, business, client, payment_methods } = data;
   const dep = Number(invoice.deposit_amount) || 0;
   const balance = Math.max(0, Number(invoice.total) - dep);
   const terms = invoice.agreement_terms;
@@ -200,10 +200,186 @@ export default function PublicInvoice() {
           </div>
         </Card>
 
+        <InvoicePayBlock
+          invoice={invoice}
+          methods={payment_methods || {}}
+          business={business}
+        />
+
         <div className="text-center text-xs text-slate-400 mt-4 print:hidden">
           Powered by Unitap
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// InvoicePayBlock — Renders pay-by-app buttons on the public invoice for any
+// payment methods the business owner has enabled in Settings.
+// ============================================================================
+function InvoicePayBlock({ invoice, methods, business }) {
+  const [marking, setMarking] = useState(false);
+  const [done, setDone] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [chosen, setChosen] = useState("");
+  const [payerName, setPayerName] = useState(invoice.client_name || "");
+  const [note, setNote] = useState("");
+
+  // Don't render if already paid or no methods enabled
+  if (invoice.status === "paid") return null;
+  const enabled = Object.entries(methods).filter(([, v]) => v?.enabled);
+  if (enabled.length === 0) return null;
+
+  const handlePay = (key, value) => {
+    setChosen(key);
+    setShowForm(true);
+    const v = (value || "").trim();
+    const clean = v.replace(/^[@$]/, "");
+    let url = "";
+    if (key === "venmo" && clean) {
+      url = `https://venmo.com/u/${clean}`;
+    } else if (key === "paypal" && clean) {
+      url = `https://paypal.me/${clean}/${Math.max(0, Number(invoice.total) || 0)}`;
+    } else if (key === "cashapp" && clean) {
+      url = `https://cash.app/$${clean}`;
+    }
+    if (url) window.open(url, "_blank", "noopener");
+  };
+
+  const submitMarkPaid = async () => {
+    if (!chosen) return;
+    setMarking(true);
+    try {
+      await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/public/invoices/${invoice.id}/mark-paid-notice`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: chosen, payer_name: payerName, note }),
+        }
+      );
+      setDone(true);
+    } catch {
+      // Silent — user can retry
+    } finally {
+      setMarking(false);
+    }
+  };
+
+  const METHOD_LABELS = {
+    venmo: { label: "Pay with Venmo", color: "bg-sky-500 hover:bg-sky-600", letter: "V" },
+    paypal: { label: "Pay with PayPal", color: "bg-blue-700 hover:bg-blue-800", letter: "P" },
+    cashapp: { label: "Pay with Cash App", color: "bg-emerald-600 hover:bg-emerald-700", letter: "$" },
+    zelle: { label: "Pay with Zelle", color: "bg-violet-600 hover:bg-violet-700", letter: "Z" },
+    cash: { label: "Pay in Cash", color: "bg-slate-700 hover:bg-slate-800", letter: "💵" },
+    check: { label: "Pay by Check", color: "bg-amber-600 hover:bg-amber-700", letter: "📝" },
+  };
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none mt-4 print:hidden" data-testid="invoice-pay-block">
+      <h3 className="font-heading font-bold text-base mb-1">
+        Pay this invoice
+      </h3>
+      <p className="text-xs text-slate-500 mb-4">
+        Choose your preferred payment method below.
+      </p>
+
+      <div className="space-y-2">
+        {enabled.map(([key, entry]) => {
+          const meta = METHOD_LABELS[key];
+          const v = (entry.value || "").trim();
+          const showCopyable = key === "zelle" || key === "cash" || key === "check";
+          return (
+            <div key={key} className="rounded-xl border border-slate-200 overflow-hidden">
+              <button
+                data-testid={`pay-${key}`}
+                onClick={() => handlePay(key, v)}
+                disabled={showCopyable}
+                className={`w-full ${meta.color} text-white p-3 flex items-center gap-3 text-left transition disabled:opacity-90 disabled:cursor-default`}
+              >
+                <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center font-bold flex-none">
+                  {meta.letter}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-sm">{meta.label}</div>
+                  {v && (
+                    <div className="text-xs opacity-90 mt-0.5">
+                      {key === "venmo" && `@${v.replace(/^@/, "")}`}
+                      {key === "paypal" && `paypal.me/${v}`}
+                      {key === "cashapp" && `${v.startsWith("$") ? "" : "$"}${v}`}
+                      {key === "zelle" && `Send to: ${v}`}
+                      {key === "check" && v}
+                    </div>
+                  )}
+                  {!v && entry.note && (
+                    <div className="text-xs opacity-90 mt-0.5">{entry.note}</div>
+                  )}
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {done ? (
+        <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
+          ✅ <strong>Thanks!</strong> {business?.business_name || "The business owner"} has
+          been notified. They'll confirm receipt of your payment shortly.
+        </div>
+      ) : !showForm ? (
+        <button
+          data-testid="open-mark-paid"
+          onClick={() => setShowForm(true)}
+          className="w-full mt-4 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline"
+        >
+          ✓ I've already paid — let them know
+        </button>
+      ) : (
+        <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <div className="text-sm font-semibold">
+            Let {business?.business_name || "the owner"} know you paid:
+          </div>
+          {!chosen && (
+            <select
+              data-testid="paid-method"
+              value={chosen}
+              onChange={(e) => setChosen(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm"
+            >
+              <option value="">— Method used —</option>
+              {enabled.map(([key]) => (
+                <option key={key} value={key}>{METHOD_LABELS[key]?.label || key}</option>
+              ))}
+              <option value="other">Other</option>
+            </select>
+          )}
+          <input
+            type="text"
+            data-testid="paid-name"
+            value={payerName}
+            onChange={(e) => setPayerName(e.target.value)}
+            placeholder="Your name"
+            className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm"
+          />
+          <textarea
+            data-testid="paid-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Optional: confirmation number, time of payment, etc."
+            rows={2}
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm"
+          />
+          <button
+            data-testid="submit-paid"
+            onClick={submitMarkPaid}
+            disabled={marking || !chosen}
+            className="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-50"
+          >
+            {marking ? "Sending..." : "Notify business"}
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }
