@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateQuotePDF } from "@/lib/pdf";
-import { ArrowLeft, Download, Send, FileDown, MoreVertical, Loader2, Receipt, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Send, FileDown, MoreVertical, Loader2, Receipt, Trash2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 
@@ -67,6 +67,11 @@ export default function QuoteDetail() {
   };
 
   const convert = async () => {
+    // If the quote was accepted-and-signed, an invoice already exists.
+    if (quote?.invoice_id) {
+      navigate(`/invoices/${quote.invoice_id}`);
+      return;
+    }
     if (!window.confirm("¿Convertir este quote en invoice?")) return;
     const { data } = await api.post(`/quotes/${id}/convert`);
     toast.success("Convertido a invoice");
@@ -103,6 +108,31 @@ export default function QuoteDetail() {
         <ArrowLeft className="w-4 h-4" /> Quotes
       </button>
 
+      {/* Prominent next-step banner when the quote was already accepted+signed
+          or converted. Drives the user from /quotes/:id → /invoices/:id. */}
+      {quote.invoice_id && (
+        <div
+          data-testid="quote-converted-banner"
+          className="rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-4 shadow-lg flex items-center gap-3 cursor-pointer hover:from-emerald-600 hover:to-emerald-700 transition"
+          onClick={() => navigate(`/invoices/${quote.invoice_id}`)}
+        >
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-none">
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm">
+              {quote.signer_name
+                ? `${quote.signer_name} aceptó y firmó`
+                : "Quote convertido en invoice"}
+            </div>
+            <div className="text-xs opacity-90">
+              El siguiente paso es enviar el invoice al cliente. Toca para ver.
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 flex-none" />
+        </div>
+      )}
+
       <Card className="card-elevated p-5 border-0 shadow-none">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -133,20 +163,20 @@ export default function QuoteDetail() {
           </DropdownMenu>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
           <Button data-testid="download-pdf" onClick={downloadPDF} variant="outline" className="h-12 rounded-xl border-slate-200">
             <FileDown className="w-4 h-4 mr-1" /> PDF
           </Button>
           <Button data-testid="share-link" onClick={openSend} className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
-            <Send className="w-4 h-4 mr-1" /> Mandar Quote
+            <Send className="w-4 h-4 mr-1" /> Mandar
           </Button>
           <Button
             data-testid="convert-invoice"
             onClick={convert}
-            disabled={quote.status === "converted"}
-            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white col-span-2 sm:col-span-1"
           >
-            <Receipt className="w-4 h-4 mr-1" /> A Invoice
+            <Receipt className="w-4 h-4 mr-1" />
+            {quote.invoice_id ? "Ver Invoice" : "A Invoice"}
           </Button>
         </div>
       </Card>
