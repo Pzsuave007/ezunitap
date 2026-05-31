@@ -1204,6 +1204,7 @@ async def set_review_settings(
 
 class PublicReviewFeedbackIn(BaseModel):
     sentiment: str
+    rating: Optional[int] = None
     feedback: Optional[str] = ""
     name: Optional[str] = ""
     contact: Optional[str] = ""
@@ -1237,6 +1238,7 @@ async def public_review_feedback(slug: str, payload: PublicReviewFeedbackIn):
         "user_id": user["id"],
         "card_slug": slug,
         "sentiment": payload.sentiment,
+        "rating": payload.rating if isinstance(payload.rating, int) and 1 <= payload.rating <= 5 else None,
         "feedback": (payload.feedback or "").strip()[:1000],
         "name": (payload.name or "").strip()[:80],
         "contact": (payload.contact or "").strip()[:120],

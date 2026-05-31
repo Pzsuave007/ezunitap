@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save, Star, ExternalLink, Copy, Check, Share2 } from "lucide-react";
+import { Loader2, Save, Star, Copy, Check, Share2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
@@ -115,35 +115,32 @@ export default function GoogleReviewsSection() {
       </div>
 
       {publicUrl && (
-        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 mb-1">
-            Tu link público de reseñas
+        <div className="card-elevated p-4 rounded-2xl bg-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-shrink-0">
+              <Share2 className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Tu link de reseñas</div>
+              <div className="font-semibold text-sm truncate" data-testid="reviews-public-url">{publicUrl}</div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <code className="text-xs text-emerald-900 truncate flex-1">{publicUrl}</code>
-            <button onClick={copyLink} className="p-1.5 rounded-lg hover:bg-white" data-testid="copy-gmb-link" title="Copiar">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5 text-emerald-700" />}
-            </button>
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-white" title="Ver">
-              <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
+          <div className="grid grid-cols-3 gap-2">
+            <Button onClick={copyLink} data-testid="copy-gmb-link" variant="outline" className="h-11 rounded-xl">
+              {copied ? <Check className="w-4 h-4 mr-1 text-emerald-600" /> : <Copy className="w-4 h-4 mr-1" />} Copiar
+            </Button>
+            <Button onClick={() => setShareOpen(true)} data-testid="gmb-share" variant="outline" className="h-11 rounded-xl">
+              <Share2 className="w-4 h-4 mr-1" /> Compartir
+            </Button>
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer" data-testid="gmb-view">
+              <Button variant="outline" className="h-11 rounded-xl w-full">
+                <Eye className="w-4 h-4 mr-1" /> Ver
+              </Button>
             </a>
           </div>
-
-          <Button
-            data-testid="gmb-share"
-            onClick={() => setShareOpen(true)}
-            className="w-full h-11 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-semibold mt-3"
-          >
-            <Share2 className="w-4 h-4 mr-2" /> Compartir link (WhatsApp, Texto, Email)
-          </Button>
-
-          {!url ? (
-            <p className="text-[11px] text-amber-700 mt-2">
+          {!url && (
+            <p className="text-[11px] text-amber-700 mt-3">
               ⚠️ Configura tu link de Google arriba para que los clientes felices lleguen directo a Google.
-            </p>
-          ) : (
-            <p className="text-[10px] text-emerald-700 mt-2">
-              Programa este link en tu tarjeta NFC de Google Reviews y compártelo con tus clientes.
             </p>
           )}
         </div>

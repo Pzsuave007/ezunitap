@@ -15,6 +15,8 @@ export default function PublicReviewPage() {
   const { slug } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
   const [sentiment, setSentiment] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [name, setName] = useState("");
@@ -45,14 +47,25 @@ export default function PublicReviewPage() {
     );
   }
 
-  const goToGoogle = async () => {
+  const goToGoogle = async (stars) => {
     // Track happy sentiment silently (best-effort)
     try {
       await axios.post(`${API}/public/reviews/${slug}/feedback`, {
-        sentiment: "happy", feedback: "", name: "", contact: "",
+        sentiment: "happy", rating: stars, feedback: "", name: "", contact: "",
       });
     } catch { /* ignore */ }
     window.location.href = data.google_review_url;
+  };
+
+  // Star gate: 4-5 stars → Google. 3 or fewer → private feedback form.
+  const handleRate = (stars) => {
+    setRating(stars);
+    if (stars >= 4) {
+      setSentiment("happy");
+      goToGoogle(stars);
+    } else {
+      setSentiment(stars <= 2 ? "sad" : "neutral");
+    }
   };
 
   const submitFeedback = async () => {
@@ -60,7 +73,7 @@ export default function PublicReviewPage() {
     setSubmitting(true);
     try {
       await axios.post(`${API}/public/reviews/${slug}/feedback`, {
-        sentiment, feedback: feedback.trim(), name: name.trim(), contact: contact.trim(),
+        sentiment, rating, feedback: feedback.trim(), name: name.trim(), contact: contact.trim(),
       });
       setSubmitted(true);
     } catch {
@@ -68,7 +81,7 @@ export default function PublicReviewPage() {
     } finally { setSubmitting(false); }
   };
 
-  // Step 1 — sentiment selection
+  // Step 1 — star rating selection
   if (!sentiment) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-6">
@@ -79,23 +92,32 @@ export default function PublicReviewPage() {
             )}
             <h1 className="font-heading text-2xl font-bold">{data.business_name}</h1>
             <p className="text-sm text-slate-500 mt-2">
-              {data.intro_text || "Thanks for choosing us! How was your experience?"}
+              {data.intro_text || "Thanks for choosing us! How would you rate your experience?"}
             </p>
 
-            <div className="grid grid-cols-3 gap-3 mt-8">
-              <SentimentButton emoji="😊" label="Great" onClick={() => { setSentiment("happy"); goToGoogle(); }} testid="sent-happy" color="bg-emerald-500 hover:bg-emerald-600" />
-              <SentimentButton emoji="😐" label="Okay" onClick={() => setSentiment("neutral")} testid="sent-neutral" color="bg-amber-500 hover:bg-amber-600" />
-              <SentimentButton emoji="😞" label="Poor" onClick={() => setSentiment("sad")} testid="sent-sad" color="bg-rose-500 hover:bg-rose-600" />
+            <div className="flex items-center justify-center gap-1.5 mt-8" data-testid="star-rating">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  data-testid={`star-${s}`}
+                  onClick={() => handleRate(s)}
+                  onMouseEnter={() => setHover(s)}
+                  onMouseLeave={() => setHover(0)}
+                  className="p-1 transition-transform hover:scale-110 active:scale-95"
+                  aria-label={`${s} star${s > 1 ? "s" : ""}`}
+                >
+                  <Star
+                    className={`w-11 h-11 transition-colors ${
+                      (hover || rating) >= s
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-slate-300"
+                    }`}
+                  />
+                </button>
+              ))}
             </div>
-
-            {!data.filter_enabled && (
-              <button
-                onClick={() => { setSentiment("happy"); goToGoogle(); }}
-                className="mt-6 text-xs text-slate-500 underline"
-              >
-                Skip and leave a Google review
-              </button>
-            )}
+            <p className="text-xs text-slate-400 mt-4">Tap a star to rate</p>
 
             <div className="text-[10px] text-slate-400 mt-6">Powered by Unitap</div>
           </Card>
@@ -113,7 +135,7 @@ export default function PublicReviewPage() {
     );
   }
 
-  // Step 3 — neutral/sad: feedback form
+  // Step 3 — 3 stars or fewer: private feedback form
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-6">
       <div className="max-w-md w-full">
@@ -121,19 +143,25 @@ export default function PublicReviewPage() {
           {submitted ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-3">🙏</div>
-              <h2 className="font-heading text-xl font-bold">Thank you for your honesty</h2>
+              <h2 className="font-heading text-xl font-bold">Thank you for your feedback</h2>
               <p className="text-sm text-slate-600 mt-2">
-                {data.owner_name || "The owner"} from {data.business_name} will reach out
-                personally to make this right.
+                The team at {data.business_name} will reach out personally to make this right.
               </p>
             </div>
           ) : (
             <>
               <div className="text-center mb-5">
-                <div className="text-3xl mb-2">{sentiment === "neutral" ? "😐" : "😞"}</div>
-                <h2 className="font-heading text-xl font-bold">We're sorry to hear that</h2>
+                <div className="flex items-center justify-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-6 h-6 ${rating >= s ? "text-yellow-400 fill-yellow-400" : "text-slate-200"}`}
+                    />
+                  ))}
+                </div>
+                <h2 className="font-heading text-xl font-bold">How can we do better?</h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  Help us improve. Your feedback goes directly to {data.owner_name || "the owner"} — not public.
+                  Tell us what happened and we'll make it right.
                 </p>
               </div>
               <textarea
@@ -164,10 +192,10 @@ export default function PublicReviewPage() {
                 disabled={!feedback.trim() || submitting}
                 className="w-full mt-4 h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold disabled:opacity-50"
               >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Send feedback"}
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Send"}
               </button>
               <button
-                onClick={() => setSentiment(null)}
+                onClick={() => { setSentiment(null); setRating(0); }}
                 className="w-full mt-2 text-xs text-slate-500 underline"
               >
                 ← Back
@@ -180,11 +208,3 @@ export default function PublicReviewPage() {
   );
 }
 
-function SentimentButton({ emoji, label, onClick, testid, color }) {
-  return (
-    <button onClick={onClick} data-testid={testid} className={`${color} text-white p-4 rounded-2xl transition flex flex-col items-center justify-center gap-1`}>
-      <div className="text-3xl">{emoji}</div>
-      <div className="text-xs font-bold">{label}</div>
-    </button>
-  );
-}
