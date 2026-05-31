@@ -17,25 +17,72 @@ const NAV = [
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
 ];
 
-// Desktop sidebar — follows the business flow:
-//   Quote → Contrato → Invoice → Agenda → Trabajo
-// Scope of Work and Mensajes AI moved INTO the client profile (per-client).
-const FLOW = [
+// Desktop sidebar — grouped for clarity.
+//   Inicio · Clientes · [Invoicing: Quotes/Contratos/Invoices] ·
+//   [Trabajos: Agenda] · Google Reviews · Tarjeta Digital
+const SIDEBAR = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/quotes", label: "Quotes", icon: FileText },
-  { to: "/contratos", label: "Contratos", icon: FileSignature },
-  { to: "/invoices", label: "Invoices", icon: Receipt },
-  { to: "/calendario", label: "Agenda", icon: CalendarDays },
-  { to: "/trabajos", label: "Trabajos", icon: Briefcase },
+  {
+    label: "Invoicing", icon: Receipt,
+    children: [
+      { to: "/quotes", label: "Quotes", icon: FileText },
+      { to: "/contratos", label: "Contratos", icon: FileSignature },
+      { to: "/invoices", label: "Invoices", icon: Receipt },
+    ],
+  },
+  {
+    to: "/trabajos", label: "Trabajos", icon: Briefcase,
+    children: [
+      { to: "/calendario", label: "Agenda", icon: CalendarDays },
+    ],
+  },
+  { to: "/reviews", label: "Google Reviews", icon: Star },
+  { to: "/tarjeta", label: "Tarjeta Digital", icon: IdCard },
 ];
 
 const ACCOUNT = [
-  { to: "/tarjeta", label: "Tarjeta", icon: IdCard },
-  { to: "/reviews", label: "Google Reviews", icon: Star },
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
   { to: "/ajustes#suscripcion", label: "Suscripción", icon: CreditCard },
 ];
+
+function SidebarLink({ item, nested }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      data-testid={`nav-${item.to.replace("/", "") || "home"}`}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-xl font-medium tap ${
+          nested ? "pl-3 pr-3 py-2.5 text-[13px]" : "px-3 py-3 text-sm"
+        } ${isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"}`
+      }
+    >
+      <item.icon className={nested ? "w-4 h-4" : "w-5 h-5"} strokeWidth={2} />
+      {item.label}
+    </NavLink>
+  );
+}
+
+function SidebarGroup({ group }) {
+  return (
+    <div>
+      {group.to ? (
+        <SidebarLink item={group} />
+      ) : (
+        <div className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500">
+          <group.icon className="w-5 h-5" strokeWidth={2} />
+          {group.label}
+        </div>
+      )}
+      <div className="ml-[1.45rem] pl-3 border-l border-slate-200 space-y-1 mt-1 mb-1">
+        {group.children.map((c) => (
+          <SidebarLink key={c.to} item={c} nested />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -90,37 +137,17 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {FLOW.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              data-testid={`nav-${n.to.replace("/", "") || "home"}`}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
-                  isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
-                }`
-              }
-            >
-              <n.icon className="w-5 h-5" strokeWidth={2} />
-              {n.label}
-            </NavLink>
-          ))}
+          {SIDEBAR.map((n) =>
+            n.children ? (
+              <SidebarGroup key={n.label} group={n} />
+            ) : (
+              <SidebarLink key={n.to} item={n} />
+            )
+          )}
           <div className="h-px bg-slate-100 my-2" />
+          <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Cuenta</div>
           {accountItems.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              data-testid={`nav-${n.to.replace("/", "")}`}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium tap ${
-                  isActive ? "bg-blue-50 text-blue-900" : "text-slate-700 hover:bg-slate-50"
-                }`
-              }
-            >
-              <n.icon className="w-5 h-5" strokeWidth={2} />
-              {n.label}
-            </NavLink>
+            <SidebarLink key={n.to} item={n} />
           ))}
         </nav>
 
