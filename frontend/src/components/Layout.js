@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -84,6 +84,39 @@ function SidebarGroup({ group }) {
   );
 }
 
+// Days left in a local (non-Stripe) trial, or null if not applicable.
+function trialDaysLeft(user) {
+  if (!user || user.is_comp) return null;
+  if (user.subscription_status !== "trialing") return null;
+  if (user.stripe_customer_id) return null;
+  const ts = user.trial_ends_at;
+  if (!ts) return null;
+  return Math.max(0, Math.ceil((ts * 1000 - Date.now()) / 86400000));
+}
+
+// Subtle, always-visible trial indicator in the sidebar (turns amber near the end).
+function TrialPill({ user }) {
+  const days = trialDaysLeft(user);
+  if (days === null) return null;
+  const urgent = days <= 3;
+  const label = days === 0 ? "último día" : `${days} ${days === 1 ? "día" : "días"}`;
+  return (
+    <Link
+      to="/precios"
+      data-testid="sidebar-trial-pill"
+      className={`mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold tap transition-colors ${
+        urgent
+          ? "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+          : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+      }`}
+    >
+      <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="flex-1">Prueba gratis · {label}</span>
+      <span className="text-[10px] opacity-70">Ver planes</span>
+    </Link>
+  );
+}
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -135,6 +168,8 @@ export default function Layout() {
             </div>
           </div>
         </div>
+
+        <TrialPill user={user} />
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {SIDEBAR.map((n) =>

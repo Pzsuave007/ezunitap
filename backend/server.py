@@ -407,6 +407,8 @@ async def register(payload: RegisterIn):
         "plan_type": None,
         "subscription_status": "trialing",
         "trial_ends_at": trial_ends_at,
+        "trial_extended": False,
+        "trial_notifs": [],
         "current_period_end": None,
         "stripe_customer_id": None,
         "stripe_subscription_id": None,
@@ -441,6 +443,26 @@ async def register(payload: RegisterIn):
         )
 
     token = create_token(user["id"])
+    # Welcome notification for new local-trial users (skip invited comp accounts).
+    if not invite:
+        try:
+            await _create_notification(
+                user_id=user["id"],
+                title="👋 ¡Bienvenido a Unitap!",
+                body=(
+                    "Tienes <strong>14 días gratis</strong> para probar todo — sin tarjeta. "
+                    "Empieza creando tu primer quote profesional en inglés y comparte tu "
+                    "tarjeta digital. ¡Estamos para ayudarte a crecer tu negocio!"
+                ),
+                kind="success",
+                action_url="/quotes",
+                action_label="Crear mi primer quote",
+            )
+            await db.users.update_one(
+                {"id": user["id"]}, {"$addToSet": {"trial_notifs": "welcome"}}
+            )
+        except Exception as e:
+            logger.error(f"welcome notif failed: {e!r}")
     return {
         "token": token,
         "user": await _user_doc(user["id"]),
@@ -2674,9 +2696,15 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
         or (card.get("business_type") or "").strip()
     )
 
+    # Activation items — computed from real work done.
+    quotes_count = await db.quotes.count_documents({"user_id": user_id})
+    invoices_count = await db.invoices.count_documents({"user_id": user_id})
+
     items = [
         {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes"},
-        {"id": "smart_card", "label": "Crea tu Tarjeta Inteligente", "minutes": 3, "done": card_created, "path": "/tarjeta"},
+        {"id": "smart_card", "label": "Crea y comparte tu Tarjeta Digital", "minutes": 3, "done": card_created, "path": "/tarjeta"},
+        {"id": "first_quote", "label": "Crea tu primer quote", "minutes": 2, "done": quotes_count > 0, "path": "/quotes"},
+        {"id": "first_invoice", "label": "Manda tu primer invoice", "minutes": 2, "done": invoices_count > 0, "path": "/invoices"},
     ]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0
@@ -2708,6 +2736,160 @@ async def onboarding_set_state(
     if update:
         await db.users.update_one({"id": user_id}, {"$set": update})
     return {"ok": True}
+
+
+# ============================================================================
+# TRIAL — status, +7-day extension (engaged users only), milestone notifs
+# ============================================================================
+TRIAL_EXTEND_DAYS = 7
+
+
+def _ceil_days(diff_seconds: int) -> int:
+    if diff_seconds <= 0:
+        return 0
+    return (diff_seconds + 86399) // 86400
+
+
+async def _trial_state(user_id: str):
+    """Compute the user's trial state + extension eligibility."""
+    import time as _t
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u:
+        raise HTTPException(404, "User not found")
+    now = int(_t.time())
+    status = u.get("subscription_status")
+    is_comp = bool(u.get("is_comp"))
+    has_card = bool(u.get("stripe_customer_id"))
+    ts = u.get("trial_ends_at")
+    days_left = None if ts is None else _ceil_days(ts - now)
+    is_trialing = (status == "trialing") and not is_comp and not has_card
+    expired = bool(is_trialing and ts is not None and ts <= now)
+
+    clients_count = await db.clients.count_documents({"user_id": user_id})
+    invoices_count = await db.invoices.count_documents({"user_id": user_id})
+    active = clients_count > 0 and invoices_count > 0
+    trial_extended = bool(u.get("trial_extended"))
+
+    near_end = days_left is not None and days_left <= 3
+    within_grace = expired and ts is not None and (now - ts) <= 3 * 86400
+    extend_eligible = bool(
+        is_trialing and active and not trial_extended and (near_end or within_grace)
+    )
+
+    state = {
+        "status": status,
+        "is_comp": is_comp,
+        "has_card": has_card,
+        "trial_ends_at": ts,
+        "days_left": days_left,
+        "is_trialing": is_trialing,
+        "expired": expired,
+        "active": active,
+        "clients_count": clients_count,
+        "invoices_count": invoices_count,
+        "trial_extended": trial_extended,
+        "extend_eligible": extend_eligible,
+    }
+    return u, state
+
+
+async def _sync_trial_notifications(u: dict, st: dict):
+    """Create milestone notifications once each (idempotent via trial_notifs)."""
+    if not st["is_trialing"]:
+        return
+    import time as _t
+    now = int(_t.time())
+    ts = st["trial_ends_at"]
+    days_left = st["days_left"]
+    sent = set(u.get("trial_notifs") or [])
+    to_add: list[str] = []
+
+    if days_left is not None and 3 < days_left <= 7 and "mid" not in sent:
+        await _create_notification(
+            user_id=u["id"], title="⏳ Vas a mitad de tu prueba",
+            body=(
+                f"Te quedan <strong>{days_left} días</strong> de tu prueba gratis. "
+                "Crea tu primer quote y manda tu primer invoice para sacarle todo el jugo a Unitap."
+            ),
+            kind="info", action_url="/quotes", action_label="Crear quote",
+        )
+        to_add.append("mid")
+
+    if days_left is not None and 0 < days_left <= 3 and "urgency" not in sent:
+        unit = "día" if days_left == 1 else "días"
+        await _create_notification(
+            user_id=u["id"], title="🔔 Últimos días de tu prueba",
+            body=(
+                f"Solo te quedan <strong>{days_left} {unit}</strong>. "
+                "Suscríbete para no perder tu trabajo ni la tarjeta NFC física."
+            ),
+            kind="warning", action_url="/precios", action_label="Ver planes",
+        )
+        to_add.append("urgency")
+
+    if st["expired"] and "expired" not in sent:
+        await _create_notification(
+            user_id=u["id"], title="⌛ Tu prueba terminó",
+            body=(
+                "Tu prueba gratis terminó. Suscríbete para seguir creando quotes, "
+                "invoices y conservar todo tu trabajo."
+            ),
+            kind="warning", action_url="/precios", action_label="Suscribirme",
+        )
+        to_add.append("expired")
+
+    if ts is not None and (now - ts) >= 2 * 86400 and "post_expiry" not in sent:
+        await _create_notification(
+            user_id=u["id"], title="👋 Tu negocio te espera en Unitap",
+            body=(
+                "Tu información sigue guardada. Reactiva tu cuenta y sigue cobrando "
+                "más rápido con quotes e invoices profesionales."
+            ),
+            kind="info", action_url="/precios", action_label="Reactivar",
+        )
+        to_add.append("post_expiry")
+
+    if to_add:
+        await db.users.update_one(
+            {"id": u["id"]}, {"$addToSet": {"trial_notifs": {"$each": to_add}}}
+        )
+
+
+@api_router.get("/trial/status")
+async def trial_status(user_id: str = Depends(get_current_user_id)):
+    u, st = await _trial_state(user_id)
+    try:
+        await _sync_trial_notifications(u, st)
+    except Exception as e:
+        logger.error(f"trial notif sync failed: {e!r}")
+    return st
+
+
+@api_router.post("/trial/extend")
+async def trial_extend(user_id: str = Depends(get_current_user_id)):
+    """Grant a one-time +7-day extension to engaged trial users (has clients + invoices)."""
+    import time as _t
+    u, st = await _trial_state(user_id)
+    if not st["extend_eligible"]:
+        raise HTTPException(400, "No elegible para extensión")
+    now = int(_t.time())
+    base = st["trial_ends_at"] if (st["trial_ends_at"] and st["trial_ends_at"] > now) else now
+    new_ends = base + TRIAL_EXTEND_DAYS * 86400
+    await db.users.update_one(
+        {"id": user_id}, {"$set": {"trial_ends_at": new_ends, "trial_extended": True}}
+    )
+    try:
+        await _create_notification(
+            user_id=user_id, title="🎁 ¡Te regalamos 7 días más!",
+            body=(
+                "Como estás usando Unitap activamente, extendimos tu prueba "
+                "<strong>7 días gratis</strong>. Aprovéchalos para cerrar más trabajos."
+            ),
+            kind="success", action_url="/", action_label="Seguir",
+        )
+    except Exception as e:
+        logger.error(f"extend notif failed: {e!r}")
+    return {"ok": True, "trial_ends_at": new_ends, "days_left": _ceil_days(new_ends - now)}
 
 
 

@@ -87,17 +87,19 @@ export default function WelcomeModal() {
             ¡Hola{firstName ? ` ${firstName}` : ""}! 👋
           </h2>
           <p className="text-center text-slate-600 mt-3 leading-relaxed">
-            Vamos a dejar tu negocio listo en <strong className="text-slate-900">2 minutos</strong>. Te ayudo paso a paso para que mañana ya estés mandando tu primer quote profesional en inglés. 🚀
+            Tienes <strong className="text-emerald-600">14 días gratis</strong> para probar todo. Vamos a dejar tu negocio listo en <strong className="text-slate-900">unos minutos</strong> para que hoy mismo mandes tu primer quote profesional en inglés. 🚀
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 text-center">
+          <div className="mt-6 grid grid-cols-4 gap-2 text-center">
             {[
               { n: "01", l: "Tu info" },
               { n: "02", l: "Tu tarjeta" },
+              { n: "03", l: "Primer quote" },
+              { n: "04", l: "Primer invoice" },
             ].map((s) => (
               <div key={s.n} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">{s.n}</div>
-                <div className="text-xs font-semibold text-slate-700 mt-0.5">{s.l}</div>
+                <div className="text-[11px] font-semibold text-slate-700 mt-0.5 leading-tight">{s.l}</div>
               </div>
             ))}
           </div>
@@ -109,7 +111,7 @@ export default function WelcomeModal() {
               className="w-full h-13 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-base font-bold gap-2 shadow-lg shadow-emerald-500/20"
             >
               <Rocket className="w-4 h-4" />
-              Setup en 2 minutos
+              Empezar mis primeros pasos
             </Button>
             <button
               data-testid="welcome-explore"

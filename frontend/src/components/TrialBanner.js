@@ -1,23 +1,26 @@
 /**
- * TrialBanner — small banner shown to users currently in a trial.
+ * TrialBanner — prominent banner for the END of a free trial.
  *
- * Hidden in these cases:
- *   - Not logged in
- *   - Paid (active / past_due)
- *   - Comp (complimentary) accounts
- *   - Trialing users who ALREADY entered a card via Stripe Checkout
- *     (i.e. `stripe_customer_id` is set) — they're already subscribed.
- *   - On /precios or /pago/exito routes
- *   - User dismissed it in this session
+ * Day-to-day, the trial countdown lives as a subtle pill in the sidebar
+ * (see Layout). This banner only appears when it matters:
+ *   - The last 4 days of the trial, or
+ *   - After the trial has expired.
  *
- * For trial users WITH a card on file, we show a friendly reminder of how
- * many days until the first charge — no "subscribe" CTA, just info + a
- * "Manage" link to the Settings page.
+ * Hidden for: not logged in, paid (active/past_due), comp accounts,
+ * /precios + /pago/exito routes, and when dismissed this session.
+ *
+ * For trial users WITH a card on file (Stripe Checkout), we show a friendly
+ * NFC-shipping welcome instead.
+ *
+ * Engaged trial users (clients + invoices) near the end get a one-time
+ * "Extender 7 días gratis" button instead of just "Ver planes".
  */
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Clock, Sparkles, Package } from "lucide-react";
+import { Clock, Sparkles, Package, Gift, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 
 function daysLeft(ts) {
   if (!ts) return null;
@@ -28,15 +31,28 @@ function daysLeft(ts) {
 const HIDE_ON_PATHS = ["/precios", "/pago/exito"];
 
 export default function TrialBanner() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [dismissed, setDismissed] = useState(false);
+  const [trialApi, setTrialApi] = useState(null);
+  const [extending, setExtending] = useState(false);
 
   useEffect(() => {
     const v = sessionStorage.getItem("trial_banner_dismissed");
     if (v === "1") setDismissed(true);
   }, []);
+
+  const isLocalTrial =
+    user &&
+    !user.is_comp &&
+    user.subscription_status === "trialing" &&
+    !user.stripe_customer_id;
+
+  useEffect(() => {
+    if (!isLocalTrial) return;
+    api.get("/trial/status").then(({ data }) => setTrialApi(data)).catch(() => {});
+  }, [isLocalTrial]);
 
   if (!user) return null;
   if (dismissed) return null;
@@ -51,9 +67,6 @@ export default function TrialBanner() {
   if (left === null) return null;
 
   const isExpired = left <= 0;
-
-  // ✅ Paying trial (card on file via Stripe Checkout) → friendly reminder,
-  //    no "subscribe again" prompt — they're already subscribed.
   const isPayingTrial = status === "trialing" && !!user.stripe_customer_id;
 
   const dismiss = () => {
@@ -61,6 +74,7 @@ export default function TrialBanner() {
     setDismissed(true);
   };
 
+  // Paying trial (NFC shipping) — keep friendly welcome.
   if (isPayingTrial) {
     return (
       <div
@@ -69,9 +83,7 @@ export default function TrialBanner() {
       >
         <Package className="w-5 h-5 text-emerald-700 flex-none" />
         <div className="flex-1 text-sm">
-          <span className="font-semibold text-emerald-900">
-            ¡Bienvenido a UniTap Pro!
-          </span>{" "}
+          <span className="font-semibold text-emerald-900">¡Bienvenido a UniTap Pro!</span>{" "}
           <span className="text-emerald-800">
             Tu tarjeta NFC física ya está en proceso de programación y envío.
           </span>
@@ -88,13 +100,31 @@ export default function TrialBanner() {
     );
   }
 
+  // Only show the prominent banner near the end (<= 4 days) or once expired.
+  // Day-to-day the subtle sidebar pill carries the countdown.
+  if (!isExpired && left > 4) return null;
+
+  const canExtend = !!trialApi?.extend_eligible;
+
+  const handleExtend = async () => {
+    setExtending(true);
+    try {
+      await api.post("/trial/extend");
+      await refreshUser();
+      toast.success("¡Te regalamos 7 días más! 🎁");
+      setTrialApi(null);
+    } catch {
+      toast.error("No se pudo extender la prueba");
+    } finally {
+      setExtending(false);
+    }
+  };
+
   return (
     <div
       data-testid="trial-banner"
       className={`mb-4 rounded-2xl border px-4 py-3 flex items-center gap-3 ${
-        isExpired
-          ? "bg-red-50 border-red-200"
-          : "bg-amber-50 border-amber-200"
+        isExpired ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"
       }`}
     >
       <div className="flex-none">
@@ -109,7 +139,9 @@ export default function TrialBanner() {
           <>
             <span className="font-semibold text-red-900">Tu prueba terminó.</span>{" "}
             <span className="text-red-800">
-              Suscríbete para seguir usando Unitap sin interrupciones.
+              {canExtend
+                ? "Como has estado usando Unitap, puedes extenderla 7 días gratis."
+                : "Suscríbete para seguir usando Unitap sin interrupciones."}
             </span>
           </>
         ) : (
@@ -118,22 +150,38 @@ export default function TrialBanner() {
               {left} {left === 1 ? "día restante" : "días restantes"} de tu prueba gratis.
             </span>{" "}
             <span className="text-amber-800">
-              Suscríbete para desbloquear la Tarjeta NFC física.
+              {canExtend
+                ? "¡Vas muy bien! Extiéndela 7 días gratis."
+                : "Suscríbete para desbloquear la Tarjeta NFC física."}
             </span>
           </>
         )}
       </div>
-      <button
-        data-testid="trial-banner-cta"
-        onClick={() => navigate("/precios")}
-        className={`text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap ${
-          isExpired
-            ? "bg-red-600 hover:bg-red-700 text-white"
-            : "bg-amber-600 hover:bg-amber-700 text-white"
-        }`}
-      >
-        Ver planes
-      </button>
+
+      {canExtend ? (
+        <button
+          data-testid="trial-extend-cta"
+          onClick={handleExtend}
+          disabled={extending}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 disabled:opacity-60"
+        >
+          {extending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gift className="w-3.5 h-3.5" />}
+          Extender 7 días
+        </button>
+      ) : (
+        <button
+          data-testid="trial-banner-cta"
+          onClick={() => navigate("/precios")}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap ${
+            isExpired
+              ? "bg-red-600 hover:bg-red-700 text-white"
+              : "bg-amber-600 hover:bg-amber-700 text-white"
+          }`}
+        >
+          Ver planes
+        </button>
+      )}
+
       {!isExpired && (
         <button
           data-testid="trial-banner-dismiss"

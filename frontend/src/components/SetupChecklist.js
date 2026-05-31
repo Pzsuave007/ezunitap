@@ -65,10 +65,10 @@ export default function SetupChecklist() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-slate-900">
-              Configura tu negocio
+              Tus primeros pasos
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
-              {data.done_count} de {data.total} completados · te queda poquito
+              {data.done_count} de {data.total} completados · activa tu negocio en Unitap
             </p>
           </div>
           <div className="hidden sm:block text-right">

@@ -35,7 +35,7 @@ export default function Register() {
       toast.success(
         inviteToken
           ? "¡Cuenta creada con acceso gratis! 🎁"
-          : "¡Cuenta creada! Bienvenido."
+          : "¡Cuenta creada! Tienes 14 días gratis 🎁"
       );
       navigate("/");
     } catch (err) {
@@ -71,7 +71,17 @@ export default function Register() {
         )}
 
         <h2 className="font-heading text-3xl font-bold tracking-tight">Crea tu cuenta</h2>
-        <p className="text-slate-500 mt-2 text-sm">Empieza gratis. Sin tarjeta requerida.</p>
+        {!inviteToken && (
+          <div
+            data-testid="trial-badge"
+            className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold"
+          >
+            <Gift className="w-3.5 h-3.5" /> 14 días gratis · Sin tarjeta de crédito
+          </div>
+        )}
+        <p className="text-slate-500 mt-2 text-sm">
+          Prueba todo Unitap gratis por 14 días. Cancela cuando quieras.
+        </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           <div>
