@@ -36,6 +36,7 @@ import NotificationsInbox from "@/pages/NotificationsInbox";
 import PublicInvoice from "@/pages/PublicInvoice";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import PublicReviewPage from "@/pages/PublicReviewPage";
+import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -102,6 +103,7 @@ function App() {
               <Route path="/trabajos" element={<Jobs />} />
               <Route path="/calendario" element={<Calendar />} />
               <Route path="/tarjeta" element={<CardAdmin />} />
+              <Route path="/reviews" element={<GoogleReviewsPage />} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />

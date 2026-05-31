@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const FLOW = [
 
 const ACCOUNT = [
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard },
+  { to: "/reviews", label: "Google Reviews", icon: Star },
   { to: "/ajustes", label: "Perfil", icon: UserIcon },
   { to: "/ajustes#suscripcion", label: "Suscripción", icon: CreditCard },
 ];
