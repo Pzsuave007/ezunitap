@@ -84,6 +84,39 @@ const SERVICES = [
   "Landscaping", "Catering", "Plumbing", "Electrical", "HVAC",
 ];
 
+// ── "La historia de un trabajo" — el flujo completo, conectado ──
+const JOURNEY = [
+  { n: "01", icon: IdCard, tag: "Te encuentran", title: "El cliente toca tu tarjeta", desc: "Toca tu tarjeta NFC o escanea tu QR y llega a tu mini-sitio. Te llama o pide quote — sin que gastes un dólar en publicidad." },
+  { n: "02", icon: Sparkles, tag: "Cotizas", title: "Quote en inglés en 10 seg", desc: "Lo describes en español y la AI escribe un quote profesional en inglés. El cliente piensa: «esta es una empresa seria» — y te dan el trabajo." },
+  { n: "03", icon: FileBadge, tag: "Firman", title: "Aceptan y firman", desc: "El cliente firma desde su celular. Unitap crea el contrato y el invoice automáticamente. Protegido, sin abogado." },
+  { n: "04", icon: CalendarDays, tag: "Agendas", title: "El trabajo va a tu agenda", desc: "Directo a tu calendario. Trabajos recurrentes y proyectos de varias semanas, sin doble-booking." },
+  { n: "05", icon: DollarSign, tag: "Cobras", title: "Te pagan el mismo día", desc: "Mandas el invoice con botón de pago (Venmo, Zelle, PayPal, CashApp). Cobras hoy — no en 3 semanas." },
+  { n: "06", icon: Star, tag: "Reseña 5★", title: "Pides la reseña con 1 tap", desc: "El cliente feliz deja una reseña 5★ en Google. Y esa reseña te trae el siguiente cliente. El ciclo se repite." },
+];
+
+// ── Antes vs Después ──
+const BEFORE = [
+  "Quotes a mano o por texto, mal escritos en inglés",
+  "Pierdes trabajos contra empresas que se ven más \u201cpro\u201d",
+  "Te pagan tarde… o no te pagan",
+  "Todo en papelitos, WhatsApp y la memoria",
+  "Nunca pides reseñas — y los clientes no regresan",
+];
+const AFTER = [
+  "Quotes e invoices en inglés perfecto en segundos",
+  "Te ves como empresa grande y ganas mejores trabajos",
+  "Cobras el mismo día con botón de pago",
+  "Todo conectado en un solo lugar, en tu celular",
+  "Reseñas 5★ en automático que te traen más clientes",
+];
+
+// ── El costo de NO tenerlo ──
+const COST = [
+  { icon: Clock, stat: "Cada quote que tardas", p: "es un trabajo que se va con el contratista que cotizó primero." },
+  { icon: DollarSign, stat: "Cada invoice sin seguimiento", p: "es dinero tuyo que se queda en la calle por semanas." },
+  { icon: Star, stat: "Cada reseña que no pides", p: "es un cliente nuevo que nunca te encontró en Google." },
+];
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
@@ -104,6 +137,7 @@ export default function Landing() {
             <a href="#invoices" className="hover:text-slate-900 tap">Invoices</a>
             <a href="#features" className="hover:text-slate-900 tap">Features</a>
             <a href="#how" className="hover:text-slate-900 tap">Cómo funciona</a>
+            <a href="#historia" className="hover:text-slate-900 tap">La historia</a>
             <a href="#card" className="hover:text-slate-900 tap">Tarjeta</a>
             <a href="#para-quien" className="hover:text-slate-900 tap">Para quién</a>
           </nav>
@@ -378,6 +412,178 @@ export default function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ====== ANTES vs DESPUÉS ====== */}
+      <section id="transformacion" className="py-20 lg:py-28 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">La transformación</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              De "el del jardín" a <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">una empresa de verdad.</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              No es una app más. Es la diferencia entre verte como uno más… o como el profesional al que le pagan mejor y le pagan a tiempo.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5 lg:gap-7">
+            {/* ANTES */}
+            <div className="rounded-3xl bg-white border border-slate-200 p-7 lg:p-9">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider mb-6">
+                Sin Unitap
+              </div>
+              <ul className="space-y-4">
+                {BEFORE.map((b) => (
+                  <li key={b} className="flex items-start gap-3 text-slate-500">
+                    <span className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-sm">✕</span>
+                    <span className="leading-snug">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* DESPUÉS */}
+            <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-7 lg:p-9 text-white shadow-xl shadow-blue-900/20">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-xs font-bold uppercase tracking-wider mb-6">
+                Con Unitap
+              </div>
+              <ul className="space-y-4">
+                {AFTER.map((a) => (
+                  <li key={a} className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-emerald-300 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                    <span className="leading-snug font-medium">{a}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== LA HISTORIA DE UN TRABAJO (walkthrough 6 pasos) ====== */}
+      <section id="historia" className="py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">La historia de un trabajo</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Sigue un trabajo de principio a fin.
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              Así trabaja Unitap por ti: <strong className="text-slate-900">cada paso conectado con el siguiente</strong>, desde que el cliente te encuentra hasta que te deja una reseña 5★ que te trae el próximo.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 relative">
+            {JOURNEY.map((s, i) => (
+              <div key={s.n} className="relative">
+                <div className="h-full rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
+                      <s.icon className="w-6 h-6 text-white" strokeWidth={2} />
+                    </div>
+                    <span className="font-heading text-4xl font-bold text-slate-100">{s.n}</span>
+                  </div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">{s.tag}</div>
+                  <h3 className="font-heading font-bold text-lg leading-tight mb-2">{s.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+                </div>
+                {i < JOURNEY.length - 1 && (
+                  <ArrowRight className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 text-emerald-400 w-6 h-6 z-10" strokeWidth={2} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Flywheel callout */}
+          <div className="mt-10 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 p-8 lg:p-10 text-center text-white relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+            <div className="relative">
+              <TrendingUp className="w-10 h-10 text-emerald-300 mx-auto mb-4" strokeWidth={2} />
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold leading-tight">
+                Y vuelve a empezar. <span className="text-emerald-300">Solo que con un cliente más.</span>
+              </h3>
+              <p className="mt-4 text-white/75 max-w-2xl mx-auto leading-relaxed">
+                Cada reseña 5★ te hace más visible en Google → más clientes te encuentran → más trabajos → más reseñas. Unitap no es un gasto: es una máquina que hace crecer tu negocio solita.
+              </p>
+              <Link
+                to="/register"
+                data-testid="historia-register"
+                className="mt-7 inline-flex items-center gap-2 h-13 px-7 py-3.5 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
+              >
+                Empieza tu primer trabajo gratis <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== EL COSTO DE NO TENERLO ====== */}
+      <section className="py-20 lg:py-28 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 relative">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-rose-300 mb-3">El costo de esperar</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Cada día sin Unitap te cuesta dinero.
+            </h2>
+            <p className="mt-5 text-lg text-white/70 leading-relaxed">
+              No lo ves en tu cuenta, pero está ahí: trabajos que se van, pagos que llegan tarde, clientes que nunca te encontraron.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {COST.map((c) => (
+              <div key={c.stat} className="rounded-2xl bg-white/[0.04] border border-white/10 p-7">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-400/30 flex items-center justify-center mb-5">
+                  <c.icon className="w-6 h-6 text-rose-300" strokeWidth={2} />
+                </div>
+                <div className="font-heading font-bold text-xl leading-tight mb-2">{c.stat}</div>
+                <p className="text-white/65 leading-relaxed">{c.p}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ====== ANCLA DE PRECIO ====== */}
+      <section className="py-20 lg:py-28 bg-slate-50">
+        <div className="max-w-5xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Hagamos la cuenta</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Se paga solo con un trabajo.
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5 items-stretch">
+            <div className="rounded-3xl bg-white border border-slate-200 p-8 flex flex-col">
+              <div className="text-xs font-bold uppercase tracking-wider text-rose-600 mb-3">Perder un trabajo</div>
+              <div className="font-heading text-5xl font-bold text-slate-900">$800<span className="text-lg text-slate-400 font-semibold"> +</span></div>
+              <p className="text-slate-600 mt-3 leading-relaxed flex-1">
+                Lo que pierdes cuando mandas el quote tarde, se ve poco profesional, o el cliente se va con otro. Una sola vez al mes.
+              </p>
+            </div>
+
+            <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-8 text-white flex flex-col shadow-xl shadow-blue-900/20">
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">Tener Unitap</div>
+              <div className="font-heading text-5xl font-bold">$49<span className="text-lg text-white/70 font-semibold"> /mes</span></div>
+              <p className="text-white/85 mt-3 leading-relaxed flex-1">
+                Quotes e invoices en inglés, cobros, agenda, tarjeta NFC y reseñas 5★ — todo en uno. Cancela cuando quieras.
+              </p>
+              <Link
+                to="/register"
+                data-testid="ancla-register"
+                className="mt-6 inline-flex items-center justify-center gap-2 h-13 px-7 py-3.5 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
+              >
+                Empieza gratis 14 días <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <p className="text-center text-slate-500 mt-7 text-sm">
+            La pregunta no es si puedes pagarlo. Es cuánto te cuesta <strong className="text-slate-700">no</strong> tenerlo.
+          </p>
         </div>
       </section>
 
