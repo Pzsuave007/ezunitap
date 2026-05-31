@@ -43,13 +43,13 @@ const FLOW = [
   },
   {
     n: "05", icon: DollarSign, title: "Recibe depósitos y pagos",
-    lead: "Lleva el control total del dinero, sin que se te escape un peso.",
-    points: ["Pago inicial y pagos parciales", "Balance pendiente y pagos completados", "Siempre sabes quién pagó y quién debe"],
+    lead: "Lleva el control total del dinero, sin que se te escape un dólar.",
+    points: ["Pago inicial, pagos parciales y balance pendiente", "Cobra por Venmo, PayPal, CashApp, Zelle, efectivo o cheque", "Siempre sabes quién pagó y quién debe"],
   },
   {
     n: "06", icon: CalendarDays, title: "Agenda el trabajo",
-    lead: "Organiza tus proyectos y clientes desde tu celular.",
-    points: ["Trabajos programados y en progreso", "Trabajos completados", "Pendientes de pago"],
+    lead: "Agéndalos en tu calendario y mantén tus trabajos bien organizados.",
+    points: ["Trabajos de una sola vez o recurrentes", "Semanales, cada dos semanas o una vez al mes", "Programados, en progreso, completados y pendientes de pago"],
   },
   {
     n: "07", icon: Camera, title: "Guarda fotos y evidencia",
@@ -59,7 +59,7 @@ const FLOW = [
   {
     n: "08", icon: Star, title: "Pide reseñas automáticamente",
     lead: "Cuando el trabajo termina, Unitap genera el mensaje para pedir la reseña.",
-    points: ["Mensaje profesional automático", "Más reseñas, más confianza", "Más clientes nuevos"],
+    points: ["Mensaje profesional automático", "Incluye tarjeta NFC: pide reseñas en persona con un solo tap", "Más reseñas, más confianza, más clientes nuevos"],
   },
 ];
 
