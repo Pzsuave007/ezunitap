@@ -289,6 +289,7 @@ export default function SmartCard() {
             {phoneClean && <CircleAction icon={MessageSquare} label={t.text} href={`sms:${phoneClean}`} onClick={() => track(slug, "text_click")} brand={brand} />}
             {whatsappClean && <CircleAction icon={Send} label={t.whatsapp} href={`https://wa.me/${whatsappClean}`} onClick={() => track(slug, "whatsapp_click")} brand={brand} />}
             {business.email && <CircleAction icon={Mail} label={t.email} href={`mailto:${business.email}`} onClick={() => track(slug, "email_click")} brand={brand} />}
+            {business.google_review_url && <CircleAction icon={Star} label="Review" href={`/r/${slug}`} onClick={() => track(slug, "review_click")} brand={brand} />}
           </div>
         </div>
 

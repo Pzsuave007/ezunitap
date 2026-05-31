@@ -35,6 +35,7 @@ import AdminShipments from "@/pages/AdminShipments";
 import NotificationsInbox from "@/pages/NotificationsInbox";
 import PublicInvoice from "@/pages/PublicInvoice";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
+import PublicReviewPage from "@/pages/PublicReviewPage";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -80,6 +81,7 @@ function App() {
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/p/invoice/:id" element={<PublicInvoice />} />
             <Route path="/c/:slug" element={<SmartCard />} />
+            <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
             <Route path="/terminos" element={<TermsPage />} />
             <Route path="/privacidad" element={<PrivacyPage />} />

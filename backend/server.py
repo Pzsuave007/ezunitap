@@ -1162,6 +1162,119 @@ async def public_mark_paid_notice(invoice_id: str, payload: PublicMarkPaidIn):
 
 
 # ============================================================================
+# GOOGLE REVIEWS — sentiment-gated review collection
+# ============================================================================
+class GoogleReviewSettingsIn(BaseModel):
+    google_review_url: Optional[str] = ""
+    review_intro_text: Optional[str] = ""
+    review_filter_enabled: Optional[bool] = True
+
+
+@api_router.get("/google-reviews/settings")
+async def get_review_settings(user_id: str = Depends(get_current_user_id)):
+    u = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "google_review_url": 1, "review_intro_text": 1, "review_filter_enabled": 1},
+    ) or {}
+    return {
+        "google_review_url": u.get("google_review_url") or "",
+        "review_intro_text": u.get("review_intro_text") or "",
+        "review_filter_enabled": u.get("review_filter_enabled", True),
+    }
+
+
+@api_router.put("/google-reviews/settings")
+async def set_review_settings(
+    payload: GoogleReviewSettingsIn,
+    user_id: str = Depends(get_current_user_id),
+):
+    url = (payload.google_review_url or "").strip()
+    if url and not (url.startswith("http://") or url.startswith("https://")):
+        url = "https://" + url
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "google_review_url": url,
+            "review_intro_text": (payload.review_intro_text or "").strip(),
+            "review_filter_enabled": bool(payload.review_filter_enabled),
+        }},
+    )
+    return {"ok": True, "google_review_url": url}
+
+
+class PublicReviewFeedbackIn(BaseModel):
+    sentiment: str
+    feedback: Optional[str] = ""
+    name: Optional[str] = ""
+    contact: Optional[str] = ""
+
+
+@api_router.get("/public/reviews/{slug}")
+async def public_review_page(slug: str):
+    card, user = await _public_card_by_slug(slug)
+    google_url = (user.get("google_review_url") or "").strip()
+    if not google_url:
+        raise HTTPException(404, "Esta empresa aún no ha configurado Google Reviews.")
+    return {
+        "business_name": user.get("business_name", ""),
+        "owner_name": user.get("owner_name", ""),
+        "logo_url": user.get("logo_url") or card.get("logo_url"),
+        "card_slug": card.get("slug"),
+        "google_review_url": google_url,
+        "intro_text": user.get("review_intro_text") or "",
+        "filter_enabled": user.get("review_filter_enabled", True),
+    }
+
+
+@api_router.post("/public/reviews/{slug}/feedback")
+async def public_review_feedback(slug: str, payload: PublicReviewFeedbackIn):
+    """Capture private feedback when client picks neutral/sad sentiment."""
+    card, user = await _public_card_by_slug(slug)
+    if payload.sentiment not in ("happy", "neutral", "sad"):
+        raise HTTPException(400, "Sentimiento inválido")
+    doc = {
+        "id": _new_id(),
+        "user_id": user["id"],
+        "card_slug": slug,
+        "sentiment": payload.sentiment,
+        "feedback": (payload.feedback or "").strip()[:1000],
+        "name": (payload.name or "").strip()[:80],
+        "contact": (payload.contact or "").strip()[:120],
+        "created_at": _now_iso(),
+    }
+    await db.review_feedback.insert_one(dict(doc))
+    if payload.sentiment != "happy":
+        emoji = "😐" if payload.sentiment == "neutral" else "😞"
+        try:
+            await _create_notification(
+                user_id=user["id"],
+                title=f"{emoji} Feedback privado de un cliente",
+                body=(
+                    f"{doc['name'] or 'Un cliente'} compartió feedback privado en lugar de "
+                    f"dejar reseña pública. Contáctalo para arreglar la situación.<br><br>"
+                    f"<em>\"{doc['feedback'] or '(sin mensaje)'}\"</em>"
+                    + (f"<br><br>Contacto: <strong>{doc['contact']}</strong>" if doc['contact'] else "")
+                ),
+                kind="warning",
+                action_url="/feedback",
+                action_label="Ver feedback",
+            )
+        except Exception as e:
+            logger.error(f"feedback notif failed: {e!r}")
+    return {"ok": True}
+
+
+@api_router.get("/review-feedback")
+async def list_review_feedback(user_id: str = Depends(get_current_user_id)):
+    docs = await db.review_feedback.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).limit(200).to_list(200)
+    return {"feedback": docs}
+
+
+
+
+# ============================================================================
 # JOBS CRUD
 # ============================================================================
 @api_router.get("/jobs")
@@ -1843,6 +1956,7 @@ async def public_get_card(slug: str):
             "phone": user.get("phone", ""),
             "email": user.get("business_email") or user.get("email"),
             "address": user.get("business_address", ""),
+            "google_review_url": user.get("google_review_url") or "",
         },
         "card": card,
         "reviews": reviews,

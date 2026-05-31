@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
 import PaymentMethodsSection from "@/components/PaymentMethodsSection";
+import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -256,6 +257,9 @@ export default function Profile() {
       </div>
       <div id="pagos" className="scroll-mt-20">
         <PaymentMethodsSection />
+      </div>
+      <div id="reviews" className="scroll-mt-20">
+        <GoogleReviewsSection />
       </div>
 
       {/* Quick links */}
