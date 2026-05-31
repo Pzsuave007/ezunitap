@@ -1,120 +1,76 @@
 /**
  * Public landing page for Unitap.
- * Spanish for the contractor (visitor); shows AI/CRM/Calendar/Smart Card features.
+ * Spanish for the contractor (visitor). Narrative follows the full business
+ * flow: get a client → quote with AI → accept → invoice → payments → schedule
+ * → photos → reviews. All customer-facing docs are in English.
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PlatformChat from "@/components/PlatformChat";
 import {
-  Hammer, Sparkles, CalendarDays, IdCard, FileText, Receipt, Users,
+  Hammer, Sparkles, CalendarDays, IdCard, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
   PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge,
 } from "lucide-react";
-
-const FEATURES = [
-  {
-    icon: Receipt,
-    title: "Quotes & Invoices en 1-Tap",
-    desc: "Convierte cualquier quote en invoice con un solo click. Descarga PDF profesional en inglés, mándalo por WhatsApp o email. El cliente lo paga, tú lo marcas pagado. Así de fácil.",
-    accent: "from-orange-500 to-red-600",
-    pill: "★ Lo más usado",
-  },
-  {
-    icon: Sparkles,
-    title: "Quotes con AI",
-    desc: "Describe el trabajo en español o sube una foto y la AI escribe un quote profesional en inglés. Listo en segundos.",
-    accent: "from-emerald-500 to-emerald-700",
-    pill: "GPT-5.2",
-  },
-  {
-    icon: LayoutDashboard,
-    title: "Control total del negocio",
-    desc: "Sabe AL DÍA: quién ya pagó, quién debe, quotes pendientes, trabajos en progreso. Tu dashboard te dice qué hacer hoy.",
-    accent: "from-violet-600 to-fuchsia-600",
-    pill: "Nuevo",
-  },
-  {
-    icon: CalendarDays,
-    title: "Agenda inteligente",
-    desc: "Calendario con vista de día, semana, mes y lista. Soporta trabajos recurrentes (cleaning semanal, landscaping) y proyectos multi-día (roofing de 3 semanas).",
-    accent: "from-blue-700 to-blue-900",
-  },
-  {
-    icon: IdCard,
-    title: "Tarjeta Inteligente",
-    desc: "Mini-sitio premium con QR. Tus clientes te ven, te llaman, te dejan reseña y piden quote desde el celular. Con AI chat 24/7.",
-    accent: "from-purple-700 to-pink-600",
-    pill: "Premium",
-  },
-  {
-    icon: Users,
-    title: "CRM de clientes",
-    desc: "Toda tu cartera en un solo lugar — historial de quotes, invoices, mensajes, fotos del trabajo y notas. Búscalo en segundos.",
-    accent: "from-cyan-600 to-blue-700",
-  },
-  {
-    icon: MessageSquare,
-    title: "Mensajes AI",
-    desc: "Follow-ups, recordatorios de pago, gracias por su negocio — la AI escribe en inglés profesional. Copia, pega, manda.",
-    accent: "from-amber-500 to-orange-600",
-  },
-  {
-    icon: Camera,
-    title: "Fotos del trabajo",
-    desc: "Sube fotos del antes y después desde la obra. Quedan ligadas al cliente y al trabajo. Tu portafolio digital.",
-    accent: "from-slate-600 to-slate-900",
-  },
-  {
-    icon: Bot,
-    title: "AI Scope of Work",
-    desc: "Genera scope detallado y profesional para cualquier trabajo. Incluye materiales, labor y timeline en inglés.",
-    accent: "from-indigo-600 to-purple-700",
-  },
-];
-
-const STEPS = [
-  { n: "01", title: "Crea el quote con AI", desc: "Descríbelo en español o sube fotos. La AI escribe el quote profesional en inglés en 10 segundos." },
-  { n: "02", title: "Manda, aprueban → 1-tap a Invoice", desc: "Comparte por WhatsApp, email o PDF. Cuando aprueben, conviertes el quote en invoice con un solo click." },
-  { n: "03", title: "Cobra y lleva el control", desc: "El cliente paga, marcas el invoice como pagado. Tu dashboard te muestra todo: cuánto ganaste, qué falta cobrar, qué quotes están pendientes." },
-];
 
 const SERVICES = [
   "Roofing", "Drywall", "Painting", "Concrete", "Cleaning",
   "Landscaping", "Catering", "Plumbing", "Electrical", "HVAC",
 ];
 
-// ── "La historia de un trabajo" — el flujo completo, conectado ──
-const JOURNEY = [
-  { n: "01", icon: IdCard, tag: "Te encuentran", title: "El cliente toca tu tarjeta", desc: "Toca tu tarjeta NFC o escanea tu QR y llega a tu mini-sitio. Te llama o pide quote — sin que gastes un dólar en publicidad." },
-  { n: "02", icon: Sparkles, tag: "Cotizas", title: "Quote en inglés en 10 seg", desc: "Lo describes en español y la AI escribe un quote profesional en inglés. El cliente piensa: «esta es una empresa seria» — y te dan el trabajo." },
-  { n: "03", icon: FileBadge, tag: "Firman", title: "Aceptan y firman", desc: "El cliente firma desde su celular. Unitap crea el contrato y el invoice automáticamente. Protegido, sin abogado." },
-  { n: "04", icon: CalendarDays, tag: "Agendas", title: "El trabajo va a tu agenda", desc: "Directo a tu calendario. Trabajos recurrentes y proyectos de varias semanas, sin doble-booking." },
-  { n: "05", icon: DollarSign, tag: "Cobras", title: "Te pagan el mismo día", desc: "Mandas el invoice con botón de pago (Venmo, Zelle, PayPal, CashApp). Cobras hoy — no en 3 semanas." },
-  { n: "06", icon: Star, tag: "Reseña 5★", title: "Pides la reseña con 1 tap", desc: "El cliente feliz deja una reseña 5★ en Google. Y esa reseña te trae el siguiente cliente. El ciclo se repite." },
+// ── "Así Funciona" — el flujo completo del negocio, conectado ──
+const FLOW = [
+  {
+    n: "01", icon: IdCard, title: "Consigue nuevos clientes",
+    lead: "Comparte tu Tarjeta Inteligente por código QR, NFC, link directo o redes sociales.",
+    points: ["Ven tus servicios y fotos de tus trabajos", "Guardan tu contacto al instante", "Solicitan una cotización y te contactan fácil", "Todo entra automático a tu sistema"],
+  },
+  {
+    n: "02", icon: Sparkles, title: "Cotiza en segundos con AI",
+    lead: "Describe el trabajo en español — la inteligencia artificial hace el resto.",
+    points: ["Cotización profesional automática", "Scope of Work detallado", "Documento en inglés para tu cliente", "PDF listo para enviar"],
+  },
+  {
+    n: "03", icon: FileBadge, title: "Tu cliente acepta la cotización",
+    lead: "Recibe una propuesta profesional y la aprueba desde su celular.",
+    points: ["Revisa servicios, términos y alcance del trabajo", "Aprueba con un tap", "Todo queda documentado en el sistema"],
+  },
+  {
+    n: "04", icon: Receipt, title: "El invoice se genera solo",
+    lead: "Al aprobar la cotización, Unitap crea el invoice profesional automáticamente.",
+    points: ["Invoice profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"],
+  },
+  {
+    n: "05", icon: DollarSign, title: "Recibe depósitos y pagos",
+    lead: "Lleva el control total del dinero, sin que se te escape un peso.",
+    points: ["Pago inicial y pagos parciales", "Balance pendiente y pagos completados", "Siempre sabes quién pagó y quién debe"],
+  },
+  {
+    n: "06", icon: CalendarDays, title: "Agenda el trabajo",
+    lead: "Organiza tus proyectos y clientes desde tu celular.",
+    points: ["Trabajos programados y en progreso", "Trabajos completados", "Pendientes de pago"],
+  },
+  {
+    n: "07", icon: Camera, title: "Guarda fotos y evidencia",
+    lead: "Sube fotos del antes, durante y después de cada proyecto.",
+    points: ["Tu portafolio ligado a cada cliente y trabajo", "Organizado para ti y para tus clientes"],
+  },
+  {
+    n: "08", icon: Star, title: "Pide reseñas automáticamente",
+    lead: "Cuando el trabajo termina, Unitap genera el mensaje para pedir la reseña.",
+    points: ["Mensaje profesional automático", "Más reseñas, más confianza", "Más clientes nuevos"],
+  },
 ];
 
-// ── Antes vs Después ──
-const BEFORE = [
-  "Quotes a mano o por texto, mal escritos en inglés",
-  "Pierdes trabajos contra empresas que se ven más \u201cpro\u201d",
-  "Te pagan tarde… o no te pagan",
-  "Todo en papelitos, WhatsApp y la memoria",
-  "Nunca pides reseñas — y los clientes no regresan",
-];
-const AFTER = [
-  "Quotes e invoices en inglés perfecto en segundos",
-  "Te ves como empresa grande y ganas mejores trabajos",
-  "Cobras el mismo día con botón de pago",
-  "Todo conectado en un solo lugar, en tu celular",
-  "Reseñas 5★ en automático que te traen más clientes",
-];
-
-// ── El costo de NO tenerlo ──
-const COST = [
-  { icon: Clock, stat: "Cada quote que tardas", p: "es un trabajo que se va con el contratista que cotizó primero." },
-  { icon: DollarSign, stat: "Cada invoice sin seguimiento", p: "es dinero tuyo que se queda en la calle por semanas." },
-  { icon: Star, stat: "Cada reseña que no pides", p: "es un cliente nuevo que nunca te encontró en Google." },
+// ── "Lo que antes tomaba horas, ahora toma minutos" ──
+const BENEFITS = [
+  { icon: Users, t: "Más clientes" },
+  { icon: LayoutDashboard, t: "Más organización" },
+  { icon: Star, t: "Más profesionalismo" },
+  { icon: Clock, t: "Menos tiempo perdido" },
+  { icon: Zap, t: "Menos estrés" },
+  { icon: TrendingUp, t: "Más crecimiento" },
 ];
 
 export default function Landing() {
@@ -134,12 +90,10 @@ export default function Landing() {
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-            <a href="#invoices" className="hover:text-slate-900 tap">Invoices</a>
-            <a href="#features" className="hover:text-slate-900 tap">Features</a>
-            <a href="#how" className="hover:text-slate-900 tap">Cómo funciona</a>
-            <a href="#historia" className="hover:text-slate-900 tap">La historia</a>
-            <a href="#card" className="hover:text-slate-900 tap">Tarjeta</a>
-            <a href="#para-quien" className="hover:text-slate-900 tap">Para quién</a>
+            <a href="#como-funciona" className="hover:text-slate-900 tap">Cómo funciona</a>
+            <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
+            <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
+            <a href="#beneficios" className="hover:text-slate-900 tap">Beneficios</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" data-testid="nav-login" className="hidden sm:inline-flex items-center px-4 h-10 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 tap">
@@ -154,7 +108,6 @@ export default function Landing() {
 
       {/* ====== HERO ====== */}
       <section className="relative pt-32 lg:pt-40 pb-20 lg:pb-28 overflow-hidden">
-        {/* background mesh */}
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
           <div className="absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full opacity-30 blur-3xl"
                style={{ background: "radial-gradient(circle, #1E3A8A 0%, transparent 70%)" }} />
@@ -169,13 +122,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6">
-              <Receipt className="w-3.5 h-3.5" /> Quotes • Invoices • Control total — en inglés
+              <Zap className="w-3.5 h-3.5" /> Para dueños de negocios de servicios
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Cotiza, factura y cobra <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">sin escribir inglés.</span>
+              Tu negocio. Más clientes. <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">Menos estrés.</span>
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Unitap es la app todo-en-uno para contratistas latinos. <strong className="text-slate-900">Crea quotes e invoices profesionales en inglés con AI,</strong> lleva el control de quién te pagó, quién debe, y maneja todo tu negocio desde el celular.
+              Desde conseguir un cliente hasta recibir una reseña — <strong className="text-slate-900">todo en un solo sistema.</strong> Unitap te ayuda a verte más profesional, ahorrar tiempo y organizar tu negocio sin complicaciones.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
@@ -184,7 +137,7 @@ export default function Landing() {
                 data-testid="hero-register"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
               >
-                Empieza gratis <ArrowRight className="w-4 h-4" />
+                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/login"
@@ -202,7 +155,6 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Phone mockup */}
           <div className="lg:col-span-5 relative">
             <PhoneMockup />
           </div>
@@ -221,375 +173,96 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== INVOICES & BUSINESS CONTROL — featured section ====== */}
-      <section id="invoices" className="py-20 lg:py-28 relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 text-white">
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
-          backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)",
-          backgroundSize: "32px 32px"
-        }} />
-
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 relative">
-          <div className="grid lg:grid-cols-12 gap-12 items-start">
-            <div className="lg:col-span-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-6">
-                <Receipt className="w-3.5 h-3.5" /> El corazón de tu negocio
-              </div>
-              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
-                De <span className="text-emerald-400">quote</span> a <span className="text-emerald-400">invoice</span> a <span className="text-emerald-400">cobrado</span> — en un día.
-              </h2>
-              <p className="mt-6 text-lg text-slate-300 leading-relaxed">
-                Olvídate de Word, de plantillas viejas, de cobrar tarde. Unitap te lleva paso a paso desde la cotización hasta el dinero en tu cuenta.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                {[
-                  { icon: FileText, h: "Quote profesional en 10 segundos", p: "AI escribe líneas detalladas, precios, scope of work — en inglés perfecto." },
-                  { icon: Receipt, h: "Invoice con 1-click", p: "Cuando el cliente aprueba, conviertes el quote en invoice sin re-escribir nada. PDF listo para mandar." },
-                  { icon: DollarSign, h: "Sabe quién te pagó y quién debe", p: "Marca invoices como pagadas. Ve cuánto te deben, qué está vencido, cuánto facturaste este mes." },
-                  { icon: TrendingUp, h: "Tu negocio en números", p: "Dashboard con totales de quotes pendientes, invoices cobradas, trabajos abiertos. Ya no adivinas — sabes." },
-                ].map((it) => (
-                  <div key={it.h} className="flex gap-4">
-                    <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                      <it.icon className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-base mb-0.5">{it.h}</h3>
-                      <p className="text-slate-400 text-sm leading-relaxed">{it.p}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10">
-                <Link
-                  to="/register"
-                  data-testid="invoices-register"
-                  className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-base shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all tap"
-                >
-                  Empieza a facturar gratis <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Visual: stacked mockup cards of quote / invoice / paid */}
-            <div className="lg:col-span-6 relative">
-              <div className="relative max-w-md mx-auto lg:ml-auto space-y-4">
-                {/* Quote card */}
-                <div className="rounded-2xl bg-white text-slate-900 p-5 shadow-2xl shadow-blue-900/20 transform lg:-rotate-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-blue-700" />
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Quote #1024</div>
-                        <div className="text-sm font-bold">Mike's Bakery — Roof Repair</div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase">Sent</span>
-                  </div>
-                  <div className="text-xs text-slate-500 leading-relaxed">"Replace 8 damaged shingles, seal around chimney, clean gutters. Materials + 4 hours labor."</div>
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500">Total</span>
-                    <span className="font-bold text-lg text-slate-900">$1,485.00</span>
-                  </div>
-                </div>
-
-                {/* Arrow */}
-                <div className="flex justify-center text-emerald-400 text-2xl font-bold">↓</div>
-
-                {/* Invoice card */}
-                <div className="rounded-2xl bg-white text-slate-900 p-5 shadow-2xl shadow-emerald-900/20 transform lg:rotate-2 lg:translate-x-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                        <Receipt className="w-4 h-4 text-emerald-700" />
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Invoice #2024-0118</div>
-                        <div className="text-sm font-bold">Mike's Bakery</div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">✓ Paid</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-[11px]">
-                    <div>
-                      <div className="text-slate-400">Issued</div>
-                      <div className="font-semibold text-slate-700">Jan 15, 2026</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-400">Paid on</div>
-                      <div className="font-semibold text-emerald-700">Jan 18, 2026</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500">Paid in full</span>
-                    <span className="font-bold text-lg text-emerald-700">$1,485.00</span>
-                  </div>
-                </div>
-
-                {/* Dashboard mini */}
-                <div className="mt-6 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 p-5">
-                  <div className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-3">Este mes</div>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-emerald-400">$8,420</div>
-                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Cobrado</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-amber-400">$2,150</div>
-                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Por cobrar</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">12</div>
-                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">Quotes activos</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* ====== PAIN CONSOLIDATION BAND ====== */}
+      <section className="py-16 lg:py-20 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 text-center relative">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
+            Olvídate de WhatsApp, notas del celular, <br className="hidden lg:block" />papeles y mil aplicaciones.
+          </h2>
+          <p className="mt-5 text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
+            Toda la información de tu negocio regada en mil lados es dinero y tiempo que pierdes. Con Unitap manejas <strong className="text-white">todo desde un solo lugar.</strong>
+          </p>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3 text-sm">
+            {["Papelitos", "WhatsApp", "Excel", "Notas", "Word", "3 apps más"].map((x) => (
+              <span key={x} className="px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 text-white/50 line-through">{x}</span>
+            ))}
+            <ArrowRight className="w-5 h-5 text-emerald-400 hidden sm:block" />
+            <span className="px-5 py-2 rounded-full bg-emerald-500 text-slate-900 font-bold inline-flex items-center gap-2">
+              <Hammer className="w-4 h-4" /> Unitap
+            </span>
           </div>
         </div>
       </section>
 
-      {/* ====== FEATURES ====== */}
-      <section id="features" className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-5 lg:px-8">
-          <div className="max-w-2xl mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Todo lo que necesitas</div>
+      {/* ====== ASÍ FUNCIONA — 8 pasos ====== */}
+      <section id="como-funciona" className="py-20 lg:py-28">
+        <div className="max-w-4xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Así funciona</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Una app, nueve herramientas que tu negocio necesita todos los días.
+              Tu negocio completo, <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">paso a paso.</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Reemplaza WhatsApp, Excel, Google Calendar, Word y tres apps más. Todo conectado, todo en español para ti.
+              Desde que el cliente te encuentra hasta que te deja una reseña 5★ — cada paso conectado con el siguiente.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {FEATURES.map((f, i) => (
-              <div
-                key={f.title}
-                data-testid={`feature-${i}`}
-                className="group relative bg-white rounded-3xl p-6 border border-slate-100 hover:border-slate-300 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md"
-              >
-                {f.pill && (
-                  <span className="absolute top-4 right-4 text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-900 text-white">
-                    {f.pill}
-                  </span>
-                )}
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.accent} flex items-center justify-center mb-5 shadow-sm`}>
-                  <f.icon className="w-6 h-6 text-white" strokeWidth={2.2} />
-                </div>
-                <h3 className="font-heading font-bold text-lg leading-tight mb-2">{f.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ====== HOW IT WORKS ====== */}
-      <section id="how" className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Cómo funciona</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              3 pasos. De la llamada al cobro.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5 lg:gap-8 relative">
-            {STEPS.map((s, i) => (
-              <div key={s.n} className="relative">
-                <div className="text-7xl lg:text-8xl font-heading font-bold leading-none bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">
-                  {s.n}
-                </div>
-                <h3 className="font-heading font-bold text-2xl tracking-tight mt-3">{s.title}</h3>
-                <p className="text-slate-600 mt-2 leading-relaxed">{s.desc}</p>
-                {i < STEPS.length - 1 && (
-                  <ArrowRight className="hidden md:block absolute -right-4 top-12 text-slate-300 w-7 h-7" strokeWidth={1.5} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ====== ANTES vs DESPUÉS ====== */}
-      <section id="transformacion" className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">La transformación</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              De "el del jardín" a <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">una empresa de verdad.</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              No es una app más. Es la diferencia entre verte como uno más… o como el profesional al que le pagan mejor y le pagan a tiempo.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-5 lg:gap-7">
-            {/* ANTES */}
-            <div className="rounded-3xl bg-white border border-slate-200 p-7 lg:p-9">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider mb-6">
-                Sin Unitap
-              </div>
-              <ul className="space-y-4">
-                {BEFORE.map((b) => (
-                  <li key={b} className="flex items-start gap-3 text-slate-500">
-                    <span className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-sm">✕</span>
-                    <span className="leading-snug">{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* DESPUÉS */}
-            <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-7 lg:p-9 text-white shadow-xl shadow-blue-900/20">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-xs font-bold uppercase tracking-wider mb-6">
-                Con Unitap
-              </div>
-              <ul className="space-y-4">
-                {AFTER.map((a) => (
-                  <li key={a} className="flex items-start gap-3">
-                    <Check className="w-6 h-6 text-emerald-300 flex-shrink-0 mt-0.5" strokeWidth={3} />
-                    <span className="leading-snug font-medium">{a}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====== LA HISTORIA DE UN TRABAJO (walkthrough 6 pasos) ====== */}
-      <section id="historia" className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">La historia de un trabajo</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Sigue un trabajo de principio a fin.
-            </h2>
-            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Así trabaja Unitap por ti: <strong className="text-slate-900">cada paso conectado con el siguiente</strong>, desde que el cliente te encuentra hasta que te deja una reseña 5★ que te trae el próximo.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 relative">
-            {JOURNEY.map((s, i) => (
-              <div key={s.n} className="relative">
-                <div className="h-full rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
-                      <s.icon className="w-6 h-6 text-white" strokeWidth={2} />
+          <div className="relative">
+            {/* Connecting line */}
+            <div className="absolute left-6 lg:left-8 top-6 bottom-6 w-px bg-gradient-to-b from-blue-900 via-emerald-500 to-emerald-300" />
+            <div className="space-y-5 lg:space-y-6">
+              {FLOW.map((step) => (
+                <div key={step.n} className="relative flex gap-5 lg:gap-7" data-testid={`flow-step-${step.n}`}>
+                  <div className="relative z-10 flex-shrink-0">
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-900/20 ring-4 ring-white">
+                      <step.icon className="w-6 h-6 lg:w-7 lg:h-7 text-white" strokeWidth={2} />
                     </div>
-                    <span className="font-heading text-4xl font-bold text-slate-100">{s.n}</span>
                   </div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">{s.tag}</div>
-                  <h3 className="font-heading font-bold text-lg leading-tight mb-2">{s.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+                  <div className="flex-1 rounded-2xl bg-white border border-slate-200 p-5 lg:p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Paso {step.n}</div>
+                    <h3 className="font-heading font-bold text-xl lg:text-2xl tracking-tight">{step.title}</h3>
+                    <p className="text-slate-600 mt-1.5 leading-relaxed">{step.lead}</p>
+                    <ul className="mt-4 grid sm:grid-cols-2 gap-2.5">
+                      {step.points.map((p) => (
+                        <li key={p} className="flex items-start gap-2 text-sm text-slate-700">
+                          <Check className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" strokeWidth={3} />
+                          <span className="leading-snug">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                {i < JOURNEY.length - 1 && (
-                  <ArrowRight className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 text-emerald-400 w-6 h-6 z-10" strokeWidth={2} />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Flywheel callout */}
-          <div className="mt-10 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 p-8 lg:p-10 text-center text-white relative overflow-hidden">
+          {/* Flywheel close */}
+          <div className="mt-12 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 p-8 lg:p-10 text-center text-white relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "28px 28px" }} />
             <div className="relative">
               <TrendingUp className="w-10 h-10 text-emerald-300 mx-auto mb-4" strokeWidth={2} />
               <h3 className="font-heading text-2xl lg:text-3xl font-bold leading-tight">
-                Y vuelve a empezar. <span className="text-emerald-300">Solo que con un cliente más.</span>
+                Y el ciclo se repite. <span className="text-emerald-300">Cada reseña te trae el siguiente cliente.</span>
               </h3>
               <p className="mt-4 text-white/75 max-w-2xl mx-auto leading-relaxed">
-                Cada reseña 5★ te hace más visible en Google → más clientes te encuentran → más trabajos → más reseñas. Unitap no es un gasto: es una máquina que hace crecer tu negocio solita.
+                Unitap no es un gasto más: es una máquina que hace crecer tu negocio sola — más reseñas, más visibilidad en Google, más clientes, más trabajos.
               </p>
               <Link
                 to="/register"
-                data-testid="historia-register"
-                className="mt-7 inline-flex items-center gap-2 h-13 px-7 py-3.5 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
+                data-testid="flow-register"
+                className="mt-7 inline-flex items-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
               >
-                Empieza tu primer trabajo gratis <ArrowRight className="w-4 h-4" />
+                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ====== EL COSTO DE NO TENERLO ====== */}
-      <section className="py-20 lg:py-28 bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "32px 32px" }} />
-        <div className="max-w-6xl mx-auto px-5 lg:px-8 relative">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-rose-300 mb-3">El costo de esperar</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Cada día sin Unitap te cuesta dinero.
-            </h2>
-            <p className="mt-5 text-lg text-white/70 leading-relaxed">
-              No lo ves en tu cuenta, pero está ahí: trabajos que se van, pagos que llegan tarde, clientes que nunca te encontraron.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {COST.map((c) => (
-              <div key={c.stat} className="rounded-2xl bg-white/[0.04] border border-white/10 p-7">
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-400/30 flex items-center justify-center mb-5">
-                  <c.icon className="w-6 h-6 text-rose-300" strokeWidth={2} />
-                </div>
-                <div className="font-heading font-bold text-xl leading-tight mb-2">{c.stat}</div>
-                <p className="text-white/65 leading-relaxed">{c.p}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ====== ANCLA DE PRECIO ====== */}
-      <section className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-5xl mx-auto px-5 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Hagamos la cuenta</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Se paga solo con un trabajo.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-5 items-stretch">
-            <div className="rounded-3xl bg-white border border-slate-200 p-8 flex flex-col">
-              <div className="text-xs font-bold uppercase tracking-wider text-rose-600 mb-3">Perder un trabajo</div>
-              <div className="font-heading text-5xl font-bold text-slate-900">$800<span className="text-lg text-slate-400 font-semibold"> +</span></div>
-              <p className="text-slate-600 mt-3 leading-relaxed flex-1">
-                Lo que pierdes cuando mandas el quote tarde, se ve poco profesional, o el cliente se va con otro. Una sola vez al mes.
-              </p>
-            </div>
-
-            <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-8 text-white flex flex-col shadow-xl shadow-blue-900/20">
-              <div className="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">Tener Unitap</div>
-              <div className="font-heading text-5xl font-bold">$49<span className="text-lg text-white/70 font-semibold"> /mes</span></div>
-              <p className="text-white/85 mt-3 leading-relaxed flex-1">
-                Quotes e invoices en inglés, cobros, agenda, tarjeta NFC y reseñas 5★ — todo en uno. Cancela cuando quieras.
-              </p>
-              <Link
-                to="/register"
-                data-testid="ancla-register"
-                className="mt-6 inline-flex items-center justify-center gap-2 h-13 px-7 py-3.5 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
-              >
-                Empieza gratis 14 días <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-          <p className="text-center text-slate-500 mt-7 text-sm">
-            La pregunta no es si puedes pagarlo. Es cuánto te cuesta <strong className="text-slate-700">no</strong> tenerlo.
-          </p>
-        </div>
-      </section>
-
-      {/* ====== SMART CARD HIGHLIGHT ====== */}
+      {/* ====== SMART CARD HIGHLIGHT (NFC) — conservada ====== */}
       <section
-        id="card"
+        id="tarjeta"
         className="py-20 lg:py-28 relative overflow-hidden text-white"
         style={{ background: "radial-gradient(ellipse at top right, #050810 0%, #0F172A 60%, #1E1B4B 100%)" }}
       >
@@ -601,13 +274,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 items-center relative">
           <div className="lg:col-span-6 text-white">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-xs font-bold uppercase tracking-wider mb-6">
-              <Star className="w-3.5 h-3.5 text-amber-300" /> El feature más premium
+              <Star className="w-3.5 h-3.5 text-amber-300" /> Paso 1 — Consigue clientes
             </div>
             <h2 className="font-heading text-4xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
               Tu Tarjeta Inteligente. <span className="text-emerald-300">Tu mejor vendedor.</span>
             </h2>
             <p className="mt-6 text-lg text-white/75 leading-relaxed">
-              Un mini-sitio profesional con tu foto, servicios, reseñas y QR. Compártelo por WhatsApp o pégalo en tu camioneta. Tus prospectos te llaman, te mandan WhatsApp y piden quote — directo desde su celular. Y un AI chat les responde 24/7 en su idioma.
+              Un mini-sitio profesional con tu foto, servicios, reseñas y QR. Compártelo por WhatsApp o pégalo en tu camioneta. Tus prospectos te llaman, te mandan WhatsApp y piden cotización — directo desde su celular. Y un AI chat les responde 24/7 en su idioma.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-8">
               {[
@@ -641,23 +314,23 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== PARA QUIÉN ====== */}
-      <section id="para-quien" className="py-20 lg:py-28 bg-white">
+      {/* ====== TODO EN ESPAÑOL ====== */}
+      <section id="espanol" className="py-20 lg:py-28 bg-white">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Para quién</div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Hecho para ti</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Hecho específicamente para dueños de negocios latinos.
+              Tú trabajas en español. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tus clientes reciben inglés.</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Sabemos que tus clientes son americanos y tú piensas en español. Sabemos que cobras en cash o cheque. Sabemos que tu oficina es tu camioneta. Unitap está diseñado para esa realidad.
+              Unitap está diseñado especialmente para dueños de negocios latinos. Tú manejas todo en español; tus clientes reciben documentos profesionales en inglés.
             </p>
             <ul className="mt-7 space-y-3">
               {[
-                "100% del software en español. 100% de los documentos al cliente en inglés.",
-                "Mobile-first. La app se siente nativa en tu celular.",
-                "Sin merchant account, sin Stripe, sin trámites. Mandas PDF y cobras como siempre.",
-                "Tu data se guarda segura. Tú la controlas.",
+                "Sin traductores, sin complicaciones, sin perder tiempo",
+                "100% del software en español, 100% de los documentos en inglés",
+                "Mobile-first: se siente nativo en tu celular",
+                "Mandas PDF y cobras como siempre — sin trámites",
               ].map((p) => (
                 <li key={p} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
@@ -667,7 +340,55 @@ export default function Landing() {
             </ul>
           </div>
 
-          <div className="space-y-4">
+          {/* ES → EN visual */}
+          <div className="relative">
+            <div className="rounded-3xl bg-slate-50 border border-slate-200 p-6 lg:p-8 space-y-4">
+              <div className="rounded-2xl bg-white border border-slate-200 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Languages className="w-4 h-4 text-blue-700" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tú escribes (Español)</span>
+                </div>
+                <p className="text-slate-700 text-sm">"Reparación de drywall en sala, incluye textura y pintura."</p>
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 p-5 text-white shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="w-4 h-4 text-emerald-200" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Tu cliente recibe (English)</span>
+                </div>
+                <p className="text-sm font-medium leading-relaxed">"Living room drywall repair, including texture and paint. Materials and labor included. Professional finish guaranteed."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== BENEFICIOS — horas → minutos ====== */}
+      <section id="beneficios" className="py-20 lg:py-28 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">El resultado</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Lo que antes tomaba horas, <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">ahora toma minutos.</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {BENEFITS.map((b) => (
+              <div key={b.t} className="rounded-2xl bg-white border border-slate-200 p-6 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center mb-3">
+                  <b.icon className="w-6 h-6 text-white" strokeWidth={2} />
+                </div>
+                <div className="font-heading font-bold text-lg">{b.t}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
             <StatCard label="Tiempo para crear un quote con AI" value="< 30s" accent="emerald" />
             <StatCard label="Idiomas soportados" value="EN + ES" accent="blue" />
             <StatCard label="Acceso 100% mobile" value="iOS + Android" accent="purple" />
@@ -676,30 +397,36 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== FINAL CTA ====== */}
-      <section className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-4xl mx-auto px-5 lg:px-8 text-center">
-          <Zap className="w-12 h-12 text-emerald-600 mx-auto mb-5" strokeWidth={2} />
-          <h2 className="font-heading text-4xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-            Tu próximo trabajo merece quote profesional.
-          </h2>
-          <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Crea tu cuenta gratis y manda tu primer quote en inglés hoy mismo. Sin riesgo, sin tarjeta de crédito.
-          </p>
-          <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-            <Link
-              to="/register"
-              data-testid="final-register"
-              className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
-            >
-              Crear cuenta gratis <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center h-14 px-8 rounded-2xl border border-slate-200 text-slate-900 font-bold text-base hover:bg-white tap"
-            >
-              Iniciar sesión
-            </Link>
+      {/* ====== FINAL CTA — Todo tu negocio. Conectado. ====== */}
+      <section className="py-20 lg:py-28 bg-white">
+        <div className="max-w-4xl mx-auto px-5 lg:px-8">
+          <div className="rounded-[2.5rem] bg-gradient-to-br from-blue-900 to-emerald-700 p-10 lg:p-16 text-center text-white relative overflow-hidden shadow-2xl shadow-blue-900/30">
+            <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+            <div className="relative">
+              <Zap className="w-12 h-12 text-emerald-300 mx-auto mb-5" strokeWidth={2} />
+              <h2 className="font-heading text-4xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
+                Todo tu negocio. Conectado.
+              </h2>
+              <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
+                Desde el primer contacto hasta la reseña final, Unitap te ayuda a administrar tu negocio como un profesional. Se paga solo con un trabajo.
+              </p>
+              <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+                <Link
+                  to="/register"
+                  data-testid="final-register"
+                  className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
+                >
+                  Crear cuenta gratis <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center h-14 px-8 rounded-2xl border border-white/30 text-white font-bold text-base hover:bg-white/10 tap"
+                >
+                  Iniciar sesión
+                </Link>
+              </div>
+              <div className="mt-6 text-xs text-white/60">Sin tarjeta de crédito · Cancela cuando quieras</div>
+            </div>
           </div>
         </div>
       </section>
