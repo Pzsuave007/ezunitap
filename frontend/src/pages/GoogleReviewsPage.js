@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Star, MessageSquareWarning, Inbox, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
+import ReviewLinkCard from "@/components/ReviewLinkCard";
 
 const SENT_META = {
   neutral: { emoji: "😐", label: "Neutral",   cls: "bg-amber-50 text-amber-900 border-amber-200" },
@@ -57,6 +58,9 @@ export default function GoogleReviewsPage() {
           una reseña negativa pública.
         </p>
       </div>
+
+      {/* Public review link — share it everywhere */}
+      <ReviewLinkCard />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
