@@ -12,6 +12,9 @@ import StatusBadge, { JOB_STATUSES } from "@/components/StatusBadge";
 import { Plus, Briefcase, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
+import { useAuth } from "@/context/AuthContext";
+import SendDocumentDialog from "@/components/SendDocumentDialog";
+import RequestReviewButton from "@/components/RequestReviewButton";
 
 const labelFor = (s) => ({
   new_lead: "Nuevo Lead", estimate_sent: "Quote enviado", approved: "Aprobado",
@@ -21,11 +24,17 @@ const labelFor = (s) => ({
 
 export default function Jobs() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [clients, setClients] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ client_id: "", title: "", status: "new_lead", scheduled_date: "", notes: "" });
   const [saving, setSaving] = useState(false);
+
+  // Auto-prompt to request a review when a job is marked completed.
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewClient, setReviewClient] = useState(null);
+  const [reviewJobTitle, setReviewJobTitle] = useState("");
 
   const load = async () => {
     const [j, c] = await Promise.all([api.get("/jobs"), api.get("/clients")]);
@@ -33,6 +42,23 @@ export default function Jobs() {
     setClients(c.data);
   };
   useEffect(() => { load(); }, []);
+
+  const reviewUrl = user?.card_slug
+    ? `${window.location.origin}/r/${user.card_slug}`
+    : "";
+
+  const promptReview = (job) => {
+    if (!user?.google_review_url) {
+      toast("¡Trabajo completado! 🎉 Configura tu link de Google Reviews para pedir reseñas.", {
+        action: { label: "Configurar", onClick: () => navigate("/reviews") },
+      });
+      return;
+    }
+    const client = clients.find((c) => c.id === job.client_id) || null;
+    setReviewClient(client);
+    setReviewJobTitle(job.title);
+    setReviewOpen(true);
+  };
 
   const save = async () => {
     if (!form.client_id || !form.title) return toast.error("Falta cliente o título");
@@ -50,7 +76,10 @@ export default function Jobs() {
 
   const updateStatus = async (job, status) => {
     await api.put(`/jobs/${job.id}`, { ...job, status });
-    load();
+    await load();
+    if (status === "completed" && job.status !== "completed") {
+      promptReview(job);
+    }
   };
 
   const clientName = (id) => clients.find((c) => c.id === id)?.name || "Cliente";
@@ -107,6 +136,16 @@ export default function Jobs() {
                         {JOB_STATUSES.map((st) => <SelectItem key={st} value={st}>{labelFor(st)}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {j.status === "completed" && (
+                      <div className="mt-2">
+                        <RequestReviewButton
+                          client={clients.find((c) => c.id === j.client_id) || null}
+                          jobTitle={j.title}
+                          size="sm"
+                          className="h-10 rounded-xl text-xs w-full"
+                        />
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
@@ -154,6 +193,16 @@ export default function Jobs() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SendDocumentDialog
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        kind="review"
+        publicUrl={reviewUrl}
+        client={reviewClient}
+        businessName={user?.business_name}
+        jobTitle={reviewJobTitle}
+      />
     </div>
   );
 }

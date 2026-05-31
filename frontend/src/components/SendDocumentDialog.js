@@ -43,6 +43,13 @@ const KIND_LABELS = {
     enShort: "your invoice",
     enAction: "You can review, download, or print it from the link below",
   },
+  review: {
+    title: "Pedir reseña",
+    description: "Pídele al cliente que te deje una reseña. Solo le toma 30 segundos.",
+    cta: "Review request",
+    enShort: "",
+    enAction: "",
+  },
 };
 
 function cleanPhone(phone) {
@@ -74,18 +81,28 @@ export default function SendDocumentDialog({
   const message = useMemo(() => {
     const firstName = clientName ? clientName.split(" ")[0] : "";
     const greet = firstName ? `Hi ${firstName},` : "Hi,";
-    const job = jobTitle ? ` for ${jobTitle}` : "";
     const biz = businessName ? `\n\n— ${businessName}` : "";
+    if (kind === "review") {
+      const who = businessName ? ` for choosing ${businessName}` : "";
+      return `${greet}\n\nThank you so much${who}! It would mean a lot if you could leave us a quick review — it only takes 30 seconds:\n\n${publicUrl}\n\nThank you!${biz}`;
+    }
+    const job = jobTitle ? ` for ${jobTitle}` : "";
     return `${greet}\n\nHere is ${meta.enShort}${job}. ${meta.enAction}:\n\n${publicUrl}${biz}`;
-  }, [clientName, jobTitle, businessName, meta.enShort, meta.enAction, publicUrl]);
+  }, [clientName, jobTitle, businessName, kind, meta.enShort, meta.enAction, publicUrl]);
 
   const messageShort = useMemo(() => {
     const firstName = clientName ? clientName.split(" ")[0] : "";
     const greet = firstName ? `Hi ${firstName},` : "Hi,";
+    if (kind === "review") {
+      const who = businessName ? ` for choosing ${businessName}` : "";
+      return `${greet} thank you${who}! Could you leave us a quick review? It only takes 30 sec: ${publicUrl}`;
+    }
     return `${greet} here is ${meta.enShort}: ${publicUrl}`;
-  }, [clientName, meta.enShort, publicUrl]);
+  }, [clientName, businessName, kind, meta.enShort, publicUrl]);
 
-  const emailSubject = `${meta.cta}${jobTitle ? ` - ${jobTitle}` : ""}${businessName ? ` from ${businessName}` : ""}`;
+  const emailSubject = kind === "review"
+    ? `Quick favor — leave ${businessName || "us"} a review?`
+    : `${meta.cta}${jobTitle ? ` - ${jobTitle}` : ""}${businessName ? ` from ${businessName}` : ""}`;
 
   const openWhatsApp = () => {
     const text = encodeURIComponent(message);

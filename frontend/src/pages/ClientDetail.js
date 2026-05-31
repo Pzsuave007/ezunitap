@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
 import ClientFlowNotices from "@/components/ClientFlowNotices";
+import RequestReviewButton from "@/components/RequestReviewButton";
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -160,6 +161,11 @@ export default function ClientDetail() {
             Foto
           </Button>
           <input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadPhoto} />
+          <RequestReviewButton
+            client={client}
+            jobTitle={client.job_type}
+            className="h-12 rounded-xl text-sm w-full"
+          />
         </div>
         <div className="flex items-center gap-1.5 mt-3 text-xs flex-wrap">
           <span className="text-slate-500 mr-1">Etiqueta:</span>
