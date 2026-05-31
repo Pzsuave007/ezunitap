@@ -24,7 +24,7 @@
     "GET /api/admin/users exposes all 6 new shipment keys on every row even when null (shipping_address, card_shipping_status, card_shipped_at, card_delivered_at, card_tracking_number, card_shipping_note). Verified.",
     "GET /api/payments/subscription includes shipping_address + card_shipping_status. Verified.",
     "Non-super-admin gets 403 on GET /api/admin/shipments and POST /api/admin/shipments/{id} (newly-registered TEST_nonadmin user). Verified.",
-    "Cleanup: admin user (id=13d02667-2685-46ac-846a-5362ad569f1f) had all card_shipping_* and shipping_address fields $unset via mongosh after the test class to restore demo state — final mongosh check shows only {email} remaining."
+    "Cleanup: admin user (id=unitap-reviews) had all card_shipping_* and shipping_address fields $unset via mongosh after the test class to restore demo state — final mongosh check shows only {email} remaining."
   ],
   "updated_files": [
     "/app/backend/tests/test_stripe_shipments.py (new — 17 pytest cases covering Stripe checkout + shipments admin)"
