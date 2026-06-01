@@ -100,19 +100,16 @@ export default function ClientDetail() {
       </button>
 
       {/* ===== Header ===== */}
-      <Card className="overflow-hidden border-0 shadow-sm rounded-3xl p-0">
-        <div className="h-24 bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-600 relative">
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)", backgroundSize: "20px 20px" }} />
-        </div>
-        <div className="px-5 pb-5">
-          <div className="flex items-end gap-4 -mt-9">
-            <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 ring-4 ring-white shadow-lg">
+      <Card className="border-0 shadow-sm rounded-3xl p-5">
+        <div>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow-md">
               {initials}
             </div>
-            <div className="flex-1 min-w-0 pb-1">
-              <h1 className="font-heading text-2xl font-bold tracking-tight truncate text-slate-900">{client.name}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-heading text-2xl font-bold tracking-tight text-slate-900 leading-tight truncate">{client.name}</h1>
               {client.job_type && (
-                <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
                   {client.job_type}
                 </span>
               )}
@@ -225,15 +222,15 @@ export default function ClientDetail() {
         <StatCard icon={Clock} label="Por cobrar" value={fmtMoney(pending)} tone="amber" />
       </div>
 
-      {/* ===== Tabs ===== */}
+      {/* ===== Tabs (visual cards) ===== */}
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="w-full flex gap-1 bg-slate-100 p-1.5 rounded-2xl h-auto overflow-x-auto justify-start scrollbar-none">
-          <TabTrig value="info" testid="tab-info">Info</TabTrig>
-          <TabTrig value="quotes" testid="tab-quotes" count={history.quotes.length}>Quotes</TabTrig>
-          <TabTrig value="agreements" testid="tab-agreements" count={history.agreements.length}>Contratos</TabTrig>
-          <TabTrig value="invoices" testid="tab-invoices" count={history.invoices.length}>Invoices</TabTrig>
-          <TabTrig value="messages" testid="tab-messages" count={history.messages.length}>Mensajes</TabTrig>
-          <TabTrig value="photos" testid="tab-photos" count={history.photos.length}>Fotos</TabTrig>
+        <TabsList className="w-full grid grid-cols-3 lg:grid-cols-6 gap-2 bg-transparent p-0 h-auto">
+          <TabTrig value="info" testid="tab-info" icon={FileText} label="Info" tone="slate" />
+          <TabTrig value="quotes" testid="tab-quotes" icon={Sparkles} label="Quotes" count={history.quotes.length} tone="emerald" />
+          <TabTrig value="agreements" testid="tab-agreements" icon={FileSignature} label="Contratos" count={history.agreements.length} tone="violet" />
+          <TabTrig value="invoices" testid="tab-invoices" icon={Receipt} label="Invoices" count={history.invoices.length} tone="blue" />
+          <TabTrig value="messages" testid="tab-messages" icon={MessageSquare} label="Mensajes" count={history.messages.length} tone="sky" />
+          <TabTrig value="photos" testid="tab-photos" icon={Camera} label="Fotos" count={history.photos.length} tone="amber" />
         </TabsList>
 
         <TabsContent value="info" className="mt-4">
@@ -403,17 +400,32 @@ const StatCard = ({ icon: Icon, label, value, tone = "blue" }) => (
   </Card>
 );
 
-const TabTrig = ({ value, testid, count, children }) => (
-  <TabsTrigger
-    value={value}
-    data-testid={testid}
-    className="group flex-shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-colors flex items-center gap-1.5"
-  >
-    {children}
-    {count != null && (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 group-data-[state=active]:bg-emerald-100 group-data-[state=active]:text-emerald-700">
-        {count}
-      </span>
-    )}
-  </TabsTrigger>
-);
+const TAB_TONES = {
+  slate: { active: "data-[state=active]:border-slate-400 data-[state=active]:bg-slate-50", icon: "bg-slate-100 text-slate-600" },
+  emerald: { active: "data-[state=active]:border-emerald-500 data-[state=active]:bg-emerald-50", icon: "bg-emerald-100 text-emerald-700" },
+  violet: { active: "data-[state=active]:border-violet-500 data-[state=active]:bg-violet-50", icon: "bg-violet-100 text-violet-700" },
+  blue: { active: "data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50", icon: "bg-blue-100 text-blue-700" },
+  sky: { active: "data-[state=active]:border-sky-500 data-[state=active]:bg-sky-50", icon: "bg-sky-100 text-sky-700" },
+  amber: { active: "data-[state=active]:border-amber-500 data-[state=active]:bg-amber-50", icon: "bg-amber-100 text-amber-700" },
+};
+
+const TabTrig = ({ value, testid, icon: Icon, label, count, tone = "slate" }) => {
+  const t = TAB_TONES[tone];
+  return (
+    <TabsTrigger
+      value={value}
+      data-testid={testid}
+      className={`relative flex flex-col items-center justify-center gap-1.5 h-auto rounded-2xl border-2 border-slate-100 bg-white px-2 py-3 transition-all hover:border-slate-200 data-[state=active]:shadow-sm ${t.active}`}
+    >
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${t.icon}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <span className="text-xs font-bold text-slate-700">{label}</span>
+      {count != null && (
+        <span className="absolute top-1.5 right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 min-w-[18px] text-center leading-none flex items-center justify-center h-[18px]">
+          {count}
+        </span>
+      )}
+    </TabsTrigger>
+  );
+};
