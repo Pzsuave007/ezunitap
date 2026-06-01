@@ -280,7 +280,7 @@ export default function Landing() {
               Tu Tarjeta Inteligente. <span className="text-emerald-300">Tu mejor vendedor.</span>
             </h2>
             <p className="mt-6 text-lg text-white/75 leading-relaxed">
-              <strong className="text-white">Recibes una tarjeta física NFC</strong> con tu nombre y logo — es tu mini-sitio profesional con foto, servicios, reseñas y QR. La acercas al celular de cualquier cliente y se abre al instante: te llaman, te mandan WhatsApp o piden presupuesto. Y un AI chat les responde 24/7 en su idioma.
+              <strong className="text-white">Recibes una tarjeta física NFC profesional</strong> — es tu mini-sitio profesional con foto, servicios, reseñas y QR. La acercas al celular de cualquier cliente y se abre al instante: te llaman, te mandan WhatsApp o piden presupuesto. Y un AI chat les responde 24/7 en su idioma.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-8">
               {[
@@ -327,9 +327,47 @@ export default function Landing() {
             </p>
           </div>
 
+          {/* Two physical NFC cards showcase */}
+          <div className="grid sm:grid-cols-2 gap-5 mb-12 max-w-3xl mx-auto">
+            {[
+              {
+                img: "/nfc-digital.webp",
+                tag: "Tarjeta Inteligente",
+                title: "Smart Business Card NFC",
+                desc: "Tu mini-sitio profesional en un tap: servicios, llamada, WhatsApp, AI chat y captura de clientes.",
+              },
+              {
+                img: "/nfc-google-review.png",
+                tag: "Reseñas Google",
+                title: "Tarjeta de Reseñas NFC",
+                desc: "Pide reseñas 5★ en persona con un solo tap. Más reseñas, más confianza, más clientes nuevos.",
+              },
+            ].map((c) => (
+              <div
+                key={c.title}
+                data-testid={`nfc-card-${c.tag.toLowerCase().replace(/\s+/g, "-")}`}
+                className="rounded-3xl bg-white/[0.05] border border-white/10 p-5 text-white"
+              >
+                <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/10 mb-4 flex items-center justify-center aspect-[16/10]">
+                  <img
+                    src={c.img}
+                    alt={c.title}
+                    loading="lazy"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-400/15 border border-emerald-300/20 text-[11px] font-bold uppercase tracking-wider text-emerald-300 mb-2">
+                  <Star className="w-3 h-3" /> {c.tag}
+                </div>
+                <h4 className="font-heading font-bold text-lg">{c.title}</h4>
+                <p className="text-white/70 text-sm mt-1.5 leading-relaxed">{c.desc}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: Package, n: "1", t: "Te llega a tu casa", d: "Recibes una tarjeta física profesional con tu nombre y logo, lista para usar." },
+              { icon: Package, n: "1", t: "Te llega a tu casa", d: "Recibes una tarjeta física NFC profesional, lista para usar." },
               { icon: Smartphone, n: "2", t: "La acercas al celular", d: "Solo un toque (tap) en el teléfono del cliente. Sin apps ni configuración — funciona en iPhone y Android." },
               { icon: Sparkles, n: "3", t: "Se abre tu perfil al instante", d: "El cliente ve tus servicios, te llama, te manda WhatsApp, guarda tu contacto o pide un presupuesto." },
             ].map((s) => (
