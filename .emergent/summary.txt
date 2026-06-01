@@ -1,0 +1,148 @@
+<analysis>**original_problem_statement**: 
+SaaS web app for Latino service contractors called Unitap. The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) are generated in English using AI. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, and GMB (Google My Business) Reviews gating. The app is LIVE in production. The user is highly focused on refining the Landing Page to highlight the secret sauce (Input in Spanish -> output perfect English docs), improving the free trial conversion funnel, and pushing the 3 core pillars: Invoicing, GMB Reviews, and NFC Cards.
+
+**User's preferred language**: Spanish (You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only)
+*Instrucción crítica para el siguiente agente: El usuario habla y requiere respuestas EXCLUSIVAMENTE en español. Asegúrate de comunicarte solo en español.*
+
+**what currently exists?** 
+A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real money. Recent additions include a completely revamped landing page, a dedicated Google Reviews page, automated 14-day free trial logic with a conditional +7 day extension, and a reorganized desktop sidebar.
+
+**Last working item**: 
+- **Last item agent was working**: Updating the Landing Page () based on feedback from the user's uncle. The agent successfully updated the Hero section to focus on the Spanish - tu nombre y logo) and adding the newly uploaded Google Review NFC card image alongside the Smart Card image.
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: Screenshot tool
+- **User Testing Done**: N
+
+**All Pending/In progress Issue list**: 
+Issue 1: Complete Landing Page NFC updates (P0)
+- Attempted fixes: Agent downloaded the uploaded images ( and  to ) but hit a bash error () and ran out of context before implementing them in .
+- Next debug checklist: 
+   1. Move  to the frontend assets folder (e.g.,  or ).
+   2. Edit  (NFC section) to remove the phrase con tu nombre y logo (as the cards are shipped blank).
+   3. Update the NFC section UI to showcase *both* the Smart Business Card NFC and the new Google Review NFC card.
+   4. Build the frontend and force commit.
+- Why fix this issue and what will be achieved with the fix?: Accurately reflects the current physical product offering and highlights the dual-NFC system (Smart Card + Reviews) to potential customers.
+- Status: IN PROGRESS
+- Is recurring issue?: N
+- Should Test frontend/backend/both after fix?: Frontend
+
+**In progress Task List**:
+None. (Tracked under Pending Issue list).
+
+**Upcoming and Future Tasks**
+- P1: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
+- P1: Export Calendar to  format for Google/Apple Calendar synchronization.
+- P2: Add dashboard charts/graphs for Admin (MRR month-over-month, signups last 30 days, Activation rate).
+- P2: Python script to consolidate/delete duplicate clients and users from the database.
+- P3: Refactor  into modular routers (File is >3800 lines).
+
+**Completed work in this session**
+- GMB Reviews migrated to a dedicated  page and removed from Settings (DONE)
+- Pedir reseña Share Button (WhatsApp/SMS/Email) added to Client Profile and Jobs list (DONE)
+- Public Review Page updated to 5-star rating system (4-5 = Google, 1-3 = private feedback), capturing  in backend (DONE)
+- Review Link Card moved above stats on  page for better visibility (DONE)
+- Landing page completely rewritten with an 8-step scrollytelling walkthrough and new secret sauce Hero section (DONE)
+- Desktop Sidebar reorganized into logical groups with headers and icons (DONE)
+- 14-Day Free Trial logic implemented with activation checklist, banners, and conditional +7 day extension for active users (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+Issue 1: Duplicate DB records (Clients/Users)
+- Debug checklist: Search MongoDB  and  collections. AI Chat and seeding scripts previously caused duplication.
+- Why to solve this issue and what will be achieved with this?: Prevents confusion in CRM and duplicate billing risks.
+- Should Test frontend/backend/both after fix: Backend
+- Is recurring issue?: Y
+
+**Known issue recurrence from previous fork**
+- Issue recurrence in previous fork: Stale Frontend builds locally on the user's VPS.
+- Recurrence count: 4
+- Status: RESOLVED (via strict adherence to deployment rules)
+- Note: **CRITICAL DEPLOY RULE**: The user's VPS explicitly pulls the  folder from git. You MUST ALWAYS run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing your task. If you don't do this, frontend changes will not reflect in production.
+
+**Code Architecture**
+- Frontend: React SPA (), TailwindCSS, Shadcn UI, React Router.
+- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic .
+- Deployments: Scripts  and  handle VPS deployments. Documentation for deployment is at .
+
+**Key Technical Concepts**
+- AI document generation (Spanish input -> English output).
+- Live Stripe Integration (Webhooks).
+- Custom Sentiment Gating for Google Reviews.
+- Automated Free Trial logic with conditional extensions evaluated at runtime.
+
+**key DB schema**
+- : {..., , , }
+- : {..., , , }
+
+**changes in tech stack**
+None.
+
+**All files of reference**
+- : Target for pending NFC text and image updates.
+- : Main backend monolith (contains new trial logic).
+-  & : Trial visibility components.
+- Uploaded Images in : , .
+
+**Areas that need refactoring**
+-  is nearly 3900 lines and severely needs refactoring into FastApi routers.
+
+**key api endpoints**
+- : Checks days left and extension eligibility.
+- : Grants +7 days if user meets activity criteria.
+- : Receives star rating and feedback.
+
+**Critical Info for New Agent**
+- **User Preference**: The user explicitly requested NOT to use the  for frontend verification (no pidas que el agente haga el test yo lo puedo hacer). Rely on manual testing (curl, python checks, screenshot tool) unless testing complex backend integrations.
+- **Production State**: The app is LIVE and processing payments. Do not alter existing Stripe or Webhook logic without extreme caution.
+- **Frontend Builds**: Any UI change requires a production build (yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. with ) explicitly force-added to git ().
+
+**documents and test reports created in this job**
+- 
+- 
+
+**Last 10 User Messages and any pending HUMAN messages**
+1. (User) Asked how to organize the sidebar menu better.
+2. (User) Noticed there was no indication of the 14-day free trial upon signup and asked for a strategy.
+3. (User) Chose to implement the 14-day trial with an activation checklist.
+4. (User) Asked if 30 days is better than 14 days. Agent explained why 14 days + extension is better.
+5. (User) Agreed to 14 days with a +7 day auto-extension for active users only.
+6. (User) Asked where the deployment instruction document was for their next project.
+7. (User) Asked for the raw Github link to the deployment document.
+8. (User) Relayed uncle's feedback: landing page needs to explain the physical NFC card better, and English terms (quote, invoice) should be put in quotes next to the Spanish words.
+9. (User) Noticed the Hero section didn't open the appetite and asked for ideas.
+10. (User) [PENDING/LAST] Uploaded images of the NFC cards. Instructed to remove con tu nombre y logo from the landing page since the cards are blank right now, and asked to add the Google Review NFC card alongside the Smart Card to the landing page.
+
+**Project Health Check:**
+Healthy.
+
+**3rd Party Integrations**
+- Stripe (Payments) — requires User API Key.
+- Resend / SMTP (Emails) — requires User API Key.
+- OpenAI GPT-5.2 — uses Emergent LLM Key.
+
+**Testing status**
+- Testing agent used after significant changes: NO (User requested not to use it).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None this session.
+- Known regressions: None.
+
+**Credentials to test flow:**
+Admin:  / 
+Trial Test User:  / 
+
+**What agent forgot to execute**
+The agent downloaded the user's uploaded images for the NFC cards but ran out of context before implementing the  image and the text fix (remove: con tu nombre y logo) into the  file.
+
+**Debugging checklist for current issue**
+Issue: Complete Landing Page NFC updates
+Frontend files to check: 
+- 
+Steps:
+1. Locate the downloaded image () and move it to  or .
+2. Edit  to import/reference the new image.
+3. Locate the text Recibes una tarjeta física NFC con tu nombre y logo in  and change it to remove the personalization promise (e.g., Recibes una tarjeta física NFC profesional).
+4. Update the layout of that section to display both the Smart Card mockup and the new Google Review NFC card image.
+5. Run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and .</analysis>
