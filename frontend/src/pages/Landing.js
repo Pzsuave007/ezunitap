@@ -12,6 +12,7 @@ import {
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
   PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package,
+  LogOut, User, Settings,
 } from "lucide-react";
 
 const SERVICES = [
@@ -537,31 +538,45 @@ function PhoneMockup() {
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-slate-900 z-10" />
         <div className="w-full h-full rounded-[2.3rem] bg-slate-50 overflow-hidden relative flex flex-col">
           {/* Top bar */}
-          <div className="h-12 flex items-center justify-between px-4 bg-white border-b border-slate-100 flex-shrink-0">
+          <div className="h-11 flex items-center justify-between px-4 bg-white border-b border-slate-100 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
                 <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
               </div>
               <span className="font-heading font-bold text-sm">Unitap</span>
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Pro</span>
+            <LogOut className="w-4 h-4 text-slate-400" />
           </div>
 
-          <div className="flex-1 overflow-hidden p-3.5 space-y-2.5">
-            {/* Greeting + earnings */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Cobrado este mes</div>
-                <div className="font-heading text-2xl font-bold bg-gradient-to-br from-emerald-500 to-emerald-700 bg-clip-text text-transparent leading-none mt-0.5">$8,940</div>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-hidden px-3.5 pt-3 pb-2 space-y-2.5">
+            {/* Greeting */}
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <div className="text-[10px] text-slate-400 leading-none">Buenas tardes,</div>
+                <h3 className="font-heading text-lg font-bold leading-tight mt-0.5 truncate">Carlos García 👋</h3>
+                <div className="text-[10px] text-slate-400 leading-none">García Landscaping</div>
               </div>
-              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 rounded-full px-2 py-1">
-                <TrendingUp className="w-3 h-3" /> +24%
+              <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <Settings className="w-3.5 h-3.5 text-slate-500" />
+              </div>
+            </div>
+
+            {/* Earnings hero */}
+            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 p-3 text-white shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
+                  <div className="font-heading text-2xl font-bold leading-none mt-1">$8,940</div>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-1">
+                  <TrendingUp className="w-3 h-3" /> +24%
+                </div>
               </div>
             </div>
 
             {/* THE MAGIC: Spanish -> English */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-              {/* Spanish input */}
               <div className="p-2.5 bg-slate-50/80 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
@@ -569,12 +584,10 @@ function PhoneMockup() {
                 </div>
                 <p className="text-[11px] text-slate-700 leading-snug">"Cambié 20 tejas y sellé el techo. Cobrar $1,450."</p>
               </div>
-              {/* Transform divider */}
               <div className="flex items-center justify-center gap-1.5 py-1.5 bg-gradient-to-r from-blue-900 to-emerald-600">
                 <Sparkles className="w-3 h-3 text-white" />
                 <span className="text-[9px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
               </div>
-              {/* English output quote */}
               <div className="p-2.5">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
@@ -600,46 +613,82 @@ function PhoneMockup() {
               </div>
             </div>
 
-            {/* Payment received */}
-            <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-2.5 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center flex-shrink-0">
-                <DollarSign className="w-4 h-4 text-white" strokeWidth={2.5} />
-              </div>
+            {/* Stat grid (real dashboard) */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700", bg: "bg-blue-50" },
+                { icon: FileBadge, label: "Quotes enviados", value: "8", color: "text-purple-700", bg: "bg-purple-50" },
+                { icon: DollarSign, label: "Por cobrar", value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
+                { icon: Star, label: "Reseñas Google", value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
+                    <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-tight truncate">{s.label}</div>
+                    <div className="font-heading text-sm font-bold text-slate-900 leading-tight">{s.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent quote */}
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[11px] font-bold text-slate-900 leading-tight">Pago recibido · +$1,450</div>
-                <div className="text-[9px] text-slate-500">Maria Rodriguez · Stripe · hace 1 min</div>
+                <div className="text-[11px] font-bold text-slate-900 leading-tight truncate">Business Website Build</div>
+                <div className="text-[9px] text-slate-400">Q-1001 · $1,200.00 · Maria R.</div>
               </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
             </div>
 
             {/* Next job */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <CalendarDays className="w-4 h-4 text-blue-700" />
+              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <CalendarDays className="w-3.5 h-3.5 text-blue-700" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
-                  <span className="text-[9px] font-semibold text-slate-400">Mañana</span>
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
+                  <span className="text-[9px] font-semibold text-slate-400">Mañana 8:00 AM</span>
                 </div>
-                <div className="text-[11px] font-bold text-slate-900 leading-tight mt-0.5">Fence installation · 8:00 AM</div>
+                <div className="text-[11px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Fence installation · Houston</div>
               </div>
             </div>
+          </div>
 
-            {/* New review */}
-            <div className="rounded-2xl bg-amber-50 border border-amber-100 p-2.5 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center flex-shrink-0">
-                <Star className="w-4 h-4 text-white fill-white" />
+          {/* Bottom navigation (like real app) */}
+          <div className="flex-shrink-0 bg-white border-t border-slate-100 px-2 pt-1.5 pb-2 flex items-end justify-around relative">
+            {[
+              { icon: LayoutDashboard, label: "Inicio" },
+              { icon: Users, label: "Clientes" },
+            ].map((n) => (
+              <div key={n.label} className="flex flex-col items-center gap-0.5 text-slate-400">
+                <n.icon className="w-4 h-4" />
+                <span className="text-[8px] font-semibold">{n.label}</span>
               </div>
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold text-slate-900 leading-tight">Nueva reseña 5★ en Google</div>
-                <div className="text-[9px] text-slate-500">"Great work, highly recommend!"</div>
+            ))}
+            {/* Center highlighted: Tarjeta */}
+            <div className="flex flex-col items-center gap-0.5 -mt-5">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-4 ring-white">
+                <IdCard className="w-5 h-5 text-white" strokeWidth={2} />
               </div>
+              <span className="text-[8px] font-bold text-emerald-700">Tarjeta</span>
             </div>
+            {[
+              { icon: CalendarDays, label: "Agenda" },
+              { icon: User, label: "Perfil" },
+            ].map((n) => (
+              <div key={n.label} className="flex flex-col items-center gap-0.5 text-slate-400">
+                <n.icon className="w-4 h-4" />
+                <span className="text-[8px] font-semibold">{n.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
       {/* Floating chips */}
-      <div className="absolute -left-5 lg:-left-16 top-[42%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
+      <div className="absolute -left-5 lg:-left-12 top-[34%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
           <Languages className="w-4 h-4 text-purple-600" />
         </div>
@@ -648,7 +697,7 @@ function PhoneMockup() {
           <div className="text-slate-500">en 2 segundos</div>
         </div>
       </div>
-      <div className="absolute -right-4 lg:-right-8 bottom-[14%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
+      <div className="absolute -right-4 lg:-right-10 bottom-[16%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
           <Smartphone className="w-4 h-4 text-emerald-600" />
         </div>
