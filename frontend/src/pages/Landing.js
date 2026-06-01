@@ -11,7 +11,7 @@ import {
   Hammer, Sparkles, CalendarDays, IdCard, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
-  PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge,
+  PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package,
 } from "lucide-react";
 
 const SERVICES = [
@@ -27,19 +27,19 @@ const FLOW = [
     points: ["Ven tus servicios y fotos de tus trabajos", "Guardan tu contacto al instante", "Solicitan una cotización y te contactan fácil", "Todo entra automático a tu sistema"],
   },
   {
-    n: "02", icon: Sparkles, title: "Cotiza en segundos con AI",
+    n: "02", icon: Sparkles, title: "Crea presupuestos “quote” en segundos",
     lead: "Describe el trabajo en español — la inteligencia artificial hace el resto.",
-    points: ["Cotización profesional automática", "Scope of Work detallado", "Documento en inglés para tu cliente", "PDF listo para enviar"],
+    points: ["Presupuesto “quote” profesional automático", "Alcance del trabajo “Scope of Work” detallado", "Documento en inglés para tu cliente", "PDF listo para enviar"],
   },
   {
-    n: "03", icon: FileBadge, title: "Tu cliente acepta la cotización",
+    n: "03", icon: FileBadge, title: "Tu cliente acepta el presupuesto “quote”",
     lead: "Recibe una propuesta profesional y la aprueba desde su celular.",
     points: ["Revisa servicios, términos y alcance del trabajo", "Aprueba con un tap", "Todo queda documentado en el sistema"],
   },
   {
-    n: "04", icon: Receipt, title: "El invoice se genera solo",
-    lead: "Al aprobar la cotización, Unitap crea el invoice profesional automáticamente.",
-    points: ["Invoice profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"],
+    n: "04", icon: Receipt, title: "La factura “invoice” se genera sola",
+    lead: "Al aprobar el presupuesto, Unitap crea la factura “invoice” profesional automáticamente.",
+    points: ["Factura “invoice” profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"],
   },
   {
     n: "05", icon: DollarSign, title: "Recibe depósitos y pagos",
@@ -280,7 +280,7 @@ export default function Landing() {
               Tu Tarjeta Inteligente. <span className="text-emerald-300">Tu mejor vendedor.</span>
             </h2>
             <p className="mt-6 text-lg text-white/75 leading-relaxed">
-              Un mini-sitio profesional con tu foto, servicios, reseñas y QR. Compártelo por WhatsApp o pégalo en tu camioneta. Tus prospectos te llaman, te mandan WhatsApp y piden cotización — directo desde su celular. Y un AI chat les responde 24/7 en su idioma.
+              <strong className="text-white">Recibes una tarjeta física NFC</strong> con tu nombre y logo — es tu mini-sitio profesional con foto, servicios, reseñas y QR. La acercas al celular de cualquier cliente y se abre al instante: te llaman, te mandan WhatsApp o piden presupuesto. Y un AI chat les responde 24/7 en su idioma.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-8">
               {[
@@ -288,7 +288,7 @@ export default function Landing() {
                 { i: MessageSquare, t: "WhatsApp directo" },
                 { i: Star, t: "Reseñas de Google" },
                 { i: Bot, t: "AI chat 24/7" },
-                { i: MapPin, t: "Lead capture form" },
+                { i: MapPin, t: "Captura de clientes" },
                 { i: Globe, t: "Inglés + Español" },
               ].map((x) => (
                 <div key={x.t} className="flex items-center gap-2.5 text-white/90 text-sm">
@@ -310,6 +310,47 @@ export default function Landing() {
 
           <div className="lg:col-span-6 relative">
             <SmartCardPreview />
+          </div>
+        </div>
+
+        {/* What is NFC + physical card explainer */}
+        <div className="max-w-5xl mx-auto px-5 lg:px-8 mt-16 lg:mt-24 relative">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 text-white">
+              <Package className="w-3.5 h-3.5 text-emerald-300" /> Recibes una tarjeta física
+            </div>
+            <h3 className="font-heading text-3xl lg:text-4xl font-bold text-white tracking-tight">
+              ¿Qué es una tarjeta NFC? Así de fácil funciona.
+            </h3>
+            <p className="mt-4 text-white/70 leading-relaxed">
+              NFC es la misma tecnología de Apple Pay. Tu cliente <strong className="text-white">no necesita bajar ninguna app</strong> — solo acerca su teléfono a tu tarjeta.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              { icon: Package, n: "1", t: "Te llega a tu casa", d: "Recibes una tarjeta física profesional con tu nombre y logo, lista para usar." },
+              { icon: Smartphone, n: "2", t: "La acercas al celular", d: "Solo un toque (tap) en el teléfono del cliente. Sin apps ni configuración — funciona en iPhone y Android." },
+              { icon: Sparkles, n: "3", t: "Se abre tu perfil al instante", d: "El cliente ve tus servicios, te llama, te manda WhatsApp, guarda tu contacto o pide un presupuesto." },
+            ].map((s) => (
+              <div key={s.n} className="rounded-2xl bg-white/[0.05] border border-white/10 p-6 text-white">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                    <s.icon className="w-5 h-5 text-white" strokeWidth={2} />
+                  </div>
+                  <span className="font-heading text-3xl font-bold text-white/15">{s.n}</span>
+                </div>
+                <h4 className="font-heading font-bold text-lg">{s.t}</h4>
+                <p className="text-white/70 text-sm mt-1.5 leading-relaxed">{s.d}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-7 rounded-2xl bg-white/[0.05] border border-white/10 p-5 flex items-start gap-3 text-white/85">
+            <Sparkles className="w-5 h-5 text-emerald-300 flex-shrink-0 mt-0.5" />
+            <p className="text-sm leading-relaxed">
+              <strong className="text-white">Adiós a las tarjetas de papel</strong> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <strong className="text-white">sin reimprimir nada</strong>.
+            </p>
           </div>
         </div>
       </section>
@@ -389,7 +430,7 @@ export default function Landing() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
-            <StatCard label="Tiempo para crear un quote con AI" value="< 30s" accent="emerald" />
+            <StatCard label="Tiempo para crear un presupuesto “quote”" value="< 30s" accent="emerald" />
             <StatCard label="Idiomas soportados" value="EN + ES" accent="blue" />
             <StatCard label="Acceso 100% mobile" value="iOS + Android" accent="purple" />
             <StatCard label="Setup inicial" value="2 minutos" accent="amber" />
@@ -469,13 +510,13 @@ function PhoneMockup() {
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Hoy</div>
             <h3 className="font-heading text-2xl font-bold leading-tight">Buenos días,<br/>Carlos 👋</h3>
             <div className="grid grid-cols-2 gap-2 mt-3">
-              <MiniStat label="Quotes" value="8" accent="emerald" />
+              <MiniStat label="Presupuestos" value="8" accent="emerald" />
               <MiniStat label="Trabajos hoy" value="3" accent="blue" />
             </div>
             <div className="mt-3 rounded-2xl bg-white p-3 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Crear quote con AI</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Crear presupuesto “quote” con AI</span>
               </div>
               <p className="text-xs text-slate-500">Describe el trabajo o sube foto</p>
               <div className="mt-2 h-9 rounded-xl bg-gradient-to-r from-blue-900 to-emerald-600 text-white text-xs font-bold flex items-center justify-center">
@@ -497,7 +538,7 @@ function PhoneMockup() {
       <div className="absolute -left-4 lg:-left-10 top-1/3 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <Bot className="w-4 h-4 text-purple-600" />
         <div className="text-[11px]">
-          <div className="font-bold leading-tight">AI generó quote</div>
+          <div className="font-bold leading-tight">AI hizo tu presupuesto</div>
           <div className="text-slate-500">2 segundos</div>
         </div>
       </div>
