@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const fmtMoney = (n) =>
 
 export default function PublicQuote() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -29,37 +30,22 @@ export default function PublicQuote() {
       .catch(() => setErr(true));
   }, [id]);
 
-  const [signerName, setSignerName] = useState("");
-  const [signing, setSigning] = useState(false);
-
+  // Accept the quote → backend creates the service agreement → we send the
+  // client straight to it to review & sign (then pay). One seamless link.
   const accept = async () => {
-    if (!window.confirm("By clicking Accept, you approve this quote and authorize the contractor to begin work. Continue?")) return;
+    if (!window.confirm("By clicking Accept, you approve this quote and continue to your service agreement. Continue?")) return;
     setAccepting(true);
     try {
-      await axios.post(`${API}/public/quotes/${id}/accept`);
+      const r = await axios.post(`${API}/public/quotes/${id}/accept`);
+      if (r.data?.agreement_id) {
+        navigate(`/p/agreement/${r.data.agreement_id}`);
+        return; // keep loading state during redirect
+      }
       setAccepted(true);
+      setAccepting(false);
     } catch (e) {
       alert(e?.response?.data?.detail || "Could not accept this quote. Please try again.");
-    } finally {
       setAccepting(false);
-    }
-  };
-
-  const acceptAndSign = async () => {
-    if (signerName.trim().length < 2) {
-      alert("Please type your full name to sign.");
-      return;
-    }
-    setSigning(true);
-    try {
-      await axios.post(`${API}/public/quotes/${id}/accept-and-sign`, {
-        signer_name: signerName.trim(),
-      });
-      setAccepted(true);
-    } catch (e) {
-      alert(e?.response?.data?.detail || "Could not accept and sign. Please try again.");
-    } finally {
-      setSigning(false);
     }
   };
 
@@ -180,88 +166,39 @@ export default function PublicQuote() {
               </div>
             )}
 
-            {/* Accept block */}
+            {/* Accept block — clean. Accepting takes the client to the agreement to sign, then pay. */}
             {accepted ? (
-              <div data-testid="quote-accepted-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-5 text-center">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
+              <div data-testid="quote-accepted-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-5 text-center space-y-3">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
                 <div className="font-heading text-xl font-bold text-emerald-800">Quote Accepted</div>
-                <p className="text-sm text-emerald-700 mt-1">
-                  Thank you! {business?.business_name || "The contractor"} will follow up with a service agreement
-                  to sign and confirm the project details.
+                <p className="text-sm text-emerald-700">
+                  Next, review and sign your service agreement.
                 </p>
+                <Button
+                  data-testid="continue-to-agreement-btn"
+                  onClick={accept}
+                  disabled={accepting}
+                  className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
+                >
+                  {accepting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue to Agreement &rarr;</>}
+                </Button>
               </div>
             ) : (
-              <div data-testid="quote-accept-block" className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
-                <div className="text-center">
-                  <h3 className="font-heading text-lg font-bold text-slate-900">Ready to move forward?</h3>
-                  <p className="text-xs text-slate-600 mt-1">
-                    {quote.require_signature
-                      ? "Review the work terms below, type your name to sign, and your invoice will be created instantly."
-                      : `Accepting this quote lets ${business?.business_name || "the contractor"} prepare the service agreement.`}
-                  </p>
-                </div>
-
-                {/* Embedded short terms (visible only when require_signature) */}
-                {quote.require_signature && quote.terms && (
-                  <div className="bg-white rounded-xl border border-slate-200 p-3 space-y-2 text-sm">
-                    {[
-                      ["what_is_included",     "What's included"],
-                      ["what_is_not_included", "What's NOT included"],
-                      ["payment_terms",        "Payment terms"],
-                      ["warranty",             "Warranty"],
-                      ["change_order_note",    "Change orders"],
-                    ].map(([k, label]) => (
-                      quote.terms[k] && (
-                        <div key={k}>
-                          <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                            {label}
-                          </div>
-                          <div className="text-slate-700 text-[13px] leading-snug whitespace-pre-line">
-                            {quote.terms[k]}
-                          </div>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                )}
-
-                {quote.require_signature ? (
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Type your full legal name to sign:
-                    </label>
-                    <input
-                      type="text"
-                      data-testid="signer-name"
-                      value={signerName}
-                      onChange={(e) => setSignerName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full h-11 px-3 rounded-xl border border-slate-300 bg-white text-sm font-cursive"
-                      style={{ fontFamily: '"Caveat", "Brush Script MT", cursive', fontSize: "20px" }}
-                    />
-                    <Button
-                      data-testid="accept-and-sign-btn"
-                      onClick={acceptAndSign}
-                      disabled={signing}
-                      className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
-                    >
-                      {signing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5 mr-2" /> Accept &amp; Sign</>}
-                    </Button>
-                    <p className="text-[10px] text-slate-500 text-center">
-                      By typing your name and clicking Accept &amp; Sign, you legally
-                      agree to the terms above.
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    data-testid="accept-quote-btn"
-                    onClick={accept}
-                    disabled={accepting}
-                    className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
-                  >
-                    {accepting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5 mr-2" /> Accept this Quote</>}
-                  </Button>
-                )}
+              <div data-testid="quote-accept-block" className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3 text-center">
+                <h3 className="font-heading text-lg font-bold text-slate-900">Ready to move forward?</h3>
+                <p className="text-xs text-slate-600">
+                  Accept this quote to review and sign your service agreement, then pay your deposit — all in a few clicks.
+                </p>
+                <Button
+                  data-testid="accept-quote-btn"
+                  onClick={accept}
+                  disabled={accepting}
+                  className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
+                >
+                  {accepting
+                    ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Preparing your agreement…</>
+                    : <><CheckCircle2 className="w-5 h-5 mr-2" /> Accept this Quote</>}
+                </Button>
               </div>
             )}
           </div>

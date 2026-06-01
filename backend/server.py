@@ -727,28 +727,79 @@ async def public_quote(quote_id: str):
 
 
 # Public quote acceptance (no auth) — client clicks "Accept this Quote" from the share link.
-# Marks the quote as approved instantly and schedules agreement creation in the background
-# so the client gets immediate feedback (the contractor reviews/sends the agreement later).
+# Marks the quote approved AND synchronously creates the AI service agreement (built from
+# the project + the contractor's own terms) so we can send the client straight to it to
+# review & sign — no extra link needed. Returns the agreement_id for the next step.
 @api_router.post("/public/quotes/{quote_id}/accept")
-async def public_accept_quote(quote_id: str, background_tasks: BackgroundTasks):
+async def public_accept_quote(quote_id: str):
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
         raise HTTPException(404, "Not found")
-    if q.get("status") == "approved":
-        return {"ok": True, "already_approved": True}
-    if q.get("status") in ("declined", "converted"):
+    if q.get("status") in ("declined",):
         raise HTTPException(400, "Quote no se puede aceptar en este estado")
-    await db.quotes.update_one(
-        {"id": quote_id},
-        {"$set": {"status": "approved", "approved_at": _now_iso(), "updated_at": _now_iso()}},
-    )
-    # Schedule auto-agreement creation in the background — the client doesn't wait for AI.
+
+    now_iso = _now_iso()
+    if q.get("status") not in ("approved", "converted"):
+        await db.quotes.update_one(
+            {"id": quote_id},
+            {"$set": {"status": "approved", "approved_at": now_iso, "updated_at": now_iso}},
+        )
+
+    # Find or create the linked service agreement (idempotent).
     existing = await db.agreements.find_one(
         {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
     )
-    if not existing:
-        background_tasks.add_task(_auto_create_agreement_from_quote, q)
-    return {"ok": True}
+    if existing:
+        return {"ok": True, "agreement_id": existing["id"]}
+
+    # Build a rich Spanish description that includes the contractor's own terms so the
+    # AI service agreement reflects exactly this project.
+    desc_parts = [q.get("job_title", "")]
+    if q.get("description"):
+        desc_parts.append(q["description"])
+    if q.get("scope_of_work"):
+        desc_parts.append("Scope of work: " + "; ".join(q["scope_of_work"]))
+    terms = q.get("terms") or {}
+    for k, label in (
+        ("what_is_included", "Incluye"),
+        ("what_is_not_included", "No incluye"),
+        ("payment_terms", "Términos de pago"),
+        ("warranty", "Garantía"),
+        ("change_order_note", "Órdenes de cambio"),
+    ):
+        if terms.get(k):
+            desc_parts.append(f"{label}: {terms[k]}")
+    if q.get("payment_terms"):
+        desc_parts.append(f"Términos de pago: {q['payment_terms']}")
+    description_es = "\n".join([p for p in desc_parts if p])
+
+    try:
+        agreement = await _build_agreement_from_quote_and_desc(
+            user_id=q["user_id"],
+            client_id=q["client_id"],
+            quote_id=quote_id,
+            description_es=description_es,
+            total=float(q.get("total") or 0),
+            deposit=float(q.get("deposit_amount") or 0),
+        )
+    except Exception as e:
+        logger.exception(f"Sync agreement creation on accept failed for quote {quote_id}: {e}")
+        raise HTTPException(500, "No se pudo preparar el acuerdo. Intenta de nuevo.")
+
+    # Notify the contractor.
+    try:
+        await _create_notification(
+            user_id=q["user_id"],
+            title="✅ Cliente aceptó tu quote",
+            body=f"{q.get('client_name','El cliente')} aceptó el quote. Ahora puede firmar el acuerdo de servicio.",
+            kind="success",
+            action_url=f"/agreements/{agreement['id']}",
+            action_label="Ver acuerdo",
+        )
+    except Exception as e:
+        logger.error(f"accept notif failed: {e!r}")
+
+    return {"ok": True, "agreement_id": agreement["id"]}
 
 
 # Public quote accept-and-sign — client accepts the quote AND signs the embedded
@@ -2620,11 +2671,14 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
         }},
     )
     # Auto-create a draft invoice from the linked quote (if any) — idempotent.
+    invoice_id = None
     if a.get("quote_id"):
         existing_inv = await db.invoices.find_one(
             {"user_id": a["user_id"], "quote_id": a["quote_id"]}, {"_id": 0, "id": 1}
         )
-        if not existing_inv:
+        if existing_inv:
+            invoice_id = existing_inv["id"]
+        else:
             try:
                 q = await db.quotes.find_one(
                     {"id": a["quote_id"], "user_id": a["user_id"]}, {"_id": 0}
@@ -2671,11 +2725,12 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
                         "updated_at": _now_iso(),
                     }
                     await db.invoices.insert_one(inv)
+                    invoice_id = inv["id"]
             except Exception as e:
                 logger.exception(f"Auto-invoice on agreement sign failed: {e}")
                 # Don't break the signing on invoice failure
     updated = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
-    return {"ok": True, "agreement": updated}
+    return {"ok": True, "agreement": updated, "invoice_id": invoice_id}
 
 
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,14 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function PublicAgreement() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
   const [mode, setMode] = useState(null); // null | "drawn" | "button"
   const [signerName, setSignerName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState(false);
+  const [invoiceId, setInvoiceId] = useState(null);
   const padRef = useRef(null);
 
   useEffect(() => {
@@ -38,8 +40,13 @@ export default function PublicAgreement() {
         if (!sig) { alert("Please draw your signature."); setSubmitting(false); return; }
         body.signature_image = sig;
       }
-      await axios.post(`${API}/public/agreements/${id}/sign`, body);
+      const r = await axios.post(`${API}/public/agreements/${id}/sign`, body);
       setSigned(true);
+      // Continue the journey: take the client to the invoice to pay the deposit.
+      if (r.data?.invoice_id) {
+        setInvoiceId(r.data.invoice_id);
+        setTimeout(() => navigate(`/p/invoice/${r.data.invoice_id}`), 2500);
+      }
     } catch (e) {
       alert(e?.response?.data?.detail || "Failed to sign. Please try again.");
     } finally {
@@ -133,9 +140,25 @@ export default function PublicAgreement() {
               <div data-testid="public-signed-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-5 text-center">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
                 <div className="font-heading text-xl font-bold text-emerald-800">Agreement Signed</div>
-                <p className="text-sm text-emerald-700 mt-1">
-                  Thank you! A signed copy has been recorded. {business?.business_name} will follow up shortly.
-                </p>
+                {invoiceId ? (
+                  <>
+                    <p className="text-sm text-emerald-700 mt-1">
+                      Thank you! Last step — review your invoice and pay your deposit to lock in your spot.
+                    </p>
+                    <Button
+                      data-testid="go-to-invoice-btn"
+                      onClick={() => navigate(`/p/invoice/${invoiceId}`)}
+                      className="mt-3 w-full sm:w-auto h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold"
+                    >
+                      View Invoice &amp; Pay &rarr;
+                    </Button>
+                    <p className="text-[11px] text-emerald-600/80 mt-2">Taking you to your invoice…</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-emerald-700 mt-1">
+                    Thank you! A signed copy has been recorded. {business?.business_name} will follow up shortly.
+                  </p>
+                )}
               </div>
             ) : (
               <div data-testid="public-sign-block" className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-4">
