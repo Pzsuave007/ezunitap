@@ -2717,15 +2717,14 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
         or (card.get("business_type") or "").strip()
     )
 
-    # Activation items — computed from real work done.
-    quotes_count = await db.quotes.count_documents({"user_id": user_id})
-    invoices_count = await db.invoices.count_documents({"user_id": user_id})
+    # Activation item — creating the FIRST CLIENT is the gateway to everything
+    # (you must have a client before you can make a quote or send an invoice).
+    clients_count = await db.clients.count_documents({"user_id": user_id})
 
     items = [
         {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes"},
         {"id": "smart_card", "label": "Crea y comparte tu Tarjeta Digital", "minutes": 3, "done": card_created, "path": "/tarjeta"},
-        {"id": "first_quote", "label": "Crea tu primer quote", "minutes": 2, "done": quotes_count > 0, "path": "/quotes"},
-        {"id": "first_invoice", "label": "Manda tu primer invoice", "minutes": 2, "done": invoices_count > 0, "path": "/invoices"},
+        {"id": "first_client", "label": "Crea tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
     ]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0

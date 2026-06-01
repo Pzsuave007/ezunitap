@@ -90,12 +90,11 @@ export default function WelcomeModal() {
             Tienes <strong className="text-emerald-600">14 días gratis</strong> para probar todo. Vamos a dejar tu negocio listo en <strong className="text-slate-900">unos minutos</strong> para que hoy mismo mandes tu primer quote profesional en inglés. 🚀
           </p>
 
-          <div className="mt-6 grid grid-cols-4 gap-2 text-center">
+          <div className="mt-6 grid grid-cols-3 gap-2 text-center">
             {[
               { n: "01", l: "Tu info" },
               { n: "02", l: "Tu tarjeta" },
-              { n: "03", l: "Primer quote" },
-              { n: "04", l: "Primer invoice" },
+              { n: "03", l: "Primer cliente" },
             ].map((s) => (
               <div key={s.n} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">{s.n}</div>
