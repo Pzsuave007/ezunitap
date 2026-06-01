@@ -549,12 +549,12 @@ function PhoneMockup() {
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-hidden px-3.5 pt-3 pb-2 space-y-2.5">
+          <div className="flex-1 overflow-hidden px-3.5 pt-2.5 pb-2 space-y-2">
             {/* Greeting */}
             <div className="flex items-start justify-between">
               <div className="min-w-0">
                 <div className="text-[10px] text-slate-400 leading-none">Buenas tardes,</div>
-                <h3 className="font-heading text-lg font-bold leading-tight mt-0.5 truncate">Carlos García 👋</h3>
+                <h3 className="font-heading text-base font-bold leading-tight mt-0.5 truncate">Carlos García 👋</h3>
                 <div className="text-[10px] text-slate-400 leading-none">García Landscaping</div>
               </div>
               <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -563,7 +563,7 @@ function PhoneMockup() {
             </div>
 
             {/* Earnings hero (slim) */}
-            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-2 text-white shadow-md flex items-center justify-between">
+            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-1.5 text-white shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
                 <div className="font-heading text-lg font-bold leading-none">$8,940</div>
@@ -573,11 +573,11 @@ function PhoneMockup() {
               </div>
             </div>
 
-            {/* THE MAGIC: Spanish -> full professional English quote */}
+            {/* THE MAGIC: Spanish -> professional English quote (compact) */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
               {/* Spanish input */}
-              <div className="p-2.5 bg-slate-50/80 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 mb-1">
+              <div className="px-2.5 py-2 bg-slate-50/80 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
                   <span className="text-[10px]">🇲🇽</span>
                 </div>
@@ -589,8 +589,8 @@ function PhoneMockup() {
                 <span className="text-[9px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
               </div>
               {/* Quote document */}
-              <div className="p-2.5">
-                <div className="flex items-center justify-between mb-2">
+              <div className="px-2.5 py-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Receipt className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
                     <div className="min-w-0">
@@ -601,57 +601,72 @@ function PhoneMockup() {
                   <span className="text-[8px] font-bold uppercase text-emerald-700 bg-emerald-50 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 flex-shrink-0"><Check className="w-2.5 h-2.5" /> Sent</span>
                 </div>
                 {/* Line items */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {[
-                    { d: "Remove & dispose old shingles", q: "1 job", p: "$200" },
-                    { d: "Architectural shingles (20 sq)", q: "20 × $31", p: "$620" },
-                    { d: "Underlayment & flashing", q: "1 job", p: "$180" },
-                    { d: "Roof sealing & waterproofing", q: "1 job", p: "$250" },
-                    { d: "Site cleanup & haul-away", q: "1 job", p: "$90" },
+                    { d: "Remove & replace 20 roof shingles", p: "$1,000" },
+                    { d: "Roof sealing & waterproofing", p: "$250" },
+                    { d: "Site cleanup & haul-away", p: "$90" },
                   ].map((li) => (
-                    <div key={li.d} className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-[10px] text-slate-700 leading-tight truncate">{li.d}</div>
-                        <div className="text-[8px] text-slate-400 leading-tight">{li.q}</div>
-                      </div>
-                      <span className="text-[10px] font-semibold text-slate-800 flex-shrink-0">{li.p}</span>
+                    <div key={li.d} className="flex items-center justify-between gap-2 text-[10px]">
+                      <span className="text-slate-700 truncate">{li.d}</span>
+                      <span className="font-semibold text-slate-800 flex-shrink-0">{li.p}</span>
                     </div>
                   ))}
                 </div>
                 {/* Totals */}
-                <div className="mt-2 pt-2 border-t border-slate-100 space-y-0.5">
+                <div className="mt-1.5 pt-1.5 border-t border-slate-100">
                   <div className="flex items-center justify-between text-[9px] text-slate-500">
-                    <span>Subtotal</span><span className="font-medium text-slate-700">$1,340.00</span>
+                    <span>Subtotal $1,340 · Tax (8.25%) $110</span>
                   </div>
-                  <div className="flex items-center justify-between text-[9px] text-slate-500">
-                    <span>Tax (8.25%)</span><span className="font-medium text-slate-700">$110.00</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 mt-0.5 border-t border-dashed border-slate-200">
+                  <div className="flex items-center justify-between mt-0.5">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total</span>
                     <span className="font-heading text-base font-bold text-slate-900">$1,450.00</span>
                   </div>
                 </div>
-                {/* Terms */}
-                <div className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 flex items-start gap-1.5">
-                  <FileBadge className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-[8px] text-slate-500 leading-snug">Valid 30 days · 50% deposit · Includes labor, materials &amp; cleanup · 1-yr workmanship warranty</p>
-                </div>
               </div>
             </div>
 
-            {/* Slim stats row */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* Stat grid (real dashboard) */}
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700" },
-                { icon: Star, label: "Reseñas", value: "4.9★", color: "text-emerald-700" },
-                { icon: DollarSign, label: "Por cobrar", value: "$1.2k", color: "text-amber-700" },
+                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700", bg: "bg-blue-50" },
+                { icon: FileBadge, label: "Quotes enviados", value: "8", color: "text-purple-700", bg: "bg-purple-50" },
+                { icon: DollarSign, label: "Por cobrar", value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
+                { icon: Star, label: "Reseñas Google", value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2 text-center">
-                  <s.icon className={`w-3.5 h-3.5 ${s.color} mx-auto`} />
-                  <div className="font-heading text-sm font-bold text-slate-900 leading-tight mt-1">{s.value}</div>
-                  <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-tight">{s.label}</div>
+                <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2 flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
+                    <s.icon className={`w-3 h-3 ${s.color}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[7px] font-bold uppercase tracking-wider text-slate-400 leading-tight truncate">{s.label}</div>
+                    <div className="font-heading text-xs font-bold text-slate-900 leading-tight">{s.value}</div>
+                  </div>
                 </div>
               ))}
+            </div>
+
+            {/* Recent quote */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-slate-900 leading-tight truncate">Business Website Build</div>
+                <div className="text-[8px] text-slate-400">Q-1001 · $1,200.00 · Maria R.</div>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+            </div>
+
+            {/* Next job */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <CalendarDays className="w-3 h-3 text-blue-700" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
+                  <span className="text-[8px] font-semibold text-slate-400">Mañana 8:00 AM</span>
+                </div>
+                <div className="text-[10px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Fence installation · Houston</div>
+              </div>
             </div>
           </div>
 
