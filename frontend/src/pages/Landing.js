@@ -562,21 +562,20 @@ function PhoneMockup() {
               </div>
             </div>
 
-            {/* Earnings hero */}
-            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 p-3 text-white shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
-                  <div className="font-heading text-2xl font-bold leading-none mt-1">$8,940</div>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-1">
-                  <TrendingUp className="w-3 h-3" /> +24%
-                </div>
+            {/* Earnings hero (slim) */}
+            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-2 text-white shadow-md flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
+                <div className="font-heading text-lg font-bold leading-none">$8,940</div>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-0.5">
+                <TrendingUp className="w-3 h-3" /> +24%
               </div>
             </div>
 
-            {/* THE MAGIC: Spanish -> English */}
+            {/* THE MAGIC: Spanish -> full professional English quote */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+              {/* Spanish input */}
               <div className="p-2.5 bg-slate-50/80 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
@@ -584,76 +583,75 @@ function PhoneMockup() {
                 </div>
                 <p className="text-[11px] text-slate-700 leading-snug">"Cambié 20 tejas y sellé el techo. Cobrar $1,450."</p>
               </div>
+              {/* Transform */}
               <div className="flex items-center justify-center gap-1.5 py-1.5 bg-gradient-to-r from-blue-900 to-emerald-600">
                 <Sparkles className="w-3 h-3 text-white" />
                 <span className="text-[9px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
               </div>
+              {/* Quote document */}
               <div className="p-2.5">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Receipt className="w-3.5 h-3.5 text-blue-700" />
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700">Quote #1042</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Receipt className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-blue-700 leading-tight">Quote #1042</div>
+                      <div className="text-[8px] text-slate-400 leading-tight truncate">García Landscaping → Maria R.</div>
+                    </div>
                   </div>
-                  <span className="text-[8px] font-bold uppercase text-emerald-700 bg-emerald-50 rounded-full px-1.5 py-0.5 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Sent</span>
+                  <span className="text-[8px] font-bold uppercase text-emerald-700 bg-emerald-50 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 flex-shrink-0"><Check className="w-2.5 h-2.5" /> Sent</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-slate-600">Replace 20 roof shingles</span>
-                    <span className="font-semibold text-slate-800">$1,100</span>
+                {/* Line items */}
+                <div className="space-y-1.5">
+                  {[
+                    { d: "Remove & dispose old shingles", q: "1 job", p: "$200" },
+                    { d: "Architectural shingles (20 sq)", q: "20 × $31", p: "$620" },
+                    { d: "Underlayment & flashing", q: "1 job", p: "$180" },
+                    { d: "Roof sealing & waterproofing", q: "1 job", p: "$250" },
+                    { d: "Site cleanup & haul-away", q: "1 job", p: "$90" },
+                  ].map((li) => (
+                    <div key={li.d} className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-700 leading-tight truncate">{li.d}</div>
+                        <div className="text-[8px] text-slate-400 leading-tight">{li.q}</div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-800 flex-shrink-0">{li.p}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Totals */}
+                <div className="mt-2 pt-2 border-t border-slate-100 space-y-0.5">
+                  <div className="flex items-center justify-between text-[9px] text-slate-500">
+                    <span>Subtotal</span><span className="font-medium text-slate-700">$1,340.00</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-slate-600">Roof sealing &amp; cleanup</span>
-                    <span className="font-semibold text-slate-800">$350</span>
+                  <div className="flex items-center justify-between text-[9px] text-slate-500">
+                    <span>Tax (8.25%)</span><span className="font-medium text-slate-700">$110.00</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 mt-0.5 border-t border-dashed border-slate-200">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total</span>
+                    <span className="font-heading text-base font-bold text-slate-900">$1,450.00</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-slate-200">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total</span>
-                  <span className="font-heading text-base font-bold text-slate-900">$1,450.00</span>
+                {/* Terms */}
+                <div className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 flex items-start gap-1.5">
+                  <FileBadge className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-[8px] text-slate-500 leading-snug">Valid 30 days · 50% deposit · Includes labor, materials &amp; cleanup · 1-yr workmanship warranty</p>
                 </div>
               </div>
             </div>
 
-            {/* Stat grid (real dashboard) */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Slim stats row */}
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700", bg: "bg-blue-50" },
-                { icon: FileBadge, label: "Quotes enviados", value: "8", color: "text-purple-700", bg: "bg-purple-50" },
-                { icon: DollarSign, label: "Por cobrar", value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
-                { icon: Star, label: "Reseñas Google", value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
+                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700" },
+                { icon: Star, label: "Reseñas", value: "4.9★", color: "text-emerald-700" },
+                { icon: DollarSign, label: "Por cobrar", value: "$1.2k", color: "text-amber-700" },
               ].map((s) => (
-                <div key={s.label} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-                    <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-tight truncate">{s.label}</div>
-                    <div className="font-heading text-sm font-bold text-slate-900 leading-tight">{s.value}</div>
-                  </div>
+                <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2 text-center">
+                  <s.icon className={`w-3.5 h-3.5 ${s.color} mx-auto`} />
+                  <div className="font-heading text-sm font-bold text-slate-900 leading-tight mt-1">{s.value}</div>
+                  <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-tight">{s.label}</div>
                 </div>
               ))}
-            </div>
-
-            {/* Recent quote */}
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold text-slate-900 leading-tight truncate">Business Website Build</div>
-                <div className="text-[9px] text-slate-400">Q-1001 · $1,200.00 · Maria R.</div>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-            </div>
-
-            {/* Next job */}
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <CalendarDays className="w-3.5 h-3.5 text-blue-700" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
-                  <span className="text-[9px] font-semibold text-slate-400">Mañana 8:00 AM</span>
-                </div>
-                <div className="text-[11px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Fence installation · Houston</div>
-              </div>
             </div>
           </div>
 
@@ -687,8 +685,8 @@ function PhoneMockup() {
           </div>
         </div>
       </div>
-      {/* Floating chips */}
-      <div className="absolute -left-5 lg:-left-12 top-[34%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
+      {/* Floating chip */}
+      <div className="absolute -right-4 lg:-right-10 top-[12%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
           <Languages className="w-4 h-4 text-purple-600" />
         </div>
@@ -697,7 +695,7 @@ function PhoneMockup() {
           <div className="text-slate-500">en 2 segundos</div>
         </div>
       </div>
-      <div className="absolute -right-4 lg:-right-10 bottom-[16%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
+      <div className="absolute -left-4 lg:-left-10 bottom-[20%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
           <Smartphone className="w-4 h-4 text-emerald-600" />
         </div>
