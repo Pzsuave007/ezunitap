@@ -122,13 +122,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6">
-              <Zap className="w-3.5 h-3.5" /> Para dueños de negocios de servicios
+              <Languages className="w-3.5 h-3.5" /> Tú en español · tus clientes en inglés
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Tu negocio. Más clientes. <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">Menos estrés.</span>
+              Cotiza, factura y haz contratos en <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">inglés perfecto.</span> Escribiendo en español.
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Desde conseguir un cliente hasta recibir una reseña — <strong className="text-slate-900">todo en un solo sistema.</strong> Unitap te ayuda a verte más profesional, ahorrar tiempo y organizar tu negocio sin complicaciones.
+              Tú describes el trabajo en <strong className="text-slate-900">español</strong> y Unitap redacta presupuestos «quotes», contratos e invoices impecables en <strong className="text-slate-900">inglés — sin que sepas el idioma.</strong> Y para crecer tu negocio: tarjeta NFC para conseguir clientes, reseñas 5★ en Google y links de pago para cobrar al instante.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
