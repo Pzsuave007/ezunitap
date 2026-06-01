@@ -331,7 +331,7 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 gap-5 mb-12 max-w-3xl mx-auto">
             {[
               {
-                img: "/nfc-digital.webp",
+                img: "/nfc-sample.png",
                 tag: "Tarjeta Inteligente",
                 title: "Smart Business Card NFC",
                 desc: "Tu mini-sitio profesional en un tap: servicios, llamada, WhatsApp, AI chat y captura de clientes.",
