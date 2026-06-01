@@ -179,13 +179,13 @@ export default function Landing() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="max-w-4xl mx-auto px-5 lg:px-8 text-center relative">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-            Olvídate de WhatsApp, notas del celular, <br className="hidden lg:block" />papeles y mil aplicaciones.
+            Olvídate de Excel, Word, notas y <br className="hidden lg:block" />invoices de papel.
           </h2>
           <p className="mt-5 text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Toda la información de tu negocio regada en mil lados es dinero y tiempo que pierdes. Con Unitap manejas <strong className="text-white">todo desde un solo lugar.</strong>
+            Tu información regada entre Excel, Word, notas del celular, papeles y QuickBooks es dinero y tiempo que pierdes. Con Unitap manejas <strong className="text-white">todo desde un solo lugar.</strong>
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3 text-sm">
-            {["Papelitos", "WhatsApp", "Excel", "Notas", "Word", "3 apps más"].map((x) => (
+            {["Excel", "Word", "Notas", "Invoice de papel", "QuickBooks", "Más apps"].map((x) => (
               <span key={x} className="px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 text-white/50 line-through">{x}</span>
             ))}
             <ArrowRight className="w-5 h-5 text-emerald-400 hidden sm:block" />
