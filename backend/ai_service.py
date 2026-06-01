@@ -150,6 +150,40 @@ async def generate_message(message_type: str, user_input_es: str, client_name: O
     return (response or "").strip()
 
 
+FIELD_GUIDANCE = {
+    "about": "a warm, professional 'About Me' bio of 2-4 sentences that builds trust with potential customers and highlights experience, quality and reliability.",
+    "tagline": "a short, punchy business tagline/slogan in ONE line, under 10 words, no period at the end.",
+    "role": "a concise professional job title or role of 2-5 words (e.g., 'Owner & Lead Contractor').",
+    "service": "a short, clear single-sentence service description, under 18 words, focused on the customer benefit.",
+    "service_area": "a clean, professional service-area line (e.g., 'Houston, TX and surrounding areas').",
+    "hours": "a clean business-hours line in U.S. format (e.g., 'Mon-Fri 8am-6pm, Sat by appointment').",
+    "generic": "polished, professional English text suitable for a public business profile.",
+}
+
+
+async def polish_to_english(field_type: str, text_es: str, business_type: str = "") -> str:
+    """Take a Latino contractor's Spanish input and return ONLY polished, public-facing English."""
+    guidance = FIELD_GUIDANCE.get(field_type, FIELD_GUIDANCE["generic"])
+    biz = f" The business type is: {business_type}." if business_type else ""
+    system = (
+        "You help Latino service contractors in the U.S. write the PUBLIC, customer-facing "
+        "text of their business profile in professional ENGLISH. The owner writes in Spanish; "
+        "you output ONLY the polished English version — no quotes, no Spanish, no explanations, "
+        "no markdown, no labels. Preserve the owner's meaning and any specific details "
+        "(years, brands, guarantees, prices). Make it natural and persuasive for U.S. customers. "
+        f"Write {guidance}{biz}"
+    )
+    chat = _new_chat(system)
+    response = await chat.send_message(
+        UserMessage(text=f"Spanish input from the owner: {text_es}")
+    )
+    out = (response or "").strip()
+    # Strip wrapping quotes the model sometimes adds
+    if len(out) >= 2 and out[0] in "\"'“”" and out[-1] in "\"'“”":
+        out = out[1:-1].strip()
+    return out
+
+
 PHOTO_QUOTE_SYSTEM = """You analyze a contractor's job-site photo and propose a quote draft.
 
 Output ONLY JSON:

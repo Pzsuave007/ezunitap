@@ -1535,6 +1535,27 @@ async def save_message(payload: SaveMessageIn, user_id: str = Depends(get_curren
 # ============================================================================
 # AI ENDPOINTS
 # ============================================================================
+class TranslateFieldIn(BaseModel):
+    field_type: str = "generic"
+    text_es: str
+    business_type: Optional[str] = ""
+
+
+@api_router.post("/ai/translate-field")
+async def ai_translate_field(payload: TranslateFieldIn, user_id: str = Depends(get_current_user_id)):
+    """Turn a contractor's Spanish input into polished public-facing English for a profile field."""
+    if not (payload.text_es or "").strip():
+        raise HTTPException(400, "Escribe algo en español primero")
+    try:
+        text_en = await ai_service.polish_to_english(
+            payload.field_type, payload.text_es.strip(), payload.business_type or ""
+        )
+    except Exception as e:
+        logger.exception("AI translate-field failed")
+        raise HTTPException(500, f"AI error: {e}")
+    return {"text_en": text_en}
+
+
 @api_router.post("/ai/quote")
 async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_user_id)):
     try:

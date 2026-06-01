@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
 import PaymentMethodsSection from "@/components/PaymentMethodsSection";
+import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -155,7 +156,10 @@ export default function Profile() {
           <p className="text-[11px] text-slate-400 mt-1">Es como te identificas en la app y en la Tarjeta.</p>
         </div>
         <div>
-          <Label>Tu rol / título (inglés, opcional)</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label>Tu rol / título (inglés, opcional)</Label>
+            <AiTranslateButton fieldType="role" businessType={form.business_name} onResult={(en) => update("role", en)} testId="ai-profile-role" placeholder="Ej: Dueño y contratista principal" />
+          </div>
           <Input
             data-testid="profile-role"
             value={form.role}
@@ -231,7 +235,10 @@ export default function Profile() {
           <h3 className="font-heading font-bold text-base">Sobre ti</h3>
         </div>
         <div>
-          <Label>Bio / About Me (inglés)</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label>Bio / About Me (inglés)</Label>
+            <AiTranslateButton fieldType="about" businessType={form.business_name} onResult={(en) => update("about_me", en)} testId="ai-profile-about" placeholder="Ej: Tengo 10 años de experiencia, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
+          </div>
           <Textarea
             data-testid="profile-about"
             value={form.about_me}

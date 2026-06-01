@@ -93,6 +93,15 @@ export default function SubscriptionSection() {
   const isPaid = (status === "active" || status === "past_due") && hasStripeCustomer;
   const isTrialing = status === "trialing" && hasStripeCustomer;
 
+  // Local free trial: brand-new users get a 14-day trial WITHOUT a card on file
+  // (no Stripe customer yet). Their account is fully active — never tell them to
+  // "start a free trial", they already started it on signup.
+  const trialDays = daysLeft(sub?.trial_ends_at);
+  const isLocalTrial =
+    status === "trialing" && !hasStripeCustomer && (trialDays === null || trialDays > 0);
+  const isLocalTrialExpired =
+    status === "trialing" && !hasStripeCustomer && trialDays !== null && trialDays <= 0;
+
   // Comp (courtesy) accounts: hand-picked free Pro access.
   if (isComp && !hasStripeCustomer) {
     return (
@@ -148,6 +157,11 @@ export default function SubscriptionSection() {
         {isTrialing && (
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
             <Crown className="w-3 h-3" /> {PLAN_LABELS[sub.plan_type] || "Pro"}
+          </span>
+        )}
+        {isLocalTrial && (
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+            <Gift className="w-3 h-3" /> Prueba gratis
           </span>
         )}
       </div>
@@ -232,17 +246,68 @@ export default function SubscriptionSection() {
         </>
       )}
 
-      {!isPaid && !isTrialing && (
+      {/* Local free trial (no card yet) — account is ACTIVE. Never prompt to
+          "start a free trial" since it already started at signup. */}
+      {isLocalTrial && (
         <>
-          <div className="p-3 rounded-xl bg-slate-50 text-sm text-slate-600">
-            No tienes una suscripción activa.
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-700 mt-0.5 flex-none" />
+              <div className="text-sm text-emerald-900">
+                <div className="font-semibold">Tu cuenta está activa 🎉</div>
+                <div className="text-emerald-800 text-xs mt-1">
+                  Tienes <strong>todas las funciones Pro desbloqueadas</strong>
+                  {trialDays !== null ? (
+                    <> — te quedan <strong>{trialDays} {trialDays === 1 ? "día" : "días"}</strong> de tu prueba gratis</>
+                  ) : null}
+                  . Úsalas sin límites; no necesitas hacer nada más por ahora.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl bg-slate-50">
+              <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
+                Estado
+              </div>
+              <div className="text-sm font-semibold mt-1 text-emerald-700">Activa</div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50">
+              <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
+                Tu prueba termina
+              </div>
+              <div className="text-sm font-semibold mt-1">
+                {formatDate(sub.trial_ends_at)}
+              </div>
+            </div>
+          </div>
+
+          <Button
+            data-testid="goto-pricing-trial"
+            onClick={() => navigate("/precios")}
+            variant="outline"
+            className="w-full h-12 rounded-xl"
+          >
+            Ver planes
+          </Button>
+        </>
+      )}
+
+      {/* Trial finished OR no plan at all — only here do we invite to subscribe. */}
+      {!isPaid && !isTrialing && !isLocalTrial && (
+        <>
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
+            {isLocalTrialExpired
+              ? "Tu prueba gratis terminó. Suscríbete para seguir usando todas las funciones y conservar tu trabajo."
+              : "No tienes un plan activo. Suscríbete para desbloquear todas las funciones."}
           </div>
           <Button
             data-testid="goto-pricing-2"
             onClick={() => navigate("/precios")}
             className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
           >
-            Empezar prueba gratis 14 días
+            Ver planes y suscribirme
           </Button>
         </>
       )}

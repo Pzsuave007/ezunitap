@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 import SmartCardPaywall from "@/components/SmartCardPaywall";
+import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 const SERVICE_TEMPLATES = [
   { name: "Roofing", icon: "🏠", description: "Repairs, replacements, inspections." },
@@ -196,15 +197,24 @@ export default function CardAdmin() {
               </div>
             </div>
             <div>
-              <Label>Tagline (frase corta en inglés)</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Tagline (frase corta en inglés)</Label>
+                <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder="Ej: Expertos en techos de confianza en Houston" />
+              </div>
               <Input data-testid="card-tagline" value={card.tagline} onChange={(e) => update("tagline", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Trusted Roofing Experts in Houston" />
             </div>
             <div>
-              <Label>Tu rol / título (inglés)</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Tu rol / título (inglés)</Label>
+                <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder="Ej: Dueño y contratista principal" />
+              </div>
               <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
             </div>
             <div>
-              <Label>Sobre ti / About Me (inglés)</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Sobre ti / About Me (inglés)</Label>
+                <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder="Ej: Tengo 10 años de experiencia en techos, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
+              </div>
               <Textarea data-testid="card-about" value={card.about_me || ""} onChange={(e) => update("about_me", e.target.value)} className="rounded-xl mt-1.5 min-h-[100px]" placeholder="With over 10 years of experience, we deliver quality work on every project..." />
               <p className="text-[11px] text-slate-400 mt-1">Una breve descripción que aparece en tu tarjeta para que los clientes te conozcan.</p>
             </div>
@@ -219,7 +229,10 @@ export default function CardAdmin() {
               </div>
             </div>
             <div>
-              <Label>Área de servicio</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Área de servicio</Label>
+                <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder="Ej: Houston y ciudades alrededor: Katy, Sugar Land, Pearland" />
+              </div>
               <Input data-testid="card-area" value={card.service_area} onChange={(e) => update("service_area", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Houston, TX and surrounding areas" />
             </div>
             <div>
@@ -394,6 +407,10 @@ export default function CardAdmin() {
                   <Input value={s.name} onChange={(e) => {
                     const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr);
                   }} placeholder="Service name (e.g., Roofing)" className="flex-1 h-11 rounded-xl bg-white" />
+                </div>
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <span className="text-[11px] font-semibold text-slate-500">Descripción (inglés)</span>
+                  <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder="Ej: Reparamos goteras e instalamos techos nuevos con garantía" />
                 </div>
                 <Input value={s.description} onChange={(e) => {
                   const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr);
