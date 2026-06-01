@@ -549,78 +549,78 @@ function PhoneMockup() {
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-hidden px-3.5 pt-2.5 pb-2 space-y-2">
+          <div className="flex-1 overflow-hidden px-3.5 pt-3 pb-2 space-y-2.5">
             {/* Greeting */}
             <div className="flex items-start justify-between">
               <div className="min-w-0">
-                <div className="text-[10px] text-slate-400 leading-none">Buenas tardes,</div>
-                <h3 className="font-heading text-base font-bold leading-tight mt-0.5 truncate">Carlos García 👋</h3>
-                <div className="text-[10px] text-slate-400 leading-none">García Landscaping</div>
+                <div className="text-[11px] text-slate-400 leading-none">Buenas tardes,</div>
+                <h3 className="font-heading text-lg font-bold leading-tight mt-1 truncate">Carlos García 👋</h3>
+                <div className="text-[11px] text-slate-400 leading-none">García Landscaping</div>
               </div>
-              <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <Settings className="w-3.5 h-3.5 text-slate-500" />
+              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <Settings className="w-4 h-4 text-slate-500" />
               </div>
             </div>
 
             {/* Earnings hero (slim) */}
-            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-1.5 text-white shadow-md flex items-center justify-between">
+            <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-2.5 text-white shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
-                <div className="font-heading text-lg font-bold leading-none">$8,940</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
+                <div className="font-heading text-xl font-bold leading-none">$8,940</div>
               </div>
-              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-0.5">
-                <TrendingUp className="w-3 h-3" /> +24%
+              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-1">
+                <TrendingUp className="w-3.5 h-3.5" /> +24%
               </div>
             </div>
 
             {/* THE MAGIC: Spanish -> professional English quote (compact) */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
               {/* Spanish input */}
-              <div className="px-2.5 py-2 bg-slate-50/80 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
-                  <span className="text-[10px]">🇲🇽</span>
+              <div className="px-2.5 py-2.5 bg-slate-50/80 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
+                  <span className="text-[11px]">🇲🇽</span>
                 </div>
-                <p className="text-[11px] text-slate-700 leading-snug">"Cambié 20 tejas y sellé el techo. Cobrar $1,450."</p>
+                <p className="text-[12px] text-slate-700 leading-snug">"Cambié 20 tejas y sellé el techo. Cobrar $1,450."</p>
               </div>
               {/* Transform */}
-              <div className="flex items-center justify-center gap-1.5 py-1.5 bg-gradient-to-r from-blue-900 to-emerald-600">
-                <Sparkles className="w-3 h-3 text-white" />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
+              <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-blue-900 to-emerald-600">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
               </div>
               {/* Quote document */}
-              <div className="px-2.5 py-2">
-                <div className="flex items-center justify-between mb-1.5">
+              <div className="px-3 py-2.5">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <Receipt className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
+                    <Receipt className="w-4 h-4 text-blue-700 flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-blue-700 leading-tight">Quote #1042</div>
-                      <div className="text-[8px] text-slate-400 leading-tight truncate">García Landscaping → Maria R.</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 leading-tight">Quote #1042</div>
+                      <div className="text-[9px] text-slate-400 leading-tight truncate">García Landscaping → Maria R.</div>
                     </div>
                   </div>
-                  <span className="text-[8px] font-bold uppercase text-emerald-700 bg-emerald-50 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 flex-shrink-0"><Check className="w-2.5 h-2.5" /> Sent</span>
+                  <span className="text-[9px] font-bold uppercase text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 flex items-center gap-0.5 flex-shrink-0"><Check className="w-3 h-3" /> Sent</span>
                 </div>
                 {/* Line items */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {[
                     { d: "Remove & replace 20 roof shingles", p: "$1,000" },
                     { d: "Roof sealing & waterproofing", p: "$250" },
                     { d: "Site cleanup & haul-away", p: "$90" },
                   ].map((li) => (
-                    <div key={li.d} className="flex items-center justify-between gap-2 text-[10px]">
+                    <div key={li.d} className="flex items-center justify-between gap-2 text-[12px]">
                       <span className="text-slate-700 truncate">{li.d}</span>
-                      <span className="font-semibold text-slate-800 flex-shrink-0">{li.p}</span>
+                      <span className="font-semibold text-slate-900 flex-shrink-0">{li.p}</span>
                     </div>
                   ))}
                 </div>
                 {/* Totals */}
-                <div className="mt-1.5 pt-1.5 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-[9px] text-slate-500">
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500">
                     <span>Subtotal $1,340 · Tax (8.25%) $110</span>
                   </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total</span>
-                    <span className="font-heading text-base font-bold text-slate-900">$1,450.00</span>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</span>
+                    <span className="font-heading text-lg font-bold text-slate-900">$1,450.00</span>
                   </div>
                 </div>
               </div>
@@ -634,38 +634,38 @@ function PhoneMockup() {
                 { icon: DollarSign, label: "Por cobrar", value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
                 { icon: Star, label: "Reseñas Google", value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2 flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-                    <s.icon className={`w-3 h-3 ${s.color}`} />
+                <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
+                    <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[7px] font-bold uppercase tracking-wider text-slate-400 leading-tight truncate">{s.label}</div>
-                    <div className="font-heading text-xs font-bold text-slate-900 leading-tight">{s.value}</div>
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400 leading-tight truncate">{s.label}</div>
+                    <div className="font-heading text-sm font-bold text-slate-900 leading-tight">{s.value}</div>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Recent quote */}
-            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 flex items-center justify-between gap-2">
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-2 flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold text-slate-900 leading-tight truncate">Business Website Build</div>
-                <div className="text-[8px] text-slate-400">Q-1001 · $1,200.00 · Maria R.</div>
+                <div className="text-[11px] font-bold text-slate-900 leading-tight truncate">Backyard Landscape Design</div>
+                <div className="text-[9px] text-slate-400">Q-1001 · $1,200.00 · Maria R.</div>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+              <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
             </div>
 
             {/* Next job */}
-            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <CalendarDays className="w-3 h-3 text-blue-700" />
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm px-2.5 py-2 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <CalendarDays className="w-3.5 h-3.5 text-blue-700" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
-                  <span className="text-[8px] font-semibold text-slate-400">Mañana 8:00 AM</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
+                  <span className="text-[9px] font-semibold text-slate-400">Mañana 8:00 AM</span>
                 </div>
-                <div className="text-[10px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Fence installation · Houston</div>
+                <div className="text-[11px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Sod &amp; sprinkler install · Houston</div>
               </div>
             </div>
           </div>
