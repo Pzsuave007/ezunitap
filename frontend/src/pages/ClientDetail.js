@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import StatusBadge from "@/components/StatusBadge";
 import {
   ArrowLeft, Phone, Mail, MapPin, FileText, Receipt,
-  MessageSquare, Camera, Sparkles, Plus, Trash2, Loader2,
+  MessageSquare, Camera, Sparkles, Trash2, Loader2,
   FileSignature, DollarSign, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,13 +21,10 @@ import RequestReviewButton from "@/components/RequestReviewButton";
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const fileInput = useRef(null);
   const [client, setClient] = useState(null);
   const [history, setHistory] = useState({ quotes: [], invoices: [], messages: [], photos: [], jobs: [], agreements: [], scopes: [] });
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [photoLabel, setPhotoLabel] = useState("during");
   const [scopeOpen, setScopeOpen] = useState(false);
 
   const token = localStorage.getItem("sf_token");
@@ -62,26 +59,6 @@ export default function ClientDetail() {
     navigate("/clientes");
   };
 
-  const uploadPhoto = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      await api.post(`/photos?client_id=${id}&label=${photoLabel}`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Foto subida");
-      load();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error subiendo foto");
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
-  };
-
   if (!client) {
     return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
   }
@@ -114,6 +91,11 @@ export default function ClientDetail() {
                 </span>
               )}
             </div>
+            <RequestReviewButton
+              client={client}
+              jobTitle={client.job_type}
+              className="h-10 rounded-xl text-sm flex-shrink-0"
+            />
           </div>
 
           {/* Contact chips — tap to call / email / map */}
@@ -177,39 +159,6 @@ export default function ClientDetail() {
             >
               <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0 text-amber-500" /> Scope
             </Button>
-            <Button
-              data-testid="client-upload-photo"
-              onClick={() => fileInput.current?.click()}
-              variant="outline"
-              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-400 hover:bg-slate-50"
-              disabled={uploading}
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5 flex-shrink-0" /> : <Camera className="w-4 h-4 mr-1.5 flex-shrink-0 text-slate-500" />}
-              Foto
-            </Button>
-            <input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadPhoto} />
-          </div>
-
-          {/* Review CTA + photo label */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
-            <RequestReviewButton
-              client={client}
-              jobTitle={client.job_type}
-              className="h-12 rounded-xl text-sm w-full sm:w-auto"
-            />
-            <div className="flex items-center gap-1.5 text-xs flex-wrap sm:ml-auto">
-              <span className="text-slate-400 mr-1">Etiqueta de foto:</span>
-              {["before", "during", "after"].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setPhotoLabel(l)}
-                  data-testid={`label-${l}`}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                >
-                  {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </Card>
@@ -342,7 +291,13 @@ export default function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="photos" className="mt-4">
-          {history.photos.length === 0 ? <EmptyHist label="photos" /> : (
+          {history.photos.length === 0 ? (
+            <Card className="card-elevated p-6 text-center border-0 shadow-none">
+              <Camera className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">Aún no hay fotos.</p>
+              <p className="text-xs text-slate-400 mt-1">Las fotos se suben desde cada Trabajo (Antes / Durante / Después).</p>
+            </Card>
+          ) : (
             <div className="grid grid-cols-3 gap-2">
               {history.photos.map((p) => (
                 <a

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import StatusBadge, { JOB_STATUSES } from "@/components/StatusBadge";
-import { Plus, Briefcase, Loader2 } from "lucide-react";
+import { Plus, Briefcase, Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 import { useAuth } from "@/context/AuthContext";
@@ -35,6 +35,34 @@ export default function Jobs() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewClient, setReviewClient] = useState(null);
   const [reviewJobTitle, setReviewJobTitle] = useState("");
+
+  // Per-job photo upload (Antes / Durante / Después)
+  const photoInput = useRef(null);
+  const [photoJob, setPhotoJob] = useState(null);
+  const [photoLabel, setPhotoLabel] = useState("during");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const uploadJobPhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !photoJob) return;
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const params = new URLSearchParams({ label: photoLabel, job_id: photoJob.id });
+      if (photoJob.client_id) params.append("client_id", photoJob.client_id);
+      await api.post(`/photos?${params.toString()}`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Foto subida al trabajo");
+      setPhotoJob(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error subiendo foto");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = "";
+    }
+  };
 
   const load = async () => {
     const [j, c] = await Promise.all([api.get("/jobs"), api.get("/clients")]);
@@ -136,6 +164,14 @@ export default function Jobs() {
                         {JOB_STATUSES.map((st) => <SelectItem key={st} value={st}>{labelFor(st)}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setPhotoJob(j); setPhotoLabel("during"); }}
+                      data-testid={`job-photo-${j.id}`}
+                      className="h-10 rounded-xl text-xs w-full mt-2 border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
+                    >
+                      <Camera className="w-4 h-4 mr-1.5 text-emerald-600" /> Subir foto
+                    </Button>
                     {j.status === "completed" && (
                       <div className="mt-2">
                         <RequestReviewButton
@@ -203,6 +239,42 @@ export default function Jobs() {
         businessName={user?.business_name}
         jobTitle={reviewJobTitle}
       />
+
+      {/* Per-job photo upload */}
+      <Dialog open={!!photoJob} onOpenChange={(o) => !o && setPhotoJob(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle className="font-heading">Subir foto del trabajo</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500 -mt-1">{photoJob?.title}</p>
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Etiqueta</Label>
+              <div className="flex gap-2 mt-2">
+                {["before", "during", "after"].map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setPhotoLabel(l)}
+                    data-testid={`job-photo-label-${l}`}
+                    className={`flex-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                  >
+                    {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button
+              onClick={() => photoInput.current?.click()}
+              disabled={uploadingPhoto}
+              data-testid="job-photo-choose"
+              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700"
+            >
+              {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Camera className="w-4 h-4 mr-2" />}
+              Elegir foto
+            </Button>
+            <input ref={photoInput} type="file" accept="image/*" hidden onChange={uploadJobPhoto} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
