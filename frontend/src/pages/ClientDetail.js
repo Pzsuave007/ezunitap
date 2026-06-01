@@ -11,7 +11,7 @@ import StatusBadge from "@/components/StatusBadge";
 import {
   ArrowLeft, Phone, Mail, MapPin, FileText, Receipt,
   MessageSquare, Camera, Sparkles, Plus, Trash2, Loader2,
-  FileSignature,
+  FileSignature, DollarSign, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
@@ -86,125 +86,154 @@ export default function ClientDetail() {
     return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
   }
 
+  const initials = client.name?.charAt(0)?.toUpperCase();
+  const fmtMoney = (n) => `$${(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  const totalInvoiced = history.invoices.reduce((s, i) => s + (i.total || 0), 0);
+  const pending = history.invoices
+    .filter((i) => i.status !== "paid")
+    .reduce((s, i) => s + (i.total || 0), 0);
+
   return (
     <div className="space-y-5">
       <button onClick={() => navigate("/clientes")} className="flex items-center gap-2 text-sm text-slate-600 tap" data-testid="back-to-clients">
         <ArrowLeft className="w-4 h-4" /> Clientes
       </button>
 
-      <Card className="card-elevated p-5 border-0 shadow-none">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-            {client.name?.charAt(0)?.toUpperCase()}
+      {/* ===== Header ===== */}
+      <Card className="overflow-hidden border-0 shadow-sm rounded-3xl p-0">
+        <div className="h-24 bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-600 relative">
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)", backgroundSize: "20px 20px" }} />
+        </div>
+        <div className="px-5 pb-5">
+          <div className="flex items-end gap-4 -mt-9">
+            <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 ring-4 ring-white shadow-lg">
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0 pb-1">
+              <h1 className="font-heading text-2xl font-bold tracking-tight truncate text-slate-900">{client.name}</h1>
+              {client.job_type && (
+                <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                  {client.job_type}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-heading text-2xl font-bold tracking-tight truncate">{client.name}</h1>
-            {client.job_type && <div className="text-emerald-700 text-sm font-medium mt-0.5">{client.job_type}</div>}
-            <div className="mt-3 space-y-1 text-sm text-slate-600">
-              {client.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4" />{client.phone}</div>}
-              {client.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4" />{client.email}</div>}
-              {client.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4" />{client.address}</div>}
+
+          {/* Contact chips — tap to call / email / map */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {client.phone && (
+              <a href={`tel:${client.phone}`} data-testid="client-phone-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors">
+                <Phone className="w-4 h-4 flex-shrink-0" /> {client.phone}
+              </a>
+            )}
+            {client.email && (
+              <a href={`mailto:${client.email}`} data-testid="client-email-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors max-w-full">
+                <Mail className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{client.email}</span>
+              </a>
+            )}
+            {client.address && (
+              <a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noreferrer" data-testid="client-address-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors">
+                <MapPin className="w-4 h-4 flex-shrink-0" /> {client.address}
+              </a>
+            )}
+          </div>
+
+          <ClientFlowNotices client={client} history={history} />
+
+          {/* Primary actions — money-makers stand out */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
+            <Button
+              data-testid="client-create-quote"
+              onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)}
+              className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm shadow-emerald-600/20"
+            >
+              <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0" /> Quote AI
+            </Button>
+            <Button
+              data-testid="client-create-invoice"
+              onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)}
+              className="h-12 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-sm font-semibold shadow-sm shadow-blue-900/20"
+            >
+              <Receipt className="w-4 h-4 mr-1.5 flex-shrink-0" /> Invoice
+            </Button>
+            <Button
+              data-testid="client-create-contract"
+              onClick={() => navigate(`/contratos/nuevo?client_id=${id}`)}
+              variant="outline"
+              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+            >
+              <FileSignature className="w-4 h-4 mr-1.5 flex-shrink-0 text-violet-600" /> Contrato
+            </Button>
+            <Button
+              data-testid="client-send-message"
+              onClick={() => navigate(`/mensajes?client_id=${id}`)}
+              variant="outline"
+              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50"
+            >
+              <MessageSquare className="w-4 h-4 mr-1.5 flex-shrink-0 text-sky-600" /> Mensaje
+            </Button>
+            <Button
+              data-testid="client-generate-scope"
+              onClick={() => setScopeOpen(true)}
+              variant="outline"
+              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50"
+            >
+              <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0 text-amber-500" /> Scope
+            </Button>
+            <Button
+              data-testid="client-upload-photo"
+              onClick={() => fileInput.current?.click()}
+              variant="outline"
+              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5 flex-shrink-0" /> : <Camera className="w-4 h-4 mr-1.5 flex-shrink-0 text-slate-500" />}
+              Foto
+            </Button>
+            <input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadPhoto} />
+          </div>
+
+          {/* Review CTA + photo label */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
+            <RequestReviewButton
+              client={client}
+              jobTitle={client.job_type}
+              className="h-12 rounded-xl text-sm w-full sm:w-auto"
+            />
+            <div className="flex items-center gap-1.5 text-xs flex-wrap sm:ml-auto">
+              <span className="text-slate-400 mr-1">Etiqueta de foto:</span>
+              {["before", "during", "after"].map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setPhotoLabel(l)}
+                  data-testid={`label-${l}`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                >
+                  {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-
-        <ClientFlowNotices client={client} history={history} />
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-5">
-          <Button
-            data-testid="client-create-quote"
-            onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)}
-            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm"
-          >
-            <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" /> Quote AI
-          </Button>
-          <Button
-            data-testid="client-create-contract"
-            onClick={() => navigate(`/contratos/nuevo?client_id=${id}`)}
-            variant="outline"
-            className="h-12 rounded-xl border-slate-200 text-sm"
-          >
-            <FileSignature className="w-4 h-4 mr-1 flex-shrink-0" /> Contrato
-          </Button>
-          <Button
-            data-testid="client-create-invoice"
-            onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)}
-            variant="outline"
-            className="h-12 rounded-xl border-slate-200 text-sm"
-          >
-            <Receipt className="w-4 h-4 mr-1 flex-shrink-0" /> Invoice
-          </Button>
-          <Button
-            data-testid="client-send-message"
-            onClick={() => navigate(`/mensajes?client_id=${id}`)}
-            variant="outline"
-            className="h-12 rounded-xl border-slate-200 text-sm"
-          >
-            <MessageSquare className="w-4 h-4 mr-1 flex-shrink-0" /> Mensaje
-          </Button>
-          <Button
-            data-testid="client-generate-scope"
-            onClick={() => setScopeOpen(true)}
-            variant="outline"
-            className="h-12 rounded-xl border-slate-200 text-sm"
-          >
-            <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" /> Scope
-          </Button>
-          <Button
-            data-testid="client-upload-photo"
-            onClick={() => fileInput.current?.click()}
-            variant="outline"
-            className="h-12 rounded-xl border-slate-200 text-sm"
-            disabled={uploading}
-          >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1 flex-shrink-0" /> : <Camera className="w-4 h-4 mr-1 flex-shrink-0" />}
-            Foto
-          </Button>
-          <input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadPhoto} />
-          <RequestReviewButton
-            client={client}
-            jobTitle={client.job_type}
-            className="h-12 rounded-xl text-sm w-full"
-          />
-        </div>
-        <div className="flex items-center gap-1.5 mt-3 text-xs flex-wrap">
-          <span className="text-slate-500 mr-1">Etiqueta:</span>
-          {["before", "during", "after"].map((l) => (
-            <button
-              key={l}
-              onClick={() => setPhotoLabel(l)}
-              data-testid={`label-${l}`}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600"}`}
-            >
-              {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
-            </button>
-          ))}
-        </div>
       </Card>
 
+      {/* ===== Stats strip ===== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard icon={FileText} label="Cotizaciones" value={history.quotes.length} tone="blue" />
+        <StatCard icon={Receipt} label="Facturas" value={history.invoices.length} tone="violet" />
+        <StatCard icon={DollarSign} label="Facturado" value={fmtMoney(totalInvoiced)} tone="emerald" />
+        <StatCard icon={Clock} label="Por cobrar" value={fmtMoney(pending)} tone="amber" />
+      </div>
+
+      {/* ===== Tabs ===== */}
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid grid-cols-6 rounded-xl bg-slate-100 p-1 h-auto gap-0.5">
-          <TabsTrigger value="info" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-info">Info</TabsTrigger>
-          <TabsTrigger value="quotes" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-quotes">
-            <span className="hidden lg:inline">Quotes ({history.quotes.length})</span>
-            <span className="lg:hidden">Quotes·{history.quotes.length}</span>
-          </TabsTrigger>
-          <TabsTrigger value="agreements" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-agreements">
-            <span className="hidden lg:inline">Contratos ({history.agreements.length})</span>
-            <span className="lg:hidden">Cont·{history.agreements.length}</span>
-          </TabsTrigger>
-          <TabsTrigger value="invoices" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-invoices">
-            <span className="hidden lg:inline">Invoices ({history.invoices.length})</span>
-            <span className="lg:hidden">Inv·{history.invoices.length}</span>
-          </TabsTrigger>
-          <TabsTrigger value="messages" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-messages">
-            <span className="hidden lg:inline">Mensajes ({history.messages.length})</span>
-            <span className="lg:hidden">Msgs·{history.messages.length}</span>
-          </TabsTrigger>
-          <TabsTrigger value="photos" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="tab-photos">
-            <span className="hidden lg:inline">Fotos ({history.photos.length})</span>
-            <span className="lg:hidden">Fotos·{history.photos.length}</span>
-          </TabsTrigger>
+        <TabsList className="w-full flex gap-1 bg-slate-100 p-1.5 rounded-2xl h-auto overflow-x-auto justify-start scrollbar-none">
+          <TabTrig value="info" testid="tab-info">Info</TabTrig>
+          <TabTrig value="quotes" testid="tab-quotes" count={history.quotes.length}>Quotes</TabTrig>
+          <TabTrig value="agreements" testid="tab-agreements" count={history.agreements.length}>Contratos</TabTrig>
+          <TabTrig value="invoices" testid="tab-invoices" count={history.invoices.length}>Invoices</TabTrig>
+          <TabTrig value="messages" testid="tab-messages" count={history.messages.length}>Mensajes</TabTrig>
+          <TabTrig value="photos" testid="tab-photos" count={history.photos.length}>Fotos</TabTrig>
         </TabsList>
 
         <TabsContent value="info" className="mt-4">
@@ -353,4 +382,38 @@ const EmptyHist = ({ label }) => (
   <Card className="card-elevated p-6 text-center border-0 shadow-none">
     <p className="text-sm text-slate-500">Aún no hay {label}.</p>
   </Card>
+);
+
+const STAT_TONES = {
+  blue: "bg-blue-50 text-blue-700",
+  violet: "bg-violet-50 text-violet-700",
+  emerald: "bg-emerald-50 text-emerald-700",
+  amber: "bg-amber-50 text-amber-700",
+};
+
+const StatCard = ({ icon: Icon, label, value, tone = "blue" }) => (
+  <Card className="border-0 shadow-sm rounded-2xl p-3.5 flex items-center gap-3">
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${STAT_TONES[tone]}`}>
+      <Icon className="w-5 h-5" />
+    </div>
+    <div className="min-w-0">
+      <div className="font-heading text-lg font-bold text-slate-900 leading-none truncate">{value}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1">{label}</div>
+    </div>
+  </Card>
+);
+
+const TabTrig = ({ value, testid, count, children }) => (
+  <TabsTrigger
+    value={value}
+    data-testid={testid}
+    className="group flex-shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-blue-900 data-[state=active]:shadow-sm transition-colors flex items-center gap-1.5"
+  >
+    {children}
+    {count != null && (
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 group-data-[state=active]:bg-emerald-100 group-data-[state=active]:text-emerald-700">
+        {count}
+      </span>
+    )}
+  </TabsTrigger>
 );
