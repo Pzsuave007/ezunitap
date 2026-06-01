@@ -710,7 +710,7 @@ function PhoneMockup() {
           <div className="text-slate-500">en 2 segundos</div>
         </div>
       </div>
-      <div className="absolute -left-4 lg:-left-10 bottom-[20%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
+      <div className="absolute -left-4 lg:-left-10 bottom-[6%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
         <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
           <Smartphone className="w-4 h-4 text-emerald-600" />
         </div>
