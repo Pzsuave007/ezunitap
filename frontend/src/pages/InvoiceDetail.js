@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy, Briefcase, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { listAgreementClauses } from "@/lib/pdf";
@@ -255,6 +255,8 @@ export default function InvoiceDetail() {
           onReload={(data) => setInvoice(data)}
         />
       )}
+
+      {!isNew && <JobFromInvoiceCard invoiceId={id} />}
 
       {!isNew && (
         <PaymentRequestsCard invoiceId={id} invoice={invoice} />
@@ -840,6 +842,75 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
             </div>
           ))}
         </div>
+      )}
+    </Card>
+  );
+}
+
+
+// ============================================================================
+// JobFromInvoiceCard — "Crear Trabajo" from an invoice (when the quote step was
+// skipped). Idempotent: shows the linked job if one already exists.
+// ============================================================================
+function JobFromInvoiceCard({ invoiceId }) {
+  const navigate = useNavigate();
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api.get(`/invoices/${invoiceId}/job`)
+      .then(({ data }) => { if (active) setJob(data.job); })
+      .catch(() => {})
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [invoiceId]);
+
+  const createJob = async () => {
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/invoices/${invoiceId}/create-job`);
+      setJob(data.job);
+      toast.success(data.created ? "Trabajo creado — ya lo puedes agendar" : "Ya existía un trabajo para este invoice");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo crear el trabajo");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none space-y-3" data-testid="job-from-invoice-card">
+      <div className="flex items-center gap-2">
+        <Briefcase className="w-5 h-5 text-emerald-600" />
+        <div>
+          <h3 className="font-heading font-bold text-base">Trabajo</h3>
+          <p className="text-xs text-slate-500">
+            {job ? "Ya hay un trabajo ligado a este invoice." : "Crea un trabajo para poder agendarlo en tu calendario."}
+          </p>
+        </div>
+      </div>
+
+      {job ? (
+        <Button
+          onClick={() => navigate("/trabajos")}
+          className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+          data-testid="goto-job-btn"
+        >
+          <CalendarClock className="w-4 h-4 mr-1.5" /> Ir a agendar el trabajo
+        </Button>
+      ) : (
+        <Button
+          onClick={createJob}
+          disabled={busy}
+          className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+          data-testid="create-job-btn"
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />} Crear Trabajo
+        </Button>
       )}
     </Card>
   );

@@ -79,3 +79,31 @@ def test_sign_creates_job_with_scope_and_schedules():
         if invoice_id:
             requests.delete(f"{BASE_URL}/api/invoices/{invoice_id}", headers=h, timeout=15)
         requests.delete(f"{BASE_URL}/api/quotes/{qid}", headers=h, timeout=15)
+
+
+def test_create_job_from_invoice_button_idempotent():
+    """The 'Crear Trabajo' button: create a job from an invoice (no quote)."""
+    h = _headers()
+    r = requests.post(f"{BASE_URL}/api/invoices", headers=h, json={
+        "client_id": _client_id(h), "job_title": "Direct invoice job", "total": 400, "subtotal": 400, "status": "draft",
+        "line_items": [{"description": "Fix faucet", "quantity": 1, "unit_price": 400, "amount": 400}],
+    }, timeout=15)
+    iid = r.json()["id"]
+    job_id = None
+    try:
+        # No job yet
+        assert requests.get(f"{BASE_URL}/api/invoices/{iid}/job", headers=h, timeout=15).json()["job"] is None
+        # Create
+        c = requests.post(f"{BASE_URL}/api/invoices/{iid}/create-job", headers=h, timeout=15).json()
+        assert c["created"] is True
+        assert c["job"]["status"] == "approved"
+        assert "Fix faucet" in c["job"]["notes"]
+        job_id = c["job"]["id"]
+        # Idempotent
+        c2 = requests.post(f"{BASE_URL}/api/invoices/{iid}/create-job", headers=h, timeout=15).json()
+        assert c2["created"] is False
+        assert c2["job"]["id"] == job_id
+    finally:
+        if job_id:
+            requests.delete(f"{BASE_URL}/api/jobs/{job_id}", headers=h, timeout=15)
+        requests.delete(f"{BASE_URL}/api/invoices/{iid}", headers=h, timeout=15)

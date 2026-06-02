@@ -1114,8 +1114,47 @@ async def update_invoice(invoice_id: str, payload: InvoiceIn, user_id: str = Dep
     return doc
 
 
-async def _ensure_job_for_invoice(inv: dict, user_id: str) -> Optional[str]:
-    """Create a Job for a paid invoice (idempotent). Returns new job_id or None."""
+@api_router.get("/invoices/{invoice_id}/job")
+async def get_invoice_job(invoice_id: str, user_id: str = Depends(get_current_user_id)):
+    """Return the Job linked to this invoice (or its quote), if any."""
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    job = await db.jobs.find_one({
+        "user_id": user_id,
+        "$or": [
+            {"invoice_id": invoice_id},
+            {"quote_id": inv.get("quote_id")} if inv.get("quote_id") else {"invoice_id": invoice_id},
+        ],
+    }, {"_id": 0})
+    return {"job": job}
+
+
+@api_router.post("/invoices/{invoice_id}/create-job")
+async def create_job_from_invoice(invoice_id: str, user_id: str = Depends(get_current_user_id)):
+    """Manually create a Job from an invoice (e.g. when the quote step was
+    skipped). Idempotent — returns the existing job if one already exists."""
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    if not inv.get("client_id"):
+        raise HTTPException(400, "Este invoice no tiene un cliente asignado.")
+    existing = await db.jobs.find_one({
+        "user_id": user_id,
+        "$or": [
+            {"invoice_id": invoice_id},
+            {"quote_id": inv.get("quote_id")} if inv.get("quote_id") else {"invoice_id": invoice_id},
+        ],
+    }, {"_id": 0})
+    if existing:
+        return {"job": existing, "created": False}
+    job_id = await _ensure_job_for_invoice(inv, user_id, default_note="Trabajo creado desde el invoice")
+    job = await db.jobs.find_one({"id": job_id, "user_id": user_id}, {"_id": 0})
+    return {"job": job, "created": True}
+
+
+async def _ensure_job_for_invoice(inv: dict, user_id: str, default_note: str = "Auto-creado al marcar invoice como pagado") -> Optional[str]:
+    """Create a Job for an invoice (idempotent). Returns new job_id or None."""
     # Idempotent: skip if a job already exists for this invoice OR its quote
     # (the job is usually created earlier, when the agreement is signed).
     existing_job = await db.jobs.find_one({
@@ -1147,7 +1186,7 @@ async def _ensure_job_for_invoice(inv: dict, user_id: str) -> Optional[str]:
         "recurrence": "none",
         "recurrence_days": [],
         "recurrence_end_date": None,
-        "notes": _scope_from_line_items(inv.get("line_items", [])) or "Auto-creado al marcar invoice como pagado",
+        "notes": _scope_from_line_items(inv.get("line_items", [])) or default_note,
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
         "auto_created": True,
