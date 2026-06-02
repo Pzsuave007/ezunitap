@@ -170,6 +170,24 @@ class InvoiceIn(BaseModel):
     status: str = "draft"  # draft, sent, paid, partial, overdue
 
 
+class PaymentIn(BaseModel):
+    amount: float
+    method: str = "cash"  # cash, check, zelle, transfer, card, other
+    date: Optional[str] = None  # ISO date; defaults to today
+    note: Optional[str] = ""
+    plan_item_id: Optional[str] = None  # links the payment to a plan installment
+
+
+class InstallmentIn(BaseModel):
+    label: str = ""
+    amount: float
+    due_date: Optional[str] = None
+
+
+class PaymentPlanIn(BaseModel):
+    installments: List[InstallmentIn] = []
+
+
 class JobIn(BaseModel):
     client_id: str
     title: str
@@ -1082,6 +1100,130 @@ async def update_invoice(invoice_id: str, payload: InvoiceIn, user_id: str = Dep
     doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Invoice no encontrado")
+    # If a payments ledger exists, it is the source of truth for amount_paid +
+    # status — don't let a plain invoice edit clobber it.
+    if doc.get("payments"):
+        doc = await _recalc_invoice_payments(invoice_id, user_id)
+    return doc
+
+
+async def _ensure_job_for_invoice(inv: dict, user_id: str) -> Optional[str]:
+    """Create a Job for a paid invoice (idempotent). Returns new job_id or None."""
+    existing_job = await db.jobs.find_one({"user_id": user_id, "invoice_id": inv["id"]})
+    if existing_job or not inv.get("client_id"):
+        return None
+    client = await db.clients.find_one(
+        {"id": inv["client_id"], "user_id": user_id}, {"_id": 0}
+    ) or {}
+    job_doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "client_id": inv["client_id"],
+        "title": inv.get("job_title") or "Trabajo",
+        "quote_id": inv.get("quote_id"),
+        "invoice_id": inv["id"],
+        "status": "approved",  # paid → ready to schedule
+        "scheduled_date": None,
+        "end_date": None,
+        "start_time": "",
+        "end_time": "",
+        "all_day": False,
+        "address": client.get("address") or "",
+        "recurrence": "none",
+        "recurrence_days": [],
+        "recurrence_end_date": None,
+        "notes": "Auto-creado al marcar invoice como pagado",
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+        "auto_created": True,
+    }
+    await db.jobs.insert_one(job_doc)
+    return job_doc["id"]
+
+
+async def _recalc_invoice_payments(invoice_id: str, user_id: str) -> dict:
+    """Recompute amount_paid + status from the payments ledger, then persist.
+
+    Status rules: paid>=total>0 → 'paid' (auto-creates job); 0<paid<total →
+    'partial'; paid<=0 keeps the current non-paid status. Never overrides a
+    manual 'overdue'/'sent' when nothing has been paid yet.
+    """
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    total = float(inv.get("total") or 0)
+    paid = round(sum(float(p.get("amount") or 0) for p in inv.get("payments", [])), 2)
+    update = {"amount_paid": paid, "updated_at": _now_iso()}
+    auto_job_id = None
+    if total > 0 and paid >= total:
+        if inv.get("status") != "paid":
+            update["status"] = "paid"
+            auto_job_id = await _ensure_job_for_invoice(inv, user_id)
+    elif paid > 0:
+        update["status"] = "partial"
+    elif inv.get("status") == "partial":
+        # All payments removed → fall back to 'sent'.
+        update["status"] = "sent"
+    await db.invoices.update_one({"id": invoice_id, "user_id": user_id}, {"$set": update})
+    doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if auto_job_id:
+        doc["auto_created_job_id"] = auto_job_id
+    return doc
+
+
+@api_router.post("/invoices/{invoice_id}/payments")
+async def add_invoice_payment(invoice_id: str, payload: PaymentIn, user_id: str = Depends(get_current_user_id)):
+    if payload.amount is None or float(payload.amount) <= 0:
+        raise HTTPException(400, "El monto del abono debe ser mayor a 0")
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    payment = {
+        "id": _new_id(),
+        "amount": round(float(payload.amount), 2),
+        "method": payload.method or "cash",
+        "date": payload.date or _now_iso(),
+        "note": (payload.note or "").strip(),
+        "plan_item_id": payload.plan_item_id,
+        "created_at": _now_iso(),
+    }
+    await db.invoices.update_one(
+        {"id": invoice_id, "user_id": user_id},
+        {"$push": {"payments": payment}},
+    )
+    return await _recalc_invoice_payments(invoice_id, user_id)
+
+
+@api_router.delete("/invoices/{invoice_id}/payments/{payment_id}")
+async def delete_invoice_payment(invoice_id: str, payment_id: str, user_id: str = Depends(get_current_user_id)):
+    res = await db.invoices.update_one(
+        {"id": invoice_id, "user_id": user_id},
+        {"$pull": {"payments": {"id": payment_id}}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Invoice no encontrado")
+    return await _recalc_invoice_payments(invoice_id, user_id)
+
+
+@api_router.put("/invoices/{invoice_id}/payment-plan")
+async def set_invoice_payment_plan(invoice_id: str, payload: PaymentPlanIn, user_id: str = Depends(get_current_user_id)):
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    plan = [
+        {
+            "id": _new_id(),
+            "label": (it.label or f"Pago {i + 1}").strip(),
+            "amount": round(float(it.amount or 0), 2),
+            "due_date": it.due_date or None,
+        }
+        for i, it in enumerate(payload.installments)
+    ]
+    await db.invoices.update_one(
+        {"id": invoice_id, "user_id": user_id},
+        {"$set": {"payment_plan": plan, "updated_at": _now_iso()}},
+    )
+    doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
     return doc
 
 
@@ -1096,40 +1238,7 @@ async def set_invoice_status(invoice_id: str, status: str, user_id: str = Depend
         inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
         if inv:
             update["amount_paid"] = inv.get("total", 0)
-            # Auto-create a Job for this client (business flow: post-payment
-            # the work starts). Skip if a job already exists for this invoice.
-            existing_job = await db.jobs.find_one({
-                "user_id": user_id,
-                "invoice_id": invoice_id,
-            })
-            if not existing_job and inv.get("client_id"):
-                client = await db.clients.find_one(
-                    {"id": inv["client_id"], "user_id": user_id}, {"_id": 0}
-                ) or {}
-                job_doc = {
-                    "id": _new_id(),
-                    "user_id": user_id,
-                    "client_id": inv["client_id"],
-                    "title": inv.get("job_title") or "Trabajo",
-                    "quote_id": inv.get("quote_id"),
-                    "invoice_id": invoice_id,
-                    "status": "approved",  # paid → ready to schedule
-                    "scheduled_date": None,
-                    "end_date": None,
-                    "start_time": "",
-                    "end_time": "",
-                    "all_day": False,
-                    "address": client.get("address") or "",
-                    "recurrence": "none",
-                    "recurrence_days": [],
-                    "recurrence_end_date": None,
-                    "notes": "Auto-creado al marcar invoice como pagado",
-                    "created_at": _now_iso(),
-                    "updated_at": _now_iso(),
-                    "auto_created": True,
-                }
-                await db.jobs.insert_one(job_doc)
-                auto_created_job_id = job_doc["id"]
+            auto_created_job_id = await _ensure_job_for_invoice(inv, user_id)
     await db.invoices.update_one({"id": invoice_id, "user_id": user_id}, {"$set": update})
     doc = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
     if auto_created_job_id:

@@ -251,17 +251,8 @@ export default function InvoiceDetail() {
       {!isNew && (
         <PaymentStatusCard
           invoice={invoice}
-          onChange={(patch) => {
-            setInvoice({ ...invoice, ...patch });
-          }}
-          onPersist={async (patch) => {
-            try {
-              await api.put(`/invoices/${id}`, { ...invoice, ...patch });
-              toast.success("Estado actualizado");
-            } catch {
-              toast.error("Error al actualizar estado");
-            }
-          }}
+          invoiceId={id}
+          onReload={(data) => setInvoice(data)}
         />
       )}
 
@@ -279,15 +270,9 @@ export default function InvoiceDetail() {
           <Label>Job Title</Label>
           <Input data-testid="inv-title" value={invoice.job_title} onChange={(e) => setInvoice({ ...invoice, job_title: e.target.value })} className="h-12 rounded-xl mt-1.5" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Due Date</Label>
-            <Input type="date" value={invoice.due_date || ""} onChange={(e) => setInvoice({ ...invoice, due_date: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-          </div>
-          <div>
-            <Label>Amount Paid ($)</Label>
-            <Input type="number" step="0.01" value={invoice.amount_paid} onChange={(e) => setInvoice({ ...invoice, amount_paid: Number(e.target.value) || 0 })} className="h-12 rounded-xl mt-1.5" />
-          </div>
+        <div>
+          <Label>Due Date</Label>
+          <Input type="date" value={invoice.due_date || ""} onChange={(e) => setInvoice({ ...invoice, due_date: e.target.value })} className="h-12 rounded-xl mt-1.5" />
         </div>
 
         <div>
@@ -386,165 +371,273 @@ export default function InvoiceDetail() {
   );
 }
 
-function PaymentStatusCard({ invoice, onChange, onPersist }) {
+function PaymentStatusCard({ invoice, invoiceId, onReload }) {
   const total = Number(invoice.total) || 0;
+  const payments = invoice.payments || [];
+  const plan = invoice.payment_plan || [];
   const paid = Number(invoice.amount_paid) || 0;
-  const deposit = Number(invoice.deposit_amount) || 0;
   const remaining = Math.max(0, total - paid);
   const status = invoice.status;
+  const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
 
-  const setStatus = async (next, amountPaid = null) => {
-    const patch = { status: next };
-    if (amountPaid !== null) patch.amount_paid = amountPaid;
-    if (next === "paid") patch.amount_paid = total;
-    if (next === "draft" || next === "sent" || next === "overdue") {
-      // Resetting to unpaid clears recorded paid amount.
-      if (amountPaid === null) patch.amount_paid = 0;
-    }
-    onChange(patch);
-    await onPersist(patch);
-  };
+  const [showForm, setShowForm] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("cash");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [showPlan, setShowPlan] = useState(plan.length > 0);
 
-  const onPartial = async () => {
-    const input = window.prompt(
-      `¿Cuánto pagó? (de $${total.toFixed(2)})`,
-      String(paid || deposit || ""),
-    );
-    if (input === null) return;
-    const amt = Number(input);
-    if (isNaN(amt) || amt < 0) {
-      toast.error("Monto inválido");
+  const addPayment = async (preset = null) => {
+    const amt = preset ? preset.amount : Number(amount);
+    if (!amt || isNaN(amt) || amt <= 0) {
+      toast.error("Escribe un monto válido");
       return;
     }
-    if (amt >= total) {
-      await setStatus("paid", total);
-    } else {
-      await setStatus("partial", amt);
+    setBusy(true);
+    try {
+      const body = preset
+        ? { amount: amt, method, date, note: preset.label || "", plan_item_id: preset.id }
+        : { amount: amt, method, date, note: note.trim() };
+      const { data } = await api.post(`/invoices/${invoiceId}/payments`, body);
+      onReload(data);
+      setAmount(""); setNote(""); setShowForm(false);
+      toast.success(data.status === "paid" ? "¡Invoice pagado completo! 🎉" : "Abono registrado");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo registrar el abono");
+    } finally {
+      setBusy(false);
     }
   };
 
-  const Pill = ({ value, label, color, testid, onClick, disabled }) => {
-    const active = status === value;
-    return (
-      <button
-        data-testid={testid}
-        onClick={onClick}
-        disabled={disabled}
-        className={`relative p-3 rounded-2xl border-2 text-center transition ${
-          active
-            ? `${color.activeBg} ${color.activeBorder} ${color.activeText} shadow-md`
-            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {active && (
-          <Check className="absolute top-1.5 right-1.5 w-3.5 h-3.5" />
-        )}
-        <div className="text-xl">{color.icon}</div>
-        <div className="font-bold text-xs mt-1">{label}</div>
-      </button>
-    );
+  const removePayment = async (pid) => {
+    if (!window.confirm("¿Borrar este abono?")) return;
+    try {
+      const { data } = await api.delete(`/invoices/${invoiceId}/payments/${pid}`);
+      onReload(data);
+      toast.success("Abono eliminado");
+    } catch {
+      toast.error("No se pudo eliminar");
+    }
   };
 
+  const quickStatus = async (next) => {
+    try {
+      const { data } = await api.post(`/invoices/${invoiceId}/status?status=${next}`);
+      onReload(data);
+    } catch {
+      toast.error("Error al actualizar estado");
+    }
+  };
+
+  const paidPlanIds = new Set(payments.map((p) => p.plan_item_id).filter(Boolean));
+
   return (
-    <Card className="card-elevated p-5 border-0 shadow-none" data-testid="payment-status-card">
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+    <Card className="card-elevated p-5 border-0 shadow-none space-y-4" data-testid="payment-status-card">
+      {/* Header + progress */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h3 className="font-heading font-bold text-base">Estado de pago</h3>
-          <p className="text-xs text-slate-500">Marca cómo va el pago de este invoice.</p>
+          <h3 className="font-heading font-bold text-base">Pagos</h3>
+          <p className="text-xs text-slate-500">Registra cada abono. El saldo se actualiza solo.</p>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-            Pendiente
-          </div>
-          <div className="font-heading font-bold text-xl text-slate-900">
-            ${remaining.toFixed(2)}
-          </div>
-          {paid > 0 && (
-            <div className="text-[10px] text-emerald-700">
-              Pagado ${paid.toFixed(2)} de ${total.toFixed(2)}
-            </div>
-          )}
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Saldo pendiente</div>
+          <div className="font-heading font-bold text-2xl text-slate-900" data-testid="payment-remaining">${remaining.toFixed(2)}</div>
+          <div className="text-[11px] text-emerald-700">Pagado ${paid.toFixed(2)} de ${total.toFixed(2)}</div>
         </div>
       </div>
-
-      <div className="grid grid-cols-4 gap-2">
-        <Pill
-          value="sent"
-          label="No pagado"
-          testid="status-unpaid"
-          onClick={() => setStatus("sent")}
-          color={{
-            icon: "⚪",
-            activeBg: "bg-slate-100",
-            activeBorder: "border-slate-400",
-            activeText: "text-slate-900",
-          }}
-        />
-        <Pill
-          value="partial"
-          label="Pago parcial"
-          testid="status-partial"
-          onClick={onPartial}
-          color={{
-            icon: "🟡",
-            activeBg: "bg-amber-100",
-            activeBorder: "border-amber-500",
-            activeText: "text-amber-900",
-          }}
-        />
-        <Pill
-          value="paid"
-          label="Pagado todo"
-          testid="status-paid"
-          onClick={() => setStatus("paid")}
-          color={{
-            icon: "✅",
-            activeBg: "bg-emerald-100",
-            activeBorder: "border-emerald-500",
-            activeText: "text-emerald-900",
-          }}
-        />
-        <Pill
-          value="overdue"
-          label="Atrasado"
-          testid="status-overdue"
-          onClick={() => setStatus("overdue")}
-          color={{
-            icon: "🔴",
-            activeBg: "bg-red-100",
-            activeBorder: "border-red-500",
-            activeText: "text-red-900",
-          }}
-        />
+      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
 
-      {status === "partial" && paid > 0 && (
-        <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2">
-          <div className="text-sm">
-            <div className="font-semibold text-amber-900">
-              Pago parcial: ${paid.toFixed(2)}
+      {/* Payment history */}
+      {payments.length > 0 && (
+        <div className="space-y-1.5" data-testid="payment-history">
+          {payments.map((p) => (
+            <div key={p.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200" data-testid={`payment-row-${p.id}`}>
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-none text-xs font-bold">
+                {METHOD_SHORT[p.method] || "$"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-slate-800">
+                  ${Number(p.amount).toFixed(2)} · {METHOD_LABEL[p.method] || p.method}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate">
+                  {fmtPayDate(p.date)}{p.note ? ` · ${p.note}` : ""}
+                </div>
+              </div>
+              <button onClick={() => removePayment(p.id)} className="text-slate-400 hover:text-rose-600 p-1 flex-none" data-testid={`payment-del-${p.id}`} aria-label="Borrar abono">
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-            <div className="text-xs text-amber-800">
-              Falta cobrar ${remaining.toFixed(2)}
-            </div>
-          </div>
-          <Button
-            data-testid="add-payment"
-            size="sm"
-            onClick={onPartial}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
-          >
-            Agregar pago
-          </Button>
+          ))}
         </div>
       )}
 
-      {status === "paid" && (
-        <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
+      {/* Add payment form */}
+      {showForm ? (
+        <div className="rounded-2xl border border-slate-200 p-3 space-y-2" data-testid="payment-form">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Monto ($)</Label>
+              <Input type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={remaining.toFixed(2)} className="h-11 rounded-xl mt-1" data-testid="payment-amount" autoFocus />
+            </div>
+            <div>
+              <Label className="text-xs">Método</Label>
+              <Select value={method} onValueChange={setMethod}>
+                <SelectTrigger className="h-11 rounded-xl mt-1" data-testid="payment-method"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(METHOD_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Fecha</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 rounded-xl mt-1" data-testid="payment-date" />
+            </div>
+            <div>
+              <Label className="text-xs">Nota (opcional)</Label>
+              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: mensualidad 1" className="h-11 rounded-xl mt-1" data-testid="payment-note" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button onClick={() => addPayment()} disabled={busy} className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold" data-testid="payment-save">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Registrar abono
+            </Button>
+            <Button variant="outline" onClick={() => setShowForm(false)} className="h-11 rounded-xl">Cancelar</Button>
+          </div>
+        </div>
+      ) : (
+        remaining > 0 && (
+          <Button onClick={() => setShowForm(true)} className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold" data-testid="add-payment">
+            <Plus className="w-4 h-4 mr-1" /> Registrar abono
+          </Button>
+        )
+      )}
+
+      {/* Fully paid banner */}
+      {status === "paid" && remaining <= 0 && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
           <Check className="w-4 h-4" /> Invoice pagado completo. Se creó un Trabajo automáticamente.
         </div>
       )}
+
+      {/* Optional fixed installment plan */}
+      <div className="pt-1">
+        <button onClick={() => setShowPlan(!showPlan)} className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1" data-testid="toggle-plan">
+          {showPlan ? "▾" : "▸"} Plan de mensualidades (opcional)
+        </button>
+        {showPlan && (
+          <PaymentPlanEditor
+            invoiceId={invoiceId}
+            total={total}
+            plan={plan}
+            paidPlanIds={paidPlanIds}
+            onReload={onReload}
+            onMarkPaid={(item) => addPayment(item)}
+          />
+        )}
+      </div>
+
+      {/* Quick status overrides */}
+      <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+        <span className="text-[11px] text-slate-400">Estado:</span>
+        <button onClick={() => quickStatus("sent")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "sent" ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-unpaid">No pagado</button>
+        <button onClick={() => quickStatus("overdue")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "overdue" ? "bg-red-100 text-red-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-overdue">Atrasado</button>
+        <button onClick={() => quickStatus("paid")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "paid" ? "bg-emerald-100 text-emerald-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-paid">Pagado todo</button>
+      </div>
     </Card>
+  );
+}
+
+const METHOD_LABEL = {
+  cash: "Efectivo",
+  check: "Cheque",
+  zelle: "Zelle",
+  transfer: "Transferencia",
+  card: "Tarjeta",
+  other: "Otro",
+};
+const METHOD_SHORT = { cash: "💵", check: "🧾", zelle: "Z", transfer: "↔", card: "💳", other: "$" };
+
+function fmtPayDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+  } catch { return ""; }
+}
+
+function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMarkPaid }) {
+  const [items, setItems] = useState(plan.length > 0 ? plan : []);
+  const [saving, setSaving] = useState(false);
+
+  const addRow = () => setItems([...items, { id: `tmp-${Date.now()}`, label: `Pago ${items.length + 1}`, amount: 0, due_date: "" }]);
+  const updateRow = (i, key, val) => setItems(items.map((it, idx) => (idx === i ? { ...it, [key]: val } : it)));
+  const removeRow = (i) => setItems(items.filter((_, idx) => idx !== i));
+
+  const splitEvenly = (n) => {
+    const per = Math.round((total / n) * 100) / 100;
+    const rows = Array.from({ length: n }, (_, i) => ({
+      id: `tmp-${Date.now()}-${i}`,
+      label: `Pago ${i + 1}`,
+      amount: i === n - 1 ? Math.round((total - per * (n - 1)) * 100) / 100 : per,
+      due_date: "",
+    }));
+    setItems(rows);
+  };
+
+  const savePlan = async () => {
+    setSaving(true);
+    try {
+      const installments = items.map((it) => ({ label: it.label, amount: Number(it.amount) || 0, due_date: it.due_date || null }));
+      const { data } = await api.put(`/invoices/${invoiceId}/payment-plan`, { installments });
+      onReload(data);
+      toast.success("Plan guardado");
+    } catch {
+      toast.error("No se pudo guardar el plan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 space-y-2" data-testid="payment-plan-editor">
+      {items.length === 0 && (
+        <div className="flex gap-2">
+          {[2, 3, 4].map((n) => (
+            <Button key={n} variant="outline" size="sm" onClick={() => splitEvenly(n)} className="rounded-lg text-xs" data-testid={`split-${n}`}>
+              Dividir en {n}
+            </Button>
+          ))}
+        </div>
+      )}
+      {items.map((it, i) => {
+        const isPaid = it.id && paidPlanIds.has(it.id);
+        return (
+          <div key={it.id || i} className="flex items-center gap-2" data-testid={`plan-row-${i}`}>
+            <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={`Pago ${i + 1}`} className="h-10 rounded-lg text-sm flex-1" />
+            <Input type="number" step="0.01" value={it.amount} onChange={(e) => updateRow(i, "amount", e.target.value)} placeholder="$" className="h-10 rounded-lg text-sm w-24" />
+            <Input type="date" value={it.due_date || ""} onChange={(e) => updateRow(i, "due_date", e.target.value)} className="h-10 rounded-lg text-sm w-36" />
+            {isPaid ? (
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 w-20 justify-center"><Check className="w-3.5 h-3.5" />Pagado</span>
+            ) : it.id && !String(it.id).startsWith("tmp-") ? (
+              <Button size="sm" onClick={() => onMarkPaid(it)} className="h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2 w-20" data-testid={`plan-pay-${i}`}>Marcar pagado</Button>
+            ) : (
+              <button onClick={() => removeRow(i)} className="text-slate-400 hover:text-rose-600 p-1 w-20 flex justify-center"><Trash2 className="w-4 h-4" /></button>
+            )}
+          </div>
+        );
+      })}
+      <div className="flex gap-2 pt-1">
+        <Button variant="outline" size="sm" onClick={addRow} className="rounded-lg text-xs" data-testid="plan-add-row"><Plus className="w-3.5 h-3.5 mr-1" />Cuota</Button>
+        {items.length > 0 && (
+          <Button size="sm" onClick={savePlan} disabled={saving} className="rounded-lg text-xs bg-slate-800 hover:bg-slate-900 text-white" data-testid="plan-save">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Guardar plan"}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
 
