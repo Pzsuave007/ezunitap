@@ -99,25 +99,27 @@ export default function PublicInvoice() {
         </div>
 
         <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden print:shadow-none print:border-0">
-          <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-6 print:bg-blue-900">
-            <div className="flex items-start justify-between flex-wrap gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Hammer className="w-5 h-5" />
-                  <h1 className="font-heading text-2xl font-bold">{business?.business_name || "Invoice"}</h1>
+          <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5 sm:p-6 print:bg-blue-900">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-none">
+                    <Hammer className="w-5 h-5" />
+                  </div>
+                  <h1 className="font-heading text-xl sm:text-2xl font-bold leading-tight break-words min-w-0">{business?.business_name || "Invoice"}</h1>
                 </div>
-                <div className="text-sm text-white/80 space-y-0.5">
-                  {business?.owner_name && <div>{business.owner_name}</div>}
-                  {business?.phone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> {business.phone}</div>}
-                  {business?.business_email && <div className="flex items-center gap-1"><Mail className="w-3 h-3" /> {business.business_email}</div>}
-                  {business?.business_address && <div className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {business.business_address}</div>}
+                <div className="text-sm text-white/80 space-y-1">
+                  {business?.owner_name && <div className="break-words">{business.owner_name}</div>}
+                  {business?.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 flex-none" /> <span className="break-all">{business.phone}</span></div>}
+                  {business?.business_email && <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 flex-none" /> <span className="break-all">{business.business_email}</span></div>}
+                  {business?.business_address && <div className="flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 flex-none mt-0.5" /> <span className="break-words">{business.business_address}</span></div>}
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right flex-none border-t border-white/15 pt-3 sm:border-t-0 sm:pt-0">
                 <div className="text-xs uppercase tracking-wider opacity-80">Invoice</div>
-                <div className="font-heading text-2xl font-bold">{invoice.number}</div>
-                <div className="text-xs mt-1">{fmtDate(invoice.created_at)}</div>
-                <div className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${statusColor}`}>
+                <div className="font-heading text-xl sm:text-2xl font-bold">{invoice.number}</div>
+                <div className="text-xs mt-1 opacity-90">{fmtDate(invoice.created_at)}</div>
+                <div className={`inline-flex mt-2 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${statusColor}`}>
                   {statusLabel}
                 </div>
               </div>
