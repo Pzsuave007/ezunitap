@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { listAgreementClauses } from "@/lib/pdf";
@@ -254,6 +254,10 @@ export default function InvoiceDetail() {
           invoiceId={id}
           onReload={(data) => setInvoice(data)}
         />
+      )}
+
+      {!isNew && (
+        <PaymentRequestsCard invoiceId={id} invoice={invoice} />
       )}
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
@@ -683,5 +687,160 @@ function AgreementTermsBlock({ terms, depositAmount, agreementId }) {
         </div>
       </div>
     </div>
+  );
+}
+
+
+// ============================================================================
+// PaymentRequestsCard — create & manage "payment slips" for an invoice.
+// Each request = a focused amount the client can pay via a shareable link.
+// ============================================================================
+function PaymentRequestsCard({ invoiceId, invoice }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState("");
+  const [desc, setDesc] = useState("");
+  const [planItemId, setPlanItemId] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const plan = invoice.payment_plan || [];
+
+  const load = async () => {
+    try {
+      const { data } = await api.get(`/invoices/${invoiceId}/payment-requests`);
+      setRequests(data.requests || []);
+    } catch {
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [invoiceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pickInstallment = (item) => {
+    setAmount(String(item.amount));
+    setDesc(item.label || "");
+    setPlanItemId(item.id);
+  };
+
+  const create = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) {
+      toast.error("Escribe un monto válido");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.post(`/invoices/${invoiceId}/payment-requests`, {
+        amount: amt,
+        description: desc.trim(),
+        plan_item_id: planItemId,
+      });
+      setAmount(""); setDesc(""); setPlanItemId(null);
+      toast.success("Solicitud creada. ¡Compártela con tu cliente!");
+      load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo crear la solicitud");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (rid) => {
+    if (!window.confirm("¿Borrar esta solicitud de pago?")) return;
+    try {
+      await api.delete(`/payment-requests/${rid}`);
+      toast.success("Solicitud eliminada");
+      load();
+    } catch {
+      toast.error("No se pudo eliminar");
+    }
+  };
+
+  const linkFor = (rid) => `${window.location.origin}/p/pay/${rid}`;
+  const copyLink = (rid) => {
+    navigator.clipboard?.writeText(linkFor(rid));
+    toast.success("Link copiado");
+  };
+  const shareWhatsApp = (req) => {
+    const msg = `Hola! Aquí está tu solicitud de pago${req.description ? ` (${req.description})` : ""} por $${Number(req.amount).toFixed(2)}: ${linkFor(req.id)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+  };
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none space-y-4" data-testid="payment-requests-card">
+      <div className="flex items-center gap-2">
+        <Receipt className="w-5 h-5 text-indigo-600" />
+        <div>
+          <h3 className="font-heading font-bold text-base">Pedir un pago</h3>
+          <p className="text-xs text-slate-500">Manda un "papelito" de cobro con todas las formas de pago.</p>
+        </div>
+      </div>
+
+      {/* Quick-pick from installment plan */}
+      {plan.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {plan.map((it) => (
+            <button
+              key={it.id}
+              onClick={() => pickInstallment(it)}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+              data-testid={`pr-pick-${it.id}`}
+            >
+              Pedir {it.label}: ${Number(it.amount).toFixed(2)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Create form */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">Monto ($)</Label>
+          <Input type="number" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setPlanItemId(null); }} placeholder="0.00" className="h-11 rounded-xl mt-1" data-testid="pr-amount-input" />
+        </div>
+        <div>
+          <Label className="text-xs">Descripción</Label>
+          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ej: Pago 1 de 4" className="h-11 rounded-xl mt-1" data-testid="pr-desc-input" />
+        </div>
+      </div>
+      <Button onClick={create} disabled={busy} className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold" data-testid="pr-create-btn">
+        {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Crear solicitud de pago
+      </Button>
+
+      {/* Existing requests */}
+      {loading ? (
+        <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
+      ) : requests.length > 0 && (
+        <div className="space-y-2 pt-1" data-testid="pr-list">
+          {requests.map((r) => (
+            <div key={r.id} className="rounded-xl border border-slate-200 p-3" data-testid={`pr-item-${r.id}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm text-slate-800">${Number(r.amount).toFixed(2)}{r.description ? ` · ${r.description}` : ""}</div>
+                </div>
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full flex-none ${r.status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  {r.status === "paid" ? "Pagado" : "Pendiente"}
+                </span>
+              </div>
+              {r.status !== "paid" && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Button size="sm" variant="outline" onClick={() => copyLink(r.id)} className="h-8 rounded-lg text-xs flex-1" data-testid={`pr-copy-${r.id}`}>
+                    <Copy className="w-3.5 h-3.5 mr-1" /> Copiar link
+                  </Button>
+                  <Button size="sm" onClick={() => shareWhatsApp(r)} className="h-8 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex-1" data-testid={`pr-wa-${r.id}`}>
+                    WhatsApp
+                  </Button>
+                  <button onClick={() => remove(r.id)} className="text-slate-400 hover:text-rose-600 p-1 flex-none" data-testid={`pr-del-${r.id}`}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }

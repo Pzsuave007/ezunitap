@@ -34,6 +34,7 @@ import AdminMetrics from "@/pages/AdminMetrics";
 import AdminShipments from "@/pages/AdminShipments";
 import NotificationsInbox from "@/pages/NotificationsInbox";
 import PublicInvoice from "@/pages/PublicInvoice";
+import PaymentRequest from "@/pages/PaymentRequest";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import PublicReviewPage from "@/pages/PublicReviewPage";
 import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
@@ -81,6 +82,7 @@ function App() {
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/p/invoice/:id" element={<PublicInvoice />} />
+            <Route path="/p/pay/:id" element={<PaymentRequest />} />
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />

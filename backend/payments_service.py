@@ -475,9 +475,9 @@ async def handle_webhook_event(db, payload: bytes, sig_header: str) -> dict:
         # Invoice card payments are one-time charges (NOT subscriptions). Handle
         # them separately and bail out BEFORE the subscription logic, so they
         # never corrupt a user's subscription state.
-        if _md(session, "type") == "invoice_payment":
+        if _md(session, "type") in ("invoice_payment", "payment_request"):
             await _record_invoice_card_payment(db, session)
-            return {"received": True, "type": event_type, "handled": "invoice_payment"}
+            return {"received": True, "type": event_type, "handled": _md(session, "type")}
         sub = session.subscription
         await _apply_subscription_to_user(db, session, sub)
         await db.payment_transactions.update_one(
@@ -586,11 +586,19 @@ def has_paid_subscription(user: dict) -> bool:
 # (Option A: uses the platform's own Stripe account; gated to the owner only by
 #  the caller in server.py). Kept separate from the subscription webhook flow.
 # ============================================================================
-async def create_invoice_checkout(db, invoice: dict, amount: float, origin_url: str) -> dict:
-    """Create a one-time Stripe Checkout Session for an invoice balance.
-
-    `amount` is computed server-side (never trusted from the client). Returns
-    {session_id, url}. Records a pending payment_transactions entry.
+async def create_invoice_checkout(
+    db,
+    invoice: dict,
+    amount: float,
+    success_url: str,
+    cancel_url: str,
+    label: str = "",
+    request_id: Optional[str] = None,
+) -> dict:
+    """Create a one-time Stripe Checkout Session for an invoice (or a payment
+    request for it). `amount` is computed server-side (never from the client).
+    Returns {session_id, url}. Records a pending payment_transactions entry that
+    carries enough info (invoice_id, request_id) to record the abono later.
     """
     from datetime import datetime, timezone
 
@@ -598,42 +606,48 @@ async def create_invoice_checkout(db, invoice: dict, amount: float, origin_url: 
     amount_cents = int(round(float(amount) * 100))
     number = (invoice.get("number") or "").strip()
     title = (invoice.get("job_title") or "Invoice").strip()[:90]
-    success_url = f"{origin_url}/p/invoice/{inv_id}?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin_url}/p/invoice/{inv_id}"
+    product_name = (label or "").strip()[:120] or (f"{title}" + (f" — Invoice {number}" if number else ""))
+    pay_type = "payment_request" if request_id else "invoice_payment"
+
+    metadata = {
+        "type": pay_type,
+        "invoice_id": inv_id,
+        "user_id": invoice["user_id"],
+        "app": "unitap",
+    }
+    if request_id:
+        metadata["request_id"] = request_id
 
     session = stripe.checkout.Session.create(
         mode="payment",
         line_items=[{
             "price_data": {
                 "currency": "usd",
-                "product_data": {"name": f"{title}" + (f" — Invoice {number}" if number else "")},
+                "product_data": {"name": product_name},
                 "unit_amount": amount_cents,
             },
             "quantity": 1,
         }],
         success_url=success_url,
         cancel_url=cancel_url,
-        metadata={
-            "type": "invoice_payment",
-            "invoice_id": inv_id,
-            "user_id": invoice["user_id"],
-            "app": "unitap",
-        },
+        metadata=metadata,
     )
 
     await db.payment_transactions.insert_one({
         "id": session.id,
         "session_id": session.id,
-        "type": "invoice_payment",
+        "type": pay_type,
         "invoice_id": inv_id,
+        "request_id": request_id,
         "user_id": invoice["user_id"],
         "amount_cents": amount_cents,
         "currency": "usd",
+        "description": product_name,
         "status": "initiated",
         "payment_status": "pending",
         "recorded": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "metadata": {"invoice_id": inv_id, "type": "invoice_payment"},
+        "metadata": metadata,
     })
 
     return {"session_id": session.id, "url": session.url}
@@ -685,7 +699,7 @@ async def _record_invoice_card_payment(db, session) -> bool:
         return False
 
     tx = await db.payment_transactions.find_one_and_update(
-        {"session_id": session_id, "type": "invoice_payment", "recorded": {"$ne": True}},
+        {"session_id": session_id, "type": {"$in": ["invoice_payment", "payment_request"]}, "recorded": {"$ne": True}},
         {"$set": {"recorded": True, "payment_status": "paid", "status": "complete"}},
     )
     if not tx:
@@ -698,11 +712,18 @@ async def _record_invoice_card_payment(db, session) -> bool:
         "amount": amount,
         "method": "card",
         "date": now,
-        "note": "Pago con tarjeta (Stripe)",
+        "note": tx.get("description") or "Pago con tarjeta (Stripe)",
         "plan_item_id": None,
         "created_at": now,
     }
     await db.invoices.update_one({"id": invoice_id}, {"$push": {"payments": payment}})
+
+    # Mark the originating payment request as paid (if any).
+    if tx.get("request_id"):
+        await db.payment_requests.update_one(
+            {"id": tx["request_id"]},
+            {"$set": {"status": "paid", "paid_at": now}},
+        )
 
     # Self-contained recompute (no auto-job here; the polling path handles that).
     inv = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})

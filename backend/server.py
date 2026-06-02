@@ -1303,34 +1303,158 @@ async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
     origin = (payload.origin_url or "").rstrip("/")
     if not origin.startswith("http"):
         raise HTTPException(400, "origin_url inválido")
-    return await payments_service.create_invoice_checkout(db, inv, amount, origin)
+    success_url = f"{origin}/p/invoice/{inv['id']}?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/p/invoice/{inv['id']}"
+    return await payments_service.create_invoice_checkout(db, inv, amount, success_url, cancel_url)
+
+
+async def _record_card_payment_from_tx(tx: dict) -> None:
+    """Push a card abono onto the invoice ledger and (if any) mark the
+    originating payment request as paid. Caller must have already claimed the
+    payment_transactions.recorded flag atomically."""
+    amount = round((tx.get("amount_cents") or 0) / 100, 2)
+    payment = {
+        "id": _new_id(),
+        "amount": amount,
+        "method": "card",
+        "date": _now_iso(),
+        "note": tx.get("description") or "Pago con tarjeta (Stripe)",
+        "plan_item_id": None,
+        "created_at": _now_iso(),
+    }
+    await db.invoices.update_one({"id": tx["invoice_id"]}, {"$push": {"payments": payment}})
+    await _recalc_invoice_payments(tx["invoice_id"], tx["user_id"])
+    if tx.get("request_id"):
+        await db.payment_requests.update_one(
+            {"id": tx["request_id"]},
+            {"$set": {"status": "paid", "paid_at": _now_iso()}},
+        )
 
 
 @api_router.get("/public/invoices/checkout/status/{session_id}")
 async def public_invoice_checkout_status(session_id: str):
-    """Poll a card payment. On first 'paid', records the abono on the invoice
-    ledger (idempotent via the payment_transactions.recorded flag)."""
+    """Poll a card payment (invoice or payment-request). On first 'paid',
+    records the abono on the invoice ledger (idempotent via the
+    payment_transactions.recorded flag)."""
     result = await payments_service.get_invoice_checkout_status(db, session_id)
     if result.get("payment_status") == "paid":
-        # Atomically claim this session so parallel polls record the abono once.
         tx = await db.payment_transactions.find_one_and_update(
-            {"session_id": session_id, "type": "invoice_payment", "recorded": {"$ne": True}},
+            {"session_id": session_id, "type": {"$in": ["invoice_payment", "payment_request"]}, "recorded": {"$ne": True}},
             {"$set": {"recorded": True, "payment_status": "paid", "status": "complete"}},
         )
         if tx:
-            amount = round((tx.get("amount_cents") or 0) / 100, 2)
-            payment = {
-                "id": _new_id(),
-                "amount": amount,
-                "method": "card",
-                "date": _now_iso(),
-                "note": "Pago con tarjeta (Stripe)",
-                "plan_item_id": None,
-                "created_at": _now_iso(),
-            }
-            await db.invoices.update_one({"id": tx["invoice_id"]}, {"$push": {"payments": payment}})
-            await _recalc_invoice_payments(tx["invoice_id"], tx["user_id"])
+            await _record_card_payment_from_tx(tx)
     return result
+
+
+# ============================================================================
+# PAYMENT REQUESTS — owner sends a focused "payment slip" for a specific amount
+# ============================================================================
+class PaymentRequestIn(BaseModel):
+    amount: float
+    description: str = ""
+    plan_item_id: Optional[str] = None
+
+
+@api_router.post("/invoices/{invoice_id}/payment-requests")
+async def create_payment_request(invoice_id: str, payload: PaymentRequestIn, user_id: str = Depends(get_current_user_id)):
+    inv = await db.invoices.find_one({"id": invoice_id, "user_id": user_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    amount = round(float(payload.amount or 0), 2)
+    plan_item_id = payload.plan_item_id
+    if plan_item_id:
+        item = next((p for p in (inv.get("payment_plan") or []) if p.get("id") == plan_item_id), None)
+        if item:
+            amount = round(float(item.get("amount") or 0), 2)
+    if amount <= 0:
+        raise HTTPException(400, "El monto debe ser mayor a 0")
+    req = {
+        "id": _new_id(),
+        "invoice_id": invoice_id,
+        "user_id": user_id,
+        "client_id": inv.get("client_id"),
+        "amount": amount,
+        "description": (payload.description or "").strip(),
+        "plan_item_id": plan_item_id,
+        "status": "pending",
+        "created_at": _now_iso(),
+        "paid_at": None,
+    }
+    await db.payment_requests.insert_one({**req})
+    return req
+
+
+@api_router.get("/invoices/{invoice_id}/payment-requests")
+async def list_payment_requests(invoice_id: str, user_id: str = Depends(get_current_user_id)):
+    items = await db.payment_requests.find(
+        {"invoice_id": invoice_id, "user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return {"requests": items}
+
+
+@api_router.delete("/payment-requests/{request_id}")
+async def delete_payment_request(request_id: str, user_id: str = Depends(get_current_user_id)):
+    res = await db.payment_requests.delete_one({"id": request_id, "user_id": user_id})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Solicitud no encontrada")
+    return {"ok": True}
+
+
+@api_router.get("/public/payment-requests/{request_id}")
+async def public_payment_request(request_id: str):
+    req = await db.payment_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(404, "Solicitud no encontrada")
+    inv = await db.invoices.find_one({"id": req["invoice_id"]}, {"_id": 0}) or {}
+    owner = await db.users.find_one({"id": req["user_id"]}, {"_id": 0, "password_hash": 0})
+    client_doc = await db.clients.find_one({"id": req.get("client_id")}, {"_id": 0})
+    return {
+        "request": req,
+        "invoice": {
+            "id": inv.get("id"),
+            "number": inv.get("number"),
+            "job_title": inv.get("job_title"),
+            "total": inv.get("total"),
+            "amount_paid": inv.get("amount_paid"),
+            "status": inv.get("status"),
+        },
+        "business": owner,
+        "client": client_doc,
+        "payment_methods": (owner or {}).get("payment_methods") or {},
+        "card_payment": {
+            "enabled": bool(_stripe_collect_enabled_for(owner) and req["status"] != "paid"),
+            "amount": req["amount"],
+        },
+    }
+
+
+class PaymentRequestCheckoutIn(BaseModel):
+    origin_url: str
+
+
+@api_router.post("/public/payment-requests/{request_id}/checkout")
+async def public_payment_request_checkout(request_id: str, payload: PaymentRequestCheckoutIn):
+    req = await db.payment_requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(404, "Solicitud no encontrada")
+    if req["status"] == "paid":
+        raise HTTPException(400, "Esta solicitud ya fue pagada.")
+    owner = await db.users.find_one({"id": req["user_id"]}, {"_id": 0})
+    if not _stripe_collect_enabled_for(owner):
+        raise HTTPException(403, "El cobro con tarjeta no está disponible para este negocio.")
+    inv = await db.invoices.find_one({"id": req["invoice_id"]}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    origin = (payload.origin_url or "").rstrip("/")
+    if not origin.startswith("http"):
+        raise HTTPException(400, "origin_url inválido")
+    success_url = f"{origin}/p/pay/{request_id}?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/p/pay/{request_id}"
+    label = req.get("description") or f"Pago — Invoice {inv.get('number', '')}".strip()
+    return await payments_service.create_invoice_checkout(
+        db, inv, req["amount"], success_url, cancel_url, label=label, request_id=request_id
+    )
 
 
 # ============================================================================
