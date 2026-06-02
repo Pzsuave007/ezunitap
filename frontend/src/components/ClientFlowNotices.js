@@ -76,7 +76,7 @@ export default function ClientFlowNotices({ client, history }) {
           tone: "blue",
           icon: FileSignature,
           title: `Contrato firmado por ${a.signer_name || client.name?.split(" ")[0] || "el cliente"}`,
-          message: `Se creó el invoice ${linkedInv.number} en borrador. Revísalo y mándaselo.`,
+          message: `El invoice ${linkedInv.number} ya se generó y se le muestra al cliente automáticamente para que pague. Échale un ojo aquí.`,
           ctaLabel: "Ver invoice",
           ctaAction: () => navigate(`/invoices/${linkedInv.id}`),
         });
