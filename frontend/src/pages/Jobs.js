@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import StatusBadge, { JOB_STATUSES } from "@/components/StatusBadge";
-import { Plus, Briefcase, Loader2, Camera } from "lucide-react";
+import { Plus, Briefcase, Loader2, Camera, CalendarClock, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 import { useAuth } from "@/context/AuthContext";
@@ -110,6 +110,55 @@ export default function Jobs() {
     }
   };
 
+  // --- Scheduling -----------------------------------------------------------
+  const [scheduleJob, setScheduleJob] = useState(null);
+  const [sched, setSched] = useState({ scheduled_date: "", end_date: "", all_day: true, start_time: "", end_time: "" });
+
+  const openSchedule = (job) => {
+    setSched({
+      scheduled_date: job.scheduled_date || "",
+      end_date: job.end_date || "",
+      all_day: !(job.start_time || job.end_time),
+      start_time: job.start_time || "",
+      end_time: job.end_time || "",
+    });
+    setScheduleJob(job);
+  };
+
+  const saveSchedule = async () => {
+    if (!sched.scheduled_date) return toast.error("Elige una fecha");
+    try {
+      await api.put(`/jobs/${scheduleJob.id}`, {
+        ...scheduleJob,
+        scheduled_date: sched.scheduled_date,
+        end_date: sched.end_date || null,
+        all_day: sched.all_day,
+        start_time: sched.all_day ? "" : sched.start_time,
+        end_time: sched.all_day ? "" : sched.end_time,
+        status: ["new_lead", "estimate_sent", "approved"].includes(scheduleJob.status) ? "scheduled" : scheduleJob.status,
+      });
+      toast.success("Trabajo agendado — ya aparece en tu Agenda 📅");
+      setScheduleJob(null);
+      load();
+    } catch {
+      toast.error("No se pudo agendar");
+    }
+  };
+
+  const fmtSched = (j) => {
+    if (!j.scheduled_date) return null;
+    try {
+      const d = new Date(j.scheduled_date + "T00:00:00");
+      let s = d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+      if (j.end_date && j.end_date !== j.scheduled_date) {
+        const e = new Date(j.end_date + "T00:00:00");
+        s += " – " + e.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+      }
+      if (!j.all_day && j.start_time) s += ` · ${j.start_time}${j.end_time ? "–" + j.end_time : ""}`;
+      return s;
+    } catch { return null; }
+  };
+
   const clientName = (id) => clients.find((c) => c.id === id)?.name || "Cliente";
 
   const grouped = JOB_STATUSES.reduce((acc, s) => {
@@ -156,6 +205,35 @@ export default function Jobs() {
                       </div>
                       <StatusBadge kind="job" status={j.status} />
                     </div>
+
+                    {j.notes && (
+                      <div className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2.5 mb-2 whitespace-pre-line line-clamp-5" data-testid={`job-scope-${j.id}`}>
+                        {j.notes}
+                      </div>
+                    )}
+
+                    {fmtSched(j) ? (
+                      <button
+                        onClick={() => openSchedule(j)}
+                        data-testid={`job-scheduled-${j.id}`}
+                        className="w-full flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 mb-2 hover:bg-emerald-100 transition"
+                      >
+                        <CalendarIcon className="w-4 h-4 flex-none" />
+                        <span className="capitalize">{fmtSched(j)}</span>
+                        <span className="ml-auto text-emerald-600 underline">Reagendar</span>
+                      </button>
+                    ) : (
+                      j.status !== "completed" && (
+                        <Button
+                          onClick={() => openSchedule(j)}
+                          data-testid={`job-schedule-${j.id}`}
+                          className="h-10 rounded-xl text-xs w-full mb-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                        >
+                          <CalendarClock className="w-4 h-4 mr-1.5" /> Agendar trabajo
+                        </Button>
+                      )
+                    )}
+
                     <Select value={j.status} onValueChange={(v) => updateStatus(j, v)}>
                       <SelectTrigger className="h-10 rounded-xl text-xs" data-testid={`job-status-${j.id}`}>
                         <SelectValue />
@@ -189,6 +267,48 @@ export default function Jobs() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!scheduleJob} onOpenChange={(o) => !o && setScheduleJob(null)}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader><DialogTitle className="font-heading">Agendar trabajo</DialogTitle></DialogHeader>
+          {scheduleJob && (
+            <div className="space-y-3">
+              <div className="text-sm text-slate-600">{scheduleJob.title} · {clientName(scheduleJob.client_id)}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fecha inicio *</Label>
+                  <Input type="date" value={sched.scheduled_date} onChange={(e) => setSched({ ...sched, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-date" />
+                </div>
+                <div>
+                  <Label>Fecha fin</Label>
+                  <Input type="date" value={sched.end_date} min={sched.scheduled_date || undefined} onChange={(e) => setSched({ ...sched, end_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-date" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={sched.all_day} onChange={(e) => setSched({ ...sched, all_day: e.target.checked })} className="w-4 h-4 rounded accent-emerald-600" data-testid="sched-allday" />
+                <span className="text-sm">Todo el día</span>
+              </label>
+              {!sched.all_day && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Hora inicio</Label>
+                    <Input type="time" value={sched.start_time} onChange={(e) => setSched({ ...sched, start_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-time" />
+                  </div>
+                  <div>
+                    <Label>Hora fin</Label>
+                    <Input type="time" value={sched.end_time} onChange={(e) => setSched({ ...sched, end_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-time" />
+                  </div>
+                </div>
+              )}
+              <p className="text-xs text-slate-400">Al guardar, el trabajo aparecerá en tu Agenda/Calendario.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl">Cancelar</Button>
+            <Button onClick={saveSchedule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">Guardar agenda</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-2xl max-w-md">

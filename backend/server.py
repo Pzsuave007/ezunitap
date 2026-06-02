@@ -935,6 +935,13 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
         {"$set": {"status": "converted", "invoice_id": invoice_id, "updated_at": now_iso}},
     )
 
+    # Create the Job right away (filled with the quote's scope) so it can be
+    # scheduled before payment.
+    try:
+        await _ensure_job_for_signed_quote(q, invoice_id, q["user_id"], agreement_doc)
+    except Exception as e:
+        logger.error(f"accept-and-sign auto-job failed: {e!r}")
+
     # Notify the contractor.
     try:
         await _create_notification(
@@ -1109,7 +1116,15 @@ async def update_invoice(invoice_id: str, payload: InvoiceIn, user_id: str = Dep
 
 async def _ensure_job_for_invoice(inv: dict, user_id: str) -> Optional[str]:
     """Create a Job for a paid invoice (idempotent). Returns new job_id or None."""
-    existing_job = await db.jobs.find_one({"user_id": user_id, "invoice_id": inv["id"]})
+    # Idempotent: skip if a job already exists for this invoice OR its quote
+    # (the job is usually created earlier, when the agreement is signed).
+    existing_job = await db.jobs.find_one({
+        "user_id": user_id,
+        "$or": [
+            {"invoice_id": inv["id"]},
+            {"quote_id": inv.get("quote_id")} if inv.get("quote_id") else {"invoice_id": inv["id"]},
+        ],
+    })
     if existing_job or not inv.get("client_id"):
         return None
     client = await db.clients.find_one(
@@ -1132,13 +1147,74 @@ async def _ensure_job_for_invoice(inv: dict, user_id: str) -> Optional[str]:
         "recurrence": "none",
         "recurrence_days": [],
         "recurrence_end_date": None,
-        "notes": "Auto-creado al marcar invoice como pagado",
+        "notes": _scope_from_line_items(inv.get("line_items", [])) or "Auto-creado al marcar invoice como pagado",
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
         "auto_created": True,
     }
     await db.jobs.insert_one(job_doc)
     return job_doc["id"]
+
+
+def _scope_from_line_items(line_items: list) -> str:
+    """Build a checklist of work to do from quote/invoice line items."""
+    lines = []
+    for li in (line_items or []):
+        desc = (li.get("description") or li.get("name") or "").strip()
+        if not desc:
+            continue
+        qty = li.get("quantity")
+        try:
+            qn = float(qty)
+            qty_str = str(int(qn)) if qn.is_integer() else str(qn)
+        except (TypeError, ValueError):
+            qty_str = None
+        lines.append(f"• {desc}" + (f" (x{qty_str})" if qty_str and qty_str != "1" else ""))
+    return "\n".join(lines)
+
+
+async def _ensure_job_for_signed_quote(quote: dict, invoice_id: Optional[str], user_id: str, agreement: Optional[dict] = None) -> Optional[str]:
+    """Create a Job as soon as the agreement is signed (before payment), filled
+    with the scope copied from the quote line items. Idempotent per quote."""
+    if not quote or not quote.get("client_id"):
+        return None
+    existing = await db.jobs.find_one({
+        "user_id": user_id,
+        "$or": [{"quote_id": quote.get("id")}] + ([{"invoice_id": invoice_id}] if invoice_id else []),
+    })
+    if existing:
+        return None
+    client = await db.clients.find_one(
+        {"id": quote["client_id"], "user_id": user_id}, {"_id": 0}
+    ) or {}
+    scope = _scope_from_line_items(quote.get("line_items", []))
+    extra_notes = (quote.get("notes") or "").strip()
+    notes = "\n\n".join([p for p in [scope, extra_notes] if p]) or "Trabajo creado al firmarse el acuerdo"
+    job_doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "client_id": quote["client_id"],
+        "title": quote.get("job_title") or "Trabajo",
+        "quote_id": quote.get("id"),
+        "invoice_id": invoice_id,
+        "status": "approved",  # signed → ready to schedule
+        "scheduled_date": None,
+        "end_date": None,
+        "start_time": "",
+        "end_time": "",
+        "all_day": False,
+        "address": client.get("address") or "",
+        "recurrence": "none",
+        "recurrence_days": [],
+        "recurrence_end_date": None,
+        "notes": notes,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+        "auto_created": True,
+    }
+    await db.jobs.insert_one(job_doc)
+    return job_doc["id"]
+
 
 
 async def _recalc_invoice_payments(invoice_id: str, user_id: str) -> dict:
@@ -3059,6 +3135,14 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
             except Exception as e:
                 logger.exception(f"Auto-invoice on agreement sign failed: {e}")
                 # Don't break the signing on invoice failure
+    # Create the Job (filled with the quote scope) so it can be scheduled now.
+    try:
+        if a.get("quote_id"):
+            q_for_job = await db.quotes.find_one({"id": a["quote_id"], "user_id": a["user_id"]}, {"_id": 0})
+            if q_for_job:
+                await _ensure_job_for_signed_quote(q_for_job, invoice_id, a["user_id"], a)
+    except Exception as e:
+        logger.error(f"Auto-job on agreement sign failed: {e!r}")
     updated = await db.agreements.find_one({"id": agreement_id}, {"_id": 0})
     return {"ok": True, "agreement": updated, "invoice_id": invoice_id}
 
