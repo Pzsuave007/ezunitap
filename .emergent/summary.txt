@@ -1,129 +1,146 @@
 <analysis>**original_problem_statement**: 
 SaaS web app for Latino service contractors called Unitap. The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) are generated in English using AI. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, and GMB (Google My Business) Reviews gating. The app is LIVE in production. The core focus is on perfecting the Landing Page, improving the free trial conversion funnel, and providing an impressive Spanish input - English output AI experience for users.
 
-**User's preferred language**: Spanish (You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only)
-*Instrucción crítica para el siguiente agente: El usuario habla y requiere respuestas EXCLUSIVAMENTE en español. Asegúrate de comunicarte y dar tus explicaciones solo en español.*
+**User's preferred language**: Spanish
+*(CRITICAL INSTRUCTION FOR NEXT AGENT: The user speaks Spanish and explicitly requires all responses, explanations, and communication to be EXCLUSIVAMENTE en español. Do not use English with the user.)*
 
 **what currently exists?** 
-A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real money. Recent heavy improvements include a highly customized Landing page (NFC section, dynamic Hero phone mockup), an AI-powered Polish to English feature for public profile fields, a streamlined 3-step onboarding checklist, a redesigned visually appealing Client Profile, and a seamless 3-step Public Document Acceptance flow (Quote -> Agreement -> Invoice) powered by background AI generation to eliminate loading waits.
+A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real payments. It features a complete 3-step public document flow (Quote -> Agreement -> Invoice). Recently, the app received major upgrades: a comprehensive monthly payment ledger (abonos) for invoices, direct Stripe card payments to the user's connected account, Payment Request links (cupones de cobro), and automated Job creation upon agreement signature with a robust scheduling interface.
 
 **Last working item**: 
-- **Last item agent was working**: Verifying the frontend build is up-to-date and ready for the user to deploy to production. The user returned from lunch and asked to ensure the build was ready. The agent ran a diff script confirming the  is perfectly synced with .
-- **Status**: COMPLETED
-- **Agent Testing Done**: Y
-- **Which testing method agent to use?**: manual testing by bash
+- **Last item agent was working**: Improving the Monthly Calendar view. The user mentioned the monthly view only showed little dots () for scheduled jobs and wanted it to be visually attractive. The agent modified  to display colored chips with the job titles instead of dots.
+- **Status**: TESTING PENDING (The agent wrote the code but did not test, lint, or run the production build before the session ended).
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: screenshot tool (to verify the calendar visually) followed by  for the production build.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**: 
-None currently active.
+Issue 1: Test and deploy the Calendar UI update (P0)
+- Attempted fixes: The code logic was added via  in . 
+- Next debug checklist: 
+  1. Run  on the frontend.
+  2. Use the  to view the  or calendar view and confirm the monthly calendar shows text chips instead of dots.
+  3. **CRITICAL:** Execute the frontend production build yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. with  and .
+- Why fix this issue and what will be achieved with the fix?: Fulfills the user's immediate request to make the calendar visually appealing.
+- Status: TESTING PENDING
+- Is recurring issue?: N
+- Should Test frontend/backend/both after fix?: Frontend
 
 **In progress Task List**: 
-None currently active.
+Task 1: Calendar Monthly View UI Upgrade
+- Where to resume: Linting and visually testing , then running the production build.
+- What will be achieved with this?: Better UX for the scheduling module.
+- Status: TESTING PENDING
+- Should Test frontend/backend/both after fix?: Frontend
+- Blocked on something: None.
 
 **Upcoming and Future Tasks**:
 - P1: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - P1: Export Calendar to  format for Google/Apple Calendar synchronization.
-- P2: Add dashboard charts/graphs for Admin (MRR month-over-month, signups last 30 days, Activation rate).
+- P2: Convert Job scope notes (copied from quotes) into a checkable checklist UI inside the Job Detail view.
+- P2: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - P2: Python script to consolidate/delete duplicate clients and users from the database.
-- P3: Refactor  into modular routers (File is >3900 lines).
+- P3: Refactor  into modular routers (File is ~4400 lines).
+- **Phase/Blocked**: Complete Google Business Profile integration (Blocked waiting for Google to approve the API access request, usually takes 7-10 days).
 
 **Completed work in this session**:
-- Landing Page NFC section updated with real physical card images (). (DONE)
-- Landing Page Hero Phone Mockup fully redesigned into an impressive fake dashboard showing stats, AI quote generation, bottom navigation, and larger typography. (DONE)
-- Pain points text on Landing Page updated (removed WhatsApp, emphasized Excel/Word/Paper/QuickBooks). (DONE)
-- Empezar prueba gratis text bug fixed for active trial users in . (DONE)
-- AI Translate/Polish to English button () integrated across all public fields in  and  using a new  endpoint. (DONE)
-- Onboarding checklist reduced from 4 steps to 3, prioritizing Create your first client. (DONE)
-- Client Profile () heavily redesigned with visual tabs (icons + counters), clickable contacts, a stats strip, and relocated Pedir reseña button. (DONE)
-- Photo upload moved from Client Profile to Individual Jobs () to enforce associating photos with a , which then automatically sync to the Client Profile gallery. (DONE)
-- 3-step Public Document Flow implemented: Clean Quote Page -> Accept redirects to auto-generated AI Service Agreement -> Sign Agreement redirects to Invoice. (DONE)
-- Background AI Agreement generation added: Triggered when Quote is marked Sent or when the client Opens the Quote link. Includes a race-condition lock to prevent duplicate agreements. (DONE)
+- Google Business Profile (GMB) API access requested via Google Cloud; basic backend boilerplate setup. (DONE)
+- Fixed incorrect draft invoice notification text in . (DONE)
+- Payment Ledger (Abonos): Added partial payments tracking, payment methods (Zelle, cash, check, etc.), and installment plans directly into Invoices. (DONE)
+- Stripe Integration (Option A): Allowed clients to pay invoices directly via Stripe Checkout, routing funds directly to the admin's Stripe account. (DONE)
+- Payment Requests (Papelitos de cobro): Created a system to generate payment links for specific amounts/installments to send to clients. (DONE)
+- Mobile UI Fix: Refactored the public invoice header to scale the business name properly and align the logo on mobile screens. (DONE)
+- Dashboard UX: Made the 4 main stat cards on the dashboard clickable, routing to their respective lists. (DONE)
+- Auto-Job Creation: System now automatically creates a Job (copying quote line items into notes) immediately when a client signs an agreement. (DONE)
+- Job Scheduling UI: Added an Agendar button to Jobs, allowing users to select start/end dates and times, which populates the calendar. (DONE)
+- Create Job shortcut button added to the Invoice view for users who skip the Quote phase. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 Issue 1: Duplicate DB records (Clients/Users)
-- Debug checklist: Search MongoDB  and  collections. AI Chat and seeding scripts previously caused duplication. Check if  uniqueness logic is robust.
-- Why to solve this issue and what will be achieved with this?: Prevents confusion in CRM and duplicate billing risks.
+- Debug checklist: Search MongoDB  and  collections. Check if  uniqueness logic is robust. Requires a deduplication script.
+- Why to solve this issue and what will be achieved with this?: Prevents CRM confusion.
 - Should Test frontend/backend/both after fix: Backend
 - Is recurring issue?: Y
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: Stale Frontend builds locally on the user's VPS.
-- Recurrence count: 5
-- Status: RESOLVED (via strict adherence to deployment rules)
-- Note: **CRITICAL DEPLOY RULE**: The user's VPS explicitly pulls the  folder from git. You MUST ALWAYS run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing ANY frontend UI task. If you don't do this, frontend changes will not reflect in production.
+- Issue recurrence in previous fork: Production 503 crashes due to missing dependencies.
+- Recurrence count: 1 (in this session with )
+- Status: RESOLVED
+- Note: **CRITICAL BACKEND DEPLOY RULE**: Production installs from , NOT . If you add a new Python dependency, you MUST add it to BOTH files, otherwise the production VPS will crash with a 503 error.
+- Note: **CRITICAL FRONTEND DEPLOY RULE**: You MUST ALWAYS run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing ANY frontend UI task.
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI, React Router.
-- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (>3900 lines).
-- AI Logic: Wrapped in  using Emergent LLM Key.
-- Deployments: Scripts  and  handle VPS deployments.
+- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (~4400 lines).
+- Payment Service:  handles Stripe subscriptions and invoice checkouts.
 
 **Key Technical Concepts**
-- AI document generation (Spanish input -> English output).
-- Pre-emptive background Async tasks for LLM generation ().
-- Live Stripe Integration (Webhooks).
-- Custom Sentiment Gating for Google Reviews.
+- Payment Ledger: Invoices now track an array of . The  and  are recalculated via .
+- Stripe Webhook Idempotency: Invoice checkouts are handled carefully alongside subscription webhooks to prevent data corruption.
 - Single unified public 3-step document flow (Quote -> Agreement -> Invoice).
 
 **key DB schema**
-- : {..., , }
-- : {uid=0(root) gid=0(root) groups=0(root), , , , , }
+- : {uid=0(root) gid=0(root) groups=0(root), , , , : [{monto, method, date, note}], : []}
 - : {uid=0(root) gid=0(root) groups=0(root), , , }
-- : {uid=0(root) gid=0(root) groups=0(root), , ,  (before/during/after), }
+- : {uid=0(root) gid=0(root) groups=0(root), , , , }
 
 **changes in tech stack**
-None.
+-  added to requirements (must be present in ).
 
 **All files of reference**
--  (New  translation AI).
--  (New Reusable UI component).
--  (Major Hero/NFC rewrites).
--  &  (UI layout logic and photo relationships).
--  (Contains background LLM hooks on the quote status endpoints).
--  &  (Public flow presentation).
+-  (Crucial deployment rules).
+-  (Currently edited, needs build).
+- 
+-  (Stripe checkout logic).
+-  & .
 
 **Areas that need refactoring**
--  is nearly 4000 lines long and severely needs refactoring into FastApi routers.
+-  is extremely large and needs FastAPI router separation.
 
 **key api endpoints**
-- : Converts Spanish text directly into polished professional English.
-- : Displays quote AND triggers background LLM agreement prep.
-- : Idempotent accept action; waits for async LLM generation if in progress.
-- : Uploads a photo; explicitly links to BOTH  and .
+- : Adds a manual payment to the ledger.
+- : Creates a payment link.
+- : Public portal to pay a specific payment request.
+- : Auto-creates a job directly from an invoice.
 
 **Critical Info for New Agent**
-- **User Preference (Testing)**: The user explicitly requested NOT to use the  for frontend verification (no pidas que el agente haga el test yo lo puedo hacer). Rely on manual testing (curl, python checks, screenshot tool).
-- **Frontend Builds**: Any UI change requires a production build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. with ) explicitly force-added to git (). This is non-negotiable.
-- **Production State**: The app is LIVE and processing payments. Do not alter existing Stripe or Webhook logic without extreme caution.
+- You must review . It contains hard rules about deployments.
+- The user deploys to their VPS using a Save to Github button in the chat UI, which triggers a webhook on their server.
+- The agent successfully completed a massive update to the payments and job architecture but left the final Calendar UI modification un-tested and un-built.
 
 **documents and test reports created in this job**
--  (Updated)
--  (Updated with new  credential since the old trial expired).
+-  (Created to prevent future 503 production crashes)
+- 
+- 
+- 
+- 
+- 
 
-**Last 10 User Messages and any pending HUMAN messages**
-1. (User) Agreed to implement the 3-step Quote->Agreement flow (¡Dale, me gusta!).
-2. (User) Asked why the quote in the provided screenshot was in Spanish and didn't show project details.
-3. (User) Agent explained that the screenshot was of the old behavior, and the new UI strictly shows English line items/scope.
-4. (User) Provided feedback that the Service Agreement generation took too long, asked to remove the short terms block from the Quote page, and asked why payment methods didn't show on the invoice.
-5. (User) Agent successfully handled the fixes (background agreement pre-generation on quote open/sent, removed short terms from UI, and explained that payment methods must be set up in settings).
-6. (User) [PENDING/LAST] hi sorry me fui a comer pudiras asegurarte que el build esta listo para subirlo
+**Last 10 User Messages and any pending HUMAN messages** 
+1. (User) Asked to make the Dashboard stat cards clickable.
+2. (Agent) Implemented clickable stat cards and tested.
+3. (User) Noticed Jobs aren't created when Quotes/Agreements are signed, only when paid. Asked to have Jobs auto-created with the calendar/schedule interface.
+4. (Agent) Implemented Auto-Job creation on signature and added the Agendar scheduling UI.
+5. (User) Asked for a Create Job shortcut button directly on Invoices for when they skip Quotes.
+6. (Agent) Implemented Crear Trabajo button on Invoices.
+7. (User) [PENDING/LAST] ok todo se ve bien solo por ejemplo que ya agende y estoy biendo el calendario y solo me salen unos puntitos, no se ve visualmetne mas atrativo en el que se ve calendario de 30 dias, porfa revisalo para aque se vea mejor..
 
-*Pending human action*: Reply to the user confirming that the build is completely up to date, successfully committed to git, and ready for them to deploy to production.
+*Pending Human Action:* The agent made the code change but hasn't finalized it. You need to visually test the Calendar, run the production build, commit it, and reply to the user (in Spanish) confirming the calendar has been upgraded to show text chips instead of dots.
 
 **Project Health Check:**
-Healthy.
+Healthy. No broken routes. 
 
 **3rd Party Integrations**
 - Stripe (Payments) — requires User API Key.
-- Resend / SMTP (Emails) — requires User API Key.
-- OpenAI GPT-5.2 — uses Emergent LLM Key. (Extensively used throughout the backend).
+- OpenAI GPT-5.2 — uses Emergent LLM Key.
+- Google Business Profile — Setup pending Google API approval.
 
 **Testing status**
-- Testing agent used after significant changes: NO (User requested not to use it).
+- Testing agent used after significant changes: NO (User prefers manual verification).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None this session.
+- Test files created: Yes (Multiple backend pytest files added).
 - Known regressions: None.
 
 **Credentials to test flow:**
@@ -131,12 +148,16 @@ Admin:  /
 Trial Test User:  / 
 
 **What agent forgot to execute**
-The agent confirmed the build state via bash but hasn't responded directly to the user's last message to give the final green light.
+The agent modified  but completely skipped the testing, the mandatory React production build step (yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.), and the final commit before finishing the session. 
 
 **Debugging checklist for current issue**
-Issue: Respond to user's deployment check.
+Issue: Calendar UI Update requires testing and build compilation.
 Frontend files to check: 
-- 
 Steps:
-1. Confirm the user's build is ready.
-2. Reply in Spanish telling the user that the build is verified, fully synced with the latest source code, and completely ready to be deployed to the VPS. Provide any additional brief instructions if necessary.</analysis>
+1. Run  to ensure the edit is syntactically sound.
+2. Run  on the calendar view to verify it looks attractive.
+3. Run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside .
+4. Run  and commit.
+5. Reply to the user in Spanish.</analysis>

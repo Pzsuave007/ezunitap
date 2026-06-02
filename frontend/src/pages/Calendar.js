@@ -374,15 +374,16 @@ function WeekView({ start, eventsByDate, onOpen, onPickDay }) {
   );
 }
 
-function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay }) {
+function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay, onOpen }) {
   const days = [];
   let d = rangeStart;
   while (d <= rangeEnd) { days.push(d); d = addDays(d, 1); }
   const [anchorY, anchorM] = anchor.split("-").map(Number);
   const today = todayISO();
+  const MAX_CHIPS = 3;
   return (
-    <Card className="card-elevated p-3 border-0 shadow-none">
-      <div className="grid grid-cols-7 gap-1 mb-1">
+    <Card className="card-elevated p-2 sm:p-3 border-0 shadow-none overflow-hidden">
+      <div className="grid grid-cols-7 gap-1 mb-1.5">
         {DAY_KEYS.map((k) => (
           <div key={k} className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 py-1">
             {DAY_LABELS_ES[k]}
@@ -395,27 +396,51 @@ function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay }) {
           const inMonth = y === anchorY && m === anchorM;
           const isToday = d === today;
           const list = eventsByDate[d] || [];
+          const isWeekend = (() => { const dt = new Date(y, m - 1, day); return dt.getDay() === 0 || dt.getDay() === 6; })();
           return (
-            <button
+            <div
               key={d}
               data-testid={`month-cell-${d}`}
               onClick={() => onPickDay(d)}
-              className={`aspect-square rounded-xl p-1 flex flex-col items-center justify-start gap-0.5 tap transition-all
-                ${inMonth ? "bg-white border border-slate-100" : "bg-slate-50/50 border border-transparent"}
-                ${isToday ? "ring-2 ring-blue-900 bg-blue-50" : ""}
-                ${list.length > 0 ? "hover:border-emerald-300" : ""}
+              className={`min-h-[72px] sm:min-h-[112px] rounded-xl p-1 sm:p-1.5 flex flex-col gap-1 cursor-pointer tap transition-all overflow-hidden
+                ${inMonth ? "bg-white border border-slate-100" : "bg-slate-50/60 border border-transparent"}
+                ${isToday ? "ring-2 ring-blue-900 bg-blue-50/60" : "hover:border-emerald-300 hover:shadow-sm"}
               `}
             >
-              <span className={`text-xs font-bold ${isToday ? "text-blue-900" : inMonth ? "text-slate-700" : "text-slate-300"}`}>{day}</span>
-              {list.length > 0 && (
-                <div className="flex flex-wrap gap-0.5 justify-center mt-auto">
-                  {list.slice(0, 3).map((e, i) => (
-                    <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLORS[e.status]?.dot || "#94A3B8" }} />
-                  ))}
-                  {list.length > 3 && <span className="text-[8px] text-slate-400 font-bold">+{list.length - 3}</span>}
-                </div>
-              )}
-            </button>
+              <div className="flex items-center justify-between">
+                <span
+                  className={`inline-flex items-center justify-center text-[11px] sm:text-xs font-bold rounded-full w-5 h-5 sm:w-6 sm:h-6
+                    ${isToday ? "bg-blue-900 text-white" : inMonth ? (isWeekend ? "text-slate-400" : "text-slate-700") : "text-slate-300"}`}
+                >
+                  {day}
+                </span>
+                {list.length > 0 && (
+                  <span className="text-[9px] font-bold text-slate-300 sm:hidden">{list.length}</span>
+                )}
+              </div>
+
+              <div className="flex-1 w-full space-y-0.5 overflow-hidden">
+                {list.slice(0, MAX_CHIPS).map((e, i) => {
+                  const c = STATUS_COLORS[e.status] || STATUS_COLORS.scheduled;
+                  return (
+                    <button
+                      key={`${e.job_id}-${i}`}
+                      onClick={(ev) => { ev.stopPropagation(); onOpen?.(e); }}
+                      title={e.title}
+                      className="block w-full truncate rounded-md px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold leading-tight text-left tap"
+                      style={{ background: c.bg, color: c.text }}
+                      data-testid={`month-chip-${e.job_id}-${d}`}
+                    >
+                      <span className="hidden sm:inline">{e.start_time && !e.all_day ? `${fmtTime(e.start_time).replace(":00", "")} ` : ""}</span>
+                      {e.title}
+                    </button>
+                  );
+                })}
+                {list.length > MAX_CHIPS && (
+                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 px-1">+{list.length - MAX_CHIPS} más</div>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>
