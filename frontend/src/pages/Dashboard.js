@@ -14,8 +14,15 @@ import SetupChecklist from "@/components/SetupChecklist";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
 
-const StatCard = ({ icon: Icon, label, value, accent, testid }) => (
-  <Card data-testid={testid} className="card-elevated p-4 lg:p-5 border-0 shadow-none">
+const StatCard = ({ icon: Icon, label, value, accent, testid, onClick }) => (
+  <Card
+    data-testid={testid}
+    onClick={onClick}
+    role={onClick ? "button" : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    className={`card-elevated p-4 lg:p-5 border-0 shadow-none transition ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0" : ""}`}
+  >
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
         <div className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.14em] lg:tracking-[0.18em] text-slate-500 leading-tight">{label}</div>
@@ -139,10 +146,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard testid="stat-clients" icon={Users} label="Clientes" value={stats.total_clients} accent="bg-blue-50 text-blue-900" />
-        <StatCard testid="stat-quotes" icon={FileText} label="Quotes Enviados" value={stats.quotes_sent} accent="bg-violet-50 text-violet-800" />
-        <StatCard testid="stat-invoices" icon={Receipt} label="Invoices Pendientes" value={stats.invoices_pending} accent="bg-amber-50 text-amber-800" />
-        <StatCard testid="stat-jobs" icon={Briefcase} label="Trabajos Activos" value={stats.active_jobs} accent="bg-emerald-50 text-emerald-800" />
+        <StatCard testid="stat-clients" icon={Users} label="Clientes" value={stats.total_clients} accent="bg-blue-50 text-blue-900" onClick={() => navigate("/clientes")} />
+        <StatCard testid="stat-quotes" icon={FileText} label="Quotes Enviados" value={stats.quotes_sent} accent="bg-violet-50 text-violet-800" onClick={() => navigate("/quotes")} />
+        <StatCard testid="stat-invoices" icon={Receipt} label="Invoices Pendientes" value={stats.invoices_pending} accent="bg-amber-50 text-amber-800" onClick={() => navigate("/invoices")} />
+        <StatCard testid="stat-jobs" icon={Briefcase} label="Trabajos Activos" value={stats.active_jobs} accent="bg-emerald-50 text-emerald-800" onClick={() => navigate("/trabajos")} />
       </div>
 
       <Card className="card-elevated p-5 border-0 shadow-none">
