@@ -5,6 +5,7 @@ Interface in Spanish, AI-generated client documents in English.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
 import os
@@ -640,7 +641,7 @@ async def update_quote(quote_id: str, payload: QuoteIn, user_id: str = Depends(g
 
 
 @api_router.post("/quotes/{quote_id}/status")
-async def set_quote_status(quote_id: str, status: str, user_id: str = Depends(get_current_user_id)):
+async def set_quote_status(quote_id: str, status: str, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
     valid = {"draft", "sent", "approved", "declined", "converted"}
     if status not in valid:
         raise HTTPException(400, "Status inválido")
@@ -649,30 +650,10 @@ async def set_quote_status(quote_id: str, status: str, user_id: str = Depends(ge
         {"$set": {"status": status, "updated_at": _now_iso()}},
     )
     doc = await db.quotes.find_one({"id": quote_id, "user_id": user_id}, {"_id": 0})
-    # Auto-create a Service Agreement when quote moves to "approved" (only once per quote)
-    if doc and status == "approved":
-        existing = await db.agreements.find_one(
-            {"user_id": user_id, "quote_id": quote_id}, {"_id": 0, "id": 1}
-        )
-        if not existing:
-            try:
-                desc_parts = [doc.get("job_title", "")]
-                if doc.get("description"):
-                    desc_parts.append(doc["description"])
-                if doc.get("scope_of_work"):
-                    desc_parts.append("Scope: " + "; ".join(doc["scope_of_work"]))
-                description_es = "\n".join([p for p in desc_parts if p])
-                await _build_agreement_from_quote_and_desc(
-                    user_id=user_id,
-                    client_id=doc["client_id"],
-                    quote_id=quote_id,
-                    description_es=description_es,
-                    total=float(doc.get("total") or 0),
-                    deposit=float(doc.get("deposit_amount") or 0),
-                )
-            except Exception as e:
-                logger.exception(f"Auto-agreement on quote approval failed: {e}")
-                # Don't break status update on AI failure
+    # Pre-generate the Service Agreement in the background as soon as the quote is
+    # sent (or approved) so it's ready instantly when the client accepts.
+    if doc and status in ("sent", "approved"):
+        background_tasks.add_task(_auto_create_agreement_from_quote, doc)
     return doc
 
 
@@ -717,12 +698,16 @@ async def convert_to_invoice(quote_id: str, user_id: str = Depends(get_current_u
 
 # Public share-link quote (no auth)
 @api_router.get("/public/quotes/{quote_id}")
-async def public_quote(quote_id: str):
+async def public_quote(quote_id: str, background_tasks: BackgroundTasks):
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
         raise HTTPException(404, "Not found")
     user = await db.users.find_one({"id": q["user_id"]}, {"_id": 0, "password_hash": 0})
     client_doc = await db.clients.find_one({"id": q["client_id"]}, {"_id": 0})
+    # Pre-generate the Service Agreement in the background the moment the client opens
+    # the quote — by the time they read it and click Accept, it's ready instantly.
+    if q.get("status") not in ("declined",):
+        background_tasks.add_task(_auto_create_agreement_from_quote, q)
     return {"quote": q, "business": user, "client": client_doc}
 
 
@@ -745,14 +730,31 @@ async def public_accept_quote(quote_id: str):
             {"$set": {"status": "approved", "approved_at": now_iso, "updated_at": now_iso}},
         )
 
-    # Find or create the linked service agreement (idempotent).
+    # Find or create the linked service agreement (idempotent + race-safe).
     existing = await db.agreements.find_one(
         {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
     )
     if existing:
         return {"ok": True, "agreement_id": existing["id"]}
 
-    # Build a rich Spanish description that includes the contractor's own terms so the
+    # If a background task (triggered on send/open) is already generating it, wait
+    # for it instead of creating a duplicate — usually it's already done by now.
+    claim = await db.quotes.find_one_and_update(
+        {"id": quote_id, "agreement_generating": {"$ne": True}},
+        {"$set": {"agreement_generating": True}},
+    )
+    if not claim:
+        for _ in range(30):
+            await asyncio.sleep(1)
+            doc = await db.agreements.find_one(
+                {"user_id": q["user_id"], "quote_id": quote_id}, {"_id": 0, "id": 1}
+            )
+            if doc:
+                return {"ok": True, "agreement_id": doc["id"]}
+        # Still not ready after waiting — claim it and generate ourselves.
+        await db.quotes.update_one({"id": quote_id}, {"$set": {"agreement_generating": True}})
+
+    # Build a rich Spanish description that includes any contractor terms so the
     # AI service agreement reflects exactly this project.
     desc_parts = [q.get("job_title", "")]
     if q.get("description"):
@@ -785,6 +787,8 @@ async def public_accept_quote(quote_id: str):
     except Exception as e:
         logger.exception(f"Sync agreement creation on accept failed for quote {quote_id}: {e}")
         raise HTTPException(500, "No se pudo preparar el acuerdo. Intenta de nuevo.")
+    finally:
+        await db.quotes.update_one({"id": quote_id}, {"$unset": {"agreement_generating": ""}})
 
     # Notify the contractor.
     try:
@@ -937,22 +941,37 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
 
 
 async def _auto_create_agreement_from_quote(quote: dict):
-    """Background task: builds the AI agreement after a quote is approved."""
+    """Background task: builds the AI agreement for a quote (idempotent + race-safe)."""
     try:
-        desc_parts = [quote.get("job_title", "")]
-        if quote.get("description"):
-            desc_parts.append(quote["description"])
-        if quote.get("scope_of_work"):
-            desc_parts.append("Scope: " + "; ".join(quote["scope_of_work"]))
-        description_es = "\n".join([p for p in desc_parts if p])
-        await _build_agreement_from_quote_and_desc(
-            user_id=quote["user_id"],
-            client_id=quote["client_id"],
-            quote_id=quote["id"],
-            description_es=description_es,
-            total=float(quote.get("total") or 0),
-            deposit=float(quote.get("deposit_amount") or 0),
+        existing = await db.agreements.find_one(
+            {"user_id": quote["user_id"], "quote_id": quote["id"]}, {"_id": 0, "id": 1}
         )
+        if existing:
+            return
+        # Atomic claim so two triggers (sent + open) can't generate duplicates.
+        claim = await db.quotes.find_one_and_update(
+            {"id": quote["id"], "agreement_generating": {"$ne": True}},
+            {"$set": {"agreement_generating": True}},
+        )
+        if not claim:
+            return  # another worker is already generating it
+        try:
+            desc_parts = [quote.get("job_title", "")]
+            if quote.get("description"):
+                desc_parts.append(quote["description"])
+            if quote.get("scope_of_work"):
+                desc_parts.append("Scope: " + "; ".join(quote["scope_of_work"]))
+            description_es = "\n".join([p for p in desc_parts if p])
+            await _build_agreement_from_quote_and_desc(
+                user_id=quote["user_id"],
+                client_id=quote["client_id"],
+                quote_id=quote["id"],
+                description_es=description_es,
+                total=float(quote.get("total") or 0),
+                deposit=float(quote.get("deposit_amount") or 0),
+            )
+        finally:
+            await db.quotes.update_one({"id": quote["id"]}, {"$unset": {"agreement_generating": ""}})
     except Exception as e:
         logger.exception(f"Background auto-agreement failed for quote {quote.get('id')}: {e}")
 

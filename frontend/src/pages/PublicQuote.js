@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Hammer, CheckCircle2, FileDown, Printer } from "lucide-react";
+import { Loader2, Hammer, CheckCircle2, FileDown, Printer, Sparkles } from "lucide-react";
 import { generateQuotePDF } from "@/lib/pdf";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -56,6 +56,21 @@ export default function PublicQuote() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 lg:p-10 print:p-0 print:bg-white">
+      {accepting && (
+        <div data-testid="preparing-agreement-overlay" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+              <Sparkles className="w-6 h-6 text-emerald-600 absolute inset-0 m-auto" />
+            </div>
+            <h3 className="font-heading text-xl font-bold text-slate-900">Preparing your agreement…</h3>
+            <p className="text-sm text-slate-500 mt-2">
+              We're creating your service agreement. This takes just a few seconds — please keep this page open.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-end gap-2 mb-4 print:hidden">
           <Button
