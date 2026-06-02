@@ -10,6 +10,7 @@ bcrypt
 passlib
 python-multipart
 requests
+httpx
 tzdata
 python-jose
 emergentintegrations==0.1.0

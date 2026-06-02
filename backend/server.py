@@ -3912,8 +3912,15 @@ async def root():
 # ============================================================================
 app.include_router(api_router)
 
-from gbp_routes import router as gbp_router  # noqa: E402
-app.include_router(gbp_router)
+# Optional Google Business Profile integration. Isolated so a missing optional
+# dependency (e.g. httpx) or any import error here can NEVER take down the core
+# app (login, payments, etc.). If it fails, we log and continue without it.
+try:
+    from gbp_routes import router as gbp_router  # noqa: E402
+
+    app.include_router(gbp_router)
+except Exception as _gbp_err:  # pragma: no cover
+    logger.error("Google Business Profile routes disabled (import failed): %s", _gbp_err)
 
 app.add_middleware(
     CORSMiddleware,
