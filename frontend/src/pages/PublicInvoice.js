@@ -3,13 +3,14 @@
  * Lets the client view, print, and download the PDF without needing an
  * account. Shows deposit + agreement terms if present.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Hammer, FileDown, Printer, MapPin, Phone, Mail } from "lucide-react";
+import { Loader2, Hammer, FileDown, Printer, MapPin, Phone, Mail, CreditCard, CheckCircle2 } from "lucide-react";
 import { generateInvoicePDF, listAgreementClauses } from "@/lib/pdf";
+import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -27,11 +28,41 @@ export default function PublicInvoice() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
 
-  useEffect(() => {
-    axios.get(`${API}/public/invoices/${id}`)
+  const fetchData = useCallback(() => {
+    return axios.get(`${API}/public/invoices/${id}`)
       .then((r) => setData(r.data))
       .catch(() => setErr(true));
   }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Returning from Stripe Checkout → poll status, then record + refresh.
+  useEffect(() => {
+    const sid = new URLSearchParams(window.location.search).get("session_id");
+    if (!sid) return;
+    let attempts = 0;
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const { data: st } = await axios.get(`${API}/public/invoices/checkout/status/${sid}`);
+        if (st.payment_status === "paid") {
+          toast.success("¡Pago recibido! Gracias. 🎉");
+          window.history.replaceState({}, "", window.location.pathname);
+          fetchData();
+          return;
+        }
+        if (st.status === "expired") {
+          toast.error("La sesión de pago expiró.");
+          window.history.replaceState({}, "", window.location.pathname);
+          return;
+        }
+      } catch { /* keep trying */ }
+      if (attempts < 6) setTimeout(poll, 2000);
+    };
+    poll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const download = () => {
     if (!data) return;
@@ -41,7 +72,7 @@ export default function PublicInvoice() {
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">Invoice not found.</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
-  const { invoice, business, client, payment_methods } = data;
+  const { invoice, business, client, payment_methods, card_payment } = data;
   const dep = Number(invoice.deposit_amount) || 0;
   const balance = Math.max(0, Number(invoice.total) - dep);
   const terms = invoice.agreement_terms;
@@ -199,6 +230,10 @@ export default function PublicInvoice() {
             )}
           </div>
         </Card>
+
+        {card_payment?.enabled && (
+          <StripeCardPay invoiceId={invoice.id} remaining={card_payment.remaining} />
+        )}
 
         <InvoicePayBlock
           invoice={invoice}
@@ -380,6 +415,53 @@ function InvoicePayBlock({ invoice, methods, business }) {
           </button>
         </div>
       )}
+    </Card>
+  );
+}
+
+// ============================================================================
+// StripeCardPay — prominent "Pay with card" button (owner-gated card payments).
+// Creates a Stripe Checkout Session and redirects the client to pay.
+// ============================================================================
+function StripeCardPay({ invoiceId, remaining }) {
+  const [loading, setLoading] = useState(false);
+  const amount = `$${(Number(remaining) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const pay = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.post(`${API}/public/invoices/${invoiceId}/checkout`, {
+        origin_url: window.location.origin,
+      });
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No URL");
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo iniciar el pago.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="card-elevated p-5 border-0 shadow-none mt-4 print:hidden" data-testid="stripe-card-pay">
+      <div className="flex items-center gap-2 mb-1">
+        <CreditCard className="w-5 h-5 text-indigo-600" />
+        <h3 className="font-heading font-bold text-base">Pay securely by card</h3>
+      </div>
+      <p className="text-xs text-slate-500 mb-4">
+        Pay {amount} with credit or debit card. Powered by Stripe — secure checkout.
+      </p>
+      <Button
+        onClick={pay}
+        disabled={loading}
+        className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base"
+        data-testid="stripe-pay-btn"
+      >
+        {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
+        Pay {amount} now
+      </Button>
     </Card>
   );
 }

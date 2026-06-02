@@ -1262,12 +1262,75 @@ async def public_invoice(invoice_id: str):
     # Surface the owner's payment methods so the public invoice page can
     # render pay-by-app buttons.
     payment_methods = (user or {}).get("payment_methods") or {}
+    remaining = round(max(0, float(inv.get("total") or 0) - float(inv.get("amount_paid") or 0)), 2)
+    card_payment = {
+        "enabled": bool(_stripe_collect_enabled_for(user) and remaining > 0 and inv.get("status") != "paid"),
+        "remaining": remaining,
+    }
     return {
         "invoice": inv,
         "business": user,
         "client": client_doc,
         "payment_methods": payment_methods,
+        "card_payment": card_payment,
     }
+
+
+class InvoiceCheckoutIn(BaseModel):
+    origin_url: str
+    plan_item_id: Optional[str] = None
+
+
+@api_router.post("/public/invoices/{invoice_id}/checkout")
+async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
+    """Create a Stripe Checkout Session so the client can pay an invoice by card.
+    The amount is computed server-side; card collection is gated to the owner."""
+    inv = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(404, "Invoice no encontrado")
+    owner = await db.users.find_one({"id": inv["user_id"]}, {"_id": 0})
+    if not _stripe_collect_enabled_for(owner):
+        raise HTTPException(403, "El cobro con tarjeta no está disponible para este negocio.")
+    total = float(inv.get("total") or 0)
+    paid = float(inv.get("amount_paid") or 0)
+    amount = round(max(0, total - paid), 2)
+    if payload.plan_item_id:
+        item = next((p for p in (inv.get("payment_plan") or []) if p.get("id") == payload.plan_item_id), None)
+        if item:
+            amount = round(float(item.get("amount") or 0), 2)
+    if amount <= 0:
+        raise HTTPException(400, "Este invoice ya está pagado por completo.")
+    origin = (payload.origin_url or "").rstrip("/")
+    if not origin.startswith("http"):
+        raise HTTPException(400, "origin_url inválido")
+    return await payments_service.create_invoice_checkout(db, inv, amount, origin)
+
+
+@api_router.get("/public/invoices/checkout/status/{session_id}")
+async def public_invoice_checkout_status(session_id: str):
+    """Poll a card payment. On first 'paid', records the abono on the invoice
+    ledger (idempotent via the payment_transactions.recorded flag)."""
+    result = await payments_service.get_invoice_checkout_status(db, session_id)
+    if result.get("payment_status") == "paid":
+        # Atomically claim this session so parallel polls record the abono once.
+        tx = await db.payment_transactions.find_one_and_update(
+            {"session_id": session_id, "type": "invoice_payment", "recorded": {"$ne": True}},
+            {"$set": {"recorded": True, "payment_status": "paid", "status": "complete"}},
+        )
+        if tx:
+            amount = round((tx.get("amount_cents") or 0) / 100, 2)
+            payment = {
+                "id": _new_id(),
+                "amount": amount,
+                "method": "card",
+                "date": _now_iso(),
+                "note": "Pago con tarjeta (Stripe)",
+                "plan_item_id": None,
+                "created_at": _now_iso(),
+            }
+            await db.invoices.update_one({"id": tx["invoice_id"]}, {"$push": {"payments": payment}})
+            await _recalc_invoice_payments(tx["invoice_id"], tx["user_id"])
+    return result
 
 
 # ============================================================================
@@ -2496,6 +2559,21 @@ class PlatformLeadUpdate(BaseModel):
 def _is_super_admin(user_doc: dict) -> bool:
     sa_email = (os.environ.get("SUPER_ADMIN_EMAIL", "") or "").strip().lower()
     return bool(sa_email) and user_doc.get("email", "").lower() == sa_email
+
+
+def _stripe_collect_enabled_for(user_doc: Optional[dict]) -> bool:
+    """Whether THIS invoice owner may collect card payments via the platform's
+    Stripe account. Gated to the platform owner (super admin) ONLY, so no other
+    tenant can route payments into the owner's Stripe. Optionally extendable via
+    STRIPE_COLLECT_EMAILS (comma-separated allowlist)."""
+    if not user_doc:
+        return False
+    if _is_super_admin(user_doc):
+        return True
+    allow = (os.environ.get("STRIPE_COLLECT_EMAILS", "") or "").lower()
+    emails = {e.strip() for e in allow.split(",") if e.strip()}
+    return (user_doc.get("email", "") or "").lower() in emails
+
 
 
 async def _require_super_admin(user_id: str = Depends(get_current_user_id)) -> dict:

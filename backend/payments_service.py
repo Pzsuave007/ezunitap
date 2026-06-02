@@ -472,6 +472,12 @@ async def handle_webhook_event(db, payload: bytes, sig_header: str) -> dict:
             data_obj["id"] if isinstance(data_obj, dict) else data_obj.id,
             expand=["subscription", "customer"],
         )
+        # Invoice card payments are one-time charges (NOT subscriptions). Handle
+        # them separately and bail out BEFORE the subscription logic, so they
+        # never corrupt a user's subscription state.
+        if _md(session, "type") == "invoice_payment":
+            await _record_invoice_card_payment(db, session)
+            return {"received": True, "type": event_type, "handled": "invoice_payment"}
         sub = session.subscription
         await _apply_subscription_to_user(db, session, sub)
         await db.payment_transactions.update_one(
@@ -572,3 +578,144 @@ def has_paid_subscription(user: dict) -> bool:
         return True
     # Real paying users — trialing IS paying (Stripe holds card on file).
     return user.get("subscription_status") in ("active", "trialing", "past_due")
+
+
+
+# ============================================================================
+# INVOICE CARD PAYMENTS — one-time Checkout Sessions to collect client payments
+# (Option A: uses the platform's own Stripe account; gated to the owner only by
+#  the caller in server.py). Kept separate from the subscription webhook flow.
+# ============================================================================
+async def create_invoice_checkout(db, invoice: dict, amount: float, origin_url: str) -> dict:
+    """Create a one-time Stripe Checkout Session for an invoice balance.
+
+    `amount` is computed server-side (never trusted from the client). Returns
+    {session_id, url}. Records a pending payment_transactions entry.
+    """
+    from datetime import datetime, timezone
+
+    inv_id = invoice["id"]
+    amount_cents = int(round(float(amount) * 100))
+    number = (invoice.get("number") or "").strip()
+    title = (invoice.get("job_title") or "Invoice").strip()[:90]
+    success_url = f"{origin_url}/p/invoice/{inv_id}?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/p/invoice/{inv_id}"
+
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": f"{title}" + (f" — Invoice {number}" if number else "")},
+                "unit_amount": amount_cents,
+            },
+            "quantity": 1,
+        }],
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "type": "invoice_payment",
+            "invoice_id": inv_id,
+            "user_id": invoice["user_id"],
+            "app": "unitap",
+        },
+    )
+
+    await db.payment_transactions.insert_one({
+        "id": session.id,
+        "session_id": session.id,
+        "type": "invoice_payment",
+        "invoice_id": inv_id,
+        "user_id": invoice["user_id"],
+        "amount_cents": amount_cents,
+        "currency": "usd",
+        "status": "initiated",
+        "payment_status": "pending",
+        "recorded": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "metadata": {"invoice_id": inv_id, "type": "invoice_payment"},
+    })
+
+    return {"session_id": session.id, "url": session.url}
+
+
+async def get_invoice_checkout_status(db, session_id: str) -> dict:
+    """Poll a one-time invoice Checkout Session. Returns payment_status/status/amount."""
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except stripe.error.InvalidRequestError as e:
+        if getattr(e, "code", None) == "resource_missing":
+            local = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+            if not local:
+                raise
+            return {
+                "payment_status": local.get("payment_status", "pending"),
+                "status": local.get("status", "pending"),
+                "amount_total": (local.get("amount_cents") or 0) / 100,
+                "source": "local_fallback",
+            }
+        raise
+
+    def _g(obj, key, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    return {
+        "payment_status": _g(session, "payment_status", "unpaid"),
+        "status": _g(session, "status", "open"),
+        "amount_total": (_g(session, "amount_total", 0) or 0) / 100,
+    }
+
+
+
+async def _record_invoice_card_payment(db, session) -> bool:
+    """Idempotently record a completed card payment as an abono on the invoice.
+
+    Used by the webhook (backup path). The frontend polling endpoint in
+    server.py records via the full ledger recalc. Both claim the
+    payment_transactions.recorded flag atomically, so the abono is added once.
+    Returns True if THIS call recorded it.
+    """
+    from datetime import datetime, timezone
+
+    session_id = session.id if hasattr(session, "id") else session.get("id")
+    invoice_id = _md(session, "invoice_id")
+    if not invoice_id:
+        return False
+
+    tx = await db.payment_transactions.find_one_and_update(
+        {"session_id": session_id, "type": "invoice_payment", "recorded": {"$ne": True}},
+        {"$set": {"recorded": True, "payment_status": "paid", "status": "complete"}},
+    )
+    if not tx:
+        return False
+
+    amount = round((tx.get("amount_cents") or 0) / 100, 2)
+    now = datetime.now(timezone.utc).isoformat()
+    payment = {
+        "id": __import__("uuid").uuid4().hex,
+        "amount": amount,
+        "method": "card",
+        "date": now,
+        "note": "Pago con tarjeta (Stripe)",
+        "plan_item_id": None,
+        "created_at": now,
+    }
+    await db.invoices.update_one({"id": invoice_id}, {"$push": {"payments": payment}})
+
+    # Self-contained recompute (no auto-job here; the polling path handles that).
+    inv = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if inv:
+        total = float(inv.get("total") or 0)
+        paid = round(sum(float(p.get("amount") or 0) for p in inv.get("payments", [])), 2)
+        new_status = inv.get("status")
+        if total > 0 and paid >= total:
+            new_status = "paid"
+        elif paid > 0:
+            new_status = "partial"
+        await db.invoices.update_one(
+            {"id": invoice_id},
+            {"$set": {"amount_paid": paid, "status": new_status, "updated_at": now}},
+        )
+    return True
