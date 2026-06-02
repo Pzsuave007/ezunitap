@@ -3912,6 +3912,9 @@ async def root():
 # ============================================================================
 app.include_router(api_router)
 
+from gbp_routes import router as gbp_router  # noqa: E402
+app.include_router(gbp_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

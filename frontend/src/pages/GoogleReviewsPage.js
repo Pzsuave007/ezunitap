@@ -10,6 +10,7 @@ import { Loader2, Star, MessageSquareWarning, Inbox, Phone, Mail } from "lucide-
 import { toast } from "sonner";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import ReviewLinkCard from "@/components/ReviewLinkCard";
+import GbpConnectCard from "@/components/GbpConnectCard";
 
 const SENT_META = {
   neutral: { emoji: "😐", label: "Neutral",   cls: "bg-amber-50 text-amber-900 border-amber-200" },
@@ -61,6 +62,9 @@ export default function GoogleReviewsPage() {
 
       {/* Public review link — share it everywhere */}
       <ReviewLinkCard />
+
+      {/* Connect Google Business Profile → post + reply to reviews directly */}
+      <GbpConnectCard />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
