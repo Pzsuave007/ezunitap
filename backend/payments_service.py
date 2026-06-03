@@ -121,6 +121,51 @@ def get_plan(plan_id: str) -> Optional[dict]:
     return PLANS.get(plan_id)
 
 
+# Price for each ADDITIONAL digital card (the base plan already includes 1).
+# Keyed by billing interval so monthly plans bill monthly and yearly plans yearly.
+EXTRA_CARD_PRICE_CENTS = {
+    "month": 1500,   # $15.00 / month per extra card
+    "year": 15000,   # $150.00 / year per extra card (~2 months free)
+}
+
+
+def extra_card_display_price(interval: str) -> str:
+    cents = EXTRA_CARD_PRICE_CENTS.get(interval, 1500)
+    return f"${cents // 100}"
+
+
+async def ensure_extra_card_price(db, interval: str) -> str:
+    """Return a reusable Stripe Price id for the extra-card add-on at the given
+    interval, creating the Product/Price once and caching it in app_config."""
+    config = await db.app_config.find_one({"key": "stripe_extra_card_prices"})
+    cache: dict = (config or {}).get("data") or {}
+    if cache.get(interval, {}).get("price_id"):
+        return cache[interval]["price_id"]
+    product = stripe.Product.create(
+        name="Unitap — Tarjeta digital adicional",
+        description="Tarjeta digital inteligente adicional para tu equipo",
+        metadata={"app": "unitap", "kind": "extra_card", "interval": interval},
+    )
+    price = stripe.Price.create(
+        product=product.id,
+        unit_amount=EXTRA_CARD_PRICE_CENTS.get(interval, 1500),
+        currency="usd",
+        recurring={"interval": interval, "interval_count": 1},
+        metadata={"app": "unitap", "kind": "extra_card"},
+    )
+    cache[interval] = {"product_id": product.id, "price_id": price.id}
+    await db.app_config.update_one(
+        {"key": "stripe_extra_card_prices"},
+        {"$set": {"key": "stripe_extra_card_prices", "data": cache}},
+        upsert=True,
+    )
+    return price.id
+
+
+def _extra_card_price_ids(cache: dict) -> set:
+    return {v.get("price_id") for v in (cache or {}).values() if v.get("price_id")}
+
+
 async def ensure_stripe_prices(db) -> dict:
     """Create Stripe products + recurring prices for each plan if missing.
 
@@ -186,8 +231,13 @@ async def create_checkout_session(
     plan_id: str,
     success_url: str,
     cancel_url: str,
+    num_cards: int = 1,
 ) -> dict:
     """Create a Stripe Checkout Session for a subscription with 14-day trial.
+
+    `num_cards` is the total number of digital cards the user wants. The base
+    plan includes 1; each extra card is billed as an additional recurring line
+    item in the SAME subscription, so the customer sees one combined charge.
 
     Card is REQUIRED at signup (Stripe requires it for trials). After 14 days,
     Stripe auto-charges the card unless the user cancels via the Customer
@@ -201,6 +251,9 @@ async def create_checkout_session(
     plan = get_plan(plan_id)
     if not plan:
         raise ValueError(f"Unknown plan_id: {plan_id}")
+
+    num_cards = max(1, int(num_cards or 1))
+    extra_cards = num_cards - 1
 
     line_items = [{
         "price_data": {
@@ -218,6 +271,12 @@ async def create_checkout_session(
         "quantity": 1,
     }]
 
+    # Add the extra-card add-on as a reusable priced item (so we can later bump
+    # the quantity for an existing subscriber).
+    if extra_cards > 0:
+        extra_price_id = await ensure_extra_card_price(db, plan["interval"])
+        line_items.append({"price": extra_price_id, "quantity": extra_cards})
+
     session = stripe.checkout.Session.create(
         mode="subscription",
         customer_email=user["email"],
@@ -227,6 +286,7 @@ async def create_checkout_session(
             "metadata": {
                 "user_id": user["id"],
                 "plan_id": plan_id,
+                "num_cards": str(num_cards),
                 "app": "unitap",
             },
         },
@@ -245,6 +305,7 @@ async def create_checkout_session(
         metadata={
             "user_id": user["id"],
             "plan_id": plan_id,
+            "num_cards": str(num_cards),
             "app": "unitap",
         },
     )
@@ -257,13 +318,14 @@ async def create_checkout_session(
             "user_id": user["id"],
             "user_email": user["email"],
             "plan_id": plan_id,
-            "amount_cents": plan["amount_cents"],
+            "num_cards": num_cards,
+            "amount_cents": plan["amount_cents"] + extra_cards * EXTRA_CARD_PRICE_CENTS.get(plan["interval"], 1500),
             "currency": plan["currency"],
             "status": "initiated",
             "payment_status": "pending",
             "stripe_customer_id": None,
             "created_at": session.created,
-            "metadata": {"plan_id": plan_id, "user_id": user["id"]},
+            "metadata": {"plan_id": plan_id, "user_id": user["id"], "num_cards": num_cards},
         }
     )
 
@@ -358,6 +420,13 @@ async def _apply_subscription_to_user(db, session, subscription) -> None:
             subscription.status if subscription and not isinstance(subscription, str) else "active"
         ),
     }
+    # Number of cards chosen at checkout → drives the account's card limit.
+    num_cards = _md(session, "num_cards")
+    if num_cards:
+        try:
+            update["card_limit"] = max(1, int(num_cards))
+        except (TypeError, ValueError):
+            pass
     # Persist stripe_customer_id so the Customer Portal can open later.
     try:
         customer = session.customer if not isinstance(session, dict) else session.get("customer")
@@ -547,6 +616,63 @@ async def create_portal_session(db, user: dict, return_url: str) -> dict:
         return_url=return_url,
     )
     return {"url": portal.url}
+
+
+async def set_subscription_card_seats(db, user: dict, total_cards: int) -> dict:
+    """Set the TOTAL number of cards on an existing subscriber's plan by adjusting
+    the extra-card add-on quantity (total - 1). Stripe prorates the change onto
+    the next invoice (default proration). Returns {ok, total_cards, extra}.
+
+    Used when an existing customer wants to add/remove a paid card later.
+    """
+    sub_id = user.get("stripe_subscription_id")
+    if not sub_id:
+        raise ValueError("El usuario no tiene una suscripción activa de Stripe")
+    total_cards = max(1, int(total_cards))
+    extra = total_cards - 1
+
+    plan = get_plan(user.get("plan_type") or "pro_monthly") or PLANS["pro_monthly"]
+    interval = plan["interval"]
+    extra_price_id = await ensure_extra_card_price(db, interval)
+
+    sub = stripe.Subscription.retrieve(sub_id, expand=["items"])
+    items = sub["items"]["data"] if isinstance(sub, dict) else sub.items.data
+
+    config = await db.app_config.find_one({"key": "stripe_extra_card_prices"})
+    extra_ids = _extra_card_price_ids((config or {}).get("data") or {})
+
+    existing_item = None
+    for it in items:
+        price = it["price"] if isinstance(it, dict) else it.price
+        pid = price["id"] if isinstance(price, dict) else price.id
+        if pid in extra_ids or pid == extra_price_id:
+            existing_item = it
+            break
+
+    item_id = (existing_item["id"] if isinstance(existing_item, dict) else existing_item.id) if existing_item else None
+
+    if extra <= 0:
+        if item_id:
+            stripe.Subscription.modify(
+                sub_id,
+                items=[{"id": item_id, "deleted": True}],
+                proration_behavior="create_prorations",
+            )
+    elif item_id:
+        stripe.Subscription.modify(
+            sub_id,
+            items=[{"id": item_id, "quantity": extra}],
+            proration_behavior="create_prorations",
+        )
+    else:
+        stripe.Subscription.modify(
+            sub_id,
+            items=[{"price": extra_price_id, "quantity": extra}],
+            proration_behavior="create_prorations",
+        )
+
+    await db.users.update_one({"id": user["id"]}, {"$set": {"card_limit": total_cards}})
+    return {"ok": True, "total_cards": total_cards, "extra": extra}
 
 
 def subscription_is_active(user: dict) -> bool:

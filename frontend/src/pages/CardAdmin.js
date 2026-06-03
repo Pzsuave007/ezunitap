@@ -58,15 +58,35 @@ export default function CardAdmin() {
   const [analytics, setAnalytics] = useState({ totals: {}, all_events: 0, leads: 0, reviews: 0 });
   const [reviews, setReviews] = useState([]);
   const [leads, setLeads] = useState([]);
+  // Multi-card state
+  const [cards, setCards] = useState([]);
+  const [activeCardId, setActiveCardId] = useState(null);
+  const [cardMeta, setCardMeta] = useState({ limit: 1, count: 0, can_add: false });
+  const [creating, setCreating] = useState(false);
   const { user } = useAuth();
 
   const baseUrl = window.location.origin;
   const publicUrl = card ? `${baseUrl}/c/${card.slug}` : "";
 
-  const load = async () => {
+  const loadCards = async () => {
+    const { data } = await api.get("/card/list");
+    setCards(data.cards || []);
+    setCardMeta({ limit: data.limit, count: data.count, can_add: data.can_add });
+    return data.cards || [];
+  };
+
+  const load = async (cardId = activeCardId) => {
+    const list = await loadCards();
+    // Pick the active card: keep current if still exists, else primary.
+    let id = cardId;
+    if (!id || !list.find((c) => c.id === id)) {
+      id = (list.find((c) => c.is_primary) || list[0] || {}).id;
+    }
+    setActiveCardId(id);
+    const q = id ? `?card_id=${id}` : "";
     const [c, a, r, l] = await Promise.all([
-      api.get("/card/settings"),
-      api.get("/card/analytics"),
+      api.get(`/card/settings${q}`),
+      api.get(`/card/analytics${q}`),
       api.get("/card/reviews"),
       api.get("/card/leads"),
     ]);
@@ -75,15 +95,45 @@ export default function CardAdmin() {
     setReviews(r.data);
     setLeads(l.data);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const switchCard = async (id) => {
+    setActiveCardId(id);
+    setCard(null);
+    await load(id);
+  };
+
+  const createCard = async () => {
+    setCreating(true);
+    try {
+      const { data } = await api.post("/card", { label: "Nueva tarjeta", person_name: "" });
+      toast.success("Tarjeta creada");
+      await load(data.id);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "No se pudo crear la tarjeta");
+    } finally { setCreating(false); }
+  };
+
+  const deleteCard = async () => {
+    if (!card || card.is_primary) return;
+    if (!window.confirm(`¿Eliminar la tarjeta "${card.label || card.slug}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/card/${card.id}`);
+      toast.success("Tarjeta eliminada");
+      await load(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error al eliminar");
+    }
+  };
 
   const update = (k, v) => setCard({ ...card, [k]: v });
 
   const save = async () => {
     setSaving(true);
     try {
-      const { data } = await api.put("/card/settings", card);
+      const { data } = await api.put(`/card/settings?card_id=${card.id}`, card);
       setCard(data);
+      await loadCards();
       toast.success("Tarjeta actualizada");
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error");
@@ -136,6 +186,46 @@ export default function CardAdmin() {
         <TourButton tourKey="card" />
       </div>
 
+      {/* Multi-card selector */}
+      <Card className="card-elevated p-3 border-0 shadow-none" data-testid="card-selector">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Tus tarjetas ({cardMeta.count}/{cardMeta.limit})
+          </div>
+          <Button
+            onClick={createCard}
+            disabled={creating || !cardMeta.can_add}
+            data-testid="card-new-btn"
+            size="sm"
+            className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-9"
+            title={cardMeta.can_add ? "Crear nueva tarjeta" : "Alcanzaste tu límite de tarjetas"}
+          >
+            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Nueva</>}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {cards.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => switchCard(c.id)}
+              data-testid={`card-chip-${c.id}`}
+              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border tap transition-all ${
+                c.id === activeCardId ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
+            >
+              <IdCard className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-semibold text-slate-800 whitespace-nowrap">{c.label}</span>
+              {c.is_primary && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Principal</span>}
+            </button>
+          ))}
+        </div>
+        {!cardMeta.can_add && (
+          <p className="text-[11px] text-slate-400 mt-2">
+            Llegaste a tu límite de {cardMeta.limit} tarjeta{cardMeta.limit !== 1 ? "s" : ""}. Agrega más tarjetas a tu plan para tu equipo (+$15/mes c/u).
+          </p>
+        )}
+      </Card>
+
       {/* Quick share strip */}
       <Card className="card-elevated p-4 border-0 shadow-none">
         <div className="flex items-center gap-3 mb-3">
@@ -165,6 +255,43 @@ export default function CardAdmin() {
         </TabsList>
 
         <TabsContent value="design" className="mt-4 space-y-3">
+          {/* Per-card person info */}
+          <Card className="card-elevated p-5 border-0 shadow-none space-y-3" data-testid="card-person-section">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-heading font-bold text-base">Persona de esta tarjeta</h3>
+              {!card.is_primary && (
+                <Button onClick={deleteCard} data-testid="card-delete-btn" variant="outline" size="sm" className="h-9 rounded-lg text-red-600 border-red-200">
+                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400 -mt-1">
+              {card.is_primary
+                ? "Esta es tu tarjeta principal. Aquí editas la info de la compañía (website, redes, servicios) que se comparte con TODAS tus tarjetas."
+                : "Personaliza el nombre, foto y contacto de esta persona. La info de la compañía (nombre, website, redes, fotos de trabajos) se comparte desde tu Tarjeta Principal."}
+            </p>
+            <div>
+              <Label>Nombre interno de la tarjeta</Label>
+              <Input data-testid="card-label" value={card.label || ""} onChange={(e) => update("label", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Vendedor Juan" />
+              <p className="text-[11px] text-slate-400 mt-1">Solo tú lo ves, para identificar la tarjeta.</p>
+            </div>
+            <div>
+              <Label>Nombre que se muestra al cliente</Label>
+              <Input data-testid="card-person-name" value={card.person_name || ""} onChange={(e) => update("person_name", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Juan Pérez" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Teléfono de esta persona</Label>
+                <Input data-testid="card-contact-phone" value={card.contact_phone || ""} onChange={(e) => update("contact_phone", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+1 305 555 1234" />
+              </div>
+              <div>
+                <Label>Email de esta persona</Label>
+                <Input data-testid="card-contact-email" value={card.contact_email || ""} onChange={(e) => update("contact_email", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="juan@empresa.com" />
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400">Si lo dejas vacío, se usa el teléfono/email del negocio. Los leads siempre caen en la misma cuenta.</p>
+          </Card>
+
           <IndustryTemplatePicker card={card} onApply={async (tpl) => {
             const payload = {
               brand_color: tpl.brand,
@@ -173,7 +300,7 @@ export default function CardAdmin() {
             };
             if (tpl.business_type && !card.business_type) payload.business_type = tpl.business_type;
             try {
-              const { data } = await api.put("/card/settings", payload);
+              const { data } = await api.put(`/card/settings?card_id=${card.id}`, payload);
               setCard(data);
               toast.success(`Plantilla "${tpl.label}" aplicada`, {
                 description: tpl.hint,
@@ -530,9 +657,16 @@ export default function CardAdmin() {
                         <div className="font-semibold text-sm truncate">{l.name}</div>
                         <div className="text-xs text-slate-500">{l.phone || l.email}</div>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                        {l.source || "form"}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {l.card_label && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" title="Tarjeta de origen" data-testid={`lead-source-${l.id}`}>
+                            {l.card_label}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                          {l.source || "form"}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-xs text-slate-600 mt-1 line-clamp-2">{l.description}</p>
                   </div>
@@ -963,7 +1097,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      await api.post(config.endpoint, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      await api.post(`${config.endpoint}?card_id=${card.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success(`${config.title} subido`);
       onChange();
     } catch (err) {
@@ -976,7 +1110,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
 
   const remove = async () => {
     if (!window.confirm(`¿Quitar ${config.title.toLowerCase()}?`)) return;
-    await api.delete(config.endpoint);
+    await api.delete(`${config.endpoint}?card_id=${card.id}`);
     toast.success("Removido");
     onChange();
   };

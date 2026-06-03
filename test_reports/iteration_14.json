@@ -1,0 +1,37 @@
+{
+  "summary": "End-to-end testing of the new MULTI-CARD per-account feature (Tarjeta Digital). Backend: 11/11 pytest cases pass — list, admin card-limit override, create with limit enforcement (403 Spanish), per-card settings GET/PUT (with card_id query param), shared company-field inheritance, public display person overrides, lead consolidation with card_label annotation, primary-delete protection, and Stripe checkout with num_cards=1 and num_cards=2 (real cs_test_ sessions returned). Frontend: All required data-testids exist and the three target screens render correctly — /tarjeta shows 'Tus tarjetas (1/3)' selector with chips + enabled Nueva button + full Persona section; /precios card-quantity-selector increments correctly and shows the +$15/mes note in Spanish; /admin → Cuentas → Usuarios shows 23 card-limit-{userId} buttons each rendering the user's current card_limit.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin → Cuentas → Usuarios row", "issues": ["The card-limit-{userId} button only renders an IdCard icon + the numeric limit (e.g. '1'). The review spec said the visible label should be 'Tarjetas: N'. The number is correct and the title tooltip 'Tarjetas digitales permitidas' explains it, but the literal text 'Tarjetas:' is absent. Cosmetic only — function works, prompt() opens and POSTs to /api/admin/users/{id}/card-limit."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_multi_card.py",
+    "/app/test_reports/pytest/multi_card_results.xml"
+  ],
+  "action_items": [
+    "Optional: change the admin card-limit button label from '<icon> {N}' to '<icon> Tarjetas: {N}' for clarity to match the review spec (AdminAccounts.js line ~621)."
+  ],
+  "critical_code_review_comments": [
+    "POST /api/card uses Pydantic CardSettingsIn which (per existing code) may carry many optional fields; the endpoint correctly only copies SHARED_CARD_FIELDS from the primary and ignores other defaults — verified by the test that inherited website/services/business_type only.",
+    "PUT /api/card/settings uses model_dump(exclude_unset=True) which is the correct PATCH semantics — only sent fields are mutated, preventing accidental wipes when the FE only sends the person fields. Good.",
+    "GET /api/card/leads correctly tags every lead with card_label by building a map; verified the salesperson card's lead surfaces under the admin account with the right label.",
+    "Public endpoint /api/public/card/{slug} correctly overlays primary SHARED_CARD_FIELDS onto non-primary cards (website, services, etc.) and falls back gracefully for owner_name / phone / email when the per-card person fields are blank.",
+    "Stripe checkout passes num_cards through to payments_service.create_checkout_session and both num_cards=1 and num_cards=2 produce a cs_test_ session URL — verified that no 500 is raised and ensure_extra_card_price code path works.",
+    "DELETE /api/card/{id} blocks deleting the primary card with 400. Confirmed.",
+    "Note: After this test run the admin account's card_limit remains at 3 (per review instructions 'fine to leave raised'). The transient TEST_ second/third cards were deleted; one TEST_ lead, client, and job remain under the admin account (created by the public lead test). Net DB delta is small but if a future test wants a clean slate it should also delete the TEST_ docs from card_leads / clients / jobs collections."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_multi_card.py (new — 11 pytest cases)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all critical testids verified)"},
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super-admin, is_comp, smart_card_unlocked).",
+  "seed_data_creation": "Per test run: creates two TEST_ cards (deleted at end), one TEST_ lead + auto-created client + job under the admin account (not deleted by the test — minor residual). admin user's card_limit was raised from 1 → 3 and intentionally left at 3.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Reusable suite: pytest /app/backend/tests/test_multi_card.py (≈4s). Each run creates throw-away cs_test_ Stripe sessions and one TEST_ public lead under the admin account. To reset admin card_limit to 1 in mongosh: db.users.updateOne({email:'pzsuave007@gmail.com'},{$set:{card_limit:1}}). To purge TEST_ leads/clients/jobs: filter by name starting with 'TEST_'.",
+  "rca_of_the_issue": "No bugs found in the multi-card feature. Backend and frontend behave exactly as specified."
+}

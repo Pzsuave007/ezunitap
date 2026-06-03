@@ -43,6 +43,8 @@ export default function Pricing() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(null);
+  const [numCards, setNumCards] = useState(1);
+  const EXTRA_CARD_MONTHLY = 15;
 
   useEffect(() => {
     if (params.get("cancelled")) {
@@ -71,6 +73,7 @@ export default function Pricing() {
       const { data } = await api.post("/payments/checkout", {
         plan_id: planId,
         origin_url: window.location.origin,
+        num_cards: numCards,
       });
       window.location.href = data.url;
     } catch (e) {
@@ -106,6 +109,46 @@ export default function Pricing() {
           tarjeta NFC física se envía una vez que se activa la suscripción.
         </p>
       </div>
+
+      {/* Card quantity selector */}
+      <Card className="p-5 rounded-2xl border-slate-200" data-testid="card-quantity-selector">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <div className="font-heading font-bold text-lg">¿Cuántas tarjetas digitales quieres?</div>
+            <p className="text-sm text-slate-500 mt-1">
+              Tu plan incluye <strong>1 tarjeta</strong>. Cada tarjeta adicional para tu equipo cuesta <strong>+${EXTRA_CARD_MONTHLY}/mes</strong>. Todos los leads caen en la misma cuenta.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNumCards((n) => Math.max(1, n - 1))}
+              disabled={numCards <= 1}
+              data-testid="cards-decrement"
+              className="h-11 w-11 rounded-xl text-xl p-0"
+            >
+              −
+            </Button>
+            <span className="font-heading text-2xl font-bold w-10 text-center tabular-nums" data-testid="cards-count">{numCards}</span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNumCards((n) => Math.min(20, n + 1))}
+              disabled={numCards >= 20}
+              data-testid="cards-increment"
+              className="h-11 w-11 rounded-xl text-xl p-0"
+            >
+              +
+            </Button>
+          </div>
+        </div>
+        {numCards > 1 && (
+          <div className="mt-3 text-sm text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2 font-semibold" data-testid="extra-cards-note">
+            {numCards - 1} tarjeta{numCards - 1 !== 1 ? "s" : ""} adicional{numCards - 1 !== 1 ? "es" : ""} · +${(numCards - 1) * EXTRA_CARD_MONTHLY}/mes (en planes anuales se prorratea por año)
+          </div>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {plans.map((plan) => {

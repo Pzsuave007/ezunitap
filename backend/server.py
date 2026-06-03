@@ -101,6 +101,7 @@ class BusinessUpdate(BaseModel):
 class CheckoutCreateIn(BaseModel):
     plan_id: str
     origin_url: str
+    num_cards: int = 1
 
 
 class ClientIn(BaseModel):
@@ -275,6 +276,11 @@ class CardService(BaseModel):
 
 class CardSettingsIn(BaseModel):
     slug: Optional[str] = None  # public URL slug; auto-generated if missing
+    # Multi-card: owner-facing internal name + the person shown on this card.
+    label: Optional[str] = None  # e.g. "Tarjeta Principal", "Vendedor Juan"
+    person_name: Optional[str] = None  # name displayed on the public card
+    contact_phone: Optional[str] = None  # this person's direct phone (overrides business phone)
+    contact_email: Optional[str] = None  # this person's direct email (overrides business email)
     tagline: Optional[str] = ""  # e.g., "Trusted Roofing Experts"
     business_type: Optional[str] = ""  # e.g., "Roofing"
     service_area: Optional[str] = ""  # e.g., "Houston, TX and surrounding areas"
@@ -2218,10 +2224,19 @@ def _slugify(text: str) -> str:
 
 
 async def _ensure_card(user_id: str) -> dict:
-    """Return the user's card settings, creating defaults if absent."""
-    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0})
+    """Return the user's PRIMARY card settings, creating defaults if absent."""
+    card = await db.cards.find_one({"user_id": user_id, "is_primary": True}, {"_id": 0})
     if card:
         return card
+    # Back-compat: a pre-multicard account may have a card without is_primary.
+    legacy = await db.cards.find_one({"user_id": user_id}, {"_id": 0})
+    if legacy:
+        await db.cards.update_one({"id": legacy["id"]}, {"$set": {"is_primary": True}})
+        legacy["is_primary"] = True
+        if not legacy.get("label"):
+            await db.cards.update_one({"id": legacy["id"]}, {"$set": {"label": "Tarjeta Principal"}})
+            legacy["label"] = "Tarjeta Principal"
+        return legacy
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     base_slug = _slugify(user.get("business_name", "") or user.get("email", "").split("@")[0])
     slug = base_slug
@@ -2232,6 +2247,11 @@ async def _ensure_card(user_id: str) -> dict:
     doc = {
         "id": _new_id(),
         "user_id": user_id,
+        "is_primary": True,
+        "label": "Tarjeta Principal",
+        "person_name": user.get("owner_name", ""),
+        "contact_phone": "",
+        "contact_email": "",
         "slug": slug,
         "tagline": "",
         "business_type": "",
@@ -2262,14 +2282,132 @@ async def _ensure_card(user_id: str) -> dict:
     return _strip_id(doc)
 
 
-@api_router.get("/card/settings")
-async def get_card_settings(user_id: str = Depends(get_current_user_id)):
+# Company-level fields that are SHARED across all of an account's cards. They are
+# always sourced from the PRIMARY card so the owner edits them once.
+SHARED_CARD_FIELDS = [
+    "business_type", "service_area", "years_in_business", "is_licensed",
+    "is_insured", "license_number", "services", "hours", "website",
+    "facebook", "instagram", "google_review_url", "logo_photo_id",
+]
+
+
+async def _effective_card_limit(user: dict) -> int:
+    """How many digital cards this account may have. Driven by the admin
+    override (`card_limit`) which is also bumped automatically by the number of
+    paid card seats on the subscription. Defaults to 1."""
+    return max(1, int(user.get("card_limit") or 1))
+
+
+async def _resolve_card(user_id: str, card_id: Optional[str]) -> dict:
+    """Return a specific card owned by the user, or the primary card if no id."""
+    await _ensure_card(user_id)  # guarantee a primary exists
+    if card_id:
+        card = await db.cards.find_one({"id": card_id, "user_id": user_id}, {"_id": 0})
+        if not card:
+            raise HTTPException(404, "Tarjeta no encontrada")
+        return card
     return await _ensure_card(user_id)
 
 
+@api_router.get("/card/list")
+async def list_cards(user_id: str = Depends(get_current_user_id)):
+    """All cards for the account + how many more can be created."""
+    await _ensure_card(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    limit = await _effective_card_limit(user)
+    cards = await db.cards.find({"user_id": user_id}, {"_id": 0}).sort("is_primary", -1).to_list(50)
+    slim = [{
+        "id": c["id"],
+        "slug": c.get("slug"),
+        "label": c.get("label") or ("Tarjeta Principal" if c.get("is_primary") else "Tarjeta"),
+        "person_name": c.get("person_name", ""),
+        "is_primary": bool(c.get("is_primary")),
+        "enabled": c.get("enabled", True),
+        "profile_photo_id": c.get("profile_photo_id"),
+    } for c in cards]
+    return {"cards": slim, "limit": limit, "count": len(cards), "can_add": len(cards) < limit}
+
+
+@api_router.post("/card")
+async def create_card(payload: CardSettingsIn, user_id: str = Depends(get_current_user_id)):
+    """Create an additional digital card (enforces the account's card limit).
+    Company-level info is shared from the primary card; the owner personalizes
+    the person fields (name, photo, role, phone, email)."""
+    primary = await _ensure_card(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    limit = await _effective_card_limit(user)
+    count = await db.cards.count_documents({"user_id": user_id})
+    if count >= limit:
+        raise HTTPException(403, f"Alcanzaste tu límite de {limit} tarjeta(s). Agrega tarjetas en tu plan para crear más.")
+    label = (payload.label or "Nueva tarjeta").strip()[:60]
+    person = (payload.person_name or "").strip()[:80]
+    base_slug = _slugify(person or label or (primary.get("slug") + "-2"))
+    slug = base_slug
+    n = 1
+    while await db.cards.find_one({"slug": slug}, {"_id": 0}):
+        n += 1
+        slug = f"{base_slug}-{n}"
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "is_primary": False,
+        "label": label,
+        "person_name": person,
+        "contact_phone": "",
+        "contact_email": "",
+        "slug": slug,
+        "tagline": primary.get("tagline", ""),
+        "business_type": primary.get("business_type", ""),
+        "service_area": primary.get("service_area", ""),
+        "years_in_business": primary.get("years_in_business", 0),
+        "is_licensed": primary.get("is_licensed", False),
+        "is_insured": primary.get("is_insured", False),
+        "license_number": primary.get("license_number", ""),
+        "rating": primary.get("rating", 0.0),
+        "brand_color": primary.get("brand_color", "#1E3A8A"),
+        "accent_color": primary.get("accent_color", "#10B981"),
+        "hero_overlay": primary.get("hero_overlay", 60),
+        "hero_layout": primary.get("hero_layout", "photo"),
+        "cover_photo_id": None,
+        "profile_photo_id": None,
+        "logo_photo_id": primary.get("logo_photo_id"),
+        "services": primary.get("services", []),
+        "hours": primary.get("hours", ""),
+        "whatsapp": "",
+        "website": primary.get("website", ""),
+        "facebook": primary.get("facebook", ""),
+        "instagram": primary.get("instagram", ""),
+        "google_review_url": primary.get("google_review_url", ""),
+        "about_me": "",
+        "role": "",
+        "enabled": True,
+        "languages": primary.get("languages", ["en", "es"]),
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.cards.insert_one(doc)
+    return _strip_id(doc)
+
+
+@api_router.delete("/card/{card_id}")
+async def delete_card(card_id: str, user_id: str = Depends(get_current_user_id)):
+    card = await db.cards.find_one({"id": card_id, "user_id": user_id}, {"_id": 0})
+    if not card:
+        raise HTTPException(404, "Tarjeta no encontrada")
+    if card.get("is_primary"):
+        raise HTTPException(400, "No puedes eliminar la tarjeta principal")
+    await db.cards.delete_one({"id": card_id, "user_id": user_id})
+    return {"ok": True}
+
+
+@api_router.get("/card/settings")
+async def get_card_settings(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _resolve_card(user_id, card_id)
+
+
 @api_router.put("/card/settings")
-async def update_card_settings(payload: CardSettingsIn, user_id: str = Depends(get_current_user_id)):
-    card = await _ensure_card(user_id)
+async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    card = await _resolve_card(user_id, card_id)
     # exclude_unset = only fields explicitly sent by the client (true PATCH/merge).
     # This prevents Pydantic defaults ("", [], False, 0) from wiping out saved data
     # when the frontend omits a field from the payload.
@@ -2277,51 +2415,52 @@ async def update_card_settings(payload: CardSettingsIn, user_id: str = Depends(g
     # If slug is provided, ensure unique
     if "slug" in update and update["slug"] and update["slug"] != card["slug"]:
         new_slug = _slugify(update["slug"])
-        existing = await db.cards.find_one({"slug": new_slug, "user_id": {"$ne": user_id}}, {"_id": 0})
+        existing = await db.cards.find_one({"slug": new_slug, "id": {"$ne": card["id"]}}, {"_id": 0})
         if existing:
             raise HTTPException(400, "Ese link ya está tomado, prueba otro")
         update["slug"] = new_slug
     update["updated_at"] = _now_iso()
-    await db.cards.update_one({"user_id": user_id}, {"$set": update})
-    return await _ensure_card(user_id)
+    await db.cards.update_one({"id": card["id"]}, {"$set": update})
+    return await db.cards.find_one({"id": card["id"]}, {"_id": 0})
 
 
 @api_router.post("/card/logo")
-async def upload_card_logo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
-    return await _upload_card_asset(file, user_id, kind="logo")
+async def upload_card_logo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _upload_card_asset(file, user_id, kind="logo", card_id=card_id)
 
 
 @api_router.delete("/card/logo")
-async def delete_card_logo(user_id: str = Depends(get_current_user_id)):
-    return await _delete_card_asset(user_id, kind="logo")
+async def delete_card_logo(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _delete_card_asset(user_id, kind="logo", card_id=card_id)
 
 
 @api_router.post("/card/profile-photo")
-async def upload_card_profile_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
-    return await _upload_card_asset(file, user_id, kind="profile_photo")
+async def upload_card_profile_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _upload_card_asset(file, user_id, kind="profile_photo", card_id=card_id)
 
 
 @api_router.delete("/card/profile-photo")
-async def delete_card_profile_photo(user_id: str = Depends(get_current_user_id)):
-    return await _delete_card_asset(user_id, kind="profile_photo")
+async def delete_card_profile_photo(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _delete_card_asset(user_id, kind="profile_photo", card_id=card_id)
 
 
 @api_router.post("/card/cover-photo")
-async def upload_card_cover_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
-    return await _upload_card_asset(file, user_id, kind="cover")
+async def upload_card_cover_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _upload_card_asset(file, user_id, kind="cover", card_id=card_id)
 
 
 @api_router.delete("/card/cover-photo")
-async def delete_card_cover_photo(user_id: str = Depends(get_current_user_id)):
-    return await _delete_card_asset(user_id, kind="cover")
+async def delete_card_cover_photo(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    return await _delete_card_asset(user_id, kind="cover", card_id=card_id)
 
 
-async def _upload_card_asset(file: UploadFile, user_id: str, kind: str):
+async def _upload_card_asset(file: UploadFile, user_id: str, kind: str, card_id: Optional[str] = None):
     """Shared helper for logo, profile photo and cover photo uploads."""
     label_map = {"logo": "logo", "profile_photo": "profile_photo", "cover": "cover"}
     field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
     label = label_map[kind]
     field = field_map[kind]
+    card = await _resolve_card(user_id, card_id)
 
     content_type = (file.content_type or "").lower()
     if content_type not in ALLOWED_IMAGE_TYPES:
@@ -2353,28 +2492,27 @@ async def _upload_card_asset(file: UploadFile, user_id: str, kind: str):
         "created_at": _now_iso(),
     }
     await db.photos.insert_one(photo_doc)
-    await _ensure_card(user_id)
     await db.cards.update_one(
-        {"user_id": user_id},
+        {"id": card["id"]},
         {"$set": {field: asset_id, "updated_at": _now_iso()}},
     )
     return {"ok": True, field: asset_id}
 
 
-async def _delete_card_asset(user_id: str, kind: str):
+async def _delete_card_asset(user_id: str, kind: str, card_id: Optional[str] = None):
     field_map = {"logo": "logo_photo_id", "profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
     field = field_map[kind]
-    card = await _ensure_card(user_id)
+    card = await _resolve_card(user_id, card_id)
     pid = card.get(field)
     if pid:
         await db.photos.update_one({"id": pid, "user_id": user_id}, {"$set": {"is_deleted": True}})
-    await db.cards.update_one({"user_id": user_id}, {"$set": {field: None}})
+    await db.cards.update_one({"id": card["id"]}, {"$set": {field: None}})
     return {"ok": True}
 
 
 @api_router.get("/card/analytics")
-async def card_analytics(user_id: str = Depends(get_current_user_id)):
-    card = await _ensure_card(user_id)
+async def card_analytics(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    card = await _resolve_card(user_id, card_id)
     pipeline = [
         {"$match": {"card_id": card["id"]}},
         {"$group": {"_id": "$event", "count": {"$sum": 1}}},
@@ -2437,11 +2575,16 @@ async def ai_social_posts(payload: SocialPostIn, user_id: str = Depends(get_curr
     return data
 
 
-# Leads list (admin)
+# Leads list (admin) — consolidated across ALL of the account's cards, each
+# annotated with the source card label so the owner sees who brought the lead.
 @api_router.get("/card/leads")
 async def list_card_leads(user_id: str = Depends(get_current_user_id)):
-    card = await _ensure_card(user_id)
-    docs = await db.card_leads.find({"card_id": card["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    await _ensure_card(user_id)
+    cards = await db.cards.find({"user_id": user_id}, {"_id": 0, "id": 1, "label": 1, "is_primary": 1}).to_list(50)
+    label_by_id = {c["id"]: (c.get("label") or ("Tarjeta Principal" if c.get("is_primary") else "Tarjeta")) for c in cards}
+    docs = await db.card_leads.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    for d in docs:
+        d["card_label"] = label_by_id.get(d.get("card_id"), "")
     return docs
 
 
@@ -2461,6 +2604,13 @@ async def _public_card_by_slug(slug: str) -> tuple[dict, dict]:
 @api_router.get("/public/card/{slug}")
 async def public_get_card(slug: str):
     card, user = await _public_card_by_slug(slug)
+    # Merge shared company-level fields from the PRIMARY card so every card of an
+    # account shows the same company info (website, services, social, logo...).
+    if not card.get("is_primary"):
+        primary = await db.cards.find_one({"user_id": card["user_id"], "is_primary": True}, {"_id": 0})
+        if primary:
+            for f in SHARED_CARD_FIELDS:
+                card[f] = primary.get(f)
     # Gather public-safe data
     reviews = await db.reviews.find({"user_id": card["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
     # Photos from completed jobs OR all photos (exclude logo)
@@ -2478,9 +2628,10 @@ async def public_get_card(slug: str):
     return {
         "business": {
             "name": user.get("business_name", ""),
-            "owner_name": user.get("owner_name", ""),
-            "phone": user.get("phone", ""),
-            "email": user.get("business_email") or user.get("email"),
+            # Per-card person overrides (salesperson name/phone/email), with fallback.
+            "owner_name": card.get("person_name") or user.get("owner_name", ""),
+            "phone": card.get("contact_phone") or user.get("phone", ""),
+            "email": card.get("contact_email") or user.get("business_email") or user.get("email"),
             "address": user.get("business_address", ""),
             "google_review_url": user.get("google_review_url") or "",
         },
@@ -2512,9 +2663,9 @@ async def public_photo(photo_id: str):
 async def public_vcard(slug: str):
     card, user = await _public_card_by_slug(slug)
     bn = user.get("business_name", "")
-    on = user.get("owner_name", "")
-    phone = user.get("phone", "")
-    email = user.get("business_email") or user.get("email", "")
+    on = card.get("person_name") or user.get("owner_name", "")
+    phone = card.get("contact_phone") or user.get("phone", "")
+    email = card.get("contact_email") or user.get("business_email") or user.get("email", "")
     addr = user.get("business_address", "")
     web = card.get("website", "")
     lines = [
@@ -3528,6 +3679,7 @@ async def admin_list_users(admin: dict = Depends(_require_super_admin)):
             "is_comp": bool(u.get("is_comp")),
             "comp_note": u.get("comp_note"),
             "comp_expires_at": u.get("comp_expires_at"),
+            "card_limit": int(u.get("card_limit") or 1),
             "shipping_address": u.get("shipping_address"),
             "card_shipping_status": u.get("card_shipping_status"),
             "card_shipped_at": u.get("card_shipped_at"),
@@ -4100,6 +4252,50 @@ async def admin_revoke_comp(
     return {"ok": True}
 
 
+class CardLimitIn(BaseModel):
+    card_limit: int = Field(ge=1, le=50)
+
+
+@api_router.post("/admin/users/{user_id}/card-limit")
+async def admin_set_card_limit(
+    user_id: str,
+    payload: CardLimitIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Manually set how many digital cards an account may create (free override).
+    Use this to grant extra cards to a paying customer without changing Stripe."""
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"card_limit": int(payload.card_limit)}},
+    )
+    return {"ok": True, "user_id": user_id, "card_limit": int(payload.card_limit)}
+
+
+@api_router.post("/admin/users/{user_id}/card-seats")
+async def admin_set_card_seats(
+    user_id: str,
+    payload: CardLimitIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Set the TOTAL paid cards on a subscriber's Stripe plan. Stripe prorates
+    the difference onto the next invoice (the customer pays +$15/mo per extra
+    card from the next billing cycle)."""
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not u.get("stripe_subscription_id"):
+        raise HTTPException(status_code=400, detail="Este usuario no tiene suscripción de Stripe. Usa 'card-limit' para un override gratis.")
+    try:
+        result = await payments_service.set_subscription_card_seats(db, u, int(payload.card_limit))
+    except Exception as e:
+        logger.exception("Stripe card-seats update failed")
+        raise HTTPException(status_code=500, detail=f"Error actualizando Stripe: {e}")
+    return result
+
+
 @api_router.post("/admin/users")
 async def admin_create_user(
     payload: AdminCreateUserIn,
@@ -4247,6 +4443,7 @@ async def payments_checkout(
     try:
         result = await payments_service.create_checkout_session(
             db, user, payload.plan_id, success_url, cancel_url,
+            num_cards=max(1, int(payload.num_cards or 1)),
         )
     except Exception as e:
         logger.exception("Stripe checkout creation failed")

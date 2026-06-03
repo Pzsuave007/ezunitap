@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Gift, Loader2, Copy, Check, Plus, Trash2, Users, Link as LinkIcon,
-  X, Sparkles, AlertCircle, Calendar, UserPlus,
+  X, Sparkles, AlertCircle, Calendar, UserPlus, IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminTabs from "@/components/AdminTabs";
@@ -451,6 +451,44 @@ function UsersTab({ onForbidden }) {
     }
   };
 
+  const setCardLimit = async (u) => {
+    const current = u.card_limit || 1;
+    const val = window.prompt(
+      `¿Cuántas tarjetas digitales en TOTAL para ${u.email}?\n(Actual: ${current})`,
+      String(current)
+    );
+    if (val === null) return;
+    const total = parseInt(val, 10);
+    if (isNaN(total) || total < 1) {
+      toast.error("Número inválido");
+      return;
+    }
+    const hasStripe = !u.is_comp && ["active", "trialing", "past_due"].includes(u.subscription_status);
+    let paid = false;
+    if (total > current && hasStripe) {
+      paid = window.confirm(
+        `¿Cobrar las tarjetas adicionales vía Stripe?\n\n` +
+        `Aceptar = COBRAR (+$15/mes c/u, sube el próximo pago del cliente)\n` +
+        `Cancelar = GRATIS (cortesía, no se cobra)`
+      );
+    }
+    setGrantingId(u.id);
+    try {
+      if (paid) {
+        await api.post(`/admin/users/${u.id}/card-seats`, { card_limit: total });
+        toast.success("Tarjetas actualizadas en Stripe (se cobra el próximo ciclo)");
+      } else {
+        await api.post(`/admin/users/${u.id}/card-limit`, { card_limit: total });
+        toast.success("Límite de tarjetas actualizado (gratis)");
+      }
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error");
+    } finally {
+      setGrantingId(null);
+    }
+  };
+
   const deleteUser = async (u) => {
     const confirmMsg =
       `⚠️ ¿Eliminar PERMANENTEMENTE a ${u.email}?\n\n` +
@@ -571,6 +609,17 @@ function UsersTab({ onForbidden }) {
                   </div>
 
                   <div className="flex-none flex items-center gap-1">
+                    <Button
+                      data-testid={`card-limit-${u.id}`}
+                      onClick={() => setCardLimit(u)}
+                      disabled={grantingId === u.id}
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                      title="Tarjetas digitales permitidas"
+                    >
+                      <IdCard className="w-3.5 h-3.5 mr-1" /> {u.card_limit || 1}
+                    </Button>
                     {u.is_comp ? (
                       <Button
                         data-testid={`revoke-user-${u.id}`}
