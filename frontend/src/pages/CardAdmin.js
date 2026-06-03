@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   IdCard, QrCode, Copy, ExternalLink, Eye, Plus, Trash2, Loader2,
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
@@ -1052,7 +1053,12 @@ function adjustColor(hex, amt) {
 
 function AssetUploader({ card, onChange, kind, heroLayout }) {
   const inputRef = useRef(null);
+  const enhanceRef = useRef(null);
   const [uploading, setUploading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [preview, setPreview] = useState(null); // { original, enhanced }
+  const supportsAI = kind === "profile_photo" || kind === "cover";
 
   const config = kind === "profile_photo"
     ? {
@@ -1115,6 +1121,53 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
     onChange();
   };
 
+  const BACKEND = process.env.REACT_APP_BACKEND_URL;
+
+  const handleEnhanceFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEnhancing(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post(
+        `/card/photo-enhance?kind=${kind}&card_id=${card.id}`,
+        fd,
+        { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000 }
+      );
+      setPreview({
+        original: { ...data.original, full: `${BACKEND}${data.original.url}` },
+        enhanced: { ...data.enhanced, full: `${BACKEND}${data.enhanced.url}` },
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "No se pudo mejorar la imagen");
+    } finally {
+      setEnhancing(false);
+      e.target.value = "";
+    }
+  };
+
+  const choosePhoto = async (which) => {
+    if (!preview) return;
+    const chosen = which === "enhanced" ? preview.enhanced : preview.original;
+    const discard = which === "enhanced" ? preview.original : preview.enhanced;
+    setApplying(true);
+    try {
+      await api.post(`/card/photo-choose?card_id=${card.id}`, {
+        kind,
+        photo_id: chosen.photo_id,
+        discard_photo_id: discard.photo_id,
+      });
+      toast.success(which === "enhanced" ? "¡Foto mejorada aplicada!" : "Foto original aplicada");
+      setPreview(null);
+      onChange();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Error al aplicar");
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const Icon = kind === "profile_photo" ? Camera : kind === "cover" ? ImageIcon : ImageIcon;
 
   return (
@@ -1162,9 +1215,68 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
               </Button>
             )}
           </div>
+          {supportsAI && (
+            <Button
+              data-testid={`${config.testid}-ai-enhance-btn`}
+              size="sm"
+              variant="outline"
+              onClick={() => enhanceRef.current?.click()}
+              disabled={enhancing}
+              className="rounded-xl mt-2 border-violet-300 text-violet-700 hover:bg-violet-50"
+            >
+              {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
+              {enhancing ? "Mejorando..." : "Mejorar con IA"}
+            </Button>
+          )}
           <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleFile} />
+          {supportsAI && (
+            <input ref={enhanceRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleEnhanceFile} />
+          )}
         </div>
       </div>
+
+      {/* Before / After AI enhancement dialog */}
+      <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)}>
+        <DialogContent className="rounded-2xl max-w-lg" data-testid={`${config.testid}-ai-dialog`}>
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-600" /> Antes y Después
+            </DialogTitle>
+          </DialogHeader>
+          {preview && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Original</div>
+                <img src={preview.original.full} alt="original" className="w-full aspect-square object-cover rounded-xl border border-slate-200" />
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-1.5">Mejorada ✨</div>
+                <img src={preview.enhanced.full} alt="mejorada" className="w-full aspect-square object-cover rounded-xl border-2 border-violet-400" />
+              </div>
+            </div>
+          )}
+          <p className="text-[11px] text-slate-400 text-center">La IA mejora luz, color y nitidez. Tú decides cuál usar.</p>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              data-testid={`${config.testid}-use-original`}
+              onClick={() => choosePhoto("original")}
+              disabled={applying}
+              className="rounded-xl h-11"
+            >
+              Usar original
+            </Button>
+            <Button
+              data-testid={`${config.testid}-use-enhanced`}
+              onClick={() => choosePhoto("enhanced")}
+              disabled={applying}
+              className="rounded-xl h-11 bg-violet-600 hover:bg-violet-700"
+            >
+              {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Usar mejorada ✨"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

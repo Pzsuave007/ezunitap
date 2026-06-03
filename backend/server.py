@@ -2510,6 +2510,101 @@ async def _delete_card_asset(user_id: str, kind: str, card_id: Optional[str] = N
     return {"ok": True}
 
 
+async def _store_card_photo(user_id: str, data: bytes, content_type: str, kind: str, ext: str = "png") -> str:
+    """Store image bytes to object storage + create a photo doc (without binding
+    it to a card). Returns the new photo asset_id."""
+    asset_id = _new_id()
+    path = f"{app_name}/cards/{kind}/{user_id}/{asset_id}.{ext}"
+    backend = storage_service.get_storage()
+    result = backend.put(path, data, content_type)
+    await db.photos.insert_one({
+        "id": asset_id,
+        "user_id": user_id,
+        "client_id": None,
+        "job_id": None,
+        "label": {"logo": "logo", "profile_photo": "profile_photo", "cover": "cover"}.get(kind, kind),
+        "storage_path": result.get("path", path),
+        "content_type": content_type,
+        "size": result.get("size", len(data)),
+        "is_deleted": False,
+        "is_logo": (kind == "logo"),
+        "is_profile": (kind == "profile_photo"),
+        "is_cover": (kind == "cover"),
+        "created_at": _now_iso(),
+    })
+    return asset_id
+
+
+def _photo_public_url(photo_id: str) -> str:
+    return f"/api/public/card/photo/{photo_id}"
+
+
+@api_router.post("/card/photo-enhance")
+async def card_photo_enhance(
+    file: UploadFile = File(...),
+    kind: str = "profile_photo",
+    card_id: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Upload an image and return BOTH the original and an AI-enhanced version
+    (Gemini Nano Banana) for a before/after preview. Nothing is bound to the
+    card yet — the user picks one via /card/photo-choose."""
+    if kind not in ("profile_photo", "cover"):
+        raise HTTPException(400, "kind inválido")
+    await _resolve_card(user_id, card_id)  # validate ownership
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
+    data = await file.read()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
+
+    enhance_kind = "profile" if kind == "profile_photo" else "cover"
+    try:
+        enhanced_bytes, enhanced_ct = await ai_service.enhance_image(data, kind=enhance_kind)
+    except Exception as e:
+        logger.exception("AI image enhance failed")
+        raise HTTPException(502, f"No se pudo mejorar la imagen con IA: {e}")
+
+    original_id = await _store_card_photo(user_id, data, content_type, kind, ext)
+    enhanced_ext = "png" if "png" in enhanced_ct else ("webp" if "webp" in enhanced_ct else "jpg")
+    enhanced_id = await _store_card_photo(user_id, enhanced_bytes, enhanced_ct, kind, enhanced_ext)
+
+    return {
+        "kind": kind,
+        "original": {"photo_id": original_id, "url": _photo_public_url(original_id)},
+        "enhanced": {"photo_id": enhanced_id, "url": _photo_public_url(enhanced_id)},
+    }
+
+
+class CardPhotoChooseIn(BaseModel):
+    kind: str  # "profile_photo" | "cover"
+    photo_id: str  # the chosen photo
+    discard_photo_id: Optional[str] = None  # the rejected one to soft-delete
+
+
+@api_router.post("/card/photo-choose")
+async def card_photo_choose(payload: CardPhotoChooseIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    """Bind a previously-uploaded/enhanced photo to the card and discard the other."""
+    field_map = {"profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
+    if payload.kind not in field_map:
+        raise HTTPException(400, "kind inválido")
+    field = field_map[payload.kind]
+    card = await _resolve_card(user_id, card_id)
+    chosen = await db.photos.find_one({"id": payload.photo_id, "user_id": user_id}, {"_id": 0})
+    if not chosen:
+        raise HTTPException(404, "Foto no encontrada")
+    # Soft-delete the previous card photo (if different) and the rejected one.
+    prev = card.get(field)
+    for pid in (prev, payload.discard_photo_id):
+        if pid and pid != payload.photo_id:
+            await db.photos.update_one({"id": pid, "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.cards.update_one({"id": card["id"]}, {"$set": {field: payload.photo_id, "updated_at": _now_iso()}})
+    return {"ok": True, field: payload.photo_id}
+
+
+
 @api_router.get("/card/analytics")
 async def card_analytics(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
     card = await _resolve_card(user_id, card_id)

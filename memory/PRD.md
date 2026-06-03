@@ -21,6 +21,11 @@
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
+## ✅ Jun 2026 — Mejora de imágenes con IA (Nano Banana) en la Tarjeta
+Pedido por el usuario: la gente sube fotos malas; agregar IA para mejorar la foto de perfil y la de fondo/portada. Implementado con **Gemini "Nano Banana" (`gemini-3.1-flash-image-preview`)** vía Emergent LLM Key (image-to-image). UX: **botón "Mejorar con IA" → diálogo Antes/Después → el usuario elige original o mejorada** (probado e2e: backend curl + diálogo en preview). Perfil = mejora sutil que preserva la cara 100%; portada = brillo/nitidez/profesional. La mejora tarda ~30-50s (con hasta 3 reintentos porque el modelo a veces devuelve solo texto). Backend (`ai_service.enhance_image`, `server.py`): `POST /api/card/photo-enhance?kind=&card_id=` (mejora primero, luego guarda original+mejorada, devuelve ambas urls), `POST /api/card/photo-choose?card_id=` (liga la elegida, descarta la otra). Frontend: `AssetUploader` en `CardAdmin.js` (botón violeta + Dialog Antes/Después, solo para profile_photo y cover). Consume saldo del Universal Key por imagen.
+
+
+
 ## ✅ Jun 2026 — Múltiples Tarjetas NFC por cuenta (multi-card)
 Feature pedido por el usuario (su 1ª clienta quería 2 tarjetas: dueña + vendedor, ligadas a la MISMA cuenta para que todos los leads caigan juntos). Implementado y **probado 100% (11/11 backend pytest + frontend 100%, iteration_14.json)**.
 

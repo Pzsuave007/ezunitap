@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import uuid
+import base64
 from typing import Optional
 
 from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
@@ -18,6 +19,61 @@ logger = logging.getLogger(__name__)
 LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 MODEL_PROVIDER = "openai"
 MODEL_NAME = "gpt-5.2"
+
+# Gemini "Nano Banana" image-editing model (image-to-image enhancement).
+IMAGE_MODEL = "gemini-3.1-flash-image-preview"
+
+_PROFILE_ENHANCE_PROMPT = (
+    "Enhance this portrait photo so it looks like a clean, professional business "
+    "headshot. Improve the lighting, color balance, white balance and sharpness; "
+    "reduce noise; and gently clean up and soften the background so the person "
+    "stands out. CRITICAL: keep the person's face, facial features, skin tone, "
+    "hair, glasses, clothing and expression EXACTLY the same — do NOT change their "
+    "identity, age, weight or appearance, and do not beautify or reshape the face. "
+    "Return a natural, realistic, well-lit version of the SAME person and photo."
+)
+
+_COVER_ENHANCE_PROMPT = (
+    "Enhance this photo so it works as a crisp, professional background/cover image "
+    "for a contractor's digital business card. Improve brightness, contrast, color "
+    "vibrancy and sharpness, fix exposure, and make it look clean and high quality. "
+    "Keep the SAME scene, subject and composition — do not add, remove or invent "
+    "objects, text or watermarks. Return a realistic, professional-looking version "
+    "of the same photo."
+)
+
+
+async def enhance_image(image_bytes: bytes, kind: str = "profile") -> tuple[bytes, str]:
+    """Enhance an uploaded image with Gemini Nano Banana (image-to-image).
+
+    `kind` = "profile" (subtle headshot cleanup, face preserved) or "cover"
+    (work/background photo enhancement). Returns (enhanced_bytes, mime_type).
+
+    Nano Banana occasionally replies with text only (no image); we retry a
+    couple of times and force an image-only instruction.
+    """
+    b64 = base64.b64encode(image_bytes).decode("utf-8")
+    base_prompt = _PROFILE_ENHANCE_PROMPT if kind == "profile" else _COVER_ENHANCE_PROMPT
+    prompt = base_prompt + " Output ONLY the edited image, no text."
+    last_err = "La IA no devolvió una imagen mejorada"
+    for attempt in range(3):
+        try:
+            chat = LlmChat(
+                api_key=LLM_KEY,
+                session_id=str(uuid.uuid4()),
+                system_message="You are a professional photo retoucher. You always return an edited image.",
+            ).with_model("gemini", IMAGE_MODEL).with_params(modalities=["image", "text"])
+            msg = UserMessage(text=prompt, file_contents=[ImageContent(b64)])
+            _text, images = await chat.send_message_multimodal_response(msg)
+            if images:
+                img = images[0]
+                out = base64.b64decode(img["data"])
+                return out, img.get("mime_type", "image/png")
+            logger.warning("enhance_image: no image returned (attempt %s/3)", attempt + 1)
+        except Exception as e:  # transient provider errors → retry
+            last_err = str(e)
+            logger.warning("enhance_image attempt %s/3 failed: %s", attempt + 1, e)
+    raise RuntimeError(last_err)
 
 
 def _new_chat(system_message: str) -> LlmChat:
