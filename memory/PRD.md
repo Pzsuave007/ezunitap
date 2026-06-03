@@ -21,6 +21,22 @@
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
+## ✅ Jun 2026 — Múltiples Tarjetas NFC por cuenta (multi-card)
+Feature pedido por el usuario (su 1ª clienta quería 2 tarjetas: dueña + vendedor, ligadas a la MISMA cuenta para que todos los leads caigan juntos). Implementado y **probado 100% (11/11 backend pytest + frontend 100%, iteration_14.json)**.
+
+**Modelo de datos:**
+- `users.card_limit` (int, default 1) = cuántas tarjetas digitales puede tener la cuenta. Lo sube el admin (override gratis) o automáticamente la cantidad comprada en la suscripción.
+- `cards` ahora soporta VARIAS por `user_id`. Campos nuevos: `is_primary` (bool), `label` (nombre interno ej "Vendedor Juan"), `person_name`, `contact_phone`, `contact_email`. Una tarjeta primaria por cuenta.
+- `SHARED_CARD_FIELDS` (business_type, service_area, services, website, facebook, instagram, google_review_url, logo, etc.) se COMPARTEN desde la tarjeta primaria; las tarjetas secundarias solo personalizan la PERSONA.
+
+**Backend (server.py):** `GET /api/card/list` (cards[], limit, count, can_add), `POST /api/card` (crea, enforce limit, copia shared fields de la primaria, 403 en español si excede), `DELETE /api/card/{id}` (bloquea borrar la primaria), `GET/PUT /api/card/settings?card_id=` (PATCH por tarjeta), uploads `/api/card/{logo,profile-photo,cover-photo}?card_id=`, `GET /api/card/leads` (consolidado por user_id + `card_label` de origen), `public_get_card`/vcard usan person fields con fallback + overlay de shared fields de la primaria. Admin: `POST /api/admin/users/{id}/card-limit` (override gratis), `POST /api/admin/users/{id}/card-seats` (sube cantidad pagada en Stripe, prorratea al próximo cobro). `card_limit` incluido en `admin_list_users`.
+
+**Stripe (payments_service.py):** `EXTRA_CARD_PRICE_CENTS = {month:1500, year:15000}` (**+$15/mes** o **$150/año** por tarjeta extra — el yearly fue ASUNCIÓN del agente, confirmar con usuario). `ensure_extra_card_price` (Price reusable cacheado en app_config). `create_checkout_session(num_cards)` agrega un 2º line item (extra cards). `_apply_subscription_to_user` fija `card_limit` desde metadata `num_cards`. `set_subscription_card_seats` actualiza la cantidad del item extra para un suscriptor existente (proration al próximo invoice).
+
+**Frontend:** `CardAdmin.js` — selector de tarjetas (chips) + botón "Nueva" (deshabilitado en el límite) + sección "Persona de esta tarjeta" (label, person_name, contact_phone, contact_email) + badge de origen en leads. `Pricing.js` — stepper de cantidad de tarjetas (`num_cards` → checkout). `AdminAccounts.js` — botón "Tarjetas: N" por usuario (prompt → card-limit gratis o card-seats pagado vía Stripe).
+
+
+
 ## Architecture
 - **Backend**: FastAPI (port 8001 dev / 8007 prod) on `/api` prefix, MongoDB via motor (async)
 - **Frontend**: React 19 + Tailwind + Shadcn UI components

@@ -618,7 +618,7 @@ function UsersTab({ onForbidden }) {
                       className="h-9"
                       title="Tarjetas digitales permitidas"
                     >
-                      <IdCard className="w-3.5 h-3.5 mr-1" /> {u.card_limit || 1}
+                      <IdCard className="w-3.5 h-3.5 mr-1" /> Tarjetas: {u.card_limit || 1}
                     </Button>
                     {u.is_comp ? (
                       <Button
