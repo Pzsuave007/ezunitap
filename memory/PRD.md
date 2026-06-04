@@ -21,7 +21,18 @@
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
-## ✅ Jun 2026 — Estudio de Marketing (generador de posts para redes) [FASE 1]
+## ✅ Jun 2026 — Estudio de Marketing FASE 2: Reels en video (FFmpeg) [COMPLETO]
+Feature pedido: videos animados (fotos con movimiento + transiciones + texto animado + CTA + música). **Implementado y probado 100% (9/9 pytest incl. 2 renders FFmpeg reales + frontend e2e, iteration_16.json).** Decisiones del usuario: duración **~10s**, **solo 9:16**, música = pistas libres + subir propia + sin música.
+- **Motor:** `backend/video_service.py` (FFmpeg vía subprocess). `render_reel_from_images()`: cada foto con **Ken Burns** (zoompan, upscale 1.5x), **crossfade** (xfade) entre fotos, **overlay de texto branded** (Pillow, fade-in) con titular/subtítulo/CTA + barra de acento, música opcional con afade-out. Salida MP4 H.264+AAC 1080x1920, ~2MB.
+- **Música:** 3 pistas **100% originales sintetizadas con numpy** (energetica/corporativa/lofi) en `backend/assets/music/*.mp3` (libres de derechos, sin reclamos en redes). Generadas con `backend/gen_music.py` (one-off). El usuario también puede **subir su propia música** o elegir **sin música**.
+- **Endpoints:** `GET /api/social/music` (lista), `GET /api/social/music/{id}` (preview audio), `POST /api/social/reels` (multipart: brief, language, music, brand_color, accent_color, files[1-5], music_file) → crea doc status "processing" + **BackgroundTask** `_process_reel` (genera copy IA → overlay → render en thread). `GET /api/social/reels` (lista), `GET /api/social/reels/{id}` (poll status), `DELETE /api/social/reels/{id}`. Colección `social_reels`.
+- **Frontend:** `components/ReelStudio.js` + tabs Imagen/Video en `SocialStudio.js`. Uploader 1-5 fotos, brief, idioma, selector de música (con preview play), temas de color compartidos (`lib/socialThemes.js`), polling cada 4s, reproductor de video + descarga + historial "Mis Reels".
+- **Deploy:** `deploy/fix.sh` ahora instala **ffmpeg estático** (johnvansickle, sin root) en `$PROD/bin/ffmpeg` y setea `FFMPEG_BIN` en el `.env` prod si ffmpeg no está en PATH. Las mp3 de música se despliegan vía rsync de `backend/assets/`. (Sin nuevas deps pip — numpy solo se usó para generar la música, no en runtime.)
+
+## ✅ Jun 2026 — Control de color del diseño (Estudio de Marketing)
+El usuario pidió controlar el color de la barra/diseño. `social_service.build_brand` acepta `brand_override`/`accent_override`; `server.py` `_social_brand` + `_valid_hex` validan hex. `POST /api/social/posts` y `/api/social/reels` aceptan `brand_color`/`accent_color` (se guardan en el doc, el rerender los respeta). Frontend: selector "Color del diseño" con 10 temas + Personalizado (2 color pickers). También se arregló un bug de routing pre-existente: `DELETE /card/{card_id}` tapaba a `DELETE /card/logo|profile-photo|cover-photo` (rutas literales movidas arriba).
+
+
 Feature pedido: escribir en español → IA crea post profesional en inglés con la marca del usuario; imágenes ahora, videos/reels en fase 2. **Implementado Fase 1 (imágenes), probado (curl + e2e).**
 - **Plantillas:** Antes/Después, Showcase (trabajo terminado), Oferta/Promo. Bilingüe (EN/ES). Formatos 9:16 y 1:1. Branding automático (logo + colores + nombre + teléfono de la Tarjeta Digital).
 - **IA copy:** `ai_service.generate_social_copy` (GPT-5.2 vía Emergent key) → {headline, subheadline, cta, caption, hashtags} en el idioma elegido desde un brief en español.
