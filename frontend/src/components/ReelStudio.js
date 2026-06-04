@@ -4,28 +4,58 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Loader2, Download, Trash2, ImagePlus, X, Video,
-  Music, Play, Pause, Upload,
+  Music, Play, Pause, Upload, Captions, Clapperboard, Mic,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
-const MAX_PHOTOS = 5;
+
+const REEL_TEMPLATES = [
+  { id: "showcase", label: "Clásico", desc: "Fotos con tu mensaje", min: 1, max: 5 },
+  { id: "before_after", label: "Antes / Después", desc: "Revela con deslizamiento", min: 2, max: 2 },
+  { id: "promo", label: "Oferta / Promo", desc: "Con sello de oferta", min: 1, max: 5 },
+  { id: "services", label: "Lista de servicios", desc: "Un servicio por foto", min: 1, max: 5 },
+  { id: "testimonial", label: "Testimonio", desc: "Reseña de cliente", min: 1, max: 3 },
+];
+const MOTIONS = [
+  { id: "auto", label: "Automático" },
+  { id: "zoom_in", label: "Acercar" },
+  { id: "zoom_out", label: "Alejar" },
+  { id: "pan", label: "Paneo" },
+];
+const TRANSITIONS = [
+  { id: "fade", label: "Suave" },
+  { id: "deslizar", label: "Deslizar" },
+  { id: "barrido", label: "Barrido" },
+  { id: "circulo", label: "Círculo" },
+  { id: "disolver", label: "Disolver" },
+  { id: "pixel", label: "Pixelado" },
+];
+const DURATIONS = [10, 15, 20];
 
 export default function ReelStudio() {
-  const [photos, setPhotos] = useState([]); // [{file, preview}]
+  const [template, setTemplate] = useState("showcase");
+  const [photos, setPhotos] = useState([]);
   const [brief, setBrief] = useState("");
   const [language, setLanguage] = useState("en");
   const [colorTheme, setColorTheme] = useState("card");
   const [customAccent, setCustomAccent] = useState("#10b981");
   const [customBrand, setCustomBrand] = useState("#0f5f46");
   const [tracks, setTracks] = useState([]);
-  const [music, setMusic] = useState("none"); // "none" | track id | "upload"
+  const [music, setMusic] = useState("none");
   const [musicFile, setMusicFile] = useState(null);
+  const [duration, setDuration] = useState(10);
+  const [motion, setMotion] = useState("auto");
+  const [transition, setTransition] = useState("fade");
+  const [subtitles, setSubtitles] = useState(false);
+  const [outro, setOutro] = useState(true);
+  const [voiceover, setVoiceover] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [reel, setReel] = useState(null); // current ready/processing reel
+  const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
   const [playingTrack, setPlayingTrack] = useState(null);
 
@@ -33,6 +63,10 @@ export default function ReelStudio() {
   const musicRef = useRef(null);
   const audioRef = useRef(null);
   const pollRef = useRef(null);
+
+  const tpl = REEL_TEMPLATES.find((t) => t.id === template);
+  const maxPhotos = tpl.max;
+  const isBeforeAfter = template === "before_after";
 
   const loadReels = async () => {
     try { const { data } = await api.get("/social/reels"); setReels(data); } catch { /* ignore */ }
@@ -45,10 +79,15 @@ export default function ReelStudio() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  // When switching template, trim photos to its max + reset transition for slider
+  useEffect(() => {
+    setPhotos((prev) => prev.slice(0, maxPhotos));
+  }, [template, maxPhotos]);
+
   const addPhotos = (fileList) => {
     const files = Array.from(fileList || []);
     setPhotos((prev) => {
-      const room = MAX_PHOTOS - prev.length;
+      const room = maxPhotos - prev.length;
       const next = files.slice(0, room).map((f) => ({ file: f, preview: URL.createObjectURL(f) }));
       return [...prev, ...next];
     });
@@ -56,11 +95,7 @@ export default function ReelStudio() {
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i));
 
   const previewTrack = (id) => {
-    if (playingTrack === id) {
-      audioRef.current?.pause();
-      setPlayingTrack(null);
-      return;
-    }
+    if (playingTrack === id) { audioRef.current?.pause(); setPlayingTrack(null); return; }
     if (audioRef.current) {
       audioRef.current.src = `${BACKEND}/api/social/music/${id}`;
       audioRef.current.play().catch(() => {});
@@ -74,14 +109,10 @@ export default function ReelStudio() {
       try {
         const { data } = await api.get(`/social/reels/${id}`);
         if (data.status === "ready") {
-          clearInterval(pollRef.current);
-          setReel(data);
-          setGenerating(false);
-          loadReels();
+          clearInterval(pollRef.current); setReel(data); setGenerating(false); loadReels();
           toast.success("¡Tu Reel está listo! 🎬");
         } else if (data.status === "error") {
-          clearInterval(pollRef.current);
-          setGenerating(false);
+          clearInterval(pollRef.current); setGenerating(false);
           toast.error("No se pudo generar el Reel. Intenta de nuevo.");
         }
       } catch { /* keep polling */ }
@@ -89,7 +120,7 @@ export default function ReelStudio() {
   };
 
   const generate = async () => {
-    if (photos.length < 1) { toast.error("Sube al menos 1 foto"); return; }
+    if (photos.length < tpl.min) { toast.error(`Este diseño necesita ${tpl.min} foto${tpl.min > 1 ? "s" : ""}`); return; }
     if (!brief.trim()) { toast.error("Escribe qué quieres comunicar"); return; }
     if (music === "upload" && !musicFile) { toast.error("Sube tu archivo de música o elige otra opción"); return; }
     setGenerating(true);
@@ -102,11 +133,17 @@ export default function ReelStudio() {
       fd.append("music", music);
       fd.append("brand_color", brand);
       fd.append("accent_color", accent);
+      fd.append("template", template);
+      fd.append("motion", motion);
+      fd.append("transition", transition);
+      fd.append("subtitles", subtitles ? "true" : "false");
+      fd.append("outro", outro ? "true" : "false");
+      fd.append("voiceover", voiceover ? "true" : "false");
+      fd.append("duration", String(duration));
       photos.forEach((p) => fd.append("files", p.file));
       if (music === "upload" && musicFile) fd.append("music_file", musicFile);
       const { data } = await api.post("/social/reels", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000,
+        headers: { "Content-Type": "multipart/form-data" }, timeout: 120000,
       });
       setReel(data);
       pollReel(data.id);
@@ -136,33 +173,46 @@ export default function ReelStudio() {
     toast.success("Reel eliminado");
   };
 
-  const colors = COLOR_THEMES;
-
   return (
     <div className="space-y-6" data-testid="reel-studio">
       <audio ref={audioRef} onEnded={() => setPlayingTrack(null)} hidden />
 
       <Card className="p-5 space-y-5 border-0 shadow-sm">
+        {/* Template */}
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Plantilla del Reel</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+            {REEL_TEMPLATES.map((t) => (
+              <button key={t.id} onClick={() => setTemplate(t.id)} data-testid={`reel-template-${t.id}`}
+                className={`text-left p-3 rounded-xl border tap transition-all ${template === t.id ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 hover:border-slate-300"}`}>
+                <div className="font-semibold text-sm">{t.label}</div>
+                <div className="text-[11px] text-slate-500">{t.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Photos */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Fotos (1 a 5)</Label>
-          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Cada foto tendrá zoom suave y transición. El orden es el de subida.</p>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            2. Fotos {isBeforeAfter ? "(Antes y Después)" : `(${tpl.min} a ${tpl.max})`}
+          </Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Cada foto tendrá movimiento y transición. El orden es el de subida.</p>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
             {photos.map((p, i) => (
               <div key={i} className="relative aspect-[9/16] rounded-xl overflow-hidden border border-slate-200" data-testid={`reel-photo-${i}`}>
                 <img src={p.preview} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
-                <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                <span className="absolute top-1 left-1 px-1.5 h-5 rounded-full bg-black/60 text-white text-[10px] font-bold flex items-center justify-center">
+                  {isBeforeAfter ? (i === 0 ? "Antes" : "Después") : i + 1}
+                </span>
                 <button onClick={() => removePhoto(i)} data-testid={`reel-photo-remove-${i}`} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
-            {photos.length < MAX_PHOTOS && (
-              <button
-                onClick={() => fileRef.current?.click()}
-                data-testid="reel-add-photo"
-                className="aspect-[9/16] rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-400 bg-slate-50 flex flex-col items-center justify-center text-slate-400 tap"
-              >
+            {photos.length < maxPhotos && (
+              <button onClick={() => fileRef.current?.click()} data-testid="reel-add-photo"
+                className="aspect-[9/16] rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-400 bg-slate-50 flex flex-col items-center justify-center text-slate-400 tap">
                 <ImagePlus className="w-6 h-6 mb-1" />
                 <span className="text-[11px] font-semibold">Agregar</span>
               </button>
@@ -174,40 +224,95 @@ export default function ReelStudio() {
 
         {/* Brief */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">2. ¿Qué quieres comunicar? (español)</Label>
-          <Textarea
-            data-testid="reel-brief-input"
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">3. ¿Qué quieres comunicar? (español)</Label>
+          <Textarea data-testid="reel-brief-input" value={brief} onChange={(e) => setBrief(e.target.value)}
             placeholder="Ej: Transformamos jardines descuidados en hermosos. Mantenimiento y paisajismo. Llama para una cotización gratis."
-            className="mt-2 rounded-xl min-h-[80px]"
-          />
+            className="mt-2 rounded-xl min-h-[80px]" />
         </div>
 
-        {/* Language */}
+        {/* Language + Duration */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Idioma del texto</Label>
+            <div className="flex gap-2 mt-2">
+              {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
+                <button key={id} onClick={() => setLanguage(id)} data-testid={`reel-lang-${id}`}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border tap ${language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">5. Duración</Label>
+            <div className="flex gap-2 mt-2">
+              {DURATIONS.map((d) => (
+                <button key={d} onClick={() => setDuration(d)} data-testid={`reel-duration-${d}`}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border tap ${duration === d ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  {d}s
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Motion + Transition */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">6. Movimiento</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {MOTIONS.map((m) => (
+                <button key={m.id} onClick={() => setMotion(m.id)} data-testid={`reel-motion-${m.id}`}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border tap ${motion === m.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              7. Transición {isBeforeAfter && <span className="text-slate-400 normal-case font-normal">(barra deslizante)</span>}
+            </Label>
+            <div className={`flex flex-wrap gap-2 mt-2 ${isBeforeAfter ? "opacity-40 pointer-events-none" : ""}`}>
+              {TRANSITIONS.map((t) => (
+                <button key={t.id} onClick={() => setTransition(t.id)} data-testid={`reel-transition-${t.id}`}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border tap ${transition === t.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Extras toggles */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">3. Idioma del texto</Label>
-          <div className="flex gap-2 mt-2 max-w-xs">
-            {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
-              <button key={id} onClick={() => setLanguage(id)} data-testid={`reel-lang-${id}`}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border tap ${language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
-                {lbl}
-              </button>
-            ))}
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">8. Extras</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Captions className="w-4 h-4 text-emerald-600" /> Subtítulos</span>
+              <Switch checked={subtitles} onCheckedChange={setSubtitles} data-testid="reel-subtitles-switch" />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Clapperboard className="w-4 h-4 text-emerald-600" /> Tarjeta final</span>
+              <Switch checked={outro} onCheckedChange={setOutro} data-testid="reel-outro-switch" />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Mic className="w-4 h-4 text-emerald-600" /> Voz en off IA</span>
+              <Switch checked={voiceover} onCheckedChange={setVoiceover} data-testid="reel-voiceover-switch" />
+            </div>
           </div>
         </div>
 
         {/* Music */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Música</Label>
-          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Usa una pista libre de derechos, sube la tuya, o sin música.</p>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">9. Música</Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Pista libre de derechos, sube la tuya, o sin música.</p>
           <div className="space-y-2">
             <button onClick={() => setMusic("none")} data-testid="reel-music-none"
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold tap ${music === "none" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
               <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${music === "none" ? "border-emerald-500" : "border-slate-300"}`}>{music === "none" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}</span>
               Sin música <span className="text-slate-400 font-normal">(le pones música en Instagram)</span>
             </button>
-
             {tracks.map((t) => (
               <div key={t.id} data-testid={`reel-music-${t.id}`}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold ${music === t.id ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
@@ -222,7 +327,6 @@ export default function ReelStudio() {
                 </button>
               </div>
             ))}
-
             <button onClick={() => { setMusic("upload"); musicRef.current?.click(); }} data-testid="reel-music-upload"
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold tap ${music === "upload" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
               <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${music === "upload" ? "border-emerald-500" : "border-slate-300"}`}>{music === "upload" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}</span>
@@ -236,9 +340,9 @@ export default function ReelStudio() {
 
         {/* Colors */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">5. Color del diseño</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">10. Color del diseño</Label>
           <div className="flex flex-wrap gap-2 mt-2">
-            {colors.map((c) => (
+            {COLOR_THEMES.map((c) => (
               <button key={c.id} onClick={() => setColorTheme(c.id)} data-testid={`reel-color-${c.id}`} title={c.label}
                 className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${colorTheme === c.id ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"}`}>
                 <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: c.swatch }} />
@@ -267,7 +371,7 @@ export default function ReelStudio() {
 
         <Button onClick={generate} disabled={generating} data-testid="reel-generate-btn"
           className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-base">
-          {generating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando tu Reel… (~30s)</> : <><Video className="w-5 h-5 mr-2" /> Generar Reel</>}
+          {generating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando tu Reel… (~30-60s)</> : <><Video className="w-5 h-5 mr-2" /> Generar Reel</>}
         </Button>
       </Card>
 
@@ -288,7 +392,7 @@ export default function ReelStudio() {
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-3" />
               <p className="text-sm font-semibold text-slate-600">Generando tu video…</p>
-              <p className="text-xs text-slate-400 mt-1">Tarda unos 30 segundos. No cierres esta página.</p>
+              <p className="text-xs text-slate-400 mt-1">Puede tardar de 30 a 60 segundos. No cierres esta página.</p>
             </div>
           )}
         </Card>

@@ -78,7 +78,7 @@ NOTES = {  # frequencies
 
 def build_track(style):
     mix = np.zeros(N)
-    bpm = {"energetica": 120, "corporativa": 90, "lofi": 78}[style]
+    bpm = {"energetica": 120, "corporativa": 90, "lofi": 78, "epica": 80, "alegre": 124, "urbana": 96}[style]
     beat = 60.0 / bpm
     bar = beat * 4
     # chord progressions (root triads), 4 chords looping
@@ -86,11 +86,17 @@ def build_track(style):
         "energetica": [["C4", "E4", "G4"], ["A3", "C4", "E4"], ["F3", "A3", "C4"], ["G3", "B3", "D4"]],
         "corporativa": [["C4", "E4", "G4"], ["G3", "B3", "D4"], ["A3", "C4", "E4"], ["F3", "A3", "C4"]],
         "lofi": [["A3", "C4", "E4"], ["F3", "A3", "C4"], ["C4", "E4", "G4"], ["G3", "B3", "D4"]],
+        "epica": [["C3", "G3", "C4"], ["A3", "E4", "A4"], ["F3", "C4", "F4"], ["G3", "D4", "G4"]],
+        "alegre": [["D4", "F4", "A4"], ["G3", "B3", "D4"], ["A3", "D4", "F4"], ["C4", "E4", "G4"]],
+        "urbana": [["E3", "G3", "B3"], ["C4", "E4", "G4"], ["A3", "C4", "E4"], ["D4", "F4", "A4"]],
     }[style]
     arp_top = {
         "energetica": ["C5", "E5", "G5", "E5"],
         "corporativa": ["C5", "G4", "E5", "G4"],
         "lofi": ["A4", "E5", "C5", "E5"],
+        "epica": ["C5", "G4", "A4", "E5"],
+        "alegre": ["A4", "D5", "F4", "A5"],
+        "urbana": ["E4", "B4", "G4", "E5"],
     }[style]
 
     nbars = int(DUR / bar) + 1
@@ -110,12 +116,19 @@ def build_track(style):
         if style == "corporativa":
             if i % 2 == 0:
                 mix += hat(bt, 0.10)
+        elif style == "epica":
+            mix += kick(bt, 0.6)
+            if i % 4 == 3:
+                mix += kick(bt + beat / 2, 0.3)
         else:
-            mix += kick(bt, 0.55 if style == "energetica" else 0.42)
+            mix += kick(bt, 0.55 if style in ("energetica", "alegre", "urbana") else 0.42)
             mix += hat(bt + beat / 2, 0.16)
-            if style == "energetica":
+            if style in ("energetica", "alegre"):
                 mix += hat(bt + beat / 4, 0.08)
                 mix += hat(bt + 3 * beat / 4, 0.08)
+            if style == "urbana":
+                mix += hat(bt + beat / 3, 0.07)
+                mix += hat(bt + 2 * beat / 3, 0.07)
 
     # gentle fade in/out at edges
     fade = int(0.4 * SR)
@@ -137,7 +150,7 @@ def write_wav(path, mono):
         w.writeframes(data.tobytes())
 
 
-for style in ["energetica", "corporativa", "lofi"]:
+for style in ["energetica", "corporativa", "lofi", "epica", "alegre", "urbana"]:
     np.random.seed(42)
     mono = build_track(style)
     wav = os.path.join(OUT, f"{style}.wav")

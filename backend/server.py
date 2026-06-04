@@ -28,6 +28,7 @@ import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY 
 import storage_service  # noqa: E402
 import social_service  # noqa: E402
 import video_service  # noqa: E402
+import tts_service  # noqa: E402
 import payments_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
@@ -2927,15 +2928,19 @@ async def get_reel_music(track_id: str):
 
 async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief: str,
                         language: str, music_choice: str, music_audio_id: Optional[str],
-                        brand_color: str, accent_color: str):
-    """Background: AI copy -> branded overlay -> FFmpeg render -> store MP4."""
+                        brand_color: str, accent_color: str, template: str, motion: str,
+                        transition: str, subtitles: bool, outro: bool, voiceover: bool,
+                        duration: float):
+    """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import tempfile as _tf
     music_tmp = None
+    voice_tmp = None
     try:
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         card = await _ensure_card(user_id)
         copy = await ai_service.generate_social_copy(
-            brief, template="showcase", language=language,
+            brief, template=template if template in social_service.DESIGN_PHOTOS else "showcase",
+            language=language,
             business_name=user.get("business_name", ""),
             business_type=card.get("business_type", ""),
             phone=card.get("contact_phone") or user.get("phone", ""),
@@ -2966,8 +2971,23 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 except Exception:
                     music_path = None
 
+        # Optional AI voice-over
+        voice_path = None
+        if voiceover:
+            script = ". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p])
+            try:
+                vbytes = await tts_service.generate_voiceover(script, language=language)
+                fd, voice_tmp = _tf.mkstemp(suffix=".mp3")
+                with os.fdopen(fd, "wb") as f:
+                    f.write(vbytes)
+                voice_path = voice_tmp
+            except Exception:
+                voice_path = None
+
         mp4 = await asyncio.to_thread(
-            video_service.render_reel_from_images, images, copy, brand, music_path, REEL_DURATION
+            video_service.render_reel_full, images, copy, brand,
+            template=template, motion=motion, transition=transition, duration=duration,
+            subtitles=subtitles, outro=outro, music_path=music_path, voice_path=voice_path,
         )
         out_id = await _store_card_photo(user_id, mp4, "video/mp4", "social_reel", "mp4")
         await db.social_reels.update_one(
@@ -2982,11 +3002,12 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
             {"$set": {"status": "error", "error": str(e)[:300], "updated_at": _now_iso()}},
         )
     finally:
-        if music_tmp:
-            try:
-                os.remove(music_tmp)
-            except Exception:
-                pass
+        for tmp in (music_tmp, voice_tmp):
+            if tmp:
+                try:
+                    os.remove(tmp)
+                except Exception:
+                    pass
 
 
 @api_router.post("/social/reels")
@@ -2997,17 +3018,32 @@ async def create_reel(
     music: str = Form("none"),
     brand_color: str = Form(""),
     accent_color: str = Form(""),
+    template: str = Form("showcase"),
+    motion: str = Form("auto"),
+    transition: str = Form("fade"),
+    subtitles: bool = Form(False),
+    outro: bool = Form(False),
+    voiceover: bool = Form(False),
+    duration: float = Form(10.0),
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
     user_id: str = Depends(get_current_user_id),
 ):
-    """Create a ~10s vertical reel from 1-5 photos. Renders in the background;
+    """Create a vertical reel from photos. Renders in the background;
     poll GET /social/reels/{id} for status ('processing' -> 'ready'/'error')."""
     language = "es" if language == "es" else "en"
+    if template not in video_service.REEL_TEMPLATE_PHOTOS:
+        template = "showcase"
+    if motion not in video_service.MOTIONS:
+        motion = "auto"
+    if transition not in video_service.TRANSITIONS:
+        transition = "fade"
+    duration = float(duration) if duration in (10.0, 15.0, 20.0) else 10.0
+    pmin, pmax = video_service.REEL_TEMPLATE_PHOTOS[template]
 
     source_ids = []
     skipped = 0
-    for f in (files or [])[:REEL_MAX_PHOTOS]:
+    for f in (files or [])[:pmax]:
         ct = (f.content_type or "").lower()
         if ct not in ALLOWED_IMAGE_TYPES:
             skipped += 1
@@ -3020,10 +3056,10 @@ async def create_reel(
         pid = await _store_card_photo(user_id, data, ct, "social_src", ext)
         source_ids.append(pid)
 
-    if not source_ids:
+    if len(source_ids) < pmin:
         if skipped:
             raise HTTPException(400, "Las fotos no se pudieron usar (formato no soportado o más de 8MB). Sube JPG/PNG.")
-        raise HTTPException(400, "Sube al menos 1 foto")
+        raise HTTPException(400, f"Este diseño necesita {pmin} foto{'s' if pmin > 1 else ''}")
 
     brand_color = _valid_hex(brand_color)
     accent_color = _valid_hex(accent_color)
@@ -3050,6 +3086,13 @@ async def create_reel(
         "music_audio_id": music_audio_id,
         "brand_color": brand_color or "",
         "accent_color": accent_color or "",
+        "template": template,
+        "motion": motion,
+        "transition": transition,
+        "subtitles": subtitles,
+        "outro": outro,
+        "voiceover": voiceover,
+        "duration": duration,
         "copy": None,
         "source_photo_ids": source_ids,
         "video": None,
@@ -3060,7 +3103,8 @@ async def create_reel(
     await db.social_reels.insert_one(reel)
     background_tasks.add_task(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
-        music, music_audio_id, brand_color, accent_color,
+        music, music_audio_id, brand_color, accent_color, template, motion,
+        transition, subtitles, outro, voiceover, duration,
     )
     return _strip_id(reel)
 
