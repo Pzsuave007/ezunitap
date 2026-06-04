@@ -41,6 +41,7 @@ export default function ReelStudio() {
   const [template, setTemplate] = useState("showcase");
   const [photos, setPhotos] = useState([]);
   const [brief, setBrief] = useState("");
+  const [cta, setCta] = useState("");
   const [language, setLanguage] = useState("en");
   const [colorTheme, setColorTheme] = useState("card");
   const [customAccent, setCustomAccent] = useState("#10b981");
@@ -68,6 +69,11 @@ export default function ReelStudio() {
   const tpl = REEL_TEMPLATES.find((t) => t.id === template);
   const maxPhotos = tpl.max;
   const isBeforeAfter = template === "before_after";
+
+  const selectTemplate = (id) => {
+    setTemplate(id);
+    if (id === "before_after") setTransition("deslizar");
+  };
 
   const loadReels = async () => {
     try { const { data } = await api.get("/social/reels"); setReels(data); } catch { /* ignore */ }
@@ -135,6 +141,7 @@ export default function ReelStudio() {
       fd.append("brand_color", brand);
       fd.append("accent_color", accent);
       fd.append("template", template);
+      fd.append("cta_override", cta);
       fd.append("motion", motion);
       fd.append("transition", transition);
       fd.append("subtitles", subtitles ? "true" : "false");
@@ -185,7 +192,7 @@ export default function ReelStudio() {
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Plantilla del Reel</Label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
             {REEL_TEMPLATES.map((t) => (
-              <button key={t.id} onClick={() => setTemplate(t.id)} data-testid={`reel-template-${t.id}`}
+              <button key={t.id} onClick={() => selectTemplate(t.id)} data-testid={`reel-template-${t.id}`}
                 className={`text-left p-3 rounded-xl border tap transition-all ${template === t.id ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 hover:border-slate-300"}`}>
                 <div className="font-semibold text-sm">{t.label}</div>
                 <div className="text-[11px] text-slate-500">{t.desc}</div>
@@ -230,6 +237,12 @@ export default function ReelStudio() {
           <Textarea data-testid="reel-brief-input" value={brief} onChange={(e) => setBrief(e.target.value)}
             placeholder="Ej: Transformamos jardines descuidados en hermosos. Mantenimiento y paisajismo. Llama para una cotización gratis."
             className="mt-2 rounded-xl min-h-[80px]" />
+          <div className="mt-3">
+            <Label className="text-[11px] font-semibold text-slate-500">Botón / CTA <span className="font-normal text-slate-400">(opcional — si lo dejas vacío la IA lo elige)</span></Label>
+            <input data-testid="reel-cta-input" value={cta} onChange={(e) => setCta(e.target.value.slice(0, 40))} maxLength={40}
+              placeholder="Ej: Llama hoy · (713) 555-0142"
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400" />
+          </div>
         </div>
 
         {/* Language + Duration */}
@@ -273,9 +286,9 @@ export default function ReelStudio() {
           </div>
           <div>
             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              7. Transición {isBeforeAfter && <span className="text-slate-400 normal-case font-normal">(barra deslizante)</span>}
+              7. Transición {isBeforeAfter && <span className="text-slate-400 normal-case font-normal">(prueba "Deslizar" para el efecto antes/después)</span>}
             </Label>
-            <div className={`flex flex-wrap gap-2 mt-2 ${isBeforeAfter ? "opacity-40 pointer-events-none" : ""}`}>
+            <div className="flex flex-wrap gap-2 mt-2">
               {TRANSITIONS.map((t) => (
                 <button key={t.id} onClick={() => setTransition(t.id)} data-testid={`reel-transition-${t.id}`}
                   className={`px-3 py-2 rounded-xl text-xs font-semibold border tap ${transition === t.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>

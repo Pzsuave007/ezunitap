@@ -320,13 +320,13 @@ def render_reel(photo_paths: List[str], out_path: str, *,
                 subtitle_specs: Optional[List[tuple]] = None,  # list of (path, start, end)
                 outro_path: Optional[str] = None,
                 motion: str = "auto", transition: str = "fade",
+                transition_dur: Optional[float] = None,
                 duration: float = 10.0,
                 music_path: Optional[str] = None,
                 voice_path: Optional[str] = None) -> None:
     n = max(1, len(photo_paths))
-    is_slider = (transition == "_slider")
-    xfade_name = "slideleft" if is_slider else TRANSITIONS.get(transition, "fade")
-    td_p = TD_SLIDER if is_slider else (TD_DEFAULT if n > 1 else 0.0)
+    xfade_name = TRANSITIONS.get(transition, "fade")
+    td_p = 0.0 if n == 1 else (transition_dur if transition_dur else TD_DEFAULT)
 
     montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro_path else duration
     montage_dur = max(3.0, montage_dur)
@@ -481,8 +481,8 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
                     f.write(build_segment_overlay(lines[i], brand, i, n))
                 segment_overlay_paths.append(sp)
 
-        # before_after uses the slider transition
-        eff_transition = "_slider" if template == "before_after" else transition
+        # before_after: a slower transition reads as a before/after reveal
+        eff_transition_dur = TD_SLIDER if template == "before_after" else TD_DEFAULT
 
         subtitle_specs = None
         if subs_on:
@@ -513,7 +513,7 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             segment_overlay_paths=segment_overlay_paths,
             subtitle_specs=subtitle_specs,
             outro_path=outro_path,
-            motion=motion, transition=eff_transition, duration=duration,
+            motion=motion, transition=transition, transition_dur=eff_transition_dur, duration=duration,
             music_path=music_path, voice_path=voice_path,
         )
         with open(out_path, "rb") as f:

@@ -2930,7 +2930,7 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         language: str, music_choice: str, music_audio_id: Optional[str],
                         brand_color: str, accent_color: str, template: str, motion: str,
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
-                        duration: float, voice_mode: str = "short"):
+                        duration: float, voice_mode: str = "short", cta_override: str = ""):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import re as _re
     import math as _math
@@ -2954,6 +2954,8 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
             business_type=card.get("business_type", ""),
             phone=card.get("contact_phone") or user.get("phone", ""),
         )
+        if cta_override:
+            copy["cta"] = cta_override
         brand = await _social_brand(user_id, language, brand_override=brand_color or None, accent_override=accent_color or None)
 
         images = []
@@ -3045,6 +3047,7 @@ async def create_reel(
     brand_color: str = Form(""),
     accent_color: str = Form(""),
     template: str = Form("showcase"),
+    cta_override: str = Form(""),
     motion: str = Form("auto"),
     transition: str = Form("fade"),
     subtitles: bool = Form(False),
@@ -3067,6 +3070,7 @@ async def create_reel(
         transition = "fade"
     duration = float(duration) if duration in (10.0, 15.0, 20.0) else 10.0
     voice_mode = "full" if voice_mode == "full" else "short"
+    cta_override = (cta_override or "").strip()[:40]
     pmin, pmax = video_service.REEL_TEMPLATE_PHOTOS[template]
 
     source_ids = []
@@ -3115,6 +3119,7 @@ async def create_reel(
         "brand_color": brand_color or "",
         "accent_color": accent_color or "",
         "template": template,
+        "cta_override": cta_override,
         "motion": motion,
         "transition": transition,
         "subtitles": subtitles,
@@ -3133,7 +3138,7 @@ async def create_reel(
     background_tasks.add_task(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
-        transition, subtitles, outro, voiceover, duration, voice_mode,
+        transition, subtitles, outro, voiceover, duration, voice_mode, cta_override,
     )
     return _strip_id(reel)
 
