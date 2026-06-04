@@ -2391,17 +2391,6 @@ async def create_card(payload: CardSettingsIn, user_id: str = Depends(get_curren
     return _strip_id(doc)
 
 
-@api_router.delete("/card/{card_id}")
-async def delete_card(card_id: str, user_id: str = Depends(get_current_user_id)):
-    card = await db.cards.find_one({"id": card_id, "user_id": user_id}, {"_id": 0})
-    if not card:
-        raise HTTPException(404, "Tarjeta no encontrada")
-    if card.get("is_primary"):
-        raise HTTPException(400, "No puedes eliminar la tarjeta principal")
-    await db.cards.delete_one({"id": card_id, "user_id": user_id})
-    return {"ok": True}
-
-
 @api_router.get("/card/settings")
 async def get_card_settings(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
     return await _resolve_card(user_id, card_id)
@@ -2454,6 +2443,17 @@ async def upload_card_cover_photo(file: UploadFile = File(...), card_id: Optiona
 @api_router.delete("/card/cover-photo")
 async def delete_card_cover_photo(card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
     return await _delete_card_asset(user_id, kind="cover", card_id=card_id)
+
+
+@api_router.delete("/card/{card_id}")
+async def delete_card(card_id: str, user_id: str = Depends(get_current_user_id)):
+    card = await db.cards.find_one({"id": card_id, "user_id": user_id}, {"_id": 0})
+    if not card:
+        raise HTTPException(404, "Tarjeta no encontrada")
+    if card.get("is_primary"):
+        raise HTTPException(400, "No puedes eliminar la tarjeta principal")
+    await db.cards.delete_one({"id": card_id, "user_id": user_id})
+    return {"ok": True}
 
 
 async def _upload_card_asset(file: UploadFile, user_id: str, kind: str, card_id: Optional[str] = None):
@@ -2692,7 +2692,26 @@ async def _load_pil_image(photo_id: str, user_id: str):
         return None
 
 
-async def _social_brand(user_id: str, language: str):
+def _valid_hex(value: str) -> str:
+    """Return a normalized #RRGGBB hex if valid, else empty string."""
+    v = (value or "").strip()
+    if not v:
+        return ""
+    if not v.startswith("#"):
+        v = "#" + v
+    body = v[1:]
+    if len(body) == 3:
+        body = "".join(c * 2 for c in body)
+    if len(body) != 6:
+        return ""
+    try:
+        int(body, 16)
+    except ValueError:
+        return ""
+    return "#" + body.lower()
+
+
+async def _social_brand(user_id: str, language: str, brand_override: str = None, accent_override: str = None):
     card = await _ensure_card(user_id)
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     logo_bytes = None
@@ -2703,7 +2722,10 @@ async def _social_brand(user_id: str, language: str):
                 logo_bytes, _ = storage_service.get_storage().get(ld["storage_path"])
             except Exception:
                 logo_bytes = None
-    return social_service.build_brand(card, user, logo_bytes, language=language)
+    return social_service.build_brand(
+        card, user, logo_bytes, language=language,
+        brand_override=brand_override, accent_override=accent_override,
+    )
 
 
 async def _render_social_images(template, formats, source_ids, copy, brand, user_id):
@@ -2747,6 +2769,8 @@ async def create_social_post(
     brief: str = Form(""),
     language: str = Form("en"),
     formats: str = Form("9x16,1x1"),
+    brand_color: str = Form(""),
+    accent_color: str = Form(""),
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id),
 ):
@@ -2756,6 +2780,8 @@ async def create_social_post(
         raise HTTPException(400, "Plantilla inválida")
     language = "es" if language == "es" else "en"
     fmts = [f.strip() for f in formats.split(",") if f.strip() in SOCIAL_FORMATS] or ["1x1"]
+    brand_color = _valid_hex(brand_color)
+    accent_color = _valid_hex(accent_color)
 
     # Store uploaded source photos
     source_ids = []
@@ -2791,7 +2817,7 @@ async def create_social_post(
     except Exception as e:
         raise HTTPException(502, f"Error generando el texto con IA: {e}")
 
-    brand = await _social_brand(user_id, language)
+    brand = await _social_brand(user_id, language, brand_override=brand_color, accent_override=accent_color)
     images = await _render_social_images(template, fmts, source_ids, copy, brand, user_id)
 
     doc = {
@@ -2801,6 +2827,8 @@ async def create_social_post(
         "brief": brief,
         "language": language,
         "formats": fmts,
+        "brand_color": brand_color or "",
+        "accent_color": accent_color or "",
         "copy": copy,
         "source_photo_ids": source_ids,
         "images": images,
@@ -2836,7 +2864,11 @@ async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str
     # soft-delete previous output images
     for img in post.get("images", []):
         await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
-    brand = await _social_brand(user_id, post.get("language", "en"))
+    brand = await _social_brand(
+        user_id, post.get("language", "en"),
+        brand_override=post.get("brand_color") or None,
+        accent_override=post.get("accent_color") or None,
+    )
     images = await _render_social_images(post["template"], post.get("formats", ["1x1"]), post.get("source_photo_ids", []), copy, brand, user_id)
     await db.social_posts.update_one(
         {"id": post_id, "user_id": user_id},

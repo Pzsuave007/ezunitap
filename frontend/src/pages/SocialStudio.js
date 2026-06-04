@@ -32,6 +32,21 @@ const FORMATS = [
   { id: "1x1", label: "Cuadrado 1:1", hint: "Feed Instagram / Facebook" },
 ];
 
+// Color themes for the design (panel/band = brand, bar/button = accent).
+// id "card" = use the colors from the user's Smart Card (no override).
+const COLOR_THEMES = [
+  { id: "card", label: "Mi tarjeta", brand: null, accent: null, swatch: "#94a3b8" },
+  { id: "green", label: "Verde", brand: "#0f5f46", accent: "#10b981", swatch: "#10b981" },
+  { id: "blue", label: "Azul", brand: "#1e3a8a", accent: "#3b82f6", swatch: "#3b82f6" },
+  { id: "navy", label: "Marino", brand: "#0f172a", accent: "#38bdf8", swatch: "#0f172a" },
+  { id: "black", label: "Negro", brand: "#171717", accent: "#f59e0b", swatch: "#171717" },
+  { id: "red", label: "Rojo", brand: "#7f1d1d", accent: "#ef4444", swatch: "#ef4444" },
+  { id: "orange", label: "Naranja", brand: "#7c2d12", accent: "#f97316", swatch: "#f97316" },
+  { id: "purple", label: "Morado", brand: "#4c1d95", accent: "#a855f7", swatch: "#a855f7" },
+  { id: "teal", label: "Turquesa", brand: "#134e4a", accent: "#14b8a6", swatch: "#14b8a6" },
+  { id: "gold", label: "Dorado", brand: "#3f3f46", accent: "#eab308", swatch: "#eab308" },
+];
+
 function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing }) {
   const ref = useRef(null);
   return (
@@ -101,6 +116,9 @@ export default function SocialStudio() {
   const [brief, setBrief] = useState("");
   const [language, setLanguage] = useState("en");
   const [formats, setFormats] = useState(["9x16", "1x1"]);
+  const [colorTheme, setColorTheme] = useState("card");
+  const [customAccent, setCustomAccent] = useState("#10b981");
+  const [customBrand, setCustomBrand] = useState("#0f5f46");
   const [loading, setLoading] = useState(false);
   const [post, setPost] = useState(null);
   const [history, setHistory] = useState([]);
@@ -162,6 +180,13 @@ export default function SocialStudio() {
     }
   };
 
+  const resolveColors = () => {
+    if (colorTheme === "custom") return { brand: customBrand, accent: customAccent };
+    const t = COLOR_THEMES.find((c) => c.id === colorTheme);
+    if (!t || t.id === "card") return { brand: "", accent: "" };
+    return { brand: t.brand, accent: t.accent };
+  };
+
   const generate = async () => {
     const chosen = photos.slice(0, needed).filter(Boolean);
     if (chosen.length < needed) { toast.error(`Sube ${needed} foto${needed > 1 ? "s" : ""}`); return; }
@@ -170,11 +195,14 @@ export default function SocialStudio() {
     setLoading(true);
     setPost(null);
     try {
+      const { brand: brandColor, accent: accentColor } = resolveColors();
       const fd = new FormData();
       fd.append("template", template);
       fd.append("brief", brief);
       fd.append("language", language);
       fd.append("formats", formats.join(","));
+      fd.append("brand_color", brandColor);
+      fd.append("accent_color", accentColor);
       chosen.forEach((p) => fd.append("files", p.file));
       const { data } = await api.post("/social/posts", fd, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -371,6 +399,50 @@ export default function SocialStudio() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Colors */}
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">6. Color del diseño</Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Cambia el color de la barra y el fondo para que combine con tu negocio.</p>
+          <div className="flex flex-wrap gap-2">
+            {COLOR_THEMES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setColorTheme(c.id)}
+                data-testid={`color-${c.id}`}
+                title={c.label}
+                className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${
+                  colorTheme === c.id ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: c.swatch }} />
+                {c.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setColorTheme("custom")}
+              data-testid="color-custom"
+              className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${
+                colorTheme === "custom" ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: customAccent }} />
+              Personalizado
+            </button>
+          </div>
+          {colorTheme === "custom" && (
+            <div className="flex gap-4 mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200" data-testid="custom-colors">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                Barra / botón
+                <input type="color" value={customAccent} onChange={(e) => setCustomAccent(e.target.value)} data-testid="custom-accent-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
+              </label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                Fondo
+                <input type="color" value={customBrand} onChange={(e) => setCustomBrand(e.target.value)} data-testid="custom-brand-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
+              </label>
+            </div>
+          )}
         </div>
 
         <Button

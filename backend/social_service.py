@@ -638,12 +638,13 @@ def render_post(template: str, size_key: str, photos: List[Image.Image], copy: d
     return buf.getvalue()
 
 
-def build_brand(card: dict, user: dict, logo_bytes: Optional[bytes], language: str = "en") -> dict:
+def build_brand(card: dict, user: dict, logo_bytes: Optional[bytes], language: str = "en",
+                brand_override: Optional[str] = None, accent_override: Optional[str] = None) -> dict:
     ba = ("ANTES", "DESPUÉS") if language == "es" else ("BEFORE", "AFTER")
     promo_label = "OFERTA ESPECIAL" if language == "es" else "SPECIAL OFFER"
     return {
-        "brand": _hex_to_rgb(card.get("brand_color"), (30, 58, 138)),
-        "accent": _hex_to_rgb(card.get("accent_color"), (16, 185, 129)),
+        "brand": _hex_to_rgb(brand_override or card.get("brand_color"), (30, 58, 138)),
+        "accent": _hex_to_rgb(accent_override or card.get("accent_color"), (16, 185, 129)),
         "logo": _open_logo(logo_bytes),
         "business_name": user.get("business_name", "") or "",
         "phone": card.get("contact_phone") or user.get("phone", "") or "",
