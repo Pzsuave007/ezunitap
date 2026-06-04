@@ -2930,7 +2930,8 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         language: str, music_choice: str, music_audio_id: Optional[str],
                         brand_color: str, accent_color: str, template: str, motion: str,
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
-                        duration: float, voice_mode: str = "short", cta_override: str = ""):
+                        duration: float, voice_mode: str = "short", cta_override: str = "",
+                        voice_say_phone: bool = False):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import re as _re
     import math as _math
@@ -2943,6 +2944,16 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
         t = _re.sub(r"https?://\S+", "", t)
         t = _re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2190-\u21FF\u2B00-\u2BFF]", "", t)
         return _re.sub(r"\s+", " ", t).strip()
+
+    def _strip_phone(t, phone):
+        """Drop any sentence that contains a phone number, keeping clean sentences."""
+        if not t:
+            return t
+        sentences = _re.split(r"(?<=[.!?])\s+", t)
+        kept = [s for s in sentences if not _re.search(r"\+?\d[\d\-\(\)\s\.]{5,}\d", s)]
+        out = " ".join(kept).strip()
+        out = _re.sub(r"\+?\d[\d\-\(\)\s\.]{6,}\d", "", out)  # remove any lingering number
+        return _re.sub(r"\s{2,}", " ", out).strip(" ,.-")
 
     try:
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
@@ -2992,6 +3003,14 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                     ". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p]))
             else:
                 voice_script = _clean(". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p]))
+            if not voice_say_phone:
+                phone = card.get("contact_phone") or user.get("phone", "")
+                voice_script = _strip_phone(voice_script, phone)
+                if not voice_script.strip():
+                    voice_script = _strip_phone(_clean(". ".join(
+                        [p for p in [copy.get("headline"), copy.get("subheadline")] if p])), phone)
+                if not voice_script.strip():
+                    voice_script = _clean(copy.get("headline") or "Contáctanos hoy")
             try:
                 vbytes = await tts_service.generate_voiceover(voice_script, language=language)
                 fd, voice_tmp = _tf.mkstemp(suffix=".mp3")
@@ -3054,6 +3073,7 @@ async def create_reel(
     outro: bool = Form(False),
     voiceover: bool = Form(False),
     voice_mode: str = Form("short"),
+    voice_say_phone: bool = Form(False),
     duration: float = Form(10.0),
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
@@ -3126,6 +3146,7 @@ async def create_reel(
         "outro": outro,
         "voiceover": voiceover,
         "voice_mode": voice_mode,
+        "voice_say_phone": voice_say_phone,
         "duration": duration,
         "copy": None,
         "source_photo_ids": source_ids,
@@ -3138,7 +3159,7 @@ async def create_reel(
     background_tasks.add_task(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
-        transition, subtitles, outro, voiceover, duration, voice_mode, cta_override,
+        transition, subtitles, outro, voiceover, duration, voice_mode, cta_override, voice_say_phone,
     )
     return _strip_id(reel)
 

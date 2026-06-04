@@ -56,6 +56,7 @@ export default function ReelStudio() {
   const [outro, setOutro] = useState(true);
   const [voiceover, setVoiceover] = useState(false);
   const [voiceMode, setVoiceMode] = useState("short");
+  const [voiceSayPhone, setVoiceSayPhone] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
@@ -148,6 +149,7 @@ export default function ReelStudio() {
       fd.append("outro", outro ? "true" : "false");
       fd.append("voiceover", voiceover ? "true" : "false");
       fd.append("voice_mode", voiceMode);
+      fd.append("voice_say_phone", voiceSayPhone ? "true" : "false");
       fd.append("duration", String(duration));
       photos.forEach((p) => fd.append("files", p.file));
       if (music === "upload" && musicFile) fd.append("music_file", musicFile);
@@ -332,6 +334,11 @@ export default function ReelStudio() {
               {voiceMode === "full" && (
                 <p className="text-[11px] text-emerald-700/80 mt-2">El video se alargará automáticamente para que la voz nunca se corte (máx. 60s).</p>
               )}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-emerald-100">
+                <span className="text-xs font-semibold text-slate-600">Decir mi teléfono en la voz</span>
+                <Switch checked={voiceSayPhone} onCheckedChange={setVoiceSayPhone} data-testid="reel-voice-phone-switch" />
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">La voz habla un poco más lento para entenderse mejor.</p>
             </div>
           )}
         </div>
