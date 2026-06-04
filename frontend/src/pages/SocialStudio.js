@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
-  ImagePlus, Wand2, X,
+  ImagePlus, Wand2, X, Check,
 } from "lucide-react";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
@@ -25,7 +25,7 @@ const TEMPLATES = [
   { id: "side_panel", label: "Panel Lateral", photos: 1 },
   { id: "before_after", label: "Antes / Después", photos: 2 },
   { id: "promo", label: "Oferta / Promo", photos: 1 },
-];
+].map((t) => ({ ...t, preview: `/social-previews/${t.id}.jpg` }));
 
 const FORMATS = [
   { id: "9x16", label: "Vertical 9:16", hint: "Reels / TikTok / Stories" },
@@ -258,20 +258,41 @@ export default function SocialStudio() {
       <Card className="p-5 space-y-5 border-0 shadow-sm">
         {/* Template */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Tipo de post</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Elige un diseño</Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Así se verá tu post (tu foto y marca reemplazan el ejemplo).</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTemplate(t.id)}
                 data-testid={`template-${t.id}`}
-                className={`text-left p-3 rounded-xl border tap transition-all ${
-                  template === t.id ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 hover:border-slate-300"
+                className={`group relative text-left rounded-2xl border overflow-hidden tap transition-all ${
+                  template === t.id
+                    ? "border-emerald-500 ring-2 ring-emerald-500 shadow-md"
+                    : "border-slate-200 hover:border-emerald-300 hover:shadow-sm"
                 }`}
               >
-                <t.icon className="w-5 h-5 text-emerald-600 mb-1" />
-                <div className="font-semibold text-sm">{t.label}</div>
-                <div className="text-[11px] text-slate-500">{t.desc}</div>
+                <div className="relative aspect-square bg-slate-100">
+                  <img
+                    src={t.preview}
+                    alt={t.label}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                  {template === t.id && (
+                    <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow">
+                      <Check className="w-4 h-4" />
+                    </span>
+                  )}
+                  {t.photos > 1 && (
+                    <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/60 text-white">
+                      2 fotos
+                    </span>
+                  )}
+                </div>
+                <div className="px-2 py-1.5 bg-white">
+                  <div className="font-semibold text-xs text-slate-700 truncate">{t.label}</div>
+                </div>
               </button>
             ))}
           </div>
