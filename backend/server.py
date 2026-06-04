@@ -2738,21 +2738,25 @@ async def create_social_post(
 
     # Store uploaded source photos
     source_ids = []
+    skipped = 0
     for f in (files or []):
         ct = (f.content_type or "").lower()
         if ct not in ALLOWED_IMAGE_TYPES:
+            skipped += 1
             continue
         data = await f.read()
         if not data or len(data) > MAX_IMAGE_BYTES:
+            skipped += 1
             continue
         ext = f.filename.rsplit(".", 1)[-1].lower() if f.filename and "." in f.filename else "png"
         pid = await _store_card_photo(user_id, data, ct, "social_src", ext)
         source_ids.append(pid)
 
-    if template == "before_after" and len(source_ids) < 2:
-        raise HTTPException(400, "Antes/Después necesita 2 fotos")
-    if template == "showcase" and len(source_ids) < 1:
-        raise HTTPException(400, "Showcase necesita 1 foto")
+    needed = 2 if template == "before_after" else (1 if template == "showcase" else 0)
+    if len(source_ids) < needed:
+        if skipped:
+            raise HTTPException(400, "Una o más fotos no se pudieron usar (formato no soportado o más de 8MB). Sube JPG/PNG de menos de 8MB.")
+        raise HTTPException(400, f"{'Antes/Después necesita 2 fotos' if template == 'before_after' else 'Necesitas subir 1 foto'}")
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     card = await _ensure_card(user_id)
