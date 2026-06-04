@@ -203,22 +203,14 @@ def _render_showcase(size, photos, copy, brand) -> Image.Image:
     canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.35), start_frac=0.55))
     draw = ImageDraw.Draw(canvas)
     margin = int(w * 0.075)
-    scale = int(w * 0.05)
 
-    # top brand chip
-    _paste_logo_chip(canvas, draw, brand.get("logo"), brand.get("business_name", ""), margin, margin, scale)
-
-    # text block bottom
+    # text block bottom (clean: no top logo chip, no phone)
     y = h - margin
-    phone = brand.get("phone", "")
     cta = copy.get("cta", "")
     cta_font = _font("bold", int(w * 0.042))
-    # CTA pill + phone (drawn last so compute its height first)
     cta_h = cta_font.size + 28
     y_cta = y - cta_h
-    cw, _ = _pill(draw, (margin, y_cta), cta or "Contáctanos", cta_font, accent_rgb, _text_on(accent_rgb))
-    if phone:
-        draw.text((margin + cw + int(w * 0.03), y_cta + cta_h / 2), phone, font=_font("semibold", int(w * 0.04)), fill=(255, 255, 255), anchor="lm")
+    _pill(draw, (margin, y_cta), cta or "Contáctanos", cta_font, accent_rgb, _text_on(accent_rgb))
     y = y_cta - int(h * 0.025)
 
     sub = copy.get("subheadline", "")
@@ -284,9 +276,6 @@ def _render_before_after(size, photos, copy, brand) -> Image.Image:
     cta_x = w - margin - int(cw)
     cta_y = by0 + (band_h - cta_h) // 2 + int(h * 0.012)
     _pill(draw, (cta_x, cta_y), cta, cta_font, accent_rgb, _text_on(accent_rgb))
-    phone = brand.get("phone", "")
-    if phone:
-        draw.text((cta_x + cw / 2, cta_y - int(h * 0.006)), phone, font=_font("semibold", int(w * 0.028)), fill=fg, anchor="mb")
 
     # Headline on the LEFT, width capped so it never collides with the CTA.
     head = copy.get("headline", "") or ("ANTES Y DESPUÉS" if labels[0] == "ANTES" else "BEFORE & AFTER")
@@ -349,8 +338,8 @@ def _render_promo(size, photos, copy, brand) -> Image.Image:
         sf, slines, slh = _fit_text(draw, sub, "semibold", w - margin * 2, sub_alloc, int(w * 0.045), 26)
         _draw_lines(draw, slines, sf, margin, top, slh, (235, 240, 245))
 
-    # Business name + phone, then CTA pill at the bottom.
-    line = " · ".join([p for p in [brand.get("business_name", ""), brand.get("phone", "")] if p])
+    # Business name (no phone), then CTA pill at the bottom.
+    line = brand.get("business_name", "")
     if line:
         draw.text((margin, biz_y), line, font=biz_font, fill=fg, anchor="lb")
     _pill(draw, (margin, cta_y), copy.get("cta", "") or "Call Now", cta_font, accent_rgb, _text_on(accent_rgb), pad_x=44)
