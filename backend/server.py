@@ -27,6 +27,7 @@ load_dotenv(ROOT_DIR / ".env")
 import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY is set)
 import storage_service  # noqa: E402
 import social_service  # noqa: E402
+import video_service  # noqa: E402
 import payments_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
@@ -2893,6 +2894,202 @@ async def delete_social_post(post_id: str, user_id: str = Depends(get_current_us
         await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
     await db.social_posts.delete_one({"id": post_id, "user_id": user_id})
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Reels (vertical video) — Marketing Studio Phase 2
+# ---------------------------------------------------------------------------
+ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/aac", "audio/wav", "audio/x-wav", "audio/ogg"}
+MAX_AUDIO_BYTES = 15 * 1024 * 1024
+REEL_DURATION = 10.0
+REEL_MAX_PHOTOS = 5
+
+
+@api_router.get("/social/music")
+async def list_reel_music():
+    """Bundled royalty-free music tracks the user can pick for a reel."""
+    return [
+        {**t, "url": f"/api/social/music/{t['id']}"}
+        for t in video_service.MUSIC_TRACKS
+        if video_service.bundled_music_path(t["id"])
+    ]
+
+
+@api_router.get("/social/music/{track_id}")
+async def get_reel_music(track_id: str):
+    path = video_service.bundled_music_path(track_id)
+    if not path:
+        raise HTTPException(404, "Pista no encontrada")
+    with open(path, "rb") as f:
+        data = f.read()
+    return Response(content=data, media_type="audio/mpeg")
+
+
+async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief: str,
+                        language: str, music_choice: str, music_audio_id: Optional[str],
+                        brand_color: str, accent_color: str):
+    """Background: AI copy -> branded overlay -> FFmpeg render -> store MP4."""
+    import tempfile as _tf
+    music_tmp = None
+    try:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        card = await _ensure_card(user_id)
+        copy = await ai_service.generate_social_copy(
+            brief, template="showcase", language=language,
+            business_name=user.get("business_name", ""),
+            business_type=card.get("business_type", ""),
+            phone=card.get("contact_phone") or user.get("phone", ""),
+        )
+        brand = await _social_brand(user_id, language, brand_override=brand_color or None, accent_override=accent_color or None)
+
+        images = []
+        for pid in source_ids:
+            im = await _load_pil_image(pid, user_id)
+            if im is not None:
+                images.append(im)
+        if not images:
+            raise RuntimeError("No se pudieron cargar las fotos")
+
+        # Resolve music
+        music_path = None
+        if music_choice in {t["id"] for t in video_service.MUSIC_TRACKS}:
+            music_path = video_service.bundled_music_path(music_choice)
+        elif music_choice == "upload" and music_audio_id:
+            adoc = await db.photos.find_one({"id": music_audio_id, "user_id": user_id}, {"_id": 0})
+            if adoc:
+                try:
+                    abytes, _ = storage_service.get_storage().get(adoc["storage_path"])
+                    fd, music_tmp = _tf.mkstemp(suffix=".audio")
+                    with os.fdopen(fd, "wb") as f:
+                        f.write(abytes)
+                    music_path = music_tmp
+                except Exception:
+                    music_path = None
+
+        mp4 = await asyncio.to_thread(
+            video_service.render_reel_from_images, images, copy, brand, music_path, REEL_DURATION
+        )
+        out_id = await _store_card_photo(user_id, mp4, "video/mp4", "social_reel", "mp4")
+        await db.social_reels.update_one(
+            {"id": reel_id, "user_id": user_id},
+            {"$set": {"status": "ready", "copy": copy, "music": music_choice,
+                      "video": {"photo_id": out_id, "url": _photo_public_url(out_id)},
+                      "updated_at": _now_iso()}},
+        )
+    except Exception as e:
+        await db.social_reels.update_one(
+            {"id": reel_id, "user_id": user_id},
+            {"$set": {"status": "error", "error": str(e)[:300], "updated_at": _now_iso()}},
+        )
+    finally:
+        if music_tmp:
+            try:
+                os.remove(music_tmp)
+            except Exception:
+                pass
+
+
+@api_router.post("/social/reels")
+async def create_reel(
+    background_tasks: BackgroundTasks,
+    brief: str = Form(""),
+    language: str = Form("en"),
+    music: str = Form("none"),
+    brand_color: str = Form(""),
+    accent_color: str = Form(""),
+    files: List[UploadFile] = File(default=[]),
+    music_file: Optional[UploadFile] = File(default=None),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Create a ~10s vertical reel from 1-5 photos. Renders in the background;
+    poll GET /social/reels/{id} for status ('processing' -> 'ready'/'error')."""
+    language = "es" if language == "es" else "en"
+
+    source_ids = []
+    skipped = 0
+    for f in (files or [])[:REEL_MAX_PHOTOS]:
+        ct = (f.content_type or "").lower()
+        if ct not in ALLOWED_IMAGE_TYPES:
+            skipped += 1
+            continue
+        data = await f.read()
+        if not data or len(data) > MAX_IMAGE_BYTES:
+            skipped += 1
+            continue
+        ext = f.filename.rsplit(".", 1)[-1].lower() if f.filename and "." in f.filename else "png"
+        pid = await _store_card_photo(user_id, data, ct, "social_src", ext)
+        source_ids.append(pid)
+
+    if not source_ids:
+        if skipped:
+            raise HTTPException(400, "Las fotos no se pudieron usar (formato no soportado o más de 8MB). Sube JPG/PNG.")
+        raise HTTPException(400, "Sube al menos 1 foto")
+
+    brand_color = _valid_hex(brand_color)
+    accent_color = _valid_hex(accent_color)
+
+    # Optional uploaded music
+    music_audio_id = None
+    if music == "upload" and music_file is not None:
+        act = (music_file.content_type or "").lower()
+        if act not in ALLOWED_AUDIO_TYPES:
+            raise HTTPException(400, "Audio no soportado. Sube MP3, M4A, WAV o AAC.")
+        adata = await music_file.read()
+        if not adata or len(adata) > MAX_AUDIO_BYTES:
+            raise HTTPException(400, "El audio es muy grande (máx 15MB).")
+        aext = music_file.filename.rsplit(".", 1)[-1].lower() if music_file.filename and "." in music_file.filename else "mp3"
+        music_audio_id = await _store_card_photo(user_id, adata, act, "social_audio", aext)
+
+    reel = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "status": "processing",
+        "brief": brief,
+        "language": language,
+        "music": music,
+        "music_audio_id": music_audio_id,
+        "brand_color": brand_color or "",
+        "accent_color": accent_color or "",
+        "copy": None,
+        "source_photo_ids": source_ids,
+        "video": None,
+        "error": None,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.social_reels.insert_one(reel)
+    background_tasks.add_task(
+        _process_reel, reel["id"], user_id, source_ids, brief, language,
+        music, music_audio_id, brand_color, accent_color,
+    )
+    return _strip_id(reel)
+
+
+@api_router.get("/social/reels")
+async def list_reels(user_id: str = Depends(get_current_user_id)):
+    docs = await db.social_reels.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return docs
+
+
+@api_router.get("/social/reels/{reel_id}")
+async def get_reel(reel_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.social_reels.find_one({"id": reel_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Reel no encontrado")
+    return doc
+
+
+@api_router.delete("/social/reels/{reel_id}")
+async def delete_reel(reel_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.social_reels.find_one({"id": reel_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Reel no encontrado")
+    vid = (doc.get("video") or {}).get("photo_id")
+    if vid:
+        await db.photos.update_one({"id": vid, "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.social_reels.delete_one({"id": reel_id, "user_id": user_id})
+    return {"ok": True}
+
 
 
 

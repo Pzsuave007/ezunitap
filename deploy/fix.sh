@@ -50,7 +50,45 @@ pip install \
     --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ \
     -r "$REPO/deploy/requirements.prod.txt"
 
-# 3. Sync backend source (NEVER touch venv or .env)
+# 2b. Ensure ffmpeg (needed for Reel video generation in Marketing Studio).
+#     Use a static build (no root / yum needed) into $PROD/bin and point the
+#     backend at it via FFMPEG_BIN in .env when ffmpeg isn't already on PATH.
+FFMPEG_BIN_PATH="$PROD/bin/ffmpeg"
+if command -v ffmpeg >/dev/null 2>&1; then
+    echo "  ✅ ffmpeg present on PATH"
+elif [ -x "$FFMPEG_BIN_PATH" ]; then
+    echo "  ✅ static ffmpeg present at $FFMPEG_BIN_PATH"
+else
+    echo ">>> Installing static ffmpeg into $PROD/bin ..."
+    mkdir -p "$PROD/bin" "$PROD/tmp_ff"
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64|amd64) FF_URL="https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz" ;;
+        aarch64|arm64) FF_URL="https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz" ;;
+        *) FF_URL="" ;;
+    esac
+    if [ -n "$FF_URL" ] && curl -sSL "$FF_URL" -o "$PROD/tmp_ff/ff.tar.xz"; then
+        tar -xf "$PROD/tmp_ff/ff.tar.xz" -C "$PROD/tmp_ff" || true
+        FOUND=$(find "$PROD/tmp_ff" -name ffmpeg -type f | head -1)
+        if [ -n "$FOUND" ]; then
+            cp "$FOUND" "$FFMPEG_BIN_PATH" && chmod +x "$FFMPEG_BIN_PATH"
+            echo "  ✅ static ffmpeg installed"
+        else
+            echo "  ⚠️  could not locate ffmpeg in archive — Reels will be disabled until ffmpeg is installed"
+        fi
+    else
+        echo "  ⚠️  could not download static ffmpeg — Reels will be disabled until ffmpeg is installed"
+    fi
+    rm -rf "$PROD/tmp_ff"
+fi
+if [ -x "$FFMPEG_BIN_PATH" ] && ! command -v ffmpeg >/dev/null 2>&1; then
+    if grep -q "^FFMPEG_BIN=" "$PROD/.env"; then
+        sed -i "s|^FFMPEG_BIN=.*|FFMPEG_BIN=${FFMPEG_BIN_PATH}|" "$PROD/.env"
+    else
+        echo "FFMPEG_BIN=${FFMPEG_BIN_PATH}" >> "$PROD/.env"
+    fi
+    echo "  ✅ FFMPEG_BIN set to $FFMPEG_BIN_PATH"
+fi
 rsync -a \
     --exclude '__pycache__' \
     --exclude 'tests' \

@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
-  ImagePlus, Wand2, X, Check,
+  ImagePlus, Wand2, X, Check, Image as ImageIcon, Video,
 } from "lucide-react";
+import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
+import ReelStudio from "@/components/ReelStudio";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -30,21 +32,6 @@ const TEMPLATES = [
 const FORMATS = [
   { id: "9x16", label: "Vertical 9:16", hint: "Reels / TikTok / Stories" },
   { id: "1x1", label: "Cuadrado 1:1", hint: "Feed Instagram / Facebook" },
-];
-
-// Color themes for the design (panel/band = brand, bar/button = accent).
-// id "card" = use the colors from the user's Smart Card (no override).
-const COLOR_THEMES = [
-  { id: "card", label: "Mi tarjeta", brand: null, accent: null, swatch: "#94a3b8" },
-  { id: "green", label: "Verde", brand: "#0f5f46", accent: "#10b981", swatch: "#10b981" },
-  { id: "blue", label: "Azul", brand: "#1e3a8a", accent: "#3b82f6", swatch: "#3b82f6" },
-  { id: "navy", label: "Marino", brand: "#0f172a", accent: "#38bdf8", swatch: "#0f172a" },
-  { id: "black", label: "Negro", brand: "#171717", accent: "#f59e0b", swatch: "#171717" },
-  { id: "red", label: "Rojo", brand: "#7f1d1d", accent: "#ef4444", swatch: "#ef4444" },
-  { id: "orange", label: "Naranja", brand: "#7c2d12", accent: "#f97316", swatch: "#f97316" },
-  { id: "purple", label: "Morado", brand: "#4c1d95", accent: "#a855f7", swatch: "#a855f7" },
-  { id: "teal", label: "Turquesa", brand: "#134e4a", accent: "#14b8a6", swatch: "#14b8a6" },
-  { id: "gold", label: "Dorado", brand: "#3f3f46", accent: "#eab308", swatch: "#eab308" },
 ];
 
 function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing }) {
@@ -111,6 +98,7 @@ function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing 
 }
 
 export default function SocialStudio() {
+  const [mode, setMode] = useState("image");
   const [template, setTemplate] = useState("before_after");
   const [photos, setPhotos] = useState([null, null]);
   const [brief, setBrief] = useState("");
@@ -180,12 +168,7 @@ export default function SocialStudio() {
     }
   };
 
-  const resolveColors = () => {
-    if (colorTheme === "custom") return { brand: customBrand, accent: customAccent };
-    const t = COLOR_THEMES.find((c) => c.id === colorTheme);
-    if (!t || t.id === "card") return { brand: "", accent: "" };
-    return { brand: t.brand, accent: t.accent };
-  };
+  const resolveColorsLocal = () => resolveColors(colorTheme, customBrand, customAccent);
 
   const generate = async () => {
     const chosen = photos.slice(0, needed).filter(Boolean);
@@ -195,7 +178,7 @@ export default function SocialStudio() {
     setLoading(true);
     setPost(null);
     try {
-      const { brand: brandColor, accent: accentColor } = resolveColors();
+      const { brand: brandColor, accent: accentColor } = resolveColorsLocal();
       const fd = new FormData();
       fd.append("template", template);
       fd.append("brief", brief);
@@ -282,6 +265,32 @@ export default function SocialStudio() {
         </p>
       </div>
 
+      {/* Mode tabs */}
+      <div className="flex gap-2 p-1 rounded-2xl bg-slate-100 w-full sm:w-auto sm:inline-flex" data-testid="studio-mode-tabs">
+        <button
+          onClick={() => setMode("image")}
+          data-testid="mode-image"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold tap transition-all ${
+            mode === "image" ? "bg-white shadow-sm text-emerald-700" : "text-slate-500"
+          }`}
+        >
+          <ImageIcon className="w-4 h-4" /> Imagen
+        </button>
+        <button
+          onClick={() => setMode("reel")}
+          data-testid="mode-reel"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold tap transition-all ${
+            mode === "reel" ? "bg-white shadow-sm text-emerald-700" : "text-slate-500"
+          }`}
+        >
+          <Video className="w-4 h-4" /> Video (Reel)
+        </button>
+      </div>
+
+      {mode === "reel" && <ReelStudio />}
+
+      {mode === "image" && (
+      <>
       {/* Builder */}
       <Card className="p-5 space-y-5 border-0 shadow-sm">
         {/* Template */}
@@ -576,6 +585,8 @@ export default function SocialStudio() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }
