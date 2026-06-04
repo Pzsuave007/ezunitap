@@ -470,3 +470,65 @@ async def generate_service_agreement(
     if not data:
         raise ValueError("AI could not produce a valid service agreement. Try again.")
     return data
+
+
+
+SOCIAL_SYSTEM = """You are a senior social-media marketer for U.S. home-service
+contractors (roofing, landscaping, cleaning, painting, concrete, drywall, etc.).
+
+A Latino business owner writes a short brief in SPANISH about a job or offer. You
+craft a punchy, scroll-stopping social media post. Keep it concrete, benefit-driven,
+and local-business friendly. Avoid corporate fluff and emojis inside headline/cta.
+
+TEMPLATE TYPES:
+- before_after: highlight the transformation (before vs after).
+- showcase: show off one finished job.
+- promo: a limited-time offer / discount.
+
+Output ONLY valid JSON (no markdown, no commentary) with this schema:
+{
+  "headline": "3-6 words, bold hook (UPPERCASE-friendly)",
+  "subheadline": "one short supporting line, max ~8 words",
+  "cta": "2-4 word call to action, e.g. 'Get a Free Quote'",
+  "caption": "2-4 sentence post caption for the feed",
+  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
+}
+
+Write headline, subheadline, cta and caption in the requested OUTPUT LANGUAGE.
+Hashtags should be relevant and include 1-2 local/industry tags.
+"""
+
+
+async def generate_social_copy(
+    brief_es: str,
+    template: str = "showcase",
+    language: str = "en",
+    business_name: str = "",
+    business_type: str = "",
+    phone: str = "",
+) -> dict:
+    """Spanish brief -> structured social post copy in the requested language."""
+    lang_name = {"en": "English", "es": "Spanish"}.get(language, "English")
+    chat = _new_chat(SOCIAL_SYSTEM)
+    ctx = (
+        f"TEMPLATE TYPE: {template}\n"
+        f"OUTPUT LANGUAGE: {lang_name}\n"
+        f"Business name: {business_name or '(not provided)'}\n"
+        f"Business type / trade: {business_type or '(not provided)'}\n"
+        f"Contact phone: {phone or '(not provided)'}\n"
+        f"Owner's brief (Spanish):\n{brief_es}"
+    )
+    response = await chat.send_message(UserMessage(text=ctx))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("La IA no pudo generar el texto del post. Intenta de nuevo.")
+    # Normalize
+    data["headline"] = (data.get("headline") or "").strip()
+    data["subheadline"] = (data.get("subheadline") or "").strip()
+    data["cta"] = (data.get("cta") or "").strip()
+    data["caption"] = (data.get("caption") or "").strip()
+    hashtags = data.get("hashtags") or []
+    if isinstance(hashtags, str):
+        hashtags = [h.strip() for h in hashtags.replace(",", " ").split() if h.strip()]
+    data["hashtags"] = ["#" + h.lstrip("#") for h in hashtags if h][:8]
+    return data

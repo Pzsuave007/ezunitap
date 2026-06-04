@@ -1,0 +1,35 @@
+{
+  "summary": "Independent e2e test of NEW 'Estudio de Marketing' (social post studio). Full backend pytest suite (10/10) + Playwright e2e on /marketing covering all 3 templates' validation, generation, language=es Spanish output, rerender (image_ids change + new JPEGs + old soft-deleted), history list, and delete. Everything works as advertised.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_social_studio.py",
+    "/app/test_reports/pytest/social_studio_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 4997 lines — long overdue to split (social, auth, invoices, etc.) into modules. Not a blocker, but maintainability risk.",
+    "create_social_post silently drops uploaded files when content_type is missing/wrong or size>MAX. A user uploading a 6MB phone JPEG would get a confusing '2 fotos' / '1 foto' 400 with no hint why. Suggest returning a clearer Spanish error like 'Foto demasiado grande (máx X MB) o formato no soportado'.",
+    "rerender endpoint does not validate that source_photo_ids still exist / are not soft-deleted. If a user deletes the source photos out-of-band, rerender will silently produce a brand-only image. Minor.",
+    "delete_social_post only soft-deletes generated output images but does NOT touch source_photo_ids. Source photos remain in db.photos forever. Not user-visible, but adds DB cruft.",
+    "Frontend SocialStudio.js: photos state is [null,null] but slicing by `needed` means switching from before_after (2) -> showcase (1) keeps photo[0] selected (good UX), but switching showcase -> before_after silently keeps only one slot upload — the user must remember to add the second. Consider a brief hint when count requirement changes.",
+    "Frontend uses window.confirm for delete (works but inconsistent with shadcn Dialog used elsewhere)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_social_studio.py"
+  ],
+  "success_rate": {"backend": "100% (10/10 pytest)", "frontend": "100% (full e2e flow)"},
+  "test_credentials": "Used admin from /app/memory/test_credentials.md: pzsuave007@gmail.com / Uni2mkt007!",
+  "seed_data_creation": "Tests create temporary posts (TEST headline) via the real LLM and clean them up via DELETE at the end of the run. The frontend test also leaves a post that it immediately deletes via the history UI.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_social_studio.py are pytest-class based and self-cleaning. They DO consume Emergent LLM key (4 real generations per run: 1 showcase + 1 before_after + 1 promo + 1 rerender). To run: `export REACT_APP_BACKEND_URL=https://latino-contractors.preview.emergentagent.com && python -m pytest backend/tests/test_social_studio.py -v`. Endpoints verified: POST /api/social/posts (validation: invalid template 400, before_after<2 photos 400, showcase 0 photos 400, unauth 401/403; generation: 2 formats -> 2 image entries that serve real image/jpeg with JPEG magic bytes; language=es returns Spanish copy by heuristic); POST /api/social/posts/{id}/rerender (new photo_ids disjoint from old, new images valid JPEG, old image GET returns 404/410); GET /api/social/posts (ordered desc by created_at, includes our posts); DELETE /api/social/posts/{id} (returns {ok:true}, item removed from list, repeat delete -> 404). Frontend selectors all match spec: social-studio, template-{before_after|showcase|promo}, photo-slot-0/1, brief-input, lang-en/lang-es, format-9x16/format-1x1, generate-btn, post-result, result-img-1x1, result-img-9x16, edit-headline/subheadline/cta, rerender-btn, copy-caption-btn, download-1x1/9x16, post-history, history-{id}, history-delete-{id}, dashboard-marketing-cta, sidebar a[href='/marketing'].",
+  "rca of the issue": "No bugs found."
+}

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Users, FileText, Receipt, Briefcase, DollarSign,
   Plus, UserPlus, Sparkles, ArrowRight, TrendingUp,
-  Settings as SettingsIcon,
+  Settings as SettingsIcon, Megaphone,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
@@ -140,6 +140,25 @@ export default function Dashboard() {
           onClick={() => navigate("/invoices/nuevo")}
         />
       </div>
+
+      {/* Marketing studio highlight */}
+      <button
+        onClick={() => navigate("/marketing")}
+        data-testid="dashboard-marketing-cta"
+        className="w-full text-left rounded-2xl p-4 flex items-center gap-4 tap text-white shadow-sm"
+        style={{ background: "linear-gradient(120deg, #7C3AED 0%, #DB2777 100%)" }}
+      >
+        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          <Megaphone className="w-6 h-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-heading font-bold text-base flex items-center gap-2">
+            Estudio de Marketing <span className="text-[10px] font-bold uppercase tracking-wider bg-white/25 px-1.5 py-0.5 rounded">Nuevo</span>
+          </div>
+          <div className="text-sm text-white/85">Crea posts profesionales para redes con IA en segundos.</div>
+        </div>
+        <ArrowRight className="w-5 h-5 flex-shrink-0" />
+      </button>
 
       {/* Onboarding setup checklist (auto-hides at 100%) */}
       <SetupChecklist />

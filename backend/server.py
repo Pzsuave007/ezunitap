@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, File, Header, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
@@ -26,6 +26,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY is set)
 import storage_service  # noqa: E402
+import social_service  # noqa: E402
 import payments_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
@@ -2669,6 +2670,174 @@ async def ai_social_posts(payload: SocialPostIn, user_id: str = Depends(get_curr
     except Exception as e:
         raise HTTPException(500, f"AI error: {e}")
     return data
+
+# ============================================================================
+# SOCIAL POST STUDIO — branded image posts (AI copy + Pillow rendering)
+# ============================================================================
+import io as _io  # noqa: E402
+from PIL import Image as _PILImage  # noqa: E402
+
+SOCIAL_TEMPLATES = {"before_after", "showcase", "promo"}
+SOCIAL_FORMATS = {"9x16", "1x1"}
+
+
+async def _load_pil_image(photo_id: str, user_id: str):
+    doc = await db.photos.find_one({"id": photo_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        return None
+    try:
+        data, _ct = storage_service.get_storage().get(doc["storage_path"])
+        return _PILImage.open(_io.BytesIO(data)).convert("RGB")
+    except Exception:
+        return None
+
+
+async def _social_brand(user_id: str, language: str):
+    card = await _ensure_card(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    logo_bytes = None
+    if card.get("logo_photo_id"):
+        ld = await db.photos.find_one({"id": card["logo_photo_id"], "user_id": user_id}, {"_id": 0})
+        if ld:
+            try:
+                logo_bytes, _ = storage_service.get_storage().get(ld["storage_path"])
+            except Exception:
+                logo_bytes = None
+    return social_service.build_brand(card, user, logo_bytes, language=language)
+
+
+async def _render_social_images(template, formats, source_ids, copy, brand, user_id):
+    pil_photos = []
+    for pid in source_ids:
+        img = await _load_pil_image(pid, user_id)
+        if img is not None:
+            pil_photos.append(img)
+    images = []
+    for fmt in formats:
+        png = social_service.render_post(template, fmt, pil_photos, copy, brand)
+        out_id = await _store_card_photo(user_id, png, "image/jpeg", "social_out", "jpg")
+        images.append({"format": fmt, "photo_id": out_id, "url": _photo_public_url(out_id)})
+    return images
+
+
+@api_router.post("/social/posts")
+async def create_social_post(
+    template: str = Form(...),
+    brief: str = Form(""),
+    language: str = Form("en"),
+    formats: str = Form("9x16,1x1"),
+    files: List[UploadFile] = File(default=[]),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Generate a branded social post: AI copy (ES brief -> chosen language) +
+    rendered graphics in the requested formats, using the user's card branding."""
+    if template not in SOCIAL_TEMPLATES:
+        raise HTTPException(400, "Plantilla inválida")
+    language = "es" if language == "es" else "en"
+    fmts = [f.strip() for f in formats.split(",") if f.strip() in SOCIAL_FORMATS] or ["1x1"]
+
+    # Store uploaded source photos
+    source_ids = []
+    for f in (files or []):
+        ct = (f.content_type or "").lower()
+        if ct not in ALLOWED_IMAGE_TYPES:
+            continue
+        data = await f.read()
+        if not data or len(data) > MAX_IMAGE_BYTES:
+            continue
+        ext = f.filename.rsplit(".", 1)[-1].lower() if f.filename and "." in f.filename else "png"
+        pid = await _store_card_photo(user_id, data, ct, "social_src", ext)
+        source_ids.append(pid)
+
+    if template == "before_after" and len(source_ids) < 2:
+        raise HTTPException(400, "Antes/Después necesita 2 fotos")
+    if template == "showcase" and len(source_ids) < 1:
+        raise HTTPException(400, "Showcase necesita 1 foto")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    card = await _ensure_card(user_id)
+    try:
+        copy = await ai_service.generate_social_copy(
+            brief, template=template, language=language,
+            business_name=user.get("business_name", ""),
+            business_type=card.get("business_type", ""),
+            phone=card.get("contact_phone") or user.get("phone", ""),
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Error generando el texto con IA: {e}")
+
+    brand = await _social_brand(user_id, language)
+    images = await _render_social_images(template, fmts, source_ids, copy, brand, user_id)
+
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "template": template,
+        "brief": brief,
+        "language": language,
+        "formats": fmts,
+        "copy": copy,
+        "source_photo_ids": source_ids,
+        "images": images,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.social_posts.insert_one(doc)
+    return _strip_id(doc)
+
+
+class SocialCopyIn(BaseModel):
+    headline: Optional[str] = None
+    subheadline: Optional[str] = None
+    cta: Optional[str] = None
+    caption: Optional[str] = None
+    hashtags: Optional[List[str]] = None
+
+
+@api_router.post("/social/posts/{post_id}/rerender")
+async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str = Depends(get_current_user_id)):
+    """Re-render a post's graphics after the user edits the copy (reuses the
+    already-uploaded source photos)."""
+    post = await db.social_posts.find_one({"id": post_id, "user_id": user_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post no encontrado")
+    copy = dict(post.get("copy") or {})
+    for k in ("headline", "subheadline", "cta", "caption"):
+        v = getattr(payload, k)
+        if v is not None:
+            copy[k] = v
+    if payload.hashtags is not None:
+        copy["hashtags"] = ["#" + h.lstrip("#") for h in payload.hashtags if h][:8]
+    # soft-delete previous output images
+    for img in post.get("images", []):
+        await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    brand = await _social_brand(user_id, post.get("language", "en"))
+    images = await _render_social_images(post["template"], post.get("formats", ["1x1"]), post.get("source_photo_ids", []), copy, brand, user_id)
+    await db.social_posts.update_one(
+        {"id": post_id, "user_id": user_id},
+        {"$set": {"copy": copy, "images": images, "updated_at": _now_iso()}},
+    )
+    post.update({"copy": copy, "images": images})
+    return post
+
+
+@api_router.get("/social/posts")
+async def list_social_posts(user_id: str = Depends(get_current_user_id)):
+    docs = await db.social_posts.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return docs
+
+
+@api_router.delete("/social/posts/{post_id}")
+async def delete_social_post(post_id: str, user_id: str = Depends(get_current_user_id)):
+    post = await db.social_posts.find_one({"id": post_id, "user_id": user_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post no encontrado")
+    for img in post.get("images", []):
+        await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.social_posts.delete_one({"id": post_id, "user_id": user_id})
+    return {"ok": True}
+
+
 
 
 # Leads list (admin) — consolidated across ALL of the account's cards, each

@@ -13,4 +13,5 @@ requests
 httpx
 tzdata
 python-jose
+pillow
 emergentintegrations==0.1.0

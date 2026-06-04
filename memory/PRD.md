@@ -21,7 +21,17 @@
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
-## ✅ Jun 2026 — Open Graph dinámico al compartir la tarjeta
+## ✅ Jun 2026 — Estudio de Marketing (generador de posts para redes) [FASE 1]
+Feature pedido: escribir en español → IA crea post profesional en inglés con la marca del usuario; imágenes ahora, videos/reels en fase 2. **Implementado Fase 1 (imágenes), probado (curl + e2e).**
+- **Plantillas:** Antes/Después, Showcase (trabajo terminado), Oferta/Promo. Bilingüe (EN/ES). Formatos 9:16 y 1:1. Branding automático (logo + colores + nombre + teléfono de la Tarjeta Digital).
+- **IA copy:** `ai_service.generate_social_copy` (GPT-5.2 vía Emergent key) → {headline, subheadline, cta, caption, hashtags} en el idioma elegido desde un brief en español.
+- **Render:** `social_service.py` (Pillow) compone gráficos con fuentes Poppins (bundled en `backend/assets/fonts/`), scrim/gradiente de marca, chips, CTA pill, auto-fit de texto. Salida JPEG.
+- **Endpoints:** `POST /api/social/posts` (multipart: template, brief, language, formats, files → copy+render), `POST /api/social/posts/{id}/rerender` (re-render con copy editado, reusa fotos), `GET /api/social/posts`, `DELETE /api/social/posts/{id}`. Colección `social_posts`.
+- **Frontend:** `pages/SocialStudio.js` (ruta `/marketing`, link en sidebar + CTA destacado en Dashboard). Selección de plantilla, subida de fotos, brief, idioma, formato, preview con descarga + edición de copy + re-generar + copiar caption + historial "Mis posts".
+- **Deploy:** Pillow agregado a `deploy/requirements.prod.txt` (¡crítico, evita 503!); fuentes Poppins commiteadas en backend/assets (el rsync las despliega).
+- **FASE 2 PENDIENTE:** Reels en video (FFmpeg slideshow: fotos con movimiento + transición antes/después + texto animado + CTA + música). Requiere instalar FFmpeg en el VPS (agregar a deploy scripts).
+
+
 Pedido: al compartir `ezunitap.com/c/<slug>` salía la info de Unitap en vez de la persona/compañía. Como es una SPA, los crawlers (WhatsApp/Facebook) leían los meta tags estáticos. **Solución (backend + Apache):** nuevo endpoint `GET /api/public/card/{slug}/og` (`server.py`) que renderiza HTML con meta tags Open Graph/Twitter por tarjeta (título = Persona · Compañía, descripción = tagline, og:image = cover/profile/logo absoluta, og:url = link real). Helper `_public_base_from_request` deriva el dominio público (Origin/Referer → X-Forwarded-Host → base_url). En `deploy/htaccess` se agregó una regla que enruta SOLO a User-Agents de crawlers sociales (`/c/<slug>` → `/api/public/card/{slug}/og`); los usuarios reales siguen recibiendo la SPA. Probado por curl (preview + simulación prod con X-Forwarded-Host). Solo backend+htaccess, sin rebuild de frontend. NOTA: WhatsApp/Facebook cachean previews → re-escanear en Facebook Sharing Debugger tras el deploy.
 
 

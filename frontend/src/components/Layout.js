@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ const SIDEBAR = [
   },
   { to: "/reviews", label: "Google Reviews", icon: Star },
   { to: "/tarjeta", label: "Tarjeta Digital", icon: IdCard },
+  { to: "/marketing", label: "Marketing", icon: Megaphone },
 ];
 
 const ACCOUNT = [

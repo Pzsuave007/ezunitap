@@ -20,6 +20,7 @@ import Settings from "@/pages/Settings";
 import PublicQuote from "@/pages/PublicQuote";
 import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
+import SocialStudio from "@/pages/SocialStudio";
 import Landing from "@/pages/Landing";
 import AdminLeads from "@/pages/AdminLeads";
 import Agreements from "@/pages/Agreements";
@@ -105,6 +106,7 @@ function App() {
               <Route path="/trabajos" element={<Jobs />} />
               <Route path="/calendario" element={<Calendar />} />
               <Route path="/tarjeta" element={<CardAdmin />} />
+              <Route path="/marketing" element={<SocialStudio />} />
               <Route path="/reviews" element={<GoogleReviewsPage />} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
