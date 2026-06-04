@@ -2720,6 +2720,27 @@ async def _render_social_images(template, formats, source_ids, copy, brand, user
     return images
 
 
+@api_router.post("/social/enhance")
+async def enhance_social_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
+    """Enhance an uploaded work/scene photo with AI (brighten, sharpen, pro look)
+    so social posts look great even if the original photo is dark or low quality.
+    Returns the enhanced image; the frontend shows a before/after and lets the
+    user keep it or the original."""
+    ct = (file.content_type or "").lower()
+    if ct not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
+    data = await file.read()
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
+    try:
+        enhanced_bytes, enhanced_ct = await ai_service.enhance_image(data, kind="cover")
+    except Exception as e:
+        raise HTTPException(502, f"No se pudo mejorar la imagen con IA: {e}")
+    ext = "png" if "png" in enhanced_ct else ("webp" if "webp" in enhanced_ct else "jpg")
+    eid = await _store_card_photo(user_id, enhanced_bytes, enhanced_ct, "social_src", ext)
+    return {"enhanced": {"photo_id": eid, "url": _photo_public_url(eid)}}
+
+
 @api_router.post("/social/posts")
 async def create_social_post(
     template: str = Form(...),

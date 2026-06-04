@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Megaphone, Images, Sparkles, Loader2, Download, Copy, Trash2,
@@ -24,7 +25,7 @@ const FORMATS = [
   { id: "1x1", label: "Cuadrado 1:1", hint: "Feed Instagram / Facebook" },
 ];
 
-function PhotoSlot({ index, label, photo, onPick, onClear }) {
+function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing }) {
   const ref = useRef(null);
   return (
     <div className="flex-1 min-w-0">
@@ -46,6 +47,11 @@ function PhotoSlot({ index, label, photo, onPick, onClear }) {
             >
               <X className="w-4 h-4" />
             </button>
+            {photo.enhanced && (
+              <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-600 text-white flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> IA
+              </span>
+            )}
           </>
         ) : (
           <div className="text-center text-slate-400">
@@ -54,6 +60,19 @@ function PhotoSlot({ index, label, photo, onPick, onClear }) {
           </div>
         )}
       </div>
+      {photo && !photo.enhanced && (
+        <Button
+          onClick={() => onEnhance(index)}
+          disabled={enhancing}
+          data-testid={`enhance-photo-${index}`}
+          size="sm"
+          variant="outline"
+          className="w-full mt-2 rounded-lg border-violet-300 text-violet-700 hover:bg-violet-50 h-9"
+        >
+          {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
+          {enhancing ? "Mejorando..." : "Mejorar con IA"}
+        </Button>
+      )}
       <input
         ref={ref}
         type="file"
@@ -79,6 +98,9 @@ export default function SocialStudio() {
   const [post, setPost] = useState(null);
   const [history, setHistory] = useState([]);
   const [rerendering, setRerendering] = useState(false);
+  const [enhanceIdx, setEnhanceIdx] = useState(null); // slot being enhanced (loading)
+  const [enhancePreview, setEnhancePreview] = useState(null); // { index, originalPreview, enhancedUrl }
+  const [applyingEnhance, setApplyingEnhance] = useState(false);
 
   const tpl = TEMPLATES.find((t) => t.id === template);
   const needed = tpl.photos;
@@ -96,6 +118,42 @@ export default function SocialStudio() {
   };
 
   const setPhotoAt = (i, p) => setPhotos((prev) => { const n = [...prev]; n[i] = p; return n; });
+
+  const enhancePhoto = async (i) => {
+    const photo = photos[i];
+    if (!photo?.file) return;
+    setEnhanceIdx(i);
+    try {
+      const fd = new FormData();
+      fd.append("file", photo.file);
+      const { data } = await api.post("/social/enhance", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 120000,
+      });
+      setEnhancePreview({ index: i, originalPreview: photo.preview, enhancedUrl: `${BACKEND}${data.enhanced.url}` });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "No se pudo mejorar la foto");
+    } finally {
+      setEnhanceIdx(null);
+    }
+  };
+
+  const applyEnhanced = async () => {
+    if (!enhancePreview) return;
+    setApplyingEnhance(true);
+    try {
+      const res = await fetch(enhancePreview.enhancedUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `enhanced-${enhancePreview.index}.jpg`, { type: blob.type || "image/jpeg" });
+      setPhotoAt(enhancePreview.index, { file, preview: enhancePreview.enhancedUrl, enhanced: true });
+      toast.success("¡Foto mejorada aplicada!");
+      setEnhancePreview(null);
+    } catch {
+      toast.error("Error al aplicar la foto");
+    } finally {
+      setApplyingEnhance(false);
+    }
+  };
 
   const generate = async () => {
     const chosen = photos.slice(0, needed).filter(Boolean);
@@ -226,9 +284,14 @@ export default function SocialStudio() {
                 photo={photos[i]}
                 onPick={(p) => setPhotoAt(i, p)}
                 onClear={() => setPhotoAt(i, null)}
+                onEnhance={enhancePhoto}
+                enhancing={enhanceIdx === i}
               />
             ))}
           </div>
+          <p className="text-[11px] text-violet-600 mt-2 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" /> Tip: ¿foto oscura o borrosa? Dale "Mejorar con IA" antes de generar.
+          </p>
         </div>
 
         {/* Brief */}
@@ -381,6 +444,38 @@ export default function SocialStudio() {
           </div>
         </Card>
       )}
+
+      {/* AI photo enhancement before/after dialog */}
+      <Dialog open={!!enhancePreview} onOpenChange={(v) => !v && setEnhancePreview(null)}>
+        <DialogContent className="rounded-2xl max-w-lg" data-testid="enhance-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-600" /> Foto Antes y Después
+            </DialogTitle>
+          </DialogHeader>
+          {enhancePreview && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Original</div>
+                <img src={enhancePreview.originalPreview} alt="original" className="w-full aspect-square object-cover rounded-xl border border-slate-200" />
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-1.5">Mejorada ✨</div>
+                <img src={enhancePreview.enhancedUrl} alt="mejorada" className="w-full aspect-square object-cover rounded-xl border-2 border-violet-400" />
+              </div>
+            </div>
+          )}
+          <p className="text-[11px] text-slate-400 text-center">La IA mejora luz, color y nitidez. Tú decides cuál usar para el post.</p>
+          <DialogFooter className="grid grid-cols-2 gap-2">
+            <Button variant="outline" data-testid="enhance-use-original" onClick={() => setEnhancePreview(null)} disabled={applyingEnhance} className="rounded-xl h-11">
+              Usar original
+            </Button>
+            <Button data-testid="enhance-use-enhanced" onClick={applyEnhanced} disabled={applyingEnhance} className="rounded-xl h-11 bg-violet-600 hover:bg-violet-700">
+              {applyingEnhance ? <Loader2 className="w-4 h-4 animate-spin" /> : "Usar mejorada ✨"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

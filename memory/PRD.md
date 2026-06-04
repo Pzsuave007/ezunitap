@@ -29,6 +29,7 @@ Feature pedido: escribir en español → IA crea post profesional en inglés con
 - **Endpoints:** `POST /api/social/posts` (multipart: template, brief, language, formats, files → copy+render), `POST /api/social/posts/{id}/rerender` (re-render con copy editado, reusa fotos), `GET /api/social/posts`, `DELETE /api/social/posts/{id}`. Colección `social_posts`.
 - **Frontend:** `pages/SocialStudio.js` (ruta `/marketing`, link en sidebar + CTA destacado en Dashboard). Selección de plantilla, subida de fotos, brief, idioma, formato, preview con descarga + edición de copy + re-generar + copiar caption + historial "Mis posts".
 - **Deploy:** Pillow agregado a `deploy/requirements.prod.txt` (¡crítico, evita 503!); fuentes Poppins commiteadas en backend/assets (el rsync las despliega).
+- **Mejora de foto con IA integrada (Jun 2026):** cada slot de foto tiene botón "Mejorar con IA" → `POST /api/social/enhance` (Nano Banana, prompt "cover") → diálogo Antes/Después → si elige la mejorada, el frontend descarga el blob y lo usa como foto del post. Badge "IA" en el slot. Probado e2e.
 - **FASE 2 PENDIENTE:** Reels en video (FFmpeg slideshow: fotos con movimiento + transición antes/después + texto animado + CTA + música). Requiere instalar FFmpeg en el VPS (agregar a deploy scripts).
 
 
