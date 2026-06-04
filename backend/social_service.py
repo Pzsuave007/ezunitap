@@ -346,11 +346,287 @@ def _render_promo(size, photos, copy, brand) -> Image.Image:
     return canvas.convert("RGB")
 
 
+def _accent_bar(draw, x, y, length, accent, thick=10):
+    draw.rounded_rectangle([x, y, x + length, y + thick], radius=thick // 2, fill=accent)
+
+
+def _render_bold_bar(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    bar_h = int(h * 0.32)
+    photo_h = h - bar_h
+    canvas = Image.new("RGBA", (w, h), brand_rgb + (255,))
+    if photos:
+        canvas.paste(_cover_crop(photos[0], w, photo_h), (0, 0))
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([0, photo_h, w, h], fill=brand_rgb)
+    draw.rectangle([0, photo_h, w, photo_h + 10], fill=accent)
+    fg = _text_on(brand_rgb)
+    margin = int(w * 0.07)
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.036))
+    cta_h = cta_font.size + 26
+    cta_y = h - margin - cta_h
+    head = copy.get("headline", "")
+    head_top = photo_h + int(h * 0.045)
+    head_maxh = cta_y - int(h * 0.02) - head_top
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, max(int(h * 0.08), head_maxh), int(w * 0.072), 32)
+    _draw_lines(draw, hlines, hf, margin, head_top, hlh, fg)
+    _pill(draw, (margin, cta_y), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    return canvas.convert("RGB")
+
+
+def _render_center_stage(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(Image.new("RGBA", (w, h), _darken(brand_rgb, 0.25) + (140,)))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.10)
+    cx = w // 2
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.42), int(w * 0.125), 46)
+    sub = copy.get("subheadline", "")
+    sub_font = _font("semibold", int(w * 0.044))
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.04))
+    cta_h = cta_font.size + 30
+    htotal = hlh * len(hlines)
+    block = int(h * 0.04) + htotal + (int(h * 0.02) + sub_font.size if sub else 0) + int(h * 0.045) + cta_h
+    y = (h - block) // 2
+    _accent_bar(draw, cx - int(w * 0.07), y, int(w * 0.14), accent)
+    y += int(h * 0.04)
+    for ln in hlines:
+        draw.text((cx, y), ln, font=hf, fill=(255, 255, 255), anchor="ma")
+        y += hlh
+    if sub:
+        y += int(h * 0.02)
+        st = sub
+        while st and draw.textlength(st, font=sub_font) > w - margin * 2:
+            st = st[:-1]
+        draw.text((cx, y), st, font=sub_font, fill=(235, 240, 245), anchor="ma")
+        y += sub_font.size
+    y += int(h * 0.045)
+    tw = draw.textlength(cta, font=cta_font)
+    pillw = tw + 88
+    _pill(draw, (cx - pillw / 2, y), cta, cta_font, accent, _text_on(accent), pad_x=44)
+    return canvas.convert("RGB")
+
+
+def _render_side_panel(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    fg = _text_on(brand_rgb)
+    canvas = Image.new("RGBA", (w, h), brand_rgb + (255,))
+    horizontal = w >= h
+    draw = ImageDraw.Draw(canvas)
+    if horizontal:
+        panel_w = int(w * 0.44)
+        if photos:
+            canvas.paste(_cover_crop(photos[0], w - panel_w, h), (panel_w, 0))
+        draw = ImageDraw.Draw(canvas)
+        draw.rectangle([0, 0, panel_w, h], fill=brand_rgb)
+        draw.rectangle([panel_w - 8, 0, panel_w, h], fill=accent)
+        tx = int(w * 0.05)
+        maxw = panel_w - int(w * 0.08)
+        region_h = h
+        cy0 = 0
+    else:
+        panel_h = int(h * 0.38)
+        photo_h = h - panel_h
+        if photos:
+            canvas.paste(_cover_crop(photos[0], w, photo_h), (0, 0))
+        draw = ImageDraw.Draw(canvas)
+        draw.rectangle([0, photo_h, w, h], fill=brand_rgb)
+        draw.rectangle([0, photo_h, w, photo_h + 8], fill=accent)
+        tx = int(w * 0.07)
+        maxw = w - int(w * 0.14)
+        region_h = panel_h
+        cy0 = photo_h
+    head = copy.get("headline", "")
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.034))
+    cta_h = cta_font.size + 26
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", maxw, int(region_h * 0.45), int(w * 0.07), 30)
+    sub = copy.get("subheadline", "")
+    sub_font = _font("semibold", int(w * 0.034))
+    sub_lines = _wrap(draw, sub, sub_font, maxw)[:2] if sub else []
+    htotal = hlh * len(hlines)
+    sub_total = int(sub_font.size * 1.1) * len(sub_lines)
+    block = int(h * 0.025) + htotal + (int(h * 0.015) + sub_total if sub_lines else 0) + int(h * 0.03) + cta_h
+    ty = cy0 + max(int(h * 0.02), (region_h - block) // 2)
+    _accent_bar(draw, tx, ty, int(w * 0.10), accent)
+    ty += int(h * 0.025)
+    ty = _draw_lines(draw, hlines, hf, tx, ty, hlh, fg)
+    if sub_lines:
+        ty += int(h * 0.015)
+        for ln in sub_lines:
+            draw.text((tx, ty), ln, font=sub_font, fill=fg)
+            ty += int(sub_font.size * 1.1)
+    ty += int(h * 0.03)
+    _pill(draw, (tx, ty), cta, cta_font, accent, _text_on(accent), pad_x=38)
+    return canvas.convert("RGB")
+
+
+def _render_top_banner(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    bar_h = int(h * 0.26)
+    canvas = Image.new("RGBA", (w, h), brand_rgb + (255,))
+    if photos:
+        canvas.paste(_cover_crop(photos[0], w, h - bar_h), (0, bar_h))
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([0, 0, w, bar_h], fill=brand_rgb)
+    draw.rectangle([0, bar_h - 8, w, bar_h], fill=accent)
+    fg = _text_on(brand_rgb)
+    margin = int(w * 0.07)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, bar_h - int(h * 0.06), int(w * 0.068), 32)
+    ty = (bar_h - hlh * len(hlines)) // 2
+    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.4), start_frac=0.28))
+    draw = ImageDraw.Draw(canvas)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.04))
+    cta_h = cta_font.size + 28
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf = _font("semibold", int(w * 0.038))
+        draw.text((margin, y - cta_h - int(h * 0.02)), sub, font=sf, fill=(255, 255, 255), anchor="lb")
+    return canvas.convert("RGB")
+
+
+def _render_boxed(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(Image.new("RGBA", (w, h), (0, 0, 0, 60)))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    pad = int(w * 0.06)
+    head = copy.get("headline", "")
+    sub = copy.get("subheadline", "")
+    cta = copy.get("cta", "") or "Contáctanos"
+    cardw = w - margin * 2
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", cardw - pad * 2, int(h * 0.22), int(w * 0.072), 34)
+    cta_font = _font("bold", int(w * 0.034))
+    cta_h = cta_font.size + 26
+    sub_font = _font("semibold", int(w * 0.038))
+    sub_lines = _wrap(draw, sub, sub_font, cardw - pad * 2)[:2] if sub else []
+    sub_total = int(sub_font.size * 1.1) * len(sub_lines)
+    bar_gap = int(h * 0.022)
+    card_h = pad * 2 + bar_gap + hlh * len(hlines) + (int(h * 0.008) + sub_total if sub_lines else 0) + int(h * 0.02) + cta_h
+    cardx = margin
+    cardy = h - margin - card_h
+    draw.rounded_rectangle([cardx, cardy, cardx + cardw, cardy + card_h], radius=36, fill=(255, 255, 255, 242))
+    tx = cardx + pad
+    ty = cardy + pad
+    _accent_bar(draw, tx, ty, int(w * 0.12), accent)
+    ty += bar_gap
+    ty = _draw_lines(draw, hlines, hf, tx, ty, hlh, (17, 24, 39))
+    if sub_lines:
+        ty += int(h * 0.008)
+        for ln in sub_lines:
+            draw.text((tx, ty), ln, font=sub_font, fill=(90, 100, 112))
+            ty += int(sub_font.size * 1.1)
+    ty += int(h * 0.02)
+    _pill(draw, (tx, ty), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    return canvas.convert("RGB")
+
+
+def _render_magazine(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(_bottom_scrim((w, h), (0, 0, 0), start_frac=0.6, max_alpha=205))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.032))
+    cta_h = cta_font.size + 24
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent))
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.34), int(w * 0.13), 42)
+    htotal = hlh * len(hlines)
+    y -= htotal
+    draw.rectangle([margin, y - int(h * 0.022), w - margin, y - int(h * 0.022) + 5], fill=accent)
+    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf = _font("semibold", int(w * 0.034))
+        draw.text((margin, y - int(h * 0.038)), sub.upper(), font=sf, fill=accent, anchor="lb")
+    return canvas.convert("RGB")
+
+
+def _render_elegant_dark(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), (20, 20, 25))
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(Image.new("RGBA", (w, h), (10, 12, 18, 105)))
+    canvas.alpha_composite(_bottom_scrim((w, h), (8, 10, 14), start_frac=0.55, max_alpha=235))
+    draw = ImageDraw.Draw(canvas)
+    m = int(w * 0.05)
+    draw.rectangle([m, m, w - m, h - m], outline=(255, 255, 255, 150), width=3)
+    margin = int(w * 0.10)
+    y = h - int(h * 0.11)
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("semibold", int(w * 0.032))
+    cta_h = cta_font.size + 26
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=42)
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "bold", w - margin * 2, int(h * 0.3), int(w * 0.10), 38)
+    htotal = hlh * len(hlines)
+    y -= htotal
+    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf = _font("regular", int(w * 0.034))
+        draw.text((margin, y - int(h * 0.025)), sub, font=sf, fill=(220, 225, 230), anchor="lb")
+    return canvas.convert("RGB")
+
+
 _RENDERERS = {
     "before_after": _render_before_after,
     "showcase": _render_showcase,
     "promo": _render_promo,
+    "bold_bar": _render_bold_bar,
+    "center_stage": _render_center_stage,
+    "side_panel": _render_side_panel,
+    "top_banner": _render_top_banner,
+    "boxed": _render_boxed,
+    "magazine": _render_magazine,
+    "elegant_dark": _render_elegant_dark,
 }
+
+# Design catalog (id -> label + how many photos it needs). Order = display order.
+DESIGNS = [
+    {"id": "showcase", "label": "Minimalista", "photos": 1},
+    {"id": "bold_bar", "label": "Barra Bold", "photos": 1},
+    {"id": "center_stage", "label": "Centro Impacto", "photos": 1},
+    {"id": "boxed", "label": "Tarjeta", "photos": 1},
+    {"id": "magazine", "label": "Editorial", "photos": 1},
+    {"id": "elegant_dark", "label": "Elegante", "photos": 1},
+    {"id": "top_banner", "label": "Banner Arriba", "photos": 1},
+    {"id": "side_panel", "label": "Panel Lateral", "photos": 1},
+    {"id": "before_after", "label": "Antes / Después", "photos": 2},
+    {"id": "promo", "label": "Oferta / Promo", "photos": 1},
+]
+DESIGN_PHOTOS = {d["id"]: d["photos"] for d in DESIGNS}
 
 
 def render_post(template: str, size_key: str, photos: List[Image.Image], copy: dict, brand: dict) -> bytes:

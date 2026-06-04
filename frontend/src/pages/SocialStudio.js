@@ -8,16 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  Megaphone, Images, Sparkles, Loader2, Download, Copy, Trash2,
-  ArrowLeftRight, ImagePlus, Wand2, X,
+  Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
+  ImagePlus, Wand2, X,
 } from "lucide-react";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 const TEMPLATES = [
-  { id: "before_after", label: "Antes / Después", desc: "Muestra la transformación", icon: ArrowLeftRight, photos: 2 },
-  { id: "showcase", label: "Trabajo Terminado", desc: "Luce un trabajo bien hecho", icon: Images, photos: 1 },
-  { id: "promo", label: "Oferta / Promo", desc: "Promociona un descuento", icon: Megaphone, photos: 1 },
+  { id: "showcase", label: "Minimalista", photos: 1 },
+  { id: "bold_bar", label: "Barra Bold", photos: 1 },
+  { id: "center_stage", label: "Centro Impacto", photos: 1 },
+  { id: "boxed", label: "Tarjeta", photos: 1 },
+  { id: "magazine", label: "Editorial", photos: 1 },
+  { id: "elegant_dark", label: "Elegante", photos: 1 },
+  { id: "top_banner", label: "Banner Arriba", photos: 1 },
+  { id: "side_panel", label: "Panel Lateral", photos: 1 },
+  { id: "before_after", label: "Antes / Después", photos: 2 },
+  { id: "promo", label: "Oferta / Promo", photos: 1 },
 ];
 
 const FORMATS = [

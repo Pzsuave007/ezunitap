@@ -2677,7 +2677,7 @@ async def ai_social_posts(payload: SocialPostIn, user_id: str = Depends(get_curr
 import io as _io  # noqa: E402
 from PIL import Image as _PILImage  # noqa: E402
 
-SOCIAL_TEMPLATES = {"before_after", "showcase", "promo"}
+SOCIAL_TEMPLATES = set(social_service.DESIGN_PHOTOS.keys())
 SOCIAL_FORMATS = {"9x16", "1x1"}
 
 
@@ -2773,11 +2773,11 @@ async def create_social_post(
         pid = await _store_card_photo(user_id, data, ct, "social_src", ext)
         source_ids.append(pid)
 
-    needed = 2 if template == "before_after" else (1 if template == "showcase" else 0)
+    needed = social_service.DESIGN_PHOTOS.get(template, 1)
     if len(source_ids) < needed:
         if skipped:
             raise HTTPException(400, "Una o más fotos no se pudieron usar (formato no soportado o más de 8MB). Sube JPG/PNG de menos de 8MB.")
-        raise HTTPException(400, f"{'Antes/Después necesita 2 fotos' if template == 'before_after' else 'Necesitas subir 1 foto'}")
+        raise HTTPException(400, f"Este diseño necesita {needed} foto{'s' if needed > 1 else ''}")
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     card = await _ensure_card(user_id)
