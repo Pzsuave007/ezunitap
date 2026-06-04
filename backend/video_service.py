@@ -251,13 +251,7 @@ def build_outro(brand: dict, cta: str = "") -> bytes:
         for ln in nlines:
             draw.text((cx, y), ln, font=nf, fill=fg, anchor="ma")
             y += nlh
-        y += int(H * 0.02)
-
-    phone = (brand.get("phone") or "").strip()
-    if phone:
-        pf = ss._font("semibold", int(W * 0.052))
-        draw.text((cx, y), phone, font=pf, fill=accent, anchor="ma")
-        y += pf.size + int(H * 0.05)
+        y += int(H * 0.05)
 
     cta = cta or "Contáctanos hoy"
     cf = ss._font("bold", int(W * 0.05))
