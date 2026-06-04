@@ -80,7 +80,7 @@ def _png(canvas: Image.Image) -> bytes:
     return buf.getvalue()
 
 
-def build_overlay(copy: dict, brand: dict, template: str = "showcase") -> bytes:
+def build_overlay(copy: dict, brand: dict, template: str = "showcase", show_subheadline: bool = True) -> bytes:
     """Full-duration branded text overlay (transparent PNG)."""
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     canvas.alpha_composite(ss._bottom_scrim((W, H), ss._darken(brand["brand"], 0.3), start_frac=0.58, max_alpha=215))
@@ -130,7 +130,7 @@ def build_overlay(copy: dict, brand: dict, template: str = "showcase") -> bytes:
     ss._pill(draw, (margin, y_cta), cta, cta_font, accent, ss._text_on(accent))
     y = y_cta - int(H * 0.03)
 
-    if template != "services":
+    if template != "services" and show_subheadline:
         sub = copy.get("subheadline", "")
         if sub:
             sf, slines, slh = ss._fit_text(draw, sub, "semibold", W - margin * 2, int(H * 0.12), int(W * 0.05), 30)
@@ -191,7 +191,7 @@ def build_subtitle_overlay(text: str, brand: dict) -> bytes:
     total_h = lh * len(lines)
     box_w = max(draw.textlength(ln, font=f) for ln in lines) + int(W * 0.08)
     box_h = total_h + int(H * 0.025)
-    cy = int(H * 0.60)
+    cy = int(H * 0.30)
     x0 = (W - box_w) / 2
     y0 = cy - box_h / 2
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -441,9 +441,12 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             im.convert("RGB").save(p, format="JPEG", quality=92)
             photo_paths.append(p)
 
+        n = len(images)
+        subs_on = subtitles and template in ("showcase", "promo", "before_after")
+
         main_overlay_path = os.path.join(tmp, "main.png")
         with open(main_overlay_path, "wb") as f:
-            f.write(build_overlay(copy, brand, template))
+            f.write(build_overlay(copy, brand, template, show_subheadline=not subs_on))
 
         segment_overlay_paths = None
         if template == "services":
@@ -459,7 +462,7 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
         eff_transition = "_slider" if template == "before_after" else transition
 
         subtitle_specs = None
-        if subtitles and template != "services":
+        if subs_on:
             montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro else duration
             montage_dur = max(3.0, montage_dur)
             nchunks = 2 if duration <= 10 else (3 if duration <= 15 else 4)
