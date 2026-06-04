@@ -8,6 +8,12 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{REQUEST_URI} ^/api
 RewriteRule ^(.*)$ http://127.0.0.1:8007/$1 [P,L]
 
+# Social/link crawlers requesting a digital card (/c/<slug>) get server-rendered
+# Open Graph meta tags (person + company), so shared links don't show generic
+# Unitap branding. Real users fall through to the SPA below.
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview|Embedly|Iframely|flipboard|tumblr|bitlybot|Snapchat|Google-InspectionTool) [NC]
+RewriteRule ^c/([^/]+)/?$ http://127.0.0.1:8007/api/public/card/$1/og [P,L]
+
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

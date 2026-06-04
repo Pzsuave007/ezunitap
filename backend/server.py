@@ -29,6 +29,7 @@ import storage_service  # noqa: E402
 import payments_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -2754,6 +2755,101 @@ async def public_photo(photo_id: str):
     return Response(content=data, media_type=doc.get("content_type", ct))
 
 
+def _public_base_from_request(request: Request) -> str:
+    """Best-effort PUBLIC base URL (e.g. https://ezunitap.com).
+
+    Prefers the page the user is on (Origin/Referer), then the proxy's
+    X-Forwarded-Host (set by Apache mod_proxy in prod / ingress in preview),
+    finally request.base_url. Avoids leaking the internal cluster host.
+    """
+    import re as _re
+    for h in (request.headers.get("origin"), request.headers.get("referer")):
+        if h:
+            m = _re.match(r"^(https?://[^/]+)", h)
+            if m:
+                return m.group(1).rstrip("/")
+    xf_host = request.headers.get("x-forwarded-host")
+    if xf_host:
+        proto = request.headers.get("x-forwarded-proto", "https")
+        host = xf_host.split(",")[0].strip()
+        if host and "127.0.0.1" not in host and "localhost" not in host:
+            return f"{proto}://{host}"
+    return str(request.base_url).rstrip("/")
+
+
+def _esc(s: str) -> str:
+    """Escape a string for safe insertion into HTML attributes/text."""
+    return (
+        (s or "")
+        .replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+@api_router.get("/public/card/{slug}/og", response_class=HTMLResponse)
+async def public_card_og(slug: str, request: Request):
+    """HTML page with per-card Open Graph / Twitter Card meta tags, served to
+    social crawlers (WhatsApp, Facebook, etc.) via an Apache rewrite so shared
+    card links show the PERSON + COMPANY, not generic Unitap branding.
+    Humans that land here are redirected to the real card page."""
+    card, user = await _public_card_by_slug(slug)
+    base = _public_base_from_request(request)
+    # Shared company fields come from the primary card.
+    if not card.get("is_primary"):
+        primary = await db.cards.find_one({"user_id": card["user_id"], "is_primary": True}, {"_id": 0})
+        if primary:
+            for f in SHARED_CARD_FIELDS:
+                card[f] = primary.get(f)
+
+    company = (user.get("business_name", "") or "").strip()
+    person = (card.get("person_name") or user.get("owner_name", "") or "").strip()
+    title = " · ".join([p for p in [person, company] if p]) or company or person or "Tarjeta Digital"
+
+    desc = (card.get("tagline") or "").strip()
+    if not desc:
+        bits = []
+        if card.get("business_type"):
+            bits.append(card["business_type"])
+        if card.get("service_area"):
+            bits.append(card["service_area"])
+        desc = " · ".join(bits) if bits else f"Contacta a {title}. Guarda mi tarjeta digital y mi información de contacto."
+
+    img_id = card.get("cover_photo_id") or card.get("profile_photo_id") or card.get("logo_photo_id")
+    image = f"{base}/api/public/card/photo/{img_id}" if img_id else ""
+    card_url = f"{base}/c/{card.get('slug')}"
+
+    og_image_tags = (
+        f'<meta property="og:image" content="{_esc(image)}"/>'
+        f'<meta name="twitter:image" content="{_esc(image)}"/>'
+        if image else ""
+    )
+    html = f"""<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_esc(title)}</title>
+<meta name="description" content="{_esc(desc)}"/>
+<meta property="og:type" content="profile"/>
+<meta property="og:site_name" content="{_esc(company or title)}"/>
+<meta property="og:title" content="{_esc(title)}"/>
+<meta property="og:description" content="{_esc(desc)}"/>
+<meta property="og:url" content="{_esc(card_url)}"/>
+<meta name="twitter:card" content="{'summary_large_image' if image else 'summary'}"/>
+<meta name="twitter:title" content="{_esc(title)}"/>
+<meta name="twitter:description" content="{_esc(desc)}"/>
+{og_image_tags}
+<link rel="canonical" href="{_esc(card_url)}"/>
+<meta http-equiv="refresh" content="0; url={_esc(card_url)}"/>
+</head><body>
+<p>Redirigiendo a la tarjeta de {_esc(title)}… <a href="{_esc(card_url)}">Abrir tarjeta</a></p>
+<script>window.location.replace({card_url!r});</script>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+
 @api_router.get("/public/card/{slug}/vcard")
 async def public_vcard(slug: str, request: Request):
     card, user = await _public_card_by_slug(slug)
@@ -2763,22 +2859,9 @@ async def public_vcard(slug: str, request: Request):
     email = card.get("contact_email") or user.get("business_email") or user.get("email", "")
     addr = user.get("business_address", "")
     web = card.get("website", "")
-    # Public link to this digital card. Derive the PUBLIC host from the page the
-    # user is on (Referer/Origin) so it's the real frontend domain (ezunitap.com),
-    # not the internal cluster host that request.base_url exposes. Fall back to
-    # X-Forwarded-Host / base_url.
+    # Public link to this digital card (real frontend domain via Referer/proxy).
     def _public_base() -> str:
-        import re as _re
-        for h in (request.headers.get("origin"), request.headers.get("referer")):
-            if h:
-                m = _re.match(r"^(https?://[^/]+)", h)
-                if m:
-                    return m.group(1)
-        xf_host = request.headers.get("x-forwarded-host")
-        if xf_host:
-            proto = request.headers.get("x-forwarded-proto", "https")
-            return f"{proto}://{xf_host.split(',')[0].strip()}"
-        return str(request.base_url).rstrip("/")
+        return _public_base_from_request(request)
     card_link = f"{_public_base().rstrip('/')}/c/{card.get('slug')}"
     lines = [
         "BEGIN:VCARD",
