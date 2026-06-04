@@ -63,6 +63,28 @@ def ffmpeg_bin() -> str:
     return os.environ.get("FFMPEG_BIN") or shutil.which("ffmpeg") or "ffmpeg"
 
 
+def ffprobe_bin() -> str:
+    fb = ffmpeg_bin()
+    d = os.path.dirname(fb)
+    cand = os.path.join(d, "ffprobe") if d else "ffprobe"
+    if os.path.exists(cand) or shutil.which(cand):
+        return cand
+    return shutil.which("ffprobe") or "ffprobe"
+
+
+def audio_duration(path: str) -> float:
+    """Return the duration (seconds) of an audio file, or 0.0 on failure."""
+    try:
+        out = subprocess.run(
+            [ffprobe_bin(), "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", path],
+            capture_output=True, text=True, check=True,
+        )
+        return float(out.stdout.strip())
+    except Exception:
+        return 0.0
+
+
 def bundled_music_path(track_id: str) -> Optional[str]:
     if track_id not in _MUSIC_IDS:
         return None
@@ -430,7 +452,8 @@ def render_reel(photo_paths: List[str], out_path: str, *,
 def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
                      template: str = "showcase", motion: str = "auto", transition: str = "fade",
                      duration: float = 10.0, subtitles: bool = False, outro: bool = False,
-                     music_path: Optional[str] = None, voice_path: Optional[str] = None) -> bytes:
+                     music_path: Optional[str] = None, voice_path: Optional[str] = None,
+                     subtitle_text: Optional[str] = None) -> bytes:
     """High-level: write photos + overlays to a tempdir, render, return MP4 bytes."""
     n = len(images)
     tmp = tempfile.mkdtemp(prefix="reel_")
@@ -465,8 +488,8 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
         if subs_on:
             montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro else duration
             montage_dur = max(3.0, montage_dur)
-            nchunks = 2 if duration <= 10 else (3 if duration <= 15 else 4)
-            src = copy.get("caption") or copy.get("subheadline") or copy.get("headline") or ""
+            nchunks = max(2, min(6, round(montage_dur / 3.5)))
+            src = subtitle_text or copy.get("caption") or copy.get("subheadline") or copy.get("headline") or ""
             chunks = _chunk_text(src, nchunks)
             if chunks:
                 seg = montage_dur / len(chunks)

@@ -72,6 +72,8 @@ else
         FOUND=$(find "$PROD/tmp_ff" -name ffmpeg -type f | head -1)
         if [ -n "$FOUND" ]; then
             cp "$FOUND" "$FFMPEG_BIN_PATH" && chmod +x "$FFMPEG_BIN_PATH"
+            FOUND_PROBE=$(find "$PROD/tmp_ff" -name ffprobe -type f | head -1)
+            if [ -n "$FOUND_PROBE" ]; then cp "$FOUND_PROBE" "$PROD/bin/ffprobe" && chmod +x "$PROD/bin/ffprobe"; fi
             echo "  ✅ static ffmpeg installed"
         else
             echo "  ⚠️  could not locate ffmpeg in archive — Reels will be disabled until ffmpeg is installed"

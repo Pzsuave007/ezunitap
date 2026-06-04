@@ -2930,11 +2930,20 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         language: str, music_choice: str, music_audio_id: Optional[str],
                         brand_color: str, accent_color: str, template: str, motion: str,
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
-                        duration: float):
+                        duration: float, voice_mode: str = "short"):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
+    import re as _re
+    import math as _math
     import tempfile as _tf
     music_tmp = None
     voice_tmp = None
+
+    def _clean(t):
+        t = _re.sub(r"#\w+", "", t or "")
+        t = _re.sub(r"https?://\S+", "", t)
+        t = _re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2190-\u21FF\u2B00-\u2BFF]", "", t)
+        return _re.sub(r"\s+", " ", t).strip()
+
     try:
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         card = await _ensure_card(user_id)
@@ -2971,28 +2980,45 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 except Exception:
                     music_path = None
 
-        # Optional AI voice-over
+        # Optional AI voice-over (short = headline/sub/cta; full = whole post caption)
         voice_path = None
+        voice_script = None
+        eff_duration = duration
         if voiceover:
-            script = ". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p])
+            if voice_mode == "full":
+                voice_script = _clean(copy.get("caption") or "") or _clean(
+                    ". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p]))
+            else:
+                voice_script = _clean(". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p]))
             try:
-                vbytes = await tts_service.generate_voiceover(script, language=language)
+                vbytes = await tts_service.generate_voiceover(voice_script, language=language)
                 fd, voice_tmp = _tf.mkstemp(suffix=".mp3")
                 with os.fdopen(fd, "wb") as f:
                     f.write(vbytes)
                 voice_path = voice_tmp
+                # Auto-extend the video so a long ("full") voice-over is never cut.
+                if voice_mode == "full":
+                    vdur = video_service.audio_duration(voice_path)
+                    if vdur > 0:
+                        eff_duration = min(60.0, max(duration, _math.ceil(vdur) + 1.0))
             except Exception:
                 voice_path = None
+                voice_script = None
+
+        # Subtitles synced to the voice text when voice-over is on
+        subtitle_text = voice_script if (voiceover and voice_script) else None
 
         mp4 = await asyncio.to_thread(
             video_service.render_reel_full, images, copy, brand,
-            template=template, motion=motion, transition=transition, duration=duration,
+            template=template, motion=motion, transition=transition, duration=eff_duration,
             subtitles=subtitles, outro=outro, music_path=music_path, voice_path=voice_path,
+            subtitle_text=subtitle_text,
         )
         out_id = await _store_card_photo(user_id, mp4, "video/mp4", "social_reel", "mp4")
         await db.social_reels.update_one(
             {"id": reel_id, "user_id": user_id},
             {"$set": {"status": "ready", "copy": copy, "music": music_choice,
+                      "final_duration": eff_duration,
                       "video": {"photo_id": out_id, "url": _photo_public_url(out_id)},
                       "updated_at": _now_iso()}},
         )
@@ -3024,6 +3050,7 @@ async def create_reel(
     subtitles: bool = Form(False),
     outro: bool = Form(False),
     voiceover: bool = Form(False),
+    voice_mode: str = Form("short"),
     duration: float = Form(10.0),
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
@@ -3039,6 +3066,7 @@ async def create_reel(
     if transition not in video_service.TRANSITIONS:
         transition = "fade"
     duration = float(duration) if duration in (10.0, 15.0, 20.0) else 10.0
+    voice_mode = "full" if voice_mode == "full" else "short"
     pmin, pmax = video_service.REEL_TEMPLATE_PHOTOS[template]
 
     source_ids = []
@@ -3092,6 +3120,7 @@ async def create_reel(
         "subtitles": subtitles,
         "outro": outro,
         "voiceover": voiceover,
+        "voice_mode": voice_mode,
         "duration": duration,
         "copy": None,
         "source_photo_ids": source_ids,
@@ -3104,7 +3133,7 @@ async def create_reel(
     background_tasks.add_task(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
-        transition, subtitles, outro, voiceover, duration,
+        transition, subtitles, outro, voiceover, duration, voice_mode,
     )
     return _strip_id(reel)
 

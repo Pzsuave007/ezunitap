@@ -54,6 +54,7 @@ export default function ReelStudio() {
   const [subtitles, setSubtitles] = useState(false);
   const [outro, setOutro] = useState(true);
   const [voiceover, setVoiceover] = useState(false);
+  const [voiceMode, setVoiceMode] = useState("short");
   const [generating, setGenerating] = useState(false);
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
@@ -139,6 +140,7 @@ export default function ReelStudio() {
       fd.append("subtitles", subtitles ? "true" : "false");
       fd.append("outro", outro ? "true" : "false");
       fd.append("voiceover", voiceover ? "true" : "false");
+      fd.append("voice_mode", voiceMode);
       fd.append("duration", String(duration));
       photos.forEach((p) => fd.append("files", p.file));
       if (music === "upload" && musicFile) fd.append("music_file", musicFile);
@@ -301,6 +303,24 @@ export default function ReelStudio() {
               <Switch checked={voiceover} onCheckedChange={setVoiceover} data-testid="reel-voiceover-switch" />
             </div>
           </div>
+          {voiceover && (
+            <div className="mt-2 p-3 rounded-xl bg-emerald-50/60 border border-emerald-100" data-testid="reel-voice-mode">
+              <span className="text-xs font-semibold text-slate-600">¿Qué debe leer la voz?</span>
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => setVoiceMode("short")} data-testid="reel-voice-short"
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border tap ${voiceMode === "short" ? "border-emerald-500 bg-white text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  Voz corta <span className="text-slate-400 font-normal">(titular + CTA)</span>
+                </button>
+                <button onClick={() => setVoiceMode("full")} data-testid="reel-voice-full"
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border tap ${voiceMode === "full" ? "border-emerald-500 bg-white text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  Voz completa <span className="text-slate-400 font-normal">(lee todo el post)</span>
+                </button>
+              </div>
+              {voiceMode === "full" && (
+                <p className="text-[11px] text-emerald-700/80 mt-2">El video se alargará automáticamente para que la voz nunca se corte (máx. 60s).</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Music */}
