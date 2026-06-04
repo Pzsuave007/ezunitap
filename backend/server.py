@@ -2755,7 +2755,7 @@ async def public_photo(photo_id: str):
 
 
 @api_router.get("/public/card/{slug}/vcard")
-async def public_vcard(slug: str):
+async def public_vcard(slug: str, request: Request):
     card, user = await _public_card_by_slug(slug)
     bn = user.get("business_name", "")
     on = card.get("person_name") or user.get("owner_name", "")
@@ -2763,6 +2763,23 @@ async def public_vcard(slug: str):
     email = card.get("contact_email") or user.get("business_email") or user.get("email", "")
     addr = user.get("business_address", "")
     web = card.get("website", "")
+    # Public link to this digital card. Derive the PUBLIC host from the page the
+    # user is on (Referer/Origin) so it's the real frontend domain (ezunitap.com),
+    # not the internal cluster host that request.base_url exposes. Fall back to
+    # X-Forwarded-Host / base_url.
+    def _public_base() -> str:
+        import re as _re
+        for h in (request.headers.get("origin"), request.headers.get("referer")):
+            if h:
+                m = _re.match(r"^(https?://[^/]+)", h)
+                if m:
+                    return m.group(1)
+        xf_host = request.headers.get("x-forwarded-host")
+        if xf_host:
+            proto = request.headers.get("x-forwarded-proto", "https")
+            return f"{proto}://{xf_host.split(',')[0].strip()}"
+        return str(request.base_url).rstrip("/")
+    card_link = f"{_public_base().rstrip('/')}/c/{card.get('slug')}"
     lines = [
         "BEGIN:VCARD",
         "VERSION:3.0",
@@ -2775,11 +2792,18 @@ async def public_vcard(slug: str):
         lines.append(f"EMAIL:{email}")
     if addr:
         lines.append(f"ADR;TYPE=WORK:;;{addr};;;;")
-    if web:
-        lines.append(f"URL:{web}")
-    note = card.get("tagline", "")
-    if note:
-        lines.append(f"NOTE:{note}")
+    # Labeled digital-card link (Apple Contacts shows the X-ABLabel; Android/Google
+    # shows the URL). Listed first so it's the primary URL on the contact.
+    lines.append(f"item1.URL:{card_link}")
+    lines.append("item1.X-ABLabel:Tarjeta Digital")
+    if web and web.rstrip("/") != card_link.rstrip("/"):
+        lines.append(f"item2.URL:{web}")
+        lines.append("item2.X-ABLabel:Website")
+    note_parts = []
+    if card.get("tagline"):
+        note_parts.append(card["tagline"])
+    note_parts.append(f"Tarjeta digital: {card_link}")
+    lines.append("NOTE:" + " — ".join(note_parts))
     lines.append("END:VCARD")
     vcf = "\r\n".join(lines) + "\r\n"
     filename = _slugify(bn or on or "contact") + ".vcf"
