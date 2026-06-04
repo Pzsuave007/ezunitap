@@ -2916,6 +2916,33 @@ async def list_reel_music():
     ]
 
 
+@api_router.post("/social/copy")
+async def generate_reel_copy(
+    brief: str = Form(""),
+    language: str = Form("en"),
+    template: str = Form("showcase"),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Generate (preview) the AI copy for a reel/post so the user can review &
+    edit it BEFORE rendering the video. Returns headline/subheadline/cta/caption."""
+    language = "es" if language == "es" else "en"
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    card = await _ensure_card(user_id)
+    copy = await ai_service.generate_social_copy(
+        brief, template=template if template in social_service.DESIGN_PHOTOS else "showcase",
+        language=language,
+        business_name=user.get("business_name", ""),
+        business_type=card.get("business_type", ""),
+        phone=card.get("contact_phone") or user.get("phone", ""),
+    )
+    return {
+        "headline": copy.get("headline", ""),
+        "subheadline": copy.get("subheadline", ""),
+        "cta": copy.get("cta", ""),
+        "caption": copy.get("caption", ""),
+    }
+
+
 @api_router.get("/social/music/{track_id}")
 async def get_reel_music(track_id: str):
     path = video_service.bundled_music_path(track_id)
@@ -2931,7 +2958,7 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         brand_color: str, accent_color: str, template: str, motion: str,
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
                         duration: float, voice_mode: str = "short", cta_override: str = "",
-                        voice_say_phone: bool = False):
+                        voice_say_phone: bool = False, copy_override: Optional[dict] = None):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import re as _re
     import math as _math
@@ -2958,13 +2985,22 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
     try:
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         card = await _ensure_card(user_id)
-        copy = await ai_service.generate_social_copy(
-            brief, template=template if template in social_service.DESIGN_PHOTOS else "showcase",
-            language=language,
-            business_name=user.get("business_name", ""),
-            business_type=card.get("business_type", ""),
-            phone=card.get("contact_phone") or user.get("phone", ""),
-        )
+        if copy_override and (copy_override.get("headline") or copy_override.get("caption")):
+            copy = {
+                "headline": copy_override.get("headline", ""),
+                "subheadline": copy_override.get("subheadline", ""),
+                "cta": copy_override.get("cta", ""),
+                "caption": copy_override.get("caption", ""),
+                "hashtags": [],
+            }
+        else:
+            copy = await ai_service.generate_social_copy(
+                brief, template=template if template in social_service.DESIGN_PHOTOS else "showcase",
+                language=language,
+                business_name=user.get("business_name", ""),
+                business_type=card.get("business_type", ""),
+                phone=card.get("contact_phone") or user.get("phone", ""),
+            )
         if cta_override:
             copy["cta"] = cta_override
         brand = await _social_brand(user_id, language, brand_override=brand_color or None, accent_override=accent_color or None)
@@ -3067,6 +3103,9 @@ async def create_reel(
     accent_color: str = Form(""),
     template: str = Form("showcase"),
     cta_override: str = Form(""),
+    headline: str = Form(""),
+    subheadline: str = Form(""),
+    caption: str = Form(""),
     motion: str = Form("auto"),
     transition: str = Form("fade"),
     subtitles: bool = Form(False),
@@ -3091,6 +3130,13 @@ async def create_reel(
     duration = float(duration) if duration in (10.0, 15.0, 20.0) else 10.0
     voice_mode = "full" if voice_mode == "full" else "short"
     cta_override = (cta_override or "").strip()[:40]
+    copy_override = None
+    if (headline or "").strip() or (caption or "").strip():
+        copy_override = {
+            "headline": (headline or "").strip()[:120],
+            "subheadline": (subheadline or "").strip()[:200],
+            "caption": (caption or "").strip()[:1500],
+        }
     pmin, pmax = video_service.REEL_TEMPLATE_PHOTOS[template]
 
     source_ids = []
@@ -3160,6 +3206,7 @@ async def create_reel(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
         transition, subtitles, outro, voiceover, duration, voice_mode, cta_override, voice_say_phone,
+        copy_override,
     )
     return _strip_id(reel)
 

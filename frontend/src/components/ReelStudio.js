@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Loader2, Download, Trash2, ImagePlus, X, Video,
-  Music, Play, Pause, Upload, Captions, Clapperboard, Mic,
+  Music, Play, Pause, Upload, Captions, Clapperboard, Mic, Sparkles,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 
@@ -41,7 +41,8 @@ export default function ReelStudio() {
   const [template, setTemplate] = useState("showcase");
   const [photos, setPhotos] = useState([]);
   const [brief, setBrief] = useState("");
-  const [cta, setCta] = useState("");
+  const [copyDraft, setCopyDraft] = useState(null);
+  const [copyLoading, setCopyLoading] = useState(false);
   const [language, setLanguage] = useState("en");
   const [colorTheme, setColorTheme] = useState("card");
   const [customAccent, setCustomAccent] = useState("#10b981");
@@ -127,9 +128,34 @@ export default function ReelStudio() {
     }, 4000);
   };
 
+  const genCopy = async () => {
+    if (!brief.trim()) { toast.error("Escribe qué quieres comunicar"); return; }
+    setCopyLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("brief", brief);
+      fd.append("language", language);
+      fd.append("template", template);
+      const { data } = await api.post("/social/copy", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setCopyDraft({
+        headline: data.headline || "",
+        subheadline: data.subheadline || "",
+        cta: data.cta || "",
+        caption: data.caption || "",
+      });
+      toast.success("Texto listo — revísalo y edítalo antes de crear el video ✍️");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "No se pudo generar el texto");
+    } finally {
+      setCopyLoading(false);
+    }
+  };
+
+  const setDraft = (k, v) => setCopyDraft((d) => ({ ...d, [k]: v }));
+
   const generate = async () => {
     if (photos.length < tpl.min) { toast.error(`Este diseño necesita ${tpl.min} foto${tpl.min > 1 ? "s" : ""}`); return; }
-    if (!brief.trim()) { toast.error("Escribe qué quieres comunicar"); return; }
+    if (!copyDraft) { toast.error("Primero genera y revisa el texto con IA"); return; }
     if (music === "upload" && !musicFile) { toast.error("Sube tu archivo de música o elige otra opción"); return; }
     setGenerating(true);
     setReel(null);
@@ -142,7 +168,10 @@ export default function ReelStudio() {
       fd.append("brand_color", brand);
       fd.append("accent_color", accent);
       fd.append("template", template);
-      fd.append("cta_override", cta);
+      fd.append("cta_override", copyDraft.cta || "");
+      fd.append("headline", copyDraft.headline || "");
+      fd.append("subheadline", copyDraft.subheadline || "");
+      fd.append("caption", copyDraft.caption || "");
       fd.append("motion", motion);
       fd.append("transition", transition);
       fd.append("subtitles", subtitles ? "true" : "false");
@@ -233,18 +262,42 @@ export default function ReelStudio() {
             onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
         </div>
 
-        {/* Brief */}
+        {/* Brief + AI copy */}
         <div>
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">3. ¿Qué quieres comunicar? (español)</Label>
           <Textarea data-testid="reel-brief-input" value={brief} onChange={(e) => setBrief(e.target.value)}
             placeholder="Ej: Transformamos jardines descuidados en hermosos. Mantenimiento y paisajismo. Llama para una cotización gratis."
             className="mt-2 rounded-xl min-h-[80px]" />
-          <div className="mt-3">
-            <Label className="text-[11px] font-semibold text-slate-500">Botón / CTA <span className="font-normal text-slate-400">(opcional — si lo dejas vacío la IA lo elige)</span></Label>
-            <input data-testid="reel-cta-input" value={cta} onChange={(e) => setCta(e.target.value.slice(0, 40))} maxLength={40}
-              placeholder="Ej: Llama hoy · (713) 555-0142"
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400" />
-          </div>
+          <Button onClick={genCopy} disabled={copyLoading} variant="outline" data-testid="reel-gen-copy-btn"
+            className="w-full mt-2 rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+            {copyLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Escribiendo…</> : <><Sparkles className="w-4 h-4 mr-2" /> {copyDraft ? "Regenerar texto con IA" : "Generar texto con IA"}</>}
+          </Button>
+
+          {copyDraft && (
+            <div className="mt-3 space-y-3 p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-100" data-testid="reel-copy-editor">
+              <p className="text-[11px] font-semibold text-emerald-700">✍️ Revisa y edita el texto antes de crear el video</p>
+              <div>
+                <Label className="text-[11px] font-semibold text-slate-500">Titular</Label>
+                <input data-testid="reel-copy-headline" value={copyDraft.headline} onChange={(e) => setDraft("headline", e.target.value.slice(0, 120))} maxLength={120}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold text-slate-500">Subtítulo</Label>
+                <input data-testid="reel-copy-subheadline" value={copyDraft.subheadline} onChange={(e) => setDraft("subheadline", e.target.value.slice(0, 200))} maxLength={200}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold text-slate-500">Botón / CTA</Label>
+                <input data-testid="reel-copy-cta" value={copyDraft.cta} onChange={(e) => setDraft("cta", e.target.value.slice(0, 40))} maxLength={40}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold text-slate-500">Descripción <span className="font-normal text-slate-400">(lo que lee la voz completa y los subtítulos)</span></Label>
+                <Textarea data-testid="reel-copy-caption" value={copyDraft.caption} onChange={(e) => setDraft("caption", e.target.value.slice(0, 1500))}
+                  className="mt-1 rounded-lg min-h-[70px] text-sm" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Language + Duration */}
@@ -409,10 +462,11 @@ export default function ReelStudio() {
           )}
         </div>
 
-        <Button onClick={generate} disabled={generating} data-testid="reel-generate-btn"
+        <Button onClick={generate} disabled={generating || !copyDraft} data-testid="reel-generate-btn"
           className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-base">
           {generating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando tu Reel… (~30-60s)</> : <><Video className="w-5 h-5 mr-2" /> Generar Reel</>}
         </Button>
+        {!copyDraft && <p className="text-[11px] text-center text-slate-400 -mt-2">Primero genera el texto con IA (arriba) para poder crear el video.</p>}
       </Card>
 
       {/* Current reel */}
