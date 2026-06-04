@@ -21,7 +21,16 @@
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 
-## ✅ Jun 2026 — Estudio de Marketing FASE 2: Reels en video (FFmpeg) [COMPLETO]
+## ✅ Jun 2026 — Reels FASE 2 EXPANSIÓN: opciones seleccionables [COMPLETO]
+El usuario pidió agregar TODO como opciones seleccionables. **Probado 100% (10/10 pytest incl. 3 renders FFmpeg + TTS, frontend e2e, iteration_17.json).**
+- **5 plantillas de Reel** (`video_service.REEL_TEMPLATES`): Clásico (showcase), **Antes/Después con barra deslizante** (before_after, slider forzado), Oferta/Promo (sello), Lista de servicios (chip por foto), Testimonio (cita centrada). Validación de # fotos por plantilla (`REEL_TEMPLATE_PHOTOS`).
+- **Movimientos** (zoom in / zoom out / paneo / automático) vía `_zoompan`. **Transiciones** (suave/deslizar/barrido/círculo/disolver/pixelado) vía xfade.
+- **Subtítulos quemados** (chunks del caption, banda inferior-centro). **Tarjeta final (outro)** con logo+nombre+teléfono+CTA (`build_outro`). **Voz en off IA** (`tts_service.py`, OpenAI tts-1, voz onyx[en]/nova[es] vía EMERGENT_LLM_KEY) mezclada con música (amix, ducking de música a 0.20).
+- **Duración 10/15/20s**. **6 pistas** de música (numpy originales): energetica, corporativa, lofi, epica, alegre, urbana.
+- Endpoint `POST /api/social/reels` ampliado con Form: template, motion, transition, subtitles, outro, voiceover, duration. `_process_reel` genera copy + TTS opcional + render en thread. Frontend `ReelStudio.js` con todos los selectores + toggles.
+- **Render times pod:** ~12s (10s simple) hasta ~60s (20s con todo). Background + polling. ⚠️ VPS baja RAM: si tarda/falla, bajar resolución de procesamiento.
+
+
 Feature pedido: videos animados (fotos con movimiento + transiciones + texto animado + CTA + música). **Implementado y probado 100% (9/9 pytest incl. 2 renders FFmpeg reales + frontend e2e, iteration_16.json).** Decisiones del usuario: duración **~10s**, **solo 9:16**, música = pistas libres + subir propia + sin música.
 - **Motor:** `backend/video_service.py` (FFmpeg vía subprocess). `render_reel_from_images()`: cada foto con **Ken Burns** (zoompan, upscale 1.5x), **crossfade** (xfade) entre fotos, **overlay de texto branded** (Pillow, fade-in) con titular/subtítulo/CTA + barra de acento, música opcional con afade-out. Salida MP4 H.264+AAC 1080x1920, ~2MB.
 - **Música:** 3 pistas **100% originales sintetizadas con numpy** (energetica/corporativa/lofi) en `backend/assets/music/*.mp3` (libres de derechos, sin reclamos en redes). Generadas con `backend/gen_music.py` (one-off). El usuario también puede **subir su propia música** o elegir **sin música**.

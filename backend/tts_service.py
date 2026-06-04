@@ -7,7 +7,7 @@ from emergentintegrations.llm.openai import OpenAITextToSpeech
 load_dotenv()
 
 # Voice per language — a clear, professional tone for contractor marketing.
-_VOICE = {"en": "onyx", "es": "onyx"}
+_VOICE = {"en": "onyx", "es": "nova"}
 
 
 async def generate_voiceover(text: str, language: str = "en") -> bytes:
