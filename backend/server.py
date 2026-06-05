@@ -3431,11 +3431,11 @@ async def public_reviews_og(slug: str, request: Request):
             for f in SHARED_CARD_FIELDS:
                 card[f] = primary.get(f)
 
-    company = (user.get("business_name", "") or "").strip() or "Nuestro negocio"
-    title = f"Reseña a {company}"
+    company = (user.get("business_name", "") or "").strip() or "Our business"
+    title = f"Review {company}"
     desc = (user.get("review_intro_text") or "").strip()
     if not desc:
-        desc = f"¿Cómo fue tu experiencia con {company}? Déjanos una reseña en Google ⭐ — toma solo 10 segundos."
+        desc = f"How was your experience with {company}? Leave us a Google review ⭐ — it only takes 10 seconds."
 
     img_id = card.get("logo_photo_id") or card.get("cover_photo_id") or card.get("profile_photo_id")
     image = f"{base}/api/public/card/photo/{img_id}" if img_id else ""
@@ -3464,7 +3464,7 @@ async def public_reviews_og(slug: str, request: Request):
 <link rel="canonical" href="{_esc(reviews_url)}"/>
 <meta http-equiv="refresh" content="0; url={_esc(reviews_url)}"/>
 </head><body>
-<p>Redirigiendo… <a href="{_esc(reviews_url)}">Dejar una reseña a {_esc(company)}</a></p>
+<p>Redirecting… <a href="{_esc(reviews_url)}">Leave {_esc(company)} a review</a></p>
 <script>window.location.replace({reviews_url!r});</script>
 </body></html>"""
     return HTMLResponse(content=html)
