@@ -1,57 +1,53 @@
 <analysis>**original_problem_statement**: 
-SaaS web app for Latino service contractors called Unitap. The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) are generated in English using AI. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, and GMB (Google My Business) Reviews gating. The app is LIVE in production. The core focus is on perfecting the Landing Page, improving the free trial conversion funnel, and providing an impressive Spanish input - English output AI experience for users.
+SaaS web app for Latino service contractors called Unitap. The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) are generated in English using AI. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio (Social Media Post & Video generation), and GMB (Google My Business) Reviews gating. The app is LIVE in production. The core focus is on perfecting the Marketing Studio and providing a seamless Spanish input - English output AI experience for users.
 
 **User's preferred language**: Spanish
 *(CRITICAL INSTRUCTION FOR NEXT AGENT: The user speaks Spanish and explicitly requires all responses, explanations, and communication to be EXCLUSIVAMENTE en español. Do not use English with the user.)*
 
 **what currently exists?** 
-A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real payments. It features a complete 3-step public document flow (Quote -> Agreement -> Invoice). Recently, the app received major upgrades: multi-card NFC support, dynamic Open Graph routing for social link sharing, and a brand new Estudio de Marketing (Social Studio) that uses AI to generate social media post copy and design images using Pillow.
+A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real payments. It features a complete CRM and public document flow. Recently, the app received a massive upgrade to its Estudio de Marketing (Social Studio). Phase 1 (10-design AI Image Posts) and Phase 2 (AI Video Reels using FFmpeg, OpenAI TTS, Background Music, and Ken Burns animations) are fully implemented, tested, and working.
 
 **Last working item**:
-- **Last item agent was working**: Expanding the AI Social Media post designs from 3 templates to 10 distinct visual templates. The agent completed the backend Python script () to generate the 10 designs, generated sample preview images, and updated the frontend () to display a visual gallery for the user to select from.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N (Backend was tested via shell, but the frontend React UI was not linted or tested after the code injection).
-- **Which testing method agent to use?**: screenshot tool (to visually verify the 10-design gallery in ), followed by executing the production build.
-- **User Testing Done**: N
+- **Last item agent was working**: Fixing the Open Graph (OG) meta tags for the Google Reviews public page () so that when shared on WhatsApp/Facebook, it shows the specific business name and image instead of the generic Unitap branding. 
+- **Status**: USER VERIFICATION PENDING
+- **Agent Testing Done**: Y
+- **Which testing method agent to use?**: manual testing by curl
+- **User Testing Done**: N (User is testing but seeing old cached data because their live VPS  hasn't been updated yet).
 
 **All Pending/In progress Issue list**:
-  Issue 1: Test, Build and Commit the 10-design gallery in Social Studio (P0)
-     - Attempted fixes: The code for the 10 designs was injected into  via  right before the session ended.
+  Issue 1: Open Graph tags for  showing generic Unitap info on WhatsApp (P0)
+     - Attempted fixes: The agent successfully created the  endpoint and updated . The backend logic works perfectly. However, the user is still complaining that WhatsApp shows Unitap.
      - Next debug checklist: 
-       1. Run  on the frontend.
-       2. Use the  to view the  (Social Studio) route and verify the design selector gallery renders correctly.
-       3. **CRITICAL:** Execute the frontend production build yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. with  and .
-     - Why fix this issue and what will be achieved with the fix?: Finalizes the user's request for a 10-design catalog, ensuring it reaches production safely.
-     - Status: TESTING PENDING
+       1. DO NOT change the backend code for this—it is already correct. 
+       2. The issue is that the user's LIVE VPS has an outdated  file, AND WhatsApp has cached the old preview. 
+       3. Explain to the user (in Spanish) that they MUST run Save to GitHub and execute their deploy script () on the VPS to update the  file. 
+       4. Instruct the user to use the Facebook Sharing Debugger to scrape the URL again to clear the cache.
+     - Why fix this issue and what will be achieved with the fix?: Finalizes the social sharing aspect of the Google Reviews feature.
+     - Status: USER VERIFICATION PENDING
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Frontend
+     - Should Test frontend/backend/both after fix?: NA (Deployment/Cache issue)
 
 **In progress Task List**:
-  Task 1: Marketing Studio Phase 1 (Image Posts)
-     - Where to resume: Finalize the 10-template UI gallery, run the React build, and inform the user.
-     - What will be achieved with this?: Provides the user with a powerful AI image post generator featuring 10 professional designs.
-     - Status: TESTING PENDING
-     - Should Test frontend/backend/both after fix?: Frontend
-     - Blocked on something: None.
+  *(None. Phase 2 Reels feature was successfully completed and tested).*
 
 **Upcoming and Future Tasks**
-- **P0**: Marketing Studio Phase 2 (Video/Reels Generation). The user requested animated presentation videos (photos with movement, transitions, animated text, CTA, and music). Requires installing  on the VPS and implementing video rendering logic in the backend.
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
 - **P2**: Convert Job scope notes (copied from quotes) into a checkable checklist UI inside the Job Detail view.
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - **P2**: Python script to consolidate/delete duplicate clients and users from the database.
-- **P3**: Refactor  into modular routers (File is ~4800 lines).
-- **Phase/Blocked**: Complete Google Business Profile integration (Blocked waiting for Google to approve the API access request, usually takes 7-10 days).
+- **P3**: Refactor  into modular routers (File is now ~5400 lines).
+- **Phase/Blocked**: Complete Google Business Profile integration (Blocked waiting for Google to approve the API access request).
 
 **Completed work in this session**
-- Multi-Card NFC support: Added ability to have multiple smart cards per account, an admin override, and Stripe checkout logic to charge 5/mo per extra card. (DONE)
-- Saved Contact update: Included the digital card URL inside the downloaded  file when someone clicks Guardar Contacto. (DONE)
-- Open Graph tags for Smart Cards: Configured  and Apache  to serve proper meta tags (Title, Description, Image) when the smart card link is shared on WhatsApp/Facebook. (DONE)
-- AI Photo Enhancement: Integrated Gemini Nano Banana to enhance uploaded photos (profile, cover, and marketing photos) with a Before/After comparison dialog. (DONE)
-- Marketing Studio (Phase 1): Created a new  section where AI generates bilingual copy and renders professional social media images (1x1 and 9x16) using Pillow. (DONE)
-- Social Studio Designs: Removed the logo/business name/phone from the top of the post images to make them cleaner, and expanded the template engine to support 10 distinct designs. (DONE)
+- Social Studio UI bug fix: Fixed template gallery crash and added 10 rendered preview images (DONE).
+- Custom Colors for Social Posts: Added a color picker to apply brand & accent colors to AI image posts (DONE).
+- Reel Studio (Phase 2): Built an FFmpeg-based video rendering engine in . Supports Ken Burns zoom, dynamic transitions, text animations, and 6 royalty-free music tracks (DONE).
+- TTS Voiceovers: Integrated OpenAI TTS (via Emergent LLM Key) to read the post copy. Added Short Voice vs Full Voice modes. Video auto-expands duration to prevent voice cutoff (DONE).
+- Synced Subtitles: Added burned-in subtitles that sync with the TTS voice (DONE).
+- Editable AI Copy: Created a 2-step flow where users generate AI text, edit the Headline/Subheadline/CTA/Caption manually, and THEN render the reel (DONE).
+- Outro Card update: Removed the phone number from the video's outro card per user request (DONE).
+- Open Graph tags for Reviews: Added  endpoint and updated  to serve business-specific meta tags when  is shared (DONE).
 
 **Earlier issues found/mentioned but not fixed**
 Issue 1: Duplicate DB records (Clients/Users)
@@ -60,69 +56,76 @@ Issue 1: Duplicate DB records (Clients/Users)
    - Should Test frontend/backend/both after fix: Backend
    - Is recurring issue?: Y
 
+Issue 2: server.py needs refactoring
+   - Debug checklist: Break down  (currently 5400+ lines) into  and .
+   - Why to solve this issue and what will be achieved with this?: Maintainability. 
+   - Should Test frontend/backend/both after fix: Backend (via testing agent)
+   - Is recurring issue?: N
+
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: Production 503 crashes due to missing dependencies.
-  - Recurrence count: 1 (agent correctly caught  and added it to  this time).
-  - Status: RESOLVED
-  - Note: **CRITICAL BACKEND DEPLOY RULE**: Production installs from , NOT . If you add a new Python dependency, you MUST add it to BOTH files.
+  - Issue recurrence in previous fork: FFmpeg missing in container. 
+  - Recurrence count: 1
+  - Status: RESOLVED (Agent downloaded static ARM64  and  directly into  to survive pod restarts, and updated ).
   - Note: **CRITICAL FRONTEND DEPLOY RULE**: You MUST ALWAYS run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing ANY frontend UI task.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing ANY frontend UI task. The backend deploy script on the VPS relies on this pre-built folder.
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI, React Router.
-- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (~4800 lines).
-- AI/Image Generation:  handles LLM interactions.  uses  for text-on-image rendering.
-- Deployment: Apache + cPanel VPS ( and ).
+- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (~5400 lines).
+- AI/Image Generation:  uses  for text-on-image rendering.  uses  for Reel rendering.  handles Voiceovers.
+- Deployment: Apache + cPanel VPS (, , and ).
 
 **Key Technical Concepts**
-- Marketing Studio uses  (PIL) to draw text, overlays, and logos programmatically onto images.
-- Social sharing Open Graph relies on a backend  endpoint and an Apache  rewrite rule to redirect social crawlers (Facebook/WhatsApp bots) to the meta tags while letting normal users load the React SPA.
-- AI Image Enhancement uses  to cleanly upscale/fix lighting on user-uploaded images.
+- Marketing Studio uses  to stitch images into videos, apply Ken Burns effects, overlay text/subtitles, and mix audio (TTS + background music).
+- Social sharing Open Graph relies on backend  endpoints and an Apache  rewrite rule to redirect social crawlers (Facebook/WhatsApp bots) to the meta tags while letting normal users load the React SPA.
+- Voiceover uses OpenAI TTS () via the Emergent Universal Key.
 
 **key DB schema**
-- : { added to manage how many NFC cards an account can generate}
-- : {uid=0(root) gid=0(root) groups=0(root), , , , , ,  — separated to allow different reps under the same business}
+- : {uid=0(root) gid=0(root) groups=0(root), , , , , , , etc.}
+- : {uid=0(root) gid=0(root) groups=0(root), , , , , , , , etc.}
 
 **changes in tech stack**
--  added for image generation.
-- Emergent Universal Key utilized for both text (OpenAI) and image enhancement (Gemini).
+-  and  static binaries added to .
+-  added for text-to-speech.
 
 **All files of reference**
--  (New image generation engine)
--  (New marketing UI currently being edited)
+-  (FFmpeg reel engine)
+-  (Voiceover engine)
+-  (Reels UI)
+-  
 - 
 - 
-- 
-- 
+-  &  (Static binaries)
 
 **Areas that need refactoring**
--  is extremely large (~4800 lines) and urgently needs FastAPI router separation.
+-  is extremely large (~5400 lines) and urgently needs FastAPI router separation.
 
 **key api endpoints**
-- : Generates social media posts (copy + images).
-- : Enhances a given uploaded photo using Gemini Nano Banana.
-- : Serves raw HTML Open Graph tags for social crawlers.
+- : Initiates background generation of a video reel.
+- : Serves raw HTML Open Graph tags for Google Review links.
 
 **Critical Info for New Agent**
-- The previous agent did an immense amount of work and successfully tested it all using the . The ONLY thing pending is finalizing the last UI update ( now displaying 10 designs) which was injected but not built.
 - **Do not forget the React production build step.** It is mandatory before handing control back to the user so they can click Save to GitHub and deploy.
+- If FFmpeg commands fail with Exec format error, remember the pod is ARM64. The correct static binaries are already placed in .
+- The user is currently stuck thinking the Open Graph code is broken. **It is not broken.** The user's WhatsApp is caching the old preview, and their VPS  has not been updated yet. Guide them patiently in Spanish.
 
 **documents and test reports created in this job**
--  (Multi-card tests)
--  (Social Studio tests)
--  (Updated with new architecture and feature phases)
+-  (Reels Phase 2 base tests)
+-  (Reels Phase 2 expansion tests)
+-  (Updated with Reels and new features)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. (User) Asked to apply the Enhance with AI feature to the Social Studio uploads as well.
-2. (Agent) Integrated Gemini enhancement to Social Studio, showing Before/After, built and pushed.
-3. (User) Asked to remove the business logo, name, and phone number from the top of the AI designs because it blocks the photo.
-4. (Agent) Modified  to remove those elements and clean up the design.
-5. (User) Asked the agent to rebuild because they fell asleep and missed the update.
-6. (Agent) Verified the build was already up to date, instructed the user to deploy.
-7. (User) [LAST MESSAGE] Agreed with using predefined designs instead of AI-generated text layouts, and requested 10 different design templates to choose from.
-
-*Pending Human Action:* The agent created the 10 designs in the backend and injected the selector into the frontend. You need to lint it, take a screenshot to verify it looks good, run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command., stage the files, and tell the user (in Spanish) that the 10-design gallery is ready for deployment.
+1. (User) Asked to make the phone number in the voiceover optional and complained it spoke too fast.
+2. (Agent) Added a toggle for the phone number and slowed the TTS speed to 0.9.
+3. (User) Asked to view and edit the AI-generated text *before* the video renders.
+4. (Agent) Implemented a 2-step flow (Generate Text -> Edit -> Generate Reel) with editable fields.
+5. (User) Asked to remove the phone number from the video's Outro card.
+6. (Agent) Removed the phone number from the Outro frame.
+7. (User) Complained the Google Reviews link () shows generic Unitap info when shared.
+8. (Agent) Created  endpoint and updated .
+9. (User) Sent a screenshot of a bracket link not sharing properly. Then clarified it's from another project, ignore it.
+10. (User) [LAST MESSAGE] Complained that WhatsApp STILL shows the generic Unitap info for the Google Reviews link.
+*Pending Human Action:* Reiterate to the user (in Spanish) that the code is fixed, but their live server's  file needs to be updated (by deploying) and WhatsApp cache needs to be cleared.
 
 **Project Health Check:**
 Healthy. No broken routes.
@@ -131,29 +134,26 @@ Healthy. No broken routes.
 - Stripe (Payments) — requires User API Key.
 - OpenAI GPT-5.2 (Text Gen) — uses Emergent LLM Key.
 - Gemini 3.1 Pro Flash (Image Gen/Enhance) — uses Emergent LLM Key.
+- OpenAI TTS (Voiceovers) — uses Emergent LLM Key.
 - Google Business Profile — Setup pending Google API approval.
 
 **Testing status**
-- Testing agent used after significant changes: YES (iteration 14 & 15).
+- Testing agent used after significant changes: YES (iterations 16 & 17).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: Yes.
+- Test files created: Yes ().
 - Known regressions: None.
 
 **Credentials to test flow:**
 Admin:  / 
-Trial Test User:  / 
 
 **What agent forgot to execute**
-The agent modified  to add the 10-design layout at the very end of the session but forgot to run , , and the critical yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. + .
+The agent executed everything perfectly. The only pending item is patiently guiding the user through deployment and cache clearing for the OG tags.
 
 **Debugging checklist for current issue**
-Issue: Finalize 10-design Marketing Studio UI update.
-Frontend files to check: 
+Issue: WhatsApp caching old Open Graph tags for .
 Steps:
-1. Run  on the frontend.
-2. Run  navigating to the  page to ensure the 10 design templates render correctly in the selection gallery.
-3. Run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside .
-4. Run  and commit.
-5. Reply to the user in Spanish confirming the 10 designs are ready and asking if they want to move to Phase 2 (Video Reels).</analysis>
+1. Do not modify the backend code or . It is already correct.
+2. Respond to the user in Spanish. 
+3. Explain clearly that their LIVE server is still using the old configuration file.
+4. Instruct them to click Save to GitHub and then run their deploy script on their cPanel VPS to apply the changes.
+5. Provide them with the Facebook Sharing Debugger link to scrape the URL and force WhatsApp/Facebook to clear their cache.</analysis>

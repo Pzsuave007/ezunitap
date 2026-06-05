@@ -8,7 +8,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://social-studio-27.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketing-studio-33.preview.emergentagent.com").rstrip("/")
 SUPER_EMAIL = "pzsuave007@gmail.com"
 SUPER_PASS = "Uni2mkt007!"
 
