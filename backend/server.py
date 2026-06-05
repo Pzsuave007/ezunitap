@@ -749,7 +749,7 @@ async def public_accept_quote(quote_id: str):
     if not q:
         raise HTTPException(404, "Not found")
     if q.get("status") in ("declined",):
-        raise HTTPException(400, "Quote no se puede aceptar en este estado")
+        raise HTTPException(400, "This quote can't be accepted in its current state")
 
     now_iso = _now_iso()
     if q.get("status") not in ("approved", "converted"):
@@ -846,9 +846,9 @@ class PublicAcceptSignIn(BaseModel):
 async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignIn):
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
-        raise HTTPException(404, "Quote no encontrado")
+        raise HTTPException(404, "Quote not found")
     if q.get("status") in ("declined",):
-        raise HTTPException(400, "Quote rechazado")
+        raise HTTPException(400, "Quote declined")
     signer = (payload.signer_name or "").strip()
     if len(signer) < 2:
         raise HTTPException(400, "Por favor ingresa tu nombre completo para firmar")
@@ -1412,10 +1412,10 @@ async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
     The amount is computed server-side; card collection is gated to the owner."""
     inv = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
     if not inv:
-        raise HTTPException(404, "Invoice no encontrado")
+        raise HTTPException(404, "Invoice not found")
     owner = await db.users.find_one({"id": inv["user_id"]}, {"_id": 0})
     if not _stripe_collect_enabled_for(owner):
-        raise HTTPException(403, "El cobro con tarjeta no está disponible para este negocio.")
+        raise HTTPException(403, "Card payments are not available for this business.")
     total = float(inv.get("total") or 0)
     paid = float(inv.get("amount_paid") or 0)
     amount = round(max(0, total - paid), 2)
@@ -1424,7 +1424,7 @@ async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
         if item:
             amount = round(float(item.get("amount") or 0), 2)
     if amount <= 0:
-        raise HTTPException(400, "Este invoice ya está pagado por completo.")
+        raise HTTPException(400, "This invoice is already paid in full.")
     origin = (payload.origin_url or "").rstrip("/")
     if not origin.startswith("http"):
         raise HTTPException(400, "origin_url inválido")
@@ -1530,7 +1530,7 @@ async def delete_payment_request(request_id: str, user_id: str = Depends(get_cur
 async def public_payment_request(request_id: str):
     req = await db.payment_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
-        raise HTTPException(404, "Solicitud no encontrada")
+        raise HTTPException(404, "Request not found")
     inv = await db.invoices.find_one({"id": req["invoice_id"]}, {"_id": 0}) or {}
     owner = await db.users.find_one({"id": req["user_id"]}, {"_id": 0, "password_hash": 0})
     client_doc = await db.clients.find_one({"id": req.get("client_id")}, {"_id": 0})
@@ -1562,15 +1562,15 @@ class PaymentRequestCheckoutIn(BaseModel):
 async def public_payment_request_checkout(request_id: str, payload: PaymentRequestCheckoutIn):
     req = await db.payment_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
-        raise HTTPException(404, "Solicitud no encontrada")
+        raise HTTPException(404, "Request not found")
     if req["status"] == "paid":
-        raise HTTPException(400, "Esta solicitud ya fue pagada.")
+        raise HTTPException(400, "This request has already been paid.")
     owner = await db.users.find_one({"id": req["user_id"]}, {"_id": 0})
     if not _stripe_collect_enabled_for(owner):
-        raise HTTPException(403, "El cobro con tarjeta no está disponible para este negocio.")
+        raise HTTPException(403, "Card payments are not available for this business.")
     inv = await db.invoices.find_one({"id": req["invoice_id"]}, {"_id": 0})
     if not inv:
-        raise HTTPException(404, "Invoice no encontrado")
+        raise HTTPException(404, "Invoice not found")
     origin = (payload.origin_url or "").rstrip("/")
     if not origin.startswith("http"):
         raise HTTPException(400, "origin_url inválido")
@@ -1728,7 +1728,7 @@ async def public_review_page(slug: str):
     card, user = await _public_card_by_slug(slug)
     google_url = (user.get("google_review_url") or "").strip()
     if not google_url:
-        raise HTTPException(404, "Esta empresa aún no ha configurado Google Reviews.")
+        raise HTTPException(404, "This business hasn't set up Google Reviews yet.")
     return {
         "business_name": user.get("business_name", ""),
         "owner_name": user.get("owner_name", ""),
@@ -1745,7 +1745,7 @@ async def public_review_feedback(slug: str, payload: PublicReviewFeedbackIn):
     """Capture private feedback when client picks neutral/sad sentiment."""
     card, user = await _public_card_by_slug(slug)
     if payload.sentiment not in ("happy", "neutral", "sad"):
-        raise HTTPException(400, "Sentimiento inválido")
+        raise HTTPException(400, "Invalid sentiment")
     doc = {
         "id": _new_id(),
         "user_id": user["id"],
@@ -3374,7 +3374,7 @@ async def public_card_og(slug: str, request: Request):
 
     company = (user.get("business_name", "") or "").strip()
     person = (card.get("person_name") or user.get("owner_name", "") or "").strip()
-    title = " · ".join([p for p in [person, company] if p]) or company or person or "Tarjeta Digital"
+    title = " · ".join([p for p in [person, company] if p]) or company or person or "Digital Card"
 
     desc = (card.get("tagline") or "").strip()
     if not desc:
@@ -3383,7 +3383,7 @@ async def public_card_og(slug: str, request: Request):
             bits.append(card["business_type"])
         if card.get("service_area"):
             bits.append(card["service_area"])
-        desc = " · ".join(bits) if bits else f"Contacta a {title}. Guarda mi tarjeta digital y mi información de contacto."
+        desc = " · ".join(bits) if bits else f"Contact {title}. Save my digital card and contact info."
 
     img_id = card.get("cover_photo_id") or card.get("profile_photo_id") or card.get("logo_photo_id")
     image = f"{base}/api/public/card/photo/{img_id}" if img_id else ""

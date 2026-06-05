@@ -18,6 +18,18 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — ROOT CAUSE del "preview URL en producción" ARREGLADO + Contenido público 100% en inglés [COMPLETO]
+- **Causa raíz hallada**: `frontend/craco.config.js` línea 3 hacía `require("dotenv").config()` que cargaba el `.env` (URL preview) ANTES de que react-scripts leyera `.env.production`, y dotenv no sobrescribe → el build de producción horneaba la URL del preview de Emergent. La producción EN VIVO (`main.66966e80.js`) estaba llamando al backend/DB del preview.
+- **Fix**: `craco.config.js` ahora solo carga `.env` en dev (`if (isDevServer)`). Builds de producción usan `.env.production` (ezunitap.com) correctamente. Verificado: build ya NO contiene la URL del preview.
+- **Open Graph `/r/<slug>` (reseñas)**: además se regeneró el build faltante en git, por lo que `fix.sh` ahora sí copia el `.htaccess` con la regla de `/r/`.
+- **Todo el contenido PÚBLICO traducido a inglés** (la UI del contratista sigue en español):
+  - OG de tarjeta (`/c/og`) y reseñas (`/r/og`) → títulos/descripciones por defecto en inglés.
+  - `SmartCard.js`: idioma por defecto ahora **inglés** (`useState("en")`, antes auto-detectaba navegador). Se mantiene el toggle ES/EN.
+  - Mensajes de error de endpoints `/public/*` (quotes, invoices, payment-requests, reviews, agreements) → inglés. Los de endpoints autenticados (panel) quedan en español.
+- **Bug colateral arreglado**: línea suelta corrupta `ient.close()` al final de `server.py` que tumbaba el backend al recargar.
+- Probado con curl (OG en inglés) + screenshot (tarjeta pública en inglés).
+
+
 ## Original Problem Statement
 SaaS for Latino service contractors (roofing, drywall, construction, cleaning, painting, concrete, landscaping). UI in Spanish for the owner; quotes/invoices/messages to clients in English. Simple, mobile-first, usable by non-technical users from a phone. Production domain: **ezunitap.com**.
 

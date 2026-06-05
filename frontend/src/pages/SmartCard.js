@@ -109,7 +109,7 @@ export default function SmartCard() {
   const { slug } = useParams();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
-  const [lang, setLang] = useState(() => (navigator.language || "en").startsWith("es") ? "es" : "en");
+  const [lang, setLang] = useState("en");
   const t = I18N[lang];
   const [chatOpen, setChatOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
