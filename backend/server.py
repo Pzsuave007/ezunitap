@@ -3385,7 +3385,7 @@ async def public_card_og(slug: str, request: Request):
             bits.append(card["service_area"])
         desc = " · ".join(bits) if bits else f"Contact {title}. Save my digital card and contact info."
 
-    img_id = card.get("cover_photo_id") or card.get("profile_photo_id") or card.get("logo_photo_id")
+    img_id = card.get("profile_photo_id") or card.get("cover_photo_id") or card.get("logo_photo_id")
     image = f"{base}/api/public/card/photo/{img_id}" if img_id else ""
     card_url = f"{base}/c/{card.get('slug')}"
 
