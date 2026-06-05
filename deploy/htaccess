@@ -14,6 +14,11 @@ RewriteRule ^(.*)$ http://127.0.0.1:8007/$1 [P,L]
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview|Embedly|Iframely|flipboard|tumblr|bitlybot|Snapchat|Google-InspectionTool) [NC]
 RewriteRule ^c/([^/]+)/?$ http://127.0.0.1:8007/api/public/card/$1/og [P,L]
 
+# Social/link crawlers requesting a Google Reviews page (/r/<slug>) get
+# server-rendered Open Graph meta tags (business name + info) too.
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview|Embedly|Iframely|flipboard|tumblr|bitlybot|Snapchat|Google-InspectionTool) [NC]
+RewriteRule ^r/([^/]+)/?$ http://127.0.0.1:8007/api/public/reviews/$1/og [P,L]
+
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -3418,6 +3418,57 @@ async def public_card_og(slug: str, request: Request):
     return HTMLResponse(content=html)
 
 
+@api_router.get("/public/reviews/{slug}/og", response_class=HTMLResponse)
+async def public_reviews_og(slug: str, request: Request):
+    """Per-business Open Graph meta tags for a shared Google Reviews link (/r/<slug>),
+    so it shows the BUSINESS name + info instead of generic Unitap branding.
+    Humans are redirected to the real reviews page."""
+    card, user = await _public_card_by_slug(slug)
+    base = _public_base_from_request(request)
+    if not card.get("is_primary"):
+        primary = await db.cards.find_one({"user_id": card["user_id"], "is_primary": True}, {"_id": 0})
+        if primary:
+            for f in SHARED_CARD_FIELDS:
+                card[f] = primary.get(f)
+
+    company = (user.get("business_name", "") or "").strip() or "Nuestro negocio"
+    title = f"Reseña a {company}"
+    desc = (user.get("review_intro_text") or "").strip()
+    if not desc:
+        desc = f"¿Cómo fue tu experiencia con {company}? Déjanos una reseña en Google ⭐ — toma solo 10 segundos."
+
+    img_id = card.get("logo_photo_id") or card.get("cover_photo_id") or card.get("profile_photo_id")
+    image = f"{base}/api/public/card/photo/{img_id}" if img_id else ""
+    reviews_url = f"{base}/r/{card.get('slug')}"
+
+    og_image_tags = (
+        f'<meta property="og:image" content="{_esc(image)}"/>'
+        f'<meta name="twitter:image" content="{_esc(image)}"/>'
+        if image else ""
+    )
+    html = f"""<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_esc(title)}</title>
+<meta name="description" content="{_esc(desc)}"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="{_esc(company)}"/>
+<meta property="og:title" content="{_esc(title)}"/>
+<meta property="og:description" content="{_esc(desc)}"/>
+<meta property="og:url" content="{_esc(reviews_url)}"/>
+<meta name="twitter:card" content="{'summary_large_image' if image else 'summary'}"/>
+<meta name="twitter:title" content="{_esc(title)}"/>
+<meta name="twitter:description" content="{_esc(desc)}"/>
+{og_image_tags}
+<link rel="canonical" href="{_esc(reviews_url)}"/>
+<meta http-equiv="refresh" content="0; url={_esc(reviews_url)}"/>
+</head><body>
+<p>Redirigiendo… <a href="{_esc(reviews_url)}">Dejar una reseña a {_esc(company)}</a></p>
+<script>window.location.replace({reviews_url!r});</script>
+</body></html>"""
+    return HTMLResponse(content=html)
+
 
 @api_router.get("/public/card/{slug}/vcard")
 async def public_vcard(slug: str, request: Request):
