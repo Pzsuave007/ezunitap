@@ -1,10 +1,19 @@
 // craco.config.js
 const path = require("path");
-require("dotenv").config();
 
 // Check if we're in development/preview mode (not production build)
 // Craco sets NODE_ENV=development for start, NODE_ENV=production for build
 const isDevServer = process.env.NODE_ENV !== "production";
+
+// IMPORTANT: Only load the local .env (preview backend URL) in dev/preview.
+// During a production build, loading .env here would inject the PREVIEW
+// REACT_APP_BACKEND_URL into process.env before react-scripts reads
+// .env.production, and dotenv does NOT override already-set vars — so the
+// preview URL would silently win and ship to production. Skipping it in
+// production lets react-scripts load .env.production (ezunitap.com) correctly.
+if (isDevServer) {
+  require("dotenv").config();
+}
 
 // Environment variable overrides
 const config = {
