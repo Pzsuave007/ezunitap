@@ -18,6 +18,15 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — PAYWALL MODULAR FASE 2: blindaje backend + panel admin de planes [COMPLETO]
+Se cerró la Fase 2 del sistema de suscripciones modulares (4 planes: Presencia=`card`, Negocio=`business`, Marketing=`marketing`, Bundle=todo). **Probado 100% (27/27 pytest + e2e frontend, iteration_18.json, sin bugs).**
+- **Dependencia `require_feature(feature)`** (`server.py`, justo después de `_user_doc`): valida `payments_service.user_has_feature(user, feature)`. Devuelve **403 en español** si el módulo está bloqueado ("Necesitas el plan {Presencia/Negocio/Marketing} (o el Bundle)…") o si la prueba expiró ("Tu prueba gratis terminó. Elige un plan…").
+- **Solo se bloquean CREAR/EDITAR** (decisión del usuario); las LECTURAS siguen abiertas para que un usuario bloqueado siga viendo sus datos y se sienta empujado a pagar sin perder acceso. Endpoints gateados: `business` → POST/PUT clients, POST/PUT quotes, quotes/convert, POST/PUT invoices, POST jobs, ai/quote, ai/scope, ai/photo-quote, ai/agreement, agreements; `card` → POST /card, PUT /card/settings, uploads (logo/profile/cover/photo-enhance/photo-choose); `marketing` → social/posts, posts/rerender, social/enhance, social/copy, social/reels.
+- **Asignación manual de plan por admin (sin Stripe)**: nuevo campo `users.manual_plan` honrado por `payments_service.user_features` (prioridad: comp > manual_plan > suscripción Stripe activa > trial > bloqueado). Endpoint `POST /api/admin/users/{id}/set-plan` con `plan` ∈ {presencia, negocio, marketing, bundle, comp, trial, locked}. `admin_list_users` ahora expone `manual_plan` + `features`.
+- **Frontend `AdminAccounts.js` (tab Usuarios)**: cada fila tiene un **selector de plan** (`plan-select-{uid}` / `plan-option-{uid}-{plan}`) que reemplaza los botones Regalar/Revocar; badge "manual" / "Bloqueado". `FeatureGate.js`/`UpgradeWall` ya bloqueaban el frontend.
+- **Build de producción regenerado** (`.env.production` con URL vacía → `/api` relativo, multi-dominio) + `git add -f frontend/build/`. **LISTO PARA DESPLEGAR** (Fase 2 completa).
+
+
 ## ✅ Jun 2026 — REBRAND Unitap → UniTech + arquitectura multi-dominio (mismo origen) [COMPLETO]
 - **Rebrand de marca** en TODO lo visible: frontend (~28 archivos), backend (server.py, ai_service, email_service, payments_service, gbp_routes), `index.html`. "Unitap"/"UniTap" → "UniTech". Tagline logo "Tu negocio en un tap" → "Tecnología para tu negocio".
 - **Dominio en código**: `ezunitap.com` → `ezunitech.com` (email soporte en LegalPages, placeholder GBP, ai_service, email_service admin_url, index.html og:url).
