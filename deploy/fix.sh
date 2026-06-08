@@ -121,18 +121,20 @@ nohup "$PROD/venv/bin/uvicorn" server:app \
     > "$PROD/backend.log" 2>&1 &
 
 sleep 4
-if curl -sf "http://127.0.0.1:${PORT}/api/" >/dev/null; then
-    echo "  ✅ Backend restarted on :${PORT}"
-else
-    # Give it a few more seconds — first request can be slow
-    sleep 6
+echo ">>> Waiting for backend to be healthy on :${PORT} ..."
+OK=0
+for i in $(seq 1 15); do
     if curl -sf "http://127.0.0.1:${PORT}/api/" >/dev/null; then
-        echo "  ✅ Backend restarted on :${PORT} (slow start)"
-    else
-        echo "  ❌ Backend failed — see $PROD/backend.log"
-        tail -n 40 "$PROD/backend.log"
-        exit 1
+        echo "  ✅ Backend healthy on :${PORT} (after check ${i})"
+        OK=1
+        break
     fi
+    sleep 3
+done
+if [ "$OK" != "1" ]; then
+    echo "  ❌ Backend failed — see $PROD/backend.log"
+    tail -n 40 "$PROD/backend.log"
+    exit 1
 fi
 
 echo ">>> fix.sh DONE"
