@@ -1,34 +1,38 @@
 <analysis>**original_problem_statement**: 
-SaaS web app for Latino service contractors called Unitap. The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) are generated in English using AI. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio (Social Media Post & Video generation), and GMB (Google My Business) Reviews gating. The app is LIVE in production. The core focus is on perfecting the Marketing Studio and providing a seamless Spanish input - English output AI experience for users.
+SaaS web app for Latino service contractors called UniTech (formerly Unitap). The UI is in Spanish, but customer-facing documents (quotes, invoices, agreements) and public pages (Review page, SmartCard) are generated in English. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio (Social Media Post & Video generation), and Google Reviews gating. The app is LIVE in production. The core focus is currently completing the transition to a modular subscription/billing system via Stripe.
 
 **User's preferred language**: Spanish
 *(CRITICAL INSTRUCTION FOR NEXT AGENT: The user speaks Spanish and explicitly requires all responses, explanations, and communication to be EXCLUSIVAMENTE en español. Do not use English with the user.)*
 
 **what currently exists?** 
-A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real payments. It features a complete CRM and public document flow. Recently, the app received a massive upgrade to its Estudio de Marketing (Social Studio). Phase 1 (10-design AI Image Posts) and Phase 2 (AI Video Reels using FFmpeg, OpenAI TTS, Background Music, and Ken Burns animations) are fully implemented, tested, and working.
+A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production processing real payments. The app was just successfully rebranded from Unitap to UniTech. It currently serves from dual domains ( and ) using relative  paths. The agent has implemented Phase 1 of a new modular Stripe billing system (4 plans: Presencia, Negocio, Marketing, Bundle) replacing the old all-in-one Pro plan. A 14-day trial without a card is enforced, grandfathering was applied to 15 existing users, and frontend route gating () was just built. 
 
 **Last working item**:
-- **Last item agent was working**: Fixing the Open Graph (OG) meta tags for the Google Reviews public page () so that when shared on WhatsApp/Facebook, it shows the specific business name and image instead of the generic Unitap branding. 
-- **Status**: USER VERIFICATION PENDING
-- **Agent Testing Done**: Y
-- **Which testing method agent to use?**: manual testing by curl
-- **User Testing Done**: N (User is testing but seeing old cached data because their live VPS  hasn't been updated yet).
+- **Last item agent was working**: Completing Fase 2 of the modular subscription system. The agent just finished frontend gating via  and was about to implement backend endpoint protection. Specifically, creating a  FastAPI dependency and applying it to core generation endpoints (, , , , , ).
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: both (Backend testing agent for the gating logic, testing agent for end-to-end Stripe subscription flow once backend is done).
+- **User Testing Done**: N 
 
 **All Pending/In progress Issue list**:
-  Issue 1: Open Graph tags for  showing generic Unitap info on WhatsApp (P0)
-     - Attempted fixes: The agent successfully created the  endpoint and updated . The backend logic works perfectly. However, the user is still complaining that WhatsApp shows Unitap.
+  Issue 1: Enforce backend endpoint gating for modular subscriptions (P0)
+     - Attempted fixes: Agent mapped the targeted endpoints requiring protection. 
      - Next debug checklist: 
-       1. DO NOT change the backend code for this—it is already correct. 
-       2. The issue is that the user's LIVE VPS has an outdated  file, AND WhatsApp has cached the old preview. 
-       3. Explain to the user (in Spanish) that they MUST run Save to GitHub and execute their deploy script () on the VPS to update the  file. 
-       4. Instruct the user to use the Facebook Sharing Debugger to scrape the URL again to clear the cache.
-     - Why fix this issue and what will be achieved with the fix?: Finalizes the social sharing aspect of the Google Reviews feature.
-     - Status: USER VERIFICATION PENDING
+       1. Create the  FastAPI dependency in .
+       2. Ensure it checks the  array (which contains , , and/or ).
+       3. Apply this dependency to the relevant  endpoints.
+     - Why fix this issue and what will be achieved with the fix?: Without backend validation, users whose trials expired could theoretically bypass the frontend  via direct API calls. This gives the paywall teeth.
+     - Status: IN PROGRESS
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: NA (Deployment/Cache issue)
+     - Should Test frontend/backend/both after fix?: Both (Full Stripe paywall/lockout flow).
 
 **In progress Task List**:
-  *(None. Phase 2 Reels feature was successfully completed and tested).*
+  Task 1: Complete Modular Billing / Stripe Paywall rollout (Fase 2)
+     - Where to resume: Finish backend endpoint gating (Issue 1). Next, build the Admin UI panel allowing the user to manually change/assign subscription plans to users (including overriding the grandfathered comp/lifetime status).
+     - What will be achieved with this?: Allows the user to officially monetize specific tools independently and enforce a strict 14-day trial lockout.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix?: Both
+     - Blocked on something: None.
 
 **Upcoming and Future Tasks**
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
@@ -36,96 +40,90 @@ A fully functional, mobile-first full-stack application (React frontend + FastAP
 - **P2**: Convert Job scope notes (copied from quotes) into a checkable checklist UI inside the Job Detail view.
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - **P2**: Python script to consolidate/delete duplicate clients and users from the database.
-- **P3**: Refactor  into modular routers (File is now ~5400 lines).
+- **P3**: Refactor  into modular routers (File is now ~5450 lines).
 - **Phase/Blocked**: Complete Google Business Profile integration (Blocked waiting for Google to approve the API access request).
 
 **Completed work in this session**
-- Social Studio UI bug fix: Fixed template gallery crash and added 10 rendered preview images (DONE).
-- Custom Colors for Social Posts: Added a color picker to apply brand & accent colors to AI image posts (DONE).
-- Reel Studio (Phase 2): Built an FFmpeg-based video rendering engine in . Supports Ken Burns zoom, dynamic transitions, text animations, and 6 royalty-free music tracks (DONE).
-- TTS Voiceovers: Integrated OpenAI TTS (via Emergent LLM Key) to read the post copy. Added Short Voice vs Full Voice modes. Video auto-expands duration to prevent voice cutoff (DONE).
-- Synced Subtitles: Added burned-in subtitles that sync with the TTS voice (DONE).
-- Editable AI Copy: Created a 2-step flow where users generate AI text, edit the Headline/Subheadline/CTA/Caption manually, and THEN render the reel (DONE).
-- Outro Card update: Removed the phone number from the video's outro card per user request (DONE).
-- Open Graph tags for Reviews: Added  endpoint and updated  to serve business-specific meta tags when  is shared (DONE).
+- Open Graph tags caching: Regenerated  and forced commit to git so the deploy script copies  properly (DONE).
+- Preview URL Leak: Fixed  loading  too early, preventing the preview URL from baking into the production build (DONE).
+- Public English Translation: Translated all public-facing SmartCard OG tags, Google Reviews OG tags, and public backend endpoints (quotes, checkout errors) to English (DONE).
+- Rebranding to UniTech: Renamed all instances of Unitap to UniTech. Adjusted frontend API calls to use relative paths () so the app can be served from both  and  natively (DONE).
+- Unified Deploy Script: Created >>> FIRST-TIME INSTALL for ezunitap on port 8007 that pulls code, restarts backend, deploys BOTH domains, and runs AutoSSL in a single command (DONE).
+- Modular Billing (Fase 1): Converted Stripe subscription logic to support 4 tiers (Presencia, Negocio, Marketing, Bundle). Modified the 14-day trial logic to NOT ask for a card upfront and to automatically lock access upon expiration. Applied grandfathering to 15 existing users. Redesigned  frontend (DONE).
+- Frontend Module Gating: Created  to block frontend access to unpaid routes based on  (DONE).
 
 **Earlier issues found/mentioned but not fixed**
-Issue 1: Duplicate DB records (Clients/Users)
+Issue 1: server.py needs refactoring
+   - Debug checklist: Break down  (currently 5450+ lines) into  and .
+   - Why to solve this issue and what will be achieved with this?: Maintainability. 
+   - Should Test frontend/backend/both after fix: Backend (via testing agent)
+   - Is recurring issue?: N
+
+Issue 2: Duplicate DB records (Clients/Users)
    - Debug checklist: Search MongoDB  and  collections. Check if  uniqueness logic is robust. Requires a deduplication script.
    - Why to solve this issue and what will be achieved with this?: Prevents CRM confusion.
    - Should Test frontend/backend/both after fix: Backend
    - Is recurring issue?: Y
 
-Issue 2: server.py needs refactoring
-   - Debug checklist: Break down  (currently 5400+ lines) into  and .
-   - Why to solve this issue and what will be achieved with this?: Maintainability. 
-   - Should Test frontend/backend/both after fix: Backend (via testing agent)
-   - Is recurring issue?: N
-
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: FFmpeg missing in container. 
+  - Issue recurrence in previous fork:  folder not making it to cPanel.
   - Recurrence count: 1
-  - Status: RESOLVED (Agent downloaded static ARM64  and  directly into  to survive pod restarts, and updated ).
-  - Note: **CRITICAL FRONTEND DEPLOY RULE**: You MUST ALWAYS run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before finishing ANY frontend UI task. The backend deploy script on the VPS relies on this pre-built folder.
+  - Status: RESOLVED
+  - Note: You MUST ALWAYS run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before handing back to the user to run their deploy script. Do not rely on standard git tracking for the build folder.
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI, React Router.
-- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (~5400 lines).
-- AI/Image Generation:  uses  for text-on-image rendering.  uses  for Reel rendering.  handles Voiceovers.
-- Deployment: Apache + cPanel VPS (, , and ).
+- Backend: FastAPI (), MongoDB (Motor/PyMongo). Monolithic  (~5450 lines).
+- Deployment/Dual-Domain: Apache + cPanel VPS. Handled via >>> FIRST-TIME INSTALL for ezunitap on port 8007. Uses  on backend and relative  paths on frontend.
+- Subscriptions: Modular Stripe setup managed inside .
 
 **Key Technical Concepts**
-- Marketing Studio uses  to stitch images into videos, apply Ken Burns effects, overlay text/subtitles, and mix audio (TTS + background music).
-- Social sharing Open Graph relies on backend  endpoints and an Apache  rewrite rule to redirect social crawlers (Facebook/WhatsApp bots) to the meta tags while letting normal users load the React SPA.
-- Voiceover uses OpenAI TTS () via the Emergent Universal Key.
+- Dual domain routing: The frontend build has NO absolute backend URL baked in. It dynamically requests relative to origin. The backend detects origin to generate dynamic Open Graph (OG) tag links.
+- Granular Feature Gating: Instead of a generic , users now have an array of features (, , ) injected into the  endpoint depending on their active subscription plan (, , , , or ).
 
 **key DB schema**
-- : {uid=0(root) gid=0(root) groups=0(root), , , , , , , etc.}
-- : {uid=0(root) gid=0(root) groups=0(root), , , , , , , , etc.}
+- : {uid=0(root) gid=0(root) groups=0(root),  (array), , , , }
+- , , , , .
 
 **changes in tech stack**
--  and  static binaries added to .
--  added for text-to-speech.
+- Transitioned Stripe architecture from Single-Plan to Modular Tiers.
 
 **All files of reference**
--  (FFmpeg reel engine)
--  (Voiceover engine)
--  (Reels UI)
--  
-- 
-- 
--  &  (Static binaries)
+-  (Updated modular billing logic)
+-  (New 4-tier pricing UI)
+-  (Frontend module lock)
+-  (Endpoints to be gated)
+- >>> FIRST-TIME INSTALL for ezunitap on port 8007 (Master deployment script for the VPS)
 
 **Areas that need refactoring**
--  is extremely large (~5400 lines) and urgently needs FastAPI router separation.
+-  (Critically large).
 
 **key api endpoints**
-- : Initiates background generation of a video reel.
-- : Serves raw HTML Open Graph tags for Google Review links.
+- : Returns user info including unlocked .
+- : Public endpoint returning the 4 modular plans.
+- : (Various endpoints requiring the new  validation).
 
 **Critical Info for New Agent**
-- **Do not forget the React production build step.** It is mandatory before handing control back to the user so they can click Save to GitHub and deploy.
-- If FFmpeg commands fail with Exec format error, remember the pod is ARM64. The correct static binaries are already placed in .
-- The user is currently stuck thinking the Open Graph code is broken. **It is not broken.** The user's WhatsApp is caching the old preview, and their VPS  has not been updated yet. Guide them patiently in Spanish.
+- **DO NOT give the user standalone bash commands for deployment.** The user explicitly stated they hate copy-pasting terminal commands. Instruct them to click Save to GitHub and run their single unified script: >>> FIRST-TIME INSTALL for ezunitap on port 8007.
+- The frontend build folder MUST be manually staged with .
+- The user is aware that the new paywall (Fase 2) is incomplete and shouldn't be deployed yet. DO NOT tell the user to deploy until the backend endpoints are properly gated and the Admin panel allows assigning specific plans.
 
 **documents and test reports created in this job**
--  (Reels Phase 2 base tests)
--  (Reels Phase 2 expansion tests)
--  (Updated with Reels and new features)
+- 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. (User) Asked to make the phone number in the voiceover optional and complained it spoke too fast.
-2. (Agent) Added a toggle for the phone number and slowed the TTS speed to 0.9.
-3. (User) Asked to view and edit the AI-generated text *before* the video renders.
-4. (Agent) Implemented a 2-step flow (Generate Text -> Edit -> Generate Reel) with editable fields.
-5. (User) Asked to remove the phone number from the video's Outro card.
-6. (Agent) Removed the phone number from the Outro frame.
-7. (User) Complained the Google Reviews link () shows generic Unitap info when shared.
-8. (Agent) Created  endpoint and updated .
-9. (User) Sent a screenshot of a bracket link not sharing properly. Then clarified it's from another project, ignore it.
-10. (User) [LAST MESSAGE] Complained that WhatsApp STILL shows the generic Unitap info for the Google Reviews link.
-*Pending Human Action:* Reiterate to the user (in Spanish) that the code is fixed, but their live server's  file needs to be updated (by deploying) and WhatsApp cache needs to be cleared.
+1. (User) Asked for a unified deployment script instead of running step-by-step commands.
+2. (Agent) Merged all deploy logic into >>> FIRST-TIME INSTALL for ezunitap on port 8007.
+3. (User) Confirmed dual-domain deploy worked. Asked for promotional text for SMS/DMs.
+4. (Agent) Provided promotional text in Spanish.
+5. (User) Corrected text (removing card payments since it's limited). Suggested separating products into different price tiers.
+6. (Agent) Recommended a 4-tier strategy: Presencia (9.99), Negocio (9.99), Marketing (4.99), Bundle (9.99).
+7. (User) Agreed to strategy, requested 14-day trial (no card) locking out afterward, and requested grandfathering old users.
+8. (Agent) Implemented backend modular plans (Fase 1), grandfathered 15 users, built Pricing.js and FeatureGate.js. Warned user not to deploy yet because Fase 2 (backend lockout) isn't done.
+9. (User) Asked if the build was ready to be pushed to move to phase 2.
+10. (Agent) Rebuilt frontend to ensure it's clean and safe in Git, and announced the start of Fase 2 (backend feature gating).
+*Pending Human Action:* None. The agent should seamlessly continue implementing the backend endpoint gating (Fase 2).
 
 **Project Health Check:**
 Healthy. No broken routes.
@@ -135,25 +133,25 @@ Healthy. No broken routes.
 - OpenAI GPT-5.2 (Text Gen) — uses Emergent LLM Key.
 - Gemini 3.1 Pro Flash (Image Gen/Enhance) — uses Emergent LLM Key.
 - OpenAI TTS (Voiceovers) — uses Emergent LLM Key.
-- Google Business Profile — Setup pending Google API approval.
 
 **Testing status**
-- Testing agent used after significant changes: YES (iterations 16 & 17).
+- Testing agent used after significant changes: NO (Pending Fase 2 completion before testing end-to-end Stripe flow).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: Yes ().
+- Test files created: None this session.
 - Known regressions: None.
 
 **Credentials to test flow:**
 Admin:  / 
 
 **What agent forgot to execute**
-The agent executed everything perfectly. The only pending item is patiently guiding the user through deployment and cache clearing for the OG tags.
+The agent explicitly paused Phase 2 implementation to answer a user's question about the build status. The new agent needs to pick up writing the  dependency in  immediately.
 
 **Debugging checklist for current issue**
-Issue: WhatsApp caching old Open Graph tags for .
+Issue: Backend endpoint gating for modular subscriptions.
+Backend files to check: 
 Steps:
-1. Do not modify the backend code or . It is already correct.
-2. Respond to the user in Spanish. 
-3. Explain clearly that their LIVE server is still using the old configuration file.
-4. Instruct them to click Save to GitHub and then run their deploy script on their cPanel VPS to apply the changes.
-5. Provide them with the Facebook Sharing Debugger link to scrape the URL and force WhatsApp/Facebook to clear their cache.</analysis>
+1. Define a dependency  that inspects  and checks if  is inside . Raise 403 HTTP Exception if missing.
+2. Apply  to , , .
+3. Apply  to .
+4. Apply  to , .
+5. Verify via manual curl or backend test script.</analysis>

@@ -39,6 +39,7 @@ import PaymentRequest from "@/pages/PaymentRequest";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import PublicReviewPage from "@/pages/PublicReviewPage";
 import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
+import { FeatureGate } from "@/components/FeatureGate";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -92,22 +93,22 @@ function App() {
 
             <Route element={<HomeOrAuth />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/clientes" element={<Clients />} />
-              <Route path="/clientes/:id" element={<ClientDetail />} />
-              <Route path="/quotes" element={<Quotes />} />
-              <Route path="/quotes/nuevo" element={<QuoteBuilder />} />
-              <Route path="/quotes/:id" element={<QuoteDetail />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/invoices/nuevo" element={<InvoiceDetail />} />
-              <Route path="/invoices/:id" element={<InvoiceDetail />} />
-              <Route path="/contratos" element={<Agreements />} />
-              <Route path="/contratos/nuevo" element={<AgreementBuilder />} />
-              <Route path="/contratos/:id" element={<AgreementDetail />} />
-              <Route path="/trabajos" element={<Jobs />} />
-              <Route path="/calendario" element={<Calendar />} />
-              <Route path="/tarjeta" element={<CardAdmin />} />
-              <Route path="/marketing" element={<SocialStudio />} />
-              <Route path="/reviews" element={<GoogleReviewsPage />} />
+              <Route path="/clientes" element={<FeatureGate feature="business"><Clients /></FeatureGate>} />
+              <Route path="/clientes/:id" element={<FeatureGate feature="business"><ClientDetail /></FeatureGate>} />
+              <Route path="/quotes" element={<FeatureGate feature="business"><Quotes /></FeatureGate>} />
+              <Route path="/quotes/nuevo" element={<FeatureGate feature="business"><QuoteBuilder /></FeatureGate>} />
+              <Route path="/quotes/:id" element={<FeatureGate feature="business"><QuoteDetail /></FeatureGate>} />
+              <Route path="/invoices" element={<FeatureGate feature="business"><Invoices /></FeatureGate>} />
+              <Route path="/invoices/nuevo" element={<FeatureGate feature="business"><InvoiceDetail /></FeatureGate>} />
+              <Route path="/invoices/:id" element={<FeatureGate feature="business"><InvoiceDetail /></FeatureGate>} />
+              <Route path="/contratos" element={<FeatureGate feature="business"><Agreements /></FeatureGate>} />
+              <Route path="/contratos/nuevo" element={<FeatureGate feature="business"><AgreementBuilder /></FeatureGate>} />
+              <Route path="/contratos/:id" element={<FeatureGate feature="business"><AgreementDetail /></FeatureGate>} />
+              <Route path="/trabajos" element={<FeatureGate feature="business"><Jobs /></FeatureGate>} />
+              <Route path="/calendario" element={<FeatureGate feature="business"><Calendar /></FeatureGate>} />
+              <Route path="/tarjeta" element={<FeatureGate feature="card"><CardAdmin /></FeatureGate>} />
+              <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
+              <Route path="/reviews" element={<FeatureGate feature="card"><GoogleReviewsPage /></FeatureGate>} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />
               <Route path="/ajustes" element={<Settings />} />

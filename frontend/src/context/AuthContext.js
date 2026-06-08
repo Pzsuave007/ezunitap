@@ -80,11 +80,22 @@ export function AuthProvider({ children }) {
 
   const refreshUser = fetchMe;
 
+  // Per-module access (driven by backend `user.features`).
+  const features = user?.features || [];
+  const hasFeature = useCallback(
+    (f) => Array.isArray(features) && features.includes(f),
+    [features]
+  );
+  // "locked" = authenticated user whose trial ended with no active plan
+  // (no unlocked features at all). Comp/paid/trial users have features.
+  const locked = !!user && features.length === 0;
+
   return (
     <AuthContext.Provider
       value={{
         user, loading, login, register, logout, refreshUser,
         impersonate, endImpersonation, isImpersonating,
+        features, hasFeature, locked,
       }}
     >
       {children}
