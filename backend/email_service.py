@@ -27,7 +27,7 @@ def _owner_email() -> Optional[str]:
 
 
 def _sender_email() -> str:
-    return os.environ.get("SENDER_EMAIL", "Unitap <onboarding@resend.dev>").strip()
+    return os.environ.get("SENDER_EMAIL", "UniTech <onboarding@resend.dev>").strip()
 
 
 # ---- SMTP backend (preferred for self-hosted) -----------------------------
@@ -139,7 +139,7 @@ def render_new_subscription_email(
     plan_label: str,
     trial_days: int,
     shipping_address: Optional[dict] = None,
-    admin_url: str = "https://ezunitap.com/admin/envios",
+    admin_url: str = "https://ezunitech.com/admin/envios",
 ) -> str:
     """Plain HTML body for a new-subscription notification."""
     addr_html = ""

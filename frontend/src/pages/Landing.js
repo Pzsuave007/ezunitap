@@ -1,5 +1,5 @@
 /**
- * Public landing page for Unitap.
+ * Public landing page for UniTech.
  * Spanish for the contractor (visitor). Narrative follows the full business
  * flow: get a client → quote with AI → accept → invoice → payments → schedule
  * → photos → reviews. All customer-facing docs are in English.
@@ -39,7 +39,7 @@ const FLOW = [
   },
   {
     n: "04", icon: Receipt, title: "La factura “invoice” se genera sola",
-    lead: "Al aprobar el presupuesto, Unitap crea la factura “invoice” profesional automáticamente.",
+    lead: "Al aprobar el presupuesto, UniTech crea la factura “invoice” profesional automáticamente.",
     points: ["Factura “invoice” profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"],
   },
   {
@@ -59,7 +59,7 @@ const FLOW = [
   },
   {
     n: "08", icon: Star, title: "Pide reseñas automáticamente",
-    lead: "Cuando el trabajo termina, Unitap genera el mensaje para pedir la reseña.",
+    lead: "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
     points: ["Mensaje profesional automático", "Incluye tarjeta NFC: pide reseñas en persona con un solo tap", "Más reseñas, más confianza, más clientes nuevos"],
   },
 ];
@@ -86,8 +86,8 @@ export default function Landing() {
               <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-none">
-              <div className="font-heading font-bold text-base">Unitap</div>
-              <div className="text-[10px] text-slate-500">Tu negocio en un tap</div>
+              <div className="font-heading font-bold text-base">UniTech</div>
+              <div className="text-[10px] text-slate-500">Tecnología para tu negocio</div>
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
@@ -129,7 +129,7 @@ export default function Landing() {
               Cotiza, factura y haz contratos en <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">inglés perfecto.</span> Escribiendo en español.
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Tú describes el trabajo en <strong className="text-slate-900">español</strong> y Unitap redacta presupuestos «quotes», contratos e invoices impecables en <strong className="text-slate-900">inglés — sin que sepas el idioma.</strong> Y para crecer tu negocio: tarjeta NFC para conseguir clientes, reseñas 5★ en Google y links de pago para cobrar al instante.
+              Tú describes el trabajo en <strong className="text-slate-900">español</strong> y UniTech redacta presupuestos «quotes», contratos e invoices impecables en <strong className="text-slate-900">inglés — sin que sepas el idioma.</strong> Y para crecer tu negocio: tarjeta NFC para conseguir clientes, reseñas 5★ en Google y links de pago para cobrar al instante.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
@@ -182,7 +182,7 @@ export default function Landing() {
             Olvídate de Excel, Word, notas y <br className="hidden lg:block" />invoices de papel.
           </h2>
           <p className="mt-5 text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Tu información regada entre Excel, Word, notas del celular, papeles y QuickBooks es dinero y tiempo que pierdes. Con Unitap manejas <strong className="text-white">todo desde un solo lugar.</strong>
+            Tu información regada entre Excel, Word, notas del celular, papeles y QuickBooks es dinero y tiempo que pierdes. Con UniTech manejas <strong className="text-white">todo desde un solo lugar.</strong>
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3 text-sm">
             {["Excel", "Word", "Notas", "Invoice de papel", "QuickBooks", "Más apps"].map((x) => (
@@ -190,7 +190,7 @@ export default function Landing() {
             ))}
             <ArrowRight className="w-5 h-5 text-emerald-400 hidden sm:block" />
             <span className="px-5 py-2 rounded-full bg-emerald-500 text-slate-900 font-bold inline-flex items-center gap-2">
-              <Hammer className="w-4 h-4" /> Unitap
+              <Hammer className="w-4 h-4" /> UniTech
             </span>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function Landing() {
                 Y el ciclo se repite. <span className="text-emerald-300">Cada reseña te trae el siguiente cliente.</span>
               </h3>
               <p className="mt-4 text-white/75 max-w-2xl mx-auto leading-relaxed">
-                Unitap no es un gasto más: es una máquina que hace crecer tu negocio sola — más reseñas, más visibilidad en Google, más clientes, más trabajos.
+                UniTech no es un gasto más: es una máquina que hace crecer tu negocio sola — más reseñas, más visibilidad en Google, más clientes, más trabajos.
               </p>
               <Link
                 to="/register"
@@ -403,7 +403,7 @@ export default function Landing() {
               Tú trabajas en español. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tus clientes reciben inglés.</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Unitap está diseñado especialmente para dueños de negocios latinos. Tú manejas todo en español; tus clientes reciben documentos profesionales en inglés.
+              UniTech está diseñado especialmente para dueños de negocios latinos. Tú manejas todo en español; tus clientes reciben documentos profesionales en inglés.
             </p>
             <ul className="mt-7 space-y-3">
               {[
@@ -428,7 +428,7 @@ export default function Landing() {
                   <Languages className="w-4 h-4 text-blue-700" />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tú escribes (Español)</span>
                 </div>
-                <p className="text-slate-700 text-sm">"Reparación de drywall en sala, incluye textura y pintura."</p>
+                <p className="text-slate-700 text-sm">“Reparación de drywall en sala, incluye textura y pintura.”</p>
               </div>
               <div className="flex items-center justify-center">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg">
@@ -440,7 +440,7 @@ export default function Landing() {
                   <Globe className="w-4 h-4 text-emerald-200" />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Tu cliente recibe (English)</span>
                 </div>
-                <p className="text-sm font-medium leading-relaxed">"Living room drywall repair, including texture and paint. Materials and labor included. Professional finish guaranteed."</p>
+                <p className="text-sm font-medium leading-relaxed">“Living room drywall repair, including texture and paint. Materials and labor included. Professional finish guaranteed.”</p>
               </div>
             </div>
           </div>
@@ -488,7 +488,7 @@ export default function Landing() {
                 Todo tu negocio. Conectado.
               </h2>
               <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-                Desde el primer contacto hasta la reseña final, Unitap te ayuda a administrar tu negocio como un profesional. Se paga solo con un trabajo.
+                Desde el primer contacto hasta la reseña final, UniTech te ayuda a administrar tu negocio como un profesional. Se paga solo con un trabajo.
               </p>
               <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
                 <Link
@@ -518,10 +518,10 @@ export default function Landing() {
             <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
               <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-heading font-bold text-slate-900">Unitap</span>
-            <span className="text-slate-400">— Tu negocio en un tap · QR + NFC</span>
+            <span className="font-heading font-bold text-slate-900">UniTech</span>
+            <span className="text-slate-400">— Tecnología para tu negocio · QR + NFC</span>
           </div>
-          <div className="text-xs">© {new Date().getFullYear()} Unitap. Todos los derechos reservados.</div>
+          <div className="text-xs">© {new Date().getFullYear()} UniTech. Todos los derechos reservados.</div>
         </div>
       </footer>
     </div>
@@ -543,7 +543,7 @@ function PhoneMockup() {
               <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
                 <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-heading font-bold text-sm">Unitap</span>
+              <span className="font-heading font-bold text-sm">UniTech</span>
             </div>
             <LogOut className="w-4 h-4 text-slate-400" />
           </div>
@@ -581,7 +581,7 @@ function PhoneMockup() {
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
                   <span className="text-[11px]">🇲🇽</span>
                 </div>
-                <p className="text-[12px] text-slate-700 leading-snug">"Cambié 20 tejas y sellé el techo. Cobrar $1,450."</p>
+                <p className="text-[12px] text-slate-700 leading-snug">“Cambié 20 tejas y sellé el techo. Cobrar $1,450.”</p>
               </div>
               {/* Transform */}
               <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-blue-900 to-emerald-600">

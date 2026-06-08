@@ -20,7 +20,7 @@ API = f"{BASE_URL}/api"
 ADMIN_EMAIL = "pzsuave007@gmail.com"
 ADMIN_PASSWORD = "Uni2mkt007!"
 ADMIN_USER_ID = "13d02667-2685-46ac-846a-5362ad569f1f"
-ORIGIN = "https://ezunitap.com"
+ORIGIN = "https://ezunitech.com"
 
 
 # ---------- shared fixtures ----------

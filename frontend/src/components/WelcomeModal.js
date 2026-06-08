@@ -79,7 +79,7 @@ export default function WelcomeModal() {
         <div className="px-6 sm:px-8 pt-12 pb-7">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="text-xs uppercase tracking-wider font-bold text-slate-500">Bienvenido a Unitap</span>
+            <span className="text-xs uppercase tracking-wider font-bold text-slate-500">Bienvenido a UniTech</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
 

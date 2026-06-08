@@ -1,4 +1,4 @@
-"""Unitap — FastAPI backend.
+"""UniTech — FastAPI backend.
 
 Spanish-speaking Latino contractor SaaS.
 Interface in Spanish, AI-generated client documents in English.
@@ -44,7 +44,7 @@ app_name = os.environ.get("APP_NAME", "servicioflow")
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
-app = FastAPI(title="Unitap")
+app = FastAPI(title="UniTech")
 api_router = APIRouter(prefix="/api")
 bearer = HTTPBearer(auto_error=False)
 
@@ -477,7 +477,7 @@ async def register(payload: RegisterIn):
         try:
             await _create_notification(
                 user_id=user["id"],
-                title="👋 ¡Bienvenido a Unitap!",
+                title="👋 ¡Bienvenido a UniTech!",
                 body=(
                     "Tienes <strong>14 días gratis</strong> para probar todo — sin tarjeta. "
                     "Empieza creando tu primer quote profesional en inglés y comparte tu "
@@ -3325,7 +3325,7 @@ async def public_photo(photo_id: str):
 
 
 def _public_base_from_request(request: Request) -> str:
-    """Best-effort PUBLIC base URL (e.g. https://ezunitap.com).
+    """Best-effort PUBLIC base URL (e.g. https://ezunitech.com).
 
     Prefers the page the user is on (Origin/Referer), then the proxy's
     X-Forwarded-Host (set by Apache mod_proxy in prod / ingress in preview),
@@ -3361,7 +3361,7 @@ def _esc(s: str) -> str:
 async def public_card_og(slug: str, request: Request):
     """HTML page with per-card Open Graph / Twitter Card meta tags, served to
     social crawlers (WhatsApp, Facebook, etc.) via an Apache rewrite so shared
-    card links show the PERSON + COMPANY, not generic Unitap branding.
+    card links show the PERSON + COMPANY, not generic UniTech branding.
     Humans that land here are redirected to the real card page."""
     card, user = await _public_card_by_slug(slug)
     base = _public_base_from_request(request)
@@ -3421,7 +3421,7 @@ async def public_card_og(slug: str, request: Request):
 @api_router.get("/public/reviews/{slug}/og", response_class=HTMLResponse)
 async def public_reviews_og(slug: str, request: Request):
     """Per-business Open Graph meta tags for a shared Google Reviews link (/r/<slug>),
-    so it shows the BUSINESS name + info instead of generic Unitap branding.
+    so it shows the BUSINESS name + info instead of generic UniTech branding.
     Humans are redirected to the real reviews page."""
     card, user = await _public_card_by_slug(slug)
     base = _public_base_from_request(request)
@@ -3821,7 +3821,7 @@ async def unitap_platform_chat(payload: PlatformChatIn):
             language_code=(payload.language or "es"),
         )
     except Exception as e:
-        logger.exception("Unitap chat failed")
+        logger.exception("UniTech chat failed")
         raise HTTPException(500, f"AI error: {e}")
 
     now = _now_iso()
@@ -4310,7 +4310,7 @@ async def _sync_trial_notifications(u: dict, st: dict):
             user_id=u["id"], title="⏳ Vas a mitad de tu prueba",
             body=(
                 f"Te quedan <strong>{days_left} días</strong> de tu prueba gratis. "
-                "Crea tu primer quote y manda tu primer invoice para sacarle todo el jugo a Unitap."
+                "Crea tu primer quote y manda tu primer invoice para sacarle todo el jugo a UniTech."
             ),
             kind="info", action_url="/quotes", action_label="Crear quote",
         )
@@ -4341,7 +4341,7 @@ async def _sync_trial_notifications(u: dict, st: dict):
 
     if ts is not None and (now - ts) >= 2 * 86400 and "post_expiry" not in sent:
         await _create_notification(
-            user_id=u["id"], title="👋 Tu negocio te espera en Unitap",
+            user_id=u["id"], title="👋 Tu negocio te espera en UniTech",
             body=(
                 "Tu información sigue guardada. Reactiva tu cuenta y sigue cobrando "
                 "más rápido con quotes e invoices profesionales."
@@ -4383,7 +4383,7 @@ async def trial_extend(user_id: str = Depends(get_current_user_id)):
         await _create_notification(
             user_id=user_id, title="🎁 ¡Te regalamos 7 días más!",
             body=(
-                "Como estás usando Unitap activamente, extendimos tu prueba "
+                "Como estás usando UniTech activamente, extendimos tu prueba "
                 "<strong>7 días gratis</strong>. Aprovéchalos para cerrar más trabajos."
             ),
             kind="success", action_url="/", action_label="Seguir",
@@ -5357,7 +5357,7 @@ async def stripe_webhook(request: Request):
 # ============================================================================
 @api_router.get("/")
 async def root():
-    return {"app": "Unitap", "ok": True}
+    return {"app": "UniTech", "ok": True}
 
 
 # ============================================================================
@@ -5418,11 +5418,11 @@ async def startup():
     try:
         await _seed_admin_from_env(
             "SUPER_ADMIN_EMAIL", "SUPER_ADMIN_PASSWORD",
-            "SUPER_ADMIN_BUSINESS_NAME", "Unitap HQ",
+            "SUPER_ADMIN_BUSINESS_NAME", "UniTech HQ",
         )
         await _seed_admin_from_env(
             "ADMIN_EMAIL", "ADMIN_PASSWORD",
-            "ADMIN_BUSINESS_NAME", "Unitap Admin",
+            "ADMIN_BUSINESS_NAME", "UniTech Admin",
         )
     except Exception as e:
         logger.error(f"Admin seed at startup failed: {e}")

@@ -130,7 +130,7 @@ export default function PaymentRequest() {
             </div>
           </div>
         </Card>
-        <div className="text-center text-xs text-slate-400 mt-4">Powered by Unitap</div>
+        <div className="text-center text-xs text-slate-400 mt-4">Powered by UniTech</div>
       </div>
     </div>
   );

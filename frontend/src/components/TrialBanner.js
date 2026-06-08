@@ -83,7 +83,7 @@ export default function TrialBanner() {
       >
         <Package className="w-5 h-5 text-emerald-700 flex-none" />
         <div className="flex-1 text-sm">
-          <span className="font-semibold text-emerald-900">¡Bienvenido a UniTap Pro!</span>{" "}
+          <span className="font-semibold text-emerald-900">¡Bienvenido a UniTech Pro!</span>{" "}
           <span className="text-emerald-800">
             Tu tarjeta NFC física ya está en proceso de programación y envío.
           </span>
@@ -140,8 +140,8 @@ export default function TrialBanner() {
             <span className="font-semibold text-red-900">Tu prueba terminó.</span>{" "}
             <span className="text-red-800">
               {canExtend
-                ? "Como has estado usando Unitap, puedes extenderla 7 días gratis."
-                : "Suscríbete para seguir usando Unitap sin interrupciones."}
+                ? "Como has estado usando UniTech, puedes extenderla 7 días gratis."
+                : "Suscríbete para seguir usando UniTech sin interrupciones."}
             </span>
           </>
         ) : (

@@ -1,5 +1,5 @@
 /**
- * AdminLeads — Super admin only. List/follow-up Unitap platform leads
+ * AdminLeads — Super admin only. List/follow-up UniTech platform leads
  * captured by the public AI chat on the landing page.
  */
 import { useEffect, useState } from "react";
@@ -99,7 +99,7 @@ export default function AdminLeads() {
       <Card className="p-8 text-center border-red-200 bg-red-50">
         <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-3" />
         <h2 className="text-xl font-bold text-red-900 mb-2">Acceso restringido</h2>
-        <p className="text-sm text-red-700">Esta sección es solo para el super administrador de Unitap.</p>
+        <p className="text-sm text-red-700">Esta sección es solo para el super administrador de UniTech.</p>
       </Card>
     </div>
   );
@@ -118,7 +118,7 @@ export default function AdminLeads() {
       <AdminTabs />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">Leads de Unitap</h1>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">Leads de UniTech</h1>
           <p className="text-sm text-slate-500 mt-1">Contratistas capturados por el chat del landing page.</p>
         </div>
         <Button data-testid="leads-refresh" variant="outline" onClick={loadLeads} className="rounded-xl gap-2">

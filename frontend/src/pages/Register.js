@@ -52,7 +52,7 @@ export default function Register() {
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
             <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="font-heading font-bold text-xl">Unitap</span>
+          <span className="font-heading font-bold text-xl">UniTech</span>
         </div>
 
         {inviteToken && (
@@ -64,7 +64,7 @@ export default function Register() {
             <div className="text-xs text-amber-900">
               <div className="font-semibold">¡Tienes una invitación!</div>
               <div className="text-amber-800">
-                Al registrarte tendrás acceso gratis a todo Unitap.
+                Al registrarte tendrás acceso gratis a todo UniTech.
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function Register() {
           </div>
         )}
         <p className="text-slate-500 mt-2 text-sm">
-          Prueba todo Unitap gratis por 14 días. Cancela cuando quieras.
+          Prueba todo UniTech gratis por 14 días. Cancela cuando quieras.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">

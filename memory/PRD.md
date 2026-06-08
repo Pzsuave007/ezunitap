@@ -18,6 +18,15 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — REBRAND Unitap → UniTech + arquitectura multi-dominio (mismo origen) [COMPLETO]
+- **Rebrand de marca** en TODO lo visible: frontend (~28 archivos), backend (server.py, ai_service, email_service, payments_service, gbp_routes), `index.html`. "Unitap"/"UniTap" → "UniTech". Tagline logo "Tu negocio en un tap" → "Tecnología para tu negocio".
+- **Dominio en código**: `ezunitap.com` → `ezunitech.com` (email soporte en LegalPages, placeholder GBP, ai_service, email_service admin_url, index.html og:url).
+- **Intencionalmente SIN cambiar** (internos, no romper): localStorage key `unitap_chat_sid`, ruta API `/public/unitap/chat`, metadata Stripe `"app":"unitap"`.
+- **Arquitectura multi-dominio (clave)**: `frontend/.env.production` → `REACT_APP_BACKEND_URL=` (VACÍO) ⇒ `API_BASE = "/api"` relativo (mismo origen). Un solo build sirve `ezunitap.com` Y `ezunitech.com` sin recompilar ni CORS. Auth es Bearer token (no cookies) → funciona en ambos dominios. Links de compartir usan `window.location.origin` y OG backend usa `_public_base_from_request` ⇒ se adaptan solos al dominio. **Esto también elimina permanentemente el bug del 'preview URL horneado'** (ya no se hornea ningún dominio absoluto).
+- VPS: apuntar DNS de ezunitech.com al mismo servidor + ServerAlias en Apache al mismo DocumentRoot. `fix.sh` despliega build+backend.
+- Probado: backend `{"app":"UniTech"}`, login API OK, landing/login renderizan "UniTech", build verificado (sin URL absoluta, `"/api"` relativo), lint limpio.
+
+
 ## ✅ Jun 2026 — ROOT CAUSE del "preview URL en producción" ARREGLADO + Contenido público 100% en inglés [COMPLETO]
 - **Causa raíz hallada**: `frontend/craco.config.js` línea 3 hacía `require("dotenv").config()` que cargaba el `.env` (URL preview) ANTES de que react-scripts leyera `.env.production`, y dotenv no sobrescribe → el build de producción horneaba la URL del preview de Emergent. La producción EN VIVO (`main.66966e80.js`) estaba llamando al backend/DB del preview.
 - **Fix**: `craco.config.js` ahora solo carga `.env` en dev (`if (isDevServer)`). Builds de producción usan `.env.production` (ezunitap.com) correctamente. Verificado: build ya NO contiene la URL del preview.

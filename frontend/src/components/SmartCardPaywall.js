@@ -37,7 +37,7 @@ export default function SmartCardPaywall({ user }) {
         <p className="text-slate-600 mt-3 sm:text-lg">
           {isTrialing ? (
             <>
-              Tu prueba gratis te da acceso a todo Unitap — <strong>excepto la
+              Tu prueba gratis te da acceso a todo UniTech — <strong>excepto la
               Tarjeta NFC física</strong>. Suscríbete para activarla y recibirla por correo.
             </>
           ) : (

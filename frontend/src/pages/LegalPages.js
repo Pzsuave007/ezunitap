@@ -29,9 +29,9 @@ function PageShell({ icon: Icon, title, children }) {
           {children}
         </div>
         <div className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500">
-          Last updated: May 2026 · Unitap by Uni2 Marketing Agency LLC ·
-          <a href="mailto:support@ezunitap.com" className="text-emerald-700 hover:underline ml-1">
-            support@ezunitap.com
+          Last updated: May 2026 · UniTech by Uni2 Marketing Agency LLC ·
+          <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline ml-1">
+            support@ezunitech.com
           </a>
         </div>
       </div>
@@ -43,7 +43,7 @@ export function TermsPage() {
   return (
     <PageShell icon={ScrollText} title="Terms of Service">
       <p>
-        Welcome to <strong>Unitap</strong> (the &quot;Service&quot;), operated by
+        Welcome to <strong>UniTech</strong> (the &quot;Service&quot;), operated by
         Uni2 Marketing Agency LLC (&quot;we&quot;, &quot;us&quot;). By creating
         an account or using the Service you agree to these Terms.
       </p>
@@ -57,7 +57,7 @@ export function TermsPage() {
 
       <h2>2. The Service</h2>
       <p>
-        Unitap is a CRM and quote/invoice/agreement platform for service
+        UniTech is a CRM and quote/invoice/agreement platform for service
         contractors. We provide a digital Smart Card and may ship a physical
         NFC card to paying subscribers in the U.S., Canada, Mexico, and
         Puerto Rico.
@@ -118,7 +118,7 @@ export function TermsPage() {
 
       <h2>7. AI-Generated Content</h2>
       <p>
-        Unitap uses third-party AI providers (e.g., OpenAI) to generate
+        UniTech uses third-party AI providers (e.g., OpenAI) to generate
         quotes, agreements, and messages. You are responsible for reviewing
         and editing AI output before sending it to your clients. We do not
         guarantee accuracy or fitness for any particular purpose.
@@ -154,8 +154,8 @@ export function TermsPage() {
       <h2>12. Contact</h2>
       <p>
         Questions? Email{" "}
-        <a href="mailto:support@ezunitap.com" className="text-emerald-700 hover:underline">
-          support@ezunitap.com
+        <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline">
+          support@ezunitech.com
         </a>
       </p>
     </PageShell>
@@ -167,7 +167,7 @@ export function PrivacyPage() {
     <PageShell icon={Shield} title="Privacy Policy">
       <p>
         This Privacy Policy explains how Uni2 Marketing Agency LLC (&quot;we&quot;)
-        collects and uses your information when you use Unitap.
+        collects and uses your information when you use UniTech.
       </p>
 
       <h2>1. Information We Collect</h2>
@@ -236,8 +236,8 @@ export function PrivacyPage() {
       <p>
         You can access, correct, export, or delete your data at any time
         from Settings, or by emailing{" "}
-        <a href="mailto:support@ezunitap.com" className="text-emerald-700 hover:underline">
-          support@ezunitap.com
+        <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline">
+          support@ezunitech.com
         </a>
         .
       </p>
@@ -271,8 +271,8 @@ export function PrivacyPage() {
       <h2>11. Contact</h2>
       <p>
         Privacy questions:{" "}
-        <a href="mailto:support@ezunitap.com" className="text-emerald-700 hover:underline">
-          support@ezunitap.com
+        <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline">
+          support@ezunitech.com
         </a>
       </p>
     </PageShell>

@@ -1,7 +1,7 @@
 /**
  * GbpConnectCard — connect a contractor's own Google Business Profile and,
  * once connected, publish posts (write in Spanish → AI English) and read /
- * reply to Google reviews directly from Unitap.
+ * reply to Google reviews directly from UniTech.
  *
  * Handles 4 states:
  *   - loading
@@ -90,7 +90,7 @@ export default function GbpConnectCard({ businessType = "" }) {
               Publicar en Google Business
             </h3>
             <p className="text-xs text-slate-500">
-              Conecta tu perfil y publica directo desde Unitap.
+              Conecta tu perfil y publica directo desde UniTech.
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function GbpConnectCard({ businessType = "" }) {
           <p className="text-xs text-amber-800/90 mt-1 leading-snug">
             Ya enviamos la solicitud de acceso a la API de Google Business Profile.
             En cuanto Google la apruebe (7–10 días hábiles), aquí podrás conectar
-            tu perfil y publicar posts + responder reseñas sin salir de Unitap.
+            tu perfil y publicar posts + responder reseñas sin salir de UniTech.
           </p>
         </div>
       )}
@@ -204,7 +204,7 @@ function PostComposer({ businessType }) {
       <Input
         value={cta}
         onChange={(e) => setCta(e.target.value)}
-        placeholder="Link opcional (ej: https://ezunitap.com/tu-tarjeta)"
+        placeholder="Link opcional (ej: https://ezunitech.com/tu-tarjeta)"
         className="rounded-xl text-sm"
         data-testid="gbp-post-cta"
       />

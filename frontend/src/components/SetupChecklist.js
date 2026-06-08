@@ -68,7 +68,7 @@ export default function SetupChecklist() {
               Tus primeros pasos
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
-              {data.done_count} de {data.total} completados · activa tu negocio en Unitap
+              {data.done_count} de {data.total} completados · activa tu negocio en UniTech
             </p>
           </div>
           <div className="hidden sm:block text-right">

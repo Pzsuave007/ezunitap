@@ -119,7 +119,7 @@ export default function PublicReviewPage() {
             </div>
             <p className="text-xs text-slate-400 mt-4">Tap a star to rate</p>
 
-            <div className="text-[10px] text-slate-400 mt-6">Powered by Unitap</div>
+            <div className="text-[10px] text-slate-400 mt-6">Powered by UniTech</div>
           </Card>
         </div>
       </div>

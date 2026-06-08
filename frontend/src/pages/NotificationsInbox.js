@@ -60,7 +60,7 @@ export default function NotificationsInbox() {
           Mensajes
         </h1>
         <p className="text-slate-500 mt-2">
-          Anuncios y mensajes del equipo de Unitap.
+          Anuncios y mensajes del equipo de UniTech.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function NotificationsInbox() {
           <Inbox className="w-10 h-10 text-slate-300 mx-auto mb-3" />
           <h3 className="font-heading font-bold text-lg">Sin mensajes nuevos</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Cuando el equipo de Unitap te envíe un anuncio, aparecerá aquí.
+            Cuando el equipo de UniTech te envíe un anuncio, aparecerá aquí.
           </p>
         </Card>
       ) : (

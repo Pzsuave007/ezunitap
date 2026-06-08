@@ -1,4 +1,4 @@
-"""Backend tests for Stripe Subscriptions Phase 1 (Unitap).
+"""Backend tests for Stripe Subscriptions Phase 1 (UniTech).
 
 Tests:
 - GET /api/payments/plans (public)

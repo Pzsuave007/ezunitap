@@ -244,7 +244,7 @@ export default function PublicInvoice() {
         />
 
         <div className="text-center text-xs text-slate-400 mt-4 print:hidden">
-          Powered by Unitap
+          Powered by UniTech
         </div>
       </div>
     </div>

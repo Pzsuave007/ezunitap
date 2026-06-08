@@ -199,7 +199,7 @@ export default function ReelStudio() {
       const blob = await res.blob();
       const u = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = u; a.download = "unitap-reel.mp4";
+      a.href = u; a.download = "unitech-reel.mp4";
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(u);
     } catch { window.open(`${BACKEND}${url}`, "_blank"); }

@@ -2,7 +2,7 @@
 
 Lets each contractor connect THEIR OWN verified Google Business Profile via
 OAuth 2.0, then publish local posts (updates) and read / reply to reviews
-directly from Unitap.
+directly from UniTech.
 
 The whole OAuth flow runs server-side (the React frontend only triggers a
 redirect). One refresh token is stored per user in MongoDB; access tokens are

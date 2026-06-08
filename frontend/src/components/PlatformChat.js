@@ -1,5 +1,5 @@
 /**
- * PlatformChat — Floating AI chat widget for the Unitap landing page.
+ * PlatformChat — Floating AI chat widget for the UniTech landing page.
  * Captures leads automatically when the AI detects LEAD_READY.
  */
 import { useEffect, useRef, useState } from "react";
@@ -22,7 +22,7 @@ export default function PlatformChat() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "¡Hola! 👋 Soy el asistente de Unitap. ¿En qué puedo ayudarte? Puedo contarte sobre las funciones, precios, o agendar una llamada con el fundador.",
+      content: "¡Hola! 👋 Soy el asistente de UniTech. ¿En qué puedo ayudarte? Puedo contarte sobre las funciones, precios, o agendar una llamada con el fundador.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -63,7 +63,7 @@ export default function PlatformChat() {
           data-testid="platform-chat-bubble"
           onClick={() => { setOpen(true); setUnread(0); }}
           className="fixed bottom-6 right-6 z-50 group"
-          aria-label="Abrir chat con asistente de Unitap"
+          aria-label="Abrir chat con asistente de UniTech"
         >
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-emerald-400 blur-xl opacity-50 animate-pulse" />
@@ -95,7 +95,7 @@ export default function PlatformChat() {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-bold leading-none">Asistente Unitap</div>
+                <div className="font-bold leading-none">Asistente UniTech</div>
                 <div className="text-[11px] text-white/75 mt-0.5">Responde 24/7</div>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function PlatformChat() {
               </button>
             </div>
             <p className="text-[10px] text-slate-400 text-center mt-2">
-              Powered by Unitap AI · Tu info está segura
+              Powered by UniTech AI · Tu info está segura
             </p>
           </div>
         </div>

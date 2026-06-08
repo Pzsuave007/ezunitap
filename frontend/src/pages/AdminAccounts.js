@@ -182,8 +182,8 @@ function InvitesTab({ onForbidden }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Unitap — Acceso gratis",
-          text: "Te invito a usar Unitap gratis 👇",
+          title: "UniTech — Acceso gratis",
+          text: "Te invito a usar UniTech gratis 👇",
           url,
         });
       } catch {

@@ -218,7 +218,7 @@ export default function PublicQuote() {
             )}
           </div>
         </Card>
-        <div className="text-center text-xs text-slate-400 mt-4">Powered by Unitap AI</div>
+        <div className="text-center text-xs text-slate-400 mt-4">Powered by UniTech AI</div>
       </div>
     </div>
   );

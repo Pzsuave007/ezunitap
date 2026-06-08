@@ -1,4 +1,4 @@
-"""Stripe Subscriptions service for Unitap.
+"""Stripe Subscriptions service for UniTech.
 
 Implements:
 - Real Stripe Subscriptions with `trial_period_days=14` (card-on-file)
@@ -142,7 +142,7 @@ async def ensure_extra_card_price(db, interval: str) -> str:
     if cache.get(interval, {}).get("price_id"):
         return cache[interval]["price_id"]
     product = stripe.Product.create(
-        name="Unitap — Tarjeta digital adicional",
+        name="UniTech — Tarjeta digital adicional",
         description="Tarjeta digital inteligente adicional para tu equipo",
         metadata={"app": "unitap", "kind": "extra_card", "interval": interval},
     )
@@ -181,7 +181,7 @@ async def ensure_stripe_prices(db) -> dict:
             continue
         # Create product
         product = stripe.Product.create(
-            name=f"Unitap — {plan['name']}",
+            name=f"UniTech — {plan['name']}",
             description=plan["description"],
             metadata={"plan_id": plan_id, "app": "unitap"},
         )
@@ -259,7 +259,7 @@ async def create_checkout_session(
         "price_data": {
             "currency": plan["currency"],
             "product_data": {
-                "name": f"Unitap — {plan['name']}",
+                "name": f"UniTech — {plan['name']}",
                 "description": plan["description"],
             },
             "unit_amount": plan["amount_cents"],
