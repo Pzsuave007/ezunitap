@@ -92,6 +92,7 @@ export default function Landing() {
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <a href="#como-funciona" className="hover:text-slate-900 tap">Cómo funciona</a>
+            <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">Demo en vivo</Link>
             <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
             <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
             <a href="#beneficios" className="hover:text-slate-900 tap">Beneficios</a>
@@ -132,13 +133,20 @@ export default function Landing() {
               Tú describes el trabajo en <strong className="text-slate-900">español</strong> y UniTech redacta presupuestos «quotes», contratos e invoices impecables en <strong className="text-slate-900">inglés — sin que sepas el idioma.</strong> Y para crecer tu negocio: tarjeta NFC para conseguir clientes, reseñas 5★ en Google y links de pago para cobrar al instante.
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
+            <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 max-w-2xl">
               <Link
                 to="/register"
                 data-testid="hero-register"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
               >
                 Crear cuenta gratis <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/demo"
+                data-testid="hero-demo"
+                className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold text-base hover:bg-emerald-100 transition-all tap"
+              >
+                🎬 Pruébalo en vivo
               </Link>
               <Link
                 to="/login"

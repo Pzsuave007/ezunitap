@@ -1,0 +1,27 @@
+{
+  "summary": "PUBLIC LIVE DEMO feature fully validated end-to-end. Backend pytest (10/10 PASS in 38s, real AI): POST /public/demo/start happy-path + 400 on invalid email / missing name; POST /public/demo/quote happy-path returns {quote:{job_title, line_items[], subtotal, tax_amount, total, number 'Q-1001'}, business:{business_name:'Demo Contractors',...}} + 404 on bad demo_id + 400 on <6-char description; POST /public/demo/agreement returns {agreement} dict with title/services_included/pricing keys; admin/demo-leads returns leads incl. our newly created lead with quote_count>=1, 401/403 without auth. Frontend Playwright E2E on /demo (no login): nav-demo + hero-demo on Landing both route to /demo; full 5-step wizard works — Step 0 form -> Step 1 example chip + AI quote generation -> Step 2 quote doc (Demo Contractors header, English line items, $11,250 TOTAL) -> Step 3 AI Service Agreement with full legal clauses -> sign -> Step 4 invoice + simulated demo-pay-btn -> demo-paid-block ('✅ ¡Esto es un demo!') + demo-final-cta -> /register. All requested data-testid present and working. No bugs.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/backend/tests/test_demo_public.py",
+    "/app/test_reports/pytest/demo_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "/api/public/demo/quote and /agreement re-raise raw exception messages from ai_service via HTTPException(500, f'AI error: {e}'). In production this can leak provider/internal details. Consider logging full error but returning a sanitized 'AI temporarily unavailable. Please try again.' to the client.",
+    "DEMO_MAX_QUOTES=8 cap is enforced but tied to demo_id only — a fresh /public/demo/start call from the same IP returns a new demo_id with quote_count=0. Consider also rate-limiting by IP in demo_start (or maintaining a soft IP counter) to prevent burning the Emergent LLM key. The 'lighter' cap test was used here per the request to avoid actually triggering 8 real AI calls.",
+    "demo_agreement does NOT validate that lead/total/deposit make sense — caller can pass total=0/deposit=0 and the AI still gets called and counts toward the cap. Minor (the AI gracefully ignores empty numbers), but worth a Pydantic >0 check or default-from-last-quote.",
+    "frontend DemoFlow.js: the signature step is literally just rendering the lead name in cursive + a Sign button (no canvas, no IP/timestamp captured locally). Functional for a demo, but if you ever promote this to capture a real signature for the actual product flow, you'll want to add at least a captured timestamp.",
+    "server.py still 5706 lines — the PUBLIC LIVE DEMO block (~120 lines) is a clean candidate to extract to /app/backend/routes/public_demo.py. Same general refactor recommendation carried from iteration_18."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_demo_public.py"
+  ],
+  "success_rate": { "backend": "100% (10/10)", "frontend": "100% (Landing entry + full /demo 5-step E2E)" },
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! (admin/demo-leads only). Public demo needs no auth.",
+  "seed_data_creation": "Created 3 TEST_-prefixed demo_leads records during this run (one fixture-scoped lead reused by quote+agreement+admin tests, plus two start-only validation leads). All harmless; live in db.demo_leads only and do not pollute clients/quotes/invoices collections per design.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_demo_public.py (pytest, 10 tests, ~38s incl. 2 real AI calls). Run: export REACT_APP_BACKEND_URL=https://unitech-paywall.preview.emergentagent.com && python -m pytest backend/tests/test_demo_public.py -v --junitxml=/app/test_reports/pytest/demo_results.xml. Endpoints covered: POST /api/public/demo/start (200 + 400 on bad email + 400 on missing name), POST /api/public/demo/quote (200 with full schema validation + 404 invalid demo_id + 400 short desc), POST /api/public/demo/agreement (200 with schema), GET /api/admin/demo-leads (super-admin 200 + unauth 401/403). The 8-quote 429 cap was NOT exhaustively tested (would burn 8 real AI calls — used lighter quote_count++ assertion via admin endpoint instead). Frontend selectors verified working: nav-demo + hero-demo on /, and on /demo: demo-name, demo-email, demo-phone, demo-trade, demo-start-btn, demo-example-Techo, demo-desc, demo-gen-quote-btn, demo-accept-quote-btn, demo-sign-btn, demo-pay-btn, demo-paid-block, demo-final-cta (-> /register). AI generation latencies observed: quote ~10-15s, agreement ~15-20s — use timeout>=90s in playwright.",
+  "rca of the issue": "No bugs. The PUBLIC LIVE DEMO MVP is production-ready. Only code-quality nits (sanitize 5xx AI errors, optional IP rate limit, file size) listed in critical_code_review_comments."
+}

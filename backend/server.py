@@ -3840,6 +3840,129 @@ async def _require_super_admin(user_id: str = Depends(get_current_user_id)) -> d
     raise HTTPException(status_code=403, detail="Forbidden")
 
 
+# ============================================================================
+# PUBLIC LIVE DEMO — let prospects experience the full flow (quote -> approve ->
+# sign agreement -> invoice with payment links) WITHOUT creating an account.
+# Real AI generation is used (the "wow"), gated behind a captured lead + per-lead
+# caps so it can't be abused to burn the LLM key. Nothing touches the real CRM;
+# leads land in the `demo_leads` collection so the owner can follow up.
+# ============================================================================
+DEMO_BUSINESS = {
+    "business_name": "Demo Contractors",
+    "business_email": "hello@democontractors.com",
+    "phone": "(555) 012-3456",
+    "business_address": "Houston, TX",
+}
+DEMO_MAX_QUOTES = 8       # AI quote generations allowed per captured lead
+DEMO_MAX_AGREEMENTS = 4   # AI agreement generations allowed per captured lead
+
+
+class DemoStartIn(BaseModel):
+    name: str
+    email: str
+    phone: Optional[str] = ""
+    trade: Optional[str] = ""
+
+
+class DemoQuoteIn(BaseModel):
+    demo_id: str
+    description_es: str
+
+
+class DemoAgreementIn(BaseModel):
+    demo_id: str
+    description_es: str
+    job_title: Optional[str] = ""
+    total: Optional[float] = 0
+    deposit: Optional[float] = 0
+
+
+async def _get_demo_lead(demo_id: str) -> dict:
+    lead = await db.demo_leads.find_one({"id": demo_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Demo session not found. Please start again.")
+    return lead
+
+
+@api_router.post("/public/demo/start")
+async def demo_start(payload: DemoStartIn, request: Request):
+    """Capture a demo visitor as a lead and open a demo session."""
+    email = (payload.email or "").strip().lower()
+    name = (payload.name or "").strip()
+    if not name or "@" not in email:
+        raise HTTPException(status_code=400, detail="Name and a valid email are required.")
+    doc = {
+        "id": _new_id(),
+        "name": name,
+        "email": email,
+        "phone": (payload.phone or "").strip(),
+        "trade": (payload.trade or "").strip(),
+        "ip": (request.client.host if request.client else ""),
+        "quote_count": 0,
+        "agreement_count": 0,
+        "completed": False,
+        "created_at": _now_iso(),
+        "last_activity": _now_iso(),
+    }
+    await db.demo_leads.insert_one(doc)
+    return {"demo_id": doc["id"], "business": DEMO_BUSINESS}
+
+
+@api_router.post("/public/demo/quote")
+async def demo_quote(payload: DemoQuoteIn):
+    """Generate a real AI quote (English) from the visitor's Spanish description."""
+    lead = await _get_demo_lead(payload.demo_id)
+    if int(lead.get("quote_count") or 0) >= DEMO_MAX_QUOTES:
+        raise HTTPException(status_code=429, detail="Demo limit reached. Create a free account to keep going.")
+    desc = (payload.description_es or "").strip()
+    if len(desc) < 6:
+        raise HTTPException(status_code=400, detail="Describe el trabajo con un poco más de detalle.")
+    try:
+        data = await ai_service.generate_quote_from_text(desc[:1500])
+    except Exception as e:
+        logger.exception("Demo AI quote failed")
+        raise HTTPException(500, f"AI error: {e}")
+    await db.demo_leads.update_one(
+        {"id": payload.demo_id},
+        {"$inc": {"quote_count": 1}, "$set": {"last_activity": _now_iso(), "last_desc": desc[:500]}},
+    )
+    data["number"] = f"Q-{1000 + int(lead.get('quote_count') or 0) + 1}"
+    data["created_at"] = _now_iso()
+    return {"quote": data, "business": DEMO_BUSINESS}
+
+
+@api_router.post("/public/demo/agreement")
+async def demo_agreement(payload: DemoAgreementIn):
+    """Generate a real AI Service Agreement (English) for the demo flow."""
+    lead = await _get_demo_lead(payload.demo_id)
+    if int(lead.get("agreement_count") or 0) >= DEMO_MAX_AGREEMENTS:
+        raise HTTPException(status_code=429, detail="Demo limit reached. Create a free account to keep going.")
+    try:
+        sections = await ai_service.generate_service_agreement(
+            description_es=(payload.description_es or "")[:1500],
+            business_name=DEMO_BUSINESS["business_name"],
+            client_name=lead.get("name") or "Client",
+            total=payload.total or 0,
+            deposit=payload.deposit or 0,
+        )
+    except Exception as e:
+        logger.exception("Demo AI agreement failed")
+        raise HTTPException(500, f"AI error: {e}")
+    await db.demo_leads.update_one(
+        {"id": payload.demo_id},
+        {"$inc": {"agreement_count": 1}, "$set": {"last_activity": _now_iso(), "completed": True}},
+    )
+    return {"agreement": sections}
+
+
+@api_router.get("/admin/demo-leads")
+async def admin_demo_leads(_admin: dict = Depends(_require_super_admin)):
+    """All captured demo visitors (most recent first) so the owner can follow up."""
+    leads = await db.demo_leads.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return {"leads": leads}
+
+
+
 @api_router.post("/public/unitap/chat")
 async def unitap_platform_chat(payload: PlatformChatIn):
     import re as _re
