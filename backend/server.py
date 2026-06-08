@@ -393,6 +393,7 @@ async def _user_doc(user_id: str) -> dict:
     # Compute derived flags for UI consumption
     u["smart_card_unlocked"] = payments_service.has_paid_subscription(u)
     u["subscription_active"] = payments_service.subscription_is_active(u)
+    u["features"] = sorted(payments_service.user_features(u))
     return u
 
 
@@ -5306,6 +5307,7 @@ async def payments_subscription(user_id: str = Depends(get_current_user_id)):
         "comp_expires_at": u.get("comp_expires_at"),
         "smart_card_unlocked": payments_service.has_paid_subscription(u),
         "subscription_active": payments_service.subscription_is_active(u),
+        "features": sorted(payments_service.user_features(u)),
     }
 
 
@@ -5440,6 +5442,30 @@ async def startup():
         )
     except Exception as e:
         logger.error(f"Trial backfill failed: {e}")
+    # One-time: when modular plans launched, grandfather all EXISTING users
+    # (those WITHOUT a real Stripe subscription) to comp = "Lifetime / Gratis"
+    # so nobody gets locked unexpectedly. The owner can change individuals from
+    # the admin panel afterwards. Guarded by an app_config flag = runs once.
+    try:
+        flag = await db.app_config.find_one({"key": "modular_grandfather_done"})
+        if not flag:
+            res = await db.users.update_many(
+                {"is_comp": {"$ne": True}, "stripe_subscription_id": {"$in": [None, ""]}},
+                {"$set": {
+                    "is_comp": True,
+                    "comp_note": "Grandfathered (usuario existente antes de planes modulares)",
+                    "plan_type": "comp",
+                    "subscription_status": "active",
+                }},
+            )
+            await db.app_config.update_one(
+                {"key": "modular_grandfather_done"},
+                {"$set": {"key": "modular_grandfather_done", "count": res.modified_count}},
+                upsert=True,
+            )
+            logger.info(f"Grandfathered {res.modified_count} existing users to comp")
+    except Exception as e:
+        logger.error(f"Grandfather migration failed: {e}")
 
 
 @app.on_event("shutdown")

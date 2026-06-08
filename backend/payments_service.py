@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Optional
 
 import stripe
@@ -30,91 +31,116 @@ stripe.api_key = os.environ.get("STRIPE_API_KEY", "")
 if "sk_test_emergent" in stripe.api_key:
     stripe.api_base = "https://integrations.emergentagent.com/stripe"
 
-PLANS = {
-    "pro_monthly": {
-        "id": "pro_monthly",
-        "name": "Pro Mensual",
-        "description": "Plan profesional con cobro mensual",
-        "amount_cents": 4900,
-        "currency": "usd",
-        "interval": "month",
-        "interval_count": 1,
-        "display_price": "$49",
-        "display_period": "/mes",
-        "features": [
-            "Todas las funciones Pro",
-            "Tarjeta digital inteligente",
-            "Quotes, Invoices y Contratos con IA",
-            "Agenda inteligente",
-            "Soporte prioritario",
-        ],
-        "trial_period_days": 14,
-        "is_founder": False,
+# ============================================================================
+# MODULAR PLANS — each subscription is ONE plan: a single module OR the bundle.
+# (Any 2 individual modules ≈ the bundle price, so customers realistically pick
+#  one module or the bundle.) The `features` a plan unlocks drive per-module
+# access control across the app.
+#   Features: "card" (NFC card + mini-site + reviews),
+#             "business" (quotes/invoices/contracts AI + CRM + calendar),
+#             "marketing" (Marketing Studio: posts + reels).
+# ============================================================================
+FEATURES_ALL = ["card", "business", "marketing"]
+
+MODULES = {
+    "presencia": {
+        "label": "Presencia",
+        "features": ["card"],
+        "tagline": "Tarjeta digital NFC + mini-sitio web + Reseñas de Google",
         "ships_card": True,
     },
-    "pro_yearly": {
-        "id": "pro_yearly",
-        "name": "Pro Anual",
-        "description": "Plan profesional anual (ahorra 2 meses)",
-        "amount_cents": 39000,
-        "currency": "usd",
-        "interval": "year",
-        "interval_count": 1,
-        "display_price": "$390",
-        "display_period": "/año",
-        "features": [
-            "Todo lo de Pro Mensual",
-            "Equivalente a $32.50/mes",
-            "Ahorra ~$198 vs mensual",
-            "Tarjeta NFC física incluida",
-        ],
-        "trial_period_days": 14,
-        "is_founder": False,
-        "ships_card": True,
+    "negocio": {
+        "label": "Negocio",
+        "features": ["business"],
+        "tagline": "Presupuestos, facturas y contratos con IA + CRM + Calendario",
+        "ships_card": False,
     },
-    "founder": {
-        "id": "founder",
-        "name": "Founder Deal",
-        "description": "Oferta limitada para early adopters — anual",
-        "amount_cents": 29000,
-        "currency": "usd",
-        "interval": "year",
-        "interval_count": 1,
-        "display_price": "$290",
-        "display_period": "/año",
-        "features": [
-            "Todo lo de Pro Anual",
-            "Precio Founder de por vida si no cancelas",
-            "Acceso a nuevas funciones beta",
-            "Tarjeta NFC física incluida",
-            "Soporte directo del fundador",
-        ],
-        "trial_period_days": 14,
-        "is_founder": True,
+    "marketing": {
+        "label": "Marketing",
+        "features": ["marketing"],
+        "tagline": "Estudio de Marketing: posts y videos con IA",
+        "ships_card": False,
+    },
+    "bundle": {
+        "label": "Todo UniTech",
+        "features": ["card", "business", "marketing"],
+        "tagline": "Todas las herramientas en un solo plan",
         "ships_card": True,
     },
 }
 
+# Monthly price (cents) per base module. Yearly = x10 (2 months free).
+_MODULE_MONTHLY_CENTS = {
+    "presencia": 1999,
+    "negocio": 2999,
+    "marketing": 2499,
+    "bundle": 4999,
+}
+
+
+def _build_plans() -> dict:
+    plans = {}
+    for base, mod in MODULES.items():
+        monthly = _MODULE_MONTHLY_CENTS[base]
+        for interval, cents in (("month", monthly), ("year", monthly * 10)):
+            pid = f"{base}_{'monthly' if interval == 'month' else 'yearly'}"
+            plans[pid] = {
+                "id": pid,
+                "base": base,
+                "name": mod["label"] + (" (Anual)" if interval == "year" else ""),
+                "description": mod["tagline"],
+                "features": mod["features"],
+                "amount_cents": cents,
+                "currency": "usd",
+                "interval": interval,
+                "interval_count": 1,
+                "display_price": f"${cents / 100:.2f}",
+                "display_period": "/año" if interval == "year" else "/mes",
+                "is_bundle": base == "bundle",
+                "ships_card": mod["ships_card"],
+                "trial_period_days": 0,
+            }
+    return plans
+
+
+PLANS = _build_plans()
+PLAN_FEATURES = {base: set(mod["features"]) for base, mod in MODULES.items()}
+
+
+def plan_base(plan_type: Optional[str]) -> str:
+    """`presencia_monthly` -> `presencia`. Legacy `pro_monthly` -> `pro`."""
+    if not plan_type:
+        return ""
+    return plan_type.rsplit("_", 1)[0]
+
 
 def list_plans() -> list[dict]:
-    """Public list of plans for the frontend pricing page."""
-    return [
-        {
-            "id": p["id"],
-            "name": p["name"],
-            "description": p["description"],
-            "display_price": p["display_price"],
-            "display_period": p["display_period"],
-            "amount_cents": p["amount_cents"],
-            "currency": p["currency"],
-            "interval": p["interval"],
-            "features": p["features"],
-            "trial_period_days": p["trial_period_days"],
-            "is_founder": p["is_founder"],
-            "ships_card": p["ships_card"],
-        }
-        for p in PLANS.values()
-    ]
+    """Grouped plans for the pricing page: one card per module, each with
+    monthly + yearly options."""
+    out = []
+    for base, mod in MODULES.items():
+        m = PLANS[f"{base}_monthly"]
+        y = PLANS[f"{base}_yearly"]
+        out.append({
+            "base": base,
+            "label": mod["label"],
+            "tagline": mod["tagline"],
+            "features": mod["features"],
+            "is_bundle": base == "bundle",
+            "ships_card": mod["ships_card"],
+            "monthly": {
+                "plan_id": m["id"],
+                "amount_cents": m["amount_cents"],
+                "display_price": m["display_price"],
+            },
+            "yearly": {
+                "plan_id": y["id"],
+                "amount_cents": y["amount_cents"],
+                "display_price": y["display_price"],
+                "per_month": f"${(y['amount_cents'] / 12) / 100:.2f}",
+            },
+        })
+    return out
 
 
 def get_plan(plan_id: str) -> Optional[dict]:
@@ -675,35 +701,48 @@ async def set_subscription_card_seats(db, user: dict, total_cards: int) -> dict:
     return {"ok": True, "total_cards": total_cards, "extra": extra}
 
 
-def subscription_is_active(user: dict) -> bool:
-    """Return True if user has an active paid or trialing subscription."""
+def user_features(user: dict) -> set:
+    """The set of unlocked features for a user. Drives per-module access.
+
+    Priority: admin comp (grandfathered = all) > real paid subscription
+    (the plan's features; legacy/unknown plans grant all) > self-managed
+    14-day free trial (all, no card) > LOCKED (nothing) once the trial
+    expires with no active subscription.
+    """
+    now = int(time.time())
+    # Comp / grandfathered (admin-granted lifetime/free)
     if user.get("is_comp"):
         exp = user.get("comp_expires_at")
-        if exp and exp < int(__import__("time").time()):
-            return False
-        return True
+        if not (exp and exp < now):
+            return set(FEATURES_ALL)
     status = user.get("subscription_status")
-    return status in ("active", "trialing", "past_due")
+    sub_id = user.get("stripe_subscription_id")
+    # Real paying subscriber
+    if status in ("active", "past_due") and sub_id:
+        base = plan_base(user.get("plan_type"))
+        return set(PLAN_FEATURES.get(base, FEATURES_ALL))  # legacy/unknown -> all
+    # Self-managed free trial (no card) — full access until it expires
+    te = user.get("trial_ends_at")
+    if status == "trialing" and te and now < int(te):
+        return set(FEATURES_ALL)
+    # Trial expired and no active subscription -> LOCKED
+    return set()
+
+
+def user_has_feature(user: dict, feature: str) -> bool:
+    return feature in user_features(user)
+
+
+def subscription_is_active(user: dict) -> bool:
+    """True if the user has ANY unlocked access (paid, comp, or within the
+    free trial)."""
+    return bool(user_features(user))
 
 
 def has_paid_subscription(user: dict) -> bool:
-    """Return True when the user has paid Pro access — including the 14-day
-    trial (since the user already entered a card and authorized billing).
-
-    The digital Smart Card is unlocked during trial. The physical NFC card
-    is gated separately by `card_shipping_status` and is only mailed once
-    the trial converts (`subscription_status == "active"`).
-
-    Also returns True for "comp" (complimentary) accounts granted by an admin.
-    """
-    if user.get("is_comp"):
-        # Comp account may have an expiry — respect it.
-        exp = user.get("comp_expires_at")
-        if exp and exp < int(__import__("time").time()):
-            return False
-        return True
-    # Real paying users — trialing IS paying (Stripe holds card on file).
-    return user.get("subscription_status") in ("active", "trialing", "past_due")
+    """Back-compat: True when the user can access the digital Smart Card
+    (comp, an active plan that includes `card`, or the active free trial)."""
+    return "card" in user_features(user)
 
 
 

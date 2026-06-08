@@ -31,6 +31,16 @@ function daysLeft(ts) {
 }
 
 const PLAN_LABELS = {
+  presencia_monthly: "Presencia (Mensual)",
+  presencia_yearly: "Presencia (Anual)",
+  negocio_monthly: "Negocio (Mensual)",
+  negocio_yearly: "Negocio (Anual)",
+  marketing_monthly: "Marketing (Mensual)",
+  marketing_yearly: "Marketing (Anual)",
+  bundle_monthly: "Todo UniTech (Mensual)",
+  bundle_yearly: "Todo UniTech (Anual)",
+  comp: "Gratis (Lifetime)",
+  // legacy
   pro_monthly: "Pro Mensual",
   pro_yearly: "Pro Anual",
   founder: "Founder Deal",
@@ -64,7 +74,7 @@ export default function SubscriptionSection() {
       const { data } = await api.post("/payments/portal", {
         origin_url: window.location.origin,
       });
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (e) {
       toast.error(
         e?.response?.data?.detail ||
