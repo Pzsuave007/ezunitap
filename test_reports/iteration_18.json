@@ -1,0 +1,26 @@
+{
+  "summary": "Phase 2 modular paywall (backend gating + admin set-plan + frontend UpgradeWall + admin Usuarios plan dropdown) fully validated end-to-end. Backend pytest 27/27 PASS in ~11s. Frontend Playwright e2e: locked user (trial expired in DB) sees [data-testid=upgrade-wall] on /clientes, /tarjeta, /marketing with Spanish 'Tu prueba gratis terminó' + 'Ver planes' CTA. Super-admin can change plan from Usuarios tab — plan-select-{uid} -> plan-option-{uid}-negocio -> toast 'Plan actualizado: Negocio (CRM/IA)' -> row badge/dropdown updates to NEGOCIO (CRM/IA) · MANUAL. No bugs found.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/backend/tests/test_paywall_gating.py",
+    "/app/test_reports/pytest/paywall_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now 5583 lines. The require_feature() factory + admin set-plan endpoint + comp invites + payments admin are all in one file. Consider extracting to /app/backend/routes/admin_plans.py and /app/backend/dependencies/paywall.py — same recommendation as previous iterations.",
+    "POST /api/card on a fresh trial user immediately returns 403 with 'Alcanzaste tu límite de 1 tarjeta(s)' because a default card is auto-created at registration. This is correct behaviour but it means /api/card POST is essentially a duplicate-create on most accounts — the test had to use PUT /api/card/settings instead. Consider documenting this or returning a clearer error code/message that distinguishes 'card limit' (402/409) from 'feature locked' (403) — today both surface as 403 which is confusing for clients.",
+    "require_feature() does an extra DB roundtrip per gated request (db.users.find_one) even though get_current_user_id already loaded a user. Consider caching the user dict in a request-scoped dependency to halve the load on hot paths like POST /api/clients and POST /api/quotes.",
+    "admin_set_plan resets `is_comp=False` and `comp_expires_at=None` only inside the 'comp' branch path, but the top-level update dict already sets is_comp=False unconditionally. The branch ordering is correct but the redundant assignment in the comp branch is confusing — minor readability nit.",
+    "PLAN_TO_FEATURES is duplicated in payments_service.PLAN_FEATURES, the admin Usuarios dropdown (frontend PLAN_OPTIONS), and the tests. Worth exposing a /api/plans/manual endpoint so the frontend and tests pull the canonical list from one source.",
+    "Frontend AdminAccounts.js is 970 lines — UsersTab, InvitesTab, and the plan-select Select component would benefit from being split into smaller files."
+  ],
+  "updated_files": ["/app/backend/tests/test_paywall_gating.py"],
+  "success_rate": { "backend": "100% (27/27)", "frontend": "100% (locked paywall + admin set-plan e2e)" },
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md). Test users registered as TEST_paywall_*/TEST_locked_* and locked via Mongo update.",
+  "seed_data_creation": "Each pytest test class creates a fresh registered user (TEST_paywall_<uuid>) and cleans it up (pymongo delete_one + delete_many on clients/cards). The Playwright run created TEST_locked_d8aa4243@example.com and a related client; cleaned by sweep at end of run. No pollution of production users.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_paywall_gating.py (pytest, self-cleaning via pymongo). Run: `export REACT_APP_BACKEND_URL=https://unitech-paywall.preview.emergentagent.com && python -m pytest backend/tests/test_paywall_gating.py -v --junitxml=/app/test_reports/pytest/paywall_results.xml`. Covered: (a) fresh trial user features=['business','card','marketing'] + POST /api/clients 200; (b) locked user (subscription_status=canceled, trial_ends_at past) gets features=[] + GET /api/clients|quotes|invoices 200 + 12 write endpoints all 403 with Spanish detail 'Tu prueba gratis terminó. Elige un plan para seguir usando UniTech.'; (c) admin POST /api/admin/users/{uid}/set-plan with each of presencia|negocio|marketing|bundle|comp|trial|locked returns expected features array; (d) modular enforcement E2E — assigning 'negocio' to a previously-locked user lets POST /api/clients succeed but PUT /api/card/settings + POST /api/social/copy return 403 with 'Necesitas el plan Presencia/Marketing (o el Bundle) para usar esta función.'; assigning 'presencia' lets PUT /api/card/settings succeed but POST /api/clients returns 403 with 'Negocio'; 'marketing' is symmetric. Frontend selectors verified: data-testid='upgrade-wall' + 'upgrade-wall-cta' present on /clientes /tarjeta /marketing when locked; data-testid=`plan-select-${uid}` and `plan-option-${uid}-${plan}` work in /admin/cuentas -> Usuarios tab and trigger PUT toast + row refresh. NOTE for follow-up: POST /api/card on a fresh user 403s with a CARD-LIMIT message (not a paywall message) because registration auto-creates one card. Use PUT /api/card/settings to validate the 'card' module gate cleanly.",
+  "rca of the issue": "No bugs — all Fase 2 acceptance criteria met."
+}

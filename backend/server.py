@@ -398,6 +398,36 @@ async def _user_doc(user_id: str) -> dict:
 
 
 # ============================================================================
+# FEATURE GATING — modular subscription paywall (Fase 2)
+# ============================================================================
+_FEATURE_LABELS = {"card": "Presencia", "business": "Negocio", "marketing": "Marketing"}
+
+
+def require_feature(feature_name: str):
+    """FastAPI dependency factory that guards create/edit endpoints behind the
+    modular subscription. The user must have `feature_name` unlocked (active
+    paid plan that includes it, admin comp, or an active 14-day trial). READ
+    endpoints stay open on purpose, so a user whose trial expired still sees
+    their existing data and is nudged to pay — they just can't create/edit.
+
+    Raises 403 (Spanish) when the module is locked or the trial has expired.
+    """
+    async def _dep(user_id: str = Depends(get_current_user_id)) -> dict:
+        u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if not payments_service.user_has_feature(u, feature_name):
+            if not payments_service.user_features(u):
+                detail = "Tu prueba gratis terminó. Elige un plan para seguir usando UniTech."
+            else:
+                label = _FEATURE_LABELS.get(feature_name, feature_name)
+                detail = f"Necesitas el plan {label} (o el Bundle) para usar esta función."
+            raise HTTPException(status_code=403, detail=detail)
+        return u
+    return _dep
+
+
+# ============================================================================
 # AUTH
 # ============================================================================
 @api_router.post("/auth/register")
@@ -565,7 +595,7 @@ async def list_clients(user_id: str = Depends(get_current_user_id)):
 
 
 @api_router.post("/clients")
-async def create_client(payload: ClientIn, user_id: str = Depends(get_current_user_id)):
+async def create_client(payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     doc = {
         "id": _new_id(),
         "user_id": user_id,
@@ -585,7 +615,7 @@ async def get_client(client_id: str, user_id: str = Depends(get_current_user_id)
 
 
 @api_router.put("/clients/{client_id}")
-async def update_client(client_id: str, payload: ClientIn, user_id: str = Depends(get_current_user_id)):
+async def update_client(client_id: str, payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     await db.clients.update_one(
         {"id": client_id, "user_id": user_id}, {"$set": payload.model_dump()}
     )
@@ -634,7 +664,7 @@ async def list_quotes(user_id: str = Depends(get_current_user_id), status: Optio
 
 
 @api_router.post("/quotes")
-async def create_quote(payload: QuoteIn, user_id: str = Depends(get_current_user_id)):
+async def create_quote(payload: QuoteIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     # Determine quote number
     count = await db.quotes.count_documents({"user_id": user_id})
     doc = {
@@ -658,7 +688,7 @@ async def get_quote(quote_id: str, user_id: str = Depends(get_current_user_id)):
 
 
 @api_router.put("/quotes/{quote_id}")
-async def update_quote(quote_id: str, payload: QuoteIn, user_id: str = Depends(get_current_user_id)):
+async def update_quote(quote_id: str, payload: QuoteIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     await db.quotes.update_one(
         {"id": quote_id, "user_id": user_id},
         {"$set": {**payload.model_dump(), "updated_at": _now_iso()}},
@@ -1025,7 +1055,7 @@ async def list_invoices(user_id: str = Depends(get_current_user_id), status: Opt
 
 
 @api_router.post("/invoices")
-async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_user_id)):
+async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     count = await db.invoices.count_documents({"user_id": user_id})
     data = payload.model_dump()
     # Auto-pull deposit and agreement terms if quote/agreement linked and the
@@ -1110,7 +1140,7 @@ async def get_invoice(invoice_id: str, user_id: str = Depends(get_current_user_i
 
 
 @api_router.put("/invoices/{invoice_id}")
-async def update_invoice(invoice_id: str, payload: InvoiceIn, user_id: str = Depends(get_current_user_id)):
+async def update_invoice(invoice_id: str, payload: InvoiceIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     await db.invoices.update_one(
         {"id": invoice_id, "user_id": user_id},
         {"$set": {**payload.model_dump(), "updated_at": _now_iso()}},
@@ -1803,7 +1833,7 @@ async def list_jobs(user_id: str = Depends(get_current_user_id), status: Optiona
 
 
 @api_router.post("/jobs")
-async def create_job(payload: JobIn, user_id: str = Depends(get_current_user_id)):
+async def create_job(payload: JobIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     doc = {
         "id": _new_id(),
         "user_id": user_id,
@@ -2049,7 +2079,7 @@ async def ai_translate_field(payload: TranslateFieldIn, user_id: str = Depends(g
 
 
 @api_router.post("/ai/quote")
-async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_user_id)):
+async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     try:
         data = await ai_service.generate_quote_from_text(payload.description_es)
     except Exception as e:
@@ -2059,7 +2089,7 @@ async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_u
 
 
 @api_router.post("/ai/scope")
-async def ai_scope(payload: AIScopeRequest, user_id: str = Depends(get_current_user_id)):
+async def ai_scope(payload: AIScopeRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     try:
         data = await ai_service.generate_scope_of_work(payload.description_es)
     except Exception as e:
@@ -2069,7 +2099,7 @@ async def ai_scope(payload: AIScopeRequest, user_id: str = Depends(get_current_u
 
 
 @api_router.post("/ai/photo-quote")
-async def ai_photo(payload: AIPhotoRequest, user_id: str = Depends(get_current_user_id)):
+async def ai_photo(payload: AIPhotoRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     # Strip data: prefix if present
     b64 = payload.image_base64
     if "," in b64 and b64.strip().startswith("data:"):
@@ -2334,7 +2364,7 @@ async def list_cards(user_id: str = Depends(get_current_user_id)):
 
 
 @api_router.post("/card")
-async def create_card(payload: CardSettingsIn, user_id: str = Depends(get_current_user_id)):
+async def create_card(payload: CardSettingsIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     """Create an additional digital card (enforces the account's card limit).
     Company-level info is shared from the primary card; the owner personalizes
     the person fields (name, photo, role, phone, email)."""
@@ -2400,7 +2430,7 @@ async def get_card_settings(card_id: Optional[str] = None, user_id: str = Depend
 
 
 @api_router.put("/card/settings")
-async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     card = await _resolve_card(user_id, card_id)
     # exclude_unset = only fields explicitly sent by the client (true PATCH/merge).
     # This prevents Pydantic defaults ("", [], False, 0) from wiping out saved data
@@ -2419,7 +2449,7 @@ async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] =
 
 
 @api_router.post("/card/logo")
-async def upload_card_logo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+async def upload_card_logo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     return await _upload_card_asset(file, user_id, kind="logo", card_id=card_id)
 
 
@@ -2429,7 +2459,7 @@ async def delete_card_logo(card_id: Optional[str] = None, user_id: str = Depends
 
 
 @api_router.post("/card/profile-photo")
-async def upload_card_profile_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+async def upload_card_profile_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     return await _upload_card_asset(file, user_id, kind="profile_photo", card_id=card_id)
 
 
@@ -2439,7 +2469,7 @@ async def delete_card_profile_photo(card_id: Optional[str] = None, user_id: str 
 
 
 @api_router.post("/card/cover-photo")
-async def upload_card_cover_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+async def upload_card_cover_photo(file: UploadFile = File(...), card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     return await _upload_card_asset(file, user_id, kind="cover", card_id=card_id)
 
 
@@ -2550,6 +2580,7 @@ async def card_photo_enhance(
     kind: str = "profile_photo",
     card_id: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
+    _feat: dict = Depends(require_feature("card")),
 ):
     """Upload an image and return BOTH the original and an AI-enhanced version
     (Gemini Nano Banana) for a before/after preview. Nothing is bound to the
@@ -2590,7 +2621,7 @@ class CardPhotoChooseIn(BaseModel):
 
 
 @api_router.post("/card/photo-choose")
-async def card_photo_choose(payload: CardPhotoChooseIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+async def card_photo_choose(payload: CardPhotoChooseIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     """Bind a previously-uploaded/enhanced photo to the card and discard the other."""
     field_map = {"profile_photo": "profile_photo_id", "cover": "cover_photo_id"}
     if payload.kind not in field_map:
@@ -2746,7 +2777,7 @@ async def _render_social_images(template, formats, source_ids, copy, brand, user
 
 
 @api_router.post("/social/enhance")
-async def enhance_social_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id)):
+async def enhance_social_photo(file: UploadFile = File(...), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
     """Enhance an uploaded work/scene photo with AI (brighten, sharpen, pro look)
     so social posts look great even if the original photo is dark or low quality.
     Returns the enhanced image; the frontend shows a before/after and lets the
@@ -2776,6 +2807,7 @@ async def create_social_post(
     accent_color: str = Form(""),
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id),
+    _feat: dict = Depends(require_feature("marketing")),
 ):
     """Generate a branded social post: AI copy (ES brief -> chosen language) +
     rendered graphics in the requested formats, using the user's card branding."""
@@ -2851,7 +2883,7 @@ class SocialCopyIn(BaseModel):
 
 
 @api_router.post("/social/posts/{post_id}/rerender")
-async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str = Depends(get_current_user_id)):
+async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
     """Re-render a post's graphics after the user edits the copy (reuses the
     already-uploaded source photos)."""
     post = await db.social_posts.find_one({"id": post_id, "user_id": user_id}, {"_id": 0})
@@ -2923,6 +2955,7 @@ async def generate_reel_copy(
     language: str = Form("en"),
     template: str = Form("showcase"),
     user_id: str = Depends(get_current_user_id),
+    _feat: dict = Depends(require_feature("marketing")),
 ):
     """Generate (preview) the AI copy for a reel/post so the user can review &
     edit it BEFORE rendering the video. Returns headline/subheadline/cta/caption."""
@@ -3118,6 +3151,7 @@ async def create_reel(
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
     user_id: str = Depends(get_current_user_id),
+    _feat: dict = Depends(require_feature("marketing")),
 ):
     """Create a vertical reel from photos. Renders in the background;
     poll GET /social/reels/{id} for status ('processing' -> 'ready'/'error')."""
@@ -3962,7 +3996,7 @@ async def _build_agreement_from_quote_and_desc(
 
 
 @api_router.post("/ai/agreement")
-async def ai_generate_agreement(payload: AIAgreementRequest, user_id: str = Depends(get_current_user_id)):
+async def ai_generate_agreement(payload: AIAgreementRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     """Generate agreement content only (no DB write). Used by the create form for live preview."""
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
     business_name = user.get("business_name") or user.get("owner_name") or ""
@@ -3994,7 +4028,7 @@ async def list_agreements(user_id: str = Depends(get_current_user_id), status: O
 
 
 @api_router.post("/agreements")
-async def create_agreement(payload: AgreementIn, user_id: str = Depends(get_current_user_id)):
+async def create_agreement(payload: AgreementIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     count = await db.agreements.count_documents({"user_id": user_id})
     doc = {
         "id": _new_id(),
@@ -4502,6 +4536,8 @@ async def admin_list_users(admin: dict = Depends(_require_super_admin)):
             "is_comp": bool(u.get("is_comp")),
             "comp_note": u.get("comp_note"),
             "comp_expires_at": u.get("comp_expires_at"),
+            "manual_plan": u.get("manual_plan"),
+            "features": sorted(payments_service.user_features(u)),
             "card_limit": int(u.get("card_limit") or 1),
             "shipping_address": u.get("shipping_address"),
             "card_shipping_status": u.get("card_shipping_status"),
@@ -5073,6 +5109,79 @@ async def admin_revoke_comp(
         }},
     )
     return {"ok": True}
+
+
+# Plans the admin can manually assign (no Stripe). Maps to the same feature
+# sets used everywhere else. "comp" = lifetime free (all), "trial" = restart a
+# 14-day trial, "locked" = remove access (trial ended, no plan).
+MANUAL_PLAN_CHOICES = {"presencia", "negocio", "marketing", "bundle", "comp", "trial", "locked"}
+
+
+class AdminSetPlanIn(BaseModel):
+    plan: str  # one of MANUAL_PLAN_CHOICES
+    note: Optional[str] = ""
+
+
+@api_router.post("/admin/users/{user_id}/set-plan")
+async def admin_set_plan(
+    user_id: str,
+    payload: AdminSetPlanIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Manually assign / change a user's plan from the admin panel WITHOUT
+    Stripe. Drives the modular paywall via `manual_plan` (honored by
+    payments_service.user_features). Useful to comp a friend, give a single
+    module for free, restart a trial, or lock an account."""
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    plan = (payload.plan or "").strip().lower()
+    if plan not in MANUAL_PLAN_CHOICES:
+        raise HTTPException(status_code=400, detail="Plan inválido")
+
+    import time as _time
+    now_ts = int(_time.time())
+    update: dict = {
+        "is_comp": False,
+        "manual_plan": None,
+        "comp_note": payload.note or "",
+        "plan_assigned_by": admin["id"],
+        "plan_assigned_at": _now_iso(),
+    }
+    if plan == "comp":
+        update.update({
+            "is_comp": True,
+            "comp_expires_at": None,
+            "plan_type": "comp",
+            "subscription_status": "active",
+        })
+    elif plan in ("presencia", "negocio", "marketing", "bundle"):
+        update.update({
+            "manual_plan": plan,
+            "plan_type": f"{plan}_manual",
+            "subscription_status": "active",
+        })
+    elif plan == "trial":
+        update.update({
+            "plan_type": None,
+            "subscription_status": "trialing",
+            "trial_ends_at": now_ts + 14 * 24 * 3600,
+        })
+    elif plan == "locked":
+        update.update({
+            "plan_type": None,
+            "subscription_status": "canceled",
+            "trial_ends_at": now_ts - 1,
+        })
+
+    await db.users.update_one({"id": user_id}, {"$set": update})
+    fresh = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return {
+        "ok": True,
+        "user_id": user_id,
+        "plan": plan,
+        "features": sorted(payments_service.user_features(fresh)),
+    }
 
 
 class CardLimitIn(BaseModel):

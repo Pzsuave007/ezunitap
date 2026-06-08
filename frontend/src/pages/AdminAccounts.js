@@ -24,6 +24,32 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+
+const PLAN_OPTIONS = [
+  { value: "trial", label: "Prueba (14 días)" },
+  { value: "presencia", label: "Presencia (tarjeta)" },
+  { value: "negocio", label: "Negocio (CRM/IA)" },
+  { value: "marketing", label: "Marketing" },
+  { value: "bundle", label: "Bundle — Todo" },
+  { value: "comp", label: "Cortesía (gratis)" },
+  { value: "locked", label: "Bloqueado" },
+];
+
+const PLAN_LABELS = PLAN_OPTIONS.reduce((m, o) => ({ ...m, [o.value]: o.label }), {});
+
+function currentPlan(u) {
+  if (u.is_comp) return "comp";
+  if (u.manual_plan) return u.manual_plan;
+  if (u.subscription_status === "trialing") return "trial";
+  if (["active", "past_due"].includes(u.subscription_status) && u.plan_type) {
+    const base = String(u.plan_type).replace(/_(monthly|yearly|manual)$/, "");
+    if (["presencia", "negocio", "marketing", "bundle"].includes(base)) return base;
+  }
+  return "locked";
+}
 
 function formatDate(ts) {
   if (!ts) return "—";
@@ -416,6 +442,27 @@ function UsersTab({ onForbidden }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const setPlan = async (u, plan) => {
+    if (!plan || plan === currentPlan(u)) return;
+    if (
+      plan === "locked" &&
+      !window.confirm(
+        `¿Bloquear el acceso de ${u.email}?\nNo podrá crear ni editar nada (solo ver sus datos).`
+      )
+    )
+      return;
+    setGrantingId(u.id);
+    try {
+      await api.post(`/admin/users/${u.id}/set-plan`, { plan });
+      toast.success(`Plan actualizado: ${PLAN_LABELS[plan] || plan}`);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error");
+    } finally {
+      setGrantingId(null);
+    }
+  };
+
   const grant = async (userId) => {
     const days = window.prompt(
       "¿Por cuántos días? (deja vacío para indefinido)",
@@ -450,6 +497,10 @@ function UsersTab({ onForbidden }) {
       setGrantingId(null);
     }
   };
+
+  // grant/revoke kept for backward-compat; primary control is now setPlan above.
+  void grant;
+  void revoke;
 
   const setCardLimit = async (u) => {
     const current = u.card_limit || 1;
@@ -589,9 +640,19 @@ function UsersTab({ onForbidden }) {
                           Pagado
                         </span>
                       )}
-                      {u.subscription_status === "trialing" && !u.is_comp && (
+                      {u.subscription_status === "trialing" && !u.is_comp && !u.manual_plan && (
                         <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                           Trial
+                        </span>
+                      )}
+                      {u.manual_plan && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-violet-100 text-violet-800 px-2 py-0.5 rounded-full">
+                          {PLAN_LABELS[u.manual_plan] || u.manual_plan} · manual
+                        </span>
+                      )}
+                      {Array.isArray(u.features) && u.features.length === 0 && !u.is_comp && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                          Bloqueado
                         </span>
                       )}
                     </div>
@@ -620,38 +681,30 @@ function UsersTab({ onForbidden }) {
                     >
                       <IdCard className="w-3.5 h-3.5 mr-1" /> Tarjetas: {u.card_limit || 1}
                     </Button>
-                    {u.is_comp ? (
-                      <Button
-                        data-testid={`revoke-user-${u.id}`}
-                        onClick={() => revoke(u.id)}
-                        disabled={grantingId === u.id}
-                        variant="outline"
-                        size="sm"
-                        className="h-9"
+                    <Select
+                      value={currentPlan(u)}
+                      onValueChange={(v) => setPlan(u, v)}
+                      disabled={grantingId === u.id}
+                    >
+                      <SelectTrigger
+                        data-testid={`plan-select-${u.id}`}
+                        className="h-9 w-[150px] text-xs"
                       >
-                        {grantingId === u.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <X className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        Revocar
-                      </Button>
-                    ) : (
-                      <Button
-                        data-testid={`grant-user-${u.id}`}
-                        onClick={() => grant(u.id)}
-                        disabled={grantingId === u.id}
-                        size="sm"
-                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        {grantingId === u.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Gift className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        Regalar
-                      </Button>
-                    )}
+                        <SelectValue placeholder="Plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PLAN_OPTIONS.map((o) => (
+                          <SelectItem
+                            key={o.value}
+                            value={o.value}
+                            data-testid={`plan-option-${u.id}-${o.value}`}
+                            className="text-xs"
+                          >
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {!isSelf && (
                       <Button
                         data-testid={`delete-user-${u.id}`}

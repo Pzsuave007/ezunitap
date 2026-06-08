@@ -715,6 +715,14 @@ def user_features(user: dict) -> set:
         exp = user.get("comp_expires_at")
         if not (exp and exp < now):
             return set(FEATURES_ALL)
+    # Admin MANUAL plan grant (no Stripe) — lets the owner assign a specific
+    # module (or the bundle) to a user from the admin panel without charging.
+    # Overrides trial/locked but NOT a real comp grant above.
+    mp = user.get("manual_plan")
+    if mp:
+        if mp in ("bundle", "comp", "all"):
+            return set(FEATURES_ALL)
+        return set(PLAN_FEATURES.get(mp, set()))
     status = user.get("subscription_status")
     sub_id = user.get("stripe_subscription_id")
     # Real paying subscriber
