@@ -69,16 +69,6 @@ const FLOW = [
   },
 ];
 
-// ── "Lo que antes tomaba horas, ahora toma minutos" ──
-const BENEFITS = [
-  { icon: Users, t: "Más clientes" },
-  { icon: LayoutDashboard, t: "Más organización" },
-  { icon: Star, t: "Más profesionalismo" },
-  { icon: Clock, t: "Menos tiempo perdido" },
-  { icon: Zap, t: "Menos estrés" },
-  { icon: TrendingUp, t: "Más crecimiento" },
-];
-
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
@@ -622,32 +612,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== BENEFICIOS — horas → minutos ====== */}
+      {/* ====== STATS — banda de credibilidad ====== */}
       <section id="beneficios" className="py-20 lg:py-28 bg-slate-50">
         <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">El resultado</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Lo que antes tomaba horas, <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">ahora toma minutos.</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            {BENEFITS.map((b) => (
-              <div key={b.t} className="rounded-2xl bg-white border border-slate-200 p-6 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center mb-3">
-                  <b.icon className="w-6 h-6 text-white" strokeWidth={2} />
-                </div>
-                <div className="font-heading font-bold text-lg">{b.t}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
-            <StatCard label="Tiempo para crear un presupuesto “quote”" value="< 30s" accent="emerald" />
-            <StatCard label="Idiomas soportados" value="EN + ES" accent="blue" />
-            <StatCard label="Acceso 100% mobile" value="iOS + Android" accent="purple" />
-            <StatCard label="Setup inicial" value="2 minutos" accent="amber" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+            <StatCard icon={Clock} label="Crear un presupuesto “quote”" value="< 30s" accent="emerald" />
+            <StatCard icon={Languages} label="Idiomas soportados" value="EN + ES" accent="blue" />
+            <StatCard icon={Smartphone} label="Acceso 100% mobile" value="iOS + Android" accent="purple" />
+            <StatCard icon={Zap} label="Setup inicial" value="2 minutos" accent="amber" />
           </div>
         </div>
       </section>
@@ -1132,7 +1104,7 @@ function SmartCardPreview() {
   );
 }
 
-function StatCard({ label, value, accent }) {
+function StatCard({ icon: Icon, label, value, accent }) {
   const palette = {
     emerald: "from-emerald-500 to-emerald-700",
     blue: "from-blue-700 to-blue-900",
@@ -1140,11 +1112,14 @@ function StatCard({ label, value, accent }) {
     amber: "from-amber-500 to-orange-600",
   };
   return (
-    <div className="rounded-3xl bg-white border border-slate-100 p-6 flex items-center justify-between gap-4 shadow-sm">
-      <div className="text-sm font-medium text-slate-500 flex-1">{label}</div>
-      <div className={`font-heading text-2xl lg:text-3xl font-bold bg-gradient-to-br ${palette[accent]} bg-clip-text text-transparent whitespace-nowrap`}>
+    <div className="rounded-3xl bg-white border border-slate-100 p-6 lg:p-7 flex flex-col items-center text-center shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${palette[accent]} flex items-center justify-center mb-4 shadow-md`}>
+        {Icon && <Icon className="w-6 h-6 text-white" strokeWidth={2} />}
+      </div>
+      <div className={`font-heading text-3xl lg:text-4xl font-bold bg-gradient-to-br ${palette[accent]} bg-clip-text text-transparent`}>
         {value}
       </div>
+      <div className="mt-2 text-sm font-medium text-slate-500 leading-snug">{label}</div>
     </div>
   );
 }
