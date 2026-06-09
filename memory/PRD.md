@@ -18,6 +18,14 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — DEMO EN VIVO público (sin login) [COMPLETO]
+Feature pedido por el usuario para vender mejor: que el visitante VIVA el flujo completo antes de registrarse. **Probado 100% (10/10 pytest con IA real + e2e frontend del wizard de 5 pasos, iteration_19.json, sin bugs).** Decisiones del usuario: IA real, captura de lead al inicio (email/teléfono), pago simulado, botón en Landing + menú, negocio ficticio "Demo Contractors".
+- **Frontend `DemoFlow.js`** (ruta pública `/demo`): wizard de 5 pasos — (1) captura de lead (nombre/email/teléfono/oficio) → (2) describe el trabajo en español (3 ejemplos de 1 clic) → (3) **quote en inglés con IA real** estilizado igual que el documento público real → "Accept this Quote" → (4) **Service Agreement con IA real** + firma (nombre en cursiva + botón) → (5) **invoice con links de pago** (botón "Pay by card" **simulado** → "✅ ¡Esto es un demo!") + CTA final "Crear mi cuenta gratis" → /register.
+- **Backend (`server.py`, sección PUBLIC LIVE DEMO ~L3842)**: endpoints públicos `POST /public/demo/{start,quote,agreement}` + `GET /admin/demo-leads`. Usa `ai_service.generate_quote_from_text` y `generate_service_agreement`. **Anti-abuso del LLM key**: caps por sesión (`DEMO_MAX_QUOTES=8`, `DEMO_MAX_AGREEMENTS=4`) + límite por IP (20 sesiones/día) en `demo_start`. Errores de IA sanitizados (503 sin filtrar internos). Los leads caen en la colección `demo_leads` (NO tocan clients/quotes/invoices reales) para que el dueño les dé seguimiento.
+- **Landing**: link "Demo en vivo" (`nav-demo`) en el menú + botón "🎬 Pruébalo en vivo" (`hero-demo`) en el hero.
+- Build de producción regenerado (sin URL de preview, demo incluido) + `git add -f frontend/build/`. **LISTO PARA DESPLEGAR.**
+
+
 ## ✅ Jun 2026 — PAYWALL MODULAR FASE 2: blindaje backend + panel admin de planes [COMPLETO]
 Se cerró la Fase 2 del sistema de suscripciones modulares (4 planes: Presencia=`card`, Negocio=`business`, Marketing=`marketing`, Bundle=todo). **Probado 100% (27/27 pytest + e2e frontend, iteration_18.json, sin bugs).**
 - **Dependencia `require_feature(feature)`** (`server.py`, justo después de `_user_doc`): valida `payments_service.user_has_feature(user, feature)`. Devuelve **403 en español** si el módulo está bloqueado ("Necesitas el plan {Presencia/Negocio/Marketing} (o el Bundle)…") o si la prueba expiró ("Tu prueba gratis terminó. Elige un plan…").
