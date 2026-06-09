@@ -58,7 +58,12 @@ const FLOW = [
     points: ["Tu portafolio ligado a cada cliente y trabajo", "Organizado para ti y para tus clientes"],
   },
   {
-    n: "08", icon: Star, title: "Pide reseñas automáticamente",
+    n: "08", icon: Share2, title: "Compártelo en tus redes sociales",
+    lead: "Al terminar el trabajo, la IA crea un post o Reel profesional para que lo publiques en tus redes.",
+    points: ["Posts y Reels en video con tus fotos y tu marca", "Listos para Instagram, Facebook y TikTok", "Muestra tu trabajo y atrae más clientes nuevos"],
+  },
+  {
+    n: "09", icon: Star, title: "Pide reseñas automáticamente",
     lead: "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
     points: ["Mensaje profesional automático", "Incluye tarjeta NFC: pide reseñas en persona con un solo tap", "Más reseñas, más confianza, más clientes nuevos"],
   },
