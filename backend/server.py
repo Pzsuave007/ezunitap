@@ -3891,13 +3891,22 @@ async def demo_start(payload: DemoStartIn, request: Request):
     name = (payload.name or "").strip()
     if not name or "@" not in email:
         raise HTTPException(status_code=400, detail="Name and a valid email are required.")
+    ip = request.client.host if request.client else ""
+    # Light per-IP abuse guard: cap how many demo sessions a single IP can open
+    # per day, so the public demo can't be scripted to burn the LLM key.
+    if ip:
+        import time as _t
+        since = datetime.fromtimestamp(int(_t.time()) - 86400, tz=timezone.utc).isoformat()
+        recent = await db.demo_leads.count_documents({"ip": ip, "created_at": {"$gte": since}})
+        if recent >= 20:
+            raise HTTPException(status_code=429, detail="Demo limit reached for today. Create a free account to keep exploring.")
     doc = {
         "id": _new_id(),
         "name": name,
         "email": email,
         "phone": (payload.phone or "").strip(),
         "trade": (payload.trade or "").strip(),
-        "ip": (request.client.host if request.client else ""),
+        "ip": ip,
         "quote_count": 0,
         "agreement_count": 0,
         "completed": False,
@@ -3921,7 +3930,7 @@ async def demo_quote(payload: DemoQuoteIn):
         data = await ai_service.generate_quote_from_text(desc[:1500])
     except Exception as e:
         logger.exception("Demo AI quote failed")
-        raise HTTPException(500, f"AI error: {e}")
+        raise HTTPException(503, "La IA no está disponible en este momento. Intenta de nuevo en un momento.")
     await db.demo_leads.update_one(
         {"id": payload.demo_id},
         {"$inc": {"quote_count": 1}, "$set": {"last_activity": _now_iso(), "last_desc": desc[:500]}},
@@ -3947,7 +3956,7 @@ async def demo_agreement(payload: DemoAgreementIn):
         )
     except Exception as e:
         logger.exception("Demo AI agreement failed")
-        raise HTTPException(500, f"AI error: {e}")
+        raise HTTPException(503, "La IA no está disponible en este momento. Intenta de nuevo en un momento.")
     await db.demo_leads.update_one(
         {"id": payload.demo_id},
         {"$inc": {"agreement_count": 1}, "$set": {"last_activity": _now_iso(), "completed": True}},
