@@ -44,13 +44,13 @@ FEATURES_ALL = ["card", "business", "marketing"]
 
 MODULES = {
     "presencia": {
-        "label": "Presencia",
+        "label": "Presencia Digital",
         "features": ["card"],
         "tagline": "Tarjeta digital NFC + mini-sitio web + Reseñas de Google",
         "ships_card": True,
     },
     "negocio": {
-        "label": "Negocio",
+        "label": "Gestión de Negocio",
         "features": ["business"],
         "tagline": "Presupuestos, facturas y contratos con IA + CRM + Calendario",
         "ships_card": False,

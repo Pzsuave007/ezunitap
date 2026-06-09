@@ -478,14 +478,14 @@ export default function Landing() {
           <div className="mt-10 grid md:grid-cols-3 gap-5">
             {[
               {
-                id: "presencia", icon: IdCard, name: "Presencia",
+                id: "presencia", icon: IdCard, name: "Presencia Digital",
                 tagline: "Tu Tarjeta Inteligente NFC",
                 desc: "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
                 points: ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"],
                 price: "$19.99",
               },
               {
-                id: "negocio", icon: LayoutDashboard, name: "Negocio",
+                id: "negocio", icon: LayoutDashboard, name: "Gestión de Negocio",
                 tagline: "Cotiza, factura, cobra y agenda",
                 desc: "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
                 points: ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"],
