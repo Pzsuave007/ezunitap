@@ -111,6 +111,7 @@ export default function DemoFlow() {
   return (
     <div className="min-h-screen bg-slate-50" data-testid="demo-flow">
       <TopBar />
+      {loading && step === 2 && <GeneratingOverlay />}
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-20">
         <StepBar step={step} />
         {err && (
@@ -123,6 +124,24 @@ export default function DemoFlow() {
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={() => { setSigned(true); setStep(4); window.scrollTo(0, 0); }} />}
         {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => setPaid(true)} />}
+      </div>
+    </div>
+  );
+}
+
+function GeneratingOverlay() {
+  return (
+    <div data-testid="demo-generating-overlay" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-6">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <div className="relative w-16 h-16 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+          <Sparkles className="w-6 h-6 text-emerald-600 absolute inset-0 m-auto" />
+        </div>
+        <h3 className="font-heading text-xl font-bold text-slate-900">Generando tu Service Agreement…</h3>
+        <p className="text-sm text-slate-500 mt-2">
+          La IA está redactando tu contrato legal en inglés. Toma unos segundos — <strong>no cierres esta página.</strong>
+        </p>
       </div>
     </div>
   );
