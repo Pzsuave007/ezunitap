@@ -276,7 +276,7 @@ export default function Landing() {
           <div className="max-w-2xl">
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Arma tu UniTech</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              3 productos. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalos por separado o todos juntos.</span>
+              3 herramientas. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalas por separado o todas juntas.</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
               Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.
@@ -346,7 +346,7 @@ export default function Landing() {
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
                 <Zap className="w-3.5 h-3.5" /> Mejor valor
               </div>
-              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — los 3 productos juntos</h3>
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — las 3 herramientas juntas</h3>
               <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
                 Presencia + Negocio + Marketing en un solo paquete. Ahorra cerca de <strong className="text-white">$30 al mes</strong> vs. comprarlos por separado.
               </p>
