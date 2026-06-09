@@ -3421,7 +3421,8 @@ async def public_get_card(slug: str):
                 card[f] = primary.get(f)
     # Gather public-safe data
     reviews = await db.reviews.find({"user_id": card["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
-    # Photos from completed jobs OR all photos (exclude logo)
+    # Portfolio photos only — exclude logo/profile/cover AND Marketing Studio
+    # assets (reels are videos, reel source/output images aren't portfolio work).
     photos = await db.photos.find(
         {
             "user_id": card["user_id"],
@@ -3429,7 +3430,9 @@ async def public_get_card(slug: str):
             "is_logo": {"$ne": True},
             "is_profile": {"$ne": True},
             "is_cover": {"$ne": True},
-            "label": {"$nin": ["logo", "profile_photo", "cover"]},
+            "label": {"$nin": ["logo", "profile_photo", "cover",
+                                "social_reel", "social_src", "social_out", "social_audio"]},
+            "content_type": {"$ne": "video/mp4"},
         },
         {"_id": 0},
     ).sort("created_at", -1).to_list(30)
