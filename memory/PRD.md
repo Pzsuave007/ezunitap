@@ -18,6 +18,14 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — ESTUDIO DE MARKETING: Reels Testimonio (verbatim) + Servicios (texto por foto sincronizado a voz) [COMPLETO]
+Continuación del refinamiento de Reels (feedback de Paul). **Probado**: backend curl (testimonio ES→EN y ES→ES), render ffmpeg e2e con frames extraídos + smoke test frontend.
+- **Testimonio verbatim**: nuevo `ai_service.clean_testimonial` — la IA SOLO corrige ortografía/puntuación, NO reescribe ni inventa marketing; si la reseña está en otro idioma que el de salida, la traduce LITERAL. `/social/copy` con `template=testimonial` devuelve `{caption=quote, cta}`. UI `ReelStudio.js`: el campo 3 cambia a "Reseña real del cliente (pégala tal cual)", botón "Corregir reseña con IA", nuevo input "Nombre del cliente" (`reel-author-input`) → `author` se pasa al reel y aparece como `copy.author` en la tarjeta de testimonio. Editor oculta titular/subtítulo para testimonio.
+- **Lista de servicios — texto por foto + sync de voz**: UI muestra un input por cada foto subida (`reel-service-text-{i}`) → se envían como `service_texts` (JSON). `ai_service.clean_service_lines` corrige ortografía de cada etiqueta (traduce literal si aplica). En `video_service.render_reel`/`render_reel_full` se agregó soporte de **duraciones por foto variables** (`clip_durs`) y **voces por segmento** (`seg_voice_paths`, alineadas al onset de cada clip vía `adelay`): cuando hay voz en off, se genera un TTS por etiqueta y cada foto dura lo que tarda en leerse su servicio. `final_duration` refleja la duración hablada real. Se **eliminó el contador "1/3"** del overlay (`build_segment_overlay` rediseñado a tarjeta-título limpia con subrayado de acento).
+- **Promo**: la velocidad de paneo ya estaba ajustada (amp dependiente de la duración del clip en `_zoompan`); regresión showcase verificada OK.
+- Archivos: `backend/ai_service.py` (clean_testimonial, clean_service_lines), `backend/video_service.py` (render_reel clip_durs/seg_voice, build_segment_overlay), `backend/server.py` (/social/copy testimonial, create_reel author/service_texts, _process_reel servicios+testimonio), `frontend/src/components/ReelStudio.js`. Build prod regenerado + `git add -f frontend/build/`.
+
+
 ## ✅ Jun 2026 — ESTUDIO DE MARKETING: refinamiento de Reels [COMPLETO]
 Iteración con el usuario (Paul) sobre el generador de videos hasta que él lo usaría para su propio negocio. Cambios (backend `video_service.py` + `tts_service.py` + frontend `ReelStudio.js`). Verificado con análisis de video + extracción de frames.
 - **Movimiento variado y suave (showcase/clásico)**: `_zoompan` reescrito con secuencia `_AUTO_SEQ` (zoom_in, pan_right, zoom_out, pan_up, pan_left, diagonales) + easing smoothstep (`_ease`). Cada foto se mueve distinto, sin jitter. (Usuario: "se ve mucho mejor".)

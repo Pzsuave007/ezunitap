@@ -532,3 +532,80 @@ async def generate_social_copy(
         hashtags = [h.strip() for h in hashtags.replace(",", " ").split() if h.strip()]
     data["hashtags"] = ["#" + h.lstrip("#") for h in hashtags if h][:8]
     return data
+
+
+
+# ============================================================================
+# Reel — Testimonial cleanup (VERBATIM, never paraphrase the customer)
+# ============================================================================
+TESTIMONIAL_SYSTEM = """You receive a REAL customer review/testimonial for a contractor's business.
+Your ONLY job is to lightly clean it up so it can be shown on a short video card —
+WITHOUT changing the customer's message, meaning, tone, or claims.
+
+STRICT RULES:
+- Do NOT rewrite, rephrase, paraphrase, summarize, embellish, or add marketing language.
+- Do NOT invent details, names, numbers, or results the customer did not state.
+- ONLY fix spelling, obvious typos, capitalization, and basic punctuation.
+- Keep it in the customer's own words.
+- If the review is written in a different language than the requested OUTPUT LANGUAGE,
+  translate it LITERALLY and faithfully (same meaning, same tone) — NOT as a marketing message.
+- Keep the wording intact (do not shorten unless it is extremely long and only trim trailing repetition).
+
+Output ONLY valid JSON (no markdown):
+{
+  "quote": "the cleaned (and, if needed, literally translated) review text",
+  "cta": "a short 2-4 word call to action in the OUTPUT LANGUAGE, e.g. 'Call us today'"
+}"""
+
+
+async def clean_testimonial(review_text: str, language: str = "en") -> dict:
+    """Lightly clean a real customer review (spelling only) — never paraphrase.
+    Translates literally if the review language differs from the output language."""
+    review_text = (review_text or "").strip()
+    if not review_text:
+        return {"quote": "", "cta": ""}
+    lang_name = {"en": "English", "es": "Spanish"}.get(language, "English")
+    chat = _new_chat(TESTIMONIAL_SYSTEM)
+    ctx = f"OUTPUT LANGUAGE: {lang_name}\nCustomer review (verbatim):\n{review_text}"
+    try:
+        response = await chat.send_message(UserMessage(text=ctx))
+        data = _extract_json(response) or {}
+    except Exception:
+        data = {}
+    quote = (data.get("quote") or "").strip().strip('"').strip("\u201c\u201d")
+    if not quote:
+        quote = review_text
+    cta = (data.get("cta") or "").strip()
+    return {"quote": quote, "cta": cta}
+
+
+# ============================================================================
+# Reel — Services per-photo labels cleanup (spelling only, keep them short)
+# ============================================================================
+SERVICE_LINES_SYSTEM = """You receive a list of short service labels a contractor typed (one per photo)
+for a marketing video. Clean each line WITHOUT changing its meaning:
+- Fix spelling, typos, and capitalization.
+- Keep it SHORT (a few words, like a title) — these are on-screen labels, not sentences.
+- Do NOT add marketing fluff or invent services.
+- If a line is in a different language than the OUTPUT LANGUAGE, translate it literally.
+- Return EXACTLY the same number of lines, in the same order.
+
+Output ONLY valid JSON (no markdown): {"lines": ["clean line 1", "clean line 2", "..."]}"""
+
+
+async def clean_service_lines(lines: list, language: str = "en") -> list:
+    """Spelling-clean each per-photo service label, keeping order and count."""
+    src = [(l or "").strip() for l in (lines or [])]
+    if not any(src):
+        return src
+    lang_name = {"en": "English", "es": "Spanish"}.get(language, "English")
+    chat = _new_chat(SERVICE_LINES_SYSTEM)
+    ctx = (f"OUTPUT LANGUAGE: {lang_name}\nLines (one per photo, in order):\n" +
+           "\n".join(f"{i + 1}. {t or '(empty)'}" for i, t in enumerate(src)))
+    try:
+        response = await chat.send_message(UserMessage(text=ctx))
+        data = _extract_json(response) or {}
+        out = [(x or "").strip() for x in (data.get("lines") or [])]
+    except Exception:
+        out = []
+    return [out[i] if i < len(out) and out[i] else src[i] for i in range(len(src))]

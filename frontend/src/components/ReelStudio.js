@@ -40,6 +40,8 @@ const DURATIONS = [10, 15, 20];
 export default function ReelStudio() {
   const [template, setTemplate] = useState("showcase");
   const [photos, setPhotos] = useState([]);
+  const [serviceTexts, setServiceTexts] = useState([]);
+  const [authorName, setAuthorName] = useState("");
   const [brief, setBrief] = useState("");
   const [copyDraft, setCopyDraft] = useState(null);
   const [copyLoading, setCopyLoading] = useState(false);
@@ -76,6 +78,11 @@ export default function ReelStudio() {
   const tpl = REEL_TEMPLATES.find((t) => t.id === template);
   const maxPhotos = tpl.max;
   const isBeforeAfter = template === "before_after";
+  const isServices = template === "services";
+  const isTestimonial = template === "testimonial";
+
+  const setServiceText = (i, v) =>
+    setServiceTexts((prev) => { const next = [...prev]; next[i] = v.slice(0, 120); return next; });
 
   const selectTemplate = (id) => {
     setTemplate(id);
@@ -218,6 +225,8 @@ export default function ReelStudio() {
       fd.append("voice", voice || "");
       fd.append("voice_speed", String(voiceSpeed));
       fd.append("duration", String(duration));
+      fd.append("author", isTestimonial ? authorName : "");
+      if (isServices) fd.append("service_texts", JSON.stringify(photos.map((_, i) => serviceTexts[i] || "")));
       photos.forEach((p) => fd.append("files", p.file));
       if (music === "upload" && musicFile) fd.append("music_file", musicFile);
       const { data } = await api.post("/social/reels", fd, {
@@ -303,39 +312,79 @@ export default function ReelStudio() {
           </div>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden multiple
             onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
+
+          {isServices && photos.length > 0 && (
+            <div className="mt-3 space-y-2" data-testid="reel-service-texts">
+              <p className="text-[11px] text-slate-500 font-semibold">
+                Texto de cada foto <span className="font-normal text-slate-400">(la voz lo lee y la IA corrige la ortografía; cada foto dura lo que tarda en leerse)</span>
+              </p>
+              {photos.map((p, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <img src={p.preview} alt={`foto ${i + 1}`} className="w-9 h-12 rounded-md object-cover border border-slate-200 flex-shrink-0" />
+                  <input
+                    data-testid={`reel-service-text-${i}`}
+                    value={serviceTexts[i] || ""}
+                    onChange={(e) => setServiceText(i, e.target.value)}
+                    placeholder={`Servicio de la foto ${i + 1} (ej: Instalación de techo)`}
+                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Brief + AI copy */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">3. ¿Qué quieres comunicar? (español)</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            {isTestimonial ? "3. Reseña real de tu cliente (pégala tal cual)" : "3. ¿Qué quieres comunicar? (español)"}
+          </Label>
           <Textarea data-testid="reel-brief-input" value={brief} onChange={(e) => setBrief(e.target.value)}
-            placeholder="Ej: Transformamos jardines descuidados en hermosos. Mantenimiento y paisajismo. Llama para una cotización gratis."
+            placeholder={isTestimonial
+              ? "Pega aquí la reseña de tu cliente, tal como la escribió. La IA solo corrige la ortografía (no cambia las palabras) y la traduce literal si eliges inglés."
+              : "Ej: Transformamos jardines descuidados en hermosos. Mantenimiento y paisajismo. Llama para una cotización gratis."}
             className="mt-2 rounded-xl min-h-[80px]" />
+          {isTestimonial && (
+            <input data-testid="reel-author-input" value={authorName}
+              onChange={(e) => setAuthorName(e.target.value.slice(0, 80))}
+              placeholder="Nombre del cliente (ej: María G.)"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
+          )}
           <Button onClick={genCopy} disabled={copyLoading} variant="outline" data-testid="reel-gen-copy-btn"
             className="w-full mt-2 rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-            {copyLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Escribiendo…</> : <><Sparkles className="w-4 h-4 mr-2" /> {copyDraft ? "Regenerar texto con IA" : "Generar texto con IA"}</>}
+            {copyLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isTestimonial ? "Corrigiendo…" : "Escribiendo…"}</>
+              : <><Sparkles className="w-4 h-4 mr-2" /> {copyDraft ? (isTestimonial ? "Volver a corregir" : "Regenerar texto con IA") : (isTestimonial ? "Corregir reseña con IA" : "Generar texto con IA")}</>}
           </Button>
 
           {copyDraft && (
             <div className="mt-3 space-y-3 p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-100" data-testid="reel-copy-editor">
-              <p className="text-[11px] font-semibold text-emerald-700">✍️ Revisa y edita el texto antes de crear el video</p>
-              <div>
-                <Label className="text-[11px] font-semibold text-slate-500">Titular</Label>
-                <input data-testid="reel-copy-headline" value={copyDraft.headline} onChange={(e) => setDraft("headline", e.target.value.slice(0, 120))} maxLength={120}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold focus:outline-none focus:border-emerald-400" />
-              </div>
-              <div>
-                <Label className="text-[11px] font-semibold text-slate-500">Subtítulo</Label>
-                <input data-testid="reel-copy-subheadline" value={copyDraft.subheadline} onChange={(e) => setDraft("subheadline", e.target.value.slice(0, 200))} maxLength={200}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
-              </div>
+              <p className="text-[11px] font-semibold text-emerald-700">
+                {isTestimonial ? "✍️ Revisa la reseña corregida (ortografía) — son las palabras de tu cliente" : "✍️ Revisa y edita el texto antes de crear el video"}
+              </p>
+              {!isTestimonial && (
+                <>
+                  <div>
+                    <Label className="text-[11px] font-semibold text-slate-500">Titular</Label>
+                    <input data-testid="reel-copy-headline" value={copyDraft.headline} onChange={(e) => setDraft("headline", e.target.value.slice(0, 120))} maxLength={120}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold focus:outline-none focus:border-emerald-400" />
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-semibold text-slate-500">Subtítulo</Label>
+                    <input data-testid="reel-copy-subheadline" value={copyDraft.subheadline} onChange={(e) => setDraft("subheadline", e.target.value.slice(0, 200))} maxLength={200}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
+                  </div>
+                </>
+              )}
               <div>
                 <Label className="text-[11px] font-semibold text-slate-500">Botón / CTA</Label>
                 <input data-testid="reel-copy-cta" value={copyDraft.cta} onChange={(e) => setDraft("cta", e.target.value.slice(0, 40))} maxLength={40}
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <Label className="text-[11px] font-semibold text-slate-500">Descripción <span className="font-normal text-slate-400">(lo que lee la voz completa y los subtítulos)</span></Label>
+                <Label className="text-[11px] font-semibold text-slate-500">
+                  {isTestimonial ? "Reseña del cliente" : "Descripción"}
+                  {!isTestimonial && <span className="font-normal text-slate-400"> (lo que lee la voz completa y los subtítulos)</span>}
+                </Label>
                 <Textarea data-testid="reel-copy-caption" value={copyDraft.caption} onChange={(e) => setDraft("caption", e.target.value.slice(0, 1500))}
                   className="mt-1 rounded-lg min-h-[70px] text-sm" />
               </div>

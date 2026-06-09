@@ -186,32 +186,35 @@ def build_overlay(copy: dict, brand: dict, template: str = "showcase", show_subh
     return _png(canvas)
 
 
-def build_segment_overlay(text: str, brand: dict, idx: int, total: int) -> bytes:
-    """Per-photo service line (services template): a centered chip near the middle."""
+def build_segment_overlay(text: str, brand: dict, idx: int = 0, total: int = 1) -> bytes:
+    """Per-photo service label (services template): a clean centered title card
+    with the exact text the user typed (spelling-cleaned). No counter chip — just
+    the service name, with an accent underline. The voice-over reads this line."""
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(canvas)
     accent = brand["accent"]
-    margin = int(W * 0.09)
+    margin = int(W * 0.085)
     text = (text or "").strip()
     if not text:
         return _png(canvas)
-    f, lines, lh = ss._fit_text(draw, text, "extrabold", W - margin * 2, int(H * 0.22), int(W * 0.10), 40)
+    f, lines, lh = ss._fit_text(draw, text, "extrabold", W - margin * 2, int(H * 0.24), int(W * 0.095), 40)
     total_h = lh * len(lines)
-    box_pad = int(W * 0.05)
+    box_pad = int(W * 0.055)
     box_w = max(draw.textlength(ln, font=f) for ln in lines) + box_pad * 2
-    box_h = total_h + box_pad * 1.4
-    cy = int(H * 0.44)
+    box_h = total_h + box_pad * 1.5
+    cy = int(H * 0.40)
     x0 = (W - box_w) / 2
     y0 = cy - box_h / 2
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
-    od.rounded_rectangle([x0, y0, x0 + box_w, y0 + box_h], radius=28, fill=ss._darken(brand["brand"], 0.25) + (210,))
+    od.rounded_rectangle([x0, y0, x0 + box_w, y0 + box_h], radius=32, fill=(20, 22, 28, 210))
     canvas.alpha_composite(overlay)
     draw = ImageDraw.Draw(canvas)
-    # accent counter chip (e.g. 1/3)
-    cf = ss._font("bold", int(W * 0.03))
-    ss._chip(draw, (x0 + box_pad, y0 - cf.size - 26), f"{idx + 1}/{total}", cf, accent, ss._text_on(accent), pad_x=18, pad_y=10)
-    ty = cy - total_h / 2
+    # accent underline bar near the top of the card
+    bar_w = int(box_w * 0.30)
+    bar_y = int(y0 + box_pad * 0.45)
+    draw.rounded_rectangle([(W - bar_w) // 2, bar_y, (W + bar_w) // 2, bar_y + 9], radius=4, fill=accent)
+    ty = cy - total_h / 2 + int(box_pad * 0.18)
     for ln in lines:
         draw.text((W // 2, ty), ln, font=f, fill=(255, 255, 255), anchor="ma")
         ty += lh
@@ -517,6 +520,8 @@ def render_reel(photo_paths: List[str], out_path: str, *,
                 motion: str = "auto", transition: str = "fade",
                 transition_dur: Optional[float] = None,
                 duration: float = 10.0,
+                clip_durs: Optional[List[float]] = None,     # per-photo on-screen seconds (voice-synced services)
+                seg_voice_paths: Optional[List[str]] = None,  # one voice clip per photo, aligned to its onset
                 music_path: Optional[str] = None,
                 voice_path: Optional[str] = None,
                 slider: bool = False,
@@ -525,11 +530,26 @@ def render_reel(photo_paths: List[str], out_path: str, *,
     xfade_name = "wiperight" if slider else TRANSITIONS.get(transition, "fade")
     td_p = 0.0 if n == 1 else (transition_dur if transition_dur else TD_DEFAULT)
 
-    montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro_path else duration
-    montage_dur = max(3.0, montage_dur)
-    per_clip = montage_dur if n == 1 else (montage_dur + (n - 1) * td_p) / n
-    frames = max(1, round(per_clip * FPS))
+    # Per-clip durations: variable (voice-synced services) or uniform.
+    if clip_durs and len(clip_durs) == n:
+        Ldurs = [max(1.0, float(d)) for d in clip_durs]
+        montage_dur = max(2.0, sum(Ldurs) - (n - 1) * td_p)
+        duration = montage_dur + ((OUTRO_LEN - TD_DEFAULT) if outro_path else 0.0)
+    else:
+        montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro_path else duration
+        montage_dur = max(3.0, montage_dur)
+        per_clip = montage_dur if n == 1 else (montage_dur + (n - 1) * td_p) / n
+        Ldurs = [per_clip] * n
+
+    frames_list = [max(1, round(d * FPS)) for d in Ldurs]
     outro_frames = max(1, round(OUTRO_LEN * FPS))
+
+    # cumulative onset of each clip in the montage timeline (clips overlap by td_p)
+    starts = [0.0] * n
+    acc = 0.0
+    for i in range(n):
+        starts[i] = acc
+        acc += Ldurs[i] - td_p
 
     # ---- inputs (order matters for stream indices) ----
     inputs: List[str] = []
@@ -546,8 +566,8 @@ def render_reel(photo_paths: List[str], out_path: str, *,
         idx += 1
     seg_idx = []
     if segment_overlay_paths:
-        for sp in segment_overlay_paths:
-            inputs += ["-loop", "1", "-t", f"{per_clip:.3f}", "-i", sp]
+        for i, sp in enumerate(segment_overlay_paths):
+            inputs += ["-loop", "1", "-t", f"{Ldurs[i]:.3f}", "-i", sp]
             seg_idx.append(idx)
             idx += 1
     sub_idx = []
@@ -567,10 +587,16 @@ def render_reel(photo_paths: List[str], out_path: str, *,
         music_in = idx
         idx += 1
     voice_in = None
-    if voice_path:
+    if voice_path and not seg_voice_paths:
         inputs += ["-i", voice_path]
         voice_in = idx
         idx += 1
+    seg_voice_idx = []
+    if seg_voice_paths:
+        for vp in seg_voice_paths:
+            inputs += ["-i", vp]
+            seg_voice_idx.append(idx)
+            idx += 1
     divider_idx = None
     if slider and divider_path:
         inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", divider_path]
@@ -580,7 +606,7 @@ def render_reel(photo_paths: List[str], out_path: str, *,
     # ---- video filtergraph ----
     parts: List[str] = []
     for i in range(n):
-        zp = _zoompan_slider(i > 0, frames) if slider else _zoompan(motion, frames, i)
+        zp = _zoompan_slider(i > 0, frames_list[i]) if slider else _zoompan(motion, frames_list[i], i)
         parts.append(f"[{photo_idx[i]}:v]{_SCALE}{zp},setsar=1,format=yuv420p[v{i}]")
 
     if seg_idx:
@@ -599,17 +625,19 @@ def render_reel(photo_paths: List[str], out_path: str, *,
         montage = "[mtg]"
     else:
         prev = clip(0)
+        run = Ldurs[0]
         for i in range(1, n):
-            off = i * (per_clip - td_p)
+            off = run - td_p
             out = f"[x{i}]"
             parts.append(f"{prev}{clip(i)}xfade=transition={xfade_name}:duration={td_p:.3f}:offset={off:.3f}{out}")
             prev = out
+            run = run + Ldurs[i] - td_p
         montage = prev
 
     # Before/After slider: timing of the wipe (for the sliding divider handle).
     slider_win = None
     if slider and n >= 2:
-        woff = per_clip - td_p
+        woff = Ldurs[0] - td_p
         slider_win = (woff, woff + td_p)
 
     if main_idx is not None:
@@ -642,19 +670,28 @@ def render_reel(photo_paths: List[str], out_path: str, *,
     parts.append(f"{montage}format=yuv420p[outv]")
 
     # ---- audio filtergraph ----
-    amap = None
+    has_voice = (voice_in is not None) or bool(seg_voice_idx)
+    music_vol = 0.20 if has_voice else 0.6
     afo = max(0.0, duration - 1.2)
-    if music_in is not None and voice_in is not None:
-        parts.append(f"[{music_in}:a]volume=0.20,atrim=0:{duration:.3f},afade=out:st={afo:.3f}:d=1.2[am]")
-        parts.append(f"[{voice_in}:a]adelay=250:all=1,volume=1.4[av]")
-        parts.append("[am][av]amix=inputs=2:duration=longest:normalize=0[aout]")
-        amap = "[aout]"
-    elif music_in is not None:
-        parts.append(f"[{music_in}:a]volume=0.6,atrim=0:{duration:.3f},afade=out:st={afo:.3f}:d=1.2[aout]")
-        amap = "[aout]"
+    audio_streams: List[str] = []
+    if music_in is not None:
+        parts.append(f"[{music_in}:a]volume={music_vol},atrim=0:{duration:.3f},afade=out:st={afo:.3f}:d=1.2[am]")
+        audio_streams.append("[am]")
+    if seg_voice_idx:
+        for k, vidx in enumerate(seg_voice_idx):
+            stt = max(0.0, starts[k] + 0.15)
+            parts.append(f"[{vidx}:a]adelay={int(stt * 1000)}:all=1,volume=1.5[av{k}]")
+            audio_streams.append(f"[av{k}]")
     elif voice_in is not None:
-        parts.append(f"[{voice_in}:a]adelay=250:all=1,volume=1.4[aout]")
+        parts.append(f"[{voice_in}:a]adelay=250:all=1,volume=1.4[av]")
+        audio_streams.append("[av]")
+
+    amap = None
+    if len(audio_streams) > 1:
+        parts.append(f"{''.join(audio_streams)}amix=inputs={len(audio_streams)}:duration=longest:normalize=0[aout]")
         amap = "[aout]"
+    elif len(audio_streams) == 1:
+        amap = audio_streams[0]
 
     cmd = [ffmpeg_bin(), "-y", *inputs, "-filter_complex", ";".join(parts), "-map", "[outv]"]
     if amap:
@@ -673,7 +710,10 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
                      template: str = "showcase", motion: str = "auto", transition: str = "fade",
                      duration: float = 10.0, subtitles: bool = False, outro: bool = False,
                      music_path: Optional[str] = None, voice_path: Optional[str] = None,
-                     subtitle_text: Optional[str] = None) -> bytes:
+                     subtitle_text: Optional[str] = None,
+                     service_texts: Optional[List[str]] = None,
+                     seg_voice_paths: Optional[List[str]] = None,
+                     clip_durs: Optional[List[float]] = None) -> bytes:
     """High-level: write photos + overlays to a tempdir, render, return MP4 bytes."""
     n = len(images)
     tmp = tempfile.mkdtemp(prefix="reel_")
@@ -713,7 +753,12 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
 
         segment_overlay_paths = None
         if template == "services":
-            lines = _service_lines(copy, n)
+            if service_texts and any((t or "").strip() for t in service_texts):
+                base = (list(service_texts) + [""] * n)[:n]
+                fb = _service_lines(copy, n)
+                lines = [(base[i].strip() if (base[i] or "").strip() else fb[i]) for i in range(n)]
+            else:
+                lines = _service_lines(copy, n)
             segment_overlay_paths = []
             for i in range(n):
                 sp = os.path.join(tmp, f"seg{i}.png")
@@ -753,6 +798,8 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             subtitle_specs=subtitle_specs,
             outro_path=outro_path,
             motion=motion, transition=transition, transition_dur=eff_transition_dur, duration=duration,
+            clip_durs=clip_durs if template == "services" else None,
+            seg_voice_paths=seg_voice_paths if template == "services" else None,
             music_path=music_path, voice_path=voice_path,
         )
         with open(out_path, "rb") as f:

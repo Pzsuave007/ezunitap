@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import logging
 import os
 import uuid
@@ -2962,6 +2963,11 @@ async def generate_reel_copy(
     language = "es" if language == "es" else "en"
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     card = await _ensure_card(user_id)
+    if template == "testimonial":
+        # Verbatim cleanup: keep the customer's real words (spelling only), never
+        # paraphrase into marketing copy.
+        t = await ai_service.clean_testimonial(brief, language)
+        return {"headline": "", "subheadline": "", "cta": t.get("cta", ""), "caption": t.get("quote", "")}
     copy = await ai_service.generate_social_copy(
         brief, template=template if template in social_service.DESIGN_PHOTOS else "showcase",
         language=language,
@@ -2993,13 +2999,15 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
                         duration: float, voice_mode: str = "short", cta_override: str = "",
                         voice_say_phone: bool = False, copy_override: Optional[dict] = None,
-                        voice: str = "", voice_speed: float = 1.0):
+                        voice: str = "", voice_speed: float = 1.0,
+                        author: str = "", service_texts: Optional[list] = None):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import re as _re
     import math as _math
     import tempfile as _tf
     music_tmp = None
     voice_tmp = None
+    seg_voice_tmps: List[str] = []
 
     def _clean(t):
         t = _re.sub(r"#\w+", "", t or "")
@@ -3038,6 +3046,8 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
             )
         if cta_override:
             copy["cta"] = cta_override
+        if template == "testimonial" and (author or "").strip():
+            copy["author"] = author.strip()
         brand = await _social_brand(user_id, language, brand_override=brand_color or None, accent_override=accent_color or None)
 
         images = []
@@ -3047,6 +3057,7 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 images.append(im)
         if not images:
             raise RuntimeError("No se pudieron cargar las fotos")
+        n_imgs = len(images)
 
         # Resolve music
         music_path = None
@@ -3064,11 +3075,41 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 except Exception:
                     music_path = None
 
+        # ---- Services template: per-photo labels (spelling-cleaned) + voice-synced timing ----
+        service_lines_clean = None
+        seg_voice_paths = None
+        clip_durs = None
+        services_voice = (template == "services" and voiceover)
+        if template == "services":
+            raw_lines = [(t or "").strip() for t in (service_texts or [])][:n_imgs]
+            while len(raw_lines) < n_imgs:
+                raw_lines.append("")
+            service_lines_clean = await ai_service.clean_service_lines(raw_lines, language)
+            if services_voice:
+                seg_voice_paths, clip_durs = [], []
+                for txt in service_lines_clean:
+                    spoken = (txt or "").strip() or _clean(copy.get("headline") or "")
+                    try:
+                        vbytes = await tts_service.generate_voiceover(spoken, language=language, voice=voice, speed=voice_speed)
+                        fd, vtmp = _tf.mkstemp(suffix=".mp3")
+                        with os.fdopen(fd, "wb") as f:
+                            f.write(vbytes)
+                        seg_voice_tmps.append(vtmp)
+                        seg_voice_paths.append(vtmp)
+                        vd = video_service.audio_duration(vtmp)
+                        clip_durs.append(max(2.6, min(12.0, (vd if vd > 0 else 2.0) + 0.9)))
+                    except Exception:
+                        seg_voice_paths.append(None)
+                        clip_durs.append(3.2)
+                # if every TTS failed, fall back to uniform timing
+                if not any(seg_voice_paths):
+                    seg_voice_paths, clip_durs, services_voice = None, None, False
+
         # Optional AI voice-over (short = headline/sub/cta; full = whole post caption)
         voice_path = None
         voice_script = None
         eff_duration = duration
-        if voiceover:
+        if voiceover and not services_voice:
             if voice_mode == "full":
                 voice_script = _clean(copy.get("caption") or "") or _clean(
                     ". ".join([p for p in [copy.get("headline"), copy.get("subheadline"), copy.get("cta")] if p]))
@@ -3097,6 +3138,11 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 voice_path = None
                 voice_script = None
 
+        # Services voice-sync drives the total duration from the spoken length.
+        if services_voice and clip_durs:
+            montage = sum(clip_durs) - (n_imgs - 1) * video_service.TD_DEFAULT
+            eff_duration = min(90.0, montage + ((video_service.OUTRO_LEN - video_service.TD_DEFAULT) if outro else 0.0))
+
         # Subtitles synced to the voice text when voice-over is on
         subtitle_text = voice_script if (voiceover and voice_script) else None
 
@@ -3105,6 +3151,9 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
             template=template, motion=motion, transition=transition, duration=eff_duration,
             subtitles=subtitles, outro=outro, music_path=music_path, voice_path=voice_path,
             subtitle_text=subtitle_text,
+            service_texts=service_lines_clean,
+            seg_voice_paths=seg_voice_paths,
+            clip_durs=clip_durs,
         )
         out_id = await _store_card_photo(user_id, mp4, "video/mp4", "social_reel", "mp4")
         await db.social_reels.update_one(
@@ -3120,7 +3169,7 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
             {"$set": {"status": "error", "error": str(e)[:300], "updated_at": _now_iso()}},
         )
     finally:
-        for tmp in (music_tmp, voice_tmp):
+        for tmp in [music_tmp, voice_tmp, *seg_voice_tmps]:
             if tmp:
                 try:
                     os.remove(tmp)
@@ -3151,6 +3200,8 @@ async def create_reel(
     voice: str = Form(""),
     voice_speed: float = Form(1.0),
     duration: float = Form(10.0),
+    author: str = Form(""),
+    service_texts: str = Form(""),
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
     user_id: str = Depends(get_current_user_id),
@@ -3173,6 +3224,15 @@ async def create_reel(
     except (TypeError, ValueError):
         voice_speed = 1.0
     cta_override = (cta_override or "").strip()[:40]
+    author = (author or "").strip()[:80]
+    service_texts_list = []
+    if service_texts:
+        try:
+            parsed = json.loads(service_texts)
+            if isinstance(parsed, list):
+                service_texts_list = [str(x or "").strip()[:120] for x in parsed]
+        except Exception:
+            service_texts_list = []
     copy_override = None
     if (headline or "").strip() or (caption or "").strip():
         copy_override = {
@@ -3251,7 +3311,7 @@ async def create_reel(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
         transition, subtitles, outro, voiceover, duration, voice_mode, cta_override, voice_say_phone,
-        copy_override, voice, voice_speed,
+        copy_override, voice, voice_speed, author, service_texts_list,
     )
     return _strip_id(reel)
 
