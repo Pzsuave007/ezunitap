@@ -52,6 +52,9 @@ const I18N = {
     connectSend: "Send my info", orEstimate: "Have a project? Request a free estimate",
     connectSuccess: "Thanks for connecting!",
     connectSuccessSub: "I'll personally reach out to you soon.",
+    leaveReviewTitle: "Did we do a great job?",
+    leaveReviewSub: "Your review helps a lot — it only takes a few seconds.",
+    leaveReviewBtn: "Leave us a review",
   },
   es: {
     callNow: "Llamar", text: "Mensaje", whatsapp: "WhatsApp", email: "Email",
@@ -81,6 +84,9 @@ const I18N = {
     connectSend: "Enviar mis datos", orEstimate: "¿Tienes un proyecto? Pide una cotización gratis",
     connectSuccess: "¡Gracias por conectar!",
     connectSuccessSub: "Te contactaré personalmente muy pronto.",
+    leaveReviewTitle: "¿Hicimos un buen trabajo?",
+    leaveReviewSub: "Tu reseña nos ayuda muchísimo — solo te toma unos segundos.",
+    leaveReviewBtn: "Déjanos una reseña",
   },
 };
 
@@ -306,7 +312,6 @@ export default function SmartCard() {
             {phoneClean && <CircleAction icon={MessageSquare} label={t.text} href={`sms:${phoneClean}`} onClick={() => track(slug, "text_click")} brand={brand} />}
             {whatsappClean && <CircleAction icon={Send} label={t.whatsapp} href={`https://wa.me/${whatsappClean}`} onClick={() => track(slug, "whatsapp_click")} brand={brand} />}
             {business.email && <CircleAction icon={Mail} label={t.email} href={`mailto:${business.email}`} onClick={() => track(slug, "email_click")} brand={brand} />}
-            {business.google_review_url && <CircleAction icon={Star} label="Review" href={`/r/${slug}`} onClick={() => track(slug, "review_click")} brand={brand} />}
           </div>
         </div>
 
@@ -455,6 +460,27 @@ export default function SmartCard() {
               ))}
             </div>
           </Section>
+        )}
+
+        {/* Dedicated "Leave a Review" CTA — visible space to collect reviews */}
+        {(business.google_review_url || card.google_review_url) && (
+          <div className="px-5 pt-7 reveal" style={{ animationDelay: "640ms" }} data-testid="card-review-cta">
+            <a href={`/r/${slug}`} onClick={() => track(slug, "review_click")}
+               className="block rounded-2xl p-5 text-center border border-white/10 bg-white/[0.04] hover:bg-white/[0.07] transition tap"
+               style={{ boxShadow: `0 14px 44px -14px ${brand}` }}>
+              <div className="flex items-center justify-center gap-1 mb-2.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star key={n} className="w-6 h-6 fill-amber-300 text-amber-300" />
+                ))}
+              </div>
+              <div className="font-heading font-bold text-lg tracking-tight">{t.leaveReviewTitle}</div>
+              <div className="text-sm text-white/65 mt-1 leading-snug max-w-xs mx-auto">{t.leaveReviewSub}</div>
+              <div className="mt-4 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm w-full"
+                   style={{ background: `linear-gradient(135deg, ${brand}, ${accent})`, boxShadow: `0 12px 34px -12px ${brand}` }}>
+                <Star className="w-4 h-4 fill-white text-white" /> {t.leaveReviewBtn}
+              </div>
+            </a>
+          </div>
         )}
 
         {/* Socials */}
