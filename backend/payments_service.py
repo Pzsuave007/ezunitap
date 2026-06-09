@@ -72,9 +72,9 @@ MODULES = {
 # Monthly price (cents) per base module. Yearly = x10 (2 months free).
 _MODULE_MONTHLY_CENTS = {
     "presencia": 1999,
-    "negocio": 2999,
-    "marketing": 2499,
-    "bundle": 4999,
+    "negocio": 3999,
+    "marketing": 2999,
+    "bundle": 5999,
 }
 
 

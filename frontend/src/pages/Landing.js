@@ -122,26 +122,26 @@ export default function Landing() {
               <Languages className="w-3.5 h-3.5" /> Tú en español · tus clientes en inglés
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Cotiza, factura y haz contratos en <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">inglés perfecto.</span> Escribiendo en español.
+              El sistema completo para tu <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">negocio de servicios.</span>
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Tú describes el trabajo en <strong className="text-slate-900">español</strong> y UniTech redacta presupuestos «quotes», contratos e invoices impecables en <strong className="text-slate-900">inglés — sin que sepas el idioma.</strong> Y para crecer tu negocio: tarjeta NFC para conseguir clientes, reseñas 5★ en Google y links de pago para cobrar al instante.
+              Desde que consigues el cliente hasta la reseña 5★: cotiza, factura y haz contratos en <strong className="text-slate-900">inglés perfecto escribiendo en español</strong>, cobra, agenda y crea contenido — <strong className="text-slate-900">todo desde tu celular.</strong>
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 max-w-2xl">
               <Link
-                to="/register"
-                data-testid="hero-register"
-                className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
-              >
-                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
                 to="/demo"
                 data-testid="hero-demo"
+                className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
+              >
+                <Play className="w-4 h-4" fill="currentColor" /> Pruébalo en vivo
+              </Link>
+              <Link
+                to="/register"
+                data-testid="hero-register"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold text-base hover:bg-emerald-100 transition-all tap"
               >
-                🎬 Pruébalo en vivo
+                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/login"
@@ -163,17 +163,23 @@ export default function Landing() {
             <PhoneMockup />
           </div>
         </div>
+      </section>
 
-        {/* Services scroll strip */}
-        <div className="mt-20 lg:mt-28">
-          <div className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
-            Hecho para
-          </div>
-          <div className="flex flex-wrap justify-center gap-2 px-5">
+      {/* ====== ¿PARA QUIÉN ES? — filtro de audiencia ====== */}
+      <section id="para-quien" className="py-14 lg:py-20 bg-white border-y border-slate-100">
+        <div className="max-w-5xl mx-auto px-5 lg:px-8 text-center">
+          <h2 className="font-heading text-3xl lg:text-4xl font-bold tracking-tight">¿Para quién es UniTech?</h2>
+          <p className="mt-3 text-slate-600 max-w-2xl mx-auto">
+            Para contratistas y negocios de servicios que quieren verse más profesionales, ahorrar tiempo y conseguir más clientes.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-2.5">
             {SERVICES.map((s) => (
-              <span key={s} className="px-4 py-2 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">{s}</span>
+              <span key={s} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold">
+                <Check className="w-3.5 h-3.5" strokeWidth={3} /> {s}
+              </span>
             ))}
           </div>
+          <p className="mt-6 text-sm text-slate-400">¿No ves tu oficio? UniTech funciona para cualquier negocio de servicios.</p>
         </div>
       </section>
 
@@ -259,6 +265,167 @@ export default function Landing() {
               >
                 Crear cuenta gratis <ArrowRight className="w-4 h-4" />
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle ====== */}
+      <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="max-w-2xl">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Arma tu UniTech</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              3 productos. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalos por separado o todos juntos.</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {[
+              {
+                id: "presencia", icon: IdCard, name: "Presencia Digital",
+                tagline: "Tu Tarjeta Inteligente NFC",
+                desc: "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
+                points: ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"],
+                price: "$19.99",
+              },
+              {
+                id: "negocio", icon: LayoutDashboard, name: "Gestión de Negocio",
+                tagline: "Cotiza, factura, cobra y agenda",
+                desc: "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
+                points: ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"],
+                price: "$39.99",
+              },
+              {
+                id: "marketing", icon: Sparkles, name: "Marketing Studio",
+                tagline: "Posts y Reels de tus trabajos",
+                desc: "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
+                points: ["Reels en video con voz y música", "Posts con tus fotos y colores", "Antes/Después, Promo, Testimonios"],
+                price: "$29.99", badge: "Nuevo",
+              },
+            ].map((p) => (
+              <div key={p.id} data-testid={`product-card-${p.id}`}
+                className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
+                {p.badge && (
+                  <span className="absolute top-5 right-5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{p.badge}</span>
+                )}
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
+                  <p.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
+                <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                <ul className="mt-4 space-y-2 flex-1">
+                  {p.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
+                  <div>
+                    <span className="font-heading text-2xl font-bold">{p.price}</span>
+                    <span className="text-sm text-slate-400">/mes</span>
+                  </div>
+                  <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
+                    Suscribirme <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bundle highlight */}
+          <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
+                <Zap className="w-3.5 h-3.5" /> Mejor valor
+              </div>
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — los 3 productos juntos</h3>
+              <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
+                Presencia + Negocio + Marketing en un solo paquete. Ahorra cerca de <strong className="text-white">$30 al mes</strong> vs. comprarlos por separado.
+              </p>
+            </div>
+            <div className="flex flex-col items-start lg:items-end gap-3">
+              <div>
+                <span className="font-heading text-4xl font-bold">$59.99</span>
+                <span className="text-white/70">/mes</span>
+              </div>
+              <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
+                className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
+                Suscribirme al Bundle <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-400">Anual disponible con 2 meses gratis · Sin tarjeta de crédito para empezar la prueba</p>
+        </div>
+      </section>
+
+      {/* ====== MARKETING STUDIO — qué crea (demo visual) ====== */}
+      <section id="marketing" className="py-20 lg:py-28 bg-white" data-testid="landing-marketing-showcase">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> Estudio de Marketing
+            </div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Convierte tus trabajos en <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">contenido que vende.</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              Escribe en español lo que hiciste y sube tus fotos — la IA crea <strong className="text-slate-900">posts y Reels en video</strong> profesionales con tu marca, listos para Instagram, Facebook y TikTok.
+            </p>
+            <ul className="mt-7 space-y-3">
+              {[
+                "Reels en video con movimiento, voz en off y música",
+                "Posts con tus fotos, tu logo y tus colores",
+                "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios",
+                "Descárgalos y publícalos en segundos",
+              ].map((p) => (
+                <li key={p} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                  <span className="text-slate-700">{p}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Visual: 1 Reel (9:16) + 2 posts (1:1), ejemplos reales generados */}
+          <div className="relative">
+            <div className="rounded-3xl bg-slate-50 border border-slate-200 p-5 lg:p-6">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Reel card */}
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-[9/16] bg-slate-900" data-testid="showcase-reel">
+                  <img src="/social-previews/before_after.jpg" alt="Reel Antes y Después" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/55 text-white text-[10px] font-bold">
+                    <Film className="w-3 h-3" /> Reel · 0:10
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <Play className="w-5 h-5 text-slate-900 ml-0.5" fill="currentColor" />
+                    </span>
+                  </span>
+                </div>
+                {/* 2 posts stacked */}
+                <div className="flex flex-col gap-4">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-1">
+                    <img src="/social-previews/promo.jpg" alt="Post promoción" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Promo</span>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-2">
+                    <img src="/social-previews/bold_bar.jpg" alt="Post showcase" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Post</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Ejemplos creados con la IA de UniTech
+              </div>
             </div>
           </div>
         </div>
@@ -394,167 +561,6 @@ export default function Landing() {
               <strong className="text-white">Adiós a las tarjetas de papel</strong> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <strong className="text-white">sin reimprimir nada</strong>.
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* ====== MARKETING STUDIO — qué crea (demo visual) ====== */}
-      <section id="marketing" className="py-20 lg:py-28 bg-white" data-testid="landing-marketing-showcase">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> Estudio de Marketing
-            </div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Convierte tus trabajos en <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">contenido que vende.</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Escribe en español lo que hiciste y sube tus fotos — la IA crea <strong className="text-slate-900">posts y Reels en video</strong> profesionales con tu marca, listos para Instagram, Facebook y TikTok.
-            </p>
-            <ul className="mt-7 space-y-3">
-              {[
-                "Reels en video con movimiento, voz en off y música",
-                "Posts con tus fotos, tu logo y tus colores",
-                "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios",
-                "Descárgalos y publícalos en segundos",
-              ].map((p) => (
-                <li key={p} className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
-                  <span className="text-slate-700">{p}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Visual: 1 Reel (9:16) + 2 posts (1:1), ejemplos reales generados */}
-          <div className="relative">
-            <div className="rounded-3xl bg-slate-50 border border-slate-200 p-5 lg:p-6">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Reel card */}
-                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-[9/16] bg-slate-900" data-testid="showcase-reel">
-                  <img src="/social-previews/before_after.jpg" alt="Reel Antes y Después" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                  <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/55 text-white text-[10px] font-bold">
-                    <Film className="w-3 h-3" /> Reel · 0:10
-                  </span>
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                      <Play className="w-5 h-5 text-slate-900 ml-0.5" fill="currentColor" />
-                    </span>
-                  </span>
-                </div>
-                {/* 2 posts stacked */}
-                <div className="flex flex-col gap-4">
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-1">
-                    <img src="/social-previews/promo.jpg" alt="Post promoción" className="w-full h-full object-cover" />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Promo</span>
-                  </div>
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-2">
-                    <img src="/social-previews/bold_bar.jpg" alt="Post showcase" className="w-full h-full object-cover" />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Post</span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Ejemplos creados con la IA de UniTech
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle ====== */}
-      <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="max-w-2xl">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Arma tu UniTech</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              3 productos. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalos por separado o todos juntos.</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.
-            </p>
-          </div>
-
-          <div className="mt-10 grid md:grid-cols-3 gap-5">
-            {[
-              {
-                id: "presencia", icon: IdCard, name: "Presencia Digital",
-                tagline: "Tu Tarjeta Inteligente NFC",
-                desc: "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
-                points: ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"],
-                price: "$19.99",
-              },
-              {
-                id: "negocio", icon: LayoutDashboard, name: "Gestión de Negocio",
-                tagline: "Cotiza, factura, cobra y agenda",
-                desc: "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
-                points: ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"],
-                price: "$29.99",
-              },
-              {
-                id: "marketing", icon: Sparkles, name: "Marketing Studio",
-                tagline: "Posts y Reels de tus trabajos",
-                desc: "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
-                points: ["Reels en video con voz y música", "Posts con tus fotos y colores", "Antes/Después, Promo, Testimonios"],
-                price: "$24.99", badge: "Nuevo",
-              },
-            ].map((p) => (
-              <div key={p.id} data-testid={`product-card-${p.id}`}
-                className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
-                {p.badge && (
-                  <span className="absolute top-5 right-5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{p.badge}</span>
-                )}
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
-                  <p.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
-                <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
-                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
-                <ul className="mt-4 space-y-2 flex-1">
-                  {p.points.map((pt) => (
-                    <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
-                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
-                  <div>
-                    <span className="font-heading text-2xl font-bold">{p.price}</span>
-                    <span className="text-sm text-slate-400">/mes</span>
-                  </div>
-                  <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
-                    Suscribirme <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bundle highlight */}
-          <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
-                <Zap className="w-3.5 h-3.5" /> Mejor valor
-              </div>
-              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — los 3 productos juntos</h3>
-              <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
-                Presencia + Negocio + Marketing en un solo paquete. Ahorra más de <strong className="text-white">$20 al mes</strong> vs. comprarlos por separado.
-              </p>
-            </div>
-            <div className="flex flex-col items-start lg:items-end gap-3">
-              <div>
-                <span className="font-heading text-4xl font-bold">$49.99</span>
-                <span className="text-white/70">/mes</span>
-              </div>
-              <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
-                className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
-                Suscribirme al Bundle <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs text-slate-400">Anual disponible con 2 meses gratis · Sin tarjeta de crédito para empezar la prueba</p>
         </div>
       </section>
 

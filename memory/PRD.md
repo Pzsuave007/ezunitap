@@ -18,6 +18,16 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — LANDING: rediseño de conversión (feedback externo) [COMPLETO]
+- **Hero**: nuevo titular de "sistema completo" → "El sistema completo para tu negocio de servicios." + subtítulo de transformación (consigue cliente → reseña 5★) conservando el gancho español→inglés. **"Pruébalo en vivo" (Demo) ahora es el botón PRIMARIO** (gradiente), "Crear cuenta gratis" secundario.
+- **Nueva sección "¿Para quién es UniTech?"** justo bajo el hero (oficios con ✔). Se quitó el strip "Hecho para" del hero.
+- **Reorden de secciones**: Hero → ¿Para quién? → Problema → Paso a paso → **Herramientas → Marketing → NFC** → Español → Stats → CTA.
+- **Precios subidos** (backend `_MODULE_MONTHLY_CENTS`): Gestión de Negocio $39.99, Marketing $29.99, Bundle $59.99 (Presencia $19.99 sin cambio). Checkout usa `amount_cents` en vivo (no precios cacheados) → el cobro coincide con lo mostrado. Landing actualizado ($39.99/$29.99/$59.99, ahorro bundle ~$30).
+- Nav: "Costo" eliminado; "Productos" → "Herramientas".
+- Nombres de planes: "Presencia"→"Presencia Digital", "Negocio"→"Gestión de Negocio" (landing + /precios + registro).
+- Botones "Suscribirme" del landing → `/register?plan=X` → tras alta retoma checkout del plan (`/precios?plan=X&start=1`), con tarjeta resaltada y auto-inicio. Archivos: `Landing.js`, `Pricing.js`, `Register.js`, `payments_service.py`.
+
+
 ## ✅ Jun 2026 — ESTUDIO DE MARKETING: Reels Testimonio (verbatim) + Servicios (texto por foto sincronizado a voz) [COMPLETO]
 Continuación del refinamiento de Reels (feedback de Paul). **Probado**: backend curl (testimonio ES→EN y ES→ES), render ffmpeg e2e con frames extraídos + smoke test frontend.
 - **Testimonio verbatim**: nuevo `ai_service.clean_testimonial` — la IA SOLO corrige ortografía/puntuación, NO reescribe ni inventa marketing; si la reseña está en otro idioma que el de salida, la traduce LITERAL. `/social/copy` con `template=testimonial` devuelve `{caption=quote, cta}`. UI `ReelStudio.js`: el campo 3 cambia a "Reseña real del cliente (pégala tal cual)", botón "Corregir reseña con IA", nuevo input "Nombre del cliente" (`reel-author-input`) → `author` se pasa al reel y aparece como `copy.author` en la tarjeta de testimonio. Editor oculta titular/subtítulo para testimonio.
