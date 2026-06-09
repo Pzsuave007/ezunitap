@@ -12,7 +12,7 @@ import {
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
   PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package,
-  LogOut, User, Settings,
+  LogOut, User, Settings, Play, Film,
 } from "lucide-react";
 
 const SERVICES = [
@@ -399,6 +399,75 @@ export default function Landing() {
             <p className="text-sm leading-relaxed">
               <strong className="text-white">Adiós a las tarjetas de papel</strong> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <strong className="text-white">sin reimprimir nada</strong>.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== MARKETING STUDIO — qué crea (demo visual) ====== */}
+      <section id="marketing" className="py-20 lg:py-28 bg-white" data-testid="landing-marketing-showcase">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> Estudio de Marketing
+            </div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              Convierte tus trabajos en <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">contenido que vende.</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              Escribe en español lo que hiciste y sube tus fotos — la IA crea <strong className="text-slate-900">posts y Reels en video</strong> profesionales con tu marca, listos para Instagram, Facebook y TikTok.
+            </p>
+            <ul className="mt-7 space-y-3">
+              {[
+                "Reels en video con movimiento, voz en off y música",
+                "Posts con tus fotos, tu logo y tus colores",
+                "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios",
+                "Descárgalos y publícalos en segundos",
+              ].map((p) => (
+                <li key={p} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                  <span className="text-slate-700">{p}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/demo" data-testid="marketing-demo-cta"
+              className="mt-8 inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-slate-900 text-white font-semibold hover:bg-black tap">
+              Pruébalo en vivo <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Visual: 1 Reel (9:16) + 2 posts (1:1), ejemplos reales generados */}
+          <div className="relative">
+            <div className="rounded-3xl bg-slate-50 border border-slate-200 p-5 lg:p-6">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Reel card */}
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-[9/16] bg-slate-900" data-testid="showcase-reel">
+                  <img src="/social-previews/before_after.jpg" alt="Reel Antes y Después" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/55 text-white text-[10px] font-bold">
+                    <Film className="w-3 h-3" /> Reel · 0:10
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <Play className="w-5 h-5 text-slate-900 ml-0.5" fill="currentColor" />
+                    </span>
+                  </span>
+                </div>
+                {/* 2 posts stacked */}
+                <div className="flex flex-col gap-4">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-1">
+                    <img src="/social-previews/promo.jpg" alt="Post promoción" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Promo</span>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md aspect-square" data-testid="showcase-post-2">
+                    <img src="/social-previews/bold_bar.jpg" alt="Post showcase" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/85 text-slate-700 text-[9px] font-bold uppercase tracking-wide">Post</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Ejemplos creados con la IA de UniTech
+              </div>
+            </div>
           </div>
         </div>
       </section>
