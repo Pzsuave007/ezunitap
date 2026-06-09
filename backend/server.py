@@ -2176,6 +2176,35 @@ async def list_photos(
     return docs
 
 
+@api_router.get("/photos/on-card-ids")
+async def list_on_card_photo_ids(user_id: str = Depends(get_current_user_id)):
+    """IDs of photos currently shown on the public Smart Card 'Recent work'.
+    Used by the Marketing Studio to reflect the toggle state per image."""
+    docs = await db.photos.find(
+        {"user_id": user_id, "on_card": True, "is_deleted": {"$ne": True}},
+        {"_id": 0, "id": 1},
+    ).to_list(500)
+    return {"ids": [d["id"] for d in docs]}
+
+
+class OnCardIn(BaseModel):
+    value: bool = True
+
+
+@api_router.post("/photos/{photo_id}/on-card")
+async def set_photo_on_card(photo_id: str, payload: OnCardIn, user_id: str = Depends(get_current_user_id)):
+    """Add (or remove) a photo to the public Smart Card 'Recent work' gallery.
+    Lets the owner curate which studio images / job photos appear on the card."""
+    res = await db.photos.update_one(
+        {"id": photo_id, "user_id": user_id, "is_deleted": {"$ne": True}},
+        {"$set": {"on_card": bool(payload.value)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Foto no encontrada")
+    return {"ok": True, "on_card": bool(payload.value)}
+
+
+
 @api_router.get("/photos/{photo_id}/file")
 async def get_photo_file(
     photo_id: str,
@@ -3421,18 +3450,18 @@ async def public_get_card(slug: str):
                 card[f] = primary.get(f)
     # Gather public-safe data
     reviews = await db.reviews.find({"user_id": card["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
-    # Portfolio photos only — exclude logo/profile/cover AND Marketing Studio
-    # assets (reels are videos, reel source/output images aren't portfolio work).
+    # Portfolio = real job photos (before/during/after) OR photos the owner
+    # explicitly added from the Marketing Studio. Never auto-pull studio assets
+    # or videos.
     photos = await db.photos.find(
         {
             "user_id": card["user_id"],
             "is_deleted": False,
-            "is_logo": {"$ne": True},
-            "is_profile": {"$ne": True},
-            "is_cover": {"$ne": True},
-            "label": {"$nin": ["logo", "profile_photo", "cover",
-                                "social_reel", "social_src", "social_out", "social_audio"]},
             "content_type": {"$ne": "video/mp4"},
+            "$or": [
+                {"label": {"$in": ["before", "during", "after"]}},
+                {"on_card": True},
+            ],
         },
         {"_id": 0},
     ).sort("created_at", -1).to_list(30)

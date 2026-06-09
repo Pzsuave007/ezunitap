@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
-  ImagePlus, Wand2, X, Check, Image as ImageIcon, Video,
+  ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import ReelStudio from "@/components/ReelStudio";
@@ -114,6 +114,8 @@ export default function SocialStudio() {
   const [enhanceIdx, setEnhanceIdx] = useState(null); // slot being enhanced (loading)
   const [enhancePreview, setEnhancePreview] = useState(null); // { index, originalPreview, enhancedUrl }
   const [applyingEnhance, setApplyingEnhance] = useState(false);
+  const [cardIds, setCardIds] = useState([]); // photo_ids currently on the Smart Card
+  const [cardBusy, setCardBusy] = useState(null);
 
   const tpl = TEMPLATES.find((t) => t.id === template);
   const needed = tpl.photos;
@@ -124,7 +126,28 @@ export default function SocialStudio() {
       setHistory(data);
     } catch { /* ignore */ }
   };
-  useEffect(() => { loadHistory(); }, []);
+  const loadCardIds = async () => {
+    try {
+      const { data } = await api.get("/photos/on-card-ids");
+      setCardIds(data.ids || []);
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { loadHistory(); loadCardIds(); }, []);
+
+  const toggleOnCard = async (photoId) => {
+    if (!photoId) return;
+    const isOn = cardIds.includes(photoId);
+    setCardBusy(photoId);
+    try {
+      await api.post(`/photos/${photoId}/on-card`, { value: !isOn });
+      setCardIds((prev) => (isOn ? prev.filter((x) => x !== photoId) : [...prev, photoId]));
+      toast.success(isOn ? "Quitada de tu tarjeta" : "¡Agregada a tu tarjeta digital!");
+    } catch {
+      toast.error("No se pudo actualizar la tarjeta");
+    } finally {
+      setCardBusy(null);
+    }
+  };
 
   const toggleFormat = (id) => {
     setFormats((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
@@ -481,6 +504,17 @@ export default function SocialStudio() {
                 <Button onClick={() => download(img)} variant="outline" data-testid={`download-${img.format}`} className="w-full rounded-xl">
                   <Download className="w-4 h-4 mr-2" /> Descargar
                 </Button>
+                {cardIds.includes(img.photo_id) ? (
+                  <Button onClick={() => toggleOnCard(img.photo_id)} disabled={cardBusy === img.photo_id} data-testid={`oncard-${img.format}`}
+                    className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
+                    {cardBusy === img.photo_id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />} En tu tarjeta
+                  </Button>
+                ) : (
+                  <Button onClick={() => toggleOnCard(img.photo_id)} disabled={cardBusy === img.photo_id} variant="outline" data-testid={`oncard-${img.format}`}
+                    className="w-full rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                    {cardBusy === img.photo_id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <IdCard className="w-4 h-4 mr-2" />} Agregar a mi tarjeta
+                  </Button>
+                )}
               </div>
             ))}
           </div>
