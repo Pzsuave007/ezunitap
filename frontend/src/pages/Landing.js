@@ -94,6 +94,7 @@ export default function Landing() {
             <a href="#como-funciona" className="hover:text-slate-900 tap">Cómo funciona</a>
             <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">Demo en vivo</Link>
             <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
+            <a href="#productos" className="hover:text-slate-900 tap">Productos</a>
             <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
             <a href="#beneficios" className="hover:text-slate-900 tap">Beneficios</a>
           </nav>
@@ -399,6 +400,102 @@ export default function Landing() {
               <strong className="text-white">Adiós a las tarjetas de papel</strong> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <strong className="text-white">sin reimprimir nada</strong>.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle ====== */}
+      <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="max-w-2xl">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Arma tu UniTech</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              3 productos. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalos por separado o todos juntos.</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {[
+              {
+                id: "presencia", icon: IdCard, name: "Presencia",
+                tagline: "Tu Tarjeta Inteligente NFC",
+                desc: "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
+                points: ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"],
+                price: "$19.99",
+              },
+              {
+                id: "negocio", icon: LayoutDashboard, name: "Negocio",
+                tagline: "Cotiza, factura, cobra y agenda",
+                desc: "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
+                points: ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"],
+                price: "$29.99",
+              },
+              {
+                id: "marketing", icon: Sparkles, name: "Marketing Studio",
+                tagline: "Posts y Reels de tus trabajos",
+                desc: "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
+                points: ["Reels en video con voz y música", "Posts con tus fotos y colores", "Antes/Después, Promo, Testimonios"],
+                price: "$24.99", badge: "Nuevo",
+              },
+            ].map((p) => (
+              <div key={p.id} data-testid={`product-card-${p.id}`}
+                className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
+                {p.badge && (
+                  <span className="absolute top-5 right-5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{p.badge}</span>
+                )}
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
+                  <p.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
+                <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                <ul className="mt-4 space-y-2 flex-1">
+                  {p.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
+                  <div>
+                    <span className="font-heading text-2xl font-bold">{p.price}</span>
+                    <span className="text-sm text-slate-400">/mes</span>
+                  </div>
+                  <Link to="/precios" data-testid={`product-cta-${p.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
+                    Ver plan <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bundle highlight */}
+          <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
+                <Zap className="w-3.5 h-3.5" /> Mejor valor
+              </div>
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — los 3 productos juntos</h3>
+              <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
+                Presencia + Negocio + Marketing en un solo paquete. Ahorra más de <strong className="text-white">$20 al mes</strong> vs. comprarlos por separado.
+              </p>
+            </div>
+            <div className="flex flex-col items-start lg:items-end gap-3">
+              <div>
+                <span className="font-heading text-4xl font-bold">$49.99</span>
+                <span className="text-white/70">/mes</span>
+              </div>
+              <Link to="/precios" data-testid="bundle-cta"
+                className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
+                Ver planes y precios <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-400">Anual disponible con 2 meses gratis · Sin tarjeta de crédito para empezar la prueba</p>
         </div>
       </section>
 
