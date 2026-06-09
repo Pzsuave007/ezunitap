@@ -524,9 +524,9 @@ export default function Landing() {
                     <span className="font-heading text-2xl font-bold">{p.price}</span>
                     <span className="text-sm text-slate-400">/mes</span>
                   </div>
-                  <Link to="/precios" data-testid={`product-cta-${p.id}`}
+                  <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
                     className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
-                    Ver plan <ArrowRight className="w-3.5 h-3.5" />
+                    Suscribirme <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -549,9 +549,9 @@ export default function Landing() {
                 <span className="font-heading text-4xl font-bold">$49.99</span>
                 <span className="text-white/70">/mes</span>
               </div>
-              <Link to="/precios" data-testid="bundle-cta"
+              <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
                 className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
-                Ver planes y precios <ArrowRight className="w-4 h-4" />
+                Suscribirme al Bundle <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>

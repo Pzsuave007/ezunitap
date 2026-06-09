@@ -12,6 +12,8 @@ export default function Register() {
   const { register } = useAuth();
   const [params] = useSearchParams();
   const inviteToken = params.get("invite") || "";
+  const selectedPlan = params.get("plan") || "";
+  const planLabels = { presencia: "Presencia", negocio: "Negocio", marketing: "Marketing Studio", bundle: "Todo UniTech (Bundle)" };
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",
@@ -37,7 +39,13 @@ export default function Register() {
           ? "¡Cuenta creada con acceso gratis! 🎁"
           : "¡Cuenta creada! Tienes 14 días gratis 🎁"
       );
-      navigate("/");
+      const planParam = params.get("plan");
+      if (planParam) {
+        const billingParam = params.get("billing") === "year" ? "year" : "month";
+        navigate(`/precios?plan=${planParam}&billing=${billingParam}&start=1`);
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error al crear cuenta");
     } finally {
@@ -71,6 +79,11 @@ export default function Register() {
         )}
 
         <h2 className="font-heading text-3xl font-bold tracking-tight">Crea tu cuenta</h2>
+        {selectedPlan && planLabels[selectedPlan] && (
+          <div data-testid="plan-banner" className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
+            <span className="font-semibold">Plan elegido: {planLabels[selectedPlan]}.</span> Crea tu cuenta y te llevamos al pago.
+          </div>
+        )}
         {!inviteToken && (
           <div
             data-testid="trial-badge"

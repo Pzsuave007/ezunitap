@@ -4,7 +4,7 @@
  * 14-day free trial is handled in-app (no card). Subscribing here charges
  * immediately via Stripe Checkout.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -71,9 +71,11 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [plans, setPlans] = useState([]);
-  const [billing, setBilling] = useState("month"); // "month" | "year"
+  const [billing, setBilling] = useState(params.get("billing") === "year" ? "year" : "month"); // "month" | "year"
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(null);
+  const highlightPlan = params.get("plan") || "";
+  const startedRef = useRef(false);
 
   useEffect(() => {
     if (params.get("cancelled")) {
@@ -93,7 +95,9 @@ export default function Pricing() {
 
   const handleSubscribe = async (planId) => {
     if (!user) {
-      navigate("/register");
+      // Carry the chosen product to register so we can resume checkout after signup.
+      const base = planId.replace(/_(monthly|yearly)$/, "");
+      navigate(`/register?plan=${base}&billing=${billing}`);
       return;
     }
     setCheckoutLoading(planId);
@@ -109,6 +113,23 @@ export default function Pricing() {
       setCheckoutLoading(null);
     }
   };
+
+  // Arriving from the landing with ?plan=X → focus that plan; with &start=1 →
+  // kick off checkout right away (or route to register first if not logged in).
+  useEffect(() => {
+    if (loading || !plans.length || !highlightPlan) return;
+    const el = document.getElementById(`plan-${highlightPlan}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (params.get("start") === "1" && !startedRef.current) {
+      const plan = plans.find((p) => p.base === highlightPlan);
+      if (plan) {
+        startedRef.current = true;
+        const opt = billing === "year" ? plan.yearly : plan.monthly;
+        handleSubscribe(opt.plan_id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, plans, user]);
 
   if (loading) {
     return (
@@ -175,8 +196,9 @@ export default function Pricing() {
           return (
             <Card
               key={plan.base}
+              id={`plan-${plan.base}`}
               data-testid={`pricing-card-${plan.base}`}
-              className={`relative p-6 rounded-3xl flex flex-col ${c.ring} ${isBundle ? "shadow-xl" : ""} transition`}
+              className={`relative p-6 rounded-3xl flex flex-col ${c.ring} ${isBundle ? "shadow-xl" : ""} ${highlightPlan === plan.base ? "ring-2 ring-emerald-500 ring-offset-2" : ""} transition`}
             >
               {isBundle && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
