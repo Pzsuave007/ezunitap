@@ -417,13 +417,13 @@ export default function SmartCard() {
                   className="gallery-card snap-center"
                   style={{ animationDelay: `${500 + i * 50}ms` }}
                 >
-                  <img src={`${API}/public/card/photo/${p.id}`} alt={p.label} className="w-full h-full object-cover" loading="lazy" />
-                  {p.label && p.label !== "logo" && (
+                  <img src={`${API}/public/card/photo/${p.id}`} alt={p.label} className="w-full h-full object-contain" loading="lazy" />
+                  {["before", "during", "after"].includes(p.label) && (
                     <span className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-[0.15em] border border-white/10">
                       {p.label}
                     </span>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
                 </a>
               ))}
             </div>
