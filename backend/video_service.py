@@ -264,21 +264,53 @@ def build_outro(brand: dict, cta: str = "") -> bytes:
 # Motion + helpers
 # ---------------------------------------------------------------------------
 
+# Varied motion sequence for `auto` so consecutive photos move differently
+# (pan right, zoom, pan left, tilt up/down, diagonal…) — this is what makes a
+# slideshow feel "alive" instead of robotic.
+_AUTO_SEQ = [
+    "zoom_in", "pan_right", "zoom_out", "pan_up",
+    "pan_left", "zoom_in_diag", "pan_down", "zoom_out_diag",
+]
+
+
+def _ease(frames: int) -> str:
+    """Smoothstep progress 0->1 across the clip (ease-in / ease-out) so the
+    camera accelerates and decelerates smoothly instead of moving at a robotic
+    constant speed."""
+    T = max(1, frames - 1)
+    p = f"(on/{T})"
+    return f"({p}*{p}*(3-2*{p}))"
+
+
 def _zoompan(mode: str, frames: int, idx: int) -> str:
-    cx = "iw/2-(iw/zoom/2)"
-    cy = "ih/2-(ih/zoom/2)"
+    s = _ease(frames)
+    cx = "(iw-iw/zoom)/2"
+    cy = "(ih-ih/zoom)/2"
     if mode == "auto":
-        mode = ["zoom_in", "zoom_out", "pan"][idx % 3]
-    if mode == "zoom_out":
-        z = "if(eq(on,0),1.18,zoom-0.0012)"
-        x, y = cx, cy
+        mode = _AUTO_SEQ[idx % len(_AUTO_SEQ)]
     elif mode == "pan":
-        z = "1.12"
-        x = f"(iw-iw/zoom)*on/{max(1, frames - 1)}"
-        y = cy
-    else:  # zoom_in
-        z = "min(zoom+0.0012,1.18)"
-        x, y = cx, cy
+        mode = "pan_right"
+
+    zp = "1.18"  # working zoom for pans → ~15% room to travel (visible movement)
+    if mode == "zoom_in":
+        z, x, y = f"1+0.20*{s}", cx, cy
+    elif mode == "zoom_out":
+        z, x, y = f"1.20-0.20*{s}", cx, cy
+    elif mode == "pan_right":
+        z, x, y = zp, f"(iw-iw/zoom)*{s}", cy
+    elif mode == "pan_left":
+        z, x, y = zp, f"(iw-iw/zoom)*(1-{s})", cy
+    elif mode == "pan_up":
+        z, x, y = zp, cx, f"(ih-ih/zoom)*(1-{s})"
+    elif mode == "pan_down":
+        z, x, y = zp, cx, f"(ih-ih/zoom)*{s}"
+    elif mode == "zoom_in_diag":  # slow dolly into a corner
+        z, x, y = f"1+0.18*{s}", f"(iw-iw/zoom)*{s}", f"(ih-ih/zoom)*{s}"
+    elif mode == "zoom_out_diag":
+        z = f"1.18-0.16*{s}"
+        x, y = f"(iw-iw/zoom)*(1-{s})", f"(ih-ih/zoom)*(1-{s})"
+    else:
+        z, x, y = f"1+0.20*{s}", cx, cy
     return f"zoompan=z='{z}':d={frames}:x='{x}':y='{y}':s={W}x{H}:fps={FPS}"
 
 
