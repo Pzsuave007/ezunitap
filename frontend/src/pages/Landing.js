@@ -91,7 +91,7 @@ export default function Landing() {
             <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
             <a href="#productos" className="hover:text-slate-900 tap">Productos</a>
             <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
-            <a href="#beneficios" className="hover:text-slate-900 tap">Beneficios</a>
+            <a href="#productos" className="hover:text-slate-900 tap">Costo</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" data-testid="nav-login" className="hidden sm:inline-flex items-center px-4 h-10 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 tap">
