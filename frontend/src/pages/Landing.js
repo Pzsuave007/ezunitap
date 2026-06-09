@@ -89,9 +89,8 @@ export default function Landing() {
             <a href="#como-funciona" className="hover:text-slate-900 tap">Cómo funciona</a>
             <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">Demo en vivo</Link>
             <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
-            <a href="#productos" className="hover:text-slate-900 tap">Productos</a>
+            <a href="#productos" className="hover:text-slate-900 tap">Herramientas</a>
             <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
-            <a href="#productos" className="hover:text-slate-900 tap">Costo</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" data-testid="nav-login" className="hidden sm:inline-flex items-center px-4 h-10 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 tap">
