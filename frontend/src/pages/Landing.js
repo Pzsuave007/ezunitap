@@ -152,6 +152,27 @@ export default function Landing() {
               </Link>
             </div>
 
+            <div className="mt-8 max-w-xl" data-testid="hero-results">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-3">Resultados que obtienes</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+                {[
+                  "Consigue más clientes",
+                  "Cotiza en segundos",
+                  "Cobra más rápido",
+                  "Organiza tus trabajos",
+                  "Obtén más reseñas 5★",
+                ].map((r) => (
+                  <div key={r} className="flex items-center gap-2 text-slate-700 font-medium">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3.5 h-3.5 text-emerald-700" strokeWidth={3} />
+                    </span>
+                    {r}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+
             <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
               <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> Sin tarjeta de crédito</div>
               <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> Funciona desde el celular</div>
