@@ -434,10 +434,6 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <Link to="/demo" data-testid="marketing-demo-cta"
-              className="mt-8 inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-slate-900 text-white font-semibold hover:bg-black tap">
-              Pruébalo en vivo <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
 
           {/* Visual: 1 Reel (9:16) + 2 posts (1:1), ejemplos reales generados */}
