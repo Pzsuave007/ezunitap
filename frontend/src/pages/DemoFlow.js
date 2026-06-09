@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
-  ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock,
+  ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
 } from "lucide-react";
+import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) =>
@@ -270,7 +271,16 @@ function DocHeader({ business, badge }) {
 }
 
 function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
+  const [dl, setDl] = useState(false);
   if (!quote) return null;
+  const downloadPdf = async () => {
+    setDl(true);
+    try {
+      await generateQuotePDF(quote, business, { name: lead.name, email: lead.email });
+    } finally {
+      setDl(false);
+    }
+  };
   return (
     <div>
       <ClientBanner text="Así es como tu cliente recibe y aprueba la cotización 👇" />
@@ -329,6 +339,7 @@ function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
           </div>
         </div>
       </Card>
+      <PdfActions onDownload={downloadPdf} downloading={dl} />
       <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mt-4"><ArrowLeft className="w-4 h-4" /> Probar con otro trabajo</button>
     </div>
   );
@@ -383,9 +394,25 @@ function AgreementStep({ agreement, business, lead, signed, onSign }) {
 }
 
 function InvoiceStep({ quote, business, lead, paid, onPay }) {
+  const [dl, setDl] = useState(false);
   const total = Number(quote?.total || 0);
   const deposit = Number(quote?.deposit_amount || 0) || Math.round(total * 0.5 * 100) / 100;
   const due = deposit > 0 ? deposit : total;
+  const downloadPdf = async () => {
+    setDl(true);
+    try {
+      const invoice = {
+        ...quote,
+        number: (quote?.number || "Q-1001").replace("Q-", "INV-"),
+        deposit_amount: deposit,
+        amount_paid: 0,
+        status: "sent",
+      };
+      await generateInvoicePDF(invoice, business, { name: lead.name, email: lead.email });
+    } finally {
+      setDl(false);
+    }
+  };
   return (
     <div>
       <ClientBanner text="¡Listo! El contrato firmado genera la factura solo, con link de pago 👇" />
@@ -456,6 +483,8 @@ function InvoiceStep({ quote, business, lead, paid, onPay }) {
         </div>
       </Card>
 
+      <PdfActions onDownload={downloadPdf} downloading={dl} />
+
       {paid && <FinalCTA />}
     </div>
   );
@@ -465,6 +494,37 @@ function ClientBanner({ text }) {
   return (
     <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold px-4 py-2.5 flex items-center gap-2">
       <Send className="w-4 h-4 flex-none" /> {text}
+    </div>
+  );
+}
+
+function PdfActions({ onDownload, downloading }) {
+  return (
+    <div data-testid="demo-pdf-actions" className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        <Button
+          data-testid="demo-download-pdf"
+          onClick={onDownload}
+          disabled={downloading}
+          variant="outline"
+          size="sm"
+          className="rounded-xl"
+        >
+          {downloading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileDown className="w-4 h-4 mr-1" />} Descargar PDF
+        </Button>
+        <Button
+          data-testid="demo-print"
+          onClick={() => window.print()}
+          variant="outline"
+          size="sm"
+          className="rounded-xl"
+        >
+          <Printer className="w-4 h-4 mr-1" /> Imprimir
+        </Button>
+      </div>
+      <p className="text-[11px] text-slate-500 text-center mt-2">
+        📄 Tus clientes pueden <strong>descargar en PDF o imprimir</strong> todo lo que les mandes para guardar sus records.
+      </p>
     </div>
   );
 }
