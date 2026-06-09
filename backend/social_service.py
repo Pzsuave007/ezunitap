@@ -67,14 +67,26 @@ def _darken(rgb: tuple, factor: float = 0.55) -> tuple:
 
 
 def _cover_crop(img: Image.Image, w: int, h: int) -> Image.Image:
+    """Fit the FULL photo inside w x h WITHOUT cropping the sides. The photo is
+    contained (whole image visible) over a blurred, filled background of the same
+    photo, so the frame is fully covered and nothing important gets cut off."""
     img = img.convert("RGB")
     src_w, src_h = img.size
-    scale = max(w / src_w, h / src_h)
-    nw, nh = int(src_w * scale + 0.5), int(src_h * scale + 0.5)
-    img = img.resize((nw, nh), Image.LANCZOS)
-    left = (nw - w) // 2
-    top = (nh - h) // 2
-    return img.crop((left, top, left + w, top + h))
+    if src_w <= 0 or src_h <= 0:
+        return Image.new("RGB", (w, h), (20, 20, 25))
+    # Blurred cover background fills the whole frame (no empty bars)
+    bg_scale = max(w / src_w, h / src_h)
+    bw, bh = max(1, int(src_w * bg_scale + 0.5)), max(1, int(src_h * bg_scale + 0.5))
+    bg = img.resize((bw, bh), Image.LANCZOS)
+    bl, bt = (bw - w) // 2, (bh - h) // 2
+    bg = bg.crop((bl, bt, bl + w, bt + h)).filter(ImageFilter.GaussianBlur(26))
+    bg = Image.blend(bg, Image.new("RGB", (w, h), (0, 0, 0)), 0.20)
+    # Foreground: the complete photo, scaled to fit fully inside the frame
+    fg_scale = min(w / src_w, h / src_h)
+    fw, fh = max(1, int(src_w * fg_scale + 0.5)), max(1, int(src_h * fg_scale + 0.5))
+    fg = img.resize((fw, fh), Image.LANCZOS)
+    bg.paste(fg, ((w - fw) // 2, (h - fh) // 2))
+    return bg
 
 
 def _bottom_scrim(size: tuple, color: tuple, start_frac: float = 0.45, max_alpha: int = 235) -> Image.Image:
