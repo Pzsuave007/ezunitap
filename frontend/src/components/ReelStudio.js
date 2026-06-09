@@ -58,6 +58,11 @@ export default function ReelStudio() {
   const [voiceover, setVoiceover] = useState(false);
   const [voiceMode, setVoiceMode] = useState("short");
   const [voiceSayPhone, setVoiceSayPhone] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [speeds, setSpeeds] = useState([]);
+  const [voice, setVoice] = useState("");
+  const [voiceSpeed, setVoiceSpeed] = useState(1.0);
+  const [previewingVoice, setPreviewingVoice] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
@@ -84,6 +89,13 @@ export default function ReelStudio() {
     (async () => {
       try { const { data } = await api.get("/social/music"); setTracks(data); } catch { /* ignore */ }
     })();
+    (async () => {
+      try {
+        const { data } = await api.get("/social/voices");
+        setVoices(data.voices || []);
+        setSpeeds(data.speeds || []);
+      } catch { /* ignore */ }
+    })();
     loadReels();
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
@@ -109,6 +121,30 @@ export default function ReelStudio() {
       audioRef.current.src = `${BACKEND}/api/social/music/${id}`;
       audioRef.current.play().catch(() => {});
       setPlayingTrack(id);
+    }
+  };
+
+  const previewVoice = async () => {
+    if (previewingVoice) return;
+    setPreviewingVoice(true);
+    try {
+      const res = await api.post(
+        "/social/voice-preview",
+        { voice: voice || (language === "es" ? "nova" : "onyx"), language, speed: voiceSpeed },
+        { responseType: "blob", timeout: 30000 }
+      );
+      const url = URL.createObjectURL(res.data);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPlayingTrack(null);
+        audioRef.current.src = url;
+        audioRef.current.onended = () => URL.revokeObjectURL(url);
+        await audioRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "No se pudo generar la muestra de voz");
+    } finally {
+      setPreviewingVoice(false);
     }
   };
 
@@ -179,6 +215,8 @@ export default function ReelStudio() {
       fd.append("voiceover", voiceover ? "true" : "false");
       fd.append("voice_mode", voiceMode);
       fd.append("voice_say_phone", voiceSayPhone ? "true" : "false");
+      fd.append("voice", voice || "");
+      fd.append("voice_speed", String(voiceSpeed));
       fd.append("duration", String(duration));
       photos.forEach((p) => fd.append("files", p.file));
       if (music === "upload" && musicFile) fd.append("music_file", musicFile);
@@ -387,11 +425,50 @@ export default function ReelStudio() {
               {voiceMode === "full" && (
                 <p className="text-[11px] text-emerald-700/80 mt-2">El video se alargará automáticamente para que la voz nunca se corte (máx. 60s).</p>
               )}
+              <div className="mt-3 pt-3 border-t border-emerald-100">
+                <span className="text-xs font-semibold text-slate-600">Voz</span>
+                <div className="flex gap-2 mt-2">
+                  <select
+                    data-testid="reel-voice-select"
+                    value={voice}
+                    onChange={(e) => setVoice(e.target.value)}
+                    className="flex-1 h-10 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700"
+                  >
+                    <option value="">Recomendada ({language === "es" ? "Nova" : "Onyx"})</option>
+                    {voices.map((v) => (
+                      <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={previewVoice}
+                    disabled={previewingVoice}
+                    data-testid="reel-voice-preview-btn"
+                    className="px-3 h-10 rounded-lg border border-emerald-300 bg-white text-emerald-700 text-xs font-bold inline-flex items-center gap-1 tap disabled:opacity-60"
+                  >
+                    {previewingVoice ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />} Escuchar
+                  </button>
+                </div>
+                <span className="text-xs font-semibold text-slate-600 block mt-3">Velocidad</span>
+                <div className="flex gap-1.5 mt-2">
+                  {speeds.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setVoiceSpeed(s.value)}
+                      data-testid={`reel-voice-speed-${s.id}`}
+                      className={`flex-1 py-2 rounded-lg text-[11px] font-semibold border tap ${Math.abs(voiceSpeed - s.value) < 0.01 ? "border-emerald-500 bg-white text-emerald-700" : "border-slate-200 text-slate-600"}`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">💡 Cada voz tiene su propio tono. Usa "Escuchar" para probar la voz y velocidad antes de generar.</p>
+              </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-emerald-100">
                 <span className="text-xs font-semibold text-slate-600">Decir mi teléfono en la voz</span>
                 <Switch checked={voiceSayPhone} onCheckedChange={setVoiceSayPhone} data-testid="reel-voice-phone-switch" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">La voz habla un poco más lento para entenderse mejor.</p>
             </div>
           )}
         </div>

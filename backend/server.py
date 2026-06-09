@@ -2992,7 +2992,8 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                         brand_color: str, accent_color: str, template: str, motion: str,
                         transition: str, subtitles: bool, outro: bool, voiceover: bool,
                         duration: float, voice_mode: str = "short", cta_override: str = "",
-                        voice_say_phone: bool = False, copy_override: Optional[dict] = None):
+                        voice_say_phone: bool = False, copy_override: Optional[dict] = None,
+                        voice: str = "", voice_speed: float = 1.0):
     """Background: AI copy -> branded overlays -> FFmpeg render -> store MP4."""
     import re as _re
     import math as _math
@@ -3082,7 +3083,7 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 if not voice_script.strip():
                     voice_script = _clean(copy.get("headline") or "Contáctanos hoy")
             try:
-                vbytes = await tts_service.generate_voiceover(voice_script, language=language)
+                vbytes = await tts_service.generate_voiceover(voice_script, language=language, voice=voice, speed=voice_speed)
                 fd, voice_tmp = _tf.mkstemp(suffix=".mp3")
                 with os.fdopen(fd, "wb") as f:
                     f.write(vbytes)
@@ -3147,6 +3148,8 @@ async def create_reel(
     voiceover: bool = Form(False),
     voice_mode: str = Form("short"),
     voice_say_phone: bool = Form(False),
+    voice: str = Form(""),
+    voice_speed: float = Form(1.0),
     duration: float = Form(10.0),
     files: List[UploadFile] = File(default=[]),
     music_file: Optional[UploadFile] = File(default=None),
@@ -3164,6 +3167,11 @@ async def create_reel(
         transition = "fade"
     duration = float(duration) if duration in (10.0, 15.0, 20.0) else 10.0
     voice_mode = "full" if voice_mode == "full" else "short"
+    voice = tts_service.resolve_voice(voice, language)
+    try:
+        voice_speed = max(0.7, min(1.4, float(voice_speed)))
+    except (TypeError, ValueError):
+        voice_speed = 1.0
     cta_override = (cta_override or "").strip()[:40]
     copy_override = None
     if (headline or "").strip() or (caption or "").strip():
@@ -3228,6 +3236,8 @@ async def create_reel(
         "voiceover": voiceover,
         "voice_mode": voice_mode,
         "voice_say_phone": voice_say_phone,
+        "voice": voice,
+        "voice_speed": voice_speed,
         "duration": duration,
         "copy": None,
         "source_photo_ids": source_ids,
@@ -3241,7 +3251,7 @@ async def create_reel(
         _process_reel, reel["id"], user_id, source_ids, brief, language,
         music, music_audio_id, brand_color, accent_color, template, motion,
         transition, subtitles, outro, voiceover, duration, voice_mode, cta_override, voice_say_phone,
-        copy_override,
+        copy_override, voice, voice_speed,
     )
     return _strip_id(reel)
 
@@ -3250,6 +3260,42 @@ async def create_reel(
 async def list_reels(user_id: str = Depends(get_current_user_id)):
     docs = await db.social_reels.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return docs
+
+
+@api_router.get("/social/voices")
+async def list_voices(_user_id: str = Depends(get_current_user_id)):
+    """Available AI voices + speed presets for the reel voice-over picker."""
+    return {"voices": tts_service.VOICES, "speeds": tts_service.SPEEDS}
+
+
+class VoicePreviewIn(BaseModel):
+    voice: str = ""
+    language: str = "en"
+    speed: float = 1.0
+    text: str = ""
+
+
+@api_router.post("/social/voice-preview")
+async def voice_preview(payload: VoicePreviewIn,
+                        _user_id: str = Depends(get_current_user_id),
+                        _feat: dict = Depends(require_feature("marketing"))):
+    """Synthesize a short sample so the user can HEAR a voice/speed before
+    committing to a full reel render."""
+    lang = "es" if payload.language == "es" else "en"
+    sample = (payload.text or "").strip()
+    if not sample:
+        sample = (
+            "¡Hola! Así sonará la voz de tu reel. Llámanos hoy para un presupuesto gratis."
+            if lang == "es" else
+            "Hi there! This is how your reel voice-over will sound. Call us today for a free estimate."
+        )
+    try:
+        audio = await tts_service.generate_voiceover(sample[:200], language=lang, voice=payload.voice, speed=payload.speed)
+    except Exception:
+        logger.exception("Voice preview failed")
+        raise HTTPException(503, "No se pudo generar la muestra de voz. Intenta de nuevo.")
+    return Response(content=audio, media_type="audio/mpeg")
+
 
 
 @api_router.get("/social/reels/{reel_id}")
