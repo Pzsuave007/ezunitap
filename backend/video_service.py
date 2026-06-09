@@ -126,20 +126,35 @@ def build_overlay(copy: dict, brand: dict, template: str = "showcase", show_subh
     y = H - margin
 
     if template == "testimonial":
-        # Centered quote block
-        cap = copy.get("caption") or copy.get("subheadline") or copy.get("headline") or ""
-        cap = f"\u201c{cap}\u201d"
-        qf, qlines, qlh = ss._fit_text(draw, cap, "semibold", W - margin * 2, int(H * 0.35), int(W * 0.072), 34)
-        author = (brand.get("business_name") or "").strip()
-        block = qlh * len(qlines) + int(H * 0.06)
-        y2 = (H - block) // 2
+        # Centered quote in a readable gray card with 5 stars + customer name.
+        cap = (copy.get("caption") or copy.get("subheadline") or copy.get("headline") or "").strip()
+        quote = f"\u201c{cap}\u201d"
+        qf, qlines, qlh = ss._fit_text(draw, quote, "semibold", W - margin * 2 - int(W * 0.06), int(H * 0.30), int(W * 0.064), 34)
+        author = (copy.get("author") or brand.get("business_name") or "").strip()
+        af = ss._font("bold", int(W * 0.04))
+        sf = ss._font("bold", int(W * 0.058))
+        stars = "\u2605\u2605\u2605\u2605\u2605"
+        text_h = qlh * len(qlines)
+        author_h = (int(H * 0.012) + af.size) if author else 0
+        stars_h = sf.size + int(H * 0.02)
+        box_pad = int(W * 0.055)
+        box_w = W - margin * 2
+        box_h = stars_h + text_h + author_h + box_pad * 1.6
+        box_x = margin
+        box_y = (H - box_h) // 2
+        ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        od = ImageDraw.Draw(ov)
+        od.rounded_rectangle([box_x, box_y, box_x + box_w, box_y + box_h], radius=36, fill=(24, 27, 33, 210))
+        canvas.alpha_composite(ov)
+        draw = ImageDraw.Draw(canvas)
+        y2 = box_y + box_pad
+        draw.text((W // 2, y2), stars, font=sf, fill=accent, anchor="ma")
+        y2 += stars_h
         for ln in qlines:
             draw.text((W // 2, y2), ln, font=qf, fill=(255, 255, 255), anchor="ma")
             y2 += qlh
         if author:
-            af = ss._font("bold", int(W * 0.04))
-            draw.text((W // 2, y2 + int(H * 0.02)), f"\u2014 {author}", font=af, fill=accent, anchor="ma")
-        # small CTA pill at bottom
+            draw.text((W // 2, y2 + int(H * 0.012)), f"\u2014 {author}", font=af, fill=accent, anchor="ma")
         cta = copy.get("cta", "") or "Contáctanos"
         cf = ss._font("bold", int(W * 0.042))
         tw = draw.textlength(cta, font=cf)
@@ -429,26 +444,33 @@ def _zoompan(mode: str, frames: int, idx: int) -> str:
     elif mode == "pan":
         mode = "pan_right"
 
-    zp = "1.18"  # working zoom for pans → ~15% room to travel (visible movement)
+    # Travel scales with clip length: longer clips (e.g. Promo with few photos)
+    # pan/zoom MORE so the motion stays lively instead of crawling. Short clips
+    # (Showcase) keep amp≈1 → unchanged.
+    amp = max(1.0, min(2.2, frames / (FPS * 2.0)))
+    zd = min(0.20 * amp, 0.42)            # zoom delta
+    pz = f"{1 + min(0.20 * amp, 0.42):.3f}"  # working zoom for pans (more room = faster pan)
+    zin = f"1+{zd:.3f}*{s}"
+    zout = f"{1 + zd:.3f}-{zd:.3f}*{s}"
     if mode == "zoom_in":
-        z, x, y = f"1+0.20*{s}", cx, cy
+        z, x, y = zin, cx, cy
     elif mode == "zoom_out":
-        z, x, y = f"1.20-0.20*{s}", cx, cy
+        z, x, y = zout, cx, cy
     elif mode == "pan_right":
-        z, x, y = zp, f"(iw-iw/zoom)*{s}", cy
+        z, x, y = pz, f"(iw-iw/zoom)*{s}", cy
     elif mode == "pan_left":
-        z, x, y = zp, f"(iw-iw/zoom)*(1-{s})", cy
+        z, x, y = pz, f"(iw-iw/zoom)*(1-{s})", cy
     elif mode == "pan_up":
-        z, x, y = zp, cx, f"(ih-ih/zoom)*(1-{s})"
+        z, x, y = pz, cx, f"(ih-ih/zoom)*(1-{s})"
     elif mode == "pan_down":
-        z, x, y = zp, cx, f"(ih-ih/zoom)*{s}"
+        z, x, y = pz, cx, f"(ih-ih/zoom)*{s}"
     elif mode == "zoom_in_diag":  # slow dolly into a corner
-        z, x, y = f"1+0.18*{s}", f"(iw-iw/zoom)*{s}", f"(ih-ih/zoom)*{s}"
+        z, x, y = zin, f"(iw-iw/zoom)*{s}", f"(ih-ih/zoom)*{s}"
     elif mode == "zoom_out_diag":
-        z = f"1.18-0.16*{s}"
+        z = zout
         x, y = f"(iw-iw/zoom)*(1-{s})", f"(ih-ih/zoom)*(1-{s})"
     else:
-        z, x, y = f"1+0.20*{s}", cx, cy
+        z, x, y = zin, cx, cy
     return f"zoompan=z='{z}':d={frames}:x='{x}':y='{y}':s={W}x{H}:fps={FPS}"
 
 
