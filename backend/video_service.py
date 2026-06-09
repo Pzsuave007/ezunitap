@@ -299,8 +299,8 @@ def render_before_after_split(before_path: str, after_path: str, out_path: str, 
 
     inputs: List[str] = []
     idx = 0
-    inputs += ["-i", before_path]; before_i = idx; idx += 1
-    inputs += ["-i", after_path]; after_i = idx; idx += 1
+    inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", before_path]; before_i = idx; idx += 1
+    inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", after_path]; after_i = idx; idx += 1
     main_idx = None
     if overlay_path:
         inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", overlay_path]; main_idx = idx; idx += 1
@@ -315,14 +315,16 @@ def render_before_after_split(before_path: str, after_path: str, out_path: str, 
         inputs += ["-i", voice_path]; voice_in = idx; idx += 1
 
     parts: List[str] = []
-    sc = f"scale=1620:{int(half * 1.5)}:force_original_aspect_ratio=increase,crop=1620:{int(half * 1.5)},"
-    s = _ease(frames)
-    cx, cy = "(iw-iw/zoom)/2", "(ih-ih/zoom)/2"
-    # top zooms in, bottom zooms out → subtle, connected, never static
-    zp_top = f"zoompan=z='1+0.12*{s}':d={frames}:x='{cx}':y='{cy}':s={W}x{half}:fps={FPS}"
-    zp_bot = f"zoompan=z='1.12-0.12*{s}':d={frames}:x='{cx}':y='{cy}':s={W}x{half}:fps={FPS}"
-    parts.append(f"[{before_i}:v]{sc}{zp_top},setsar=1,format=yuv420p[t]")
-    parts.append(f"[{after_i}:v]{sc}{zp_bot},setsar=1,format=yuv420p[b]")
+    # Static, full-image (contain) per half with a soft blurred backdrop filling
+    # the letterbox area, so the whole photo shows at 100% width with no motion
+    # (slow motion only distorts real job photos). Best with horizontal photos.
+    bg = f"scale={W}:{half}:force_original_aspect_ratio=increase,crop={W}:{half},boxblur=18:1,eq=brightness=-0.05,setsar=1"
+    fg = f"scale={W}:{half}:force_original_aspect_ratio=decrease,setsar=1"
+    for tag, src in (("t", before_i), ("b", after_i)):
+        parts.append(f"[{src}:v]split=2[{tag}bg0][{tag}fg0]")
+        parts.append(f"[{tag}bg0]{bg}[{tag}bgv]")
+        parts.append(f"[{tag}fg0]{fg}[{tag}fgv]")
+        parts.append(f"[{tag}bgv][{tag}fgv]overlay=(W-w)/2:(H-h)/2,fps={FPS},format=yuv420p[{tag}]")
     parts.append("[t][b]vstack=inputs=2[mtg]")
     montage = "[mtg]"
     if main_idx is not None:

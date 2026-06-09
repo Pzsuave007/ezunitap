@@ -18,6 +18,14 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — ESTUDIO DE MARKETING: refinamiento de Reels [COMPLETO]
+Iteración con el usuario (Paul) sobre el generador de videos hasta que él lo usaría para su propio negocio. Cambios (backend `video_service.py` + `tts_service.py` + frontend `ReelStudio.js`). Verificado con análisis de video + extracción de frames.
+- **Movimiento variado y suave (showcase/clásico)**: `_zoompan` reescrito con secuencia `_AUTO_SEQ` (zoom_in, pan_right, zoom_out, pan_up, pan_left, diagonales) + easing smoothstep (`_ease`). Cada foto se mueve distinto, sin jitter. (Usuario: "se ve mucho mejor".)
+- **Voz seleccionable + velocidad**: 9 voces OpenAI (`tts_service.VOICES`), presets de velocidad (`SPEEDS`, default Natural 1.0 — antes 0.9 lento), modelo `tts-1-hd` (más natural). Endpoints `GET /social/voices` y `POST /social/voice-preview` (muestra para "Escuchar" antes de generar). UI: dropdown de voz + velocidad + botón Escuchar. ("Pitch" se controla eligiendo voz.)
+- **Antes/Después rediseñado a SPLIT comparativo** (`render_before_after_split` + `build_ba_split_overlay`): ambas fotos visibles al mismo tiempo (Antes arriba, Después abajo), **estáticas y a 100% de ancho con fondo desenfocado** (el usuario pidió quitar el movimiento que distorsionaba), divisor central con handle + etiquetas BEFORE/AFTER. UI recomienda fotos **horizontales**. (El slider con wipe se descartó porque no mostraba ambas a la vez = "no vendía".)
+- Nota: ffmpeg debe estar instalado en el pod para probar reels en preview (no persiste entre reinicios del pod; el VPS de producción ya lo tiene).
+
+
 ## ✅ Jun 2026 — DEMO EN VIVO público (sin login) [COMPLETO]
 Feature pedido por el usuario para vender mejor: que el visitante VIVA el flujo completo antes de registrarse. **Probado 100% (10/10 pytest con IA real + e2e frontend del wizard de 5 pasos, iteration_19.json, sin bugs).** Decisiones del usuario: IA real, captura de lead al inicio (email/teléfono), pago simulado, botón en Landing + menú, negocio ficticio "Demo Contractors".
 - **Frontend `DemoFlow.js`** (ruta pública `/demo`): wizard de 5 pasos — (1) captura de lead (nombre/email/teléfono/oficio) → (2) describe el trabajo en español (3 ejemplos de 1 clic) → (3) **quote en inglés con IA real** estilizado igual que el documento público real → "Accept this Quote" → (4) **Service Agreement con IA real** + firma (nombre en cursiva + botón) → (5) **invoice con links de pago** (botón "Pay by card" **simulado** → "✅ ¡Esto es un demo!") + CTA final "Crear mi cuenta gratis" → /register.

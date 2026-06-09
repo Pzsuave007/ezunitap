@@ -16,7 +16,7 @@ const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 const REEL_TEMPLATES = [
   { id: "showcase", label: "Clásico", desc: "Fotos con tu mensaje", min: 1, max: 5 },
-  { id: "before_after", label: "Antes / Después", desc: "Revela con deslizamiento", min: 2, max: 2 },
+  { id: "before_after", label: "Antes / Después", desc: "Compara las dos fotos lado a lado", min: 2, max: 2 },
   { id: "promo", label: "Oferta / Promo", desc: "Con sello de oferta", min: 1, max: 5 },
   { id: "services", label: "Lista de servicios", desc: "Un servicio por foto", min: 1, max: 5 },
   { id: "testimonial", label: "Testimonio", desc: "Reseña de cliente", min: 1, max: 3 },
@@ -276,6 +276,11 @@ export default function ReelStudio() {
             2. Fotos {isBeforeAfter ? "(Antes y Después)" : `(${tpl.min} a ${tpl.max})`}
           </Label>
           <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Cada foto tendrá movimiento y transición. El orden es el de subida.</p>
+          {isBeforeAfter && (
+            <div data-testid="reel-ba-hint" className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-2">
+              💡 Usa fotos <strong>horizontales (de paisaje)</strong> del mismo lugar/ángulo. Se muestran completas, una arriba (Antes) y otra abajo (Después), para que se note bien la diferencia.
+            </div>
+          )}
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
             {photos.map((p, i) => (
               <div key={i} className="relative aspect-[9/16] rounded-xl overflow-hidden border border-slate-200" data-testid={`reel-photo-${i}`}>
