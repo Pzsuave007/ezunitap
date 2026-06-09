@@ -377,8 +377,38 @@ function InvoiceStep({ quote, business, lead, paid, onPay }) {
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
             <div className="font-semibold">{lead.name}</div>
           </div>
-          <div><h2 className="font-heading text-xl font-bold">{quote?.job_title}</h2></div>
+          <div>
+            <h2 className="font-heading text-xl font-bold">{quote?.job_title}</h2>
+            {quote?.description && <p className="text-slate-700 mt-2">{quote.description}</p>}
+          </div>
+          {quote?.scope_of_work?.length > 0 && (
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Scope of Work</div>
+              <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
+            </div>
+          )}
+          {quote?.line_items?.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-100 text-left">
+                  <tr><th className="p-2 font-semibold">Description</th><th className="p-2 font-semibold text-right">Qty</th><th className="p-2 font-semibold text-right">Price</th><th className="p-2 font-semibold text-right">Amount</th></tr>
+                </thead>
+                <tbody>
+                  {quote.line_items.map((li, i) => (
+                    <tr key={i} className="border-t border-slate-100">
+                      <td className="p-2">{li.description}</td>
+                      <td className="p-2 text-right">{li.quantity} {li.unit}</td>
+                      <td className="p-2 text-right">{fmtMoney(li.unit_price)}</td>
+                      <td className="p-2 text-right">{fmtMoney(li.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm ml-auto max-w-xs">
+            <div className="flex justify-between"><span>Subtotal</span><span>{fmtMoney(quote?.subtotal)}</span></div>
+            <div className="flex justify-between"><span>Tax</span><span>{fmtMoney(quote?.tax_amount)}</span></div>
             <div className="flex justify-between"><span>Total</span><span>{fmtMoney(total)}</span></div>
             <div className="flex justify-between text-emerald-700"><span>Deposit due now</span><span>{fmtMoney(deposit)}</span></div>
             <div className="flex justify-between font-bold pt-2 border-t mt-2"><span>Balance</span><span>{fmtMoney(total - deposit)}</span></div>
