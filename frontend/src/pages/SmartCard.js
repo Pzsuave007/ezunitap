@@ -44,6 +44,14 @@ const I18N = {
     poweredBy: "Powered by UniTech",
     chatGreeting: (b) => `Hi 👋 I'm here on behalf of ${b}. Ask me anything.`,
     copied: "Link copied",
+    connectButton: "Let's Connect", connectTitle: "Let's stay in touch",
+    connectSub: "Leave your info and I'll personally reach out.",
+    interests: "What are you interested in?",
+    interestsOther: "Tell us what you're looking for",
+    messageOptional: "Message (optional)",
+    connectSend: "Send my info", orEstimate: "Have a project? Request a free estimate",
+    connectSuccess: "Thanks for connecting!",
+    connectSuccessSub: "I'll personally reach out to you soon.",
   },
   es: {
     callNow: "Llamar", text: "Mensaje", whatsapp: "WhatsApp", email: "Email",
@@ -65,6 +73,14 @@ const I18N = {
     poweredBy: "Hecho con UniTech",
     chatGreeting: (b) => `Hola 👋 Estoy aquí de parte de ${b}. Pregúntame lo que quieras.`,
     copied: "Link copiado",
+    connectButton: "Conectemos", connectTitle: "Mantengámonos en contacto",
+    connectSub: "Déjame tus datos y yo te contacto personalmente.",
+    interests: "¿Qué te interesa?",
+    interestsOther: "Cuéntanos qué estás buscando",
+    messageOptional: "Mensaje (opcional)",
+    connectSend: "Enviar mis datos", orEstimate: "¿Tienes un proyecto? Pide una cotización gratis",
+    connectSuccess: "¡Gracias por conectar!",
+    connectSuccessSub: "Te contactaré personalmente muy pronto.",
   },
 };
 
@@ -113,6 +129,7 @@ export default function SmartCard() {
   const t = I18N[lang];
   const [chatOpen, setChatOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const trackedVisit = useRef(false);
 
@@ -321,17 +338,21 @@ export default function SmartCard() {
           </div>
         )}
 
-        {/* Primary CTA */}
-        <div className="px-5 pt-5 reveal" style={{ animationDelay: "250ms" }}>
-          <button data-testid="card-request-quote" onClick={() => setFormOpen(true)} className="primary-cta w-full">
+        {/* Primary CTA — Let's Connect (low friction) */}
+        <div className="px-5 pt-5 reveal space-y-2.5" style={{ animationDelay: "250ms" }}>
+          <button data-testid="card-connect" onClick={() => setConnectOpen(true)} className="primary-cta w-full">
             <span className="cta-shimmer" />
             <span className="relative z-10 flex items-center justify-between w-full">
               <span className="flex items-center gap-2.5">
                 <Sparkles className="w-5 h-5" />
-                <span className="font-heading font-bold text-base tracking-tight">{t.requestQuote}</span>
+                <span className="font-heading font-bold text-base tracking-tight">{t.connectButton}</span>
               </span>
               <ChevronRight className="w-5 h-5 opacity-80" />
             </span>
+          </button>
+          <button data-testid="card-request-quote" onClick={() => setFormOpen(true)}
+                  className="w-full rounded-2xl py-3 text-sm font-semibold text-white/70 border border-white/12 bg-white/[0.03] hover:bg-white/[0.06] hover:text-white/90 transition tap flex items-center justify-center gap-2">
+            {t.orEstimate}
           </button>
         </div>
 
@@ -491,6 +512,9 @@ export default function SmartCard() {
       )}
       {formOpen && (
         <QuoteForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setFormOpen(false)} />
+      )}
+      {connectOpen && (
+        <ConnectForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setConnectOpen(false)} />
       )}
       {qrOpen && (
         <QrModal url={`${publicUrl}?src=qr`} brand={brand} accent={accent} businessName={business.name} onClose={() => setQrOpen(false)} />
@@ -873,7 +897,6 @@ function QuoteForm({ slug, brand, accent, card, lang, t, onClose }) {
               <DarkField label={t.phone}><input data-testid="lead-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="dark-input" /></DarkField>
               <DarkField label={t.emailLabel}><input data-testid="lead-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="dark-input" /></DarkField>
             </div>
-            <DarkField label={t.address}><input data-testid="lead-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="dark-input" /></DarkField>
             {card.services?.length > 0 && (
               <DarkField label={t.service}>
                 <select data-testid="lead-service" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} className="dark-input">
@@ -919,6 +942,120 @@ function QuoteForm({ slug, brand, accent, card, lang, t, onClose }) {
     </div>
   );
 }
+
+// ===================== Connect Form (low-friction contact capture) =====================
+function ConnectForm({ slug, brand, accent, card, lang, t, onClose }) {
+  const services = card.services || [];
+  const hasServices = services.length > 0;
+  const [form, setForm] = useState({ name: "", phone: "", email: "", description: "", preferred_contact: "phone" });
+  const [interests, setInterests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const toggleInterest = (name) =>
+    setInterests((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.name.trim() || (!form.phone.trim() && !form.email.trim())) {
+      setError(lang === "es" ? "Por favor completa tu nombre y teléfono o email." : "Please fill your name and phone or email.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post(`${API}/public/card/${slug}/lead`, {
+        ...form,
+        lead_type: "connect",
+        interests,
+        service: interests[0] || "",
+      });
+      setDone(true);
+    } catch { setError(t.error); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/70 backdrop-blur-md" onClick={onClose}>
+      <div className="w-full lg:max-w-md rounded-t-3xl lg:rounded-3xl max-h-[92vh] overflow-y-auto text-white"
+           style={{ background: "linear-gradient(180deg, #0c1424 0%, #050810 100%)", border: "1px solid rgba(255,255,255,.08)", boxShadow: `0 30px 80px -10px ${brand}80` }}
+           onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 px-5 py-4 border-b border-white/8 flex items-center gap-3 bg-black/40 backdrop-blur-xl">
+          <div className="flex-1 min-w-0">
+            <div className="font-heading font-bold tracking-tight">{t.connectTitle}</div>
+            <div className="text-[11px] text-white/55 leading-snug mt-0.5">{t.connectSub}</div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center tap" data-testid="connect-close"><X className="w-4 h-4" /></button>
+        </div>
+        {done ? (
+          <div className="p-10 text-center">
+            <div className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center relative">
+              <div className="absolute inset-0 rounded-full blur-2xl opacity-60" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }} />
+              <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+                <BadgeCheck className="w-10 h-10 text-white" />
+              </div>
+            </div>
+            <h3 className="font-heading text-2xl font-bold tracking-tight mb-1">{t.connectSuccess}</h3>
+            <p className="text-sm text-white/60">{t.connectSuccessSub}</p>
+            <button onClick={onClose} className="mt-8 rounded-xl px-8 py-3 text-white font-semibold tap" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>OK</button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="p-5 space-y-3">
+            <DarkField label={t.yourName + " *"}><input data-testid="connect-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="dark-input" /></DarkField>
+            <div className="grid grid-cols-2 gap-2">
+              <DarkField label={t.phone}><input data-testid="connect-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="dark-input" /></DarkField>
+              <DarkField label={t.emailLabel}><input data-testid="connect-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="dark-input" /></DarkField>
+            </div>
+            <DarkField label={t.interests}>
+              {hasServices ? (
+                <div className="flex gap-2 flex-wrap" data-testid="connect-interests">
+                  {services.map((s, i) => (
+                    <button key={i} type="button" onClick={() => toggleInterest(s.name)} data-testid={`connect-interest-${i}`}
+                            className={`px-3.5 py-2 rounded-full text-xs font-semibold tap ${interests.includes(s.name) ? "text-white" : "bg-white/5 text-white/65 border border-white/10"}`}
+                            style={interests.includes(s.name) ? { background: `linear-gradient(135deg, ${brand}, ${accent})` } : {}}>
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <input data-testid="connect-interest-text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                       placeholder={t.interestsOther} className="dark-input" />
+              )}
+            </DarkField>
+            {hasServices && (
+              <DarkField label={t.messageOptional}>
+                <textarea data-testid="connect-message" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="dark-input py-3" />
+              </DarkField>
+            )}
+            <DarkField label={t.preferred}>
+              <div className="flex gap-2 flex-wrap">
+                {["phone", "text", "email", "whatsapp"].map((p) => (
+                  <button key={p} type="button" onClick={() => setForm({ ...form, preferred_contact: p })}
+                          className={`px-4 py-2 rounded-full text-xs font-semibold ${form.preferred_contact === p ? "text-white" : "bg-white/5 text-white/65 border border-white/10"}`}
+                          style={form.preferred_contact === p ? { background: `linear-gradient(135deg, ${brand}, ${accent})` } : {}}>{p}</button>
+                ))}
+              </div>
+            </DarkField>
+            {error && <div className="text-sm text-red-400">{error}</div>}
+            <button data-testid="connect-submit" type="submit" disabled={loading}
+                    className="w-full h-14 rounded-2xl text-white font-bold text-base shadow-2xl flex items-center justify-center gap-2 tap relative overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${brand}, ${accent})`, boxShadow: `0 14px 40px -10px ${brand}` }}>
+              {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> {t.sending}</> : <><Send className="w-5 h-5" /> {t.connectSend}</>}
+            </button>
+            <style>{`
+              .dark-input { width:100%; height:48px; padding:0 16px; border-radius:14px;
+                background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
+                color: white; font-size: 14px; outline: none; transition: border-color .15s, background .15s; }
+              .dark-input:focus { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
+              textarea.dark-input { height: auto; }
+            `}</style>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 const DarkField = ({ label, children }) => (
   <div>

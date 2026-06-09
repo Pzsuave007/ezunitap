@@ -324,9 +324,11 @@ class CardLeadIn(BaseModel):
     email: Optional[str] = ""
     address: Optional[str] = ""
     service: Optional[str] = ""
-    description: str
+    description: Optional[str] = ""
+    interests: Optional[List[str]] = []
+    lead_type: Optional[str] = "estimate"  # "estimate" | "connect"
     preferred_contact: Optional[str] = "phone"  # phone, text, email, whatsapp
-    photo_b64: Optional[str] = None  # optional base64 image
+    photo_b64: Optional[str] = None  # optional base image
 
 
 class CardChatIn(BaseModel):
@@ -3687,6 +3689,23 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "created_at": _now_iso(),
     }
     await db.card_leads.insert_one(lead)
+    # Build human-friendly notes depending on the lead type.
+    is_connect = (payload.lead_type or "estimate") == "connect"
+    interests_txt = ", ".join([i for i in (payload.interests or []) if i])
+    service_label = payload.service or (interests_txt if interests_txt else "")
+    notes_lines = []
+    if is_connect:
+        notes_lines.append("[New contact from Smart Card — wants to connect]")
+        if interests_txt:
+            notes_lines.append(f"Interested in: {interests_txt}")
+        if payload.description:
+            notes_lines.append(payload.description)
+    else:
+        notes_lines.append("[From Smart Card]")
+        if payload.description:
+            notes_lines.append(payload.description)
+    notes_lines.append(f"Preferred contact: {payload.preferred_contact}")
+    client_notes = "\n".join(notes_lines)
     # Also create a Client + Job (new_lead) automatically
     client_doc = {
         "id": _new_id(),
@@ -3695,8 +3714,8 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "phone": payload.phone or "",
         "email": payload.email or "",
         "address": payload.address or "",
-        "job_type": payload.service or "",
-        "notes": f"[From Smart Card]\n{payload.description}\nPreferred contact: {payload.preferred_contact}",
+        "job_type": service_label,
+        "notes": client_notes,
         "created_at": _now_iso(),
     }
     await db.clients.insert_one(client_doc)
@@ -3704,12 +3723,12 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "id": _new_id(),
         "user_id": card["user_id"],
         "client_id": client_doc["id"],
-        "title": payload.service or "New Lead from Card",
+        "title": service_label or ("New Contact from Card" if is_connect else "New Lead from Card"),
         "quote_id": None,
         "invoice_id": None,
         "status": "new_lead",
         "scheduled_date": None,
-        "notes": payload.description,
+        "notes": payload.description or (f"Interested in: {interests_txt}" if interests_txt else ""),
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -3719,8 +3738,8 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "id": _new_id(),
         "card_id": card["id"],
         "user_id": card["user_id"],
-        "event": "quote_request",
-        "meta": {"service": payload.service or ""},
+        "event": "connect_request" if is_connect else "quote_request",
+        "meta": {"service": service_label, "interests": payload.interests or []},
         "created_at": _now_iso(),
     })
     return {"ok": True, "lead_id": lead["id"]}
