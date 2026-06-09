@@ -26,8 +26,9 @@ import social_service as ss
 W, H, FPS = 1080, 1920, 30
 OUTRO_LEN = 2.0
 TD_DEFAULT = 0.6
-TD_SLIDER = 1.0
+TD_SLIDER = 1.3
 _SCALE = "scale=1620:2880:force_original_aspect_ratio=increase,crop=1620:2880,"
+_DIVIDER_W = 160
 
 MUSIC_TRACKS = [
     {"id": "energetica", "label": "Energética", "desc": "Animada y motivadora"},
@@ -113,10 +114,11 @@ def build_overlay(copy: dict, brand: dict, template: str = "showcase", show_subh
     # Top decorations per template
     if template == "before_after":
         labels = brand.get("ba_labels", ("BEFORE", "AFTER"))
-        lf = ss._font("bold", 38)
-        ss._chip(draw, (margin, margin), labels[0], lf, accent, ss._text_on(accent), pad_x=24, pad_y=12)
-        lw = draw.textlength(labels[1], font=lf) + 48
-        ss._chip(draw, (W - margin - lw, margin), labels[1], lf, accent, ss._text_on(accent), pad_x=24, pad_y=12)
+        lf = ss._font("extrabold", 56)
+        # BEFORE in a muted dark chip, AFTER in the bright accent → strong contrast
+        ss._chip(draw, (margin, margin), labels[0], lf, (45, 45, 52), (255, 255, 255), pad_x=30, pad_y=16)
+        lw = draw.textlength(labels[1], font=lf) + 60
+        ss._chip(draw, (W - margin - lw, margin), labels[1], lf, accent, ss._text_on(accent), pad_x=30, pad_y=16)
     elif template == "promo":
         bf = ss._font("bold", int(W * 0.04))
         ss._chip(draw, (margin, margin), brand.get("promo_label", "SPECIAL OFFER"), bf, accent, ss._text_on(accent), pad_x=26, pad_y=14)
@@ -227,6 +229,25 @@ def build_subtitle_overlay(text: str, brand: dict) -> bytes:
     return _png(canvas)
 
 
+def build_slider_handle(brand: dict) -> bytes:
+    """A vertical white bar with a round handle (drag-slider look) for the
+    before/after reveal. PNG is _DIVIDER_W wide and full height; the bar is
+    centered so overlay-x maps directly to the wipe edge."""
+    canvas = Image.new("RGBA", (_DIVIDER_W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(canvas)
+    cxp = _DIVIDER_W // 2
+    accent = tuple(brand.get("accent", (16, 185, 129)))
+    d.rounded_rectangle([cxp - 5, 0, cxp + 5, H], radius=5, fill=(255, 255, 255, 235))
+    r, cy = 50, H // 2
+    d.ellipse([cxp - r - 6, cy - r - 6, cxp + r + 6, cy + r + 6], fill=(0, 0, 0, 60))
+    d.ellipse([cxp - r, cy - r, cxp + r, cy + r], fill=(255, 255, 255, 250))
+    d.ellipse([cxp - r + 7, cy - r + 7, cxp + r - 7, cy + r - 7], outline=accent + (255,), width=5)
+    s = 13
+    d.polygon([(cxp - 12, cy), (cxp - 12 + s, cy - s), (cxp - 12 + s, cy + s)], fill=accent + (255,))
+    d.polygon([(cxp + 12, cy), (cxp + 12 - s, cy - s), (cxp + 12 - s, cy + s)], fill=accent + (255,))
+    return _png(canvas)
+
+
 def build_outro(brand: dict, cta: str = "") -> bytes:
     """Final branded card: logo + business name + phone + CTA on a solid brand background."""
     canvas = Image.new("RGBA", (W, H), brand["brand"] + (255,))
@@ -314,6 +335,15 @@ def _zoompan(mode: str, frames: int, idx: int) -> str:
     return f"zoompan=z='{z}':d={frames}:x='{x}':y='{y}':s={W}x{H}:fps={FPS}"
 
 
+def _zoompan_slider(after: bool, frames: int) -> str:
+    """Aligned motion for a before/after slider: BEFORE is static and AFTER does
+    a very gentle zoom that starts at 1.0, so both line up perfectly at the
+    moment the divider wipes across (a true before/after reveal)."""
+    cx, cy = "(iw-iw/zoom)/2", "(ih-ih/zoom)/2"
+    z = f"1+0.10*{_ease(frames)}" if after else "1"
+    return f"zoompan=z='{z}':d={frames}:x='{cx}':y='{cy}':s={W}x{H}:fps={FPS}"
+
+
 def _service_lines(copy: dict, n: int) -> List[str]:
     raw = copy.get("subheadline") or copy.get("headline") or ""
     parts = []
@@ -349,9 +379,11 @@ def render_reel(photo_paths: List[str], out_path: str, *,
                 transition_dur: Optional[float] = None,
                 duration: float = 10.0,
                 music_path: Optional[str] = None,
-                voice_path: Optional[str] = None) -> None:
+                voice_path: Optional[str] = None,
+                slider: bool = False,
+                divider_path: Optional[str] = None) -> None:
     n = max(1, len(photo_paths))
-    xfade_name = TRANSITIONS.get(transition, "fade")
+    xfade_name = "wiperight" if slider else TRANSITIONS.get(transition, "fade")
     td_p = 0.0 if n == 1 else (transition_dur if transition_dur else TD_DEFAULT)
 
     montage_dur = duration - (OUTRO_LEN - TD_DEFAULT) if outro_path else duration
@@ -400,11 +432,17 @@ def render_reel(photo_paths: List[str], out_path: str, *,
         inputs += ["-i", voice_path]
         voice_in = idx
         idx += 1
+    divider_idx = None
+    if slider and divider_path:
+        inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", divider_path]
+        divider_idx = idx
+        idx += 1
 
     # ---- video filtergraph ----
     parts: List[str] = []
     for i in range(n):
-        parts.append(f"[{photo_idx[i]}:v]{_SCALE}{_zoompan(motion, frames, i)},setsar=1,format=yuv420p[v{i}]")
+        zp = _zoompan_slider(i > 0, frames) if slider else _zoompan(motion, frames, i)
+        parts.append(f"[{photo_idx[i]}:v]{_SCALE}{zp},setsar=1,format=yuv420p[v{i}]")
 
     if seg_idx:
         for i in range(n):
@@ -429,10 +467,27 @@ def render_reel(photo_paths: List[str], out_path: str, *,
             prev = out
         montage = prev
 
+    # Before/After slider: timing of the wipe (for the sliding divider handle).
+    slider_win = None
+    if slider and n >= 2:
+        woff = per_clip - td_p
+        slider_win = (woff, woff + td_p)
+
     if main_idx is not None:
         parts.append(f"[{main_idx}:v]format=rgba,fade=in:st=0.4:d=0.7:alpha=1[mov]")
         parts.append(f"{montage}[mov]overlay=0:0[mtg1]")
         montage = "[mtg1]"
+
+    # Sliding divider handle (bar + circle) that sweeps across in sync with the
+    # wipe → a satisfying "drag the slider" before/after reveal.
+    if slider_win is not None and divider_idx is not None:
+        w0, w1 = slider_win
+        parts.append(
+            f"{montage}[{divider_idx}:v]overlay="
+            f"x='((t-{w0:.3f})/{td_p:.3f})*{W}-{_DIVIDER_W // 2}':y=0:"
+            f"enable='between(t,{w0:.3f},{w1:.3f})'[bas]"
+        )
+        montage = "[bas]"
 
     for j, (_, st, en) in enumerate(subtitle_specs or []):
         parts.append(f"[{sub_idx[j]}:v]format=rgba[sb{j}]")
@@ -507,8 +562,16 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
                     f.write(build_segment_overlay(lines[i], brand, i, n))
                 segment_overlay_paths.append(sp)
 
-        # before_after: a slower transition reads as a before/after reveal
-        eff_transition_dur = TD_SLIDER if template == "before_after" else TD_DEFAULT
+        # before_after: render as a true slider reveal (aligned photos + a
+        # divider line that wipes across) — far more eye-catching than a slide.
+        is_slider = template == "before_after"
+        eff_transition_dur = TD_SLIDER if is_slider else TD_DEFAULT
+
+        divider_path = None
+        if is_slider:
+            divider_path = os.path.join(tmp, "divider.png")
+            with open(divider_path, "wb") as f:
+                f.write(build_slider_handle(brand))
 
         subtitle_specs = None
         if subs_on:
@@ -540,7 +603,7 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             subtitle_specs=subtitle_specs,
             outro_path=outro_path,
             motion=motion, transition=transition, transition_dur=eff_transition_dur, duration=duration,
-            music_path=music_path, voice_path=voice_path,
+            music_path=music_path, voice_path=voice_path, slider=is_slider, divider_path=divider_path,
         )
         with open(out_path, "rb") as f:
             return f.read()
