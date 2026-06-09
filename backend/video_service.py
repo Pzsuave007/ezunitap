@@ -248,6 +248,121 @@ def build_slider_handle(brand: dict) -> bytes:
     return _png(canvas)
 
 
+def build_ba_split_overlay(copy: dict, brand: dict) -> bytes:
+    """Overlay for the before/after SPLIT comparison: a center divider + handle,
+    bold BEFORE/AFTER labels on each half, and a CTA pill. Both photos stay
+    visible so the viewer compares the transformation directly."""
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(canvas)
+    accent = tuple(brand.get("accent", (16, 185, 129)))
+    margin = int(W * 0.055)
+    midY = H // 2
+    labels = brand.get("ba_labels", ("BEFORE", "AFTER"))
+
+    # readability scrims behind each label row
+    d.rectangle([0, 0, W, 150], fill=(0, 0, 0, 70))
+    d.rectangle([0, midY, W, midY + 150], fill=(0, 0, 0, 70))
+
+    # center divider bar + round handle (drag-slider look)
+    d.rounded_rectangle([0, midY - 6, W, midY + 6], radius=6, fill=(255, 255, 255, 240))
+    r = 46
+    d.ellipse([W // 2 - r - 6, midY - r - 6, W // 2 + r + 6, midY + r + 6], fill=(0, 0, 0, 70))
+    d.ellipse([W // 2 - r, midY - r, W // 2 + r, midY + r], fill=(255, 255, 255, 250))
+    d.ellipse([W // 2 - r + 7, midY - r + 7, W // 2 + r - 7, midY + r - 7], outline=accent + (255,), width=5)
+    sg = 12
+    d.polygon([(W // 2, midY - 15), (W // 2 - sg, midY - 15 + sg), (W // 2 + sg, midY - 15 + sg)], fill=accent + (255,))
+    d.polygon([(W // 2, midY + 15), (W // 2 - sg, midY + 15 - sg), (W // 2 + sg, midY + 15 - sg)], fill=accent + (255,))
+
+    lf = ss._font("extrabold", 52)
+    ss._chip(d, (margin, margin), labels[0], lf, (45, 45, 52), (255, 255, 255), pad_x=28, pad_y=14)
+    ss._chip(d, (margin, midY + margin // 2), labels[1], lf, accent, ss._text_on(accent), pad_x=28, pad_y=14)
+
+    cta = (copy.get("cta") or "Free Estimate").strip()
+    cf = ss._font("bold", int(W * 0.052))
+    tw = d.textlength(cta, font=cf) + 96
+    ss._pill(d, ((W - tw) / 2, H - margin - cf.size - 24), cta, cf, accent, ss._text_on(accent), pad_x=48)
+    return _png(canvas)
+
+
+def render_before_after_split(before_path: str, after_path: str, out_path: str, *,
+                              overlay_path: Optional[str] = None, outro_path: Optional[str] = None,
+                              duration: float = 10.0, music_path: Optional[str] = None,
+                              voice_path: Optional[str] = None) -> None:
+    """Render a before/after as a stacked SPLIT comparison (before on top, after
+    on bottom) so both are visible at once. Each half gets a gentle synchronized
+    zoom so it feels alive, not static."""
+    has_outro = bool(outro_path)
+    montage_dur = max(3.0, duration - (OUTRO_LEN - TD_DEFAULT)) if has_outro else duration
+    frames = max(1, round(montage_dur * FPS))
+    outro_frames = max(1, round(OUTRO_LEN * FPS))
+    half = H // 2
+
+    inputs: List[str] = []
+    idx = 0
+    inputs += ["-i", before_path]; before_i = idx; idx += 1
+    inputs += ["-i", after_path]; after_i = idx; idx += 1
+    main_idx = None
+    if overlay_path:
+        inputs += ["-loop", "1", "-t", f"{montage_dur:.3f}", "-i", overlay_path]; main_idx = idx; idx += 1
+    outro_idx = None
+    if has_outro:
+        inputs += ["-loop", "1", "-t", f"{OUTRO_LEN:.3f}", "-i", outro_path]; outro_idx = idx; idx += 1
+    music_in = None
+    if music_path:
+        inputs += ["-stream_loop", "-1", "-i", music_path]; music_in = idx; idx += 1
+    voice_in = None
+    if voice_path:
+        inputs += ["-i", voice_path]; voice_in = idx; idx += 1
+
+    parts: List[str] = []
+    sc = f"scale=1620:{int(half * 1.5)}:force_original_aspect_ratio=increase,crop=1620:{int(half * 1.5)},"
+    s = _ease(frames)
+    cx, cy = "(iw-iw/zoom)/2", "(ih-ih/zoom)/2"
+    # top zooms in, bottom zooms out → subtle, connected, never static
+    zp_top = f"zoompan=z='1+0.12*{s}':d={frames}:x='{cx}':y='{cy}':s={W}x{half}:fps={FPS}"
+    zp_bot = f"zoompan=z='1.12-0.12*{s}':d={frames}:x='{cx}':y='{cy}':s={W}x{half}:fps={FPS}"
+    parts.append(f"[{before_i}:v]{sc}{zp_top},setsar=1,format=yuv420p[t]")
+    parts.append(f"[{after_i}:v]{sc}{zp_bot},setsar=1,format=yuv420p[b]")
+    parts.append("[t][b]vstack=inputs=2[mtg]")
+    montage = "[mtg]"
+    if main_idx is not None:
+        parts.append(f"[{main_idx}:v]format=rgba,fade=in:st=0.3:d=0.6:alpha=1[mov]")
+        parts.append(f"{montage}[mov]overlay=0:0[mtg1]")
+        montage = "[mtg1]"
+    if outro_idx is not None:
+        parts.append(
+            f"[{outro_idx}:v]{_SCALE}zoompan=z='min(zoom+0.0008,1.08)':d={outro_frames}:"
+            f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS},setsar=1,format=yuv420p[outro]"
+        )
+        off = montage_dur - TD_DEFAULT
+        parts.append(f"{montage}[outro]xfade=transition=fade:duration={TD_DEFAULT:.3f}:offset={off:.3f}[og]")
+        montage = "[og]"
+    parts.append(f"{montage}format=yuv420p[outv]")
+
+    amap = None
+    afo = max(0.0, duration - 1.2)
+    if music_in is not None and voice_in is not None:
+        parts.append(f"[{music_in}:a]volume=0.20,atrim=0:{duration:.3f},afade=out:st={afo:.3f}:d=1.2[am]")
+        parts.append(f"[{voice_in}:a]adelay=250:all=1,volume=1.4[av]")
+        parts.append("[am][av]amix=inputs=2:duration=longest:normalize=0[aout]")
+        amap = "[aout]"
+    elif music_in is not None:
+        parts.append(f"[{music_in}:a]volume=0.6,atrim=0:{duration:.3f},afade=out:st={afo:.3f}:d=1.2[aout]")
+        amap = "[aout]"
+    elif voice_in is not None:
+        parts.append(f"[{voice_in}:a]adelay=250:all=1,volume=1.4[aout]")
+        amap = "[aout]"
+
+    cmd = [ffmpeg_bin(), "-y", *inputs, "-filter_complex", ";".join(parts), "-map", "[outv]"]
+    cmd += (["-map", amap, "-c:a", "aac", "-b:a", "128k"] if amap else ["-an"])
+    cmd += [
+        "-t", f"{duration:.3f}", "-r", str(FPS),
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", out_path,
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
+
+
 def build_outro(brand: dict, cta: str = "") -> bytes:
     """Final branded card: logo + business name + phone + CTA on a solid brand background."""
     canvas = Image.new("RGBA", (W, H), brand["brand"] + (255,))
@@ -546,7 +661,27 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             photo_paths.append(p)
 
         n = len(images)
-        subs_on = subtitles and template in ("showcase", "promo", "before_after")
+        subs_on = subtitles and template in ("showcase", "promo")
+
+        # before_after → dedicated SPLIT comparison (both photos visible at once
+        # with gentle motion), which actually sells the transformation.
+        if template == "before_after" and n >= 2:
+            ba_overlay = os.path.join(tmp, "ba.png")
+            with open(ba_overlay, "wb") as f:
+                f.write(build_ba_split_overlay(copy, brand))
+            ba_outro = None
+            if outro:
+                ba_outro = os.path.join(tmp, "outro.png")
+                with open(ba_outro, "wb") as f:
+                    f.write(build_outro(brand, copy.get("cta", "")))
+            out_path = os.path.join(tmp, "reel.mp4")
+            render_before_after_split(
+                photo_paths[0], photo_paths[1], out_path,
+                overlay_path=ba_overlay, outro_path=ba_outro, duration=duration,
+                music_path=music_path, voice_path=voice_path,
+            )
+            with open(out_path, "rb") as f:
+                return f.read()
 
         main_overlay_path = os.path.join(tmp, "main.png")
         with open(main_overlay_path, "wb") as f:
@@ -562,16 +697,7 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
                     f.write(build_segment_overlay(lines[i], brand, i, n))
                 segment_overlay_paths.append(sp)
 
-        # before_after: render as a true slider reveal (aligned photos + a
-        # divider line that wipes across) — far more eye-catching than a slide.
-        is_slider = template == "before_after"
-        eff_transition_dur = TD_SLIDER if is_slider else TD_DEFAULT
-
-        divider_path = None
-        if is_slider:
-            divider_path = os.path.join(tmp, "divider.png")
-            with open(divider_path, "wb") as f:
-                f.write(build_slider_handle(brand))
+        eff_transition_dur = TD_DEFAULT
 
         subtitle_specs = None
         if subs_on:
@@ -603,7 +729,7 @@ def render_reel_full(images: List[Image.Image], copy: dict, brand: dict, *,
             subtitle_specs=subtitle_specs,
             outro_path=outro_path,
             motion=motion, transition=transition, transition_dur=eff_transition_dur, duration=duration,
-            music_path=music_path, voice_path=voice_path, slider=is_slider, divider_path=divider_path,
+            music_path=music_path, voice_path=voice_path,
         )
         with open(out_path, "rb") as f:
             return f.read()
