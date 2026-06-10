@@ -1,22 +1,29 @@
 # Unitap (formerly ServicioFlow AI) — Product Requirements Document
 
-## 🚨 CRITICAL DEPLOY RULE — DO NOT SKIP 🚨
+## 🚨 CRITICAL DEPLOY RULE — DO NOT SKIP 🚨 (UPDATED Jun 2026 — MULTI-DOMAIN)
+**The app is MULTI-DOMAIN (`ezunitap.com` AND `ezunitech.com`), same origin, relative `/api`.**
+The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME build works on BOTH domains.
+
 **EVERY time the frontend changes (any file under `/app/frontend/src/`), the agent MUST:**
-1. **ALWAYS run build with the env var EXPLICITLY** — NEVER rely on `.env.production` alone:
+1. **Run a PLAIN build (NO env override)** — `.env.production` already has `REACT_APP_BACKEND_URL=` (EMPTY) → `API_BASE = "/api"` relative:
    ```
-   cd /app/frontend && rm -rf build && REACT_APP_BACKEND_URL=https://ezunitap.com yarn build
+   cd /app/frontend && rm -rf build && yarn build
    ```
-   ⚠️ A plain `yarn build` quietly bakes the **preview URL** from `.env` instead of `.env.production`. This DID happen once (May 2026) and shipped a build that called Emergent's backend from `ezunitap.com`, showing fake test data instead of real production data. NEVER again.
-2. **Verify the build was bundled with the correct URL** before commit:
+   ⚠️ **NEVER** pass `REACT_APP_BACKEND_URL=https://ezunitap.com yarn build`. Baking an absolute domain (e.g. ezunitap.com) HARDCODES that backend → the OTHER domain (ezunitech.com) breaks login with a cross-origin/CORS failure. This DID happen (Jun 2026) and locked users out of ezunitech.com.
+   ℹ️ The old "preview URL leak" bug (May 2026) was fixed in `craco.config.js` (only loads `.env` in dev). A plain `yarn build` now correctly uses `.env.production` (empty) → relative `/api`.
+2. **Verify the build is RELATIVE (no absolute API base, no preview URL)** before commit:
    ```
-   grep -oE "https://(ezunitap\.com|unitap-staging[^\"',]*)" /app/frontend/build/static/js/main.*.js | sort -u
+   JS=$(ls /app/frontend/build/static/js/main.*.js)
+   grep -oE "https://(ezunitap\.com|ezunitech\.com|unitech-preview[^\"',]*)/api" "$JS" | sort -u   # must be EMPTY
+   grep -oE "unitech-preview[^\"',]*" "$JS" | sort -u                                              # must be EMPTY
+   grep -oE '"/api"' "$JS" | head -1                                                                # must show "/api"
    ```
-   Must show ONLY `https://ezunitap.com`. If `unitap-staging-*.preview.emergentagent.com` appears, the build is WRONG — rebuild.
+   If any absolute `.../api` or preview URL appears, the build is WRONG — rebuild with plain `yarn build`.
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
-4. **Explicitly commit it** (Emergent auto-commit ONLY commits already-tracked files; `frontend/build/` may be untracked after a clean): `git commit -m "Build frontend: <change summary>"`
+4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 5. Tell the user to **"Save to GitHub"** in chat input + `git pull` + `cp -r frontend/build/. /home/ezunitap/public_html/` on the VPS.
 
-**Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
+**Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must use RELATIVE `/api` so it serves BOTH ezunitap.com and ezunitech.com without CORS issues.
 
 ## ✅ Jun 2026 — STRIPE CONNECT: cobros directos a la cuenta del contratista [COMPLETO + PROBADO]
 Objetivo del usuario: que cada contratista cobre los pagos de sus invoices **directo en su propia cuenta de Stripe** (con su nombre en el recibo), sin que UniTech toque el dinero. 0% comisión. Las suscripciones de la plataforma siguen en la cuenta de UniTech (Emergent proxy) sin cambios.
