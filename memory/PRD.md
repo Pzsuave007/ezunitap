@@ -1,5 +1,10 @@
 # Unitap (formerly ServicioFlow AI) — Product Requirements Document
 
+> ## 🚨 LEE PRIMERO / READ FIRST: `/app/memory/CRITICAL_DEPLOY_RULES.md`
+> **OBLIGATORIO antes de compilar el frontend.** App MULTI-DOMINIO (ezunitap.com + ezunitech.com).
+> Compila SIEMPRE con `yarn build` PLANO (sin `REACT_APP_BACKEND_URL=...`) → `/api` relativo.
+> Hornear un dominio absoluto ROMPE el otro dominio por CORS (login falla). Esto ya pasó (Jun 2026) y NO debe repetirse.
+
 ## 🚨 CRITICAL DEPLOY RULE — DO NOT SKIP 🚨 (UPDATED Jun 2026 — MULTI-DOMAIN)
 **The app is MULTI-DOMAIN (`ezunitap.com` AND `ezunitech.com`), same origin, relative `/api`.**
 The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME build works on BOTH domains.
