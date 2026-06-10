@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
 import PaymentMethodsSection from "@/components/PaymentMethodsSection";
+import StripeConnectSection from "@/components/StripeConnectSection";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 
@@ -264,6 +265,9 @@ export default function Profile() {
       </div>
       <div id="pagos" className="scroll-mt-20">
         <PaymentMethodsSection />
+      </div>
+      <div id="stripe-connect" className="scroll-mt-20">
+        <StripeConnectSection />
       </div>
 
       {/* Quick links */}

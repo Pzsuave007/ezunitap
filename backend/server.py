@@ -31,6 +31,7 @@ import social_service  # noqa: E402
 import video_service  # noqa: E402
 import tts_service  # noqa: E402
 import payments_service  # noqa: E402
+import connect_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
@@ -1464,7 +1465,7 @@ async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
         raise HTTPException(400, "origin_url inválido")
     success_url = f"{origin}/p/invoice/{inv['id']}?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/p/invoice/{inv['id']}"
-    return await payments_service.create_invoice_checkout(db, inv, amount, success_url, cancel_url)
+    return await _create_card_checkout(owner, inv, amount, success_url, cancel_url)
 
 
 async def _record_card_payment_from_tx(tx: dict) -> None:
@@ -1495,7 +1496,11 @@ async def public_invoice_checkout_status(session_id: str):
     """Poll a card payment (invoice or payment-request). On first 'paid',
     records the abono on the invoice ledger (idempotent via the
     payment_transactions.recorded flag)."""
-    result = await payments_service.get_invoice_checkout_status(db, session_id)
+    tx0 = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if tx0 and tx0.get("is_connect") and tx0.get("connect_account_id"):
+        result = connect_service.get_checkout_status_connect(session_id, tx0["connect_account_id"])
+    else:
+        result = await payments_service.get_invoice_checkout_status(db, session_id)
     if result.get("payment_status") == "paid":
         tx = await db.payment_transactions.find_one_and_update(
             {"session_id": session_id, "type": {"$in": ["invoice_payment", "payment_request"]}, "recorded": {"$ne": True}},
@@ -1504,6 +1509,84 @@ async def public_invoice_checkout_status(session_id: str):
         if tx:
             await _record_card_payment_from_tx(tx)
     return result
+
+
+# ============================================================================
+# STRIPE CONNECT — each tenant connects their OWN Stripe account to get paid
+# ============================================================================
+class ConnectOnboardIn(BaseModel):
+    origin_url: Optional[str] = None
+
+
+@api_router.get("/connect/status")
+async def connect_status(user_id: str = Depends(get_current_user_id)):
+    """Current Stripe Connect state for the logged-in user (drives the UI)."""
+    if not connect_service.connect_enabled():
+        return {"available": False, "connected": False, "charges_enabled": False}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    acct = (user or {}).get("stripe_connect_account_id")
+    if not acct:
+        return {"available": True, "connected": False, "charges_enabled": False}
+    try:
+        st = connect_service.get_account_status(acct)
+    except Exception as e:
+        logger.warning(f"connect status error: {e}")
+        return {"available": True, "connected": True, "charges_enabled": bool((user or {}).get("stripe_connect_charges_enabled")),
+                "details_submitted": False, "account_id": acct, "error": "status_unavailable"}
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "stripe_connect_charges_enabled": st["charges_enabled"],
+            "stripe_connect_details_submitted": st["details_submitted"],
+            "stripe_connect_payouts_enabled": st["payouts_enabled"],
+        }},
+    )
+    return {"available": True, "connected": True, **st}
+
+
+@api_router.post("/connect/onboard")
+async def connect_onboard(payload: ConnectOnboardIn, request: Request, user_id: str = Depends(get_current_user_id)):
+    """Create (or reuse) the user's Express account and return a Stripe-hosted
+    onboarding link. The user finishes verification on Stripe and returns."""
+    if not connect_service.connect_enabled():
+        raise HTTPException(400, "Stripe Connect no está configurado en el servidor.")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+    acct = user.get("stripe_connect_account_id")
+    if not acct:
+        card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+        biz = card.get("business_name") or user.get("business_name") or user.get("name") or ""
+        try:
+            acct = connect_service.create_express_account(email=user.get("email", ""), business_name=biz)
+        except Exception as e:
+            logger.error(f"connect account create failed: {e}")
+            raise HTTPException(400, f"No se pudo crear la cuenta de Stripe Connect: {str(e)[:200]}")
+        await db.users.update_one({"id": user_id}, {"$set": {"stripe_connect_account_id": acct}})
+    origin = (payload.origin_url or _public_base_from_request(request) or "").rstrip("/")
+    refresh_url = f"{origin}/ajustes?connect=refresh"
+    return_url = f"{origin}/ajustes?connect=done"
+    try:
+        url = connect_service.create_onboarding_link(acct, refresh_url, return_url)
+    except Exception as e:
+        logger.error(f"connect onboarding link failed: {e}")
+        raise HTTPException(400, f"No se pudo generar el enlace de Stripe: {str(e)[:200]}")
+    return {"url": url, "account_id": acct}
+
+
+@api_router.post("/connect/login-link")
+async def connect_login_link(user_id: str = Depends(get_current_user_id)):
+    """Express dashboard link so the user can see balance & payouts."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    acct = (user or {}).get("stripe_connect_account_id")
+    if not acct:
+        raise HTTPException(400, "No tienes una cuenta de Stripe conectada.")
+    try:
+        url = connect_service.create_login_link(acct)
+    except Exception as e:
+        raise HTTPException(400, f"No se pudo abrir el panel de Stripe: {str(e)[:200]}")
+    return {"url": url}
+
 
 
 # ============================================================================
@@ -1611,8 +1694,8 @@ async def public_payment_request_checkout(request_id: str, payload: PaymentReque
     success_url = f"{origin}/p/pay/{request_id}?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/p/pay/{request_id}"
     label = req.get("description") or f"Pago — Invoice {inv.get('number', '')}".strip()
-    return await payments_service.create_invoice_checkout(
-        db, inv, req["amount"], success_url, cancel_url, label=label, request_id=request_id
+    return await _create_card_checkout(
+        owner, inv, req["amount"], success_url, cancel_url, label=label, request_id=request_id
     )
 
 
@@ -3965,11 +4048,20 @@ def _is_super_admin(user_doc: dict) -> bool:
     return bool(sa_email) and user_doc.get("email", "").lower() == sa_email
 
 
-def _stripe_collect_enabled_for(user_doc: Optional[dict]) -> bool:
-    """Whether THIS invoice owner may collect card payments via the platform's
-    Stripe account. Gated to the platform owner (super admin) ONLY, so no other
-    tenant can route payments into the owner's Stripe. Optionally extendable via
-    STRIPE_COLLECT_EMAILS (comma-separated allowlist)."""
+def _connect_collect_account(user_doc: Optional[dict]) -> Optional[str]:
+    """Return the user's connected Stripe account id IF they can collect (Connect
+    enabled + onboarding complete). Used to route invoice charges to their own
+    account so the client sees THEIR business name."""
+    if not user_doc or not connect_service.connect_enabled():
+        return None
+    acct = user_doc.get("stripe_connect_account_id")
+    if acct and user_doc.get("stripe_connect_charges_enabled"):
+        return acct
+    return None
+
+
+def _platform_collect_allowed(user_doc: Optional[dict]) -> bool:
+    """Legacy platform-account collection (super admin / allowlist only)."""
     if not user_doc:
         return False
     if _is_super_admin(user_doc):
@@ -3977,6 +4069,33 @@ def _stripe_collect_enabled_for(user_doc: Optional[dict]) -> bool:
     allow = (os.environ.get("STRIPE_COLLECT_EMAILS", "") or "").lower()
     emails = {e.strip() for e in allow.split(",") if e.strip()}
     return (user_doc.get("email", "") or "").lower() in emails
+
+
+def _stripe_collect_enabled_for(user_doc: Optional[dict]) -> bool:
+    """Whether THIS invoice owner may collect card payments — either via their own
+    connected Stripe account (Connect) or, for the platform owner, the platform
+    Stripe account."""
+    if not user_doc:
+        return False
+    if _connect_collect_account(user_doc):
+        return True
+    return _platform_collect_allowed(user_doc)
+
+
+async def _create_card_checkout(owner: dict, inv: dict, amount: float, success_url: str,
+                                cancel_url: str, label: str = "", request_id: Optional[str] = None) -> dict:
+    """Route an invoice card payment: connected account (direct charge) when the
+    owner has connected their Stripe, otherwise the platform account."""
+    acct = _connect_collect_account(owner)
+    if acct:
+        return await connect_service.create_invoice_checkout_connect(
+            db, inv, amount, success_url, cancel_url, acct, label=label, request_id=request_id
+        )
+    if _platform_collect_allowed(owner):
+        return await payments_service.create_invoice_checkout(
+            db, inv, amount, success_url, cancel_url, label=label, request_id=request_id
+        )
+    raise HTTPException(403, "Card payments are not available for this business.")
 
 
 
