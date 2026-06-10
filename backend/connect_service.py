@@ -61,13 +61,18 @@ def create_onboarding_link(account_id: str, refresh_url: str, return_url: str) -
 
 def get_account_status(account_id: str) -> dict:
     acct = _v1().accounts.retrieve(account_id)
-    bp = acct.get("business_profile") or {}
+    bp = getattr(acct, "business_profile", None) or {}
+    bname = ""
+    try:
+        bname = bp["name"] if isinstance(bp, dict) else getattr(bp, "name", "")
+    except Exception:
+        bname = ""
     return {
         "account_id": account_id,
-        "charges_enabled": bool(acct.get("charges_enabled")),
-        "details_submitted": bool(acct.get("details_submitted")),
-        "payouts_enabled": bool(acct.get("payouts_enabled")),
-        "business_name": bp.get("name") or "",
+        "charges_enabled": bool(getattr(acct, "charges_enabled", False)),
+        "details_submitted": bool(getattr(acct, "details_submitted", False)),
+        "payouts_enabled": bool(getattr(acct, "payouts_enabled", False)),
+        "business_name": bname or "",
     }
 
 
@@ -150,9 +155,9 @@ async def create_invoice_checkout_connect(
 def get_checkout_status_connect(session_id: str, account_id: str) -> dict:
     session = _v1().checkout.sessions.retrieve(session_id, options={"stripe_account": account_id})
     return {
-        "payment_status": session.get("payment_status"),
-        "status": session.get("status"),
-        "amount_total": (session.get("amount_total") or 0) / 100,
+        "payment_status": getattr(session, "payment_status", None),
+        "status": getattr(session, "status", None),
+        "amount_total": (getattr(session, "amount_total", 0) or 0) / 100,
     }
 
 

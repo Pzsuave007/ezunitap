@@ -18,6 +18,16 @@
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must be compiled against `ezunitap.com`, not the preview URL.
 
+## ✅ Jun 2026 — STRIPE CONNECT: cobros directos a la cuenta del contratista [COMPLETO + PROBADO]
+Objetivo del usuario: que cada contratista cobre los pagos de sus invoices **directo en su propia cuenta de Stripe** (con su nombre en el recibo), sin que UniTech toque el dinero. 0% comisión. Las suscripciones de la plataforma siguen en la cuenta de UniTech (Emergent proxy) sin cambios.
+- **Modelo**: Stripe Connect **Express + cargos directos** (`stripe_account` option) → el comerciante (contratista) cobra directo. Requirió que el usuario habilitara Connect en su dashboard (modelo "Platform", perfil de plataforma: Negative balance liability + Ongoing seller compliance acknowledgements, pricing=Flat rate, payments=Prebuilt checkout).
+- **Backend**: `connect_service.py` (cuenta Express, link de onboarding, status, login-link, checkout direct-charge), endpoints `/api/connect/{status,onboard,login-link}` en `server.py`. `_create_card_checkout` enruta a la cuenta conectada cuando `stripe_connect_charges_enabled` es true; si no, cae al flujo plataforma (solo super admin).
+- **🐛 BUG ARREGLADO**: `connect_service.get_account_status` y `get_checkout_status_connect` usaban `obj.get("x")` sobre objetos StripeObject → en esta versión del SDK lanza `AttributeError: get` ⇒ `/connect/status` devolvía `error: status_unavailable` y `charges_enabled:false` aunque la cuenta SÍ estuviera activa. Reescrito con `getattr(obj, "x", default)`.
+- **Frontend**: `StripeConnectSection.js` en Ajustes (3 estados: conectar / verificación pendiente / conectado-y-listo).
+- **Probado e2e (curl + screenshot)**: onboarding genera cuenta `acct_1TgpLwCle7Zq9Has` ("Uni2 Marketing Agency"), `charges_enabled:true`, checkout público de invoice ($250) crea sesión en la cuenta conectada con `is_connect:true` + `connect_account_id` correcto. UI muestra "Stripe conectado y listo para cobrar".
+- **DEPLOY**: (1) `deploy/fix.sh` ahora también carga `STRIPE_CONNECT_SECRET_KEY` y `STRIPE_CONNECT_WEBHOOK_SECRET` desde `public_html/keys.txt`. (2) `backend.env.production.example` documenta las 3 vars de Connect. (3) Frontend recompilado (incluye la sección, URL `ezunitap.com`) + `git add -f frontend/build/`. **Para producción el usuario debe agregar `STRIPE_CONNECT_SECRET_KEY=...` a `keys.txt` en el VPS + Save to GitHub + deploy.** ⚠️ La llave secreta de test quedó expuesta en el chat → conviene rotarla.
+
+
 ## ✅ Jun 2026 — LANDING: rediseño de conversión (feedback externo) [COMPLETO]
 - **Hero**: nuevo titular de "sistema completo" → "El sistema completo para tu negocio de servicios." + subtítulo de transformación (consigue cliente → reseña 5★) conservando el gancho español→inglés. **"Pruébalo en vivo" (Demo) ahora es el botón PRIMARIO** (gradiente), "Crear cuenta gratis" secundario.
 - **Nueva sección "¿Para quién es UniTech?"** justo bajo el hero (oficios con ✔). Se quitó el strip "Hecho para" del hero.
