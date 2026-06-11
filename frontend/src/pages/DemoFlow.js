@@ -16,6 +16,7 @@ import {
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
+import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) =>
@@ -60,6 +61,9 @@ export default function DemoFlow() {
       const r = await axios.post(`${API}/public/demo/start`, lead);
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
+      // Meta Pixel: mid-funnel lead — prospect started the live demo.
+      fbTrack("Lead", { content_name: "Live Demo Start", content_category: lead.trade || "" });
+      fbTrackCustom("DemoStarted", { trade: lead.trade || "" });
       setStep(1);
     } catch (e) {
       apiErr(e, "No se pudo iniciar el demo. Intenta de nuevo.");
@@ -79,6 +83,9 @@ export default function DemoFlow() {
       const r = await axios.post(`${API}/public/demo/quote`, { demo_id: demoId, description_es: desc });
       setQuote(r.data.quote);
       setBusiness(r.data.business);
+      // Meta Pixel: the "magic moment" — AI produced the English quote.
+      fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
+      fbTrackCustom("DemoQuoteGenerated");
       setStep(2);
       window.scrollTo(0, 0);
     } catch (e) {

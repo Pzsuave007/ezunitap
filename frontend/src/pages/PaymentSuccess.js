@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, AlertCircle, Truck } from "lucide-react";
+import { fbTrack } from "@/lib/fbpixel";
 
 const POLL_MAX = 10;
 const POLL_INTERVAL = 2000;
@@ -38,6 +39,12 @@ export default function PaymentSuccess() {
         setDetails(data);
         if (data.status === "complete") {
           setState("success");
+          // Meta Pixel: paid conversion (subscription started).
+          fbTrack("Subscribe", {
+            value: Number(data.amount || data.amount_total || 0),
+            currency: "USD",
+            predicted_ltv: Number(data.amount || data.amount_total || 0),
+          });
           await refreshUser();
           return;
         }

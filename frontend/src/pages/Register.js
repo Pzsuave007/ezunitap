@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Hammer, Loader2, Gift } from "lucide-react";
 import { toast } from "sonner";
+import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -34,6 +35,9 @@ export default function Register() {
     setLoading(true);
     try {
       await register({ ...form, invite_token: inviteToken || undefined });
+      // Meta Pixel: account created (free 14-day trial, no card).
+      fbTrack("CompleteRegistration", { content_name: selectedPlan || "trial", status: true });
+      fbTrackCustom("StartTrial", { plan: selectedPlan || "" });
       toast.success(
         inviteToken
           ? "¡Cuenta creada con acceso gratis! 🎁"

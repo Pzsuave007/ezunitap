@@ -26,6 +26,18 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
    If any absolute `.../api` or preview URL appears, the build is WRONG — rebuild with plain `yarn build`.
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
+
+## ✅ Jun 2026 — META PIXEL + eventos de conversión (para campañas de Meta Ads) [COMPLETO]
+El usuario (Paul) va a correr campañas en Meta ($5/día) llevando al demo. Se instaló su Pixel existente **"Uni2 Website Pixel" ID `735321109080783`** para medir/optimizar el embudo.
+- **Base**: snippet del Meta Pixel + `PageView` en `frontend/public/index.html` (mismo en ambos dominios; el ID del pixel es público por naturaleza, va hardcodeado en el HTML — NO es secreto).
+- **Helper**: `frontend/src/lib/fbpixel.js` (`fbTrack`, `fbTrackCustom`) — no-ops seguros si `fbq` está bloqueado por adblocker.
+- **Eventos del embudo**:
+  - `DemoFlow.js` → al iniciar demo: `Lead` (content_name "Live Demo Start") + custom `DemoStarted`; al generar quote IA (momento mágico): `ViewContent` + custom `DemoQuoteGenerated`.
+  - `Register.js` → al crear cuenta: `CompleteRegistration` + custom `StartTrial`.
+  - `PaymentSuccess.js` → al confirmar suscripción: `Subscribe` (value/currency USD).
+- **Recomendación de campaña** (dada al usuario): optimizar por evento frecuente (DemoStarted/Lead o registro), NO por compra con $5/día; usar retargeting (gran ROI); creativo = video del demo ES→EN; probar variante "Click to WhatsApp".
+- Build prod recompilado (plano → `/api` relativo) + `git add -f frontend/build/`. **Pendiente futuro (opcional): Conversions API (server-side) para tracking más confiable que solo el pixel del navegador.**
+
 5. Tell the user to **"Save to GitHub"** in chat input + `git pull` + `cp -r frontend/build/. /home/ezunitap/public_html/` on the VPS.
 
 **Why:** The user's VPS has very low RAM and CANNOT run `yarn build`. The build folder MUST arrive pre-compiled via git, AND must use RELATIVE `/api` so it serves BOTH ezunitap.com and ezunitech.com without CORS issues.
