@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
+  SlidersHorizontal, Languages, Palette,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import ReelStudio from "@/components/ReelStudio";
 import AiImageStudio from "@/components/AiImageStudio";
 
@@ -62,6 +64,17 @@ function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing 
                 <Sparkles className="w-3 h-3" /> IA
               </span>
             )}
+            {!photo.enhanced && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEnhance(index); }}
+                disabled={enhancing}
+                data-testid={`enhance-photo-${index}`}
+                className="absolute bottom-2 right-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md shadow border border-violet-200 text-violet-700 text-[11px] font-bold tap"
+              >
+                {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {enhancing ? "Mejorando…" : "Mejorar con IA"}
+              </button>
+            )}
           </>
         ) : (
           <div className="text-center text-slate-400">
@@ -70,19 +83,6 @@ function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing 
           </div>
         )}
       </div>
-      {photo && !photo.enhanced && (
-        <Button
-          onClick={() => onEnhance(index)}
-          disabled={enhancing}
-          data-testid={`enhance-photo-${index}`}
-          size="sm"
-          variant="outline"
-          className="w-full mt-2 rounded-lg border-violet-300 text-violet-700 hover:bg-violet-50 h-9"
-        >
-          {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
-          {enhancing ? "Mejorando..." : "Mejorar con IA"}
-        </Button>
-      )}
       <input
         ref={ref}
         type="file"
@@ -118,6 +118,7 @@ export default function SocialStudio() {
   const [cardIds, setCardIds] = useState([]); // photo_ids currently on the Smart Card
   const [cardBusy, setCardBusy] = useState(null);
   const [reelInject, setReelInject] = useState(null); // AI image pushed into the reel builder
+  const [advOpen, setAdvOpen] = useState(false); // "Más opciones" drawer (idioma + colores personalizados)
 
   // Use an AI-generated image in the Post builder (single-photo template).
   const useAiImageInPost = (file, preview) => {
@@ -362,14 +363,14 @@ export default function SocialStudio() {
         {/* Template */}
         <div>
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Elige un diseño</Label>
-          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Así se verá tu post (tu foto y marca reemplazan el ejemplo).</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Desliza → y toca uno. Tu foto y marca reemplazan el ejemplo.</p>
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" data-testid="template-carousel">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTemplate(t.id)}
                 data-testid={`template-${t.id}`}
-                className={`group relative text-left rounded-2xl border overflow-hidden tap transition-all ${
+                className={`group relative flex-none w-[132px] snap-start text-left rounded-2xl border overflow-hidden tap transition-all ${
                   template === t.id
                     ? "border-emerald-500 ring-2 ring-emerald-500 shadow-md"
                     : "border-slate-200 hover:border-emerald-300 hover:shadow-sm"
@@ -406,7 +407,7 @@ export default function SocialStudio() {
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
             2. {needed > 1 ? "Fotos" : "Foto"}
           </Label>
-          <div className="flex gap-3 mt-2">
+          <div className={`flex gap-3 mt-2 ${needed === 1 ? "max-w-[220px]" : ""}`}>
             {Array.from({ length: needed }).map((_, i) => (
               <PhotoSlot
                 key={i}
@@ -437,87 +438,64 @@ export default function SocialStudio() {
           />
         </div>
 
-        {/* Language + formats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Idioma del post</Label>
-            <div className="flex gap-2 mt-2">
-              {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
-                <button
-                  key={id}
-                  onClick={() => setLanguage(id)}
-                  data-testid={`lang-${id}`}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border tap ${
-                    language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
-                  }`}
-                >
-                  {lbl}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">5. Formato</Label>
-            <div className="flex gap-2 mt-2">
-              {FORMATS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => toggleFormat(f.id)}
-                  data-testid={`format-${f.id}`}
-                  title={f.hint}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border tap ${
-                    formats.includes(f.id) ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+        {/* 4. Formato (chips horizontales) */}
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Formato</Label>
+          <div className="flex overflow-x-auto gap-2 pb-1 mt-2 scrollbar-hide">
+            {FORMATS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => toggleFormat(f.id)}
+                data-testid={`format-${f.id}`}
+                title={f.hint}
+                className={`flex-none px-5 py-2.5 rounded-full text-xs font-semibold border tap transition-colors ${
+                  formats.includes(f.id) ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Colors */}
+        {/* 5. Color (swatches horizontales) + Más opciones */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">6. Color del diseño</Label>
-          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Cambia el color de la barra y el fondo para que combine con tu negocio.</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">5. Color del diseño</Label>
+            <button
+              onClick={() => setAdvOpen(true)}
+              data-testid="more-options-btn"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 tap"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Más opciones
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Desliza → para ver los colores. Cambia barra y fondo.</p>
+          <div className="flex overflow-x-auto gap-3 pb-1 items-center scrollbar-hide">
             {COLOR_THEMES.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setColorTheme(c.id)}
                 data-testid={`color-${c.id}`}
                 title={c.label}
-                className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${
-                  colorTheme === c.id ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"
+                className={`flex-none w-11 h-11 rounded-full border-2 tap transition-transform hover:scale-105 ${
+                  colorTheme === c.id ? "ring-2 ring-emerald-600 ring-offset-2 border-white" : "border-slate-200"
                 }`}
-              >
-                <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: c.swatch }} />
-                {c.label}
-              </button>
+                style={{ background: c.swatch }}
+              />
             ))}
             <button
-              onClick={() => setColorTheme("custom")}
+              onClick={() => { setColorTheme("custom"); setAdvOpen(true); }}
               data-testid="color-custom"
-              className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${
-                colorTheme === "custom" ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"
+              title="Personalizado"
+              className={`flex-none w-11 h-11 rounded-full border-2 flex items-center justify-center tap ${
+                colorTheme === "custom" ? "ring-2 ring-emerald-600 ring-offset-2 border-white" : "border-dashed border-slate-300 bg-slate-50 text-slate-500"
               }`}
+              style={colorTheme === "custom" ? { background: customAccent } : {}}
             >
-              <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: customAccent }} />
-              Personalizado
+              {colorTheme === "custom" ? null : <Palette className="w-4 h-4" />}
             </button>
           </div>
-          {colorTheme === "custom" && (
-            <div className="flex gap-4 mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200" data-testid="custom-colors">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                Barra / botón
-                <input type="color" value={customAccent} onChange={(e) => setCustomAccent(e.target.value)} data-testid="custom-accent-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
-              </label>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                Fondo
-                <input type="color" value={customBrand} onChange={(e) => setCustomBrand(e.target.value)} data-testid="custom-brand-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
-              </label>
-            </div>
-          )}
         </div>
 
         <Button
@@ -529,6 +507,63 @@ export default function SocialStudio() {
           {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Generando con IA…</> : <><Sparkles className="w-5 h-5 mr-2" /> Generar Post</>}
         </Button>
       </Card>
+
+      {/* "Más opciones" — Idioma + colores personalizados (drawer para no llenar la pantalla) */}
+      <Drawer open={advOpen} onOpenChange={setAdvOpen}>
+        <DrawerContent data-testid="advanced-settings-drawer">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <SlidersHorizontal className="w-5 h-5 text-emerald-600" /> Más opciones
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 space-y-6 max-w-lg mx-auto w-full">
+            {/* Idioma */}
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Languages className="w-3.5 h-3.5" /> Idioma del post
+              </Label>
+              <div className="flex gap-2 mt-2">
+                {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
+                  <button
+                    key={id}
+                    onClick={() => setLanguage(id)}
+                    data-testid={`lang-${id}`}
+                    className={`flex-1 py-3 rounded-xl text-sm font-semibold border tap ${
+                      language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Colores personalizados */}
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5" /> Colores personalizados
+              </Label>
+              <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Elige colores exactos para que combine con tu negocio.</p>
+              <div className="flex gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200" data-testid="custom-colors">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  Barra / botón
+                  <input type="color" value={customAccent} onChange={(e) => { setCustomAccent(e.target.value); setColorTheme("custom"); }} data-testid="custom-accent-input" className="w-10 h-10 rounded-lg border border-slate-300 cursor-pointer" />
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  Fondo
+                  <input type="color" value={customBrand} onChange={(e) => { setCustomBrand(e.target.value); setColorTheme("custom"); }} data-testid="custom-brand-input" className="w-10 h-10 rounded-lg border border-slate-300 cursor-pointer" />
+                </label>
+              </div>
+            </div>
+
+            <DrawerClose asChild>
+              <Button data-testid="adv-done-btn" className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                <Check className="w-5 h-5 mr-2" /> Listo
+              </Button>
+            </DrawerClose>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Result */}
       {post && (

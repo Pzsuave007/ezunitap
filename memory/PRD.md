@@ -27,6 +27,15 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — MARKETING STUDIO: rediseño móvil (carruseles horizontales, menos scroll) [COMPLETO]
+Pedido: el constructor de posts (tab "Imagen") era una página muy larga en móvil (6 secciones apiladas). Reorganizado mobile-first (design_agent blueprint en `/app/design_guidelines.json`, archetype Swiss; se MANTUVIERON los colores de marca emerald de UniTech, NO se cambió el esquema). Ninguna funcionalidad removida.
+- **Diseños (templates)**: de grid 2-col (muy alto) → **carrusel horizontal** con snap (`flex overflow-x-auto snap-x scrollbar-hide`, cards `w-[132px]`, se asoma el siguiente para indicar swipe). `data-testid="template-carousel"`.
+- **Foto(s)**: botón "Mejorar con IA" ahora es **píldora flotante** dentro del marco (no ocupa fila aparte); contenedor limitado a `max-w-[220px]` cuando es 1 foto.
+- **Formato y Color**: chips/swatches en **scroll horizontal** (no apilados). Swatches de color = círculos.
+- **"Más opciones" (Drawer inferior)**: Idioma (Inglés/Español) + colores personalizados (barra/fondo) movidos a un `Drawer` para no llenar la pantalla. `data-testid="advanced-settings-drawer"`, `more-options-btn`.
+- Resultado: el builder cabe en ~1-1.5 pantallas en móvil. Testids preservados (template-{id}, format-{id}, color-{id}, color-custom, lang-en/es, custom-accent/brand-input, brief-input, generate-btn). Verificado en 390px por screenshot (carrusel, drawer, switch de template 1-foto, colores).
+
+
 ## ✅ Jun 2026 — MÓVIL: acceso fácil a Marketing + menú "Más" [COMPLETO]
 Problema reportado: usuarios poco técnicos no podían llegar a Marketing en celular (el bottom nav móvil solo tenía 5 items: Inicio/Clientes/Tarjeta/Agenda/Perfil — Marketing, Quotes, Invoices, Contratos, Reviews NO eran accesibles sin escribir la URL).
 - **Fix** (`components/Layout.js`): bottom nav móvil ahora = **Inicio · Clientes · Tarjeta(centro) · Marketing · Más**. Nuevo botón **"Más"** (`bottomnav-more`) abre un Sheet inferior (`more-menu`) con filas grandes y etiquetas claras en español: Agenda, Cotizaciones (Quotes), Contratos, Facturas (Invoices), Trabajos, Reseñas de Google, Mi Perfil, Mi Suscripción, (Admin si super admin), Cerrar sesión.
