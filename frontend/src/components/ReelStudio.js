@@ -9,10 +9,9 @@ import { toast } from "sonner";
 import {
   Loader2, Download, Trash2, ImagePlus, X, Video,
   Music, Play, Pause, Upload, Captions, Clapperboard, Mic, Sparkles,
-  SlidersHorizontal, Check,
+  Check, Palette,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -71,7 +70,6 @@ export default function ReelStudio({ injectPhoto } = {}) {
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
   const [playingTrack, setPlayingTrack] = useState(null);
-  const [settingsOpen, setSettingsOpen] = useState(false); // "Ajustes del video" drawer
 
   const fileRef = useRef(null);
   const musicRef = useRef(null);
@@ -406,30 +404,11 @@ export default function ReelStudio({ injectPhoto } = {}) {
           )}
         </div>
 
-        {/* Ajustes del video (avanzado) — drawer para no llenar la pantalla en móvil */}
-        <button
-          onClick={() => setSettingsOpen(true)}
-          data-testid="reel-settings-btn"
-          className="w-full flex items-center justify-between gap-2 px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 active:bg-slate-100 tap"
-        >
-          <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
-            <SlidersHorizontal className="w-4 h-4 text-emerald-600" /> Ajustes del video
-          </span>
-          <span className="text-[11px] text-slate-500 text-right">{duration}s · {language === "es" ? "Español" : "Inglés"} · {voiceover ? "con voz" : "sin voz"} ›</span>
-        </button>
-
-        <Drawer open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DrawerContent data-testid="reel-settings-drawer">
-            <DrawerHeader className="text-left">
-              <DrawerTitle className="font-heading flex items-center gap-2">
-                <SlidersHorizontal className="w-5 h-5 text-emerald-600" /> Ajustes del video
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-8 space-y-6 max-w-lg mx-auto w-full overflow-y-auto max-h-[72vh]">
+        {/* Ajustes — compactos en chips horizontales deslizables (sin popup) */}
         {/* Language + Duration */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Idioma del texto</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Idioma del texto</Label>
             <div className="flex gap-2 mt-2">
               {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
                 <button key={id} onClick={() => setLanguage(id)} data-testid={`reel-lang-${id}`}
@@ -440,7 +419,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
             </div>
           </div>
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">5. Duración</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Duración</Label>
             <div className="flex gap-2 mt-2">
               {DURATIONS.map((d) => (
                 <button key={d} onClick={() => setDuration(d)} data-testid={`reel-duration-${d}`}
@@ -455,11 +434,11 @@ export default function ReelStudio({ injectPhoto } = {}) {
         {/* Motion + Transition */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">6. Movimiento</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Movimiento</Label>
+            <div className="flex overflow-x-auto gap-2 mt-2 pb-1 scrollbar-hide">
               {MOTIONS.map((m) => (
                 <button key={m.id} onClick={() => setMotion(m.id)} data-testid={`reel-motion-${m.id}`}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold border tap ${motion === m.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  className={`flex-none px-4 py-2.5 rounded-full text-xs font-semibold border tap ${motion === m.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
                   {m.label}
                 </button>
               ))}
@@ -467,12 +446,12 @@ export default function ReelStudio({ injectPhoto } = {}) {
           </div>
           <div>
             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              7. Transición {isBeforeAfter && <span className="text-slate-400 normal-case font-normal">(prueba "Deslizar" para el efecto antes/después)</span>}
+              Transición {isBeforeAfter && <span className="text-slate-400 normal-case font-normal">(prueba "Deslizar")</span>}
             </Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex overflow-x-auto gap-2 mt-2 pb-1 scrollbar-hide">
               {TRANSITIONS.map((t) => (
                 <button key={t.id} onClick={() => setTransition(t.id)} data-testid={`reel-transition-${t.id}`}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold border tap ${transition === t.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                  className={`flex-none px-4 py-2.5 rounded-full text-xs font-semibold border tap ${transition === t.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
                   {t.label}
                 </button>
               ))}
@@ -480,22 +459,22 @@ export default function ReelStudio({ injectPhoto } = {}) {
           </div>
         </div>
 
-        {/* Extras toggles */}
+        {/* Extras toggles (pills compactos) */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">8. Extras</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Captions className="w-4 h-4 text-emerald-600" /> Subtítulos</span>
-              <Switch checked={subtitles} onCheckedChange={setSubtitles} data-testid="reel-subtitles-switch" />
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Clapperboard className="w-4 h-4 text-emerald-600" /> Tarjeta final</span>
-              <Switch checked={outro} onCheckedChange={setOutro} data-testid="reel-outro-switch" />
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Mic className="w-4 h-4 text-emerald-600" /> Voz en off IA</span>
-              <Switch checked={voiceover} onCheckedChange={setVoiceover} data-testid="reel-voiceover-switch" />
-            </div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Extras</Label>
+          <div className="flex overflow-x-auto gap-2 mt-2 pb-1 scrollbar-hide">
+            <button onClick={() => setSubtitles(!subtitles)} data-testid="reel-subtitles-switch"
+              className={`flex-none inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-semibold border tap ${subtitles ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+              <Captions className="w-4 h-4" /> Subtítulos {subtitles && <Check className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={() => setOutro(!outro)} data-testid="reel-outro-switch"
+              className={`flex-none inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-semibold border tap ${outro ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+              <Clapperboard className="w-4 h-4" /> Tarjeta final {outro && <Check className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={() => setVoiceover(!voiceover)} data-testid="reel-voiceover-switch"
+              className={`flex-none inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-semibold border tap ${voiceover ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+              <Mic className="w-4 h-4" /> Voz en off IA {voiceover && <Check className="w-3.5 h-3.5" />}
+            </button>
           </div>
           {voiceover && (
             <div className="mt-2 p-3 rounded-xl bg-emerald-50/60 border border-emerald-100" data-testid="reel-voice-mode">
@@ -561,56 +540,49 @@ export default function ReelStudio({ injectPhoto } = {}) {
           )}
         </div>
 
-        {/* Music */}
+        {/* Music (chips horizontales) */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">9. Música</Label>
-          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Pista libre de derechos, sube la tuya, o sin música.</p>
-          <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Música</Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Desliza → toca para elegir, ▶ para escuchar.</p>
+          <div className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide items-center">
             <button onClick={() => setMusic("none")} data-testid="reel-music-none"
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold tap ${music === "none" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
-              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${music === "none" ? "border-emerald-500" : "border-slate-300"}`}>{music === "none" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}</span>
-              Sin música <span className="text-slate-400 font-normal">(le pones música en Instagram)</span>
+              className={`flex-none inline-flex items-center px-3.5 py-2.5 rounded-full text-xs font-semibold border tap ${music === "none" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+              Sin música
             </button>
             {tracks.map((t) => (
               <div key={t.id} data-testid={`reel-music-${t.id}`}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold ${music === t.id ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
-                <button onClick={() => setMusic(t.id)} className="flex items-center gap-3 flex-1 text-left tap">
-                  <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${music === t.id ? "border-emerald-500" : "border-slate-300"}`}>{music === t.id && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}</span>
-                  <Music className="w-4 h-4 text-emerald-600" />
-                  <span>{t.label} <span className="text-slate-400 font-normal">· {t.desc}</span></span>
+                className={`flex-none inline-flex items-center gap-1 pl-3.5 pr-1.5 py-1.5 rounded-full text-xs font-semibold border ${music === t.id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+                <button onClick={() => setMusic(t.id)} className="inline-flex items-center gap-1.5 tap whitespace-nowrap">
+                  <Music className="w-3.5 h-3.5" /> {t.label}
                 </button>
                 <button onClick={() => previewTrack(t.id)} data-testid={`reel-music-preview-${t.id}`}
-                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 tap flex-shrink-0">
-                  {playingTrack === t.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  className="w-7 h-7 rounded-full bg-white/70 flex items-center justify-center tap shrink-0">
+                  {playingTrack === t.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                 </button>
               </div>
             ))}
             <button onClick={() => { setMusic("upload"); musicRef.current?.click(); }} data-testid="reel-music-upload"
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-semibold tap ${music === "upload" ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>
-              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${music === "upload" ? "border-emerald-500" : "border-slate-300"}`}>{music === "upload" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}</span>
-              <Upload className="w-4 h-4 text-emerald-600" />
-              {musicFile ? <span className="truncate">{musicFile.name}</span> : "Subir mi música (MP3, M4A, WAV)"}
+              className={`flex-none inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-semibold border tap whitespace-nowrap ${music === "upload" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>
+              <Upload className="w-3.5 h-3.5" /> {musicFile ? "Mi música ✓" : "Subir música"}
             </button>
             <input ref={musicRef} type="file" accept="audio/*" hidden
               onChange={(e) => { const f = e.target.files?.[0]; if (f) { setMusicFile(f); setMusic("upload"); } e.target.value = ""; }} />
           </div>
         </div>
 
-        {/* Colors */}
+        {/* Colors (swatches horizontales) */}
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">10. Color del diseño</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Color del diseño</Label>
+          <div className="flex overflow-x-auto gap-3 pb-1 mt-2 items-center scrollbar-hide">
             {COLOR_THEMES.map((c) => (
               <button key={c.id} onClick={() => setColorTheme(c.id)} data-testid={`reel-color-${c.id}`} title={c.label}
-                className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${colorTheme === c.id ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"}`}>
-                <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: c.swatch }} />
-                {c.label}
-              </button>
+                className={`flex-none w-11 h-11 rounded-full border-2 tap transition-transform hover:scale-105 ${colorTheme === c.id ? "ring-2 ring-emerald-600 ring-offset-2 border-white" : "border-slate-200"}`}
+                style={{ background: c.swatch }} />
             ))}
-            <button onClick={() => setColorTheme("custom")} data-testid="reel-color-custom"
-              className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border text-xs font-semibold tap transition-all ${colorTheme === "custom" ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200 hover:border-slate-300"}`}>
-              <span className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: customAccent }} />
-              Personalizado
+            <button onClick={() => setColorTheme("custom")} data-testid="reel-color-custom" title="Personalizado"
+              className={`flex-none w-11 h-11 rounded-full border-2 flex items-center justify-center tap ${colorTheme === "custom" ? "ring-2 ring-emerald-600 ring-offset-2 border-white" : "border-dashed border-slate-300 bg-slate-50 text-slate-500"}`}
+              style={colorTheme === "custom" ? { background: customAccent } : {}}>
+              {colorTheme === "custom" ? null : <Palette className="w-4 h-4" />}
             </button>
           </div>
           {colorTheme === "custom" && (
@@ -626,15 +598,6 @@ export default function ReelStudio({ injectPhoto } = {}) {
             </div>
           )}
         </div>
-
-            <DrawerClose asChild>
-              <Button data-testid="reel-settings-done" className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
-                <Check className="w-5 h-5 mr-2" /> Listo
-              </Button>
-            </DrawerClose>
-            </div>
-          </DrawerContent>
-        </Drawer>
 
         <Button onClick={generate} disabled={generating || !copyDraft} data-testid="reel-generate-btn"
           className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-base">

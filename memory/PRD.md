@@ -42,6 +42,14 @@ Aplicado el mismo patrón al Reel Studio (`components/ReelStudio.js`, tenía 10 
 - **Drawer "Ajustes del video"** (`reel-settings-drawer`, scrollable max-h-72vh) contiene TODO lo avanzado: Idioma, Duración, Movimiento, Transición, Extras (subtítulos/outro/voz en off + opciones de voz), Música, Color (+ custom). El botón muestra resumen (duración · idioma · con/sin voz).
 - Ninguna funcionalidad removida; todos los testids preservados (reel-template-{id}, reel-lang-{id}, reel-duration-{d}, reel-motion-{id}, reel-transition-{id}, reel-*-switch, reel-music-{id}, reel-color-{id}, reel-generate-btn, etc.). Verificado en 390px (carrusel + drawer).
 
+## ✅ Jun 2026 — REEL STUDIO v2: opciones COMPACTAS (no popup) [COMPLETO]
+Feedback del usuario: mover los ajustes a un popup NO mejoró nada porque adentro seguían siendo listas largas. Rehecho como la sección de Imagen: **quitado el drawer/popup** y cada opción convertida en **fila compacta de chips horizontales deslizables**.
+- Movimiento, Transición, Música → `flex overflow-x-auto scrollbar-hide` (chips `flex-none`, scroll lateral con el siguiente asomándose).
+- Extras (Subtítulos/Tarjeta final/Voz en off) → de 3 filas con Switch a **3 píldoras toggle compactas** en una línea horizontal (muestran ✓ al activar). El sub-panel de voz aparece inline solo cuando "Voz en off" está activo.
+- Música → de lista vertical larga a **chips horizontales** con ▶ de preview por pista.
+- Color → círculos swatch deslizables + custom (igual que Imagen).
+- Idioma/Duración → chips compactos, sin numeración. Removido estado `settingsOpen` e imports de Drawer. Verificado en 390px.
+
 
 ## ✅ Jun 2026 — MÓVIL: acceso fácil a Marketing + menú "Más" [COMPLETO]
 Problema reportado: usuarios poco técnicos no podían llegar a Marketing en celular (el bottom nav móvil solo tenía 5 items: Inicio/Clientes/Tarjeta/Agenda/Perfil — Marketing, Quotes, Invoices, Contratos, Reviews NO eran accesibles sin escribir la URL).
