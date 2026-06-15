@@ -1,20 +1,34 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import TrialBanner from "@/components/TrialBanner";
 import NotificationBanner from "@/components/NotificationBanner";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 
-// Mobile bottom nav — 5 essential items only.
+// Mobile bottom nav — 5 essentials. "Marketing" is front-and-center for our
+// non-tech contractors; "Más" opens a full menu with everything else.
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true },
+  { to: "/marketing", label: "Marketing", icon: Megaphone },
+  { more: true, label: "Más", icon: Menu },
+];
+
+// Everything reachable from the mobile "Más" menu (big, clearly-labeled rows).
+const MORE_ITEMS = [
   { to: "/calendario", label: "Agenda", icon: CalendarDays },
-  { to: "/ajustes", label: "Perfil", icon: UserIcon },
+  { to: "/quotes", label: "Cotizaciones (Quotes)", icon: FileText },
+  { to: "/contratos", label: "Contratos", icon: FileSignature },
+  { to: "/invoices", label: "Facturas (Invoices)", icon: Receipt },
+  { to: "/trabajos", label: "Trabajos", icon: Briefcase },
+  { to: "/reviews", label: "Reseñas de Google", icon: Star },
+  { to: "/ajustes", label: "Mi Perfil", icon: UserIcon },
+  { to: "/precios", label: "Mi Suscripción", icon: CreditCard },
 ];
 
 // Desktop sidebar — grouped for clarity.
@@ -122,6 +136,7 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Fast path: check email locally (works immediately even before API responds)
   const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com"];
@@ -239,6 +254,19 @@ export default function Layout() {
       >
         <div className="grid grid-cols-5">
           {NAV.map((n) => {
+            if (n.more) {
+              return (
+                <button
+                  key="more"
+                  onClick={() => setMoreOpen(true)}
+                  data-testid="bottomnav-more"
+                  className="flex flex-col items-center justify-center gap-1 py-2.5 tap text-slate-400"
+                >
+                  <n.icon className="w-5 h-5" strokeWidth={2} />
+                  <span className="text-[10px] font-semibold">{n.label}</span>
+                </button>
+              );
+            }
             if (n.accent) {
               return (
                 <NavLink
@@ -281,6 +309,53 @@ export default function Layout() {
           })}
         </div>
       </nav>
+
+      {/* Mobile "Más" menu — full access for non-tech users (big tap targets) */}
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="bottom" className="lg:hidden rounded-t-3xl max-h-[85vh] overflow-y-auto p-0" data-testid="more-menu">
+          <SheetHeader className="px-5 pt-5 pb-3 text-left">
+            <SheetTitle className="font-heading text-lg">Menú</SheetTitle>
+            <div className="text-xs text-slate-500 truncate">{user?.business_name}</div>
+          </SheetHeader>
+          <div className="px-3 pb-3 grid grid-cols-1 gap-1">
+            {MORE_ITEMS.map((n) => (
+              <button
+                key={n.to}
+                onClick={() => { setMoreOpen(false); navigate(n.to); }}
+                data-testid={`more-${n.to.replace(/[/#]/g, "-")}`}
+                className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-800 bg-slate-50 active:bg-slate-100 tap"
+              >
+                <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                  <n.icon className="w-5 h-5 text-blue-900" strokeWidth={2} />
+                </span>
+                {n.label}
+              </button>
+            ))}
+            {showAdminLink && (
+              <button
+                onClick={() => { setMoreOpen(false); navigate("/admin/cuentas"); }}
+                data-testid="more-admin"
+                className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-800 bg-slate-50 active:bg-slate-100 tap"
+              >
+                <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-blue-900" strokeWidth={2} />
+                </span>
+                Admin
+              </button>
+            )}
+            <button
+              onClick={() => { setMoreOpen(false); handleLogout(); }}
+              data-testid="more-logout"
+              className="flex items-center gap-4 px-4 py-3.5 mt-1 rounded-2xl text-[15px] font-semibold text-red-600 bg-red-50 active:bg-red-100 tap"
+            >
+              <span className="w-10 h-10 rounded-xl bg-white border border-red-200 flex items-center justify-center shrink-0">
+                <LogOut className="w-5 h-5 text-red-600" strokeWidth={2} />
+              </span>
+              Cerrar sesión
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

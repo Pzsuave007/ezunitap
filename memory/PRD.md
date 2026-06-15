@@ -27,6 +27,12 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — MÓVIL: acceso fácil a Marketing + menú "Más" [COMPLETO]
+Problema reportado: usuarios poco técnicos no podían llegar a Marketing en celular (el bottom nav móvil solo tenía 5 items: Inicio/Clientes/Tarjeta/Agenda/Perfil — Marketing, Quotes, Invoices, Contratos, Reviews NO eran accesibles sin escribir la URL).
+- **Fix** (`components/Layout.js`): bottom nav móvil ahora = **Inicio · Clientes · Tarjeta(centro) · Marketing · Más**. Nuevo botón **"Más"** (`bottomnav-more`) abre un Sheet inferior (`more-menu`) con filas grandes y etiquetas claras en español: Agenda, Cotizaciones (Quotes), Contratos, Facturas (Invoices), Trabajos, Reseñas de Google, Mi Perfil, Mi Suscripción, (Admin si super admin), Cerrar sesión.
+- Sidebar desktop sin cambios (ya tenía Marketing). Verificado en móvil (390px) por screenshot: Marketing visible en nav + menú "Más" abre con todos los accesos.
+
+
 ## ✅ Jun 2026 — MARKETING STUDIO: "Crear con IA" (generación de imágenes + ideas de posts) [COMPLETO + TESTEADO 100%]
 Tercera pestaña en `/marketing` ("Crear con IA") para contratistas SIN fotos: describen su idea → la IA crea una imagen realista o gráfica → la usan en posts/reels.
 - **Generación de imágenes IA** (texto→imagen) con Gemini Nano Banana (`gemini-3.1-flash-image-preview`) vía Emergent LLM key. Estilos: `realistic` / `graphic`. Formatos exactos vía Pillow cover-crop: 9x16=1080x1920, 1x1=1080x1080, 4x5=1080x1350.
