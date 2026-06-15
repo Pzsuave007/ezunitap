@@ -119,6 +119,7 @@ export default function SocialStudio() {
   const [cardBusy, setCardBusy] = useState(null);
   const [reelInject, setReelInject] = useState(null); // AI image pushed into the reel builder
   const [advOpen, setAdvOpen] = useState(false); // "Más opciones" drawer (idioma + colores personalizados)
+  const [resultOpen, setResultOpen] = useState(false); // slide-up result drawer
 
   // Use an AI-generated image in the Post builder (single-photo template).
   const useAiImageInPost = (file, preview) => {
@@ -224,6 +225,7 @@ export default function SocialStudio() {
     if (formats.length === 0) { toast.error("Elige al menos un formato"); return; }
     setLoading(true);
     setPost(null);
+    setResultOpen(true);
     try {
       const { brand: brandColor, accent: accentColor } = resolveColorsLocal();
       const fd = new FormData();
@@ -243,6 +245,7 @@ export default function SocialStudio() {
       loadHistory();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "No se pudo generar el post");
+      setResultOpen(false);
     } finally {
       setLoading(false);
     }
@@ -565,10 +568,23 @@ export default function SocialStudio() {
         </DrawerContent>
       </Drawer>
 
-      {/* Result */}
-      {post && (
-        <Card className="p-5 space-y-4 border-0 shadow-sm" data-testid="post-result">
-          <h2 className="font-heading text-lg font-bold">Tu post</h2>
+      {/* Result — slide-up Drawer */}
+      <Drawer open={resultOpen} onOpenChange={setResultOpen}>
+        <DrawerContent data-testid="post-result-drawer" className="max-h-[92vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600" /> Tu post
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-lg mx-auto w-full" data-testid="post-result">
+          {(loading || !post) ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Loader2 className="w-9 h-9 animate-spin text-emerald-600 mb-3" />
+              <p className="text-sm font-semibold text-slate-600">Creando tu post con IA…</p>
+              <p className="text-xs text-slate-400 mt-1">Un momento, la IA está diseñando tu publicación.</p>
+            </div>
+          ) : (
+          <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {post.images.map((img) => (
               <div key={img.format} className="space-y-2">
@@ -631,8 +647,11 @@ export default function SocialStudio() {
             <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">{post.copy.caption}</p>
             <p className="text-sm text-blue-600 mt-2">{(post.copy.hashtags || []).join(" ")}</p>
           </div>
-        </Card>
-      )}
+          </div>
+          )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* History */}
       {history.length > 0 && (
@@ -647,7 +666,7 @@ export default function SocialStudio() {
                     <img
                       src={`${BACKEND}${thumb.url}`}
                       alt={h.template}
-                      onClick={() => { setPost(h); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      onClick={() => { setPost(h); setResultOpen(true); }}
                       data-testid={`history-${h.id}`}
                       className="w-full aspect-square object-cover rounded-xl border border-slate-200 cursor-pointer tap"
                     />

@@ -27,6 +27,13 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — MARKETING STUDIO: resultados en Drawer deslizable (3 pestañas) [COMPLETO + PROBADO]
+Pedido de Paul: al generar (post/video/imagen) mostrar "Creando…" y al terminar abrir el resultado en un **Drawer deslizable de abajo** con todas las herramientas, en vez de saltar arriba de la página. Tocar un ítem de la galería abre ese mismo Drawer. Decisión del usuario: **cada pestaña conserva su propio estilo** (no unificado).
+- **Imagen** (`SocialStudio.js`): nuevo estado `resultOpen`. `generate()` abre el Drawer al iniciar (estado "Creando tu post con IA…" con spinner), al terminar muestra el resultado dentro del Drawer (`post-result-drawer`): imágenes, Descargar, Agregar a tarjeta, editar Titular/Subtítulo/CTA + "Volver a generar diseño", Caption + Copiar. Galería "Mis posts" → onClick abre el Drawer (sin scrollTo). En error cierra el Drawer; borrar el post abierto lo cierra.
+- **Video/Reel** (`ReelStudio.js`): Drawer `reel-result-drawer` con estado generando (spinner ~30-60s) → video + Descargar al estar listo. Galería "Mis Reels" → onClick abre el Drawer. Errores de polling cierran el Drawer.
+- **Crear con IA** (`AiImageStudio.js`): Drawer `ai-result-drawer` (`Tu imagen IA`) con la imagen grande + Usar en Post, Usar en Reel, Descargar, A mi tarjeta, Eliminar. La galería ahora es clickeable (`ai-image-open-{id}`). `generate()` abre el Drawer en "Creando imagen…" y al terminar muestra la nueva imagen.
+- **Probado** (screenshot e2e en `unitech-studio.preview…`): galería de Imagen abre `post-result-drawer` con `rerender-btn`; galería de IA abre `ai-result-drawer` con `ai-result-use-post`. Build prod plano (relativo `/api`, multi-dominio) + `git add -f frontend/build/`. ⚠️ Recordatorio: la URL de preview correcta de este pod es la de `REACT_APP_BACKEND_URL` (`unitech-studio…`), NO `unitech-preview…`.
+
 ## ✅ Jun 2026 — MARKETING STUDIO: rediseño móvil (carruseles horizontales, menos scroll) [COMPLETO]
 Pedido: el constructor de posts (tab "Imagen") era una página muy larga en móvil (6 secciones apiladas). Reorganizado mobile-first (design_agent blueprint en `/app/design_guidelines.json`, archetype Swiss; se MANTUVIERON los colores de marca emerald de UniTech, NO se cambió el esquema). Ninguna funcionalidad removida.
 - **Diseños (templates)**: de grid 2-col (muy alto) → **carrusel horizontal** con snap (`flex overflow-x-auto snap-x scrollbar-hide`, cards `w-[132px]`, se asoma el siguiente para indicar swipe). `data-testid="template-carousel"`.

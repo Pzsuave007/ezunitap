@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   Sparkles, Loader2, Trash2, Download, ImagePlus, Video, Lightbulb, Wand2, IdCard, Check,
 } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -33,6 +34,8 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
   const [gallery, setGallery] = useState([]);
   const [usage, setUsage] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [resultOpen, setResultOpen] = useState(false);
 
   // Post ideas
   const [ideasTopic, setIdeasTopic] = useState("");
@@ -51,13 +54,17 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
   const generate = async () => {
     if (prompt.trim().length < 4) { toast.error("Describe la imagen que quieres crear"); return; }
     setLoading(true);
+    setSelected(null);
+    setResultOpen(true);
     try {
       const { data } = await api.post("/social/ai-image", { prompt, aspect, style }, { timeout: 120000 });
       setGallery((prev) => [data, ...prev]);
+      setSelected(data);
       setUsage({ used: data.used, limit: data.limit, unlimited: data.unlimited, remaining: data.remaining });
       toast.success("¡Imagen creada con IA! ✨");
     } catch (err) {
       toast.error(err?.response?.data?.detail || "No se pudo generar la imagen");
+      setResultOpen(false);
     } finally {
       setLoading(false);
     }
@@ -68,6 +75,7 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
     try {
       await api.delete(`/social/ai-images/${id}`);
       setGallery((prev) => prev.filter((g) => g.id !== id));
+      if (selected?.id === id) { setSelected(null); setResultOpen(false); }
       toast.success("Imagen eliminada");
     } catch {
       toast.error("No se pudo eliminar");
@@ -214,7 +222,9 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
                   <img
                     src={authedUrl(img.photo_id)}
                     alt={img.prompt}
-                    className="w-full aspect-square object-cover rounded-xl border border-slate-200"
+                    onClick={() => { setSelected(img); setResultOpen(true); }}
+                    data-testid={`ai-image-open-${img.id}`}
+                    className="w-full aspect-square object-cover rounded-xl border border-slate-200 cursor-pointer tap"
                   />
                   <button
                     onClick={() => removeImage(img.id)}
@@ -289,6 +299,53 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
           </div>
         )}
       </Card>
+
+      {/* Result — slide-up Drawer */}
+      <Drawer open={resultOpen} onOpenChange={setResultOpen}>
+        <DrawerContent data-testid="ai-result-drawer" className="max-h-[92vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-violet-600" /> {loading ? "Creando imagen…" : "Tu imagen IA"}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-md mx-auto w-full">
+            {(loading || !selected) ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Loader2 className="w-9 h-9 animate-spin text-violet-600 mb-3" />
+                <p className="text-sm font-semibold text-slate-600">Creando tu imagen con IA…</p>
+                <p className="text-xs text-slate-400 mt-1">Esto puede tardar unos segundos.</p>
+              </div>
+            ) : (
+              <div className="space-y-4" data-testid="ai-result">
+                <img src={authedUrl(selected.photo_id)} alt={selected.prompt}
+                  className="w-full rounded-2xl border border-slate-200" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" onClick={() => applyTo(selected, "post")} disabled={busyId === `${selected.photo_id}|post`}
+                    data-testid="ai-result-use-post" className="rounded-xl h-11 border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                    {busyId === `${selected.photo_id}|post` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ImagePlus className="w-4 h-4 mr-1.5" /> Usar en Post</>}
+                  </Button>
+                  <Button variant="outline" onClick={() => applyTo(selected, "reel")} disabled={busyId === `${selected.photo_id}|reel`}
+                    data-testid="ai-result-use-reel" className="rounded-xl h-11 border-blue-300 text-blue-700 hover:bg-blue-50">
+                    {busyId === `${selected.photo_id}|reel` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Video className="w-4 h-4 mr-1.5" /> Usar en Reel</>}
+                  </Button>
+                  <Button variant="outline" onClick={() => download(selected)}
+                    data-testid="ai-result-download" className="rounded-xl h-11 text-slate-700">
+                    <Download className="w-4 h-4 mr-1.5" /> Descargar
+                  </Button>
+                  <Button variant="outline" onClick={() => onToggleCard?.(selected.photo_id)} disabled={cardBusy === selected.photo_id}
+                    data-testid="ai-result-oncard" className={`rounded-xl h-11 ${cardIds.includes(selected.photo_id) ? "border-emerald-400 text-emerald-700 bg-emerald-50" : "text-slate-700"}`}>
+                    {cardBusy === selected.photo_id ? <Loader2 className="w-4 h-4 animate-spin" /> : (cardIds.includes(selected.photo_id) ? <><Check className="w-4 h-4 mr-1.5" /> En tarjeta</> : <><IdCard className="w-4 h-4 mr-1.5" /> A mi tarjeta</>)}
+                  </Button>
+                </div>
+                <Button variant="ghost" onClick={() => removeImage(selected.id)}
+                  data-testid="ai-result-delete" className="w-full rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700">
+                  <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar imagen
+                </Button>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

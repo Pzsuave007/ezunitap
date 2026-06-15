@@ -12,6 +12,7 @@ import {
   Check, Palette,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -175,7 +176,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
           clearInterval(pollRef.current); setReel(data); setGenerating(false); loadReels();
           toast.success("¡Tu Reel está listo! 🎬");
         } else if (data.status === "error") {
-          clearInterval(pollRef.current); setGenerating(false);
+          clearInterval(pollRef.current); setGenerating(false); setResultOpen(false);
           toast.error("No se pudo generar el Reel. Intenta de nuevo.");
         }
       } catch { /* keep polling */ }
@@ -213,6 +214,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
     if (music === "upload" && !musicFile) { toast.error("Sube tu archivo de música o elige otra opción"); return; }
     setGenerating(true);
     setReel(null);
+    setResultOpen(true);
     try {
       const { brand, accent } = resolveColors(colorTheme, customBrand, customAccent);
       const fd = new FormData();
@@ -247,6 +249,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
       pollReel(data.id);
     } catch (err) {
       setGenerating(false);
+      setResultOpen(false);
       toast.error(err?.response?.data?.detail || "No se pudo iniciar el Reel");
     }
   };
@@ -266,7 +269,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
   const deleteReel = async (id) => {
     if (!window.confirm("¿Eliminar este Reel?")) return;
     await api.delete(`/social/reels/${id}`);
-    if (reel?.id === id) setReel(null);
+    if (reel?.id === id) { setReel(null); setResultOpen(false); }
     loadReels();
     toast.success("Reel eliminado");
   };
@@ -606,28 +609,34 @@ export default function ReelStudio({ injectPhoto } = {}) {
         {!copyDraft && <p className="text-[11px] text-center text-slate-400 -mt-2">Primero genera el texto con IA (arriba) para poder crear el video.</p>}
       </Card>
 
-      {/* Current reel */}
-      {reel && (
-        <Card className="p-5 space-y-3 border-0 shadow-sm" data-testid="reel-result">
-          <h2 className="font-heading text-lg font-bold">Tu Reel</h2>
-          {reel.status === "ready" && reel.video ? (
-            <div className="space-y-3">
-              <video src={`${BACKEND}${reel.video.url}`} controls playsInline data-testid="reel-video"
-                className="w-full max-w-[320px] mx-auto rounded-2xl border border-slate-200 bg-black" />
-              <Button onClick={() => download(reel.video.url)} data-testid="reel-download-btn"
-                className="w-full max-w-[320px] mx-auto flex rounded-xl bg-emerald-600 hover:bg-emerald-700">
-                <Download className="w-4 h-4 mr-2" /> Descargar Reel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-3" />
-              <p className="text-sm font-semibold text-slate-600">Generando tu video…</p>
-              <p className="text-xs text-slate-400 mt-1">Puede tardar de 30 a 60 segundos. No cierres esta página.</p>
-            </div>
-          )}
-        </Card>
-      )}
+      {/* Current reel — slide-up Drawer */}
+      <Drawer open={resultOpen} onOpenChange={setResultOpen}>
+        <DrawerContent data-testid="reel-result-drawer" className="max-h-[92vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <Video className="w-5 h-5 text-emerald-600" /> Tu Reel
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-md mx-auto w-full" data-testid="reel-result">
+            {reel && reel.status === "ready" && reel.video ? (
+              <div className="space-y-3">
+                <video src={`${BACKEND}${reel.video.url}`} controls playsInline data-testid="reel-video"
+                  className="w-full max-w-[320px] mx-auto rounded-2xl border border-slate-200 bg-black" />
+                <Button onClick={() => download(reel.video.url)} data-testid="reel-download-btn"
+                  className="w-full max-w-[320px] mx-auto flex rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                  <Download className="w-4 h-4 mr-2" /> Descargar Reel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-3" />
+                <p className="text-sm font-semibold text-slate-600">Generando tu video…</p>
+                <p className="text-xs text-slate-400 mt-1">Puede tardar de 30 a 60 segundos. No cierres esta página.</p>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* History */}
       {reels.length > 0 && (
@@ -636,7 +645,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
             {reels.map((r) => (
               <div key={r.id} className="relative group">
-                <div onClick={() => { if (r.status === "ready") { setReel(r); window.scrollTo({ top: 0, behavior: "smooth" }); } }}
+                <div onClick={() => { if (r.status === "ready") { setReel(r); setResultOpen(true); } }}
                   data-testid={`reel-history-${r.id}`}
                   className="aspect-[9/16] rounded-xl border border-slate-200 bg-slate-900 overflow-hidden cursor-pointer tap flex items-center justify-center">
                   {r.status === "ready" && r.video ? (
