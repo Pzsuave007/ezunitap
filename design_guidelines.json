@@ -1,87 +1,88 @@
 {
   "theme": "Light",
-  "archetype": "Soft Utility (Archetype 3 adapted for outdoor/mobile use)",
-  "colors": {
-    "background": "#F8FAFC",
-    "surface": "#FFFFFF",
-    "primary": "#1E3A8A",
-    "primary_hover": "#172554",
-    "secondary": "#10B981",
-    "secondary_hover": "#059669",
-    "text_primary": "#0F172A",
-    "text_secondary": "#475569",
-    "accent_warning": "#F59E0B",
-    "accent_danger": "#EF4444",
-    "border": "#E2E8F0"
-  },
+  "archetype": "4 (Swiss & High-Contrast)",
+  "target_audience": "Latino service contractors, non-tech-savvy, mobile-first",
+  "design_philosophy": "Clear affordances, large tap targets, horizontal progression (carousels) to reduce vertical scroll fatigue, intuitive Spanish-first labeling.",
   "typography": {
-    "heading_font": "Outfit",
-    "body_font": "DM Sans",
-    "scale": {
-      "h1": "text-3xl font-bold tracking-tight",
-      "h2": "text-2xl font-bold tracking-tight",
-      "h3": "text-xl font-semibold",
-      "body": "text-base leading-relaxed",
-      "small": "text-sm text-slate-500",
-      "micro_label": "text-xs font-bold uppercase tracking-[0.2em]"
+    "headings": "Cabinet Grotesk (font-sans font-bold tracking-tight)",
+    "body": "IBM Plex Sans (font-sans text-base leading-relaxed)",
+    "hierarchy": {
+      "h1": "text-2xl sm:text-3xl lg:text-4xl",
+      "h2": "text-xl sm:text-2xl",
+      "h3": "text-lg sm:text-xl",
+      "body": "text-base",
+      "labels": "text-xs font-bold uppercase tracking-[0.1em] text-slate-500"
     }
   },
-  "layout_and_spacing": {
-    "philosophy": "Mobile-first, generous touch targets, card-based with distinct visual separation for outdoor readability.",
-    "spacing_scale": "Use p-4 to p-6 for containers. Emphasize vertical stacking and progressive disclosure.",
-    "button_heights": "h-14 for primary actions (thumb-friendly), h-10 for secondary.",
-    "border_radius": "rounded-2xl for main cards, rounded-xl for inner elements, rounded-full for pills and FABs."
+  "colors": {
+    "background": "bg-slate-50",
+    "surface": "bg-white",
+    "primary_action": "bg-slate-900 hover:bg-slate-800 text-white",
+    "secondary_action": "bg-slate-100 hover:bg-slate-200 text-slate-900",
+    "border": "border-slate-200",
+    "text_primary": "text-slate-900",
+    "text_secondary": "text-slate-500",
+    "accents": "Electric blue or high-contrast brand color strictly for selections/highlights"
   },
-  "components": {
-    "buttons": "Large, full-width on mobile. Primary CTA uses Emerald green for high visibility outdoors. Dark blue for secondary actions.",
-    "cards": "White surface, 1px border of slate-200, subtle shadow-sm. active:scale-[0.98] transition-transform.",
-    "bottom_nav": "Fixed bottom navigation with icons (Dashboard, Clientes, Quotes, Invoices). Icon color slate-400 inactive, Dark blue active.",
-    "inputs": "h-14, rounded-xl, border-slate-300, focus:border-blue-900 focus:ring-blue-900.",
-    "badges": "Used for statuses. Draft (Gray), Sent (Blue), Approved/Paid (Green), Overdue (Red). rounded-full, px-3 py-1 text-xs font-semibold."
+  "layout_strategy": {
+    "global": "Mobile-first priority. Generous internal padding (p-4 to p-6). Avoid long vertical stacking of large items.",
+    "top_navigation": "Sticky top header with Shadcn Tabs ('Imagen', 'Video (Reel)', 'Crear con IA'). Use overflow-x-auto so tabs slide sideways if they don't fit on small screens.",
+    "section_1_templates": "Horizontal snap carousel replacing the 2-col grid. Use flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4. Cards show partial next item to indicate scrollability.",
+    "section_2_photos": "Square dashed dropzones for 1 or 2 photos. Incorporate the 'Mejorar con IA' button inside the photo frame natively as a floating bottom-right pill.",
+    "section_3_brief": "Textarea for '¿Qué quieres comunicar?'. Min 4 rows. Clear distinct label.",
+    "section_4_quick_options": "Horizontal scrollable chip lists for 'Formato' (Vertical, Cuadrado) and 'Color' swatches to completely eliminate vertical stacking.",
+    "section_5_advanced": "Use a Shadcn Drawer (Bottom Sheet on mobile, Dialog on desktop) for the 'Personalizado' color pickers and 'Idioma del post' toggle. Keeps main feed clean.",
+    "bottom_action": "Sticky bottom bar using glassmorphism (bg-white/80 backdrop-blur-xl) housing a large 'Generar Post' button so users never hunt for it."
   },
-  "icons": {
-    "library": "lucide-react",
-    "style": "stroke-width 2, clean, readable at small sizes."
-  },
-  "motion": {
-    "hover_states": "subtle opacity changes or slight upward translation (-translate-y-0.5) for cards.",
-    "tap_states": "active:scale-95 on all clickable mobile elements to provide instant tactile feedback.",
-    "transitions": "transition-all duration-200 ease-out"
-  },
-  "image_urls": [
-    {
-      "category": "login_hero",
-      "url": "https://static.prod-images.emergentagent.com/jobs/483e0bc6-f696-4694-9c37-5f18c220d311/images/f15f7c90fb2b58aeaa9615ac21f3bbbd91105f6428b524b84739a1c3a00dbee1.png",
-      "description": "Illustration of Latino contractor using app, flat design matching colors. Use for Login/Welcome screen."
+  "component_specs": {
+    "template_carousel": {
+      "wrapper": "flex w-full overflow-x-auto snap-x snap-mandatory gap-4 pb-6 scrollbar-hide",
+      "item": "flex-none w-[200px] h-[200px] snap-center rounded-2xl border-2 bg-white overflow-hidden relative transition-all duration-200",
+      "active_state": "border-slate-900 shadow-md",
+      "inactive_state": "border-slate-200 opacity-80 scale-95",
+      "data_testid": "template-carousel-item"
     },
-    {
-      "category": "app_background",
-      "url": "https://static.prod-images.emergentagent.com/jobs/483e0bc6-f696-4694-9c37-5f18c220d311/images/7a733b712a8e7fcee791847d2a6f25977469fedbee90968cef8344040ba7bc42.png",
-      "description": "Subtle abstract texture for app backgrounds or auth screens."
+    "horizontal_chips": {
+      "wrapper": "flex w-full overflow-x-auto gap-3 pb-4 scrollbar-hide",
+      "chip": "flex-none px-5 py-2.5 rounded-full border text-sm font-semibold transition-colors cursor-pointer",
+      "active_chip": "bg-slate-900 text-white border-slate-900",
+      "inactive_chip": "bg-white text-slate-600 border-slate-200",
+      "data_testid": "format-chip"
     },
-    {
-      "category": "contractor_avatar_1",
-      "url": "https://images.unsplash.com/photo-1620082691363-8283e2f7bf61?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwzfHxjb250cmFjdG9yJTIwdXNpbmclMjBwaG9uZSUyMG91dGRvb3JzfGVufDB8fHx8MTc3OTYwNDE2NHww&ixlib=rb-4.1.0&q=85",
-      "description": "Photo of a contractor in a blue jacket/helmet, use for demo user profile avatar."
+    "color_swatches": {
+      "wrapper": "flex w-full overflow-x-auto gap-4 pb-4 scrollbar-hide items-center",
+      "swatch": "flex-none w-12 h-12 rounded-full border-2 cursor-pointer shadow-sm transition-transform hover:scale-105",
+      "active_swatch": "ring-4 ring-slate-900 ring-offset-2",
+      "custom_trigger": "flex-none w-12 h-12 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-500 bg-slate-50",
+      "data_testid": "color-swatch"
     },
-    {
-      "category": "contractor_avatar_2",
-      "url": "https://images.unsplash.com/photo-1621905253185-95614217f357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwxfHxjb250cmFjdG9yJTIwdXNpbmclMjBwaG9uZSUyMG91dGRvb3JzfGVufDB8fHx8MTc3OTYwNDE2NHww&ixlib=rb-4.1.0&q=85",
-      "description": "Photo of a contractor holding a phone outdoors, use for onboarding or empty states."
+    "photo_dropzone": {
+      "container": "w-full aspect-square border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center bg-white relative overflow-hidden group",
+      "ai_button": "absolute bottom-4 right-4 bg-white/90 backdrop-blur-md shadow-sm border border-slate-200 text-slate-900 text-xs px-4 py-2 rounded-full font-bold z-10 flex items-center gap-2",
+      "data_testid": "photo-dropzone"
+    },
+    "bottom_sheet_drawer": {
+      "usage": "Triggered by 'Personalizado' color or 'Más opciones'. Contains Idioma toggle (Inglés/Español) and exact color pickers.",
+      "data_testid": "advanced-settings-drawer"
+    },
+    "sticky_action_bar": {
+      "container": "fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-slate-200 z-50",
+      "button": "w-full h-14 text-lg font-bold rounded-2xl bg-slate-900 text-white shadow-lg",
+      "data_testid": "generate-post-button"
+    },
+    "results_section": {
+      "layout": "Displays generated post with a horizontal carousel if multiple formats are generated. Action buttons (Descargar, Agregar a mi tarjeta) directly below the image preview.",
+      "copy_editor": "A card container wrapping editable inputs (Headline, Subheadline, CTA, Caption) with a 'Generar de nuevo' re-render action at the top right of the card."
     }
-  ],
-  "accessibility": {
-    "contrast": "High contrast required for outdoor visibility in direct sunlight. Avoid low contrast grays on white.",
-    "touch_targets": "Minimum 48x48px for all interactable elements to support thick fingers."
   },
   "instructions_to_main_agent": [
-    "Build the application strictly mobile-first. Assume the vast majority of usage is on a smartphone.",
-    "The UI text must be in Spanish (for the business owner/dueño) but any generated output/documents/messages must be stored and generated in English.",
-    "Use lucide-react for all icons.",
-    "Implement a persistent bottom navigation bar on mobile view.",
-    "Do not use complex tables for lists. Use stacked cards (List Cards) with an Avatar/Icon + Title + Subtitle + Status Badge for Clients, Quotes, and Jobs.",
-    "When creating the AI Quote Builder, use a wizard interface or chat-like flow. Provide large, prominent buttons for 'Voice input' or 'Photo upload'.",
-    "Ensure data-testid attributes are included on every button, input, tab, and interactable card.",
-    "Use Shadcn UI components but heavily override their default classes (remove enterprise look) to use rounded-2xl corners, larger paddings, and the defined color palette."
+    "Refactor the /marketing 'Imagen' tab UI to prioritize horizontal scrolling for selectors.",
+    "DO NOT REMOVE ANY FUNCTIONALITY. The form state should remain intact (10 templates, 1-2 photos, prompts, English/Spanish toggle, formats, colors).",
+    "Replace the tall vertical grid of templates with the `template_carousel` spec.",
+    "Replace vertically stacked radio buttons/checkboxes for formats and colors with `horizontal_chips` and `color_swatches`.",
+    "Move advanced/secondary choices like 'Idioma del post' and 'Personalizado' color configuration into a Shadcn Drawer/Dialog to save vertical space on mobile.",
+    "Implement a custom `scrollbar-hide` CSS class (or use standard Tailwind hiding methods) to keep horizontal scrolling areas clean without a visible track.",
+    "Always wrap the 'Generar Post' button in the `sticky_action_bar` layout so it is always accessible on mobile without scrolling to the bottom.",
+    "Add `data-testid` attributes to all actionable elements strictly following the component_specs."
   ]
 }
