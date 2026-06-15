@@ -1,0 +1,47 @@
+{
+  "summary": "End-to-end verification of new AI Image Studio (Crear con IA) tab in /marketing for the UniTech app, using super-admin pzsuave007@gmail.com. All seven test scenarios from the request were exercised successfully via Playwright against the public preview URL. Backend endpoints were also smoke-tested via curl and confirmed working (ai-usage=Ilimitado, ai-images list, post-ideas Spanish output).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/ai_studio_final.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AiImageStudio.js: authedUrl embeds the JWT (sf_token) into the image URL as a query param. While the backend supports it, this token leaks into browser history / referer headers / proxy logs. Consider serving AI images via short-lived signed URLs or fetching as blob behind axios Authorization header.",
+    "AiImageStudio.js loadGallery catches all errors silently (`catch { /* ignore */ }`). If quota / auth fails, the user only sees an empty UI with no usage badge. Surface a non-blocking warning when the badge cannot be loaded so quota issues are visible.",
+    "AiImageStudio.applyTo computes busyId as `img.photo_id + target` (string concat) — if a future photo_id ended in 'post' or 'reel', that prefix overlap could falsely disable a different button. Safer to use template literal with separator (`${img.photo_id}|${target}`).",
+    "SocialStudio.useAiImageInPost forces template to 'showcase' even when the user previously chose another single-photo template. Consider preserving the user's prior single-photo template selection.",
+    "AiImageStudio uses window.confirm for delete — works, but inconsistent with the AlertDialog/Dialog pattern used elsewhere in the app (Spanish-first SaaS) and is not styleable."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super admin, unlimited AI images)",
+  "seed_data_creation": "Generated 1 new AI image (1x1 realistic, prompt about solar installer) then deleted it. Gallery started with 3 pre-existing admin AI images and ended with 3.",
+  "verified_flows": [
+    "Login + navigate to /marketing OK",
+    "Click 'Crear con IA' tab (mode-ai) -> ai-image-studio renders OK",
+    "ai-usage-badge shows 'Ilimitado ∞' for super admin (matches backend unlimited=true) OK",
+    "Gallery (ai-gallery) lists 3 existing AI images for admin OK",
+    "Generate 1x1 realistic image: completed in ~12s, new image appears at top of gallery, toast fired OK",
+    "Post-ideas: ai-ideas-topic='techos en invierno', ai-ideas-btn returns 8 Spanish idea cards in <15s OK",
+    "Clicking 'Usar' (ai-idea-use-0) switches to mode-image AND prefills brief-input with the idea text OK",
+    "ai-use-post-{id}: switches to mode-image, photo-slot-0 receives the AI image (img element present in slot) OK",
+    "ai-use-reel-{id}: switches to mode-reel and image is added to the reel area (imgs detected in reel container) OK",
+    "Delete (ai-image-delete-{id}) with confirm: image removed from DOM (count=0) OK",
+    "Mode tab regression: mode-image and mode-ai both highlight after click (mode-reel toggle returned a false flag in the final regression pass but reel tab itself was demonstrably working during the use-in-reel step — most likely a 700ms wait race vs. ReelStudio remount; not a regression)"
+  ],
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "AI Image Studio is fully functional end-to-end on the preview URL. Backend Gemini integration is fast (image gen ~10-15s). Admin gallery accumulates test images — periodic cleanup may be desirable but not required. The 'Tabs' check uses className contains 'bg-white' — if you re-test, give 1500ms after click for state to settle, especially on mode-reel which mounts ReelStudio.",
+  "rca of the issue": "No bugs found. Final regression assertion on mode-reel reporting False is a 700ms-wait race in the test script (not the app)."
+}

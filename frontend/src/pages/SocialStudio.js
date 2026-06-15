@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import ReelStudio from "@/components/ReelStudio";
+import AiImageStudio from "@/components/AiImageStudio";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -116,6 +117,28 @@ export default function SocialStudio() {
   const [applyingEnhance, setApplyingEnhance] = useState(false);
   const [cardIds, setCardIds] = useState([]); // photo_ids currently on the Smart Card
   const [cardBusy, setCardBusy] = useState(null);
+  const [reelInject, setReelInject] = useState(null); // AI image pushed into the reel builder
+
+  // Use an AI-generated image in the Post builder (single-photo template).
+  const useAiImageInPost = (file, preview) => {
+    setTemplate("showcase");
+    setPhotos([{ file, preview, enhanced: true }, null]);
+    setMode("image");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  // Use an AI-generated image in the Reel builder.
+  const useAiImageInReel = (file, preview) => {
+    setReelInject({ file, preview, _k: Date.now() });
+    setMode("reel");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  // Prefill the post brief from a generated idea.
+  const useIdeaInPost = (idea) => {
+    setBrief(idea);
+    setMode("image");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.success("Idea lista en tu post — sube una foto o crea una con IA ✨");
+  };
 
   const tpl = TEMPLATES.find((t) => t.id === template);
   const needed = tpl.photos;
@@ -308,9 +331,29 @@ export default function SocialStudio() {
         >
           <Video className="w-4 h-4" /> Video (Reel)
         </button>
+        <button
+          onClick={() => setMode("ai")}
+          data-testid="mode-ai"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold tap transition-all ${
+            mode === "ai" ? "bg-white shadow-sm text-violet-700" : "text-slate-500"
+          }`}
+        >
+          <Wand2 className="w-4 h-4" /> Crear con IA
+        </button>
       </div>
 
-      {mode === "reel" && <ReelStudio />}
+      {mode === "reel" && <ReelStudio injectPhoto={reelInject} />}
+
+      {mode === "ai" && (
+        <AiImageStudio
+          onUseInPost={useAiImageInPost}
+          onUseInReel={useAiImageInReel}
+          onUseIdea={useIdeaInPost}
+          onToggleCard={toggleOnCard}
+          cardIds={cardIds}
+          cardBusy={cardBusy}
+        />
+      )}
 
       {mode === "image" && (
       <>

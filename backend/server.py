@@ -3046,6 +3046,145 @@ async def delete_social_post(post_id: str, user_id: str = Depends(get_current_us
 
 
 # ---------------------------------------------------------------------------
+# AI image generation (text -> realistic/graphic image) + monthly limit
+# ---------------------------------------------------------------------------
+AI_IMAGE_ASPECTS = {"9x16": (1080, 1920), "1x1": (1080, 1080), "4x5": (1080, 1350)}
+AI_IMAGE_DEFAULT_LIMIT = 30
+
+
+def _ai_image_limit(user_doc: dict) -> int:
+    """Monthly AI-image limit. -1 = unlimited. Super admin is always unlimited.
+    Per-user override via users.ai_image_limit (set by admin; -1 = unlimited)."""
+    if _is_super_admin(user_doc or {}):
+        return -1
+    val = (user_doc or {}).get("ai_image_limit")
+    if val is None:
+        return AI_IMAGE_DEFAULT_LIMIT
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return AI_IMAGE_DEFAULT_LIMIT
+
+
+def _current_month() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m")
+
+
+async def _ai_images_used(user_id: str) -> int:
+    return await db.ai_images.count_documents(
+        {"user_id": user_id, "month": _current_month(), "is_deleted": {"$ne": True}}
+    )
+
+
+def _crop_to_aspect(data: bytes, aspect: str) -> tuple[bytes, str]:
+    """Cover-crop + resize an image to the exact target aspect ratio."""
+    tw, th = AI_IMAGE_ASPECTS.get(aspect, AI_IMAGE_ASPECTS["1x1"])
+    img = _PILImage.open(_io.BytesIO(data)).convert("RGB")
+    w, h = img.size
+    target = tw / th
+    cur = w / h
+    if cur > target:  # too wide -> crop sides
+        nw = int(h * target)
+        left = (w - nw) // 2
+        img = img.crop((left, 0, left + nw, h))
+    elif cur < target:  # too tall -> crop top/bottom
+        nh = int(w / target)
+        top = (h - nh) // 2
+        img = img.crop((0, top, w, top + nh))
+    img = img.resize((tw, th), _PILImage.LANCZOS)
+    buf = _io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return buf.getvalue(), "image/jpeg"
+
+
+class AiImageIn(BaseModel):
+    prompt: str
+    aspect: str = "1x1"
+    style: str = "realistic"
+
+
+@api_router.get("/social/ai-usage")
+async def social_ai_usage(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    limit = _ai_image_limit(user)
+    used = await _ai_images_used(user_id)
+    return {"used": used, "limit": limit, "unlimited": limit < 0,
+            "remaining": (None if limit < 0 else max(0, limit - used))}
+
+
+@api_router.post("/social/ai-image")
+async def create_ai_image(payload: AiImageIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
+    prompt = (payload.prompt or "").strip()
+    if len(prompt) < 4:
+        raise HTTPException(400, "Describe la imagen que quieres crear (mínimo unas palabras).")
+    aspect = payload.aspect if payload.aspect in AI_IMAGE_ASPECTS else "1x1"
+    style = payload.style if payload.style in ("realistic", "graphic") else "realistic"
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    limit = _ai_image_limit(user)
+    used = await _ai_images_used(user_id)
+    if limit >= 0 and used >= limit:
+        raise HTTPException(403, f"Llegaste a tu límite de {limit} imágenes IA este mes. Se reinicia el día 1.")
+    try:
+        raw, _ct = await ai_service.generate_image(prompt, aspect=aspect, style=style)
+        out_bytes, out_ct = _crop_to_aspect(raw, aspect)
+    except Exception as e:
+        raise HTTPException(502, f"No se pudo generar la imagen con IA: {str(e)[:200]}")
+    photo_id = await _store_card_photo(user_id, out_bytes, out_ct, "ai_gen", "jpg")
+    doc = {
+        "id": _new_id(), "user_id": user_id, "photo_id": photo_id,
+        "prompt": prompt, "aspect": aspect, "style": style,
+        "month": _current_month(), "is_deleted": False, "created_at": _now_iso(),
+    }
+    await db.ai_images.insert_one(doc)
+    used += 1
+    return {"id": doc["id"], "photo_id": photo_id, "url": _photo_public_url(photo_id),
+            "aspect": aspect, "style": style, "prompt": prompt,
+            "used": used, "limit": limit, "unlimited": limit < 0,
+            "remaining": (None if limit < 0 else max(0, limit - used))}
+
+
+@api_router.get("/social/ai-images")
+async def list_ai_images(user_id: str = Depends(get_current_user_id)):
+    docs = await db.ai_images.find({"user_id": user_id, "is_deleted": {"$ne": True}}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    for d in docs:
+        d["url"] = _photo_public_url(d["photo_id"])
+    return docs
+
+
+@api_router.delete("/social/ai-images/{image_id}")
+async def delete_ai_image(image_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.ai_images.find_one({"id": image_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Imagen no encontrada")
+    await db.ai_images.update_one({"id": image_id, "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.photos.update_one({"id": doc["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    return {"ok": True}
+
+
+class PostIdeasIn(BaseModel):
+    topic: Optional[str] = ""
+    count: int = 8
+    language: str = "es"
+
+
+@api_router.post("/social/post-ideas")
+async def social_post_ideas(payload: PostIdeasIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
+    card = await _ensure_card(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    ideas = await ai_service.generate_post_ideas(
+        business_type=card.get("business_type", ""),
+        business_name=(user or {}).get("business_name", ""),
+        topic=payload.topic or "",
+        count=payload.count,
+        language="es" if payload.language == "es" else "en",
+    )
+    if not ideas:
+        raise HTTPException(502, "No se pudieron generar ideas. Intenta de nuevo.")
+    return {"ideas": ideas}
+
+
+
+# ---------------------------------------------------------------------------
 # Reels (vertical video) — Marketing Studio Phase 2
 # ---------------------------------------------------------------------------
 ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/aac", "audio/wav", "audio/x-wav", "audio/ogg"}
@@ -5612,6 +5751,29 @@ async def admin_set_card_limit(
         {"$set": {"card_limit": int(payload.card_limit)}},
     )
     return {"ok": True, "user_id": user_id, "card_limit": int(payload.card_limit)}
+
+
+class AiLimitIn(BaseModel):
+    limit: int  # -1 = unlimited
+
+
+@api_router.post("/admin/users/{user_id}/ai-image-limit")
+async def admin_set_ai_image_limit(
+    user_id: str,
+    payload: AiLimitIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Set a user's monthly AI image generation limit. -1 = unlimited.
+    (Future: tie to paid packages.)"""
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"ai_image_limit": int(payload.limit)}},
+    )
+    return {"ok": True, "user_id": user_id, "ai_image_limit": int(payload.limit)}
+
 
 
 @api_router.post("/admin/users/{user_id}/card-seats")

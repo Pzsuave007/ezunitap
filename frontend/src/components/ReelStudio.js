@@ -37,7 +37,7 @@ const TRANSITIONS = [
 ];
 const DURATIONS = [10, 15, 20];
 
-export default function ReelStudio() {
+export default function ReelStudio({ injectPhoto } = {}) {
   const [template, setTemplate] = useState("showcase");
   const [photos, setPhotos] = useState([]);
   const [serviceTexts, setServiceTexts] = useState([]);
@@ -121,6 +121,16 @@ export default function ReelStudio() {
     });
   };
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i));
+
+  // Inject an AI-generated image (handed from the "Crear con IA" tab) into the reel.
+  useEffect(() => {
+    if (injectPhoto?.file) {
+      setPhotos((prev) =>
+        prev.length < maxPhotos ? [...prev, { file: injectPhoto.file, preview: injectPhoto.preview }] : prev
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [injectPhoto]);
 
   const previewTrack = (id) => {
     if (playingTrack === id) { audioRef.current?.pause(); setPlayingTrack(null); return; }

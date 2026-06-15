@@ -609,3 +609,97 @@ async def clean_service_lines(lines: list, language: str = "en") -> list:
     except Exception:
         out = []
     return [out[i] if i < len(out) and out[i] else src[i] for i in range(len(src))]
+
+
+
+# ============================================================================
+# Marketing Studio — Text-to-image generation (Gemini Nano Banana)
+# ============================================================================
+IMAGE_GEN_MODEL = "gemini-3.1-flash-image-preview"
+
+_IMG_STYLE = {
+    "realistic": (
+        "Ultra-realistic professional photograph. Natural lighting, sharp focus, "
+        "high detail, shot on a DSLR camera, photojournalistic and authentic. "
+        "NO text, NO words, NO captions, NO logos, NO watermark."
+    ),
+    "graphic": (
+        "Clean modern marketing graphic / illustration. Bold flat design, vibrant "
+        "cohesive colors, polished poster look. NO text, NO words, NO watermark."
+    ),
+}
+_IMG_ASPECT_HINT = {
+    "9x16": "Vertical 9:16 portrait composition (tall, full-frame vertical).",
+    "1x1": "Square 1:1 composition, centered subject.",
+    "4x5": "Vertical 4:5 portrait composition.",
+}
+
+
+async def generate_image(idea: str, aspect: str = "1x1", style: str = "realistic") -> tuple[bytes, str]:
+    """Generate a marketing image from a text idea (no source photo) with Gemini
+    Nano Banana. Returns (image_bytes, mime_type). Retries a few times because
+    the model occasionally replies with text only."""
+    idea = (idea or "").strip()
+    style_txt = _IMG_STYLE.get(style, _IMG_STYLE["realistic"])
+    aspect_txt = _IMG_ASPECT_HINT.get(aspect, _IMG_ASPECT_HINT["1x1"])
+    prompt = (
+        "Create ONE high-quality marketing image for a contractor / home-services "
+        f"business to use on social media. Subject / idea: {idea}. "
+        f"{aspect_txt} {style_txt} Output ONLY the image, no text."
+    )
+    last_err = "La IA no devolvió una imagen"
+    for attempt in range(3):
+        try:
+            chat = LlmChat(
+                api_key=LLM_KEY,
+                session_id=str(uuid.uuid4()),
+                system_message="You are an expert visual content generator. You always return an image.",
+            ).with_model("gemini", IMAGE_GEN_MODEL).with_params(modalities=["image", "text"])
+            _text, images = await chat.send_message_multimodal_response(UserMessage(text=prompt))
+            if images:
+                img = images[0]
+                return base64.b64decode(img["data"]), img.get("mime_type", "image/png")
+            logger.warning("generate_image: no image returned (attempt %s/3)", attempt + 1)
+        except Exception as e:
+            last_err = str(e)
+            logger.warning("generate_image attempt %s/3 failed: %s", attempt + 1, e)
+    raise RuntimeError(last_err)
+
+
+# ============================================================================
+# Marketing Studio — AI post-idea generator ("no sé qué postear")
+# ============================================================================
+async def generate_post_ideas(
+    business_type: str = "",
+    business_name: str = "",
+    topic: str = "",
+    count: int = 8,
+    language: str = "es",
+) -> list[dict]:
+    """Return a list of practical social post ideas tailored to the contractor's
+    trade. Each item: {"title": str, "idea": str}."""
+    count = max(3, min(int(count or 8), 12))
+    lang_name = {"en": "English", "es": "Spanish"}.get(language, "Spanish")
+    chat = _new_chat("You are a social media marketing expert for local home-services contractors.")
+    ctx = (
+        f"Generate {count} short, practical social media post ideas in {lang_name} for a "
+        f"{business_type or 'home services / contractor'} business named "
+        f"'{business_name or 'the business'}'. "
+        + (f"Focus the ideas around this topic: {topic}. " if (topic or '').strip() else "")
+        + "Mix promotional, educational tips, before/after, seasonal, and trust-building ideas. "
+        'Output ONLY valid JSON (no markdown): {"ideas": [{"title": "short catchy title", '
+        '"idea": "one practical sentence describing what to post"}]}'
+    )
+    try:
+        response = await chat.send_message(UserMessage(text=ctx))
+        data = _extract_json(response) or {}
+    except Exception as e:
+        logger.warning("generate_post_ideas failed: %s", e)
+        data = {}
+    out = []
+    for it in (data.get("ideas") or []):
+        title = (it.get("title") or "").strip()
+        idea = (it.get("idea") or "").strip()
+        if title or idea:
+            out.append({"title": title or idea[:40], "idea": idea or title})
+    return out[:count]
