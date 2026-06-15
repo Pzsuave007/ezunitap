@@ -9,8 +9,10 @@ import { toast } from "sonner";
 import {
   Loader2, Download, Trash2, ImagePlus, X, Video,
   Music, Play, Pause, Upload, Captions, Clapperboard, Mic, Sparkles,
+  SlidersHorizontal, Check,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -69,6 +71,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
   const [playingTrack, setPlayingTrack] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false); // "Ajustes del video" drawer
 
   const fileRef = useRef(null);
   const musicRef = useRef(null);
@@ -278,10 +281,11 @@ export default function ReelStudio({ injectPhoto } = {}) {
         {/* Template */}
         <div>
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Plantilla del Reel</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Desliza → y toca una.</p>
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-2.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" data-testid="reel-template-carousel">
             {REEL_TEMPLATES.map((t) => (
               <button key={t.id} onClick={() => selectTemplate(t.id)} data-testid={`reel-template-${t.id}`}
-                className={`text-left p-3 rounded-xl border tap transition-all ${template === t.id ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 hover:border-slate-300"}`}>
+                className={`flex-none w-[150px] snap-start text-left p-3 rounded-xl border tap transition-all ${template === t.id ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500" : "border-slate-200 hover:border-slate-300"}`}>
                 <div className="font-semibold text-sm">{t.label}</div>
                 <div className="text-[11px] text-slate-500">{t.desc}</div>
               </button>
@@ -402,6 +406,26 @@ export default function ReelStudio({ injectPhoto } = {}) {
           )}
         </div>
 
+        {/* Ajustes del video (avanzado) — drawer para no llenar la pantalla en móvil */}
+        <button
+          onClick={() => setSettingsOpen(true)}
+          data-testid="reel-settings-btn"
+          className="w-full flex items-center justify-between gap-2 px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50 active:bg-slate-100 tap"
+        >
+          <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+            <SlidersHorizontal className="w-4 h-4 text-emerald-600" /> Ajustes del video
+          </span>
+          <span className="text-[11px] text-slate-500 text-right">{duration}s · {language === "es" ? "Español" : "Inglés"} · {voiceover ? "con voz" : "sin voz"} ›</span>
+        </button>
+
+        <Drawer open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DrawerContent data-testid="reel-settings-drawer">
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="font-heading flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5 text-emerald-600" /> Ajustes del video
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-8 space-y-6 max-w-lg mx-auto w-full overflow-y-auto max-h-[72vh]">
         {/* Language + Duration */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -602,6 +626,15 @@ export default function ReelStudio({ injectPhoto } = {}) {
             </div>
           )}
         </div>
+
+            <DrawerClose asChild>
+              <Button data-testid="reel-settings-done" className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                <Check className="w-5 h-5 mr-2" /> Listo
+              </Button>
+            </DrawerClose>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         <Button onClick={generate} disabled={generating || !copyDraft} data-testid="reel-generate-btn"
           className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-base">

@@ -35,6 +35,13 @@ Pedido: el constructor de posts (tab "Imagen") era una página muy larga en móv
 - **"Más opciones" (Drawer inferior)**: Idioma (Inglés/Español) + colores personalizados (barra/fondo) movidos a un `Drawer` para no llenar la pantalla. `data-testid="advanced-settings-drawer"`, `more-options-btn`.
 - Resultado: el builder cabe en ~1-1.5 pantallas en móvil. Testids preservados (template-{id}, format-{id}, color-{id}, color-custom, lang-en/es, custom-accent/brand-input, brief-input, generate-btn). Verificado en 390px por screenshot (carrusel, drawer, switch de template 1-foto, colores).
 
+## ✅ Jun 2026 — REEL STUDIO: mismo rediseño móvil [COMPLETO]
+Aplicado el mismo patrón al Reel Studio (`components/ReelStudio.js`, tenía 10 secciones apiladas).
+- **Plantillas** → carrusel horizontal (`reel-template-carousel`, cards `w-[150px]` snap).
+- **Flujo principal móvil** = Plantilla → Fotos → Mensaje+texto IA → botón **"Ajustes del video"** (`reel-settings-btn`) → Generar.
+- **Drawer "Ajustes del video"** (`reel-settings-drawer`, scrollable max-h-72vh) contiene TODO lo avanzado: Idioma, Duración, Movimiento, Transición, Extras (subtítulos/outro/voz en off + opciones de voz), Música, Color (+ custom). El botón muestra resumen (duración · idioma · con/sin voz).
+- Ninguna funcionalidad removida; todos los testids preservados (reel-template-{id}, reel-lang-{id}, reel-duration-{d}, reel-motion-{id}, reel-transition-{id}, reel-*-switch, reel-music-{id}, reel-color-{id}, reel-generate-btn, etc.). Verificado en 390px (carrusel + drawer).
+
 
 ## ✅ Jun 2026 — MÓVIL: acceso fácil a Marketing + menú "Más" [COMPLETO]
 Problema reportado: usuarios poco técnicos no podían llegar a Marketing en celular (el bottom nav móvil solo tenía 5 items: Inicio/Clientes/Tarjeta/Agenda/Perfil — Marketing, Quotes, Invoices, Contratos, Reviews NO eran accesibles sin escribir la URL).
