@@ -81,7 +81,7 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
   };
 
   const applyTo = async (img, target) => {
-    setBusyId(img.photo_id + target);
+    setBusyId(`${img.photo_id}|${target}`);
     try {
       const file = await fetchAsFile(img.photo_id);
       const preview = authedUrl(img.photo_id);
@@ -228,13 +228,13 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
-                  <Button size="sm" variant="outline" onClick={() => applyTo(img, "post")} disabled={busyId === img.photo_id + "post"}
+                  <Button size="sm" variant="outline" onClick={() => applyTo(img, "post")} disabled={busyId === `${img.photo_id}|post`}
                     data-testid={`ai-use-post-${img.id}`} className="rounded-lg h-8 text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-                    {busyId === img.photo_id + "post" ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ImagePlus className="w-3 h-3 mr-1" /> Post</>}
+                    {busyId === `${img.photo_id}|post` ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ImagePlus className="w-3 h-3 mr-1" /> Post</>}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => applyTo(img, "reel")} disabled={busyId === img.photo_id + "reel"}
+                  <Button size="sm" variant="outline" onClick={() => applyTo(img, "reel")} disabled={busyId === `${img.photo_id}|reel`}
                     data-testid={`ai-use-reel-${img.id}`} className="rounded-lg h-8 text-[11px] border-blue-300 text-blue-700 hover:bg-blue-50">
-                    {busyId === img.photo_id + "reel" ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Video className="w-3 h-3 mr-1" /> Reel</>}
+                    {busyId === `${img.photo_id}|reel` ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Video className="w-3 h-3 mr-1" /> Reel</>}
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">

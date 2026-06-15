@@ -27,6 +27,18 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — MARKETING STUDIO: "Crear con IA" (generación de imágenes + ideas de posts) [COMPLETO + TESTEADO 100%]
+Tercera pestaña en `/marketing` ("Crear con IA") para contratistas SIN fotos: describen su idea → la IA crea una imagen realista o gráfica → la usan en posts/reels.
+- **Generación de imágenes IA** (texto→imagen) con Gemini Nano Banana (`gemini-3.1-flash-image-preview`) vía Emergent LLM key. Estilos: `realistic` / `graphic`. Formatos exactos vía Pillow cover-crop: 9x16=1080x1920, 1x1=1080x1080, 4x5=1080x1350.
+- **Galería personal** "Mis imágenes IA" (listar/eliminar). Cada imagen: usar en Post, usar en Reel, descargar, agregar a tarjeta.
+- **Usar en post/reel**: el frontend baja la imagen IA (authed `/photos/{id}/file?auth=token`) como File y la inyecta en el builder de Post (slot 0, template showcase) o Reel (prop `injectPhoto`). Sin re-subir, sin tocar los endpoints de post/reel.
+- **Generador de ideas de posts** (`/social/post-ideas`) — "no sé qué postear" → 8 ideas en español por oficio; "Usar" precarga el brief del post.
+- **Límite mensual por usuario**: default 30/mes; super admin = ilimitado; override admin por usuario vía `users.ai_image_limit` (-1 = ilimitado) y endpoint `POST /api/admin/users/{id}/ai-image-limit` (a futuro atar a paquetes pagados).
+- **Endpoints**: `POST /api/social/ai-image`, `GET /api/social/ai-images`, `GET /api/social/ai-usage`, `DELETE /api/social/ai-images/{id}`, `POST /api/social/post-ideas`. Colección nueva `ai_images` {id,user_id,photo_id,prompt,aspect,style,month,is_deleted}.
+- **Archivos**: `frontend/src/components/AiImageStudio.js` (nuevo), `SocialStudio.js` (+modo "ai"+callbacks), `ReelStudio.js` (+prop injectPhoto), `backend/ai_service.py` (generate_image, generate_post_ideas), `backend/server.py` (endpoints+límite+_crop_to_aspect).
+- **Testeado**: testing_agent iteration_20 → 7/7 flujos OK, 100% backend+frontend, retest_needed=False.
+
+
 ## ✅ Jun 2026 — META PIXEL + eventos de conversión (para campañas de Meta Ads) [COMPLETO]
 El usuario (Paul) va a correr campañas en Meta ($5/día) llevando al demo. Se instaló su Pixel existente **"Uni2 Website Pixel" ID `735321109080783`** para medir/optimizar el embudo.
 - **Base**: snippet del Meta Pixel + `PageView` en `frontend/public/index.html` (mismo en ambos dominios; el ID del pixel es público por naturaleza, va hardcodeado en el HTML — NO es secreto).
