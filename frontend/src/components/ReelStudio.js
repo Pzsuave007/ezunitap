@@ -505,7 +505,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
                     onChange={(e) => setVoice(e.target.value)}
                     className="flex-1 h-10 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700"
                   >
-                    <option value="">Recomendada ({language === "es" ? "Nova" : "Onyx"})</option>
+                    <option value="">Recomendada (voz en español)</option>
                     {voices.map((v) => (
                       <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>
                     ))}

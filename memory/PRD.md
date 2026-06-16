@@ -27,6 +27,15 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — VOZ EN OFF DE REELS: ElevenLabs (español latino nativo + inglés) [COMPLETO + PROBADO]
+Pedido de Paul: las voces de los Reels sonaban "a gringo hablando español". Causa: OpenAI `tts-1-hd` lee español con fonética inglesa. La Universal Key (Emergent) NO da acceso a voces nativas ni instrucciones de acento → cambio de motor obligatorio. **Usuario tiene su propia API key de ElevenLabs.**
+- **Motor nuevo** (`tts_service.py`): ElevenLabs `eleven_multilingual_v2` vía `AsyncElevenLabs` (`client.text_to_speech.convert`, `output_format=mp3_44100_128`, `VoiceSettings` stability 0.5 / similarity 0.75 / speaker_boost). El modelo multilingüe pronuncia español Y inglés natural con las MISMAS voces (el toggle de idioma del reel solo cambia el TEXTO).
+- **Voces** (10 curadas de la cuenta, hombre/mujer/neutral): Brian, Eric, Liam, Chris, Bill, Sarah, Matilda, Jessica, Laura, River. Default es→Sarah, en→Brian. `resolve_voice` mapea ids legacy de OpenAI (onyx→Brian, nova→Sarah, etc.) para no romper reels viejos.
+- **Respaldo**: si falta `ELEVENLABS_API_KEY`, cae automáticamente a OpenAI TTS (no rompe el flujo). Speeds clamp 0.7–1.2 (rango ElevenLabs).
+- **Key**: `ELEVENLABS_API_KEY` en `backend/.env` (pod) y agregada al cargador de `keys.txt` en `deploy/fix.sh` (línea para el VPS: `ELEVENLABS_API_KEY=...`). `elevenlabs==2.53.0` agregado a `requirements.txt` y `deploy/requirements.prod.txt`.
+- **Frontend** (`ReelStudio.js`): el dropdown de voz se llena de `/social/voices` (ya muestra las 10 nuevas), texto "Recomendada (voz en español)". Sin más cambios.
+- **Probado e2e** (curl + screenshot): `/social/voices`=10 voces; `/social/voice-preview` ES (Sarah) 83KB y EN (Brian) 82KB `audio/mpeg` MP3 válidos (ID3); dropdown + botón "Escuchar" OK en el estudio. Build prod plano (relativo `/api`) + `git add -f`. ⚠️ Para producción: confirmar que la línea `ELEVENLABS_API_KEY=` esté en `keys.txt` del VPS (Paul ya la puso) + Save to GitHub + deploy.
+
 ## ✅ Jun 2026 — MARKETING STUDIO: resultados en Drawer deslizable (3 pestañas) [COMPLETO + PROBADO]
 Pedido de Paul: al generar (post/video/imagen) mostrar "Creando…" y al terminar abrir el resultado en un **Drawer deslizable de abajo** con todas las herramientas, en vez de saltar arriba de la página. Tocar un ítem de la galería abre ese mismo Drawer. Decisión del usuario: **cada pestaña conserva su propio estilo** (no unificado).
 - **Imagen** (`SocialStudio.js`): nuevo estado `resultOpen`. `generate()` abre el Drawer al iniciar (estado "Creando tu post con IA…" con spinner), al terminar muestra el resultado dentro del Drawer (`post-result-drawer`): imágenes, Descargar, Agregar a tarjeta, editar Titular/Subtítulo/CTA + "Volver a generar diseño", Caption + Copiar. Galería "Mis posts" → onClick abre el Drawer (sin scrollTo). En error cierra el Drawer; borrar el post abierto lo cierra.
