@@ -70,6 +70,7 @@ export default function ReelStudio({ injectPhoto } = {}) {
   const [generating, setGenerating] = useState(false);
   const [reel, setReel] = useState(null);
   const [reels, setReels] = useState([]);
+  const [resultOpen, setResultOpen] = useState(false);
   const [playingTrack, setPlayingTrack] = useState(null);
 
   const fileRef = useRef(null);
