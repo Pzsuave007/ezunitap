@@ -494,8 +494,9 @@ export default function ReelStudio({ injectPhoto } = {}) {
                 </button>
               </div>
               {voiceMode === "full" && (
-                <p className="text-[11px] text-emerald-700/80 mt-2">El video se alargará automáticamente para que la voz nunca se corte (máx. 60s).</p>
+                <p className="text-[11px] text-emerald-700/80 mt-2">La voz lee todo el post (titular, subtítulo y descripción).</p>
               )}
+              <p className="text-[11px] text-emerald-700/80 mt-2">⏱️ El video se alarga solo para que se escuche TODA la voz, sin cortes (máx. 60s).</p>
               <div className="mt-3 pt-3 border-t border-emerald-100">
                 <span className="text-xs font-semibold text-slate-600">Voz</span>
                 <div className="flex gap-2 mt-2">

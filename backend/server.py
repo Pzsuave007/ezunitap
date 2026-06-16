@@ -3382,11 +3382,14 @@ async def _process_reel(reel_id: str, user_id: str, source_ids: List[str], brief
                 with os.fdopen(fd, "wb") as f:
                     f.write(vbytes)
                 voice_path = voice_tmp
-                # Auto-extend the video so a long ("full") voice-over is never cut.
-                if voice_mode == "full":
-                    vdur = video_service.audio_duration(voice_path)
-                    if vdur > 0:
-                        eff_duration = min(60.0, max(duration, _math.ceil(vdur) + 1.0))
+                # ALWAYS auto-extend the video so the full voice-over is heard
+                # and never cut — regardless of voice mode (short or full).
+                # Voice starts ~0.25s in (adelay=250); add a small tail so the
+                # last words breathe before the video ends.
+                vdur = video_service.audio_duration(voice_path)
+                if vdur > 0:
+                    needed = _math.ceil(vdur + 0.25 + 0.8)
+                    eff_duration = min(60.0, max(duration, float(needed)))
             except Exception:
                 voice_path = None
                 voice_script = None
