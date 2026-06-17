@@ -112,6 +112,7 @@ class CheckoutCreateIn(BaseModel):
 
 class ClientIn(BaseModel):
     name: str
+    company: Optional[str] = ""
     phone: Optional[str] = ""
     email: Optional[str] = ""
     address: Optional[str] = ""

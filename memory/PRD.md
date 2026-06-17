@@ -27,6 +27,13 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — CLIENTE: campo "Nombre del negocio" → invoice a nombre del negocio [COMPLETO + PROBADO]
+Pedido de Paul: al crear/editar cliente faltaba el nombre del negocio; el invoice debe ir dirigido al negocio (si lo tiene), no solo al dueño. Si no tiene negocio, queda solo el nombre.
+- **Backend** (`server.py` `ClientIn`): nuevo campo opcional `company`. Se persiste solo (model_dump) en create/update; sin migración necesaria.
+- **Frontend** (`Clients.js`): input "Nombre del negocio (opcional)" con nota explicativa, `data-testid="cli-company"`, incluido en búsqueda y mostrado en la lista (ícono Building2).
+- **Invoice (PDF `lib/pdf.js` + público `PublicInvoice.js`)**: el "BILL TO" muestra el negocio como nombre principal (negrita) y "Attn: <dueño>" debajo cuando hay negocio; si no hay negocio, solo el nombre del dueño (igual que antes). Los quotes PDF también heredan esto (usan el mismo `clientBlock`).
+- **Probado e2e**: creé cliente "Juan Perez" / company "Construcciones Lopez LLC" → invoice INV-2010; la página pública mostró BILL TO "Construcciones Lopez LLC" + "Attn: Juan Perez". Formulario verificado por screenshot. Build prod plano (relativo `/api`) + `git add -f`.
+
 ## ✅ Jun 2026 — PAYWALL MODULAR: combos de 2 módulos (30% OFF) + selector "Arma tu plan" [COMPLETO + PROBADO]
 Pedido de Paul: poder asignar/vender cualquier combinación de módulos. Antes solo se podía 1 módulo o los 3 (bundle); faltaban los combos de exactamente 2.
 - **Precios** (combos = 30% off la suma): Presencia+Negocio $41.99, Presencia+Marketing $34.99, Negocio+Marketing $48.99. Bundle (3) sigue en $59.99. Anual = ×10.

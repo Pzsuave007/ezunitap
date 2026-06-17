@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Search, Phone, Mail, MapPin, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Search, Phone, Mail, MapPin, ChevronRight, Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
-const EMPTY = { name: "", phone: "", email: "", address: "", job_type: "", notes: "" };
+const EMPTY = { name: "", company: "", phone: "", email: "", address: "", job_type: "", notes: "" };
 
 export default function Clients() {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ export default function Clients() {
   };
 
   const filtered = clients.filter((c) =>
-    [c.name, c.phone, c.email, c.address, c.job_type].some((f) =>
+    [c.name, c.company, c.phone, c.email, c.address, c.job_type].some((f) =>
       (f || "").toLowerCase().includes(filter.toLowerCase())
     )
   );
@@ -108,6 +108,7 @@ export default function Clients() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{c.name}</div>
+                  {c.company && <div className="text-xs text-slate-500 truncate flex items-center gap-1"><Building2 className="w-3 h-3" />{c.company}</div>}
                   <div className="text-xs text-slate-500 flex items-center gap-3 mt-0.5 flex-wrap">
                     {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone}</span>}
                     {c.address && <span className="flex items-center gap-1 truncate"><MapPin className="w-3 h-3" />{c.address}</span>}
@@ -130,6 +131,11 @@ export default function Clients() {
             <div>
               <Label>Nombre *</Label>
               <Input data-testid="cli-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl mt-1.5" required />
+            </div>
+            <div>
+              <Label>Nombre del negocio (opcional)</Label>
+              <Input data-testid="cli-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Construcciones López LLC" />
+              <p className="text-[11px] text-slate-500 mt-1">Si lo llenas, el invoice se hará a nombre del negocio.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -74,16 +74,22 @@ function clientBlock(doc, client, y) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("BILL TO", 14, y);
-  doc.setFont("helvetica", "normal");
+  const company = (client?.company || "").trim();
+  const person = (client?.name || "").trim();
+  const primary = company || person || "—";
+  // Primary line (business name when present) in bold; everything else normal.
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  const lines = [
-    client?.name || "—",
+  doc.text(primary, 14, y + 6);
+  doc.setFont("helvetica", "normal");
+  const rest = [
+    company && person ? `Attn: ${person}` : "",
     client?.address || "",
     client?.email || "",
     client?.phone || "",
   ].filter(Boolean);
-  lines.forEach((l, i) => doc.text(l, 14, y + 6 + i * 5));
-  return y + 6 + lines.length * 5;
+  rest.forEach((l, i) => doc.text(l, 14, y + 11 + i * 5));
+  return y + 11 + rest.length * 5;
 }
 
 export async function generateQuotePDF(quote, business, client) {
