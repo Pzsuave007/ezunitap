@@ -27,6 +27,14 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — PAYWALL MODULAR: combos de 2 módulos (30% OFF) + selector "Arma tu plan" [COMPLETO + PROBADO]
+Pedido de Paul: poder asignar/vender cualquier combinación de módulos. Antes solo se podía 1 módulo o los 3 (bundle); faltaban los combos de exactamente 2.
+- **Precios** (combos = 30% off la suma): Presencia+Negocio $41.99, Presencia+Marketing $34.99, Negocio+Marketing $48.99. Bundle (3) sigue en $59.99. Anual = ×10.
+- **Backend** (`payments_service.py`): 3 módulos combo nuevos en `MODULES` (features [card,business] / [card,marketing] / [business,marketing]) + precios en `_MODULE_MONTHLY_CENTS`. Todo se auto-deriva: `PLANS`, `PLAN_FEATURES`, `list_plans` (campo `is_combo`), `get_plan`, checkout Stripe, `user_features`, `_apply_subscription`. `plan_base` ya maneja "presencia_negocio_monthly".
+- **Admin** (`server.py`): `MANUAL_PLAN_CHOICES` y el `elif` de set-plan ahora se derivan de `PLAN_FEATURES` (auto-incluye combos). `AdminAccounts.js`: opciones combo en el dropdown + `currentPlan` reconoce combos.
+- **Frontend** (`Pricing.js` reescrito): selector "Arma tu plan" — el cliente marca módulos (toggle), el precio y el ahorro se calculan en vivo (1→single, 2→combo −30%, 3→bundle). Panel resumen sticky (desktop) + barra CTA fija (móvil). Deep-link `?plan=base&start=1` preselecciona y auto-checkout (flujo de registro intacto). `Register.js`: labels de combos.
+- **Probado e2e**: `/payments/plans` devuelve los 7 planes con precios correctos; gating verificado por curl (negocio_marketing → Negocio+Marketing OK, Tarjeta 403; presencia_marketing → Tarjeta+Marketing OK, Negocio 403); selector frontend (screenshot): Negocio+Marketing $48.99 "AHORRAS 30%", Bundle $59.99 "AHORRAS 33%". Build prod plano (relativo `/api`) + `git add -f`.
+
 ## ✅ Jun 2026 — VOZ EN OFF DE REELS: ElevenLabs (español latino nativo + inglés) [COMPLETO + PROBADO]
 Pedido de Paul: las voces de los Reels sonaban "a gringo hablando español". Causa: OpenAI `tts-1-hd` lee español con fonética inglesa. La Universal Key (Emergent) NO da acceso a voces nativas ni instrucciones de acento → cambio de motor obligatorio. **Usuario tiene su propia API key de ElevenLabs.**
 - **Motor nuevo** (`tts_service.py`): ElevenLabs `eleven_multilingual_v2` vía `AsyncElevenLabs` (`client.text_to_speech.convert`, `output_format=mp3_44100_128`, `VoiceSettings` stability 0.5 / similarity 0.75 / speaker_boost). El modelo multilingüe pronuncia español Y inglés natural con las MISMAS voces (el toggle de idioma del reel solo cambia el TEXTO).

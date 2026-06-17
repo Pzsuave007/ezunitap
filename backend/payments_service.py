@@ -61,6 +61,24 @@ MODULES = {
         "tagline": "Estudio de Marketing: posts y videos con IA",
         "ships_card": False,
     },
+    "presencia_negocio": {
+        "label": "Presencia + Negocio",
+        "features": ["card", "business"],
+        "tagline": "Tarjeta digital + toda la gestión de negocio (CRM, facturas, presupuestos)",
+        "ships_card": True,
+    },
+    "presencia_marketing": {
+        "label": "Presencia + Marketing",
+        "features": ["card", "marketing"],
+        "tagline": "Tarjeta digital + Estudio de Marketing con IA",
+        "ships_card": True,
+    },
+    "negocio_marketing": {
+        "label": "Negocio + Marketing",
+        "features": ["business", "marketing"],
+        "tagline": "Gestión de negocio completa + Estudio de Marketing con IA",
+        "ships_card": False,
+    },
     "bundle": {
         "label": "Todo UniTech",
         "features": ["card", "business", "marketing"],
@@ -70,10 +88,14 @@ MODULES = {
 }
 
 # Monthly price (cents) per base module. Yearly = x10 (2 months free).
+# Combos of 2 modules = 30% off the sum of their individual monthly prices.
 _MODULE_MONTHLY_CENTS = {
     "presencia": 1999,
     "negocio": 3999,
     "marketing": 2999,
+    "presencia_negocio": 4199,    # (1999+3999) -30%
+    "presencia_marketing": 3499,  # (1999+2999) -30%
+    "negocio_marketing": 4899,    # (3999+2999) -30%
     "bundle": 5999,
 }
 
@@ -97,6 +119,7 @@ def _build_plans() -> dict:
                 "display_price": f"${cents / 100:.2f}",
                 "display_period": "/año" if interval == "year" else "/mes",
                 "is_bundle": base == "bundle",
+                "is_combo": ("_" in base) and base != "bundle",
                 "ships_card": mod["ships_card"],
                 "trial_period_days": 0,
             }
@@ -127,6 +150,7 @@ def list_plans() -> list[dict]:
             "tagline": mod["tagline"],
             "features": mod["features"],
             "is_bundle": base == "bundle",
+            "is_combo": ("_" in base) and base != "bundle",
             "ships_card": mod["ships_card"],
             "monthly": {
                 "plan_id": m["id"],

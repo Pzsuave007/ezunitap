@@ -14,7 +14,7 @@ export default function Register() {
   const [params] = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const selectedPlan = params.get("plan") || "";
-  const planLabels = { presencia: "Presencia Digital", negocio: "Gestión de Negocio", marketing: "Marketing Studio", bundle: "Todo UniTech (Bundle)" };
+  const planLabels = { presencia: "Presencia Digital", negocio: "Gestión de Negocio", marketing: "Marketing Studio", presencia_negocio: "Presencia + Negocio", presencia_marketing: "Presencia + Marketing", negocio_marketing: "Negocio + Marketing", bundle: "Todo UniTech (Bundle)" };
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",

@@ -33,6 +33,9 @@ const PLAN_OPTIONS = [
   { value: "presencia", label: "Presencia (tarjeta)" },
   { value: "negocio", label: "Negocio (CRM/IA)" },
   { value: "marketing", label: "Marketing" },
+  { value: "presencia_negocio", label: "Presencia + Negocio" },
+  { value: "presencia_marketing", label: "Presencia + Marketing" },
+  { value: "negocio_marketing", label: "Negocio + Marketing" },
   { value: "bundle", label: "Bundle — Todo" },
   { value: "comp", label: "Cortesía (gratis)" },
   { value: "locked", label: "Bloqueado" },
@@ -46,7 +49,7 @@ function currentPlan(u) {
   if (u.subscription_status === "trialing") return "trial";
   if (["active", "past_due"].includes(u.subscription_status) && u.plan_type) {
     const base = String(u.plan_type).replace(/_(monthly|yearly|manual)$/, "");
-    if (["presencia", "negocio", "marketing", "bundle"].includes(base)) return base;
+    if (["presencia", "negocio", "marketing", "presencia_negocio", "presencia_marketing", "negocio_marketing", "bundle"].includes(base)) return base;
   }
   return "locked";
 }

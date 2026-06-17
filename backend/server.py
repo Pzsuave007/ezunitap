@@ -5664,7 +5664,7 @@ async def admin_revoke_comp(
 # Plans the admin can manually assign (no Stripe). Maps to the same feature
 # sets used everywhere else. "comp" = lifetime free (all), "trial" = restart a
 # 14-day trial, "locked" = remove access (trial ended, no plan).
-MANUAL_PLAN_CHOICES = {"presencia", "negocio", "marketing", "bundle", "comp", "trial", "locked"}
+MANUAL_PLAN_CHOICES = set(payments_service.PLAN_FEATURES.keys()) | {"comp", "trial", "locked"}
 
 
 class AdminSetPlanIn(BaseModel):
@@ -5705,7 +5705,7 @@ async def admin_set_plan(
             "plan_type": "comp",
             "subscription_status": "active",
         })
-    elif plan in ("presencia", "negocio", "marketing", "bundle"):
+    elif plan in payments_service.PLAN_FEATURES:
         update.update({
             "manual_plan": plan,
             "plan_type": f"{plan}_manual",
