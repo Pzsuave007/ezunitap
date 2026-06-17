@@ -11,7 +11,7 @@ import StatusBadge from "@/components/StatusBadge";
 import {
   ArrowLeft, Phone, Mail, MapPin, FileText, Receipt,
   MessageSquare, Camera, Sparkles, Trash2, Loader2,
-  FileSignature, DollarSign, Clock,
+  FileSignature, DollarSign, Clock, Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
@@ -85,6 +85,11 @@ export default function ClientDetail() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="font-heading text-2xl font-bold tracking-tight text-slate-900 leading-tight truncate">{client.name}</h1>
+              {client.company && (
+                <div className="flex items-center gap-1 text-sm text-slate-500 mt-0.5 truncate">
+                  <Building2 className="w-3.5 h-3.5 flex-shrink-0" /> {client.company}
+                </div>
+              )}
               {client.job_type && (
                 <span className="inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
                   {client.job_type}
@@ -203,7 +208,8 @@ export default function ClientDetail() {
             {editing ? (
               <div className="space-y-3">
                 {[
-                  ["name", "Nombre"], ["phone", "Teléfono"], ["email", "Email"],
+                  ["name", "Nombre"], ["company", "Nombre del negocio (opcional)"],
+                  ["phone", "Teléfono"], ["email", "Email"],
                   ["address", "Dirección"], ["job_type", "Tipo de trabajo"],
                 ].map(([k, label]) => (
                   <div key={k}>
