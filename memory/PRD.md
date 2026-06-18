@@ -27,6 +27,15 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — INVOICE MÓVIL: edición de Line Items amigable [COMPLETO + PROBADO]
+Pedido de Paul: editar el invoice en el celular no era amigable. Causa: en móvil, Cantidad/Unidad/Precio/Total iban en una sola fila de 12 columnas sin etiquetas → muy apretado.
+- **Frontend** (`InvoiceDetail.js`): se separó el layout móvil del de escritorio. En móvil cada ítem es una tarjeta con **Descripción** ancha arriba y debajo **Cant. | Unidad | Precio $** en 3 columnas con etiquetas, más botón "Quitar ítem" y el **Total** del ítem. Escritorio conserva el grid compacto de 12 columnas. Hint cuando no hay ítems. Filas del plan de mensualidades ahora hacen `flex-wrap` (ya no se desbordan en móvil).
+- **Probado**: screenshot móvil (390px) confirma layout limpio y editable con el pulgar. Build prod plano (relativo `/api`) + `git add -f`.
+
+## ✅ Jun 2026 — LEADS DEL DEMO visibles en el panel admin [COMPLETO + PROBADO]
+Bug encontrado: los leads del demo en vivo (`demo_leads`) se capturaban pero el panel `/admin/leads` solo mostraba los del chat (`platform_leads`). Crítico para la campaña de anuncios.
+- **Frontend** (`AdminLeads.js`): nuevo toggle de fuente "🎬 Demo en vivo" / "💬 Chat del landing". La pestaña de demo carga `/admin/demo-leads` y muestra cada lead con contacto (tel/email clicables), oficio y su etapa (Empezó / Generó cotización / Firmó contrato / ✓ Completó). Probado: 12 leads visibles.
+
 ## ✅ Jun 2026 — CLIENTE: campo "Nombre del negocio" → invoice a nombre del negocio [COMPLETO + PROBADO]
 Pedido de Paul: al crear/editar cliente faltaba el nombre del negocio; el invoice debe ir dirigido al negocio (si lo tiene), no solo al dueño. Si no tiene negocio, queda solo el nombre.
 - **Backend** (`server.py` `ClientIn`): nuevo campo opcional `company`. Se persiste solo (model_dump) en create/update; sin migración necesaria.

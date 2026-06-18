@@ -286,20 +286,47 @@ export default function InvoiceDetail() {
             <Label>Line Items</Label>
             <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> Agregar</Button>
           </div>
+          {invoice.line_items.length === 0 && (
+            <p className="text-xs text-slate-400 mb-2">Toca "Agregar" para añadir tu primer concepto (ej. mano de obra, materiales).</p>
+          )}
           {invoice.line_items.map((li, i) => (
-            <div key={i} className="bg-slate-50 rounded-xl p-3 mb-2 space-y-2 lg:space-y-0 lg:bg-transparent lg:p-0">
-              <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="h-11 rounded-xl bg-white lg:hidden" />
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="hidden lg:block lg:col-span-5 h-11 rounded-xl" />
-                <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-3 lg:col-span-2 h-11 rounded-xl bg-white" />
-                <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-3 lg:col-span-1 h-11 rounded-xl bg-white" />
-                <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-4 lg:col-span-2 h-11 rounded-xl bg-white" />
-                <div className="col-span-2 lg:col-span-1 flex items-center justify-end lg:justify-start text-sm font-semibold whitespace-nowrap">${li.amount.toFixed(2)}</div>
-                <button type="button" onClick={() => removeItem(i)} className="hidden lg:flex col-span-1 items-center justify-center text-red-500"><Trash2 className="w-4 h-4" /></button>
+            <div key={i} className="bg-slate-50 rounded-xl p-3 mb-2 lg:bg-transparent lg:p-0">
+              {/* Mobile: friendly labeled layout */}
+              <div className="lg:hidden space-y-2">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Descripción</span>
+                  <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Ej: Cambio de techo" className="h-11 rounded-xl bg-white mt-0.5" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Cant.</span>
+                    <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="1" className="h-11 rounded-xl bg-white mt-0.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Unidad</span>
+                    <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="h-11 rounded-xl bg-white mt-0.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Precio $</span>
+                    <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="0.00" className="h-11 rounded-xl bg-white mt-0.5" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-0.5">
+                  <button type="button" onClick={() => removeItem(i)} className="flex items-center gap-1 text-red-500 text-xs font-semibold tap">
+                    <Trash2 className="w-3.5 h-3.5" /> Quitar ítem
+                  </button>
+                  <div className="text-sm font-bold text-slate-800">Total: ${li.amount.toFixed(2)}</div>
+                </div>
               </div>
-              <button type="button" onClick={() => removeItem(i)} className="lg:hidden flex items-center gap-1 text-red-500 text-xs font-semibold">
-                <Trash2 className="w-3.5 h-3.5" /> Quitar ítem
-              </button>
+              {/* Desktop: compact grid */}
+              <div className="hidden lg:grid grid-cols-12 gap-2 items-center">
+                <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="col-span-5 h-11 rounded-xl" />
+                <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-2 h-11 rounded-xl bg-white" />
+                <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-1 h-11 rounded-xl bg-white" />
+                <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-2 h-11 rounded-xl bg-white" />
+                <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap">${li.amount.toFixed(2)}</div>
+                <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500"><Trash2 className="w-4 h-4" /></button>
+              </div>
             </div>
           ))}
         </div>
@@ -621,10 +648,10 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
       {items.map((it, i) => {
         const isPaid = it.id && paidPlanIds.has(it.id);
         return (
-          <div key={it.id || i} className="flex items-center gap-2" data-testid={`plan-row-${i}`}>
-            <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={`Pago ${i + 1}`} className="h-10 rounded-lg text-sm flex-1" />
-            <Input type="number" step="0.01" value={it.amount} onChange={(e) => updateRow(i, "amount", e.target.value)} placeholder="$" className="h-10 rounded-lg text-sm w-24" />
-            <Input type="date" value={it.due_date || ""} onChange={(e) => updateRow(i, "due_date", e.target.value)} className="h-10 rounded-lg text-sm w-36" />
+          <div key={it.id || i} className="flex flex-wrap items-center gap-2" data-testid={`plan-row-${i}`}>
+            <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={`Pago ${i + 1}`} className="h-10 rounded-lg text-sm flex-1 min-w-[120px]" />
+            <Input type="number" step="0.01" value={it.amount} onChange={(e) => updateRow(i, "amount", e.target.value)} placeholder="$" className="h-10 rounded-lg text-sm w-20" />
+            <Input type="date" value={it.due_date || ""} onChange={(e) => updateRow(i, "due_date", e.target.value)} className="h-10 rounded-lg text-sm flex-1 min-w-[130px]" />
             {isPaid ? (
               <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 w-20 justify-center"><Check className="w-3.5 h-3.5" />Pagado</span>
             ) : it.id && !String(it.id).startsWith("tmp-") ? (
