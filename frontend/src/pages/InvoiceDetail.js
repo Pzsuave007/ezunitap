@@ -344,7 +344,7 @@ export default function InvoiceDetail() {
                   <button type="button" onClick={() => removeItem(i)} className="flex items-center gap-1 text-red-500 text-xs font-semibold tap">
                     <Trash2 className="w-3.5 h-3.5" /> Quitar ítem
                   </button>
-                  <div className="text-sm font-bold text-slate-800">Total: ${li.amount.toFixed(2)}</div>
+                  <div className="text-sm font-bold text-slate-800">Total: ${((Number(li.quantity) || 0) * (Number(li.unit_price) || 0)).toFixed(2)}</div>
                 </div>
               </div>
               {/* Desktop: compact grid */}
@@ -353,7 +353,7 @@ export default function InvoiceDetail() {
                 <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-2 h-11 rounded-xl bg-white" />
                 <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-1 h-11 rounded-xl bg-white" />
                 <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-2 h-11 rounded-xl bg-white" />
-                <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap h-11">${li.amount.toFixed(2)}</div>
+                <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap h-11">${((Number(li.quantity) || 0) * (Number(li.unit_price) || 0)).toFixed(2)}</div>
                 <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500 h-11"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
