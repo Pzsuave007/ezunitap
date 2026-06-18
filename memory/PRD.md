@@ -27,6 +27,11 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — INVOICE: descripción de ítem multilínea + fix due date + fix invoice sin cliente [COMPLETO + PROBADO]
+- **Descripción multilínea** (`InvoiceDetail.js`): el campo de descripción del line item era `<Input>` de una sola línea (texto largo se cortaba, había que hacer scroll lateral en móvil). Ahora es un `<AutoGrowTextarea>` que crece automáticamente y muestra TODO el texto en varias líneas (móvil y escritorio). Probado: descripción de 174 chars se ve en 4 líneas.
+- **Fix due date "un día antes"** (`lib/pdf.js`): `new Date("YYYY-MM-DD")` se interpretaba como UTC y mostraba el día anterior en zonas detrás de UTC. Nuevo helper `fmtDate` parsea fechas date-only como LOCAL. Verificado: 2026-06-20 → "6/20/2026" (antes 6/19).
+- **Fix invoice sin cliente** (`InvoiceDetail.js`): si `client_id` estaba vacío, el `api.get('/clients/'+id)` fallaba y disparaba "No encontrado" sacando al usuario. Ahora solo busca el cliente si existe y no bloquea la carga del invoice.
+
 ## ✅ Jun 2026 — INVOICE MÓVIL: edición de Line Items amigable [COMPLETO + PROBADO]
 Pedido de Paul: editar el invoice en el celular no era amigable. Causa: en móvil, Cantidad/Unidad/Precio/Total iban en una sola fila de 12 columnas sin etiquetas → muy apretado.
 - **Frontend** (`InvoiceDetail.js`): se separó el layout móvil del de escritorio. En móvil cada ítem es una tarjeta con **Descripción** ancha arriba y debajo **Cant. | Unidad | Precio $** en 3 columnas con etiquetas, más botón "Quitar ítem" y el **Total** del ítem. Escritorio conserva el grid compacto de 12 columnas. Hint cuando no hay ítems. Filas del plan de mensualidades ahora hacen `flex-wrap` (ya no se desbordan en móvil).

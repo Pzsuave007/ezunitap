@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +34,29 @@ const blank = () => ({
   agreement_terms: null,
   status: "draft",
 });
+
+// Auto-growing textarea so long line-item descriptions are fully visible & editable
+// (no horizontal scrolling on mobile).
+function AutoGrowTextarea({ value, onChange, placeholder, className = "", testid }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      data-testid={testid}
+      rows={1}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={`w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm leading-snug resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 ${className}`}
+    />
+  );
+}
 
 export default function InvoiceDetail() {
   const { id } = useParams();
@@ -85,8 +108,14 @@ export default function InvoiceDetail() {
     } else {
       api.get(`/invoices/${id}`).then(async ({ data }) => {
         setInvoice(data);
-        const c = await api.get(`/clients/${data.client_id}`);
-        setClient(c.data);
+        if (data.client_id) {
+          try {
+            const c = await api.get(`/clients/${data.client_id}`);
+            setClient(c.data);
+          } catch { setClient(null); }
+        } else {
+          setClient(null);
+        }
       }).catch(() => { toast.error("No encontrado"); navigate("/invoices"); });
     }
   }, [id]);
@@ -295,7 +324,7 @@ export default function InvoiceDetail() {
               <div className="lg:hidden space-y-2">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Descripción</span>
-                  <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Ej: Cambio de techo" className="h-11 rounded-xl bg-white mt-0.5" />
+                  <AutoGrowTextarea value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Ej: Cambio de techo" className="mt-0.5" />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
@@ -319,13 +348,13 @@ export default function InvoiceDetail() {
                 </div>
               </div>
               {/* Desktop: compact grid */}
-              <div className="hidden lg:grid grid-cols-12 gap-2 items-center">
-                <Input value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="col-span-5 h-11 rounded-xl" />
+              <div className="hidden lg:grid grid-cols-12 gap-2 items-start">
+                <AutoGrowTextarea value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="col-span-5" />
                 <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-2 h-11 rounded-xl bg-white" />
                 <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-1 h-11 rounded-xl bg-white" />
                 <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-2 h-11 rounded-xl bg-white" />
-                <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap">${li.amount.toFixed(2)}</div>
-                <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500"><Trash2 className="w-4 h-4" /></button>
+                <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap h-11">${li.amount.toFixed(2)}</div>
+                <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500 h-11"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}
