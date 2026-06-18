@@ -138,6 +138,28 @@ Rules:
 - Use realistic ballpark U.S. residential pricing if not specified.
 - Ensure totals are arithmetically consistent.
 - Return ONLY the JSON, nothing else.
+
+CRITICAL — PRESERVE THE USER'S ITEMIZATION (DO NOT GROUP OR SUMMARIZE):
+- If the user already lists individual sub-items WITH their own price (per day, per unit,
+  per room, per material, etc.), you MUST output ONE separate line item for EACH sub-item.
+- NEVER merge, group, or collapse several priced sub-items into a single combined line.
+  Do NOT create "weekly totals", "lump sums", or "grouped" lines when the user gave detail.
+- Keep the user's exact dollar amount for each sub-item. quantity=1, unit="ea",
+  unit_price = that sub-item's amount, amount = the same value. Do not re-price.
+- Make each description self-explanatory in English: include the period/day, the crew,
+  the hours and the rate when the user provided them.
+- Only invent grouped/estimated lines when the user did NOT provide a per-item breakdown.
+
+EXAMPLE — user input (Spanish/Spanglish):
+"Week 1 Labor (Apr 20-26, 2026): Mon 2 guys x 10 hrs ($2,000); Tue 2 guys x 10 hrs ($2,000);
+Wed 3 guys x 10 hrs ($2,500)"
+CORRECT line_items output (one line PER day, NOT one weekly total):
+[
+  {"description": "Week 1 - Mon (Apr 20): 2 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2000.0, "amount": 2000.0},
+  {"description": "Week 1 - Tue (Apr 21): 2 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2000.0, "amount": 2000.0},
+  {"description": "Week 1 - Wed (Apr 22): 3 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2500.0, "amount": 2500.0}
+]
+WRONG (do NOT do this): a single line "Week 1 Labor ... $6,500".
 """
 
 
