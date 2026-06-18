@@ -44,7 +44,7 @@ MB_V4 = "https://mybusiness.googleapis.com"
 
 # Where to send the browser back after the OAuth dance. Relative path works
 # because frontend + backend share the same domain in prod and preview.
-FRONTEND_RETURN = "/google-reviews"
+FRONTEND_RETURN = "/reviews"
 
 # --- DB (own handle to avoid a circular import with server.py) ------------
 _client = AsyncIOMotorClient(os.environ["MONGO_URL"])
