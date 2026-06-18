@@ -294,23 +294,47 @@ async def locations(user_id: str = Depends(get_current_user_id)):
     headers = {"Authorization": f"Bearer {token}"}
     out = []
     async with httpx.AsyncClient() as cli:
-        acc = await cli.get(f"{ACCT_MGMT}/v1/accounts", headers=headers, timeout=30.0)
-        acc.raise_for_status()
-        for a in acc.json().get("accounts", []):
-            loc = await cli.get(
-                f"{BIZ_INFO}/v1/{a['name']}/locations",
-                headers=headers,
-                params={"readMask": "name,title,storefrontAddress"},
-                timeout=30.0,
-            )
-            if loc.status_code != 200:
-                continue
-            for loc_item in loc.json().get("locations", []):
-                out.append({
-                    "account_id": a["name"].split("/")[-1],
-                    "location_id": loc_item["name"].split("/")[-1],
-                    "title": loc_item.get("title", ""),
-                })
+        # Accounts can also paginate — follow nextPageToken to get them all.
+        accounts = []
+        acc_token = None
+        while True:
+            acc_params = {"pageSize": 100}
+            if acc_token:
+                acc_params["pageToken"] = acc_token
+            acc = await cli.get(f"{ACCT_MGMT}/v1/accounts", headers=headers, params=acc_params, timeout=30.0)
+            acc.raise_for_status()
+            acc_data = acc.json()
+            accounts.extend(acc_data.get("accounts", []))
+            acc_token = acc_data.get("nextPageToken")
+            if not acc_token:
+                break
+
+        for a in accounts:
+            # Locations paginate too (default page = 10). Loop until exhausted so
+            # users managing many profiles (agencies) see ALL their businesses.
+            page_token = None
+            while True:
+                params = {"readMask": "name,title,storefrontAddress", "pageSize": 100}
+                if page_token:
+                    params["pageToken"] = page_token
+                loc = await cli.get(
+                    f"{BIZ_INFO}/v1/{a['name']}/locations",
+                    headers=headers,
+                    params=params,
+                    timeout=30.0,
+                )
+                if loc.status_code != 200:
+                    break
+                loc_data = loc.json()
+                for loc_item in loc_data.get("locations", []):
+                    out.append({
+                        "account_id": a["name"].split("/")[-1],
+                        "location_id": loc_item["name"].split("/")[-1],
+                        "title": loc_item.get("title", ""),
+                    })
+                page_token = loc_data.get("nextPageToken")
+                if not page_token:
+                    break
     return {"locations": out}
 
 
