@@ -72,8 +72,10 @@ sola a producción**. Hay que decirle al usuario que la agregue manualmente al
 **Objetivo:** que cada contratista conecte SU perfil de Google Business y pueda
 **publicar posts** y **responder reseñas** directo desde Unitap.
 
-**Fase 1 — solicitud a Google: ENVIADA.**
-- Case ID: `3-3261000041706` (revisión 7-10 días hábiles).
+**Fase 1 — solicitud a Google: ENVIADA (RE-ENVIADA 18-jun-2026).**
+- Case ID ACTIVO: `0-0022000041273` (re-enviado 18-jun-2026, revisión ~7-10 días hábiles → respuesta esperada ~30-jun a 2-jul-2026).
+- Case ID anterior (2-jun, parece que no avanzó / sin correo de confirmación): `3-3261000041706`.
+- Tipo: "Application For Basic API Access". Company website usado: `growthally.agency`.
 - Proyecto Google Cloud: `scenic-healer-468818-h5` (number `837710659551`).
 - APIs habilitadas: `mybusinessaccountmanagement` + `mybusinessbusinessinformation`.
 - Perfil verificado usado para aplicar: **Growth Ally** (`growthally.agency`),
