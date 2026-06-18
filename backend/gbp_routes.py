@@ -20,6 +20,7 @@ import os
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from urllib.parse import urlencode
 
 import httpx
@@ -106,7 +107,7 @@ async def connect(user_id: str = Depends(get_current_user_id)):
 
 
 @router.get("/callback")
-async def callback(code: str | None = None, state: str | None = None, error: str | None = None):
+async def callback(code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
     """Google redirects here. Exchange the code, store tokens, bounce back."""
     if error:
         return RedirectResponse(f"{FRONTEND_RETURN}?gmb=error")
