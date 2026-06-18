@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 import {
-  Loader2, CheckCircle2, Send, Star, Clock, Link2, Unlink, MapPin, MessageSquare,
+  Loader2, CheckCircle2, Send, Star, Clock, Link2, Unlink, MapPin, MessageSquare, RefreshCw, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -151,11 +151,117 @@ export default function GbpConnectCard({ businessType = "" }) {
             </button>
           </div>
 
+          <LocationSwitcher
+            currentLocationId={status.location_id}
+            onChanged={loadStatus}
+          />
+
           <PostComposer businessType={businessType} />
           <ReviewsList />
         </div>
       )}
     </Card>
+  );
+}
+
+function LocationSwitcher({ currentLocationId, onChanged }) {
+  const [open, setOpen] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState("");
+
+  const toggle = async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && locations.length === 0) {
+      setLoading(true);
+      try {
+        const { data } = await api.get("/google-business/locations");
+        setLocations(data.locations || []);
+      } catch (e) {
+        toast.error(e?.response?.data?.detail || "No se pudieron cargar tus negocios.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const pick = async (loc) => {
+    setSaving(loc.location_id);
+    try {
+      await api.post("/google-business/select-location", {
+        account_id: loc.account_id,
+        location_id: loc.location_id,
+        title: loc.title,
+      });
+      toast.success(`Negocio cambiado a "${loc.title || "ubicación"}" ✅`);
+      setOpen(false);
+      onChanged?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo cambiar el negocio.");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 p-3" data-testid="gbp-location-switcher">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center justify-between text-xs font-bold text-slate-700 hover:text-slate-900"
+        data-testid="gbp-change-location-btn"
+      >
+        <span className="flex items-center gap-1.5">
+          <RefreshCw className="w-3.5 h-3.5 text-blue-600" /> ¿No es el negocio correcto? Cámbialo
+        </span>
+        <span className="text-slate-400">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-1.5" data-testid="gbp-location-list">
+          {loading ? (
+            <div className="flex justify-center py-3">
+              <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+            </div>
+          ) : locations.length === 0 ? (
+            <div className="text-center py-3 text-xs text-slate-400">
+              No encontramos otros negocios en tu cuenta de Google.
+            </div>
+          ) : (
+            locations.map((loc) => {
+              const active = loc.location_id === currentLocationId;
+              return (
+                <button
+                  key={loc.location_id}
+                  onClick={() => pick(loc)}
+                  disabled={!!saving}
+                  className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
+                    active
+                      ? "border-emerald-300 bg-emerald-50"
+                      : "border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                  }`}
+                  data-testid={`gbp-location-option-${loc.location_id}`}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 flex-none" />
+                    <span className="text-xs font-semibold text-slate-700 truncate">
+                      {loc.title || "Negocio sin nombre"}
+                    </span>
+                  </span>
+                  {saving === loc.location_id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 flex-none" />
+                  ) : active ? (
+                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 flex-none">
+                      <Check className="w-3 h-3" /> Activo
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
