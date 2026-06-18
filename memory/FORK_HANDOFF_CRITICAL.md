@@ -67,54 +67,46 @@ sola a producción**. Hay que decirle al usuario que la agregue manualmente al
 
 ---
 
-## 🟦 ESTADO ACTUAL: Integración Google Business Profile (EN CURSO)
+## 🟦 ESTADO ACTUAL: Integración Google Business Profile (✅ APROBADA Y EN VIVO — 18-jun-2026)
 
 **Objetivo:** que cada contratista conecte SU perfil de Google Business y pueda
 **publicar posts** y **responder reseñas** directo desde Unitap.
 
-**Fase 1 — solicitud a Google: ENVIADA (RE-ENVIADA 18-jun-2026).**
-- Case ID ACTIVO: `0-0022000041273` (re-enviado 18-jun-2026, revisión ~7-10 días hábiles → respuesta esperada ~30-jun a 2-jul-2026).
-- Case ID anterior (2-jun, parece que no avanzó / sin correo de confirmación): `3-3261000041706`.
-- Tipo: "Application For Basic API Access". Company website usado: `growthally.agency`.
-- Proyecto Google Cloud: `scenic-healer-468818-h5` (number `837710659551`).
-- APIs habilitadas: `mybusinessaccountmanagement` + `mybusinessbusinessinformation`.
-- Perfil verificado usado para aplicar: **Growth Ally** (`growthally.agency`),
-  correo dueño `pzsuave007@gmail.com`. ⚠️ Google mostró alerta de "reverificar
-  perfil" — recordar al usuario completarla.
-- Estado: **esperando aprobación**. Se sabe que aprobó cuando la cuota pasa de
-  `0 QPM → 300 QPM` en Cloud Console.
+**✅ GOOGLE APROBÓ la API (18-jun-2026)** — Case ID `0-0022000041273`. La
+integración está CONFIGURADA y FUNCIONANDO en producción.
 
-**Código YA construido y listo (gateado por env):**
-- Backend `/app/backend/gbp_routes.py` — OAuth 2.0 server-side, scope
-  `business.manage`, refresh token por usuario en Mongo (`gbp_connections`),
-  state CSRF (`gbp_oauth_states`), refresh transparente, manejo de `invalid_grant`.
-  Endpoints (prefijo `/api/google-business`): `status`, `connect`, `callback`,
-  `disconnect`, `locations`, `select-location`, `posts`, `reviews`,
-  `reviews/{id}/reply`.
-- Frontend `/app/frontend/src/components/GbpConnectCard.js` montado en
-  `GoogleReviewsPage.js` (`/google-reviews`). 4 estados: cargando / **pendiente
-  de aprobación** / conectar con Google / conectado (composer con AI ES→EN +
-  lista de reseñas con respuesta).
-- Tests: `/app/backend/tests/test_gbp.py` (4/4 pasan, cubren estado pre-aprobación).
+**Credenciales OAuth (proyecto `scenic-healer-468818-h5`):**
+- Client ID: `837710659551-0ejae1jqruvuk1h6i9o77uo15q7mud4o.apps.googleusercontent.com`
+- Client Secret: `GOCSPX-...` (en `keys.txt` de prod + `.env` del pod preview).
+- Redirect URI registrado en Google + env: `https://ezunitech.com/api/google-business/callback`
+- Las 3 llaves `GOOGLE_GBP_*` se cargan a prod vía `keys.txt` (fix.sh ya las copia — se agregaron a la lista de VARs en `deploy/fix.sh`).
 
-**Para ACTIVARLO cuando Google apruebe (pasos para el usuario):**
-1. En Cloud Console crear credenciales OAuth (tipo "Aplicación web"):
-   - Redirect URI autorizado: `https://ezunitap.com/api/google-business/callback`
-   - Configurar pantalla de consentimiento con scope `business.manage`.
-2. Agregar al `.env` de producción (`/opt/ezunitap/backend/.env`):
-   ```
-   GOOGLE_GBP_CLIENT_ID=...
-   GOOGLE_GBP_CLIENT_SECRET=...
-   GOOGLE_GBP_REDIRECT_URI=https://ezunitap.com/api/google-business/callback
-   ```
-   (En el preview/pod ya existen estas 3 keys en `/app/backend/.env`, vacías salvo
-   el REDIRECT_URI.)
-3. Reiniciar backend. `/api/google-business/status` reportará `configured=true`.
-4. **NO es testeable end-to-end hasta tener credenciales reales** (Google no tiene
-   sandbox). Mientras tanto la UI muestra "pendiente" correctamente.
+**⚠️ BUG CRÍTICO RESUELTO (Python 3.9):** prod corre Python 3.9. `gbp_routes.py`
+usaba `str | None` (PEP 604, solo 3.10+) en la firma de `callback()`, lo que hacía
+fallar el import → el `try/except` en server.py lo silenciaba → ruta no montada → 404
+→ la UI mostraba "pendiente" para siempre aunque las llaves estuvieran puestas.
+Fix: `Optional[str]`. **NUNCA uses sintaxis 3.10+ (`X | Y`, `list[x]` en firmas
+evaluadas por FastAPI) en módulos del backend — prod es 3.9.**
 
-**Idea aprobada como mejora futura:** auto-publicar un post de Google cuando un
-trabajo se marca "Completado" (con fotos antes/después).
+**Estado funcional verificado en prod (ezunitech.com):**
+- `status` → `configured=true, connected=true`.
+- El admin conectó su cuenta (maneja MUCHOS perfiles: First Call Roofing, Mazatlan
+  Restaurant, Seattle Carpet Cleaning, Lee Concrete, HRG Construction, etc.).
+- `_auto_select_location` elige el PRIMER negocio → se agregó un **selector de
+  negocio/ubicación** en `GbpConnectCard.js` (componente `LocationSwitcher`) que usa
+  `GET /locations` + `POST /select-location` para que el usuario elija el correcto.
+
+**Código (todo en git, build commiteado):**
+- Backend `/app/backend/gbp_routes.py` — OAuth 2.0, scope `business.manage`, refresh
+  token por usuario (`gbp_connections`), endpoints `/api/google-business/*`.
+- Frontend `/app/frontend/src/components/GbpConnectCard.js` (con `LocationSwitcher`).
+- `FRONTEND_RETURN = "/reviews"` (la ruta real; antes apuntaba mal a `/google-reviews`).
+
+**PENDIENTE (acción del usuario):** desplegar el último build con el selector
+(Save to GitHub → `bash /home/ezunitap/repo/deploy.sh`) y elegir el negocio correcto.
+**Futuro:** para que OTROS contratistas conecten, la app OAuth necesita verificación
+de Google (ahora en "Testing" → solo test users; refresh tokens expiran a los 7 días
+en ese modo). Idea aprobada: auto-publicar post en Google al marcar trabajo "Completado".
 
 ---
 
