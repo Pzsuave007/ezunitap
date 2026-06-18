@@ -10,6 +10,16 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) =>
   `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// Format a date safely. For date-only strings ("YYYY-MM-DD") parse as LOCAL
+// time so the day isn't shifted by the timezone (the classic "one day before" bug).
+const fmtDate = (val) => {
+  if (!val) return "";
+  const s = String(val);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
+  return isNaN(d) ? "" : d.toLocaleDateString("en-US");
+};
+
 async function loadImageAsDataURL(url) {
   try {
     const resp = await fetch(url);
@@ -199,7 +209,7 @@ export async function generateInvoicePDF(invoice, business, client) {
     doc.setFont("helvetica", "bold");
     doc.text("Due Date:", 140, 52);
     doc.setFont("helvetica", "normal");
-    doc.text(new Date(invoice.due_date).toLocaleDateString("en-US"), 196, 52, { align: "right" });
+    doc.text(fmtDate(invoice.due_date), 196, 52, { align: "right" });
   }
   y += 4;
 
