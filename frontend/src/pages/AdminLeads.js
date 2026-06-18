@@ -30,6 +30,8 @@ export default function AdminLeads() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [source, setSource] = useState("demo");
+  const [demoLeads, setDemoLeads] = useState([]);
 
   // Fast-path: trust the logged-in user's email (matches the sidebar logic)
   const SUPER_ADMIN_EMAILS = ["pzsuave007@gmail.com"];
@@ -43,11 +45,11 @@ export default function AdminLeads() {
         const { data } = await api.get("/auth/is-super-admin");
         if (!mounted) return;
         setAllowed(!!data.is_super_admin || isSuperAdminByEmail);
-        if (data.is_super_admin || isSuperAdminByEmail) await loadLeads();
+        if (data.is_super_admin || isSuperAdminByEmail) { await loadLeads(); await loadDemoLeads(); }
       } catch {
         if (mounted) {
           setAllowed(isSuperAdminByEmail);
-          if (isSuperAdminByEmail) await loadLeads();
+          if (isSuperAdminByEmail) { await loadLeads(); await loadDemoLeads(); }
         }
       } finally {
         if (mounted) setLoading(false);
@@ -63,6 +65,15 @@ export default function AdminLeads() {
       setLeads(data.leads || []);
     } catch (e) {
       toast.error("No se pudieron cargar los leads");
+    }
+  };
+
+  const loadDemoLeads = async () => {
+    try {
+      const { data } = await api.get("/admin/demo-leads");
+      setDemoLeads(data.leads || []);
+    } catch (e) {
+      // silent: demo leads are secondary
     }
   };
 
@@ -119,14 +130,31 @@ export default function AdminLeads() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-bold tracking-tight">Leads de UniTech</h1>
-          <p className="text-sm text-slate-500 mt-1">Contratistas capturados por el chat del landing page.</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {source === "demo"
+              ? "Prospectos que probaron el demo en vivo (los que llegan por tu campaña/anuncios)."
+              : "Contratistas capturados por el chat del landing page."}
+          </p>
         </div>
-        <Button data-testid="leads-refresh" variant="outline" onClick={loadLeads} className="rounded-xl gap-2">
+        <Button data-testid="leads-refresh" variant="outline" onClick={() => { loadLeads(); loadDemoLeads(); }} className="rounded-xl gap-2">
           <RefreshCcw className="w-4 h-4" />
           Actualizar
         </Button>
       </div>
 
+      {/* Source toggle: demo leads vs landing chat leads */}
+      <div className="flex items-center gap-2">
+        <button data-testid="leads-source-demo" onClick={() => setSource("demo")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${source === "demo" ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"}`}>
+          🎬 Demo en vivo ({demoLeads.length})
+        </button>
+        <button data-testid="leads-source-chat" onClick={() => setSource("chat")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${source === "chat" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"}`}>
+          💬 Chat del landing ({leads.length})
+        </button>
+      </div>
+
+      {source === "chat" && (<>
       {/* Filter pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {["all", "new", "contacted", "converted", "dismissed"].map((k) => {
@@ -159,6 +187,20 @@ export default function AdminLeads() {
             <LeadCard key={lead.id} lead={lead} onUpdate={updateLead} onDelete={deleteLead} />
           ))}
         </div>
+      )}
+      </>)}
+
+      {source === "demo" && (
+        demoLeads.length === 0 ? (
+          <Card className="p-10 text-center">
+            <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">Aún no hay leads del demo. Cuando lances la campaña, aparecerán aquí en tiempo real.</p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {demoLeads.map((l) => <DemoLeadCard key={l.id} lead={l} />)}
+          </div>
+        )
       )}
     </div>
   );
@@ -263,6 +305,40 @@ function LeadCard({ lead, onUpdate, onDelete }) {
           </Button>
         </div>
       )}
+    </Card>
+  );
+}
+
+function DemoLeadCard({ lead }) {
+  const created = new Date(lead.created_at).toLocaleDateString("es-MX", {
+    year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  let stage = { label: "Empezó el demo", color: "bg-amber-100 text-amber-800 border-amber-200" };
+  if (lead.completed) stage = { label: "✓ Completó el demo", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+  else if ((lead.agreement_count || 0) > 0) stage = { label: "Firmó contrato", color: "bg-blue-100 text-blue-800 border-blue-200" };
+  else if ((lead.quote_count || 0) > 0) stage = { label: "Generó cotización", color: "bg-violet-100 text-violet-800 border-violet-200" };
+  return (
+    <Card data-testid={`demo-lead-${lead.id}`} className="p-4 sm:p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2 flex-wrap">
+        <h3 className="font-bold text-lg text-slate-900">{lead.name || "(sin nombre)"}</h3>
+        <Badge className={`${stage.color} border`} variant="outline">{stage.label}</Badge>
+        {lead.trade && (
+          <Badge variant="outline" className="bg-violet-50 border-violet-200 text-violet-700">{lead.trade}</Badge>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        {lead.phone && (
+          <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-slate-700 hover:text-emerald-700">
+            <Phone className="w-4 h-4" /> {lead.phone}
+          </a>
+        )}
+        {lead.email && (
+          <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-700 hover:text-emerald-700">
+            <Mail className="w-4 h-4" /> {lead.email}
+          </a>
+        )}
+      </div>
+      <p className="text-xs text-slate-400 mt-2">📅 {created} · cotizaciones: {lead.quote_count || 0} · contratos: {lead.agreement_count || 0}</p>
     </Card>
   );
 }
