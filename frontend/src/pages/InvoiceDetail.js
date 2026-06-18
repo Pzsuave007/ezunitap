@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { listAgreementClauses } from "@/lib/pdf";
 
+// Allow only digits + a single decimal point (keeps numeric fields freely editable on iOS Safari).
+const numClean = (v) => String(v).replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+
+
 const blank = () => ({
   client_id: "",
   quote_id: null,
@@ -122,7 +126,7 @@ export default function InvoiceDetail() {
 
   const updateItem = (i, k, v) => {
     const items = [...invoice.line_items];
-    items[i] = { ...items[i], [k]: k === "description" || k === "unit" ? v : Number(v) || 0 };
+    items[i] = { ...items[i], [k]: v };
     items[i].amount = (Number(items[i].quantity) || 0) * (Number(items[i].unit_price) || 0);
     recompute({ ...invoice, line_items: items });
   };
@@ -142,7 +146,24 @@ export default function InvoiceDetail() {
     if (!invoice.job_title.trim()) return toast.error("Falta título");
     setSaving(true);
     try {
-      const payload = { ...invoice, due_date: invoice.due_date || null };
+      // Normalize numeric fields (they're edited as free text for iOS-friendliness).
+      const cleanItems = invoice.line_items.map((li) => {
+        const q = Number(li.quantity) || 0;
+        const p = Number(li.unit_price) || 0;
+        return { ...li, quantity: q, unit_price: p, amount: round2(q * p) };
+      });
+      const subtotal = cleanItems.reduce((s, li) => s + li.amount, 0);
+      const tax_amount = subtotal * (Number(invoice.tax_rate) || 0) / 100;
+      const payload = {
+        ...invoice,
+        line_items: cleanItems,
+        tax_rate: Number(invoice.tax_rate) || 0,
+        deposit_amount: Number(invoice.deposit_amount) || 0,
+        subtotal: round2(subtotal),
+        tax_amount: round2(tax_amount),
+        total: round2(subtotal + tax_amount),
+        due_date: invoice.due_date || null,
+      };
       if (isNew) {
         const { data } = await api.post("/invoices", payload);
         toast.success("Invoice creado");
@@ -329,7 +350,7 @@ export default function InvoiceDetail() {
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Cant.</span>
-                    <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="1" className="h-11 rounded-xl bg-white mt-0.5" />
+                    <Input type="text" inputMode="decimal" value={li.quantity} onChange={(e) => updateItem(i, "quantity", numClean(e.target.value))} placeholder="1" className="h-11 rounded-xl bg-white mt-0.5" />
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Unidad</span>
@@ -337,7 +358,7 @@ export default function InvoiceDetail() {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Precio $</span>
-                    <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="0.00" className="h-11 rounded-xl bg-white mt-0.5" />
+                    <Input type="text" inputMode="decimal" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", numClean(e.target.value))} placeholder="0.00" className="h-11 rounded-xl bg-white mt-0.5" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-0.5">
@@ -350,9 +371,9 @@ export default function InvoiceDetail() {
               {/* Desktop: compact grid */}
               <div className="hidden lg:grid grid-cols-12 gap-2 items-start">
                 <AutoGrowTextarea value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Description" className="col-span-5" />
-                <Input type="number" inputMode="decimal" step="0.01" value={li.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} placeholder="Qty" className="col-span-2 h-11 rounded-xl bg-white" />
+                <Input type="text" inputMode="decimal" value={li.quantity} onChange={(e) => updateItem(i, "quantity", numClean(e.target.value))} placeholder="Qty" className="col-span-2 h-11 rounded-xl bg-white" />
                 <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="col-span-1 h-11 rounded-xl bg-white" />
-                <Input type="number" inputMode="decimal" step="0.01" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", e.target.value)} placeholder="$" className="col-span-2 h-11 rounded-xl bg-white" />
+                <Input type="text" inputMode="decimal" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", numClean(e.target.value))} placeholder="$" className="col-span-2 h-11 rounded-xl bg-white" />
                 <div className="col-span-1 flex items-center justify-start text-sm font-semibold whitespace-nowrap h-11">${((Number(li.quantity) || 0) * (Number(li.unit_price) || 0)).toFixed(2)}</div>
                 <button type="button" onClick={() => removeItem(i)} className="col-span-1 flex items-center justify-center text-red-500 h-11"><Trash2 className="w-4 h-4" /></button>
               </div>
@@ -363,16 +384,16 @@ export default function InvoiceDetail() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Tax Rate (%)</Label>
-            <Input type="number" step="0.01" value={invoice.tax_rate} onChange={(e) => recompute({ ...invoice, tax_rate: Number(e.target.value) || 0 })} className="h-12 rounded-xl mt-1.5" />
+            <Input type="text" inputMode="decimal" value={invoice.tax_rate} onChange={(e) => recompute({ ...invoice, tax_rate: numClean(e.target.value) })} className="h-12 rounded-xl mt-1.5" />
           </div>
           <div>
             <Label>Deposit / Down payment ($)</Label>
             <Input
               data-testid="invoice-deposit"
-              type="number"
-              step="0.01"
-              value={invoice.deposit_amount || 0}
-              onChange={(e) => setInvoice({ ...invoice, deposit_amount: Number(e.target.value) || 0 })}
+              type="text"
+              inputMode="decimal"
+              value={invoice.deposit_amount || ""}
+              onChange={(e) => setInvoice({ ...invoice, deposit_amount: numClean(e.target.value) })}
               className="h-12 rounded-xl mt-1.5"
             />
             <p className="text-[10px] text-slate-400 mt-1">
@@ -679,7 +700,7 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
         return (
           <div key={it.id || i} className="flex flex-wrap items-center gap-2" data-testid={`plan-row-${i}`}>
             <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={`Pago ${i + 1}`} className="h-10 rounded-lg text-sm flex-1 min-w-[120px]" />
-            <Input type="number" step="0.01" value={it.amount} onChange={(e) => updateRow(i, "amount", e.target.value)} placeholder="$" className="h-10 rounded-lg text-sm w-20" />
+            <Input type="text" inputMode="decimal" value={it.amount} onChange={(e) => updateRow(i, "amount", numClean(e.target.value))} placeholder="$" className="h-10 rounded-lg text-sm w-20" />
             <Input type="date" value={it.due_date || ""} onChange={(e) => updateRow(i, "due_date", e.target.value)} className="h-10 rounded-lg text-sm flex-1 min-w-[130px]" />
             {isPaid ? (
               <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 w-20 justify-center"><Check className="w-3.5 h-3.5" />Pagado</span>

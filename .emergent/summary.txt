@@ -1,148 +1,150 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. The UI is in Spanish, but customer-facing documents and public pages are in English. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. The core focus was completing Phase 2 Stripe billing paywalls (Done) and refining the Marketing Studio (Reel Generator) & new Public Demo flow.
+<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
 
 **User's preferred language**: Spanish
-*(CRITICAL INSTRUCTION FOR NEXT AGENT: The user speaks Spanish and explicitly requires all responses, explanations, and communication to be EXCLUSIVAMENTE en español. Do not use English with the user.)*
+*(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)*
 
 **what currently exists?** 
-A fully functional, mobile-first full-stack application (React frontend + FastAPI/MongoDB backend) LIVE in production. Phase 2 of the Stripe modular billing is complete (backend routes are fully gated by , and Admin can manually assign plans). A full Public Live Demo flow exists () allowing users to generate real AI quotes and agreements. The Marketing Studio (Reel Generator) has been significantly upgraded with smooth ease-in-out ffmpeg panning, OpenAI TTS-1-HD voice controls (9 voices, variable speed), and a split-screen Before/After template.
+A live React/FastAPI/MongoDB application. The Marketing Studio has mobile-friendly horizontal scrolling and a slide-up Drawer for results. Voiceovers for AI Reels use ElevenLabs for native Spanish TTS. The subscription model features modular paywall pricing with 30% OFF combo discounts. The Demo flow captures leads which are now visible in the Admin Panel. Invoices feature mobile-friendly editing, auto-growing descriptions, real-time math, and iOS Safari compatible decimal inputs. Google Business Profile (GBP) integration code is built but awaits Google's API approval. 
 
 **Last working item**:
-- **Last item agent was working**: Refining the Promo, Services, and Testimonial Reel templates based on user feedback. The agent just adjusted the panning speed for the Promo template and added a grey background box to the Testimonial text overlay for readability. The agent was about to implement verbatim AI testimonials and per-photo text inputs for the Services template.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: both (Backend curl/ffmpeg generation tests in  + frontend screenshots for ReelStudio UI).
+- **Last item agent was working**: Fixing a bug where iOS Safari users could not edit numerical inputs on the Invoice Detail page. The agent successfully replaced  with  and  in , adding string-to-number coercion before saving.
+- **Status**: IN PROGRESS (Code changes and tests are complete, but the session ended before the agent could call the  tool, update the PRD, and inform the user).
+- **Agent Testing Done**: Y
+- **Which testing method agent to use?**: Frontend screenshot tool & curl (Already verified).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Testimonial Reel AI Paraphrasing (P0)
-     - Attempted fixes: Agent added the grey background box in  to make the text legible, but hasn't updated the AI prompt.
-     - Next debug checklist: Update  (specifically  or the prompt handling the testimonial template) to instruct the LLM to output the *exact verbatim* review. If translating from ES to EN, it must be a literal translation, not a paraphrased marketing message. 
-     - Why fix this issue and what will be achieved with the fix?: User complained the AI changes the actual words of their real customers.
-     - Status: IN PROGRESS
+  Issue 1: Wrap up the iOS Safari Invoice Edit fix (P0)
+     - Attempted fixes: The fix is implemented and successfully tested. 
+     - Next debug checklist: Inform the user that the iPhone Safari bug is resolved, update the PRD, and ask for the next task.
+     - Why fix this issue and what will be achieved with the fix?: Unblocks iPhone users from editing invoices.
+     - Status: TESTING PENDING / USER VERIFICATION PENDING
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Backend (Render a test ffmpeg video).
+     - Should Test frontend/backend/both after fix?: NA (Already tested by previous agent).
      - Blocked on other issue: None.
 
-  Issue 2: Services Reel Template - Per-photo text & voice sync (P0)
-     - Attempted fixes: Agent mapped the requirement but hasn't started the code.
-     - Next debug checklist: 
-       1. Update  to render an array of text inputs for the Services template (one input per uploaded photo).
-       2. Pass this array to the backend via .
-       3. Update  and  to sync the voiceover chunks. Each photo must stay on screen for the exact duration it takes the TTS to read its specific service description.
-       4. Remove the hardcoded service chips overlay that the user mistook for subtitles.
-     - Why fix this issue and what will be achieved with the fix?: Gives the user precise control over what service is announced during which specific photo.
+  Issue 2:  needs refactoring (P3)
+     - Attempted fixes: None.
+     - Next debug checklist: Break down  (currently over 6100 lines) into modular routers.
+     - Why fix this issue and what will be achieved with the fix?: Code maintainability and organization.
      - Status: NOT STARTED
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Both (UI changes + video render).
+     - Should Test frontend/backend/both after fix?: Backend
      - Blocked on other issue: None.
 
-**In progress Task List**:
-  Task 1: Reel Studio Professional Polish
-     - Where to resume: Complete Issue 1 (Testimonials) and Issue 2 (Services template sync). 
-     - What will be achieved with this?: Ensures the generated reels are high-quality enough that the user actually wants to use them for their own business.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix?: Both
-     - Blocked on something: None.
+  Issue 3: Duplicate DB records (Clients/Users) (P2)
+     - Attempted fixes: None.
+     - Next debug checklist: Search MongoDB  and  collections. Write and run a deduplication python script.
+     - Why fix this issue and what will be achieved with the fix?: Prevents CRM confusion for the users.
+     - Status: NOT STARTED
+     - Is recurring issue?: Y
+     - Should Test frontend/backend/both after fix?: Backend
+     - Blocked on other issue: None.
+
+**In progress Task List**: 
+None
 
 **Upcoming and Future Tasks**
+- **P1**: In-app referral program (Invita un compa → ambos reciben 1 mes gratis) with unique sharing links.
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
-- **P2**: Convert Job scope notes (copied from quotes) into a checkable checklist UI inside the Job Detail view.
+- **P2**: Add 1-click Upsell button in Profile -> Subscription for adding missing modules (Agent suggested enhancement).
+- **P2**: Convert Job scope notes into a checkable checklist UI inside the Job Detail view.
+- **P2**: Add a mini How it works guided tour (3 steps) the first time a user enters the Marketing Studio.
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
-- **P2**: Python script to consolidate/delete duplicate clients and users from the database.
-- **P3**: Refactor  into modular routers.
-- **Phase/Blocked**: Complete Google Business Profile integration (Blocked waiting for Google to approve the API access request).
-- **Future**: Send automated sample quote email to leads (via Resend) after they finish the Live Demo (Proposed by agent, pending user approval).
+- **P3**: Live preview for the Reel Builder (mini player showing changes before generation).
+- **P3**: Add a drag-and-drop or reordering UI in the Smart Card admin panel for the Recent work photos.
+- **Future**: Stripe webhook implementation for bulletproof invoice payment marking.
+- **BLOCKED**: Complete Google Business Profile integration. (DO NOT ATTEMPT YET. Code is built, but blocked waiting for Google API Approval - Case ID  submitted June 18, 2026. Takes ~7-10 days).
 
 **Completed work in this session**
-- Phase 2 Modular Billing Backend (DONE):  dependency added to all POST endpoints.
-- Admin User Management (DONE): Added dropdown to  to manually assign/revoke plans.
-- Public Live Demo MVP (DONE): Created  flow with real AI generation, rate limiting, and PDF Download/Print buttons.
-- Reel Studio Motion Engine (DONE): Swapped linear ffmpeg zoompan for smooth ease-in-out scaling and varied panning directions per photo.
-- Reel Studio Voice Engine (DONE): Added  using OpenAI TTS-1-HD. Added 9 voices, speed control, and a preview button to the UI.
-- Before/After Reel Template (DONE): Converted to a split-screen static view (Top=Before, Bottom=After) with a white divider line.
+- Marketing Studio Slide-up Drawers (DONE): Results across Image, Video, and AI tabs now open in a bottom Drawer.
+- Video Tab Blank Page (DONE): Fixed state issue in .
+- ElevenLabs TTS Integration (DONE): Migrated from OpenAI TTS to ElevenLabs multilingual to support native Spanish accents.
+- Video Duration Logic (DONE): Reel videos now auto-extend to accommodate the full length of the voiceover without cutting off.
+- Modular Paywall & Combos (DONE): Implemented 30% discounts for users buying 2 modules, updated backend logic, and changed Pricing page to a module selector.
+- Client Company Name Support (DONE): Added business name to Client forms and mapped it to the Invoice PDF BILL TO section.
+- Google API Application (DONE): Guided user to properly submit Google Business Profile API request.
+- Demo Leads in Admin (DONE): Added 🎬 Demo en vivo tab in  so user can track leads generated from ad campaigns.
+- Mobile Invoice Editor UI (DONE): Converted cramped table rows into touch-friendly cards for mobile line-item editing.
+- Invoice Due Date Timezone (DONE): Fixed PDF rendering bug showing due date 1 day early.
+- Invoice Textarea & Real-time Math (DONE): Line item descriptions auto-grow, and totals recalculate immediately when quantity/price changes.
 
 **Earlier issues found/mentioned but not fixed**
-   Issue 1:  needs refactoring
-   - Debug checklist: Break down  (currently 5761 lines) into  and .
-   - Why to solve this issue and what will be achieved with this?: Maintainability. 
-   - Should Test frontend/backend/both after fix: Backend
-   - Is recurring issue?: N
-
-   Issue 2: Duplicate DB records (Clients/Users)
-   - Debug checklist: Search MongoDB  and  collections. Requires a deduplication script.
-   - Why to solve this issue and what will be achieved with this?: Prevents CRM confusion.
-   - Should Test frontend/backend/both after fix: Backend
-   - Is recurring issue?: Y
+   Issue 1:  monolith (6100+ lines).
+   Issue 2: Duplicate DB records requiring cleanup script.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork:  folder not making it to cPanel.
-  - Recurrence count: 2
+  - Issue recurrence in previous fork: Frontend build breaking across multiple domains due to hardcoded absolute API URLs in .
+  - Recurrence count: 1
   - Status: RESOLVED
-  - Note: You MUST ALWAYS run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  and explicitly  before handing back to the user to run their deploy script. Do not rely on standard git tracking.
+  - Note: Never hardcode  during a production build; leave it empty so relative  routing works across all user domains.
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI.
-- Backend: FastAPI (), MongoDB. Monolithic  (~5761 lines). Video generation handled heavily by  subprocesses in .
-- Deployment: Handled via >>> FIRST-TIME INSTALL for ezunitap on port 8007. Uses  on backend and relative  paths on frontend.
+- Backend: FastAPI (), MongoDB. Monolithic .
+- External Scripts: Meta Pixel loaded via .
 
 **Key Technical Concepts**
-- **Reel Generation ()**: Uses Python  to create image overlays and  complex filtergraphs (, , ) to compile MP4s. 
-- **TTS**:  uses Emergent integrations (OpenAI TTS-1-HD) to generate voiceovers, which are then synced in ffmpeg.
+- **ElevenLabs TTS**: Replaced OpenAI TTS for Reels voiceovers because OpenAI lacked native Spanish accents. ElevenLabs API Key is in .
+- **Modular Subscriptions**: Users can buy single modules (Presencia, Negocio, Marketing), combos of two (30% off), or all three (Bundle). Features are gated via  in FastAPI.
+- **Mobile-first UI UX**: Extensive use of Shadcn Drawers, horizontal carousels (), and card-based layouts for tables to prevent mobile scroll fatigue and layout breaking.
 
 **key DB schema**
-- : {uid=0(root) gid=0(root) groups=0(root),  (array), }
-- : {uid=0(root) gid=0(root) groups=0(root), , , , , }
+- : Stores leads captured from the public  flow.
+- : 
 
 **changes in tech stack**
-- Added heavy dependency on system  (installed via bash during testing).
+- Added  to backend requirements.
 
 **All files of reference**
--  (Core ffmpeg video generation logic)
--  (Voiceover generation)
--  (Video generator UI)
--  (Public demo implementation)
--  (Prompts for video copy and testimonials)
--  (Endpoints)
+-  (Recently heavily modified for mobile UI, textareas, real-time math, and iOS Safari  inputs).
+-  (Updated to use ElevenLabs).
+-  (Converted to a dynamic module selector).
+-  (Handles combo module logic).
+-  (Added tab for ).
+-  (Handles Invoice PDF generation, Due Date parsing).
 
 **Areas that need refactoring**
--  (5761 lines).
--  (ffmpeg filtergraphs are becoming highly complex and string-heavy).
+- 
 
 **key api endpoints**
-- : Initiates background video generation.
-- : Returns MP3 blob of TTS voice.
-- : Initializes the demo flow (rate limited).
+- : Handled by ElevenLabs TTS.
+- : Returns modular plans and combo pricing.
+- : Creates a  record.
 
 **Critical Info for New Agent**
-- **FFmpeg Testing**: Always test ffmpeg changes locally by creating a small python script in  before assuming the filtergraph syntax is correct.
-- **Frontend Build**: The frontend  must NOT have the preview URL baked in during the final yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.. Keep  empty in  so relative  routing works on the user's dual domains.
+- **iOS Safari Inputs**:  behaves poorly on iOS WebKit when controlled in React (resets to 0, prevents decimal entry). ALWAYS use  with  for numerical inputs, and coerce strings to Numbers in the state/backend.
+- **Google Business Profile**: DO NOT touch GBP code or ask the user to test it. The app is waiting on Google to approve API Case ID . Check status by asking the user to check Quotas in their Google Cloud Console (~July 2, 2026).
+- **Auth**: Always test frontend UI using the designated admin account.
 
 **documents and test reports created in this job**
-  - 
-  -  (Phase 2 paywall test)
-  -  (Demo flow test)
+  -  (Updated)
+  -  (Contains GBP Case IDs and timeline)
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - User noted the Promo reel panning was too slow. (Agent began adjusting ).
- - User noted the Services reel needs a per-photo text input synced to the voice. (Pending UI/Backend update).
- - User noted the Services reel had unwanted subtitles. (Pending removal of old hardcoded text chips).
- - User noted the Testimonial reel text was unreadable and the AI altered the original review. (Agent added a grey box, pending prompt update).
- - *Pending Human Action*: None. Continue fixing the 4 Reel Studio feedback items mentioned above.
+ - User requested the description field on invoice line items be multi-line for mobile viewing.
+ - Agent swapped the single-line input for an auto-growing Textarea and tested it.
+ - User noticed new line items show Total: /bin/bash.00 by default and requested default quantity = 1.
+ - Agent fixed the quantity default and added real-time math (quantity * price) so the total updates immediately.
+ - User reported that their client using an iPhone could not edit the numerical inputs on the invoice, though it worked on Android.
+ - Agent diagnosed an iOS Safari WebKit bug involving .
+ - Agent replaced the numerical inputs with .
+ - Agent verified the inputs save correctly in the backend.
+ - *Pending Human Action*: The agent completed the code changes and verified via screenshot, but the job ended before calling the  tool. Inform the user that the iPhone bug is resolved and ask for their next priority.
 
 **Project Health Check:**
 Healthy.
 
 **3rd Party Integrations**
-- Stripe (Payments) — requires User API Key.
+- Stripe (Payments & Connect) — requires User API Key.
+- Meta / Facebook Pixel — requires User ID (Configured).
+- ElevenLabs (TTS Voiceovers) — requires User API Key (Configured).
 - OpenAI GPT-5.2 (Text/Vision Gen) — uses Emergent LLM Key.
-- OpenAI TTS (Voiceovers) — uses Emergent LLM Key.
-- Gemini 3.1 Pro Flash (Image Gen/Enhance) — uses Emergent LLM Key.
+- Gemini 3.1 Flash Image Preview (Image Gen/Enhance) — uses Emergent LLM Key.
 
 **Testing status**
-  - Testing agent used after significant changes: YES
+  - Testing agent used after significant changes: NO (Self-tested via bash/screenshots).
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: None
   - Known regressions: None
@@ -151,13 +153,4 @@ Healthy.
 Admin:  / 
 
 **What agent forgot to execute**
-The agent gathered requirements for fixing the Services and Testimonial Reel templates and got user confirmation on the exact UX changes, but only managed to start editing the backend panning speed and gray boxes before context ran out. The frontend UI inputs for the Services template and the backend AI prompt fix for verbatim testimonials were not executed.
-
-**Debugging checklist for current issue**
-    Issue: Reel Studio Services Sync & Testimonial Verbatim
-    Frontend files to check: 
-    - Add dynamic inputs for the services template so users can type a short text per uploaded photo. Append these to .
-  
-    Backend files to check: 
-    - : Update the prompt to enforce strictly verbatim testimonials.
-    - : Update ffmpeg logic to sync voice chunk durations to individual photo durations for the Services template.</analysis>
+The agent completely implemented the fix for the iOS Safari bug (changing input types on ) and verified it via screenshot and curl. However, they ran out of time to call the  tool, update , and reply to the user. The next agent should start by letting the user know the iPhone issue is fully resolved and smoothly prompt them for the next task (like the referral program or client SMS reminders).</analysis>
