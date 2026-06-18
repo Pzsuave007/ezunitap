@@ -24,7 +24,7 @@ from typing import Optional
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
@@ -361,11 +361,29 @@ async def select_location(payload: SelectLocationIn, user_id: str = Depends(get_
 class PostIn(BaseModel):
     summary: str
     media_url: str = ""
+    photo_id: str = ""
     cta_url: str = ""
 
 
+def _public_base(request: Request) -> str:
+    """PUBLIC base URL (e.g. https://ezunitech.com) so Google can fetch media."""
+    import re as _re
+    for h in (request.headers.get("origin"), request.headers.get("referer")):
+        if h:
+            m = _re.match(r"^(https?://[^/]+)", h)
+            if m:
+                return m.group(1).rstrip("/")
+    xf_host = request.headers.get("x-forwarded-host")
+    if xf_host:
+        proto = request.headers.get("x-forwarded-proto", "https")
+        host = xf_host.split(",")[0].strip()
+        if host and "127.0.0.1" not in host and "localhost" not in host:
+            return f"{proto}://{host}"
+    return str(request.base_url).rstrip("/")
+
+
 @router.post("/posts")
-async def create_post(payload: PostIn, user_id: str = Depends(get_current_user_id)):
+async def create_post(payload: PostIn, request: Request, user_id: str = Depends(get_current_user_id)):
     if not payload.summary.strip():
         raise HTTPException(status_code=400, detail="El texto del post es obligatorio.")
     doc = await _require_location(user_id)
@@ -377,8 +395,14 @@ async def create_post(payload: PostIn, user_id: str = Depends(get_current_user_i
     }
     if payload.cta_url.strip():
         body["callToAction"] = {"actionType": "LEARN_MORE", "url": payload.cta_url.strip()}
-    if payload.media_url.strip():
-        body["media"] = [{"mediaFormat": "PHOTO", "sourceUrl": payload.media_url.strip()}]
+
+    # Media: a direct URL, or a Studio image referenced by photo_id (we build a
+    # public URL Google can fetch from).
+    media_url = payload.media_url.strip()
+    if not media_url and payload.photo_id.strip():
+        media_url = f"{_public_base(request)}/api/public/gmb-media/{payload.photo_id.strip()}"
+    if media_url:
+        body["media"] = [{"mediaFormat": "PHOTO", "sourceUrl": media_url}]
 
     path = f"{MB_V4}/v4/accounts/{doc['account_id']}/locations/{doc['location_id']}/localPosts"
     async with httpx.AsyncClient() as cli:
@@ -386,6 +410,26 @@ async def create_post(payload: PostIn, user_id: str = Depends(get_current_user_i
     if resp.status_code not in (200, 201):
         raise HTTPException(status_code=502, detail=f"Google rechazó el post: {resp.text[:300]}")
     return resp.json()
+
+
+class AiReplyIn(BaseModel):
+    comment: str = ""
+    star_rating: int = 5
+    reviewer_name: str = ""
+    business_type: str = ""
+
+
+@router.post("/reviews/ai-draft")
+async def ai_review_reply(payload: AiReplyIn, user_id: str = Depends(get_current_user_id)):
+    """Generate a professional English reply draft for a Google review."""
+    from ai_service import generate_review_reply
+    try:
+        text = await generate_review_reply(
+            payload.comment, payload.star_rating, payload.reviewer_name, payload.business_type
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="No se pudo generar la respuesta con AI.")
+    return {"reply": text}
 
 
 @router.get("/reviews")

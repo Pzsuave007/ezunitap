@@ -157,7 +157,7 @@ export default function GbpConnectCard({ businessType = "" }) {
           />
 
           <PostComposer businessType={businessType} />
-          <ReviewsList />
+          <ReviewsList businessType={businessType} />
         </div>
       )}
     </Card>
@@ -327,7 +327,7 @@ function PostComposer({ businessType }) {
   );
 }
 
-function ReviewsList() {
+function ReviewsList({ businessType }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -366,7 +366,7 @@ function ReviewsList() {
         <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> Reseñas de Google
       </div>
       {reviews.map((r) => (
-        <ReviewItem key={r.reviewId} review={r} onReplied={load} />
+        <ReviewItem key={r.reviewId} review={r} onReplied={load} businessType={businessType} />
       ))}
     </div>
   );
@@ -374,10 +374,29 @@ function ReviewsList() {
 
 const STAR_MAP = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
 
-function ReviewItem({ review, onReplied }) {
+function ReviewItem({ review, onReplied, businessType }) {
   const [reply, setReply] = useState(review?.reviewReply?.comment || "");
   const [sending, setSending] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const stars = STAR_MAP[review.starRating] || 0;
+
+  const draftWithAI = async () => {
+    setDrafting(true);
+    try {
+      const { data } = await api.post("/google-business/reviews/ai-draft", {
+        comment: review.comment || "",
+        star_rating: stars || 5,
+        reviewer_name: review.reviewer?.displayName || "",
+        business_type: businessType || "",
+      });
+      setReply(data.reply || "");
+      toast.success("Respuesta generada con AI ✨ — revísala y publícala.");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo generar la respuesta.");
+    } finally {
+      setDrafting(false);
+    }
+  };
 
   const send = async () => {
     if (!reply.trim()) {
@@ -414,6 +433,15 @@ function ReviewItem({ review, onReplied }) {
       {review.comment && (
         <p className="text-xs text-slate-600 mt-1 leading-snug">"{review.comment}"</p>
       )}
+      <button
+        onClick={draftWithAI}
+        disabled={drafting}
+        className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 hover:text-violet-800 disabled:opacity-60"
+        data-testid={`gbp-ai-draft-${review.reviewId}`}
+      >
+        {drafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        Responder con AI
+      </button>
       <div className="mt-2 flex items-center gap-2">
         <Input
           value={reply}

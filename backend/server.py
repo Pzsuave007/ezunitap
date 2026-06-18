@@ -3725,6 +3725,21 @@ async def public_photo(photo_id: str):
     return Response(content=data, media_type=doc.get("content_type", ct))
 
 
+@api_router.get("/public/gmb-media/{photo_id}")
+async def public_gmb_media(photo_id: str):
+    """Public image URL used as the sourceUrl when publishing a Google Business
+    post. The photo_id is an unguessable UUID; serves only non-deleted photos."""
+    doc = await db.photos.find_one({"id": photo_id, "is_deleted": False}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    try:
+        backend = storage_service.get_storage()
+        data, ct = backend.get(doc["storage_path"])
+    except Exception:
+        raise HTTPException(500, "Storage error")
+    return Response(content=data, media_type=doc.get("content_type", ct))
+
+
 def _public_base_from_request(request: Request) -> str:
     """Best-effort PUBLIC base URL (e.g. https://ezunitech.com).
 

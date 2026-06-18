@@ -228,6 +228,33 @@ async def generate_message(message_type: str, user_input_es: str, client_name: O
     return (response or "").strip()
 
 
+REVIEW_REPLY_SYSTEM = """You write the PUBLIC reply (in ENGLISH) that a U.S. service
+contractor posts under a Google review of their own business.
+
+Rules:
+- 1-3 short sentences. Warm, human and professional — like a real small-business
+  owner, never robotic or corporate.
+- 4-5 stars: thank them warmly (use their first name if given), reinforce one
+  positive point, and gently invite them back or to refer friends.
+- 1-3 stars: stay calm and gracious, sincerely apologize for their experience,
+  take light responsibility, and invite them to reach out so you can make it right.
+  NEVER argue, blame the customer, or sound defensive.
+- No hashtags, no markdown, no sign-off line. At most one subtle emoji (usually none).
+Output ONLY the reply text — no quotes, no preamble."""
+
+
+async def generate_review_reply(comment: str, star_rating: int = 5, reviewer_name: str = "", business_type: str = "") -> str:
+    chat = _new_chat(REVIEW_REPLY_SYSTEM)
+    ctx = (
+        f"Business type: {business_type or 'service contractor'}\n"
+        f"Reviewer name: {reviewer_name or '(unknown)'}\n"
+        f"Star rating: {star_rating}/5\n"
+        f"Review text: {comment or '(no written review, only a star rating)'}"
+    )
+    response = await chat.send_message(UserMessage(text=ctx))
+    return (response or "").strip()
+
+
 FIELD_GUIDANCE = {
     "about": "a warm, professional 'About Me' bio of 2-4 sentences that builds trust with potential customers and highlights experience, quality and reliability.",
     "tagline": "a short, punchy business tagline/slogan in ONE line, under 10 words, no period at the end.",
@@ -235,6 +262,7 @@ FIELD_GUIDANCE = {
     "service": "a short, clear single-sentence service description, under 18 words, focused on the customer benefit.",
     "service_area": "a clean, professional service-area line (e.g., 'Houston, TX and surrounding areas').",
     "hours": "a clean business-hours line in U.S. format (e.g., 'Mon-Fri 8am-6pm, Sat by appointment').",
+    "gmb_post": "an engaging Google Business Profile update of 2-3 sentences that highlights the work/offer, builds trust, and ends with a friendly call to action (e.g., 'Call us for a free estimate!'). No hashtags.",
     "generic": "polished, professional English text suitable for a public business profile.",
 }
 

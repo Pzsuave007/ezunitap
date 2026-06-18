@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  Sparkles, Loader2, Trash2, Download, ImagePlus, Video, Lightbulb, Wand2, IdCard, Check,
+  Sparkles, Loader2, Trash2, Download, ImagePlus, Video, Lightbulb, Wand2, IdCard, Check, Star,
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,6 +43,43 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
   const [ideasTopic, setIdeasTopic] = useState("");
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [ideas, setIdeas] = useState([]);
+
+  // Publish to Google Business Profile
+  const [gmbConnected, setGmbConnected] = useState(false);
+  const [gmbImg, setGmbImg] = useState(null);
+  const [gmbCaption, setGmbCaption] = useState("");
+  const [gmbCta, setGmbCta] = useState("");
+  const [gmbPosting, setGmbPosting] = useState(false);
+
+  useEffect(() => {
+    api.get("/google-business/status")
+      .then(({ data }) => setGmbConnected(!!data?.connected))
+      .catch(() => setGmbConnected(false));
+  }, []);
+
+  const openGmb = (img) => {
+    setGmbImg(img);
+    setGmbCaption("");
+    setGmbCta("");
+  };
+
+  const publishGmb = async () => {
+    if (!gmbCaption.trim()) { toast.error("Escribe el texto del post (en inglés)."); return; }
+    setGmbPosting(true);
+    try {
+      await api.post("/google-business/posts", {
+        summary: gmbCaption.trim(),
+        photo_id: gmbImg.photo_id,
+        cta_url: gmbCta.trim(),
+      });
+      toast.success("¡Publicado en tu Google Business! 🎉");
+      setGmbImg(null);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo publicar en Google.");
+    } finally {
+      setGmbPosting(false);
+    }
+  };
 
   const loadGallery = async () => {
     try {
@@ -256,6 +295,12 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
                     {cardBusy === img.photo_id ? <Loader2 className="w-3 h-3 animate-spin" /> : (cardIds.includes(img.photo_id) ? <><Check className="w-3 h-3 mr-1" /> Tarjeta</> : <><IdCard className="w-3 h-3 mr-1" /> Tarjeta</>)}
                   </Button>
                 </div>
+                {gmbConnected && (
+                  <Button size="sm" onClick={() => openGmb(img)} data-testid={`ai-gmb-${img.id}`}
+                    className="w-full rounded-lg h-8 text-[11px] bg-blue-600 hover:bg-blue-700 text-white">
+                    <Star className="w-3 h-3 mr-1 fill-white" /> Publicar en Google
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -337,6 +382,12 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
                     {cardBusy === selected.photo_id ? <Loader2 className="w-4 h-4 animate-spin" /> : (cardIds.includes(selected.photo_id) ? <><Check className="w-4 h-4 mr-1.5" /> En tarjeta</> : <><IdCard className="w-4 h-4 mr-1.5" /> A mi tarjeta</>)}
                   </Button>
                 </div>
+                {gmbConnected && (
+                  <Button onClick={() => openGmb(selected)}
+                    data-testid="ai-result-gmb" className="w-full rounded-xl h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                    <Star className="w-4 h-4 mr-1.5 fill-white" /> Publicar en Google
+                  </Button>
+                )}
                 <Button variant="ghost" onClick={() => removeImage(selected.id)}
                   data-testid="ai-result-delete" className="w-full rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700">
                   <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar imagen
@@ -346,6 +397,50 @@ export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onT
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Publish to Google Business dialog */}
+      <Dialog open={!!gmbImg} onOpenChange={(o) => !o && setGmbImg(null)}>
+        <DialogContent className="rounded-2xl max-w-md" data-testid="gmb-publish-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <Star className="w-5 h-5 text-blue-600 fill-blue-600" /> Publicar en Google Business
+            </DialogTitle>
+          </DialogHeader>
+          {gmbImg && (
+            <div className="space-y-3">
+              <img src={authedUrl(gmbImg.photo_id)} alt="" className="w-full max-h-52 object-cover rounded-xl border border-slate-200" />
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-slate-700">Texto del post (inglés)</Label>
+                <AiTranslateButton
+                  fieldType="gmb_post"
+                  onResult={(en) => setGmbCaption(en)}
+                  testId="gmb-caption-ai"
+                  placeholder="Ej: Acabamos un techo nuevo en Auburn — ¡agenda tu estimado gratis!"
+                />
+              </div>
+              <Textarea
+                value={gmbCaption}
+                onChange={(e) => setGmbCaption(e.target.value)}
+                placeholder="Write your update in English (or use the AI button above)..."
+                className="rounded-xl min-h-[90px] text-sm"
+                data-testid="gmb-caption-input"
+              />
+              <Input
+                value={gmbCta}
+                onChange={(e) => setGmbCta(e.target.value)}
+                placeholder="Link opcional (ej: https://ezunitech.com/tu-tarjeta)"
+                className="rounded-xl text-sm"
+                data-testid="gmb-cta-input"
+              />
+              <Button onClick={publishGmb} disabled={gmbPosting}
+                className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold" data-testid="gmb-publish-btn">
+                {gmbPosting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-2 fill-white" />}
+                Publicar ahora
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
