@@ -1,154 +1,85 @@
 {
-  "theme": "light",
-  "archetype": "Archetype 4 (Swiss & High-Contrast) with Amber admin accent",
+  "theme": "High-Contrast Utility (Archetype 4 with Brand Constraints)",
+  "mode": "Light (with Dark Mode Hook for contrast)",
   "typography": {
     "headings": "Cabinet Grotesk",
-    "body": "IBM Plex Sans",
-    "notes": "No Inter. Use Cabinet Grotesk for tight, authoritative admin headings. IBM Plex Sans for crisp, technical data legibility."
+    "body": "Satoshi",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-black tracking-tighter leading-tight",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-bold",
+      "body": "text-base leading-relaxed text-slate-700",
+      "overline": "uppercase text-xs font-bold tracking-[0.2em] text-blue-900"
+    }
   },
   "colors": {
-    "primary": "#F59E0B",
-    "primary_hover": "#D97706",
-    "background": "#F8FAFC",
-    "surface": "#FFFFFF",
-    "surface_hover": "#F1F5F9",
+    "primary": "#10B981",
+    "primary_hover": "#059669",
+    "secondary": "#1E3A8A",
+    "secondary_hover": "#172554",
+    "background_dark": "#0F172A",
+    "background_light": "#FFFFFF",
+    "surface": "#F8FAFC",
     "border": "#E2E8F0",
-    "text_primary": "#0F172A",
-    "text_secondary": "#64748B",
-    "success": "#10B981",
-    "warning": "#F59E0B",
-    "destructive": "#EF4444",
-    "accent_glass": "rgba(255, 255, 255, 0.7)"
+    "text_dark": "#0F172A",
+    "text_light": "#FFFFFF",
+    "accent_glow": "rgba(16, 185, 129, 0.4)"
   },
   "spacing_and_layout": {
-    "general": "Generous spacing. Tailwind scale. p-6 or p-8 for cards. Dense tables for data.",
-    "desktop": "Sidebar navigation (w-64) + Main content area. Content max-width optimized for large screens.",
-    "mobile": "Bottom navigation or Hamburger menu. Main content uses stacked cards instead of horizontal tables.",
-    "surfaces": "Grid Borders (The 'Technical' Look) or Flat with 1px subtle border. No heavy soft shadows. Crisp and clean.",
-    "drawer": "Use Sheet (shadcn) on right side for Desktop (w-[500px] or w-1/3), Bottom Sheet for Mobile."
+    "mobile_first": true,
+    "container": "max-w-md mx-auto h-full min-h-screen relative overflow-hidden",
+    "padding": "p-6 sm:p-8",
+    "gap": "gap-6",
+    "surface_styles": {
+      "cards": "bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow",
+      "glass": "backdrop-blur-xl bg-white/70 border border-white/40 shadow-sm",
+      "dark_glass": "backdrop-blur-xl bg-blue-900/60 border border-white/10 shadow-lg"
+    }
   },
-  "navigation_architecture": {
-    "sidebar": [
-      {
-        "id": "dashboard",
-        "label": "Vista Global",
-        "icon": "ChartLineUp"
-      },
-      {
-        "id": "accounts",
-        "label": "Cuentas",
-        "icon": "Users"
-      },
-      {
-        "id": "invites",
-        "label": "Invitaciones",
-        "icon": "Ticket"
-      },
-      {
-        "id": "leads",
-        "label": "Leads",
-        "icon": "Magnet"
-      },
-      {
-        "id": "shipments",
-        "label": "Envíos NFC",
-        "icon": "Package"
-      },
-      {
-        "id": "broadcast",
-        "label": "Mensajes",
-        "icon": "Broadcast"
-      }
-    ]
+  "motion": {
+    "transitions": "framer-motion for step progression (slide left/right to feel like a native mobile app swipe)",
+    "micro_interactions": "scale-95 on button tap, glowing borders on active selections"
   },
-  "views_structure": {
-    "dashboard": {
-      "title": "Métricas de Plataforma",
-      "description": "Dashboard de salud del negocio",
-      "components": [
-        "Cards (MRR, Total Usuarios, Activos, En Trial, Comp)",
-        "Charts (Evolución de MRR, Crecimiento de usuarios)"
-      ]
+  "image_urls": [
+    {
+      "url": "https://images.pexels.com/photos/34670920/pexels-photo-34670920.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "category": "hero_background",
+      "description": "Latino construction worker giving a thumbs up. Use as a background image with a deep blue-900 overlay (bg-blue-900/80) on the Lead Capture hook screen to build trust and relatability."
     },
-    "accounts": {
-      "title": "Gestión de Cuentas",
-      "description": "El corazón del admin. Lista de todos los usuarios.",
-      "components": [
-        "Barra de búsqueda superior",
-        "Filtros (Activo, Trial, Comp, Sin Plan)",
-        "Tabla densa (Desktop) / Tarjetas apilables (Mobile)",
-        "Botón 'Crear Cuenta Nueva'"
-      ]
+    {
+      "url": "https://images.unsplash.com/photo-1669295384050-a1d4357bd1d7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGVtZXJhbGQlMjBncmVlbiUyMGJsdWUlMjB0ZWNobm9sb2d5JTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODE5MDIyNzl8MA&ixlib=rb-4.1.0&q=85",
+      "category": "magic_moment_background",
+      "description": "Abstract emerald/teal tech background. Use during the 'AI is generating' loading screens to convey technological power and magic."
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1724862936518-ae7fcfc052c1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxzb2NpYWwlMjBtZWRpYSUyMHBob25lJTIwcmVlbCUyMGNvbnN0cnVjdGlvbnxlbnwwfHx8fDE3ODE5MDIyNzl8MA&ixlib=rb-4.1.0&q=85",
+      "category": "marketing_demo_visual",
+      "description": "Phone displaying social media. Use in the MARKETING branch when demonstrating the AI Social Studio generating an Instagram Reel."
     }
-  },
-  "user_detail_drawer": {
-    "concept": "A single Sheet/Drawer that opens when clicking a user in the Accounts Table. Consolidates all actions so the admin never leaves the accounts page.",
-    "header": "Avatar, Name, Email, Status Badge",
-    "tabs": [
-      {
-        "name": "Plan & Acceso",
-        "content": "Dropdown to assign/change plan (Negocio/Presencia/Marketing/Bundle). Toggle for 'Acceso de cortesía (comp)' with Note field and Expiration Date picker."
-      },
-      {
-        "name": "Tarjetas NFC",
-        "content": "Input for 'Límite de tarjetas NFC'. Toggle for 'Cobrar en próximo ciclo Stripe' or 'Gratis'."
-      },
-      {
-        "name": "Actividad",
-        "content": "List of the user's specific NFC shipments and their specific Leads."
-      },
-      {
-        "name": "Acciones",
-        "content": "Button 'Entrar como usuario' (Impersonate - amber warning color), Button 'Eliminar cuenta' (Destructive red color)."
-      }
-    ]
-  },
-  "component_usage": {
-    "sheet": "Use for User Detail Drawer. Must be slide-in from right on desktop, bottom up on mobile.",
-    "tabs": "Use inside the Drawer to organize user details without cluttering.",
-    "table": "Shadcn Table for Desktop data lists. Dense padding.",
-    "dropdown_menu": "Use for actions on table rows (e.g., quick actions) and filters.",
-    "command": "Use for global search or user search.",
-    "badge": "Use to indicate statuses (Activo = Green, Trial = Blue, Comp = Purple, Sin Plan = Gray)."
-  },
-  "microcopy_guidelines": {
-    "language": "Español",
-    "tone": "Direct, professional, administrative.",
-    "examples": {
-      "impersonate": "Entrar como usuario",
-      "comp_access": "Acceso de cortesía (Comp)",
-      "card_seats": "Límite de tarjetas NFC",
-      "save": "Guardar cambios",
-      "revoke": "Revocar acceso",
-      "delete_account": "Eliminar cuenta permanentemente",
-      "broadcast": "Enviar notificación push",
-      "search_placeholder": "Buscar por nombre o correo..."
+  ],
+  "components": [
+    {
+      "name": "BranchingSelector",
+      "description": "A customized radio-group style selector using Framer Motion. Large tap targets with Lucide icons (Star for Presencia, FileText for Negocio, Smartphone for Marketing). Active state gets a 2px emerald border and a subtle emerald glow drop-shadow.",
+      "testid": "demo-branch-selector"
+    },
+    {
+      "name": "MagicLoadingState",
+      "description": "Full-screen or card-level loader showing 'La IA está trabajando...' with an animated emerald gradient tracing border (Aceternity style).",
+      "testid": "demo-magic-loader"
+    },
+    {
+      "name": "InteractiveMockup",
+      "description": "A CSS-only mobile phone mockup that scales down to fit inside the real mobile screen, used to display the 'NFC Card' or 'Generated Reel'.",
+      "testid": "demo-interactive-mockup"
     }
-  },
-  "data_testids": {
-    "rules": "All interactive elements MUST have data-testid attributes.",
-    "examples": [
-      "admin-sidebar-nav",
-      "accounts-search-input",
-      "accounts-filter-status",
-      "accounts-table-row",
-      "user-drawer-open",
-      "user-drawer-tab-plan",
-      "user-drawer-tab-nfc",
-      "user-drawer-tab-actions",
-      "action-impersonate-btn",
-      "action-delete-account-btn",
-      "plan-select-dropdown",
-      "comp-access-toggle"
-    ]
-  },
-  "instructions_to_main_agent": [
-    "Build the dashboard using React, Tailwind CSS, and shadcn/ui (.js components, not .tsx).",
-    "Implement the Layout with a persistent Sidebar on desktop and bottom nav on mobile.",
-    "Ensure the 'Cuentas' section has a Table that triggers a Sheet (Drawer) on row click. This Sheet is the core of the redesign.",
-    "Implement the tabs inside the User Sheet exactly as defined.",
-    "Use Phosphor Icons (or Lucide) for sidebar and action buttons.",
-    "Apply the Amber primary accent sparingly for key admin actions and impersonation to visually warn the super-admin.",
-    "Make sure all headings use the defined custom font and NOT Inter."
-  ]
+  ],
+  "instructions_to_main_agent": {
+    "architecture_decision": "Implement a 'Unified Demo with Branching' (Option 2). The user flow: (1) Lead Capture -> (2) 'What is your biggest need?' (Branch Selection) -> (3) Short 3-step targeted magic moment -> (4) Unified Upsell cross-selling all 3 modules.",
+    "presencia_flow": "Step 1: Show an NFC card animation tapping a phone. Step 2: Simulate 5-star Google Reviews pouring in and the WhatsApp booking assistant. Step 3: End with CTA.",
+    "negocio_flow": "Step 1: Input text in Spanish (or use 1-click examples). Step 2: AI Loading Screen. Step 3: Generate English Quote/Invoice UI. Step 4: End with CTA.",
+    "marketing_flow": "Step 1: Input simple Spanish text 'Terminé este techo'. Step 2: AI Loading. Step 3: Show a mockup playing an AI-generated reel/post with their brand colors. Step 4: End with CTA.",
+    "testing_requirements": "All interactive elements (buttons, inputs, branching cards) MUST have a 'data-testid' attribute using kebab-case role-based naming (e.g., 'submit-lead-form', 'select-presencia-branch').",
+    "brand_adherence": "Strictly use Cabinet Grotesk for headings and Satoshi for body text. Enforce the Emerald and Blue-900 color scheme. Do not introduce purple, teal, or other colors. Follow mobile-first generous padding (p-6/p-8) and ensure contrast ratios are accessible."
+  }
 }
