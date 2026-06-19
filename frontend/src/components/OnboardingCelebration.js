@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import confetti from "canvas-confetti";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { PartyPopper, Trophy, ArrowRight } from "lucide-react";
 
@@ -51,6 +52,7 @@ const launchConfetti = () => {
 export default function OnboardingCelebration() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasFeature } = useAuth();
   const [show, setShow] = useState(false);
   const firedRef = useRef(false);
 
@@ -80,9 +82,41 @@ export default function OnboardingCelebration() {
 
   const close = () => setShow(false);
 
-  const goCreateQuote = () => {
+  // Celebration content adapts to the plan the user owns (priority: Negocio → Tarjeta → Marketing).
+  let variant;
+  if (hasFeature("business")) {
+    variant = {
+      title: "¡Tu negocio está listo! 🎉",
+      desc: "Diste el paso más difícil. Ahora a lo bueno: manda tu primer quote profesional en inglés y empieza a cobrar.",
+      cta: "Crear mi primer quote con AI",
+      to: "/quotes/nuevo?ai=1",
+    };
+  } else if (hasFeature("card")) {
+    variant = {
+      title: "¡Tu Tarjeta Digital está lista! 🎉",
+      desc: "Ya puedes compartir tu tarjeta con un tap, captar clientes y juntar reseñas de Google.",
+      cta: "Ver y compartir mi tarjeta",
+      to: "/tarjeta",
+    };
+  } else if (hasFeature("marketing")) {
+    variant = {
+      title: "¡Tu Estudio de Marketing está listo! 🎉",
+      desc: "Ahora crea tu primer post o reel profesional con IA para tus redes en segundos.",
+      cta: "Crear mi primer post",
+      to: "/marketing",
+    };
+  } else {
+    variant = {
+      title: "¡Todo listo! 🎉",
+      desc: "Tu cuenta está configurada. Empieza a explorar UniTech.",
+      cta: "Explorar",
+      to: "/",
+    };
+  }
+
+  const goPrimary = () => {
     setShow(false);
-    navigate("/quotes/nuevo?ai=1");
+    navigate(variant.to);
   };
 
   return (
@@ -112,19 +146,19 @@ export default function OnboardingCelebration() {
           </div>
 
           <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-center text-slate-900 leading-tight">
-            ¡Tu negocio está listo! 🎉
+            {variant.title}
           </h2>
           <p className="text-center text-slate-600 mt-3 leading-relaxed">
-            Diste el paso más difícil. Ahora a lo bueno: mandar tu primer quote profesional en inglés y empezar a cobrar.
+            {variant.desc}
           </p>
 
           <div className="mt-7 space-y-2">
             <Button
               data-testid="celebration-create-quote"
-              onClick={goCreateQuote}
+              onClick={goPrimary}
               className="w-full h-13 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-base font-bold gap-2 shadow-lg shadow-emerald-500/20"
             >
-              Crear mi primer quote con AI <ArrowRight className="w-4 h-4" />
+              {variant.cta} <ArrowRight className="w-4 h-4" />
             </Button>
             <button
               data-testid="celebration-close"

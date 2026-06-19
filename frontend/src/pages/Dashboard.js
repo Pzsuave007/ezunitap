@@ -14,6 +14,7 @@ import SetupChecklist from "@/components/SetupChecklist";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
 import { toast } from "sonner";
+import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
 
 const money = (n) => `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
@@ -167,7 +168,7 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
 }
 
 // ---- Card / Presencia module block ----
-function CardBlock({ navigate, cardStats, card, gbp, onConnectGbp }) {
+function CardBlock({ navigate, user, cardStats, card, gbp, onConnectGbp }) {
   const views = cardStats?.totals?.profile_visit ?? cardStats?.all_events ?? 0;
   const slug = card?.slug;
   const ready = !!card && !!(
@@ -189,32 +190,18 @@ function CardBlock({ navigate, cardStats, card, gbp, onConnectGbp }) {
         </div>
 
         {/* Live mini-site preview inside a phone mockup (or setup CTA when not ready) */}
-        {card && (ready && slug ? (
+        {card && (ready ? (
           <div className="px-3 py-4 flex flex-col items-center bg-gradient-to-b from-slate-50 to-white">
-            <button data-testid="card-live-preview" onClick={() => window.open(`/c/${slug}`, "_blank")}
-              className="tap relative group">
-              {/* Phone body */}
-              <div className="relative w-[208px] rounded-[2.3rem] bg-slate-900 p-[6px] shadow-2xl ring-1 ring-slate-300/60 transition-transform group-hover:-translate-y-0.5">
-                <div className="relative rounded-[1.9rem] overflow-hidden bg-white" style={{ height: 420 }}>
-                  {/* notch */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-b-2xl z-20" />
-                  <iframe
-                    src={`/c/${slug}?preview=1`}
-                    title="Vista en vivo de tu mini-sitio"
-                    loading="lazy"
-                    className="pointer-events-none"
-                    style={{ width: 196, height: 840, border: 0 }}
-                    scrolling="no"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                </div>
-              </div>
-              {/* Live badge */}
-              <span className="absolute top-3 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 bg-white/95 text-slate-900 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+            <button data-testid="card-live-preview" onClick={() => slug && window.open(`/c/${slug}`, "_blank")}
+              className="tap relative w-[210px] group">
+              <PhoneFrame>
+                <LiveCardPreview card={card} user={user} variant={card.hero_layout || "photo"} />
+              </PhoneFrame>
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 bg-white shadow-md ring-1 ring-slate-200 text-slate-900 text-[11px] font-bold px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En vivo
               </span>
             </button>
-            <button onClick={() => window.open(`/c/${slug}`, "_blank")}
+            <button onClick={() => slug && window.open(`/c/${slug}`, "_blank")}
               className="tap mt-4 inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 h-10 rounded-full transition-colors">
               Abrir mini-sitio <ArrowRight className="w-4 h-4" />
             </button>
@@ -422,7 +409,7 @@ export default function Dashboard() {
 
       {/* Module blocks — order: Negocio → Presencia → Marketing */}
       {hasBusiness && <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />}
-      {hasCard && <CardBlock navigate={navigate} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />}
+      {hasCard && <CardBlock navigate={navigate} user={user} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />}
       {hasMarketing && <MarketingBlock navigate={navigate} mkt={mkt} />}
 
       {/* Onboarding checklist (auto-hides at 100%) */}
