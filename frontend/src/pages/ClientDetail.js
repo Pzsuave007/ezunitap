@@ -65,7 +65,10 @@ export default function ClientDetail() {
 
   const fmtMoney = (n) => `$${(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   const totalInvoiced = history.invoices.reduce((s, i) => s + (i.total || 0), 0);
-  const pending = history.invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total || 0), 0);
+  const COUNTABLE = ["created", "sent", "partial", "overdue"];
+  const pending = history.invoices
+    .filter((i) => COUNTABLE.includes(i.status))
+    .reduce((s, i) => s + Math.max(0, (i.total || 0) - (i.amount_paid || 0)), 0);
 
   return (
     <div className="max-w-3xl mx-auto w-full pb-10 space-y-7">
@@ -74,7 +77,7 @@ export default function ClientDetail() {
       </button>
 
       {/* ===== Identity ===== */}
-      <div className="flex flex-col items-center text-center gap-2 pt-1">
+      <div className="flex flex-col items-center text-center gap-2 -mt-3">
         <h1 className="font-heading text-3xl font-bold tracking-tight text-zinc-950 leading-tight" data-testid="client-name-heading">{client.name}</h1>
         {client.company && (
           <div className="flex items-center gap-1.5 text-sm text-zinc-500">
