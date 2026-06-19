@@ -137,7 +137,10 @@ export default function DemoFlow() {
   );
 }
 
-export function GeneratingOverlay() {
+export function GeneratingOverlay({
+  title = "Generando tu Service Agreement…",
+  subtitle = (<>La IA está redactando tu contrato legal en inglés. Toma unos segundos — <strong>no cierres esta página.</strong></>),
+} = {}) {
   return (
     <div data-testid="demo-generating-overlay" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
@@ -146,10 +149,8 @@ export function GeneratingOverlay() {
           <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
           <Sparkles className="w-6 h-6 text-emerald-600 absolute inset-0 m-auto" />
         </div>
-        <h3 className="font-heading text-xl font-bold text-slate-900">Generando tu Service Agreement…</h3>
-        <p className="text-sm text-slate-500 mt-2">
-          La IA está redactando tu contrato legal en inglés. Toma unos segundos — <strong>no cierres esta página.</strong>
-        </p>
+        <h3 className="font-heading text-xl font-bold text-slate-900">{title}</h3>
+        <p className="text-sm text-slate-500 mt-2">{subtitle}</p>
       </div>
     </div>
   );

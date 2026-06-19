@@ -399,7 +399,14 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
 
   return (
     <div>
-      {loading && <GeneratingOverlay />}
+      {loading && (
+        <GeneratingOverlay
+          title={sub === "pick" ? "Generando tu cotización…" : "Generando tu Service Agreement…"}
+          subtitle={sub === "pick"
+            ? (<>La IA está armando tu cotización profesional en inglés. Unos segundos — <strong>no cierres esta página.</strong></>)
+            : (<>La IA está redactando tu contrato legal en inglés. Unos segundos — <strong>no cierres esta página.</strong></>)}
+        />
+      )}
       <BackBar onBack={onBack} label="Cotizar y cobrar" />
 
       {sub === "pick" && (
