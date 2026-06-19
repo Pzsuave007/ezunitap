@@ -61,7 +61,7 @@ export default function Clients() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight">Clientes</h1>
           <p className="text-slate-500 mt-1">{clients.length} cliente{clients.length !== 1 ? "s" : ""}</p>
@@ -71,9 +71,9 @@ export default function Clients() {
           <Button
             data-testid="new-client-btn"
             onClick={() => setOpen(true)}
-            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 flex-1 sm:flex-none whitespace-nowrap"
           >
-            <Plus className="w-4 h-4 mr-1" /> Nuevo
+            <Plus className="w-4 h-4 mr-1" /> Nuevo cliente
           </Button>
         </div>
       </div>
@@ -103,9 +103,6 @@ export default function Clients() {
               className="card-elevated p-4 border-0 shadow-none cursor-pointer tap"
             >
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {c.name?.charAt(0)?.toUpperCase() || "?"}
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{c.name}</div>
                   {c.company && <div className="text-xs text-slate-500 truncate flex items-center gap-1"><Building2 className="w-3 h-3" />{c.company}</div>}
