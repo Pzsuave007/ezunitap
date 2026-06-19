@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -149,6 +149,9 @@ function DrawerBody({ user, shipment, onClose, onChanged }) {
             <SheetTitle className="font-heading text-lg truncate text-left">
               {user.business_name || user.owner_name || "—"}
             </SheetTitle>
+            <SheetDescription className="sr-only">
+              Panel de gestión de la cuenta {user.email}
+            </SheetDescription>
             <div className="text-xs text-slate-500 truncate">{user.email}</div>
           </div>
           <span

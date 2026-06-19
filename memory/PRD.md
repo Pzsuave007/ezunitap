@@ -27,7 +27,18 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
-## ✅ Jun 2026 — PRESENCIA: dashboard enriquecido + acceso a Clientes/Mensajes [COMPLETO + PROBADO]
+## ✅ Jun 2026 — ADMIN: Área consolidada (tabla de Cuentas + Drawer unificado) [COMPLETO + PROBADO 100%]
+Pedido de Paul: el panel admin obligaba a saltar entre 5 pestañas (Métricas/Cuentas/Leads/Envíos/Mensajes) para manejar UNA cuenta. Rediseño basado en `design_guidelines.json` (Swiss/amber, Sheet lateral).
+- **Página "Cuentas"** (`AdminAccounts.js` reescrito): tabla densa (desktop) / tarjetas apilables (móvil) de TODOS los usuarios, con buscador (`accounts-search-input`), filtros de estado (Todos/Activa/Trial/Cortesía/Sin plan), badge de plan por fila, columna de tarjetas y botón "Crear cuenta". Toggle a vista "Invitaciones" (generador de comp-invites preservado). `CreateUserDialog` conservado.
+- **Drawer unificado** (`components/AdminAccountDrawer.js` nuevo): al tocar una cuenta abre un `Sheet` lateral (`user-detail-drawer`) con header (avatar/nombre/email/estado) y 4 pestañas:
+  - **Plan**: dropdown de plan (`set-plan`); al elegir Cortesía revela nota + expiración y guarda vía `grant-comp`.
+  - **Tarjetas**: límite de tarjetas NFC (`card-limit` gratis / `card-seats` con cobro Stripe si aplica).
+  - **Actividad**: editor de envío NFC por cuenta (estado/tracking/nota → `POST /admin/shipments/{id}`) o empty-state.
+  - **Acciones**: "Entrar como usuario" (impersonar, ámbar) + "Eliminar cuenta" (rojo, confirma con email exacto).
+- **AdminTabs** renombrado: Cuentas · Vista Global · Mensajes · Leads · Envíos NFC. Leads-demo y Mensajes quedan como pestañas globales aparte (decisión del usuario).
+- **Probado** (testing_agent iteration_21): 14/14 flujos frontend OK (list/search/filter, drawer 4 tabs, set-plan, card-limit + restore, comp panel, delete confirm cancelado, impersonate + volver, navegación de las 5 tabs, Invitaciones). Build prod plano (relativo `/api`) + `git add -f frontend/build/`. Fix a11y: `SheetDescription` sr-only agregado.
+
+
 - **Preview en vivo del mini-sitio** en el bloque Presencia del dashboard (`Dashboard.js` `CardBlock`): iframe a `/c/{slug}?preview=1` con badge "En vivo" + "Abrir mini-sitio". `SmartCard.js` ahora NO cuenta `profile_visit` cuando `preview=1` (no infla stats). Si la tarjeta no tiene contenido → CTA "Configura tu mini-sitio".
 - **Conectar Google My Business** desde el dashboard (usa `/google-business/status` y `/google-business/connect`; el callback regresa a `/reviews?gmb=connected`). Accesos: Reseñas de Google, Publicar en Google, Estadísticas.
 - **Plan Presencia (card) ahora accede a Clientes**: `require_any_feature("card","business")` en POST/PUT `/clients`; ruta `/clientes` y nav con `anyFeature`. Ve/gestiona los leads que la tarjeta crea automáticamente (Let's Connect / Request a Quote ya insertan un cliente + job).
