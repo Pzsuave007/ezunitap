@@ -27,6 +27,15 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — DEMO `/demo-all`: tarjeta NFC real + posts de Marketing diseñados (3 tipos) [COMPLETO + PROBADO]
+Mejoras de consistencia visual sobre `/demo-all`:
+- **Presencia**: ahora renderiza la TARJETA REAL (`LiveCardPreview` + `PhoneFrame`, el mismo componente de CardAdmin/Dashboard) personalizada con nombre/oficio del lead. Se agregó a `LiveCardPreview` soporte opcional de URLs directas (`cover_photo_url`/`profile_photo_url`/`logo_photo_url`) con fallback al comportamiento por ID (sin romper uso real). Probado 27/27 (iteration_23) incl. regresión de `/tarjeta` y dashboard.
+- **Marketing**: el usuario ELIGE uno de 3 ejemplos (sin texto libre, ya que son samples) y cada uno genera un diseño distinto y profesional vía componente `DesignedPost`:
+  - **Trabajo terminado** (showcase): foto + "TRUSTED LOCAL PRO" + "{OFICIO} / DONE RIGHT." + FREE ESTIMATE + teléfono.
+  - **Promoción**: "15% OFF · ALL {OFICIO} SERVICES · LIMITED TIME · BOOK NOW".
+  - **Antes y después**: split BEFORE (gris) / AFTER (color) + "THE {OFICIO} TRANSFORMATION".
+  Todo dentro de tarjeta estilo Instagram (header, likes, caption en inglés) con foto real por oficio.
+
 ## ✅ Jun 2026 — DEMO: nuevo `/demo-all` unificado con ramificación (3 módulos) [COMPLETO + PROBADO 30/30]
 El `/demo` original NO se tocó (sigue con su Meta Pixel y los anuncios activos). Se creó una ruta SEPARADA `/demo-all` (`pages/DemoAll.js`) como demo de conversión que muestra los 3 productos:
 - **Captura de lead** → reusa `POST /api/public/demo/start` (dispara Pixel Lead + DemoStarted).
