@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
-  SlidersHorizontal, Languages, Palette, Star,
+  SlidersHorizontal, Languages, Palette, Star, MapPin,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
@@ -129,6 +129,7 @@ export default function SocialStudio() {
 
   // Publish a generated post image to Google Business Profile
   const [gmbConnected, setGmbConnected] = useState(false);
+  const [gmbConfigured, setGmbConfigured] = useState(false);
   const [gmbImg, setGmbImg] = useState(null);
   const [gmbCaption, setGmbCaption] = useState("");
   const [gmbCta, setGmbCta] = useState("");
@@ -136,9 +137,28 @@ export default function SocialStudio() {
 
   useEffect(() => {
     api.get("/google-business/status")
-      .then(({ data }) => setGmbConnected(!!data?.connected))
-      .catch(() => setGmbConnected(false));
+      .then(({ data }) => { setGmbConnected(!!data?.connected); setGmbConfigured(!!data?.configured); })
+      .catch(() => { setGmbConnected(false); setGmbConfigured(false); });
   }, []);
+
+  useEffect(() => {
+    const g = searchParams.get("gmb");
+    if (g === "connected") {
+      toast.success("¡Google My Business conectado! 🎉 Ya puedes publicar tus posts.");
+      api.get("/google-business/status").then(({ data }) => { setGmbConnected(!!data?.connected); setGmbConfigured(!!data?.configured); }).catch(() => {});
+    } else if (g === "error") {
+      toast.error("No se pudo conectar con Google. Intenta de nuevo.");
+    }
+  }, [searchParams]);
+
+  const connectGmb = async () => {
+    try {
+      const { data } = await api.get("/google-business/connect", { params: { return_to: "/marketing" } });
+      window.location.href = data.auth_url;
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "La conexión con Google aún no está disponible.");
+    }
+  };
 
   const openGmb = (img, prefill = "") => {
     setGmbImg(img);
@@ -388,6 +408,27 @@ export default function SocialStudio() {
           <Wand2 className="w-4 h-4" /> Crear con IA
         </button>
       </div>
+
+      {/* Connect Google banner (so any plan, incl. Marketing-only, can enable publishing) */}
+      {gmbConfigured && !gmbConnected && (
+        <button onClick={connectGmb} data-testid="mkt-connect-gmb-banner"
+          className="tap w-full flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 px-4 py-3 text-left transition-colors hover:bg-blue-50">
+          <span className="w-10 h-10 rounded-full bg-white border border-blue-100 flex items-center justify-center flex-none">
+            <MapPin className="w-5 h-5 text-blue-600" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-slate-900">Conecta Google My Business</span>
+            <span className="block text-xs text-slate-500">Conéctalo una vez para publicar tus posts directo en Google.</span>
+          </span>
+          <span className="text-xs font-bold text-blue-700 flex-none">Conectar</span>
+        </button>
+      )}
+      {gmbConnected && (
+        <div data-testid="mkt-gmb-connected" className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
+          <Check className="w-4 h-4" /> Google My Business conectado — ya puedes publicar tus posts.
+        </div>
+      )}
+
 
       {mode === "reel" && <ReelStudio injectPhoto={reelInject} />}
 

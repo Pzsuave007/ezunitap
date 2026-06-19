@@ -85,15 +85,19 @@ async def status(user_id: str = Depends(get_current_user_id)):
 
 
 @router.get("/connect")
-async def connect(user_id: str = Depends(get_current_user_id)):
+async def connect(return_to: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
     """Return the Google consent URL (frontend then redirects the browser)."""
     if not is_configured():
         raise HTTPException(
             status_code=503,
             detail="La integración con Google aún no está habilitada (pendiente de aprobación de Google).",
         )
+    # Only allow safe, in-app relative return paths (e.g. "/marketing", "/reviews").
+    safe_return = FRONTEND_RETURN
+    if return_to and return_to.startswith("/") and not return_to.startswith("//"):
+        safe_return = return_to
     state = secrets.token_urlsafe(24)
-    await states.insert_one({"state": state, "user_id": user_id, "created_at": _now()})
+    await states.insert_one({"state": state, "user_id": user_id, "return_to": safe_return, "created_at": _now()})
     params = {
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
@@ -119,6 +123,7 @@ async def callback(code: Optional[str] = None, state: Optional[str] = None, erro
     if not st:
         return RedirectResponse(f"{FRONTEND_RETURN}?gmb=error")
     user_id = st["user_id"]
+    return_to = st.get("return_to") or FRONTEND_RETURN
 
     async with httpx.AsyncClient() as cli:
         resp = await cli.post(
@@ -133,7 +138,7 @@ async def callback(code: Optional[str] = None, state: Optional[str] = None, erro
             timeout=30.0,
         )
     if resp.status_code != 200:
-        return RedirectResponse(f"{FRONTEND_RETURN}?gmb=error")
+        return RedirectResponse(f"{return_to}?gmb=error")
 
     data = resp.json()
     refresh_token = data.get("refresh_token")
@@ -144,7 +149,7 @@ async def callback(code: Optional[str] = None, state: Optional[str] = None, erro
         existing = await conns.find_one({"user_id": user_id})
         refresh_token = (existing or {}).get("refresh_token")
         if not refresh_token:
-            return RedirectResponse(f"{FRONTEND_RETURN}?gmb=error")
+            return RedirectResponse(f"{return_to}?gmb=error")
 
     google_email = await _fetch_email(access_token)
 
@@ -169,7 +174,7 @@ async def callback(code: Optional[str] = None, state: Optional[str] = None, erro
     except Exception:
         pass
 
-    return RedirectResponse(f"{FRONTEND_RETURN}?gmb=connected")
+    return RedirectResponse(f"{return_to}?gmb=connected")
 
 
 @router.post("/disconnect")
