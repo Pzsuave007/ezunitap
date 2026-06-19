@@ -1,113 +1,100 @@
 {
-  "theme_and_archetype": {
-    "domain": "Field Service SaaS (Contractors)",
-    "theme": "Light",
-    "archetype": "Archetype 4 (Swiss & High-Contrast)",
-    "reasoning": "Outdoor field usage requires high contrast, maximum legibility, and no visual clutter. Moving away from 6 pastel colors to a rigorous, utilitarian monochrome base with a single intentional accent color."
-  },
-  "typography": {
-    "heading_font": "Cabinet Grotesk",
-    "body_font": "IBM Plex Sans",
-    "hierarchy": {
-      "h1_name": "text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950",
-      "h2_section": "text-xl font-semibold tracking-tight text-zinc-900",
-      "h3_label": "text-xs font-semibold tracking-[0.2em] uppercase text-zinc-500",
-      "body": "text-base text-zinc-700",
-      "stats_number": "text-2xl font-bold tracking-tight text-zinc-950"
-    }
+  "theme": "light",
+  "archetype": "4 (Swiss & High-Contrast) - Adapted for Soft Utility Mobile Dashboard",
+  "design_philosophy": {
+    "core": "Mobile-first, high-density, utility-driven interface for Latino contractors in the field.",
+    "typography": "High contrast, structural grayscale hierarchy. Bold titles, subtle labels.",
+    "spacing": "Dense but clear. Generous padding in cards (p-5 or p-6) but tight gaps between elements (gap-3 or gap-4).",
+    "buttons": "Eliminated 'gigantic' buttons. Replaced with compact horizontal scrollers, floating action buttons, and list-style triggers."
   },
   "color_palette": {
-    "background": {
-      "app": "bg-zinc-50",
-      "card": "bg-white"
-    },
-    "text": {
-      "primary": "text-zinc-950",
-      "secondary": "text-zinc-500",
-      "inverse": "text-white"
-    },
-    "border": "border-zinc-200",
-    "interactive": {
-      "primary": "bg-zinc-900 hover:bg-zinc-800 text-white",
-      "secondary": "bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200",
-      "accent": "bg-blue-600 hover:bg-blue-700 text-white (Use exclusively for key conversion: Request Review)"
-    }
+    "background_page": "bg-slate-50",
+    "surface_card": "bg-white",
+    "border_subtle": "border-slate-200/60",
+    "border_strong": "border-slate-300",
+    "text_primary": "text-slate-900",
+    "text_secondary": "text-slate-500",
+    "text_tertiary": "text-slate-400",
+    "action_primary": "bg-slate-900 text-white hover:bg-slate-800",
+    "action_secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50",
+    "chip_emerald": "bg-emerald-50 text-emerald-600 border border-emerald-100",
+    "chip_blue": "bg-blue-50 text-blue-600 border border-blue-100",
+    "chip_amber": "bg-amber-50 text-amber-600 border border-amber-100",
+    "chip_rose": "bg-rose-50 text-rose-600 border border-rose-100",
+    "chip_purple": "bg-purple-50 text-purple-600 border border-purple-100"
   },
-  "spacing_and_layout": {
-    "container": "max-w-3xl mx-auto w-full pb-24",
-    "internal_padding": "p-6 sm:p-8",
-    "gaps": {
-      "section_gap": "gap-8",
-      "item_gap": "gap-4"
-    },
-    "layout_strategy": "Mobile-first vertical stack. Strict hierarchy: 1. Identity, 2. Quick Comms, 3. Business Context (Stats), 4. History (Tabs). Floating Action Drawer for 'Create' actions."
+  "typography": {
+    "font_family_heading": "font-sans tracking-tight",
+    "font_family_body": "font-sans",
+    "h1_hero": "text-3xl font-black tracking-tighter text-slate-900 leading-none",
+    "h2_section": "text-lg font-bold tracking-tight text-slate-900",
+    "h3_card_title": "text-base font-semibold text-slate-900",
+    "body_text": "text-sm text-slate-600",
+    "label_overline": "text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500",
+    "metric_value": "text-2xl font-bold tracking-tight text-slate-900"
+  },
+  "layout_spacing": {
+    "page_padding": "px-4 pb-24 pt-4 md:px-8",
+    "card_radius": "rounded-[20px]",
+    "chip_size": "w-11 h-11 rounded-full flex items-center justify-center shrink-0",
+    "gap_section": "space-y-6",
+    "gap_element": "gap-3"
   },
   "components": {
-    "ClientHeader": {
-      "description": "Clean presentation of who the client is.",
-      "structure": "Avatar (Initials, h-20 w-20), Name (H1), Company & Tagline. Remove boxy cards, let this sit naturally on the background.",
-      "shadcn_components": ["Avatar", "AvatarFallback", "Badge"],
-      "layout": "flex flex-col items-center text-center pt-8 pb-4 gap-2"
+    "header": {
+      "wrapper": "sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl pb-2 pt-2 flex justify-between items-start",
+      "greeting": "text-sm font-medium text-slate-500",
+      "business_name": "text-xl font-bold text-slate-900 flex items-center gap-1",
+      "settings_btn": "w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-slate-600"
     },
-    "ContactChips": {
-      "description": "High-priority quick actions (Call, Email, Map) and Review request.",
-      "structure": "A grid/flex row of 3 circular icon buttons for comms. Below it, a full-width outline button for 'Solicitar Reseña de Google'.",
-      "shadcn_components": ["Button"],
-      "styling": "Icon buttons: variant='secondary' rounded-full h-12 w-12. Review button: variant='outline' w-full border-zinc-300."
+    "hero_kpi_card": {
+      "wrapper": "bg-slate-900 rounded-[24px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col gap-4 mt-2",
+      "label": "text-sm font-medium text-slate-400 flex items-center gap-2",
+      "amount": "text-4xl font-black tracking-tighter text-white",
+      "cta": "bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-4 py-2 text-sm font-semibold backdrop-blur-md self-start transition-colors"
     },
-    "StatsGrid": {
-      "description": "Grid Borders (The 'Technical' Look) to present numbers cleanly without card bloat.",
-      "structure": "2x2 CSS Grid with border-collapse. Inner borders only. No drop shadows.",
-      "metrics": ["Cotizaciones", "Facturas", "Facturado ($)", "Por cobrar ($)"],
-      "styling": "grid grid-cols-2 border border-zinc-200 rounded-xl overflow-hidden bg-white. Each cell has p-4 border-r border-b border-zinc-100 last:border-0."
+    "guided_action_flow": {
+      "wrapper": "flex gap-3 overflow-x-auto snap-x hide-scrollbar -mx-4 px-4 pb-2",
+      "card": "flex-none w-[260px] bg-white border border-slate-200/80 rounded-[20px] p-4 flex items-center gap-4 snap-start shadow-sm active:scale-[0.98] transition-transform",
+      "step_badge": "text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase tracking-wider mb-1",
+      "title": "text-sm font-bold text-slate-900",
+      "subtitle": "text-xs text-slate-500 line-clamp-1"
     },
-    "HistoryTabs": {
-      "description": "Replaces the 6 giant colorful boxes. A horizontal scrollable segmented control.",
-      "structure": "Use Shadcn Tabs. The TabsList MUST be overflow-x-auto, whitespace-nowrap, and hide the scrollbar (scrollbar-width: none).",
-      "tabs": ["Info", "Cotizaciones", "Contratos", "Facturas", "Mensajes", "Fotos"],
-      "shadcn_components": ["Tabs", "TabsList", "TabsTrigger", "TabsContent"],
-      "styling": "TabsList: bg-zinc-100 p-1 rounded-xl flex w-full justify-start overflow-x-auto. TabsTrigger: data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg px-4 py-2."
+    "stats_grid": {
+      "wrapper": "grid grid-cols-2 gap-3",
+      "card": "bg-white border border-slate-200/80 rounded-[20px] p-4 flex flex-col gap-3 shadow-sm hover:border-slate-300 transition-colors cursor-pointer",
+      "value": "text-2xl font-bold text-slate-900"
     },
-    "FloatingActionDrawer": {
-      "description": "The solution to the '30 buttons' problem. Consolidates all 'Create' actions into one thumb-friendly spot.",
-      "structure": "A fixed bottom bar (z-50) with a single massive '+ Nuevo' button. Clicking it opens a Shadcn Drawer.",
-      "drawer_contents": "A clean vertical list menu of the 5 actions: Quote AI, Invoice, Contrato, Mensaje, Scope AI. Each with a leading Phosphor Icon.",
-      "shadcn_components": ["Drawer", "DrawerTrigger", "DrawerContent", "Button"],
-      "styling": "Bottom Bar: fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-xl border-t border-zinc-200. Drawer Button: w-full bg-zinc-900 text-white rounded-xl h-14 text-lg font-semibold shadow-lg."
+    "promo_banner": {
+      "wrapper": "relative rounded-[20px] p-5 text-white shadow-md overflow-hidden bg-slate-900",
+      "background_image": "absolute inset-0 opacity-40 mix-blend-overlay object-cover w-full h-full",
+      "badge": "bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full w-fit mb-2",
+      "title": "text-base font-bold",
+      "subtitle": "text-xs text-slate-300 mt-1"
+    },
+    "list_section": {
+      "card": "bg-white border border-slate-200/80 rounded-[20px] overflow-hidden shadow-sm",
+      "header": "px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50",
+      "item": "px-5 py-4 border-b border-slate-100 last:border-0 flex justify-between items-center active:bg-slate-50 transition-colors"
+    },
+    "floating_action_button": {
+      "wrapper": "fixed bottom-6 right-4 md:right-6 bg-slate-900 text-white rounded-full px-5 py-3.5 shadow-xl flex items-center gap-2 font-bold z-50 hover:-translate-y-1 hover:shadow-2xl transition-all shadow-[0_8px_30px_rgb(15,23,42,0.3)]"
     }
   },
-  "motion_and_interactions": {
-    "hover_states": "All buttons must use Tailwind transition-colors duration-200.",
-    "drawer_entrance": "Native Shadcn drawer spring animation for smooth bottom-up presentation.",
-    "tab_switch": "Instant content switch to prevent layout shift jank on mobile."
+  "media": {
+    "promo_bg_url": "https://images.unsplash.com/photo-1614851099511-773084f6911d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGdyYWRpZW50JTIwYmFja2dyb3VuZCUyMG1vZGVybiUyMGJhbm5lcnxlbnwwfHx8fDE3ODE4NDkyMTJ8MA&ixlib=rb-4.1.0&q=85",
+    "description": "Abstract pink/purple light gradient used for the Marketing Studio promo banner background (with mix-blend-overlay)."
   },
-  "accessibility_and_testing": {
-    "contrast": "APCA/WCAG AA compliant. Zinc-900 on white is ultra-high contrast.",
-    "touch_targets": "All interactive elements (tabs, contact buttons, drawer items) MUST be minimum 48x48px physical size equivalent.",
-    "data_testid_rules": {
-      "requirement": "All interactive and key informational elements MUST include a data-testid attribute.",
-      "format": "kebab-case, role-based",
-      "examples": [
-        "data-testid='client-name-heading'",
-        "data-testid='contact-call-button'",
-        "data-testid='contact-map-button'",
-        "data-testid='request-review-button'",
-        "data-testid='stats-invoiced-value'",
-        "data-testid='history-tab-cotizaciones'",
-        "data-testid='fab-nuevo-button'",
-        "data-testid='drawer-action-quote-ai'"
-      ]
-    }
-  },
-  "image_urls": [],
   "instructions_to_main_agent": [
-    "Install required icons: yarn add @phosphor-icons/react",
-    "Do NOT use HTML inputs, use Shadcn primitives.",
-    "Implement the layout strictly as mobile-first vertical flow.",
-    "Place the ClientHeader at the top with no surrounding card.",
-    "Implement the StatsGrid as a flat 2x2 grid with 1px internal borders (border-collapse style) inside a single container with a rounded-xl border.",
-    "Hide the 6 colorful tabs and replace them with Shadcn Tabs with a horizontally scrollable TabsList.",
-    "Move all 5 creation actions (Quote, Invoice, etc) OUT of the main page body and put them inside the FloatingActionDrawer.",
-    "Ensure the bottom of the main content has pb-24 so the floating action bar doesn't overlap the last items."
+    "IMPLEMENTATION LANGUAGE: All static UI text MUST be in Spanish (e.g., 'Buenos días', 'Pagos pendientes', 'Agregar cliente').",
+    "MOBILE FIRST: The entire layout must look perfect on a standard mobile width (375px-430px). Use horizontal scrolling (overflow-x-auto, snap-x) for the guided action flow to save vertical space and eliminate 'gigantic' buttons.",
+    "HERO KPI: Use the inverted contrast (slate-900 background) to make the 'Pagos pendientes' value pop. Include a 'Ver invoices' pill button inside it.",
+    "GUIDED ACTION FLOW: Build a horizontal list of 3 cards. Step 1: Agregar cliente (Blue chip), Step 2: Crear cotización con AI (Purple chip), Step 3: Crear invoice (Emerald chip).",
+    "STATS GRID: Render 4 boxes. Clientes (Blue), Quotes enviados (Purple), Invoices pendientes (Amber), Trabajos activos (Emerald). Use the w-11 h-11 rounded-full chips for the icons.",
+    "ONBOARDING: Implement a simple checklist card that shows progress (e.g., '2/4 completado').",
+    "LISTS: Use the list_section component for Recent Quotes and Upcoming Reminders. Keep the typography crisp and data clearly separated.",
+    "FAB: Implement the '+ Crear' button strictly as fixed at bottom-6 right-4. This is the primary escape hatch for actions.",
+    "ICONS: Use lucide-react. Standardize stroke-width to 2 or 2.5 for better legibility.",
+    "TESTING: Ensure every interactive element (buttons, scroll cards, list items) has a semantic 'data-testid' (e.g., data-testid='add-client-card')."
   ]
 }
