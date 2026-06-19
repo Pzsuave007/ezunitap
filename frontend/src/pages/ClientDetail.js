@@ -63,7 +63,6 @@ export default function ClientDetail() {
     return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
   }
 
-  const initials = client.name?.charAt(0)?.toUpperCase();
   const fmtMoney = (n) => `$${(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   const totalInvoiced = history.invoices.reduce((s, i) => s + (i.total || 0), 0);
   const pending = history.invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total || 0), 0);
@@ -76,9 +75,6 @@ export default function ClientDetail() {
 
       {/* ===== Identity ===== */}
       <div className="flex flex-col items-center text-center gap-2 pt-1">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
-          {initials}
-        </div>
         <h1 className="font-heading text-3xl font-bold tracking-tight text-zinc-950 leading-tight" data-testid="client-name-heading">{client.name}</h1>
         {client.company && (
           <div className="flex items-center gap-1.5 text-sm text-zinc-500">
@@ -120,7 +116,7 @@ export default function ClientDetail() {
         <DrawerTrigger asChild>
           <Button data-testid="fab-nuevo-button" className="w-full h-auto py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition-colors flex-col gap-0.5">
             <span className="flex items-center text-base font-semibold leading-none">
-              <Plus className="w-5 h-5 mr-1.5" /> Crear para este cliente
+              <Plus className="w-5 h-5 mr-1.5" /> Crear
             </span>
             <span className="text-[11px] font-medium text-zinc-300 leading-none">Cotización · Invoice · Contrato · Mensaje</span>
           </Button>
