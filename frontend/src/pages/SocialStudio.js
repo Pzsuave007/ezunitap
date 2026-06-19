@@ -10,12 +10,13 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
-  SlidersHorizontal, Languages, Palette,
+  SlidersHorizontal, Languages, Palette, Star,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import ReelStudio from "@/components/ReelStudio";
 import AiImageStudio from "@/components/AiImageStudio";
+import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -120,6 +121,43 @@ export default function SocialStudio() {
   const [reelInject, setReelInject] = useState(null); // AI image pushed into the reel builder
   const [advOpen, setAdvOpen] = useState(false); // "Más opciones" drawer (idioma + colores personalizados)
   const [resultOpen, setResultOpen] = useState(false); // slide-up result drawer
+
+  // Publish a generated post image to Google Business Profile
+  const [gmbConnected, setGmbConnected] = useState(false);
+  const [gmbImg, setGmbImg] = useState(null);
+  const [gmbCaption, setGmbCaption] = useState("");
+  const [gmbCta, setGmbCta] = useState("");
+  const [gmbPosting, setGmbPosting] = useState(false);
+
+  useEffect(() => {
+    api.get("/google-business/status")
+      .then(({ data }) => setGmbConnected(!!data?.connected))
+      .catch(() => setGmbConnected(false));
+  }, []);
+
+  const openGmb = (img, prefill = "") => {
+    setGmbImg(img);
+    setGmbCaption(prefill || "");
+    setGmbCta("");
+  };
+
+  const publishGmb = async () => {
+    if (!gmbCaption.trim()) { toast.error("Escribe el texto del post (en inglés)."); return; }
+    setGmbPosting(true);
+    try {
+      await api.post("/google-business/posts", {
+        summary: gmbCaption.trim(),
+        photo_id: gmbImg.photo_id,
+        cta_url: gmbCta.trim(),
+      });
+      toast.success("¡Publicado en tu Google Business! 🎉");
+      setGmbImg(null);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo publicar en Google.");
+    } finally {
+      setGmbPosting(false);
+    }
+  };
 
   // Use an AI-generated image in the Post builder (single-photo template).
   const useAiImageInPost = (file, preview) => {
@@ -609,6 +647,12 @@ export default function SocialStudio() {
                     {cardBusy === img.photo_id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <IdCard className="w-4 h-4 mr-2" />} Agregar a mi tarjeta
                   </Button>
                 )}
+                {gmbConnected && (
+                  <Button onClick={() => openGmb(img, post?.copy?.caption || "")} data-testid={`gmb-post-${img.format}`}
+                    className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+                    <Star className="w-4 h-4 mr-2 fill-white" /> Publicar en Google
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -714,6 +758,50 @@ export default function SocialStudio() {
               {applyingEnhance ? <Loader2 className="w-4 h-4 animate-spin" /> : "Usar mejorada ✨"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Publish generated post to Google Business */}
+      <Dialog open={!!gmbImg} onOpenChange={(o) => !o && setGmbImg(null)}>
+        <DialogContent className="rounded-2xl max-w-md" data-testid="gmb-post-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <Star className="w-5 h-5 text-blue-600 fill-blue-600" /> Publicar en Google Business
+            </DialogTitle>
+          </DialogHeader>
+          {gmbImg && (
+            <div className="space-y-3">
+              <img src={`${BACKEND}${gmbImg.url}`} alt="" className="w-full max-h-52 object-contain rounded-xl border border-slate-200 bg-slate-50" />
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-slate-700">Texto del post (inglés)</Label>
+                <AiTranslateButton
+                  fieldType="gmb_post"
+                  onResult={(en) => setGmbCaption(en)}
+                  testId="gmb-post-caption-ai"
+                  placeholder="Ej: Acabamos un techo nuevo en Auburn — ¡agenda tu estimado gratis!"
+                />
+              </div>
+              <Textarea
+                value={gmbCaption}
+                onChange={(e) => setGmbCaption(e.target.value)}
+                placeholder="Write your update in English (or use the AI button above)..."
+                className="rounded-xl min-h-[90px] text-sm"
+                data-testid="gmb-post-caption-input"
+              />
+              <Input
+                value={gmbCta}
+                onChange={(e) => setGmbCta(e.target.value)}
+                placeholder="Link opcional (ej: https://ezunitech.com/tu-tarjeta)"
+                className="rounded-xl text-sm"
+                data-testid="gmb-post-cta-input"
+              />
+              <Button onClick={publishGmb} disabled={gmbPosting}
+                className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold" data-testid="gmb-post-publish-btn">
+                {gmbPosting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-2 fill-white" />}
+                Publicar ahora
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       </>
