@@ -25,7 +25,7 @@ export default function Invoices() {
   }, []);
 
   const list = filter === "all" ? invoices : invoices.filter((q) => q.status === filter);
-  const labelFor = (s) => ({ draft: "Borrador", sent: "Enviado", paid: "Pagado", partial: "Parcial", overdue: "Atrasado" }[s] || s);
+  const labelFor = (s) => ({ draft: "Borrador", created: "Creado", sent: "Enviado", paid: "Pagado", partial: "Parcial", overdue: "Atrasado" }[s] || s);
 
   const deleteInvoice = async (e, inv) => {
     e.stopPropagation();

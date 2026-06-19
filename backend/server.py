@@ -567,7 +567,7 @@ async def dashboard_stats(user_id: str = Depends(get_current_user_id)):
     total_clients = await db.clients.count_documents({"user_id": user_id})
     quotes_sent = await db.quotes.count_documents({"user_id": user_id, "status": "sent"})
     invoices_pending = await db.invoices.count_documents(
-        {"user_id": user_id, "status": {"$in": ["sent", "partial", "overdue"]}}
+        {"user_id": user_id, "status": {"$in": ["created", "sent", "partial", "overdue"]}}
     )
     active_jobs = await db.jobs.count_documents(
         {"user_id": user_id, "status": {"$in": ["approved", "scheduled", "in_progress", "waiting_payment"]}}
@@ -575,7 +575,7 @@ async def dashboard_stats(user_id: str = Depends(get_current_user_id)):
 
     # Pending payments sum
     pending_pipeline = [
-        {"$match": {"user_id": user_id, "status": {"$in": ["sent", "partial", "overdue"]}}},
+        {"$match": {"user_id": user_id, "status": {"$in": ["created", "sent", "partial", "overdue"]}}},
         {"$group": {"_id": None, "total": {"$sum": {"$subtract": ["$total", "$amount_paid"]}}}},
     ]
     pending_agg = await db.invoices.aggregate(pending_pipeline).to_list(1)
@@ -1390,7 +1390,7 @@ async def set_invoice_payment_plan(invoice_id: str, payload: PaymentPlanIn, user
 
 @api_router.post("/invoices/{invoice_id}/status")
 async def set_invoice_status(invoice_id: str, status: str, user_id: str = Depends(get_current_user_id)):
-    valid = {"draft", "sent", "paid", "partial", "overdue"}
+    valid = {"draft", "created", "sent", "paid", "partial", "overdue"}
     if status not in valid:
         raise HTTPException(400, "Status inválido")
     update = {"status": status, "updated_at": _now_iso()}

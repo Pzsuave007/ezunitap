@@ -306,12 +306,27 @@ export default function InvoiceDetail() {
           )}
         </div>
 
-        {!isNew && (
+        {!isNew && invoice.status === "draft" && (
+          <div className="mt-5">
+            <Button
+              data-testid="inv-create"
+              onClick={() => setStatus("created")}
+              className="w-full h-12 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold"
+            >
+              <Check className="w-4 h-4 mr-1.5" /> Crear Invoice
+            </Button>
+            <p className="text-[11px] text-slate-400 text-center mt-2">
+              Está en Borrador. Al crearlo cuenta en tu dashboard y podrás mandarlo o descargar el PDF.
+            </p>
+          </div>
+        )}
+
+        {!isNew && invoice.status !== "draft" && (
           <div className="grid grid-cols-2 gap-2 mt-5">
             <Button
               data-testid="inv-send"
               onClick={() => {
-                if (invoice.status === "draft") setStatus("sent");
+                if (invoice.status === "created") setStatus("sent");
                 setSendOpen(true);
               }}
               className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -448,7 +463,7 @@ export default function InvoiceDetail() {
         )}
 
         <Button data-testid="save-invoice" onClick={save} disabled={saving} className="w-full h-14 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? "Crear invoice" : "Guardar cambios")}
+          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? "Guardar borrador" : "Guardar cambios")}
         </Button>
       </Card>
 

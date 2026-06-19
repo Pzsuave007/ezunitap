@@ -10,6 +10,7 @@ const QUOTE_STYLES = {
 
 const INVOICE_STYLES = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-700 border-slate-200" },
+  created: { label: "Creado", cls: "bg-cyan-50 text-cyan-800 border-cyan-200" },
   sent: { label: "Enviado", cls: "bg-blue-50 text-blue-800 border-blue-200" },
   paid: { label: "Pagado", cls: "bg-emerald-50 text-emerald-800 border-emerald-200" },
   partial: { label: "Pago parcial", cls: "bg-amber-50 text-amber-800 border-amber-200" },
