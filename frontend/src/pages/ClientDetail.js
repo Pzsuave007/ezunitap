@@ -118,8 +118,11 @@ export default function ClientDetail() {
       {/* ===== Single "create" entry point (replaces 5 buttons) ===== */}
       <Drawer>
         <DrawerTrigger asChild>
-          <Button data-testid="fab-nuevo-button" className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-base font-semibold shadow-sm transition-colors">
-            <Plus className="w-5 h-5 mr-1.5" /> Nuevo documento
+          <Button data-testid="fab-nuevo-button" className="w-full h-auto py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition-colors flex-col gap-0.5">
+            <span className="flex items-center text-base font-semibold leading-none">
+              <Plus className="w-5 h-5 mr-1.5" /> Crear para este cliente
+            </span>
+            <span className="text-[11px] font-medium text-zinc-300 leading-none">Cotización · Invoice · Contrato · Mensaje</span>
           </Button>
         </DrawerTrigger>
         <DrawerContent>
