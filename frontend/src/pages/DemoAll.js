@@ -13,7 +13,6 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, FileText,
   Smartphone, Megaphone, MapPin, MessageCircle, Phone, BadgeCheck,
@@ -30,10 +29,123 @@ const TRADES = [
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
 ];
 
-const NEG_EXAMPLES = [
-  { label: "Techo", text: "Reemplazar techo de 1500 pies cuadrados con shingles nuevos, incluye remover el viejo, papel nuevo y limpieza completa." },
-  { label: "Drywall", text: "Instalar y resanar drywall en una recámara de 12x14 pies, incluye lijado y dejarlo listo para pintar." },
-  { label: "Pintura", text: "Pintar interior de casa de 3 recámaras y 2 baños, paredes y techos, 2 manos de pintura, dueño compra el color." },
+const usd = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function buildAgreement({ title, includes, excludes, schedule, warranty, total, deposit }) {
+  return {
+    title: `Service Agreement — ${title}`,
+    preamble: `This Service Agreement ("Agreement") is entered into between the Contractor and the Client for the project described below. By signing, both parties agree to the terms and conditions outlined herein.`,
+    services_included: includes,
+    services_excluded: excludes,
+    schedule,
+    pricing: `Total project cost: ${usd(total)}. A deposit of ${usd(deposit)} is due upon signing to schedule the work. The remaining balance is due upon completion and final walkthrough.`,
+    payment_terms: "Accepted payment methods: credit/debit card, Zelle, Venmo, CashApp, or check. Balances unpaid 7 days after completion may incur a 1.5% monthly service charge.",
+    cancellation_policy: "Client may cancel within 3 business days of signing for a full refund of the deposit. Once materials are ordered, the deposit becomes non-refundable.",
+    client_responsibilities: ["Provide clear access to the work area", "Secure pets, vehicles and personal belongings", "Ensure water and power are available on site"],
+    warranty,
+    change_orders: "Any changes to the agreed scope of work must be approved in writing and may affect the final price and completion timeline.",
+    dispute_resolution: "Any disputes will first be addressed through good-faith negotiation. If unresolved, disputes will be settled by binding arbitration in the Contractor's county of business.",
+  };
+}
+
+const NEG_JOBS = [
+  {
+    id: "roofing",
+    label: "Reemplazo de techo",
+    trade: "Roofing · 1,500 sq ft",
+    quote: {
+      number: "Q-1042",
+      job_title: "Complete Roof Replacement — 1,500 sq ft",
+      description: "Full tear-off and replacement of asphalt shingle roof, including new underlayment, flashing, and ridge ventilation. Debris haul-away included.",
+      scope_of_work: [
+        "Remove and dispose of existing shingles",
+        "Install synthetic underlayment + ice & water shield",
+        "Install GAF architectural shingles",
+        "Replace pipe boots, flashing & install ridge vent",
+        "Full job-site cleanup & magnetic nail sweep",
+      ],
+      line_items: [
+        { description: "Tear-off & disposal of existing roof", quantity: 1500, unit: "sq ft", unit_price: 1.2, amount: 1800 },
+        { description: "GAF architectural shingles (installed)", quantity: 1500, unit: "sq ft", unit_price: 3.5, amount: 5250 },
+        { description: "Underlayment, ice & water shield", quantity: 1, unit: "job", unit_price: 950, amount: 950 },
+        { description: "Flashing, pipe boots & ridge vent", quantity: 1, unit: "job", unit_price: 700, amount: 700 },
+      ],
+      subtotal: 8700, tax_amount: 717.75, total: 9417.75, deposit_amount: 4708.88,
+      payment_terms: "50% deposit to schedule, balance due on completion.",
+    },
+    agreement: buildAgreement({
+      title: "Roof Replacement",
+      includes: ["Tear-off and disposal of existing roofing", "New synthetic underlayment and ice & water shield", "GAF architectural shingles installation", "New flashing, pipe boots and ridge ventilation", "Complete job-site cleanup"],
+      excludes: ["Plywood/decking replacement (priced separately if rotted)", "Gutter replacement", "Interior repairs"],
+      schedule: "Work to begin within 1–2 weeks of signing, weather permitting. Estimated completion: 1–2 days.",
+      warranty: "5-year workmanship warranty plus the manufacturer's limited lifetime shingle warranty.",
+      total: 9417.75, deposit: 4708.88,
+    }),
+  },
+  {
+    id: "painting",
+    label: "Pintura interior",
+    trade: "Painting · 3 bed / 2 bath",
+    quote: {
+      number: "Q-1043",
+      job_title: "Interior Painting — 3 Bed / 2 Bath Home",
+      description: "Professional interior repaint of walls, ceilings and trim with premium low-VOC paint, two coats. Includes prep, patching and protection of floors and furniture.",
+      scope_of_work: [
+        "Protect floors, furniture & fixtures",
+        "Patch nail holes & minor drywall repairs",
+        "Caulk trim and sand surfaces",
+        "Apply 2 coats of premium interior paint",
+        "Clean up & final walkthrough",
+      ],
+      line_items: [
+        { description: "Surface prep, patch & sand", quantity: 1, unit: "job", unit_price: 450, amount: 450 },
+        { description: "Walls — premium paint, 2 coats", quantity: 2200, unit: "sq ft", unit_price: 0.95, amount: 2090 },
+        { description: "Ceilings & trim", quantity: 1, unit: "job", unit_price: 520, amount: 520 },
+      ],
+      subtotal: 3060, tax_amount: 252.45, total: 3312.45, deposit_amount: 993.74,
+      payment_terms: "30% deposit to schedule, balance due on completion.",
+    },
+    agreement: buildAgreement({
+      title: "Interior Painting",
+      includes: ["Floor & furniture protection", "Nail-hole patching and minor drywall repair", "Caulking, sanding and surface prep", "Two coats of premium low-VOC paint on walls, ceilings & trim", "Daily and final cleanup"],
+      excludes: ["Moving furniture over 50 lbs", "Exterior surfaces", "Wallpaper removal"],
+      schedule: "Work to begin within 1 week of signing. Estimated completion: 2–3 days.",
+      warranty: "2-year workmanship warranty on all painted surfaces.",
+      total: 3312.45, deposit: 993.74,
+    }),
+  },
+  {
+    id: "concrete",
+    label: "Driveway de concreto",
+    trade: "Concrete · 600 sq ft",
+    quote: {
+      number: "Q-1044",
+      job_title: "Concrete Driveway — 600 sq ft",
+      description: "Removal of old surface, grading, and pour of a new 4-inch rebar-reinforced concrete driveway with broom finish and sealing.",
+      scope_of_work: [
+        "Excavate & remove old surface",
+        "Grade and compact the base",
+        "Set forms & rebar reinforcement",
+        "Pour & finish 4\" concrete (broom finish)",
+        "Seal and cure",
+      ],
+      line_items: [
+        { description: "Excavation & grading", quantity: 1, unit: "job", unit_price: 1200, amount: 1200 },
+        { description: "Concrete pour 4\" (rebar reinforced)", quantity: 600, unit: "sq ft", unit_price: 7.5, amount: 4500 },
+        { description: "Finishing & sealing", quantity: 1, unit: "job", unit_price: 600, amount: 600 },
+      ],
+      subtotal: 6300, tax_amount: 519.75, total: 6819.75, deposit_amount: 3409.88,
+      payment_terms: "50% deposit to schedule, balance due on completion.",
+    },
+    agreement: buildAgreement({
+      title: "Concrete Driveway",
+      includes: ["Excavation and removal of old surface", "Base grading and compaction", "Forms and rebar reinforcement", "4\" concrete pour with broom finish", "Sealing and curing"],
+      excludes: ["Permit fees (billed at cost)", "Drainage systems", "Decorative stamping or coloring"],
+      schedule: "Work to begin within 2 weeks of signing. Allow 5–7 days cure time before use.",
+      warranty: "3-year workmanship warranty against settling and cracking due to installation.",
+      total: 6819.75, deposit: 3409.88,
+    }),
+  },
 ];
 
 const POST_TYPES = [
@@ -257,91 +369,77 @@ function BranchSelector({ onChoose }) {
   );
 }
 
-/* ============================ NEGOCIO (real AI) ============================ */
-function NegocioBranch({ demoId, business, lead, onBack, onSwitch }) {
-  const [sub, setSub] = useState("describe"); // describe | quote | agreement | invoice
-  const [desc, setDesc] = useState("");
-  const [quote, setQuote] = useState(null);
-  const [biz, setBiz] = useState(business);
-  const [agreement, setAgreement] = useState(null);
+/* ============================ NEGOCIO (ejemplos pre-armados, sin IA real) ============================ */
+function NegocioBranch({ lead, onBack, onSwitch }) {
+  const [sub, setSub] = useState("pick"); // pick | quote | agreement | invoice
+  const [picked, setPicked] = useState("");
   const [loading, setLoading] = useState(false);
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [err, setErr] = useState("");
 
-  const genQuote = async () => {
-    setErr("");
-    if (desc.trim().length < 6) { setErr("Describe el trabajo con un poco más de detalle."); return; }
-    setLoading(true);
-    try {
-      const r = await axios.post(`${API}/public/demo/quote`, { demo_id: demoId, description_es: desc });
-      setQuote(r.data.quote);
-      setBiz(r.data.business);
-      fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
-      fbTrackCustom("DemoQuoteGenerated");
-      setSub("quote");
-      window.scrollTo(0, 0);
-    } catch (e) {
-      setErr(e?.response?.data?.detail || "La IA no pudo generar la cotización. Intenta de nuevo.");
-    } finally { setLoading(false); }
+  const job = NEG_JOBS.find((j) => j.id === picked);
+  const demoBiz = {
+    business_name: brandName(lead),
+    business_email: lead.email || "info@yourbiz.com",
+    phone: lead.phone || "(555) 123-4567",
+    business_address: "Houston, TX",
   };
+  const client = { name: "John & Mary Smith", email: "" };
 
-  const genAgreement = async () => {
-    setErr("");
+  const genQuote = () => {
+    if (!picked) return;
     setLoading(true);
-    try {
-      const r = await axios.post(`${API}/public/demo/agreement`, {
-        demo_id: demoId,
-        description_es: desc,
-        job_title: quote?.job_title || "",
-        total: quote?.total || 0,
-        deposit: quote?.deposit_amount || 0,
-      });
-      setAgreement(r.data.agreement);
-      setSub("agreement");
-      window.scrollTo(0, 0);
-    } catch (e) {
-      setErr(e?.response?.data?.detail || "La IA no pudo generar el contrato. Intenta de nuevo.");
-    } finally { setLoading(false); }
+    fbTrackCustom("DemoQuoteGenerated", { job: picked });
+    setTimeout(() => { setSub("quote"); setLoading(false); window.scrollTo(0, 0); }, 1600);
+  };
+  const genAgreement = () => {
+    setLoading(true);
+    setTimeout(() => { setSub("agreement"); setLoading(false); window.scrollTo(0, 0); }, 1600);
   };
 
   return (
     <div>
-      {loading && sub === "describe" && <GeneratingOverlay />}
-      {loading && sub === "quote" && <GeneratingOverlay />}
+      {loading && <GeneratingOverlay />}
       <BackBar onBack={onBack} label="Cotizar y cobrar" />
-      {err && <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{err}</div>}
 
-      {sub === "describe" && (
+      {sub === "pick" && (
         <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-          <h2 className="font-heading text-2xl font-bold">Describe el trabajo… en español</h2>
-          <p className="text-slate-600 mt-1">Como se lo dirías a un amigo. La IA hace el resto.</p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {NEG_EXAMPLES.map((ex) => (
-              <button key={ex.label} data-testid={`demo-all-example-${ex.label}`} onClick={() => setDesc(ex.text)}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
-                {ex.label}
+          <h2 className="font-heading text-2xl font-bold">Elige un trabajo de ejemplo</h2>
+          <p className="text-slate-600 mt-1">Toca uno y la IA arma la cotización con números reales, lista para enviar.</p>
+          <div className="mt-4 space-y-2">
+            {NEG_JOBS.map((j, i) => (
+              <button key={j.id} data-testid={`demo-all-example-${i}`} onClick={() => setPicked(j.id)}
+                className={`w-full text-left p-3 rounded-xl border-2 flex items-center gap-3 transition ${
+                  picked === j.id ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-slate-300"
+                }`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-none ${picked === j.id ? "bg-emerald-600" : "bg-slate-100"}`}>
+                  <FileText className={`w-5 h-5 ${picked === j.id ? "text-white" : "text-slate-500"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm text-slate-900">{j.label}</div>
+                  <div className="text-xs text-slate-500">{j.trade}</div>
+                </div>
+                <span className="text-xs font-extrabold text-emerald-700 flex-none">{usd(j.quote.total)}</span>
+                {picked === j.id && <Check className="w-5 h-5 text-emerald-600 flex-none" />}
               </button>
             ))}
           </div>
-          <Textarea data-testid="demo-all-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={5}
-            placeholder="Ej: Reemplazar techo de 1500 pies cuadrados con shingles nuevos…"
-            className="mt-3 rounded-xl text-base" />
-          <Button data-testid="demo-all-gen-quote-btn" onClick={genQuote} disabled={loading} className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base">
-            {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> La IA está cotizando…</> : <><Sparkles className="w-5 h-5 mr-2" /> Generar cotización con IA</>}
+          <Button data-testid="demo-all-gen-quote-btn" onClick={genQuote} disabled={!picked || loading}
+            className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base disabled:opacity-50">
+            <Sparkles className="w-5 h-5 mr-2" /> Generar cotización con IA
           </Button>
         </Card>
       )}
 
-      {sub === "quote" && (
-        <QuoteStep quote={quote} business={biz} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setSub("describe")} />
+      {sub === "quote" && job && (
+        <QuoteStep quote={job.quote} business={demoBiz} lead={client} onAccept={genAgreement} loading={loading} onBack={() => setSub("pick")} />
       )}
-      {sub === "agreement" && (
-        <AgreementStep agreement={agreement} business={biz} lead={lead} signed={signed} onSign={() => { setSigned(true); setSub("invoice"); window.scrollTo(0, 0); }} />
+      {sub === "agreement" && job && (
+        <AgreementStep agreement={job.agreement} business={demoBiz} lead={client} signed={signed} onSign={() => { setSigned(true); setSub("invoice"); window.scrollTo(0, 0); }} />
       )}
-      {sub === "invoice" && (
+      {sub === "invoice" && job && (
         <>
-          <InvoiceStep quote={quote} business={biz} lead={lead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
+          <InvoiceStep quote={job.quote} business={demoBiz} lead={client} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
           {paid && <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />}
         </>
       )}

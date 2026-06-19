@@ -27,6 +27,9 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+- **Negocio** (ejemplos pre-armados, SIN IA real — ahorra créditos y elimina la espera): el usuario elige 1 de 3 trabajos de ejemplo (Reemplazo de techo $9,417.75 / Pintura interior $3,312.45 / Driveway de concreto $6,819.75), cada uno con cotización (line items, scope, totales, depósito), contrato (Service Agreement completo) y factura pre-armados. Loader falso `GeneratingOverlay` (~1.6s) da el "feeling" de IA. Flujo verificado: cotización → contrato → firma → factura → pagado → cross-sell. (El `/public/demo/start` se sigue llamando para capturar el lead.)
+- **Negocio (versión anterior con IA real)** reemplazada en `/demo-all`. El `/demo` original sigue usando IA real e intacto.
+
 ## ✅ Jun 2026 — DEMO `/demo-all`: tarjeta NFC real + posts de Marketing diseñados (3 tipos) [COMPLETO + PROBADO]
 Mejoras de consistencia visual sobre `/demo-all`:
 - **Presencia**: ahora renderiza la TARJETA REAL (`LiveCardPreview` + `PhoneFrame`, el mismo componente de CardAdmin/Dashboard) personalizada con nombre/oficio del lead. Se agregó a `LiveCardPreview` soporte opcional de URLs directas (`cover_photo_url`/`profile_photo_url`/`logo_photo_url`) con fallback al comportamiento por ID (sin romper uso real). Probado 27/27 (iteration_23) incl. regresión de `/tarjeta` y dashboard.
