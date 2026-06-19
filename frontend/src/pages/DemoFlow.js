@@ -137,7 +137,7 @@ export default function DemoFlow() {
   );
 }
 
-function GeneratingOverlay() {
+export function GeneratingOverlay() {
   return (
     <div data-testid="demo-generating-overlay" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
@@ -277,7 +277,7 @@ function DocHeader({ business, badge }) {
   );
 }
 
-function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
+export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
   const [dl, setDl] = useState(false);
   if (!quote) return null;
   const downloadPdf = async () => {
@@ -364,7 +364,7 @@ function Clause({ title, children }) {
   );
 }
 
-function AgreementStep({ agreement, business, lead, signed, onSign }) {
+export function AgreementStep({ agreement, business, lead, signed, onSign }) {
   if (!agreement) return null;
   return (
     <div>
@@ -400,7 +400,7 @@ function AgreementStep({ agreement, business, lead, signed, onSign }) {
   );
 }
 
-function InvoiceStep({ quote, business, lead, paid, onPay }) {
+export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta = false }) {
   const [dl, setDl] = useState(false);
   const total = Number(quote?.total || 0);
   const deposit = Number(quote?.deposit_amount || 0) || Math.round(total * 0.5 * 100) / 100;
@@ -492,7 +492,7 @@ function InvoiceStep({ quote, business, lead, paid, onPay }) {
 
       <PdfActions onDownload={downloadPdf} downloading={dl} />
 
-      {paid && <FinalCTA />}
+      {paid && !hideFinalCta && <FinalCTA />}
     </div>
   );
 }

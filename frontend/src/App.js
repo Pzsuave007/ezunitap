@@ -40,6 +40,7 @@ import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import PublicReviewPage from "@/pages/PublicReviewPage";
 import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
 import DemoFlow from "@/pages/DemoFlow";
+import DemoAll from "@/pages/DemoAll";
 import { FeatureGate } from "@/components/FeatureGate";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
@@ -84,6 +85,7 @@ function App() {
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/demo" element={<DemoFlow />} />
+            <Route path="/demo-all" element={<DemoAll />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/p/invoice/:id" element={<PublicInvoice />} />
             <Route path="/p/pay/:id" element={<PaymentRequest />} />

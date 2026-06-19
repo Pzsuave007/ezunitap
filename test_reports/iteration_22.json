@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only end-to-end testing of the NEW /demo-all unified branching demo (Spanish UI). Tested at mobile viewport (420x900). All critical flows from the review request pass: lead capture + validation, branch selector with 3 options, NEGOCIO branch (real AI - quote endpoint successfully rendered), PRESENCIA simulated branch (NFC tap -> personalized mini-site with brand name 'García Roofing', 5.0/127 reviews, WhatsApp/Call/Save contact, trade-specific Roofing services), MARKETING simulated branch (brief + chip -> ~2s loader -> post mockup with image + caption + copy button), Back button, unified ModuleUpsell w/ highlight badge, /register CTA, deep-link routing (?need=marketing and ?need=presencia jump straight into branch after lead), and regression on original /demo route loads. 30/30 passing assertions, 0 failures.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "DemoAll.js is 664 lines and packs LeadStep, BranchSelector, NegocioBranch, PresenciaBranch (incl. PhoneMockup + MiniSite), MarketingBranch (incl. inline post mockup), BackBar, FeatureRow, ModuleUpsell, and TRADE_META constants. Approaching the 700-line guideline ceiling — recommend splitting into /pages/DemoAll/index.js + ./branches/{Negocio,Presencia,Marketing}.js + ./shared/{PhoneMockup,ModuleUpsell,BackBar}.jsx so each module stays focused.",
+    "Unused imports detected at top of DemoAll.js: `useEffect`, `Smartphone`, and `Hammer` is only used in TopBar (fine) but `useEffect` is never used. Lint cleanup recommended.",
+    "MarketingBranch hardcodes 'Houston, TX' and 'Houston & surrounding areas' in the simulated caption/byline. If the lead's city is ever captured (or to feel more real to non-Houston users), parametrize this — or document that Houston is the launch market.",
+    "PRESENCIA `brandName()` uses the last token of lead.name as last-name. Single-word names like 'Maria' will brand as 'Maria Roofing' (works), but names like 'Carlos García' work as expected. Edge case: trailing whitespace or hyphenated names are fine due to split regex.",
+    "Marketing image URLs (Unsplash/Pexels) reuse the SAME photo for Drywall and Pintura (`photo-1632829882891-5047ccc421bc`). Recommend distinct images per trade for the demo's perceived value.",
+    "The simulated 'generating' delay in MarketingBranch is `setTimeout(...2200)` without cleanup on unmount. Low impact (user would have to back-navigate during the 2.2s window) but a `useEffect` with cleanup or AbortController would be cleaner.",
+    "Anti-abuse caps on /api/public/demo/quote did NOT trigger during testing — quote rendered successfully. Note for future testers: under heavy retesting from same IP the endpoint may return cap errors (expected per agent note).",
+    "Meta Pixel console warning 'unavailable due to traffic permission settings' is logged every page render — not a functional bug but noisy in production console."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% (30/30 assertions)"},
+  "test_credentials": "None required — /demo and /demo-all are public.",
+  "seed_data_creation": "None — public demo creates ephemeral demo records via /api/public/demo/start.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "DemoAll.js route /demo-all is feature-complete and stable. Negocio branch shares QuoteStep/AgreementStep/InvoiceStep with DemoFlow.js (exports added). InvoiceStep accepts optional hideFinalCta prop (used only in DemoAll so the unified ModuleUpsell can render instead). I did NOT click all the way through the Negocio sign->pay flow because the AI quote/agreement endpoints have per-IP anti-abuse caps and the review request flagged that as expected; the AI quote rendering was confirmed (real backend hit, body contained Total/Aceptar). If you need to retest the full pay->ModuleUpsell highlight=negocio chain, do it from a fresh IP/session. Deep-link ?need=negocio was not directly tested but uses the identical code path as the two tested deep-links (presencia, marketing) — see startDemo() at DemoAll.js line 91.",
+  "rca of the issue": "No defects observed."
+}
