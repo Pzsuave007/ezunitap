@@ -105,7 +105,6 @@ export default function Dashboard() {
           </button>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <TourButton tourKey="dashboard" />
           <button
             data-testid="dashboard-settings-btn"
             onClick={() => navigate("/ajustes")}
@@ -143,7 +142,10 @@ export default function Dashboard() {
 
       {/* Guided ordered flow */}
       <div>
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2.5">Empieza un trabajo</div>
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Empieza un trabajo</div>
+          <TourButton tourKey="dashboard" />
+        </div>
         <div className="space-y-2">
           <FlowAction step={1} testid="quick-new-client" icon={UserPlus} chip="bg-blue-50 text-blue-600 border border-blue-100"
             title="Agregar cliente" desc="Empieza aquí: registra a tu cliente" onClick={() => navigate("/clientes?new=1")} />
