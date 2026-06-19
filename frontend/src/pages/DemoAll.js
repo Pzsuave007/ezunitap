@@ -13,7 +13,6 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, FileText,
   Smartphone, Megaphone, MapPin, MessageCircle, Phone, BadgeCheck,
@@ -416,22 +415,13 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
 
       {sub === "pick" && (
         <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-          <h2 className="font-heading text-2xl font-bold">Describe el trabajo y los costos</h2>
+          <h2 className="font-heading text-2xl font-bold">Así describes tu trabajo</h2>
           <p className="text-slate-600 mt-1">
-            Escríbelo en español como se lo dirías a un amigo. Con <strong>solo esa descripción</strong>, la IA te crea la cotización, el contrato y la factura — listos para enviar.
+            Toca un ejemplo para ver cómo se describe un trabajo. Con <strong>solo esa descripción</strong>, la IA te crea la cotización, el contrato y la factura — listos para enviar.
           </p>
 
-          <Textarea
-            data-testid="demo-all-desc"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            rows={6}
-            placeholder="Ej: Reemplazar el techo de una casa de 1,500 pies cuadrados, quitar las tejas viejas, poner papel nuevo y tejas GAF… incluye los costos por pie y el depósito."
-            className="mt-4 rounded-xl text-base"
-          />
-
-          <div className="mt-3">
-            <div className="text-xs font-semibold text-slate-500 mb-1.5">¿No sabes qué escribir? Toca un ejemplo y míralo:</div>
+          <div className="mt-4">
+            <div className="text-xs font-semibold text-slate-500 mb-1.5">Toca un ejemplo:</div>
             <div className="flex flex-wrap gap-2">
               {NEG_JOBS.map((j, i) => (
                 <button key={j.id} data-testid={`demo-all-example-${i}`}
@@ -443,6 +433,16 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Read-only example display (not typeable) */}
+          <div className="mt-3 relative rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="absolute -top-2 left-3 bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Ejemplo de descripción</span>
+            {desc ? (
+              <p data-testid="demo-all-desc" className="text-[15px] leading-relaxed text-slate-800 whitespace-pre-wrap">{desc}</p>
+            ) : (
+              <p className="text-sm text-slate-400 italic py-6 text-center">👆 Toca uno de los ejemplos de arriba para ver cómo se ve una descripción.</p>
+            )}
           </div>
 
           <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3">
@@ -458,9 +458,7 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
             className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base disabled:opacity-50">
             <Sparkles className="w-5 h-5 mr-2" /> Generar con IA
           </Button>
-          {!picked && desc.trim().length > 0 && (
-            <p className="text-[11px] text-slate-400 mt-2 text-center">En este demo, toca uno de los ejemplos de arriba para ver el resultado. En tu cuenta real, la IA lee cualquier descripción que escribas. ✨</p>
-          )}
+          <p className="text-[11px] text-slate-400 mt-2 text-center">En tu cuenta real escribes tu propia descripción y la IA hace todo. ✨</p>
         </Card>
       )}
 
