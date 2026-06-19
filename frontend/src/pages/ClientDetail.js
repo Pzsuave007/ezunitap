@@ -14,6 +14,7 @@ import {
   FileSignature, Building2, Receipt, MessageSquare, Plus, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
 import ClientFlowNotices from "@/components/ClientFlowNotices";
 import RequestReviewButton from "@/components/RequestReviewButton";
@@ -21,6 +22,8 @@ import RequestReviewButton from "@/components/RequestReviewButton";
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { hasFeature } = useAuth();
+  const hasBusiness = hasFeature("business");
   const [client, setClient] = useState(null);
   const [history, setHistory] = useState({ quotes: [], invoices: [], messages: [], photos: [], jobs: [], agreements: [], scopes: [] });
   const [editing, setEditing] = useState(false);
@@ -108,7 +111,8 @@ export default function ClientDetail() {
 
       <ClientFlowNotices client={client} history={history} />
 
-      {/* ===== Single "create" entry point (replaces 5 buttons) ===== */}
+      {/* ===== Create entry point — only for the Negocio plan ===== */}
+      {hasBusiness ? (
       <Drawer>
         <DrawerTrigger asChild>
           <Button data-testid="fab-nuevo-button" className="w-full h-auto py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition-colors flex-col gap-0.5">
@@ -136,22 +140,40 @@ export default function ClientDetail() {
           </div>
         </DrawerContent>
       </Drawer>
+      ) : (
+        <button
+          data-testid="client-upsell-negocio"
+          onClick={() => navigate("/precios")}
+          className="tap w-full flex items-center gap-3 p-4 rounded-2xl border border-dashed border-zinc-300 bg-white hover:bg-zinc-50 text-left transition-colors"
+        >
+          <span className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center flex-none">
+            <Receipt className="w-5 h-5" strokeWidth={2.4} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-zinc-900 text-sm">Activa el plan Negocio para cotizar y facturar</span>
+            <span className="block text-xs text-zinc-500">Crea cotizaciones, invoices y contratos para este cliente.</span>
+          </span>
+          <ChevronRight className="w-5 h-5 text-zinc-300 flex-none" />
+        </button>
+      )}
 
-      {/* ===== Stats (flat technical grid) ===== */}
+      {/* ===== Stats (flat technical grid) — Negocio only ===== */}
+      {hasBusiness && (
       <div className="grid grid-cols-2 border border-zinc-200 rounded-2xl overflow-hidden bg-white">
         <StatCell label="Cotizaciones" value={history.quotes.length} testid="stats-quotes-value" cls="border-r border-b border-zinc-100" />
         <StatCell label="Facturas" value={history.invoices.length} testid="stats-invoices-value" cls="border-b border-zinc-100" />
         <StatCell label="Facturado" value={fmtMoney(totalInvoiced)} testid="stats-invoiced-value" cls="border-r border-zinc-100" />
         <StatCell label="Por cobrar" value={fmtMoney(pending)} testid="stats-pending-value" valueCls="text-amber-600" />
       </div>
+      )}
 
       {/* ===== History (scrollable segmented tabs) ===== */}
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full justify-start gap-1 bg-zinc-100 p-1 rounded-xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden h-auto">
           <Seg value="info" label="Info" testid="history-tab-info" />
-          <Seg value="quotes" label="Cotizaciones" count={history.quotes.length} testid="history-tab-cotizaciones" />
-          <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />
-          <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />
+          {hasBusiness && <Seg value="quotes" label="Cotizaciones" count={history.quotes.length} testid="history-tab-cotizaciones" />}
+          {hasBusiness && <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />}
+          {hasBusiness && <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />}
           <Seg value="messages" label="Mensajes" count={history.messages.length} testid="history-tab-mensajes" />
           <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />
         </TabsList>

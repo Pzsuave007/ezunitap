@@ -432,6 +432,25 @@ def require_feature(feature_name: str):
     return _dep
 
 
+def require_any_feature(*feature_names: str):
+    """Like require_feature but passes if the user has ANY of the given
+    features unlocked. Used for shared resources like Clients, which both the
+    Presencia (card) and Negocio (business) plans can manage."""
+    async def _dep(user_id: str = Depends(get_current_user_id)) -> dict:
+        u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if not any(payments_service.user_has_feature(u, f) for f in feature_names):
+            if not payments_service.user_features(u):
+                detail = "Tu prueba gratis terminó. Elige un plan para seguir usando UniTech."
+            else:
+                labels = " o ".join(_FEATURE_LABELS.get(f, f) for f in feature_names)
+                detail = f"Necesitas el plan {labels} (o el Bundle) para usar esta función."
+            raise HTTPException(status_code=403, detail=detail)
+        return u
+    return _dep
+
+
 # ============================================================================
 # AUTH
 # ============================================================================
@@ -600,7 +619,7 @@ async def list_clients(user_id: str = Depends(get_current_user_id)):
 
 
 @api_router.post("/clients")
-async def create_client(payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
+async def create_client(payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     doc = {
         "id": _new_id(),
         "user_id": user_id,
@@ -620,7 +639,7 @@ async def get_client(client_id: str, user_id: str = Depends(get_current_user_id)
 
 
 @api_router.put("/clients/{client_id}")
-async def update_client(client_id: str, payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
+async def update_client(client_id: str, payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     await db.clients.update_one(
         {"id": client_id, "user_id": user_id}, {"$set": payload.model_dump()}
     )
@@ -4803,11 +4822,15 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     # (you must have a client before you can make a quote or send an invoice).
     clients_count = await db.clients.count_documents({"user_id": user_id})
 
-    items = [
-        {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes"},
-        {"id": "smart_card", "label": "Crea y comparte tu Tarjeta Digital", "minutes": 3, "done": card_created, "path": "/tarjeta"},
-        {"id": "first_client", "label": "Crea tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes"},
+    feats = payments_service.user_features(u)
+    all_items = [
+        {"id": "business_info", "label": "Llena tu info de negocio (incluye logo)", "minutes": 2, "done": business_filled, "path": "/ajustes", "feature": None},
+        {"id": "smart_card", "label": "Crea y comparte tu Tarjeta Digital", "minutes": 3, "done": card_created, "path": "/tarjeta", "feature": "card"},
+        {"id": "first_client", "label": "Crea tu primer cliente", "minutes": 1, "done": clients_count > 0, "path": "/clientes", "feature": "business"},
     ]
+    # Only show steps relevant to the plan(s) the user owns.
+    items = [{k: v for k, v in it.items() if k != "feature"}
+             for it in all_items if it["feature"] is None or it["feature"] in feats]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0
     completed = done_count == len(items)

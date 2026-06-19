@@ -13,7 +13,7 @@ import ImpersonationBanner from "@/components/ImpersonationBanner";
 // non-tech contractors; "Más" opens a full menu with everything else.
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users, feature: "business" },
+  { to: "/clientes", label: "Clientes", icon: Users, anyFeature: ["card", "business"] },
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true, feature: "card" },
   { to: "/marketing", label: "Marketing", icon: Megaphone, feature: "marketing" },
   { more: true, label: "Más", icon: Menu },
@@ -36,7 +36,7 @@ const MORE_ITEMS = [
 //   [Trabajos: Agenda] · Google Reviews · Tarjeta Digital
 const SIDEBAR = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users, feature: "business" },
+  { to: "/clientes", label: "Clientes", icon: Users, anyFeature: ["card", "business"] },
   {
     label: "Invoicing", icon: Receipt, feature: "business",
     children: [
@@ -61,6 +61,13 @@ const ACCOUNT = [
   { to: "/ajustes#suscripcion", label: "Suscripción", icon: CreditCard },
 ];
 
+// True when a nav item points to a module the user has NOT unlocked.
+const navLocked = (item, hasFeature) => {
+  if (item.anyFeature) return !item.anyFeature.some((f) => hasFeature(f));
+  if (item.feature) return !hasFeature(item.feature);
+  return false;
+};
+
 function SidebarLink({ item, nested, locked }) {
   return (
     <NavLink
@@ -84,17 +91,17 @@ function SidebarGroup({ group, hasFeature }) {
   return (
     <div>
       {group.to ? (
-        <SidebarLink item={group} locked={group.feature && !hasFeature(group.feature)} />
+        <SidebarLink item={group} locked={navLocked(group, hasFeature)} />
       ) : (
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500">
           <group.icon className="w-5 h-5" strokeWidth={2} />
           <span className="flex-1">{group.label}</span>
-          {group.feature && !hasFeature(group.feature) && <Lock className="w-3.5 h-3.5 text-slate-300 flex-none" />}
+          {navLocked(group, hasFeature) && <Lock className="w-3.5 h-3.5 text-slate-300 flex-none" />}
         </div>
       )}
       <div className="ml-[1.45rem] pl-3 border-l border-slate-200 space-y-1 mt-1 mb-1">
         {group.children.map((c) => (
-          <SidebarLink key={c.to} item={c} nested locked={c.feature && !hasFeature(c.feature)} />
+          <SidebarLink key={c.to} item={c} nested locked={navLocked(c, hasFeature)} />
         ))}
       </div>
     </div>
@@ -194,7 +201,7 @@ export default function Layout() {
             n.children ? (
               <SidebarGroup key={n.label} group={n} hasFeature={hasFeature} />
             ) : (
-              <SidebarLink key={n.to} item={n} locked={n.feature && !hasFeature(n.feature)} />
+              <SidebarLink key={n.to} item={n} locked={navLocked(n, hasFeature)} />
             )
           )}
           <div className="h-px bg-slate-100 my-2" />
@@ -270,7 +277,7 @@ export default function Layout() {
               );
             }
             if (n.accent) {
-              const locked = n.feature && !hasFeature(n.feature);
+              const locked = navLocked(n, hasFeature);
               return (
                 <NavLink
                   key={n.to}
@@ -298,7 +305,7 @@ export default function Layout() {
                 </NavLink>
               );
             }
-            const locked = n.feature && !hasFeature(n.feature);
+            const locked = navLocked(n, hasFeature);
             return (
               <NavLink
                 key={n.to}
@@ -335,7 +342,7 @@ export default function Layout() {
           </SheetHeader>
           <div className="px-3 pb-3 grid grid-cols-1 gap-1">
             {MORE_ITEMS.map((n) => {
-              const locked = n.feature && !hasFeature(n.feature);
+              const locked = navLocked(n, hasFeature);
               return (
                 <button
                   key={n.to}

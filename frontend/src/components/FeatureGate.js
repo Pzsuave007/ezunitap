@@ -59,6 +59,7 @@ export function FeatureGate({ feature, children }) {
       </div>
     );
   }
-  if (hasFeature(feature)) return children;
-  return <UpgradeWall feature={feature} locked={(features || []).length === 0} />;
+  const required = Array.isArray(feature) ? feature : [feature];
+  if (required.some((f) => hasFeature(f))) return children;
+  return <UpgradeWall feature={required[0]} locked={(features || []).length === 0} />;
 }

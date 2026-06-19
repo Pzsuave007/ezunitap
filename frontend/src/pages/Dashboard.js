@@ -7,6 +7,7 @@ import {
   UserPlus, Sparkles, ArrowRight, Wallet,
   Settings as SettingsIcon, Megaphone, Bell, ChevronRight,
   IdCard, Star, Eye, UserCheck, Image as ImageIcon, Video, Lock, Plus,
+  Building2, BarChart3,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
@@ -185,20 +186,29 @@ function CardBlock({ navigate, cardStats }) {
           <MiniStat icon={Star} label="Reseñas" value={cardStats?.reviews ?? 0} chip="bg-amber-50 text-amber-600" />
           <MiniStat icon={UserCheck} label="Leads" value={cardStats?.leads ?? 0} chip="bg-emerald-50 text-emerald-600" />
         </div>
-        <div className="px-3 pb-3 grid grid-cols-2 gap-2.5">
-          <button data-testid="card-view-btn" onClick={() => navigate("/tarjeta")}
-            className="tap inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold h-11 transition-colors">
-            Ver mi tarjeta <ArrowRight className="w-4 h-4" />
-          </button>
-          <button data-testid="card-reviews-btn" onClick={() => navigate("/reviews")}
-            className="tap inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 text-sm font-semibold h-11 transition-colors">
-            <Star className="w-4 h-4" /> Reseñas
-          </button>
+        <button data-testid="card-view-btn" onClick={() => navigate("/tarjeta")}
+          className="tap mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold h-11 transition-colors">
+          Ver mi tarjeta <ArrowRight className="w-4 h-4" />
+        </button>
+        <div className="px-3 pb-3 grid grid-cols-3 gap-2.5">
+          <CardTile testid="card-reviews-tile" icon={Star} chip="bg-amber-50 text-amber-600" label="Reseñas de Google" onClick={() => navigate("/reviews")} />
+          <CardTile testid="card-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label="Publicar en Google" onClick={() => navigate("/reviews")} />
+          <CardTile testid="card-stats-tile" icon={BarChart3} chip="bg-violet-50 text-violet-600" label="Estadísticas" onClick={() => navigate("/tarjeta")} />
         </div>
       </div>
     </div>
   );
 }
+
+const CardTile = ({ icon: Icon, label, chip, onClick, testid }) => (
+  <button data-testid={testid} onClick={onClick}
+    className="tap flex flex-col items-center text-center gap-2 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+    <span className={`w-9 h-9 rounded-full flex items-center justify-center flex-none ${chip}`}>
+      <Icon className="w-4 h-4" strokeWidth={2.4} />
+    </span>
+    <span className="text-[11px] font-semibold text-slate-700 leading-tight">{label}</span>
+  </button>
+);
 
 // ---- Marketing module block ----
 function MarketingBlock({ navigate, mkt }) {
