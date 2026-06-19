@@ -438,7 +438,7 @@ export default function CardAdmin() {
                     <p className="text-[11px] text-slate-400 mt-1">Si lo dejas vacío, se usa el del negocio. Los leads siempre caen en tu cuenta.</p>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>Frase corta (eslogan)</Label>
                       <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder="Ej: Expertos en techos de confianza en Houston" />
                     </div>
@@ -446,14 +446,14 @@ export default function CardAdmin() {
                     <p className="text-[11px] text-slate-400 mt-1">Escríbela en español y toca ✨ para traducirla.</p>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>Tu puesto o título</Label>
                       <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder="Ej: Dueño y contratista principal" />
                     </div>
                     <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>Sobre tu negocio</Label>
                       <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder="Ej: Tengo 10 años de experiencia, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
                     </div>
@@ -470,7 +470,7 @@ export default function CardAdmin() {
                     </div>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>Área de servicio</Label>
                       <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder="Ej: Houston y ciudades alrededor: Katy, Sugar Land, Pearland" />
                     </div>
@@ -515,7 +515,7 @@ export default function CardAdmin() {
                       <span className="text-[10px] font-bold tracking-[0.18em] text-slate-400 w-6">{String(i + 1).padStart(2, "0")}</span>
                       <Input value={s.name} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr); }} placeholder="Nombre del servicio (ej: Techos)" className="flex-1 h-11 rounded-xl bg-white" />
                     </div>
-                    <div className="flex items-center justify-between gap-2 px-0.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
                       <span className="text-[11px] font-semibold text-slate-500">Descripción</span>
                       <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder="Ej: Reparamos goteras e instalamos techos nuevos con garantía" />
                     </div>
@@ -616,8 +616,8 @@ export default function CardAdmin() {
                 <div>
                   <Label>Link personalizado</Label>
                   <div className="flex items-center mt-1.5">
-                    <span className="text-sm text-slate-500 mr-1">{baseUrl}/c/</span>
-                    <Input data-testid="card-slug" value={card.slug} onChange={(e) => update("slug", e.target.value)} className="h-12 rounded-xl flex-1" />
+                    <span className="text-sm text-slate-500 mr-1 flex-none max-w-[45%] truncate">{baseUrl}/c/</span>
+                    <Input data-testid="card-slug" value={card.slug} onChange={(e) => update("slug", e.target.value)} className="h-12 rounded-xl flex-1 min-w-0" />
                   </div>
                 </div>
               </AccordionContent>

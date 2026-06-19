@@ -58,12 +58,16 @@ export function AiTranslateButton({
         <button
           type="button"
           data-testid={testId}
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 transition-colors"
+          className="inline-flex flex-none items-center gap-1 whitespace-nowrap text-[11px] font-bold text-emerald-700 hover:text-emerald-800 transition-colors"
         >
-          <Sparkles className="w-3.5 h-3.5" /> Escríbelo en español → AI lo pasa a inglés
+          <Sparkles className="w-3.5 h-3.5" /> Traducir con IA
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[320px] rounded-2xl p-3" align="end">
+      <PopoverContent
+        className="w-[calc(100vw-2rem)] max-w-[320px] rounded-2xl p-3"
+        align="end"
+        collisionPadding={12}
+      >
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
