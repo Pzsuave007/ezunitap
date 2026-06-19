@@ -11,13 +11,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy, Briefcase, CalendarClock } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy, Briefcase, CalendarClock, ChevronDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { listAgreementClauses } from "@/lib/pdf";
 
 // Allow only digits + a single decimal point (keeps numeric fields freely editable on iOS Safari).
 const numClean = (v) => String(v).replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+
+// Collapsible section: shows just a header row (title + summary + chevron) until
+// tapped. Keeps the invoice editor uncluttered on mobile.
+function CollapsibleSection({ icon: Icon, iconColor, title, summary, defaultOpen = false, testId, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card className="card-elevated p-0 border-0 shadow-none overflow-hidden" data-testid={testId}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 p-4 text-left tap"
+        data-testid={testId ? `${testId}-toggle` : undefined}
+      >
+        {Icon && (
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${iconColor || "bg-slate-100 text-slate-600"}`}>
+            <Icon className="w-5 h-5" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="font-heading font-bold text-base leading-tight">{title}</h3>
+          {summary && <div className="text-xs text-slate-500 truncate mt-0.5">{summary}</div>}
+        </div>
+        <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-5 pb-5 pt-1 space-y-4">{children}</div>}
+    </Card>
+  );
+}
 
 
 const blank = () => ({
@@ -298,20 +325,6 @@ export default function InvoiceDetail() {
         )}
       </Card>
 
-      {!isNew && (
-        <PaymentStatusCard
-          invoice={invoice}
-          invoiceId={id}
-          onReload={(data) => setInvoice(data)}
-        />
-      )}
-
-      {!isNew && <JobFromInvoiceCard invoiceId={id} />}
-
-      {!isNew && (
-        <PaymentRequestsCard invoiceId={id} invoice={invoice} />
-      )}
-
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div>
           <Label>Cliente</Label>
@@ -440,6 +453,20 @@ export default function InvoiceDetail() {
       </Card>
 
       {!isNew && (
+        <PaymentStatusCard
+          invoice={invoice}
+          invoiceId={id}
+          onReload={(data) => setInvoice(data)}
+        />
+      )}
+
+      {!isNew && <JobFromInvoiceCard invoiceId={id} />}
+
+      {!isNew && (
+        <PaymentRequestsCard invoiceId={id} invoice={invoice} />
+      )}
+
+      {!isNew && (
         <SendDocumentDialog
           open={sendOpen}
           onClose={() => setSendOpen(false)}
@@ -516,19 +543,13 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
   const paidPlanIds = new Set(payments.map((p) => p.plan_item_id).filter(Boolean));
 
   return (
-    <Card className="card-elevated p-5 border-0 shadow-none space-y-4" data-testid="payment-status-card">
-      {/* Header + progress */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h3 className="font-heading font-bold text-base">Pagos</h3>
-          <p className="text-xs text-slate-500">Registra cada abono. El saldo se actualiza solo.</p>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Saldo pendiente</div>
-          <div className="font-heading font-bold text-2xl text-slate-900" data-testid="payment-remaining">${remaining.toFixed(2)}</div>
-          <div className="text-[11px] text-emerald-700">Pagado ${paid.toFixed(2)} de ${total.toFixed(2)}</div>
-        </div>
-      </div>
+    <CollapsibleSection
+      icon={Wallet}
+      iconColor="bg-emerald-100 text-emerald-700"
+      title="Pagos"
+      summary={`Saldo $${remaining.toFixed(2)} · Pagado $${paid.toFixed(2)} de $${total.toFixed(2)}`}
+      testId="payment-status-card"
+    >
       <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
         <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
@@ -631,7 +652,7 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
         <button onClick={() => quickStatus("overdue")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "overdue" ? "bg-red-100 text-red-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-overdue">Atrasado</button>
         <button onClick={() => quickStatus("paid")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "paid" ? "bg-emerald-100 text-emerald-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-paid">Pagado todo</button>
       </div>
-    </Card>
+    </CollapsibleSection>
   );
 }
 
@@ -848,15 +869,13 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
   };
 
   return (
-    <Card className="card-elevated p-5 border-0 shadow-none space-y-4" data-testid="payment-requests-card">
-      <div className="flex items-center gap-2">
-        <Receipt className="w-5 h-5 text-indigo-600" />
-        <div>
-          <h3 className="font-heading font-bold text-base">Pedir un pago</h3>
-          <p className="text-xs text-slate-500">Manda un "papelito" de cobro con todas las formas de pago.</p>
-        </div>
-      </div>
-
+    <CollapsibleSection
+      icon={Receipt}
+      iconColor="bg-indigo-100 text-indigo-600"
+      title="Pedir un pago"
+      summary={requests.length > 0 ? `${requests.length} solicitud(es) creada(s)` : "Manda un cobro con todas las formas de pago"}
+      testId="payment-requests-card"
+    >
       {/* Quick-pick from installment plan */}
       {plan.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -920,7 +939,7 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
           ))}
         </div>
       )}
-    </Card>
+    </CollapsibleSection>
   );
 }
 
@@ -960,17 +979,13 @@ function JobFromInvoiceCard({ invoiceId }) {
   if (loading) return null;
 
   return (
-    <Card className="card-elevated p-5 border-0 shadow-none space-y-3" data-testid="job-from-invoice-card">
-      <div className="flex items-center gap-2">
-        <Briefcase className="w-5 h-5 text-emerald-600" />
-        <div>
-          <h3 className="font-heading font-bold text-base">Trabajo</h3>
-          <p className="text-xs text-slate-500">
-            {job ? "Ya hay un trabajo ligado a este invoice." : "Crea un trabajo para poder agendarlo en tu calendario."}
-          </p>
-        </div>
-      </div>
-
+    <CollapsibleSection
+      icon={Briefcase}
+      iconColor="bg-emerald-100 text-emerald-600"
+      title="Trabajo"
+      summary={job ? "Trabajo ligado — toca para agendar" : "Crea un trabajo para agendarlo"}
+      testId="job-from-invoice-card"
+    >
       {job ? (
         <Button
           onClick={() => navigate("/trabajos")}
@@ -989,6 +1004,6 @@ function JobFromInvoiceCard({ invoiceId }) {
           {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />} Crear Trabajo
         </Button>
       )}
-    </Card>
+    </CollapsibleSection>
   );
 }
