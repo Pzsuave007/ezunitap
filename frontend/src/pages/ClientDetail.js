@@ -103,12 +103,6 @@ export default function ClientDetail() {
         </div>
       )}
 
-      <RequestReviewButton
-        client={client}
-        jobTitle={client.job_type}
-        className="w-full h-12 rounded-xl"
-      />
-
       <ClientFlowNotices client={client} history={history} />
 
       {/* ===== Single "create" entry point (replaces 5 buttons) ===== */}
@@ -299,6 +293,12 @@ export default function ClientDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      <RequestReviewButton
+        client={client}
+        jobTitle={client.job_type}
+        className="w-full h-12 rounded-xl"
+      />
 
       <ClientScopeDialog
         open={scopeOpen}
