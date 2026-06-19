@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 import {
   Loader2, CheckCircle2, Send, Star, Clock, Link2, Unlink, MapPin, MessageSquare, RefreshCw, Check,
+  Eye, Phone, Navigation, Globe, TrendingUp, CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -156,6 +157,8 @@ export default function GbpConnectCard({ businessType = "" }) {
             onChanged={loadStatus}
           />
 
+          <InsightsPanel />
+
           <PostComposer businessType={businessType} />
           <ReviewsList businessType={businessType} />
         </div>
@@ -264,6 +267,66 @@ function LocationSwitcher({ currentLocationId, onChanged }) {
     </div>
   );
 }
+
+function InsightsPanel() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    api.get("/google-business/insights")
+      .then(({ data }) => setData(data))
+      .catch(() => setErr(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-4" data-testid="gbp-insights-loading">
+        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+  if (err || !data) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 p-3 text-center text-[11px] text-slate-400" data-testid="gbp-insights-unavailable">
+        Las métricas de Google aún no están disponibles para este negocio.
+      </div>
+    );
+  }
+
+  const t = data.totals || {};
+  const cards = [
+    { key: "views", label: "Vistas", value: t.views, icon: Eye, color: "text-blue-600" },
+    { key: "calls", label: "Llamadas", value: t.calls, icon: Phone, color: "text-emerald-600" },
+    { key: "directions", label: "Cómo llegar", value: t.directions, icon: Navigation, color: "text-violet-600" },
+    { key: "website", label: "Clics al sitio", value: t.website, icon: Globe, color: "text-orange-600" },
+  ];
+  if (t.messages > 0) cards.push({ key: "messages", label: "Mensajes", value: t.messages, icon: MessageSquare, color: "text-pink-600" });
+  if (t.bookings > 0) cards.push({ key: "bookings", label: "Reservas", value: t.bookings, icon: CalendarCheck, color: "text-teal-600" });
+
+  return (
+    <div className="rounded-2xl border border-slate-200 p-3" data-testid="gbp-insights">
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+        <span className="text-xs font-bold text-slate-700">Rendimiento (últimos 30 días)</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {cards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div key={c.key} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5" data-testid={`gbp-metric-${c.key}`}>
+              <Icon className={`w-4 h-4 ${c.color} mb-1`} />
+              <div className="text-lg font-extrabold text-slate-800 leading-none">{Number(c.value || 0).toLocaleString()}</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{c.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function PostComposer({ businessType }) {
   const [summary, setSummary] = useState("");

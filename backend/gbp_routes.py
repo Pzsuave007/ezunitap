@@ -42,6 +42,7 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 ACCT_MGMT = "https://mybusinessaccountmanagement.googleapis.com"
 BIZ_INFO = "https://mybusinessbusinessinformation.googleapis.com"
 MB_V4 = "https://mybusiness.googleapis.com"
+PERF = "https://businessprofileperformance.googleapis.com"
 
 # Where to send the browser back after the OAuth dance. Relative path works
 # because frontend + backend share the same domain in prod and preview.
@@ -470,3 +471,77 @@ async def reply_review(review_id: str, payload: ReplyIn, user_id: str = Depends(
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail=f"Google rechazó la respuesta: {resp.text[:300]}")
     return resp.json()
+
+
+_IMPRESSION_METRICS = [
+    "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH",
+    "BUSINESS_IMPRESSIONS_DESKTOP_MAPS",
+    "BUSINESS_IMPRESSIONS_MOBILE_SEARCH",
+    "BUSINESS_IMPRESSIONS_MOBILE_MAPS",
+]
+
+
+@router.get("/insights")
+async def insights(user_id: str = Depends(get_current_user_id)):
+    """Performance metrics (last 30 days) for the connected business via the
+    public Business Profile Performance API. Uses the same business.manage scope."""
+    from datetime import date, timedelta
+    doc = await _require_location(user_id)
+    token = await _valid_token(user_id)
+
+    # Google's performance data lags a couple of days; window = last 30 days ending 2 days ago.
+    end = date.today() - timedelta(days=2)
+    start = end - timedelta(days=29)
+    metrics = [
+        "CALL_CLICKS", "WEBSITE_CLICKS", "BUSINESS_DIRECTION_REQUESTS",
+        "BUSINESS_CONVERSATIONS", "BUSINESS_BOOKINGS",
+    ] + _IMPRESSION_METRICS
+
+    params = [("dailyMetrics", m) for m in metrics]
+    params += [
+        ("dailyRange.startDate.year", start.year),
+        ("dailyRange.startDate.month", start.month),
+        ("dailyRange.startDate.day", start.day),
+        ("dailyRange.endDate.year", end.year),
+        ("dailyRange.endDate.month", end.month),
+        ("dailyRange.endDate.day", end.day),
+    ]
+    path = f"{PERF}/v1/locations/{doc['location_id']}:fetchMultiDailyMetricsTimeSeries"
+    async with httpx.AsyncClient() as cli:
+        resp = await cli.get(path, headers={"Authorization": f"Bearer {token}"}, params=params, timeout=30.0)
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Google rechazó la consulta de métricas: {resp.text[:300]}")
+
+    data = resp.json()
+    sums = {}
+    daily_views_map = {}
+    for block in data.get("multiDailyMetricTimeSeries", []):
+        for dm in block.get("dailyMetricTimeSeries", []):
+            metric = dm.get("dailyMetric")
+            total = 0
+            for dv in dm.get("timeSeries", {}).get("datedValues", []):
+                v = int(dv.get("value") or 0)
+                total += v
+                if metric in _IMPRESSION_METRICS:
+                    d = dv.get("date", {})
+                    y, mo, dy = d.get("year"), d.get("month"), d.get("day")
+                    if y and mo and dy:
+                        key = f"{y:04d}-{mo:02d}-{dy:02d}"
+                        daily_views_map[key] = daily_views_map.get(key, 0) + v
+            sums[metric] = total
+
+    totals = {
+        "views": sum(sums.get(k, 0) for k in _IMPRESSION_METRICS),
+        "calls": sums.get("CALL_CLICKS", 0),
+        "directions": sums.get("BUSINESS_DIRECTION_REQUESTS", 0),
+        "website": sums.get("WEBSITE_CLICKS", 0),
+        "messages": sums.get("BUSINESS_CONVERSATIONS", 0),
+        "bookings": sums.get("BUSINESS_BOOKINGS", 0),
+    }
+    daily_views = [daily_views_map[k] for k in sorted(daily_views_map)]
+    return {
+        "location_title": doc.get("location_title", ""),
+        "range": {"start": str(start), "end": str(end)},
+        "totals": totals,
+        "daily_views": daily_views,
+    }
