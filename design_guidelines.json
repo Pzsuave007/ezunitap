@@ -1,100 +1,131 @@
 {
-  "theme": "light",
-  "archetype": "4 (Swiss & High-Contrast) - Adapted for Soft Utility Mobile Dashboard",
-  "design_philosophy": {
-    "core": "Mobile-first, high-density, utility-driven interface for Latino contractors in the field.",
-    "typography": "High contrast, structural grayscale hierarchy. Bold titles, subtle labels.",
-    "spacing": "Dense but clear. Generous padding in cards (p-5 or p-6) but tight gaps between elements (gap-3 or gap-4).",
-    "buttons": "Eliminated 'gigantic' buttons. Replaced with compact horizontal scrollers, floating action buttons, and list-style triggers."
-  },
-  "color_palette": {
-    "background_page": "bg-slate-50",
-    "surface_card": "bg-white",
-    "border_subtle": "border-slate-200/60",
-    "border_strong": "border-slate-300",
-    "text_primary": "text-slate-900",
-    "text_secondary": "text-slate-500",
-    "text_tertiary": "text-slate-400",
-    "action_primary": "bg-slate-900 text-white hover:bg-slate-800",
-    "action_secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50",
-    "chip_emerald": "bg-emerald-50 text-emerald-600 border border-emerald-100",
-    "chip_blue": "bg-blue-50 text-blue-600 border border-blue-100",
-    "chip_amber": "bg-amber-50 text-amber-600 border border-amber-100",
-    "chip_rose": "bg-rose-50 text-rose-600 border border-rose-100",
-    "chip_purple": "bg-purple-50 text-purple-600 border border-purple-100"
+  "theme_archetype": {
+    "theme": "LIGHT",
+    "archetype": "Soft Utility / Earthy Approachability",
+    "description": "A very approachable, friendly, and non-intimidating design for non-technical Latino contractors. Uses generous spacing, clear high-contrast typography, and a trustworthy primary color."
   },
   "typography": {
-    "font_family_heading": "font-sans tracking-tight",
+    "font_family_heading": "font-sans",
     "font_family_body": "font-sans",
-    "h1_hero": "text-3xl font-black tracking-tighter text-slate-900 leading-none",
-    "h2_section": "text-lg font-bold tracking-tight text-slate-900",
-    "h3_card_title": "text-base font-semibold text-slate-900",
-    "body_text": "text-sm text-slate-600",
-    "label_overline": "text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500",
-    "metric_value": "text-2xl font-bold tracking-tight text-slate-900"
-  },
-  "layout_spacing": {
-    "page_padding": "px-4 pb-24 pt-4 md:px-8",
-    "card_radius": "rounded-[20px]",
-    "chip_size": "w-11 h-11 rounded-full flex items-center justify-center shrink-0",
-    "gap_section": "space-y-6",
-    "gap_element": "gap-3"
-  },
-  "components": {
-    "header": {
-      "wrapper": "sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl pb-2 pt-2 flex justify-between items-start",
-      "greeting": "text-sm font-medium text-slate-500",
-      "business_name": "text-xl font-bold text-slate-900 flex items-center gap-1",
-      "settings_btn": "w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-slate-600"
-    },
-    "hero_kpi_card": {
-      "wrapper": "bg-slate-900 rounded-[24px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col gap-4 mt-2",
-      "label": "text-sm font-medium text-slate-400 flex items-center gap-2",
-      "amount": "text-4xl font-black tracking-tighter text-white",
-      "cta": "bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-4 py-2 text-sm font-semibold backdrop-blur-md self-start transition-colors"
-    },
-    "guided_action_flow": {
-      "wrapper": "flex gap-3 overflow-x-auto snap-x hide-scrollbar -mx-4 px-4 pb-2",
-      "card": "flex-none w-[260px] bg-white border border-slate-200/80 rounded-[20px] p-4 flex items-center gap-4 snap-start shadow-sm active:scale-[0.98] transition-transform",
-      "step_badge": "text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase tracking-wider mb-1",
-      "title": "text-sm font-bold text-slate-900",
-      "subtitle": "text-xs text-slate-500 line-clamp-1"
-    },
-    "stats_grid": {
-      "wrapper": "grid grid-cols-2 gap-3",
-      "card": "bg-white border border-slate-200/80 rounded-[20px] p-4 flex flex-col gap-3 shadow-sm hover:border-slate-300 transition-colors cursor-pointer",
-      "value": "text-2xl font-bold text-slate-900"
-    },
-    "promo_banner": {
-      "wrapper": "relative rounded-[20px] p-5 text-white shadow-md overflow-hidden bg-slate-900",
-      "background_image": "absolute inset-0 opacity-40 mix-blend-overlay object-cover w-full h-full",
-      "badge": "bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full w-fit mb-2",
-      "title": "text-base font-bold",
-      "subtitle": "text-xs text-slate-300 mt-1"
-    },
-    "list_section": {
-      "card": "bg-white border border-slate-200/80 rounded-[20px] overflow-hidden shadow-sm",
-      "header": "px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50",
-      "item": "px-5 py-4 border-b border-slate-100 last:border-0 flex justify-between items-center active:bg-slate-50 transition-colors"
-    },
-    "floating_action_button": {
-      "wrapper": "fixed bottom-6 right-4 md:right-6 bg-slate-900 text-white rounded-full px-5 py-3.5 shadow-xl flex items-center gap-2 font-bold z-50 hover:-translate-y-1 hover:shadow-2xl transition-all shadow-[0_8px_30px_rgb(15,23,42,0.3)]"
+    "hierarchy": {
+      "h1": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-900",
+      "h2": "text-lg sm:text-xl font-semibold text-slate-800",
+      "body": "text-base text-slate-600",
+      "labels": "text-sm font-medium text-slate-700",
+      "help_text": "text-xs text-slate-500"
     }
   },
-  "media": {
-    "promo_bg_url": "https://images.unsplash.com/photo-1614851099511-773084f6911d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGdyYWRpZW50JTIwYmFja2dyb3VuZCUyMG1vZGVybiUyMGJhbm5lcnxlbnwwfHx8fDE3ODE4NDkyMTJ8MA&ixlib=rb-4.1.0&q=85",
-    "description": "Abstract pink/purple light gradient used for the Marketing Studio promo banner background (with mix-blend-overlay)."
+  "colors": {
+    "background": "bg-slate-50",
+    "card_background": "bg-white",
+    "primary": "bg-blue-600 hover:bg-blue-700 text-white",
+    "text_main": "text-slate-900",
+    "text_muted": "text-slate-500",
+    "border": "border-slate-200",
+    "success": "bg-emerald-100 text-emerald-800"
   },
-  "instructions_to_main_agent": [
-    "IMPLEMENTATION LANGUAGE: All static UI text MUST be in Spanish (e.g., 'Buenos días', 'Pagos pendientes', 'Agregar cliente').",
-    "MOBILE FIRST: The entire layout must look perfect on a standard mobile width (375px-430px). Use horizontal scrolling (overflow-x-auto, snap-x) for the guided action flow to save vertical space and eliminate 'gigantic' buttons.",
-    "HERO KPI: Use the inverted contrast (slate-900 background) to make the 'Pagos pendientes' value pop. Include a 'Ver invoices' pill button inside it.",
-    "GUIDED ACTION FLOW: Build a horizontal list of 3 cards. Step 1: Agregar cliente (Blue chip), Step 2: Crear cotización con AI (Purple chip), Step 3: Crear invoice (Emerald chip).",
-    "STATS GRID: Render 4 boxes. Clientes (Blue), Quotes enviados (Purple), Invoices pendientes (Amber), Trabajos activos (Emerald). Use the w-11 h-11 rounded-full chips for the icons.",
-    "ONBOARDING: Implement a simple checklist card that shows progress (e.g., '2/4 completado').",
-    "LISTS: Use the list_section component for Recent Quotes and Upcoming Reminders. Keep the typography crisp and data clearly separated.",
-    "FAB: Implement the '+ Crear' button strictly as fixed at bottom-6 right-4. This is the primary escape hatch for actions.",
-    "ICONS: Use lucide-react. Standardize stroke-width to 2 or 2.5 for better legibility.",
-    "TESTING: Ensure every interactive element (buttons, scroll cards, list items) has a semantic 'data-testid' (e.g., data-testid='add-client-card')."
-  ]
+  "layout_strategy": {
+    "core_principle": "Progressive Disclosure (Divulgación progresiva). Hide advanced complexity inside accordions or 'Advanced Options' toggles.",
+    "global_layout": {
+      "mobile": "Single column. Top sticky header with 'Vista Previa' (Preview) button that opens a bottom Sheet containing the LiveCardPreview.",
+      "desktop": "Two columns: Editor on the left (max-w-md), sticky PhoneFrame preview on the right.",
+      "spacing": "Generous padding: p-4 to p-6 inside cards to prevent mis-taps by users with larger thumbs."
+    },
+    "structure": {
+      "header": {
+        "elements": "Back arrow, Page Title ('Editar Tarjeta'), 'Vista Previa' button (Eye Icon)",
+        "behavior": "Sticky top, z-50, backdrop-blur-md bg-white/90 border-b border-slate-200"
+      },
+      "public_link_section": {
+        "style": "Rounded-xl card, bg-white p-4 border border-slate-200 mb-6",
+        "content": "Tu enlace público (with copy/share icons)"
+      },
+      "editor_accordions": [
+        {
+          "step": "1",
+          "id": "fotos_diseno",
+          "title": "Paso 1: Fotos y Diseño",
+          "description": "Lo que la gente ve primero",
+          "default_open": true,
+          "content_primary": ["Plantillas por oficio (Chips visuales)", "Subir Foto de Perfil", "Subir Foto de Portada (Fondo)", "Colores de marca"],
+          "content_advanced": ["Estilo de tarjeta (Foto grande vs Foto + Avatar)", "Oscuridad de la foto de fondo"]
+        },
+        {
+          "step": "2",
+          "id": "info_basica",
+          "title": "Paso 2: Información Básica",
+          "description": "Tu nombre y a qué te dedicas",
+          "default_open": false,
+          "content_primary": ["Nombre mostrado", "Teléfono", "Tipo de negocio (Plomería, Jardinería, etc.)"],
+          "content_advanced": ["Lema (Eslogan corto)", "Sobre mi negocio (Descripción)", "Años de experiencia", "Área de servicio", "Horario"]
+        },
+        {
+          "step": "3",
+          "id": "redes_contacto",
+          "title": "Paso 3: Redes y Enlaces",
+          "description": "Cómo pueden contactarte",
+          "default_open": false,
+          "content_primary": ["WhatsApp", "Website", "Enlace para Reseñas de Google"],
+          "content_advanced": ["Facebook", "Instagram"]
+        },
+        {
+          "step": "4",
+          "id": "servicios_insignias",
+          "title": "Paso 4: Servicios y Credenciales",
+          "description": "Genera confianza",
+          "default_open": false,
+          "content_primary": ["Lista de servicios que ofreces", "Insignias (Licenciado, Asegurado)"],
+          "content_advanced": []
+        },
+        {
+          "step": "5",
+          "id": "ia_avanzado",
+          "title": "Paso 5: Opciones Avanzadas",
+          "description": "Link personalizado e Inteligencia Artificial",
+          "default_open": false,
+          "content_primary": ["Respuestas automáticas (IA base de conocimiento)", "Personalizar enlace web"],
+          "content_advanced": []
+        }
+      ],
+      "floating_action_bar": {
+        "position": "fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-40",
+        "content": "Botón grande 'Guardar Cambios' (w-full)"
+      }
+    }
+  },
+  "microcopy_spanish": {
+    "Tagline": "Lema o Eslogan corto",
+    "About me": "Sobre mi negocio",
+    "Hero darkness": "Oscuridad de la foto de fondo",
+    "AI Knowledge Base": "Respuestas automáticas (IA)",
+    "Phone Preview": "Vista Previa",
+    "Save": "Guardar Cambios",
+    "Advanced Options": "Ver opciones avanzadas",
+    "Role": "A qué te dedicas (Ej: Especialista en techos)",
+    "Layout": "Estilo de la tarjeta",
+    "Unsaved changes": "Tienes cambios sin guardar"
+  },
+  "components_to_use": {
+    "Accordion": "Use shadcn accordion to group the 5 steps. Keep visual clutter low.",
+    "Collapsible": "Use for 'Ver opciones avanzadas' inside each accordion content block.",
+    "Sheet": "Use for the Mobile Phone Preview. Triggered by 'Vista Previa' button in the sticky header. The Sheet should slide up from the bottom (side='bottom') and take up 90% of the screen height, rendering the existing PhoneFrame.",
+    "Tabs": "Use shadcn Tabs for top-level navigation: Diseño · QR · Reseñas · Métricas. Render as flat pills to look like segmented controls.",
+    "Card": "Use flat shadcn cards with rounded-2xl and light border for inputs inside accordions."
+  },
+  "data_testids": [
+    "btn-vista-previa",
+    "btn-guardar-cambios",
+    "accordion-fotos-diseno",
+    "accordion-info-basica",
+    "accordion-redes-contacto",
+    "btn-opciones-avanzadas",
+    "input-nombre-mostrado",
+    "input-telefono",
+    "sheet-phone-preview"
+  ],
+  "image_urls": {
+    "placeholder_avatar": "https://images.pexels.com/photos/3932291/pexels-photo-3932291.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "placeholder_cover": "https://images.pexels.com/photos/8447737/pexels-photo-8447737.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  },
+  "instructions_to_main_agent": "Implement this strictly for mobile-first. The user must not feel overwhelmed. Heavy reliance on Shadcn Accordion for steps. The most important innovation here is taking the Phone Preview OUT of the natural scroll flow on mobile, placing it inside a Shadcn Bottom Sheet triggered by a sticky header button. Ensure input labels are large and use the friendly Spanish microcopy provided. Use tailwind 'rounded-2xl' for cards and 'p-4' spacing for large touch targets."
 }
