@@ -188,28 +188,35 @@ function CardBlock({ navigate, cardStats, card, gbp, onConnectGbp }) {
           </div>
         </div>
 
-        {/* Live mini-site preview (or setup CTA when not ready yet) */}
+        {/* Live mini-site preview inside a phone mockup (or setup CTA when not ready) */}
         {card && (ready && slug ? (
-          <div className="p-3">
+          <div className="px-3 py-4 flex flex-col items-center bg-gradient-to-b from-slate-50 to-white">
             <button data-testid="card-live-preview" onClick={() => window.open(`/c/${slug}`, "_blank")}
-              className="tap block w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 relative group">
-              <div className="relative h-64 overflow-hidden">
-                <iframe
-                  src={`/c/${slug}?preview=1`}
-                  title="Vista en vivo de tu mini-sitio"
-                  loading="lazy"
-                  className="w-full pointer-events-none"
-                  style={{ height: 560, border: 0 }}
-                  scrolling="no"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 to-transparent" />
+              className="tap relative group">
+              {/* Phone body */}
+              <div className="relative w-[208px] rounded-[2.3rem] bg-slate-900 p-[6px] shadow-2xl ring-1 ring-slate-300/60 transition-transform group-hover:-translate-y-0.5">
+                <div className="relative rounded-[1.9rem] overflow-hidden bg-white" style={{ height: 420 }}>
+                  {/* notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-b-2xl z-20" />
+                  <iframe
+                    src={`/c/${slug}?preview=1`}
+                    title="Vista en vivo de tu mini-sitio"
+                    loading="lazy"
+                    className="pointer-events-none"
+                    style={{ width: 196, height: 840, border: 0 }}
+                    scrolling="no"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                </div>
               </div>
-              <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 bg-white/90 text-slate-900 text-[11px] font-bold px-2 py-1 rounded-full shadow-sm">
+              {/* Live badge */}
+              <span className="absolute top-3 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 bg-white/95 text-slate-900 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En vivo
               </span>
-              <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 bg-slate-900/85 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
-                Abrir mini-sitio <ArrowRight className="w-3.5 h-3.5" />
-              </span>
+            </button>
+            <button onClick={() => window.open(`/c/${slug}`, "_blank")}
+              className="tap mt-4 inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 h-10 rounded-full transition-colors">
+              Abrir mini-sitio <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         ) : (
