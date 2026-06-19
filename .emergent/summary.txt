@@ -1,45 +1,49 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
+<analysis><problem_statement>
+SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
+</problem_statement>
 
 **User's preferred language**: Spanish
 *(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)*
 
 **what currently exists?** 
-A live React/FastAPI/MongoDB application. The Marketing Studio has mobile-friendly horizontal scrolling and a slide-up Drawer for results. Voiceovers for AI Reels use ElevenLabs for native Spanish TTS. The subscription model features modular paywall pricing with 30% OFF combo discounts. The Demo flow captures leads which are now visible in the Admin Panel. Invoices feature mobile-friendly editing, auto-growing descriptions, real-time math, and iOS Safari compatible decimal inputs. Google Business Profile (GBP) integration code is built but awaits Google's API approval. 
+A live React/FastAPI/MongoDB application tailored for Latino contractors. Features modular paywalls, AI Spanish voiceovers (ElevenLabs), Marketing Studio with AI image generation, mobile-optimized component layouts (Drawers, Horizontal scrolls), and auto-calculating invoices. The app operates across two domains ( and ). Google Business Profile (GBP) OAuth is fully integrated, currently displaying business performance metrics (Views, Calls, etc.). Invoice UI is mobile-optimized with collapsible bottom sections, and Invoice states follow a logical Draft -> Created -> Sent flow for accurate dashboard metrics. 
 
 **Last working item**:
-- **Last item agent was working**: Fixing a bug where iOS Safari users could not edit numerical inputs on the Invoice Detail page. The agent successfully replaced  with  and  in , adding string-to-number coercion before saving.
-- **Status**: IN PROGRESS (Code changes and tests are complete, but the session ended before the agent could call the  tool, update the PRD, and inform the user).
+- **Last item agent was working**: Redesigning  to be mobile-first. The user complained that the client profile had over 30 buttons, making it a nightmare on mobile. The agent utilized the  to create a Swiss/High-Contrast mobile-first blueprint () and implemented a cleaner UI that hides the 5 creation actions inside a single + Nuevo Floating Action Drawer.
+- **Status**: IN PROGRESS (Code changes and tests are complete, but the session ended before the agent could call the  tool, update the user, and ask for the next task).
 - **Agent Testing Done**: Y
-- **Which testing method agent to use?**: Frontend screenshot tool & curl (Already verified).
+- **Which testing method agent to use?**: Frontend screenshot tool (Already verified).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Wrap up the iOS Safari Invoice Edit fix (P0)
-     - Attempted fixes: The fix is implemented and successfully tested. 
-     - Next debug checklist: Inform the user that the iPhone Safari bug is resolved, update the PRD, and ask for the next task.
-     - Why fix this issue and what will be achieved with the fix?: Unblocks iPhone users from editing invoices.
+  Issue 1: Wrap up  mobile UX refactor (P0)
+     - Attempted fixes: The refactor is fully coded and verified via screenshot. 
+     - Next debug checklist: Inform the user that the Client Profile has been cleaned up and is ready for them to test, then ask for the next task.
+     - Why fix this issue and what will be achieved with the fix?: Drastically reduces cognitive load and button clutter for mobile users.
      - Status: TESTING PENDING / USER VERIFICATION PENDING
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: NA (Already tested by previous agent).
+     - Should Test frontend/backend/both after fix?: NA (Already self-tested).
      - Blocked on other issue: None.
 
-  Issue 2:  needs refactoring (P3)
-     - Attempted fixes: None.
-     - Next debug checklist: Break down  (currently over 6100 lines) into modular routers.
-     - Why fix this issue and what will be achieved with the fix?: Code maintainability and organization.
-     - Status: NOT STARTED
+  Issue 2: Google My Business Legacy API Error 110002 (P3)
+     - Attempted fixes: Agent wrote the backend code for AI Review Replies and GMB Image Posts. However, production returns a .
+     - Next debug checklist: None at the moment. Google must manually whitelist the project  for the legacy My Business API.
+     - Why fix this issue and what will be achieved with the fix?: Unblocks AI review replies and automated posts.
+     - Status: BLOCKED (Waiting on Google).
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Backend
-     - Blocked on other issue: None.
+     - Should Test frontend/backend/both after fix?: Both (when unblocked).
+     - Blocked on other issue: Google API access.
 
-  Issue 3: Duplicate DB records (Clients/Users) (P2)
+  Issue 3:  needs refactoring (P3)
+     - Attempted fixes: None.
+     - Next debug checklist: Break down  (>6100 lines) into modular routers.
+     - Why fix this issue and what will be achieved with the fix?: Code maintainability.
+     - Status: NOT STARTED
+
+  Issue 4: Duplicate DB records (Clients/Users) (P3)
      - Attempted fixes: None.
      - Next debug checklist: Search MongoDB  and  collections. Write and run a deduplication python script.
-     - Why fix this issue and what will be achieved with the fix?: Prevents CRM confusion for the users.
      - Status: NOT STARTED
-     - Is recurring issue?: Y
-     - Should Test frontend/backend/both after fix?: Backend
-     - Blocked on other issue: None.
 
 **In progress Task List**: 
 None
@@ -48,109 +52,107 @@ None
 - **P1**: In-app referral program (Invita un compa → ambos reciben 1 mes gratis) with unique sharing links.
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
-- **P2**: Add 1-click Upsell button in Profile -> Subscription for adding missing modules (Agent suggested enhancement).
+- **P2**: Add 1-click Upsell button in Profile -> Subscription for adding missing modules.
 - **P2**: Convert Job scope notes into a checkable checklist UI inside the Job Detail view.
 - **P2**: Add a mini How it works guided tour (3 steps) the first time a user enters the Marketing Studio.
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - **P3**: Live preview for the Reel Builder (mini player showing changes before generation).
 - **P3**: Add a drag-and-drop or reordering UI in the Smart Card admin panel for the Recent work photos.
 - **Future**: Stripe webhook implementation for bulletproof invoice payment marking.
-- **BLOCKED**: Complete Google Business Profile integration. (DO NOT ATTEMPT YET. Code is built, but blocked waiting for Google API Approval - Case ID  submitted June 18, 2026. Takes ~7-10 days).
+- **Future**: GBP Profile Editor (Edit hours, descriptions via AI). Put on hold until the app passes Google Verification to allow end-clients to connect their profiles.
 
 **Completed work in this session**
-- Marketing Studio Slide-up Drawers (DONE): Results across Image, Video, and AI tabs now open in a bottom Drawer.
-- Video Tab Blank Page (DONE): Fixed state issue in .
-- ElevenLabs TTS Integration (DONE): Migrated from OpenAI TTS to ElevenLabs multilingual to support native Spanish accents.
-- Video Duration Logic (DONE): Reel videos now auto-extend to accommodate the full length of the voiceover without cutting off.
-- Modular Paywall & Combos (DONE): Implemented 30% discounts for users buying 2 modules, updated backend logic, and changed Pricing page to a module selector.
-- Client Company Name Support (DONE): Added business name to Client forms and mapped it to the Invoice PDF BILL TO section.
-- Google API Application (DONE): Guided user to properly submit Google Business Profile API request.
-- Demo Leads in Admin (DONE): Added 🎬 Demo en vivo tab in  so user can track leads generated from ad campaigns.
-- Mobile Invoice Editor UI (DONE): Converted cramped table rows into touch-friendly cards for mobile line-item editing.
-- Invoice Due Date Timezone (DONE): Fixed PDF rendering bug showing due date 1 day early.
-- Invoice Textarea & Real-time Math (DONE): Line item descriptions auto-grow, and totals recalculate immediately when quantity/price changes.
+- iOS Safari Decimal Edit Fix (DONE): Ensured all numeric inputs in  use  +  and clean strings.
+- AI Invoice Prompt Logic (DONE): Updated  to itemize line items day-by-day exactly as the user inputs them, rather than grouping by week.
+- GBP OAuth Deployment Fixes (DONE): Added GBP keys to >>> [user=ezunitap] fix.sh starting.... Fixed missing  directory in git by enforcing a relative build ().
+- GBP Python 3.9 Compatibility (DONE): Removed  syntax in  and replaced it with  to prevent production 404s.
+- GBP Account Pagination (DONE): Updated  to loop through all pages to retrieve >10 locations (Growth Ally added).
+- GBP Performance Metrics Panel (DONE): Implemented the Business Profile Performance API to show Views, Calls, and Clicks in .
+- Mobile UX for Invoice Detail (DONE): Moved Invoice line item editor to the top; made Payments, Jobs, and Payment Requests collapsible sections at the bottom.
+- Invoice Draft/Created Workflow (DONE): Replaced instant Send/Download buttons with a Crear Invoice button. Transitions status from  to  so it accurately counts in dashboard metrics before sending.
+- Mobile UX for Client Detail (DONE): Replaced 30+ buttons with a clean Swiss UI and a bottom + Nuevo drawer.
 
 **Earlier issues found/mentioned but not fixed**
-   Issue 1:  monolith (6100+ lines).
-   Issue 2: Duplicate DB records requiring cleanup script.
+-  monolith (6100+ lines).
+- Duplicate DB records requiring cleanup script.
+- GMB Legacy API 403 Error (Requires Google Whitelisting).
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: Frontend build breaking across multiple domains due to hardcoded absolute API URLs in .
-  - Recurrence count: 1
-  - Status: RESOLVED
-  - Note: Never hardcode  during a production build; leave it empty so relative  routing works across all user domains.
+- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs.
+- Recurrence count: 2
+- Status: RESOLVED
+- Note: Production uses a single backend for two domains ( and ). You **MUST** compile the frontend with a blank relative URL (yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) so that  calls resolve relative to whatever domain the user is visiting. If you don't track the  directory in git via , the  script will fail.
+- Note 2: Production runs **Python 3.9**. Do not use Python 3.10+ typing syntax like  in backend files, it will crash routes silently. Use .
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI.
-- Backend: FastAPI (), MongoDB. Monolithic .
-- External Scripts: Meta Pixel loaded via .
+- Backend: FastAPI (), MongoDB.
+- Scripts:  (Main deployment), >>> [user=ezunitap] fix.sh starting... (Env variable injector).
 
 **Key Technical Concepts**
-- **ElevenLabs TTS**: Replaced OpenAI TTS for Reels voiceovers because OpenAI lacked native Spanish accents. ElevenLabs API Key is in .
-- **Modular Subscriptions**: Users can buy single modules (Presencia, Negocio, Marketing), combos of two (30% off), or all three (Bundle). Features are gated via  in FastAPI.
-- **Mobile-first UI UX**: Extensive use of Shadcn Drawers, horizontal carousels (), and card-based layouts for tables to prevent mobile scroll fatigue and layout breaking.
+- **Mobile-first UI UX**: Use Shadcn Drawers instead of Modals on mobile. Consolidate repetitive action buttons into Floating Action Drawers to preserve screen real estate.
+- **GBP Integration**: Uses OAuth. The My Business Account Management and Business Information APIs work perfectly. The Legacy Google My Business API (needed for Reviews and Posts) is currently giving a 403 and cannot be used until Google manually enables it.
 
 **key DB schema**
-- : Stores leads captured from the public  flow.
-- : 
+- :  goes from  ->  (now counts in dashboard) ->  -> .
+- : Houses client information.
 
 **changes in tech stack**
-- Added  to backend requirements.
+- Added  as a persistent blueprint guide.
 
 **All files of reference**
--  (Recently heavily modified for mobile UI, textareas, real-time math, and iOS Safari  inputs).
--  (Updated to use ElevenLabs).
--  (Converted to a dynamic module selector).
--  (Handles combo module logic).
--  (Added tab for ).
--  (Handles Invoice PDF generation, Due Date parsing).
+-  (UX logic for Draft -> Created, Collapsible panels).
+-  (Heavily refactored to remove button clutter).
+-  (Contains OAuth callbacks, pagination, and Performance Metrics).
+-  (UI for connecting GBP and viewing metrics).
+-  (Updated  to respect daily line items).
 
 **Areas that need refactoring**
 - 
 
 **key api endpoints**
-- : Handled by ElevenLabs TTS.
-- : Returns modular plans and combo pricing.
-- : Creates a  record.
+-  (Paginated locations)
+-  (Fetches daily metrics array)
+-  (Updates draft/created/sent).
 
 **Critical Info for New Agent**
-- **iOS Safari Inputs**:  behaves poorly on iOS WebKit when controlled in React (resets to 0, prevents decimal entry). ALWAYS use  with  for numerical inputs, and coerce strings to Numbers in the state/backend.
-- **Google Business Profile**: DO NOT touch GBP code or ask the user to test it. The app is waiting on Google to approve API Case ID . Check status by asking the user to check Quotas in their Google Cloud Console (~July 2, 2026).
+- **Production Python Version**: PRODUCTION RUNS PYTHON 3.9. Never use , always use .
+- **Deployments**: Ensure  is actually tracked in git () and compiled with relative paths, otherwise  will push a broken or non-existent build.
+- **GBP Restrictions**: Do NOT attempt to debug the  error for Reviews/Posts. This is a known Google whitelist restriction, not a code issue. Work around it.
 - **Auth**: Always test frontend UI using the designated admin account.
 
 **documents and test reports created in this job**
-  -  (Updated)
-  -  (Contains GBP Case IDs and timeline)
+-  (Mobile UX guidelines created by design agent).
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - User requested the description field on invoice line items be multi-line for mobile viewing.
- - Agent swapped the single-line input for an auto-growing Textarea and tested it.
- - User noticed new line items show Total: /bin/bash.00 by default and requested default quantity = 1.
- - Agent fixed the quantity default and added real-time math (quantity * price) so the total updates immediately.
- - User reported that their client using an iPhone could not edit the numerical inputs on the invoice, though it worked on Android.
- - Agent diagnosed an iOS Safari WebKit bug involving .
- - Agent replaced the numerical inputs with .
- - Agent verified the inputs save correctly in the backend.
- - *Pending Human Action*: The agent completed the code changes and verified via screenshot, but the job ended before calling the  tool. Inform the user that the iPhone bug is resolved and ask for their next priority.
+- User requested to redesign the Invoice mobile UX because the top sections (Payments, Jobs) were hiding the actual invoice editor.
+- Agent moved the Invoice editor to the top and made the secondary sections collapsible bottom cards.
+- User noted that invoices shouldn't instantly show Send/Download. They should stay as Drafts until a Create Invoice button is clicked, after which they count on the dashboard.
+- Agent modified the DB status pipeline ( -> ) and updated the dashboard metric aggregations.
+- User asked to fix the  page next, stating it has like 30 buttons and is highly confusing on mobile.
+- Agent called the design agent, generated a clean UX blueprint, and implemented a + Nuevo Drawer in  to hide the clutter.
+- *Pending Human Action*: The agent verified the Client Detail page via screenshot but ran out of time to . Start by notifying the user that the Client Profile page is now beautifully clean and ready for them to deploy/test, then ask what to tackle next (like the P1 Referral Program).
 
 **Project Health Check:**
-Healthy.
+Healthy (Production and Preview parity maintained).
 
 **3rd Party Integrations**
 - Stripe (Payments & Connect) — requires User API Key.
-- Meta / Facebook Pixel — requires User ID (Configured).
-- ElevenLabs (TTS Voiceovers) — requires User API Key (Configured).
+- Meta / Facebook Pixel — requires User ID.
+- ElevenLabs (TTS Voiceovers) — requires User API Key.
+- Google Business Profile (OAuth) — requires User API Key.
 - OpenAI GPT-5.2 (Text/Vision Gen) — uses Emergent LLM Key.
-- Gemini 3.1 Flash Image Preview (Image Gen/Enhance) — uses Emergent LLM Key.
+- Gemini 3.1 Flash Image Preview — uses Emergent LLM Key.
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Self-tested via bash/screenshots).
-  - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None
-  - Known regressions: None
+- Testing agent used after significant changes: NO (Self-tested via bash/screenshots).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None
+- Known regressions: None
 
 **Credentials to test flow:**
 Admin:  / 
 
 **What agent forgot to execute**
-The agent completely implemented the fix for the iOS Safari bug (changing input types on ) and verified it via screenshot and curl. However, they ran out of time to call the  tool, update , and reply to the user. The next agent should start by letting the user know the iPhone issue is fully resolved and smoothly prompt them for the next task (like the referral program or client SMS reminders).</analysis>
+The agent completely refactored  based on the design agent's blueprint and verified it via screenshot, but did not call the  tool or inform the user. The next agent should immediately tell the user that the Client page has been decluttered and is ready for deploy, and subsequently ask to move onto the next P1 task.</analysis>

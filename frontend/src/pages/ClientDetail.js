@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerClose, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import StatusBadge from "@/components/StatusBadge";
 import {
-  ArrowLeft, Phone, Mail, MapPin, FileText, Receipt,
-  MessageSquare, Camera, Sparkles, Trash2, Loader2,
-  FileSignature, DollarSign, Clock, Building2,
+  ArrowLeft, Phone, Mail, MapPin, Camera, Sparkles, Trash2, Loader2,
+  FileSignature, Building2, Receipt, MessageSquare, Plus, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import ClientScopeDialog from "@/components/ClientScopeDialog";
@@ -66,125 +66,98 @@ export default function ClientDetail() {
   const initials = client.name?.charAt(0)?.toUpperCase();
   const fmtMoney = (n) => `$${(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   const totalInvoiced = history.invoices.reduce((s, i) => s + (i.total || 0), 0);
-  const pending = history.invoices
-    .filter((i) => i.status !== "paid")
-    .reduce((s, i) => s + (i.total || 0), 0);
+  const pending = history.invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total || 0), 0);
 
   return (
-    <div className="space-y-5">
-      <button onClick={() => navigate("/clientes")} className="flex items-center gap-2 text-sm text-slate-600 tap" data-testid="back-to-clients">
+    <div className="max-w-3xl mx-auto w-full pb-10 space-y-7">
+      <button onClick={() => navigate("/clientes")} className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-800 transition-colors tap" data-testid="back-to-clients">
         <ArrowLeft className="w-4 h-4" /> Clientes
       </button>
 
-      {/* ===== Header ===== */}
-      <Card className="border-0 shadow-sm rounded-3xl p-5">
-        <div>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow-md">
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-heading text-2xl font-bold tracking-tight text-slate-900 leading-tight truncate">{client.name}</h1>
-              {client.company && (
-                <div className="flex items-center gap-1 text-sm text-slate-500 mt-0.5 truncate">
-                  <Building2 className="w-3.5 h-3.5 flex-shrink-0" /> {client.company}
-                </div>
-              )}
-              {client.job_type && (
-                <span className="inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
-                  {client.job_type}
-                </span>
-              )}
-            </div>
-            <RequestReviewButton
-              client={client}
-              jobTitle={client.job_type}
-              className="h-10 rounded-xl text-sm flex-shrink-0"
-            />
-          </div>
-
-          {/* Contact chips — tap to call / email / map */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {client.phone && (
-              <a href={`tel:${client.phone}`} data-testid="client-phone-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors">
-                <Phone className="w-4 h-4 flex-shrink-0" /> {client.phone}
-              </a>
-            )}
-            {client.email && (
-              <a href={`mailto:${client.email}`} data-testid="client-email-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors max-w-full">
-                <Mail className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{client.email}</span>
-              </a>
-            )}
-            {client.address && (
-              <a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noreferrer" data-testid="client-address-link" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 hover:border-emerald-400 hover:text-emerald-700 transition-colors">
-                <MapPin className="w-4 h-4 flex-shrink-0" /> {client.address}
-              </a>
-            )}
-          </div>
-
-          <ClientFlowNotices client={client} history={history} />
-
-          {/* Primary actions — money-makers stand out */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
-            <Button
-              data-testid="client-create-quote"
-              onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)}
-              className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm shadow-emerald-600/20"
-            >
-              <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0" /> Quote AI
-            </Button>
-            <Button
-              data-testid="client-create-invoice"
-              onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)}
-              className="h-12 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-sm font-semibold shadow-sm shadow-blue-900/20"
-            >
-              <Receipt className="w-4 h-4 mr-1.5 flex-shrink-0" /> Invoice
-            </Button>
-            <Button
-              data-testid="client-create-contract"
-              onClick={() => navigate(`/contratos/nuevo?client_id=${id}`)}
-              variant="outline"
-              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-violet-300 hover:bg-violet-50"
-            >
-              <FileSignature className="w-4 h-4 mr-1.5 flex-shrink-0 text-violet-600" /> Contrato
-            </Button>
-            <Button
-              data-testid="client-send-message"
-              onClick={() => navigate(`/mensajes?client_id=${id}`)}
-              variant="outline"
-              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50"
-            >
-              <MessageSquare className="w-4 h-4 mr-1.5 flex-shrink-0 text-sky-600" /> Mensaje
-            </Button>
-            <Button
-              data-testid="client-generate-scope"
-              onClick={() => setScopeOpen(true)}
-              variant="outline"
-              className="h-12 rounded-xl border-slate-200 text-sm font-medium text-slate-700 hover:border-amber-300 hover:bg-amber-50"
-            >
-              <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0 text-amber-500" /> Scope
-            </Button>
-          </div>
+      {/* ===== Identity ===== */}
+      <div className="flex flex-col items-center text-center gap-2 pt-1">
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
+          {initials}
         </div>
-      </Card>
-
-      {/* ===== Stats strip ===== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={FileText} label="Cotizaciones" value={history.quotes.length} tone="blue" />
-        <StatCard icon={Receipt} label="Facturas" value={history.invoices.length} tone="violet" />
-        <StatCard icon={DollarSign} label="Facturado" value={fmtMoney(totalInvoiced)} tone="emerald" />
-        <StatCard icon={Clock} label="Por cobrar" value={fmtMoney(pending)} tone="amber" />
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-zinc-950 leading-tight" data-testid="client-name-heading">{client.name}</h1>
+        {client.company && (
+          <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+            <Building2 className="w-3.5 h-3.5 flex-shrink-0" /> {client.company}
+          </div>
+        )}
+        {client.job_type && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs font-semibold">
+            {client.job_type}
+          </span>
+        )}
       </div>
 
-      {/* ===== Tabs (visual cards) ===== */}
+      {/* ===== Quick contact ===== */}
+      {(client.phone || client.email || client.address) && (
+        <div className="flex items-start justify-center gap-6">
+          {client.phone && (
+            <ContactCircle href={`tel:${client.phone}`} icon={Phone} label="Llamar" testid="contact-call-button" />
+          )}
+          {client.email && (
+            <ContactCircle href={`mailto:${client.email}`} icon={Mail} label="Email" testid="contact-email-button" />
+          )}
+          {client.address && (
+            <ContactCircle href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} external icon={MapPin} label="Mapa" testid="contact-map-button" />
+          )}
+        </div>
+      )}
+
+      <RequestReviewButton
+        client={client}
+        jobTitle={client.job_type}
+        className="w-full h-12 rounded-xl"
+      />
+
+      <ClientFlowNotices client={client} history={history} />
+
+      {/* ===== Single "create" entry point (replaces 5 buttons) ===== */}
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button data-testid="fab-nuevo-button" className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-base font-semibold shadow-sm transition-colors">
+            <Plus className="w-5 h-5 mr-1.5" /> Nuevo documento
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="pb-1">
+            <DrawerTitle className="font-heading">Crear para {client.name?.split(" ")[0]}</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 pt-1 pb-8 max-w-md mx-auto w-full space-y-2">
+            <ActionRow icon={Sparkles} iconCls="bg-emerald-100 text-emerald-700" title="Cotización con AI" desc="Crea un quote en segundos" testid="drawer-action-quote-ai"
+              onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)} />
+            <ActionRow icon={Receipt} iconCls="bg-blue-100 text-blue-800" title="Invoice" desc="Cobra por tu trabajo" testid="drawer-action-invoice"
+              onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)} />
+            <ActionRow icon={FileSignature} iconCls="bg-violet-100 text-violet-700" title="Contrato" desc="Acuerdo para firmar" testid="drawer-action-contract"
+              onClick={() => navigate(`/contratos/nuevo?client_id=${id}`)} />
+            <ActionRow icon={MessageSquare} iconCls="bg-sky-100 text-sky-700" title="Mensaje" desc="Manda un texto al cliente" testid="drawer-action-message"
+              onClick={() => navigate(`/mensajes?client_id=${id}`)} />
+            <ActionRow icon={Sparkles} iconCls="bg-amber-100 text-amber-600" title="Scope con AI" desc="Detalle del trabajo a realizar" testid="drawer-action-scope"
+              onClick={() => setScopeOpen(true)} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* ===== Stats (flat technical grid) ===== */}
+      <div className="grid grid-cols-2 border border-zinc-200 rounded-2xl overflow-hidden bg-white">
+        <StatCell label="Cotizaciones" value={history.quotes.length} testid="stats-quotes-value" cls="border-r border-b border-zinc-100" />
+        <StatCell label="Facturas" value={history.invoices.length} testid="stats-invoices-value" cls="border-b border-zinc-100" />
+        <StatCell label="Facturado" value={fmtMoney(totalInvoiced)} testid="stats-invoiced-value" cls="border-r border-zinc-100" />
+        <StatCell label="Por cobrar" value={fmtMoney(pending)} testid="stats-pending-value" valueCls="text-amber-600" />
+      </div>
+
+      {/* ===== History (scrollable segmented tabs) ===== */}
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 lg:grid-cols-6 gap-2 bg-transparent p-0 h-auto">
-          <TabTrig value="info" testid="tab-info" icon={FileText} label="Info" tone="slate" />
-          <TabTrig value="quotes" testid="tab-quotes" icon={Sparkles} label="Quotes" count={history.quotes.length} tone="emerald" />
-          <TabTrig value="agreements" testid="tab-agreements" icon={FileSignature} label="Contratos" count={history.agreements.length} tone="violet" />
-          <TabTrig value="invoices" testid="tab-invoices" icon={Receipt} label="Invoices" count={history.invoices.length} tone="blue" />
-          <TabTrig value="messages" testid="tab-messages" icon={MessageSquare} label="Mensajes" count={history.messages.length} tone="sky" />
-          <TabTrig value="photos" testid="tab-photos" icon={Camera} label="Fotos" count={history.photos.length} tone="amber" />
+        <TabsList className="w-full justify-start gap-1 bg-zinc-100 p-1 rounded-xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden h-auto">
+          <Seg value="info" label="Info" testid="history-tab-info" />
+          <Seg value="quotes" label="Cotizaciones" count={history.quotes.length} testid="history-tab-cotizaciones" />
+          <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />
+          <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />
+          <Seg value="messages" label="Mensajes" count={history.messages.length} testid="history-tab-mensajes" />
+          <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />
         </TabsList>
 
         <TabsContent value="info" className="mt-4">
@@ -223,20 +196,20 @@ export default function ClientDetail() {
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                {client.notes || <span className="text-slate-400">Sin notas.</span>}
+              <div className="text-sm text-zinc-700 whitespace-pre-wrap">
+                {client.notes || <span className="text-zinc-400">Sin notas.</span>}
               </div>
             )}
           </Card>
         </TabsContent>
 
         <TabsContent value="quotes" className="mt-4 space-y-2">
-          {history.quotes.length === 0 ? <EmptyHist label="quotes" /> : history.quotes.map((q) => (
+          {history.quotes.length === 0 ? <EmptyHist label="cotizaciones" /> : history.quotes.map((q) => (
             <Card key={q.id} onClick={() => navigate(`/quotes/${q.id}`)} className="card-elevated p-4 border-0 shadow-none cursor-pointer">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-semibold truncate">{q.job_title}</div>
-                  <div className="text-xs text-slate-500">{q.number} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+                  <div className="text-xs text-zinc-500">{q.number} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                 </div>
                 <StatusBadge kind="quote" status={q.status} />
               </div>
@@ -255,12 +228,12 @@ export default function ClientDetail() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-semibold truncate">{a.title || a.job_title || "Contrato"}</div>
-                  <div className="text-xs text-slate-500">{new Date(a.created_at).toLocaleDateString("es")}</div>
+                  <div className="text-xs text-zinc-500">{new Date(a.created_at).toLocaleDateString("es")}</div>
                 </div>
                 <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${
                   a.status === "signed" ? "bg-emerald-100 text-emerald-800" :
                   a.status === "sent" ? "bg-blue-100 text-blue-800" :
-                  a.status === "draft" ? "bg-slate-100 text-slate-600" :
+                  a.status === "draft" ? "bg-zinc-100 text-zinc-600" :
                   "bg-amber-100 text-amber-800"
                 }`}>
                   {a.status === "signed" ? "Firmado" :
@@ -273,12 +246,12 @@ export default function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4 space-y-2">
-          {history.invoices.length === 0 ? <EmptyHist label="invoices" /> : history.invoices.map((i) => (
+          {history.invoices.length === 0 ? <EmptyHist label="facturas" /> : history.invoices.map((i) => (
             <Card key={i.id} onClick={() => navigate(`/invoices/${i.id}`)} className="card-elevated p-4 border-0 shadow-none cursor-pointer">
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <div className="font-semibold truncate">{i.job_title}</div>
-                  <div className="text-xs text-slate-500">{i.number} · ${i.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+                  <div className="text-xs text-zinc-500">{i.number} · ${i.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
                 </div>
                 <StatusBadge kind="invoice" status={i.status} />
               </div>
@@ -287,11 +260,11 @@ export default function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="messages" className="mt-4 space-y-2">
-          {history.messages.length === 0 ? <EmptyHist label="messages" /> : history.messages.map((m) => (
+          {history.messages.length === 0 ? <EmptyHist label="mensajes" /> : history.messages.map((m) => (
             <Card key={m.id} className="card-elevated p-4 border-0 shadow-none">
-              <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{m.message_type.replace(/_/g, " ")}</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">{m.message_type.replace(/_/g, " ")}</div>
               <div className="text-sm whitespace-pre-wrap">{m.message_en}</div>
-              <div className="text-xs text-slate-400 mt-2">{new Date(m.created_at).toLocaleString("es")}</div>
+              <div className="text-xs text-zinc-400 mt-2">{new Date(m.created_at).toLocaleString("es")}</div>
             </Card>
           ))}
         </TabsContent>
@@ -299,9 +272,9 @@ export default function ClientDetail() {
         <TabsContent value="photos" className="mt-4">
           {history.photos.length === 0 ? (
             <Card className="card-elevated p-6 text-center border-0 shadow-none">
-              <Camera className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Aún no hay fotos.</p>
-              <p className="text-xs text-slate-400 mt-1">Las fotos se suben desde cada Trabajo (Antes / Durante / Después).</p>
+              <Camera className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+              <p className="text-sm text-zinc-500">Aún no hay fotos.</p>
+              <p className="text-xs text-zinc-400 mt-1">Las fotos se suben desde cada Trabajo (Antes / Durante / Después).</p>
             </Card>
           ) : (
             <div className="grid grid-cols-3 gap-2">
@@ -311,7 +284,7 @@ export default function ClientDetail() {
                   href={`${process.env.REACT_APP_BACKEND_URL}/api/photos/${p.id}/file?auth=${token}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="block aspect-square rounded-xl overflow-hidden bg-slate-100 relative tap"
+                  className="block aspect-square rounded-xl overflow-hidden bg-zinc-100 relative tap"
                 >
                   <img
                     src={`${process.env.REACT_APP_BACKEND_URL}/api/photos/${p.id}/file?auth=${token}`}
@@ -327,6 +300,7 @@ export default function ClientDetail() {
           )}
         </TabsContent>
       </Tabs>
+
       <ClientScopeDialog
         open={scopeOpen}
         onClose={() => setScopeOpen(false)}
@@ -336,57 +310,58 @@ export default function ClientDetail() {
   );
 }
 
+const ContactCircle = ({ href, icon: Icon, label, testid, external }) => (
+  <a
+    href={href}
+    {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+    data-testid={testid}
+    className="flex flex-col items-center gap-1.5 tap"
+  >
+    <span className="w-12 h-12 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-700 hover:border-emerald-400 hover:text-emerald-600 transition-colors shadow-sm">
+      <Icon className="w-5 h-5" />
+    </span>
+    <span className="text-[11px] font-medium text-zinc-500">{label}</span>
+  </a>
+);
+
+const ActionRow = ({ icon: Icon, iconCls, title, desc, onClick, testid }) => (
+  <DrawerClose asChild>
+    <button
+      onClick={onClick}
+      data-testid={testid}
+      className="w-full flex items-center gap-3 p-3 rounded-2xl border border-zinc-200 bg-white hover:bg-zinc-50 text-left transition-colors"
+    >
+      <span className={`w-11 h-11 rounded-xl flex items-center justify-center flex-none ${iconCls}`}>
+        <Icon className="w-5 h-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-zinc-900 text-sm">{title}</span>
+        <span className="block text-xs text-zinc-500 truncate">{desc}</span>
+      </span>
+      <ChevronRight className="w-5 h-5 text-zinc-300 flex-none" />
+    </button>
+  </DrawerClose>
+);
+
+const StatCell = ({ label, value, testid, cls = "", valueCls = "text-zinc-950" }) => (
+  <div className={`p-4 ${cls}`}>
+    <div className={`font-heading text-2xl font-bold tracking-tight leading-none ${valueCls}`} data-testid={testid}>{value}</div>
+    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mt-1.5">{label}</div>
+  </div>
+);
+
+const Seg = ({ value, label, count, testid }) => (
+  <TabsTrigger
+    value={value}
+    data-testid={testid}
+    className="flex-none rounded-lg px-3.5 py-2 text-sm font-semibold text-zinc-500 data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm whitespace-nowrap transition-colors"
+  >
+    {label}{count != null && count > 0 && <span className="ml-1.5 text-xs text-zinc-400">{count}</span>}
+  </TabsTrigger>
+);
+
 const EmptyHist = ({ label }) => (
   <Card className="card-elevated p-6 text-center border-0 shadow-none">
-    <p className="text-sm text-slate-500">Aún no hay {label}.</p>
+    <p className="text-sm text-zinc-500">Aún no hay {label}.</p>
   </Card>
 );
-
-const STAT_TONES = {
-  blue: "bg-blue-50 text-blue-700",
-  violet: "bg-violet-50 text-violet-700",
-  emerald: "bg-emerald-50 text-emerald-700",
-  amber: "bg-amber-50 text-amber-700",
-};
-
-const StatCard = ({ icon: Icon, label, value, tone = "blue" }) => (
-  <Card className="border-0 shadow-sm rounded-2xl p-3.5 flex items-center gap-3">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${STAT_TONES[tone]}`}>
-      <Icon className="w-5 h-5" />
-    </div>
-    <div className="min-w-0">
-      <div className="font-heading text-lg font-bold text-slate-900 leading-none truncate">{value}</div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1">{label}</div>
-    </div>
-  </Card>
-);
-
-const TAB_TONES = {
-  slate: { active: "data-[state=active]:border-slate-400 data-[state=active]:bg-slate-50", icon: "bg-slate-100 text-slate-600" },
-  emerald: { active: "data-[state=active]:border-emerald-500 data-[state=active]:bg-emerald-50", icon: "bg-emerald-100 text-emerald-700" },
-  violet: { active: "data-[state=active]:border-violet-500 data-[state=active]:bg-violet-50", icon: "bg-violet-100 text-violet-700" },
-  blue: { active: "data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50", icon: "bg-blue-100 text-blue-700" },
-  sky: { active: "data-[state=active]:border-sky-500 data-[state=active]:bg-sky-50", icon: "bg-sky-100 text-sky-700" },
-  amber: { active: "data-[state=active]:border-amber-500 data-[state=active]:bg-amber-50", icon: "bg-amber-100 text-amber-700" },
-};
-
-const TabTrig = ({ value, testid, icon: Icon, label, count, tone = "slate" }) => {
-  const t = TAB_TONES[tone];
-  return (
-    <TabsTrigger
-      value={value}
-      data-testid={testid}
-      className={`relative flex flex-col items-center justify-center gap-1.5 h-auto rounded-2xl border-2 border-slate-100 bg-white px-2 py-3 transition-all hover:border-slate-200 data-[state=active]:shadow-sm ${t.active}`}
-    >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${t.icon}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <span className="text-xs font-bold text-slate-700">{label}</span>
-      {count != null && (
-        <span className="absolute top-1.5 right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 min-w-[18px] text-center leading-none flex items-center justify-center h-[18px]">
-          {count}
-        </span>
-      )}
-    </TabsTrigger>
-  );
-};
