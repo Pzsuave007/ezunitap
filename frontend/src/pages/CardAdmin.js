@@ -1070,7 +1070,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-slate-500 mb-2">{config.helper}</p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               data-testid={`${config.testid}-upload-btn`}
               size="sm"
