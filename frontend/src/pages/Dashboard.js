@@ -5,8 +5,8 @@ import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Users, FileText, Receipt, Briefcase, DollarSign,
-  Plus, UserPlus, Sparkles, ArrowRight, TrendingUp,
+  Users, FileText, Receipt, Briefcase,
+  UserPlus, Sparkles, ArrowRight, TrendingUp,
   Settings as SettingsIcon, Megaphone,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -35,20 +35,23 @@ const StatCard = ({ icon: Icon, label, value, accent, testid, onClick }) => (
   </Card>
 );
 
-const QuickButton = ({ icon: Icon, label, onClick, primary, testid }) => (
+const FlowAction = ({ step, icon: Icon, iconCls, title, desc, onClick, testid }) => (
   <button
     data-testid={testid}
     onClick={onClick}
-    className={`tap flex flex-col items-center justify-center gap-1.5 py-4 lg:py-5 px-1 rounded-2xl border min-h-[96px] ${
-      primary
-        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm"
-        : "bg-white hover:bg-slate-50 text-slate-900 border-slate-200"
-    }`}
+    className="tap w-full flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-left transition-colors"
   >
-    <div className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${primary ? "bg-white/15" : "bg-slate-100"}`}>
-      <Icon className="w-4 h-4 lg:w-5 lg:h-5" strokeWidth={2.2} />
-    </div>
-    <span className="text-[11px] lg:text-sm font-semibold text-center leading-tight">{label}</span>
+    <span className="relative flex-none">
+      <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconCls}`}>
+        <Icon className="w-5 h-5" strokeWidth={2.2} />
+      </span>
+      <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">{step}</span>
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block font-semibold text-slate-900 text-sm">{title}</span>
+      <span className="block text-xs text-slate-500 truncate">{desc}</span>
+    </span>
+    <ArrowRight className="w-5 h-5 text-slate-300 flex-none" />
   </button>
 );
 
@@ -118,27 +121,38 @@ export default function Dashboard() {
         <TourButton tourKey="dashboard" />
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        <QuickButton
-          testid="quick-ai-quote"
-          icon={Sparkles}
-          label="Crear Quote con AI"
-          primary
-          onClick={() => navigate("/quotes/nuevo?ai=1")}
-        />
-        <QuickButton
-          testid="quick-new-client"
-          icon={UserPlus}
-          label="Agregar Cliente"
-          onClick={() => navigate("/clientes?new=1")}
-        />
-        <QuickButton
-          testid="quick-new-invoice"
-          icon={Receipt}
-          label="Crear Invoice"
-          onClick={() => navigate("/invoices/nuevo")}
-        />
+      {/* Quick Actions — ordered flow: 1) client → 2) quote → 3) invoice */}
+      <div>
+        <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-2.5">Empieza un trabajo</div>
+        <div className="space-y-2">
+          <FlowAction
+            step={1}
+            testid="quick-new-client"
+            icon={UserPlus}
+            iconCls="bg-blue-100 text-blue-900"
+            title="Agregar cliente"
+            desc="Empieza aquí: registra a tu cliente"
+            onClick={() => navigate("/clientes?new=1")}
+          />
+          <FlowAction
+            step={2}
+            testid="quick-ai-quote"
+            icon={Sparkles}
+            iconCls="bg-emerald-100 text-emerald-700"
+            title="Crear cotización con AI"
+            desc="Manda un presupuesto en segundos"
+            onClick={() => navigate("/quotes/nuevo?ai=1")}
+          />
+          <FlowAction
+            step={3}
+            testid="quick-new-invoice"
+            icon={Receipt}
+            iconCls="bg-amber-100 text-amber-700"
+            title="Crear invoice"
+            desc="Cobra por tu trabajo"
+            onClick={() => navigate("/invoices/nuevo")}
+          />
+        </div>
       </div>
 
       {/* Marketing studio highlight */}
