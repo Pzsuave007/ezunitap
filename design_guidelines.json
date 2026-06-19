@@ -1,88 +1,113 @@
 {
-  "theme": "Light",
-  "archetype": "4 (Swiss & High-Contrast)",
-  "target_audience": "Latino service contractors, non-tech-savvy, mobile-first",
-  "design_philosophy": "Clear affordances, large tap targets, horizontal progression (carousels) to reduce vertical scroll fatigue, intuitive Spanish-first labeling.",
+  "theme_and_archetype": {
+    "domain": "Field Service SaaS (Contractors)",
+    "theme": "Light",
+    "archetype": "Archetype 4 (Swiss & High-Contrast)",
+    "reasoning": "Outdoor field usage requires high contrast, maximum legibility, and no visual clutter. Moving away from 6 pastel colors to a rigorous, utilitarian monochrome base with a single intentional accent color."
+  },
   "typography": {
-    "headings": "Cabinet Grotesk (font-sans font-bold tracking-tight)",
-    "body": "IBM Plex Sans (font-sans text-base leading-relaxed)",
+    "heading_font": "Cabinet Grotesk",
+    "body_font": "IBM Plex Sans",
     "hierarchy": {
-      "h1": "text-2xl sm:text-3xl lg:text-4xl",
-      "h2": "text-xl sm:text-2xl",
-      "h3": "text-lg sm:text-xl",
-      "body": "text-base",
-      "labels": "text-xs font-bold uppercase tracking-[0.1em] text-slate-500"
+      "h1_name": "text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950",
+      "h2_section": "text-xl font-semibold tracking-tight text-zinc-900",
+      "h3_label": "text-xs font-semibold tracking-[0.2em] uppercase text-zinc-500",
+      "body": "text-base text-zinc-700",
+      "stats_number": "text-2xl font-bold tracking-tight text-zinc-950"
     }
   },
-  "colors": {
-    "background": "bg-slate-50",
-    "surface": "bg-white",
-    "primary_action": "bg-slate-900 hover:bg-slate-800 text-white",
-    "secondary_action": "bg-slate-100 hover:bg-slate-200 text-slate-900",
-    "border": "border-slate-200",
-    "text_primary": "text-slate-900",
-    "text_secondary": "text-slate-500",
-    "accents": "Electric blue or high-contrast brand color strictly for selections/highlights"
-  },
-  "layout_strategy": {
-    "global": "Mobile-first priority. Generous internal padding (p-4 to p-6). Avoid long vertical stacking of large items.",
-    "top_navigation": "Sticky top header with Shadcn Tabs ('Imagen', 'Video (Reel)', 'Crear con IA'). Use overflow-x-auto so tabs slide sideways if they don't fit on small screens.",
-    "section_1_templates": "Horizontal snap carousel replacing the 2-col grid. Use flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4. Cards show partial next item to indicate scrollability.",
-    "section_2_photos": "Square dashed dropzones for 1 or 2 photos. Incorporate the 'Mejorar con IA' button inside the photo frame natively as a floating bottom-right pill.",
-    "section_3_brief": "Textarea for '¿Qué quieres comunicar?'. Min 4 rows. Clear distinct label.",
-    "section_4_quick_options": "Horizontal scrollable chip lists for 'Formato' (Vertical, Cuadrado) and 'Color' swatches to completely eliminate vertical stacking.",
-    "section_5_advanced": "Use a Shadcn Drawer (Bottom Sheet on mobile, Dialog on desktop) for the 'Personalizado' color pickers and 'Idioma del post' toggle. Keeps main feed clean.",
-    "bottom_action": "Sticky bottom bar using glassmorphism (bg-white/80 backdrop-blur-xl) housing a large 'Generar Post' button so users never hunt for it."
-  },
-  "component_specs": {
-    "template_carousel": {
-      "wrapper": "flex w-full overflow-x-auto snap-x snap-mandatory gap-4 pb-6 scrollbar-hide",
-      "item": "flex-none w-[200px] h-[200px] snap-center rounded-2xl border-2 bg-white overflow-hidden relative transition-all duration-200",
-      "active_state": "border-slate-900 shadow-md",
-      "inactive_state": "border-slate-200 opacity-80 scale-95",
-      "data_testid": "template-carousel-item"
+  "color_palette": {
+    "background": {
+      "app": "bg-zinc-50",
+      "card": "bg-white"
     },
-    "horizontal_chips": {
-      "wrapper": "flex w-full overflow-x-auto gap-3 pb-4 scrollbar-hide",
-      "chip": "flex-none px-5 py-2.5 rounded-full border text-sm font-semibold transition-colors cursor-pointer",
-      "active_chip": "bg-slate-900 text-white border-slate-900",
-      "inactive_chip": "bg-white text-slate-600 border-slate-200",
-      "data_testid": "format-chip"
+    "text": {
+      "primary": "text-zinc-950",
+      "secondary": "text-zinc-500",
+      "inverse": "text-white"
     },
-    "color_swatches": {
-      "wrapper": "flex w-full overflow-x-auto gap-4 pb-4 scrollbar-hide items-center",
-      "swatch": "flex-none w-12 h-12 rounded-full border-2 cursor-pointer shadow-sm transition-transform hover:scale-105",
-      "active_swatch": "ring-4 ring-slate-900 ring-offset-2",
-      "custom_trigger": "flex-none w-12 h-12 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-500 bg-slate-50",
-      "data_testid": "color-swatch"
-    },
-    "photo_dropzone": {
-      "container": "w-full aspect-square border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center bg-white relative overflow-hidden group",
-      "ai_button": "absolute bottom-4 right-4 bg-white/90 backdrop-blur-md shadow-sm border border-slate-200 text-slate-900 text-xs px-4 py-2 rounded-full font-bold z-10 flex items-center gap-2",
-      "data_testid": "photo-dropzone"
-    },
-    "bottom_sheet_drawer": {
-      "usage": "Triggered by 'Personalizado' color or 'Más opciones'. Contains Idioma toggle (Inglés/Español) and exact color pickers.",
-      "data_testid": "advanced-settings-drawer"
-    },
-    "sticky_action_bar": {
-      "container": "fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-slate-200 z-50",
-      "button": "w-full h-14 text-lg font-bold rounded-2xl bg-slate-900 text-white shadow-lg",
-      "data_testid": "generate-post-button"
-    },
-    "results_section": {
-      "layout": "Displays generated post with a horizontal carousel if multiple formats are generated. Action buttons (Descargar, Agregar a mi tarjeta) directly below the image preview.",
-      "copy_editor": "A card container wrapping editable inputs (Headline, Subheadline, CTA, Caption) with a 'Generar de nuevo' re-render action at the top right of the card."
+    "border": "border-zinc-200",
+    "interactive": {
+      "primary": "bg-zinc-900 hover:bg-zinc-800 text-white",
+      "secondary": "bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200",
+      "accent": "bg-blue-600 hover:bg-blue-700 text-white (Use exclusively for key conversion: Request Review)"
     }
   },
+  "spacing_and_layout": {
+    "container": "max-w-3xl mx-auto w-full pb-24",
+    "internal_padding": "p-6 sm:p-8",
+    "gaps": {
+      "section_gap": "gap-8",
+      "item_gap": "gap-4"
+    },
+    "layout_strategy": "Mobile-first vertical stack. Strict hierarchy: 1. Identity, 2. Quick Comms, 3. Business Context (Stats), 4. History (Tabs). Floating Action Drawer for 'Create' actions."
+  },
+  "components": {
+    "ClientHeader": {
+      "description": "Clean presentation of who the client is.",
+      "structure": "Avatar (Initials, h-20 w-20), Name (H1), Company & Tagline. Remove boxy cards, let this sit naturally on the background.",
+      "shadcn_components": ["Avatar", "AvatarFallback", "Badge"],
+      "layout": "flex flex-col items-center text-center pt-8 pb-4 gap-2"
+    },
+    "ContactChips": {
+      "description": "High-priority quick actions (Call, Email, Map) and Review request.",
+      "structure": "A grid/flex row of 3 circular icon buttons for comms. Below it, a full-width outline button for 'Solicitar Reseña de Google'.",
+      "shadcn_components": ["Button"],
+      "styling": "Icon buttons: variant='secondary' rounded-full h-12 w-12. Review button: variant='outline' w-full border-zinc-300."
+    },
+    "StatsGrid": {
+      "description": "Grid Borders (The 'Technical' Look) to present numbers cleanly without card bloat.",
+      "structure": "2x2 CSS Grid with border-collapse. Inner borders only. No drop shadows.",
+      "metrics": ["Cotizaciones", "Facturas", "Facturado ($)", "Por cobrar ($)"],
+      "styling": "grid grid-cols-2 border border-zinc-200 rounded-xl overflow-hidden bg-white. Each cell has p-4 border-r border-b border-zinc-100 last:border-0."
+    },
+    "HistoryTabs": {
+      "description": "Replaces the 6 giant colorful boxes. A horizontal scrollable segmented control.",
+      "structure": "Use Shadcn Tabs. The TabsList MUST be overflow-x-auto, whitespace-nowrap, and hide the scrollbar (scrollbar-width: none).",
+      "tabs": ["Info", "Cotizaciones", "Contratos", "Facturas", "Mensajes", "Fotos"],
+      "shadcn_components": ["Tabs", "TabsList", "TabsTrigger", "TabsContent"],
+      "styling": "TabsList: bg-zinc-100 p-1 rounded-xl flex w-full justify-start overflow-x-auto. TabsTrigger: data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg px-4 py-2."
+    },
+    "FloatingActionDrawer": {
+      "description": "The solution to the '30 buttons' problem. Consolidates all 'Create' actions into one thumb-friendly spot.",
+      "structure": "A fixed bottom bar (z-50) with a single massive '+ Nuevo' button. Clicking it opens a Shadcn Drawer.",
+      "drawer_contents": "A clean vertical list menu of the 5 actions: Quote AI, Invoice, Contrato, Mensaje, Scope AI. Each with a leading Phosphor Icon.",
+      "shadcn_components": ["Drawer", "DrawerTrigger", "DrawerContent", "Button"],
+      "styling": "Bottom Bar: fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-xl border-t border-zinc-200. Drawer Button: w-full bg-zinc-900 text-white rounded-xl h-14 text-lg font-semibold shadow-lg."
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "All buttons must use Tailwind transition-colors duration-200.",
+    "drawer_entrance": "Native Shadcn drawer spring animation for smooth bottom-up presentation.",
+    "tab_switch": "Instant content switch to prevent layout shift jank on mobile."
+  },
+  "accessibility_and_testing": {
+    "contrast": "APCA/WCAG AA compliant. Zinc-900 on white is ultra-high contrast.",
+    "touch_targets": "All interactive elements (tabs, contact buttons, drawer items) MUST be minimum 48x48px physical size equivalent.",
+    "data_testid_rules": {
+      "requirement": "All interactive and key informational elements MUST include a data-testid attribute.",
+      "format": "kebab-case, role-based",
+      "examples": [
+        "data-testid='client-name-heading'",
+        "data-testid='contact-call-button'",
+        "data-testid='contact-map-button'",
+        "data-testid='request-review-button'",
+        "data-testid='stats-invoiced-value'",
+        "data-testid='history-tab-cotizaciones'",
+        "data-testid='fab-nuevo-button'",
+        "data-testid='drawer-action-quote-ai'"
+      ]
+    }
+  },
+  "image_urls": [],
   "instructions_to_main_agent": [
-    "Refactor the /marketing 'Imagen' tab UI to prioritize horizontal scrolling for selectors.",
-    "DO NOT REMOVE ANY FUNCTIONALITY. The form state should remain intact (10 templates, 1-2 photos, prompts, English/Spanish toggle, formats, colors).",
-    "Replace the tall vertical grid of templates with the `template_carousel` spec.",
-    "Replace vertically stacked radio buttons/checkboxes for formats and colors with `horizontal_chips` and `color_swatches`.",
-    "Move advanced/secondary choices like 'Idioma del post' and 'Personalizado' color configuration into a Shadcn Drawer/Dialog to save vertical space on mobile.",
-    "Implement a custom `scrollbar-hide` CSS class (or use standard Tailwind hiding methods) to keep horizontal scrolling areas clean without a visible track.",
-    "Always wrap the 'Generar Post' button in the `sticky_action_bar` layout so it is always accessible on mobile without scrolling to the bottom.",
-    "Add `data-testid` attributes to all actionable elements strictly following the component_specs."
+    "Install required icons: yarn add @phosphor-icons/react",
+    "Do NOT use HTML inputs, use Shadcn primitives.",
+    "Implement the layout strictly as mobile-first vertical flow.",
+    "Place the ClientHeader at the top with no surrounding card.",
+    "Implement the StatsGrid as a flat 2x2 grid with 1px internal borders (border-collapse style) inside a single container with a rounded-xl border.",
+    "Hide the 6 colorful tabs and replace them with Shadcn Tabs with a horizontally scrollable TabsList.",
+    "Move all 5 creation actions (Quote, Invoice, etc) OUT of the main page body and put them inside the FloatingActionDrawer.",
+    "Ensure the bottom of the main content has pb-24 so the floating action bar doesn't overlap the last items."
   ]
 }
