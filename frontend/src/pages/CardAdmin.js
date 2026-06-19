@@ -322,6 +322,7 @@ export default function CardAdmin() {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
                 <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
+                <LogoUploader card={card} onChange={load} />
                 <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
                 <CoverPhotoUploader card={card} onChange={load} />
                 <div>
@@ -363,7 +364,6 @@ export default function CardAdmin() {
                       toast.error(err?.response?.data?.detail || "Error aplicando plantilla");
                     }
                   }} />
-                  <LogoUploader card={card} onChange={load} />
                   <div>
                     <Label>Color exacto de marca</Label>
                     <div className="flex items-center gap-3 mt-1.5">
