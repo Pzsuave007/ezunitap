@@ -362,6 +362,7 @@ function PresenciaBranch({ lead, onBack }) {
     accent_color: "#10B981",
     role: `${meta.en} · ${lead.name || "Owner"}`,
     cover_photo_url: meta.img,
+    profile_photo_url: "https://images.unsplash.com/photo-1679679811837-c28b2586f533?crop=faces&fit=crop&cs=srgb&fm=jpg&w=400&h=400&q=80",
   };
   const demoUser = { business_name: name, owner_name: lead.name || "Owner" };
 
