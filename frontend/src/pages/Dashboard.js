@@ -264,29 +264,83 @@ const CardTile = ({ icon: Icon, label, chip, onClick, testid }) => (
 );
 
 // ---- Marketing module block ----
-function MarketingBlock({ navigate, mkt }) {
+function MarketingBlock({ navigate, mkt, posts }) {
+  const BACKEND = process.env.REACT_APP_BACKEND_URL;
+  const recent = (posts || []).filter((p) => p.images?.[0]?.url).slice(0, 8);
   return (
     <div>
       <SectionTitle>Estudio de Marketing</SectionTitle>
-      <button onClick={() => navigate("/marketing")} data-testid="dashboard-marketing-cta"
-        className="tap w-full text-left rounded-2xl p-4 flex items-center gap-4 text-white shadow-md"
-        style={{ background: "linear-gradient(120deg, #7C3AED 0%, #DB2777 100%)" }}>
-        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <Megaphone className="w-6 h-6" />
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 flex items-center gap-3 border-b border-slate-100">
+          <div className="w-11 h-11 rounded-full bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center flex-none">
+            <Megaphone className="w-5 h-5" strokeWidth={2.4} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-heading font-bold text-slate-900">Marketing</div>
+            <div className="text-xs text-slate-500">Posts y reels con IA para tus redes</div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-heading font-bold text-base">Crea un post o reel con IA</div>
-          <div className="text-sm text-white/85">Contenido profesional para redes en segundos.</div>
+
+        {/* Recent designs carousel */}
+        {recent.length > 0 ? (
+          <div className="px-3 pt-3">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Diseños recientes</span>
+              <button onClick={() => navigate("/marketing")} className="text-xs text-purple-700 font-semibold tap">Ver todos</button>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide snap-x">
+              {recent.map((p) => (
+                <button key={p.id} data-testid={`mkt-recent-${p.id}`} onClick={() => navigate("/marketing")}
+                  className="tap flex-none snap-start w-24 aspect-[4/5] rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative group">
+                  <img src={`${BACKEND}${p.images[0].url}`} alt={p.template || "post"} className="w-full h-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="px-3 pt-4">
+            <button onClick={() => navigate("/marketing")} data-testid="mkt-empty-cta"
+              className="tap w-full text-left rounded-2xl p-4 flex items-center gap-4 text-white shadow-md"
+              style={{ background: "linear-gradient(120deg, #7C3AED 0%, #DB2777 100%)" }}>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-heading font-bold text-base">Crea tu primer diseño</div>
+                <div className="text-sm text-white/85">Posts y reels profesionales con IA en segundos.</div>
+              </div>
+              <ArrowRight className="w-5 h-5 flex-shrink-0" />
+            </button>
+          </div>
+        )}
+
+        {/* Quick action tiles */}
+        <div className="px-3 pt-3 grid grid-cols-2 gap-2.5">
+          <MktTile testid="mkt-post-tile" icon={ImageIcon} chip="bg-purple-50 text-purple-600" label="Crear Post" onClick={() => navigate("/marketing?mode=image")} />
+          <MktTile testid="mkt-reel-tile" icon={Video} chip="bg-pink-50 text-pink-600" label="Crear Reel" onClick={() => navigate("/marketing?mode=reel")} />
+          <MktTile testid="mkt-ai-tile" icon={Sparkles} chip="bg-violet-50 text-violet-600" label="Imagen con IA" onClick={() => navigate("/marketing?mode=ai")} />
+          <MktTile testid="mkt-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label="Publicar en Google" onClick={() => navigate("/marketing?mode=image")} />
         </div>
-        <ArrowRight className="w-5 h-5 flex-shrink-0" />
-      </button>
-      <div className="mt-3 flex gap-2.5">
-        <MiniStat icon={ImageIcon} label="Posts" value={mkt?.posts ?? 0} chip="bg-purple-50 text-purple-600" />
-        <MiniStat icon={Video} label="Reels" value={mkt?.reels ?? 0} chip="bg-pink-50 text-pink-600" />
+
+        {/* Stats */}
+        <div className="p-3 flex gap-2.5">
+          <MiniStat icon={ImageIcon} label="Posts" value={mkt?.posts ?? 0} chip="bg-purple-50 text-purple-600" />
+          <MiniStat icon={Video} label="Reels" value={mkt?.reels ?? 0} chip="bg-pink-50 text-pink-600" />
+        </div>
       </div>
     </div>
   );
 }
+
+const MktTile = ({ icon: Icon, label, chip, onClick, testid }) => (
+  <button data-testid={testid} onClick={onClick}
+    className="tap flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+    <span className={`w-9 h-9 rounded-full flex items-center justify-center flex-none ${chip}`}>
+      <Icon className="w-4 h-4" strokeWidth={2.4} />
+    </span>
+    <span className="text-sm font-semibold text-slate-800 text-left leading-tight">{label}</span>
+  </button>
+);
 
 // ---- Upsell: modules the user does NOT have yet ----
 const UPSELL_META = {
@@ -335,6 +389,7 @@ export default function Dashboard() {
   const [cardStats, setCardStats] = useState(null);
   const [card, setCard] = useState(null);
   const [mkt, setMkt] = useState({ posts: 0, reels: 0 });
+  const [posts, setPosts] = useState([]);
   const [gbp, setGbp] = useState(null);
 
   const hasBusiness = hasFeature("business");
@@ -359,6 +414,7 @@ export default function Dashboard() {
       (async () => {
         try {
           const [p, rl] = await Promise.all([api.get("/social/posts"), api.get("/social/reels")]);
+          setPosts(p.data || []);
           setMkt({ posts: (p.data || []).length, reels: (rl.data || []).length });
         } catch (e) { /* ignore */ }
       })();
@@ -410,7 +466,7 @@ export default function Dashboard() {
       {/* Module blocks — order: Negocio → Presencia → Marketing */}
       {hasBusiness && <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />}
       {hasCard && <CardBlock navigate={navigate} user={user} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />}
-      {hasMarketing && <MarketingBlock navigate={navigate} mkt={mkt} />}
+      {hasMarketing && <MarketingBlock navigate={navigate} mkt={mkt} posts={posts} />}
 
       {/* Onboarding checklist (auto-hides at 100%) */}
       <SetupChecklist />

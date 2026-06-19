@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,11 @@ function PhotoSlot({ index, label, photo, onPick, onClear, onEnhance, enhancing 
 }
 
 export default function SocialStudio() {
-  const [mode, setMode] = useState("image");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(() => {
+    const m = searchParams.get("mode");
+    return ["image", "reel", "ai"].includes(m) ? m : "image";
+  });
   const [template, setTemplate] = useState("before_after");
   const [photos, setPhotos] = useState([null, null]);
   const [brief, setBrief] = useState("");
