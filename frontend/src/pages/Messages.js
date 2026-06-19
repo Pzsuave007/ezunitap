@@ -10,23 +10,11 @@ import { MessageSquare, Sparkles, Copy, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
-const TYPES = [
-  { value: "follow_up_quote", label: "Follow up de Quote" },
-  { value: "payment_reminder", label: "Recordatorio de pago" },
-  { value: "ask_for_deposit", label: "Pedir depósito" },
-  { value: "confirm_appointment", label: "Confirmar cita" },
-  { value: "reschedule_appointment", label: "Reagendar cita" },
-  { value: "ask_for_review", label: "Pedir review de Google" },
-  { value: "explain_delay", label: "Explicar retraso" },
-  { value: "thank_you", label: "Mensaje de agradecimiento" },
-  { value: "custom", label: "Mensaje personalizado" },
-];
-
 export default function Messages() {
   const [params] = useSearchParams();
   const [clients, setClients] = useState([]);
   const [clientId, setClientId] = useState(params.get("client_id") || "");
-  const [type, setType] = useState("follow_up_quote");
+  const [type] = useState("custom");
   const [userInput, setUserInput] = useState("");
   const [output, setOutput] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -103,23 +91,6 @@ export default function Messages() {
           </Select>
         </div>
         <div>
-          <Label>Tipo de mensaje</Label>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-            {TYPES.map((t) => (
-              <button
-                key={t.value}
-                data-testid={`msg-type-${t.value}`}
-                onClick={() => setType(t.value)}
-                className={`px-3 py-3 rounded-xl text-xs font-semibold text-left tap ${
-                  type === t.value ? "bg-blue-900 text-white" : "bg-white border border-slate-200 text-slate-700"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
           <Label>¿Qué quieres decir? (español)</Label>
           <Textarea
             data-testid="msg-input"
@@ -160,7 +131,6 @@ export default function Messages() {
           <div className="space-y-2">
             {history.map((m) => (
               <Card key={m.id} className="card-elevated p-4 border-0 shadow-none">
-                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{m.message_type.replace(/_/g, " ")}</div>
                 <div className="text-sm whitespace-pre-wrap">{m.message_en}</div>
                 <div className="text-xs text-slate-400 mt-2">{new Date(m.created_at).toLocaleString("es")}</div>
               </Card>
