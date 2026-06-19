@@ -286,9 +286,6 @@ function AccountsView({ onForbidden }) {
                   onClick={() => setSelected(u)}
                   className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white hover:border-amber-300 transition flex items-center gap-3"
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-heading font-bold flex-none">
-                    {(u.business_name || u.owner_name || u.email || "?").charAt(0).toUpperCase()}
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm truncate">
