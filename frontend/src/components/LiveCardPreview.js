@@ -62,9 +62,9 @@ export function LiveCardPreview({ card, user, variant }) {
   const photoId = card.profile_photo_id;
   const logoId = card.logo_photo_id;
   const coverId = card.cover_photo_id;
-  const profileUrl = photoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${photoId}` : null;
-  const logoUrl = logoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${logoId}` : null;
-  const coverUrl = coverId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${coverId}` : null;
+  const profileUrl = card.profile_photo_url || (photoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${photoId}` : null);
+  const logoUrl = card.logo_photo_url || (logoId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${logoId}` : null);
+  const coverUrl = card.cover_photo_url || (coverId ? `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${coverId}` : null);
   const businessName = user?.business_name || "Mi Negocio";
   const ownerName = user?.owner_name || "";
   const role = card.role || ownerName;

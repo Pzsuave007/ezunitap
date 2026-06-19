@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 import { QuoteStep, AgreementStep, InvoiceStep, GeneratingOverlay } from "./DemoFlow";
+import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -348,11 +349,21 @@ function NegocioBranch({ demoId, business, lead, onBack }) {
   );
 }
 
-/* ============================ PRESENCIA (simulado) ============================ */
+/* ============================ PRESENCIA (tarjeta real) ============================ */
 function PresenciaBranch({ lead, onBack }) {
   const [opened, setOpened] = useState(false);
   const meta = tradeMeta(lead.trade);
   const name = brandName(lead);
+
+  // Build a demo "card" + "user" that render through the REAL card component
+  const demoCard = {
+    hero_layout: "logo_circle",
+    brand_color: "#1E3A8A",
+    accent_color: "#10B981",
+    role: `${meta.en} · ${lead.name || "Owner"}`,
+    cover_photo_url: meta.img,
+  };
+  const demoUser = { business_name: name, owner_name: lead.name || "Owner" };
 
   const open = () => {
     setOpened(true);
@@ -384,9 +395,11 @@ function PresenciaBranch({ lead, onBack }) {
           <p className="mt-4 text-sm font-semibold text-emerald-700">📲 Toca la tarjeta para abrir tu mini-sitio</p>
         </div>
       ) : (
-        <PhoneMockup>
-          <MiniSite name={name} meta={meta} lead={lead} />
-        </PhoneMockup>
+        <div className="max-w-[300px] mx-auto animate-in fade-in zoom-in-95 duration-500" data-testid="demo-interactive-mockup">
+          <PhoneFrame>
+            <LiveCardPreview card={demoCard} user={demoUser} variant="logo_circle" />
+          </PhoneFrame>
+        </div>
       )}
 
       {opened && (
@@ -399,77 +412,6 @@ function PresenciaBranch({ lead, onBack }) {
           <ModuleUpsell highlight="presencia" />
         </>
       )}
-    </div>
-  );
-}
-
-function PhoneMockup({ children }) {
-  return (
-    <div className="flex justify-center" data-testid="demo-interactive-mockup">
-      <div className="w-[300px] rounded-[2.2rem] border-[10px] border-slate-900 bg-slate-900 shadow-2xl overflow-hidden">
-        <div className="h-5 bg-slate-900 flex items-center justify-center">
-          <div className="w-16 h-1.5 rounded-full bg-slate-700" />
-        </div>
-        <div className="bg-white max-h-[560px] overflow-y-auto">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function MiniSite({ name, meta, lead }) {
-  const initial = (lead.name || "U").charAt(0).toUpperCase();
-  return (
-    <div className="animate-in fade-in duration-500">
-      <div className="h-28 bg-gradient-to-br from-blue-900 to-emerald-600 relative">
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white border-4 border-white shadow flex items-center justify-center">
-          <div className="w-full h-full rounded-full bg-gradient-to-br from-emerald-500 to-blue-700 text-white flex items-center justify-center font-heading font-bold text-xl">
-            {initial}
-          </div>
-        </div>
-      </div>
-      <div className="pt-10 px-4 pb-5 text-center">
-        <h3 className="font-heading font-bold text-lg">{name}</h3>
-        <p className="text-xs text-slate-500">{meta.en} · {lead.name || "Owner"}</p>
-        <div className="flex items-center justify-center gap-1 mt-1.5 text-amber-500">
-          {[1,2,3,4,5].map((i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-          <span className="text-xs text-slate-600 font-semibold ml-1">5.0 · 127 reseñas</span>
-        </div>
-        <div className="flex items-center justify-center gap-1 mt-1 text-[11px] text-slate-500">
-          <MapPin className="w-3 h-3" /> Houston, TX & alrededores
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-2 text-[10px]">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold"><BadgeCheck className="w-3 h-3" /> Licensed</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold"><BadgeCheck className="w-3 h-3" /> Insured</span>
-        </div>
-
-        <button className="mt-4 w-full py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2">
-          <MessageCircle className="w-4 h-4" /> WhatsApp
-        </button>
-        <button className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2">
-          <Phone className="w-4 h-4" /> Llamar
-        </button>
-        <button className="mt-2 w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center gap-2">
-          <Contact className="w-4 h-4" /> Guardar contacto
-        </button>
-
-        <div className="mt-4 text-left">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Servicios</div>
-          <div className="space-y-1.5">
-            {meta.services.map((s) => (
-              <div key={s} className="px-3 py-2 rounded-lg bg-slate-50 text-sm font-medium text-slate-700">{s}</div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
-          <div className="flex items-center gap-1 text-amber-600 mb-1">
-            {[1,2,3,4,5].map((i) => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
-          </div>
-          <p className="text-xs text-slate-600 italic">“Best {meta.en.toLowerCase()} crew in town. On time and clean work!” — María R.</p>
-          <button className="mt-2 w-full py-2 rounded-lg bg-amber-400 text-amber-950 font-bold text-xs">Déjanos una reseña ★</button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -543,35 +485,26 @@ function MarketingBranch({ lead, onBack }) {
           <div className="mb-3 rounded-xl bg-violet-50 border border-violet-200 text-violet-800 text-sm font-semibold px-4 py-2.5 flex items-center gap-2">
             <Sparkles className="w-4 h-4 flex-none" /> ¡Listo! Tu post para Instagram/Facebook, con tu marca 👇
           </div>
-          <PhoneMockup>
-            <div className="bg-white">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center text-xs font-bold">
-                  {(lead.name || "U").charAt(0).toUpperCase()}
-                </div>
-                <span className="text-xs font-semibold">{name.toLowerCase().replace(/\s/g, "_")}</span>
+          <div className="max-w-[340px] mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-white">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-700 to-emerald-500 text-white flex items-center justify-center text-xs font-bold">
+                {(lead.name || "U").charAt(0).toUpperCase()}
               </div>
-              <div className="relative">
-                <img src={postImg} alt="post" className="w-full aspect-square object-cover" data-testid="demo-mkt-post-img" />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3">
-                  <div className="text-white font-heading font-extrabold text-lg leading-tight drop-shadow">{headline}</div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-white/90 text-[11px] font-semibold">{name} · Houston, TX</span>
-                    <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">FREE ESTIMATE</span>
-                  </div>
-                </div>
-                <div className="absolute top-2 left-2 bg-white/90 text-blue-900 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Hecho con IA
-                </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold leading-tight">{name.toLowerCase().replace(/\s/g, "_")}</div>
+                <div className="text-[10px] text-slate-400 leading-tight">Houston, TX</div>
               </div>
-              <div className="px-3 py-2">
-                <div className="flex items-center gap-3 text-slate-700 mb-1">
-                  <span className="text-lg">♥</span><span className="text-lg">💬</span><span className="text-lg">➤</span>
-                </div>
-                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-snug">{caption}</p>
-              </div>
+              <span className="text-slate-400 text-lg leading-none">⋯</span>
             </div>
-          </PhoneMockup>
+            <DesignedPost meta={meta} name={name} lead={lead} headline={headline} />
+            <div className="px-3 py-2.5">
+              <div className="flex items-center gap-4 text-slate-800 mb-1.5 text-xl">
+                <span>♡</span><span>💬</span><span>➤</span>
+              </div>
+              <div className="text-xs font-bold text-slate-800">214 likes</div>
+              <p className="text-xs text-slate-700 mt-1 whitespace-pre-wrap leading-snug">{caption}</p>
+            </div>
+          </div>
 
           <div className="mt-4 flex gap-2 justify-center">
             <Button data-testid="demo-mkt-copy" onClick={copy} variant="outline" size="sm" className="rounded-xl">
@@ -593,6 +526,57 @@ function MarketingBranch({ lead, onBack }) {
           <ModuleUpsell highlight="marketing" />
         </div>
       )}
+    </div>
+  );
+}
+
+/* Professional designed social post (mimics the real Marketing Studio output) */
+function DesignedPost({ meta, name, lead, headline }) {
+  const phone = lead.phone || "(555) 123-4567";
+  return (
+    <div className="relative aspect-square w-full overflow-hidden bg-slate-900" data-testid="demo-mkt-post-img">
+      <img src={meta.img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(2,6,23,0.55) 0%, transparent 28%, transparent 50%, rgba(2,6,23,0.55) 100%)" }} />
+
+      {/* top-left brand chip */}
+      <div className="absolute top-3 left-3 flex items-center gap-2 bg-white/95 rounded-full pl-1 pr-3 py-1 shadow-lg">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-heading font-bold text-sm" style={{ background: "linear-gradient(135deg,#1E3A8A,#10B981)" }}>
+          {(name || "U").charAt(0).toUpperCase()}
+        </div>
+        <span className="text-[11px] font-bold text-slate-900 max-w-[120px] truncate">{name}</span>
+      </div>
+
+      {/* top-right rating */}
+      <div className="absolute top-3 right-3 bg-white/95 rounded-full px-2.5 py-1 shadow-lg flex items-center gap-1">
+        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+        <span className="text-[11px] font-extrabold text-slate-900">5.0</span>
+      </div>
+
+      {/* accent ribbon */}
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 px-4 py-1.5 font-heading font-extrabold text-white text-xs tracking-widest shadow-lg" style={{ background: "#10B981" }}>
+        ★ TRUSTED LOCAL PRO
+      </div>
+
+      {/* bottom brand panel */}
+      <div className="absolute inset-x-0 bottom-0 px-4 pt-8 pb-4" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(30,58,138,0.92) 45%, rgba(15,42,95,0.98) 100%)" }}>
+        <div className="text-white font-heading font-extrabold leading-[0.95] tracking-tight" style={{ fontSize: "30px" }}>
+          {meta.en.toUpperCase()}
+        </div>
+        <div className="font-heading font-extrabold leading-[0.95] tracking-tight" style={{ fontSize: "30px", color: "#34D399" }}>
+          DONE RIGHT.
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="bg-amber-400 text-blue-950 text-[11px] font-extrabold px-3 py-1.5 rounded-full">FREE ESTIMATE</span>
+          <span className="inline-flex items-center gap-1 text-white text-xs font-bold">
+            <Phone className="w-3.5 h-3.5" /> {phone}
+          </span>
+        </div>
+      </div>
+
+      {/* AI badge */}
+      <div className="absolute bottom-3 right-3 bg-white/90 text-blue-900 text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+        <Sparkles className="w-2.5 h-2.5" /> IA
+      </div>
     </div>
   );
 }

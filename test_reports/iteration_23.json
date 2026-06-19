@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only regression of /demo-all visual-consistency fixes. Tested at mobile (430x900). PRESENCIA branch now renders the REAL LiveCardPreview inside PhoneFrame — verified by inspecting demo-interactive-mockup content: ES pill, CG initials avatar, brand name 'García Roofing', role line 'Roofing · Carlos García', four action buttons (Call/Text/WhatsApp/Email), and 'Save Contact' bar all present and visually polished. MARKETING branch DesignedPost renders inside Instagram-style card with: ROOFING + DONE RIGHT. two-line headline, TRUSTED LOCAL PRO ribbon, 5.0 rating pill, white brand chip 'García Roofing', amber FREE ESTIMATE pill + phone number, 214 likes, English caption, garcia_roofing username header, Copiar caption working. Branch selector (no deep link) shows all three options. Deep-links ?need=presencia and ?need=marketing both work. /demo regression: lead form -> describe step transition works. /tarjeta + Dashboard regression with cardonly_test@example.com: both load successfully, /tarjeta renders editor with LiveCardPreview action buttons (default id-based fallback path preserved). 27/27 assertions passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Same as iteration_22: DemoAll.js is now 647 lines (close to 700-line guideline). DesignedPost was added inline. Recommend splitting into /pages/DemoAll/index.js + ./branches/{Negocio,Presencia,Marketing}.jsx + ./shared/{ModuleUpsell,BackBar,FeatureRow,DesignedPost}.jsx for maintainability.",
+    "MarketingBranch hardcodes Houston/'Houston & surrounding areas' in caption + 'Houston, TX' in IG header. If a non-Houston lead trade is supported in future, parametrize from lead.city. Acceptable for now (Houston launch market).",
+    "DesignedPost.lead prop is passed but only lead.phone is used; safe to simplify signature to (meta, name, phone, headline).",
+    "Marketing simulated setTimeout(2200ms) in generate() still has no cleanup if user navigates away mid-loader. Low impact.",
+    "Lint: top of DemoAll.js still imports `useEffect` (unused) and `Smartphone` (verify usage).",
+    "LiveCardPreview.js change is clean: optional card.profile_photo_url/logo_photo_url/cover_photo_url override the id-based URLs while id-based fallback is preserved (lines 65-67). No regression in /tarjeta or dashboard preview verified visually.",
+    "Anti-abuse cap on /api/public/demo/quote (Negocio branch real-AI) was NOT exercised this run to avoid IP cap; agent note confirms expected behavior."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% (27/27 assertions)"},
+  "test_credentials": "cardonly_test@example.com / Test1234 (used for /tarjeta + dashboard regression). No login needed for /demo or /demo-all.",
+  "seed_data_creation": "None — public demo creates ephemeral records.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The visual-consistency fixes are verified. PresenciaBranch now uses real LiveCardPreview via PhoneFrame; MarketingBranch result has been upgraded from flat photo to professionally DesignedPost inside an IG card chrome. LiveCardPreview accepts optional direct URL props with id-based fallback (backward-compatible). The Negocio real-AI full pay->upsell chain was NOT exercised end-to-end this iteration (would hit per-IP cap and was already verified in iteration_22). If you need to retest Negocio: use deep-link ?need=negocio (untested codepath but same as ?need=presencia/?need=marketing — see startDemo() at DemoAll.js line ~91). TRADES values include the slash (e.g. 'Techos / Roofing'), NOT just 'Roofing' — use select_option(value='Techos / Roofing') in Playwright.",
+  "rca of the issue": "No defects observed. All review-request acceptance criteria met."
+}
