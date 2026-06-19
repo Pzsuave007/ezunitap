@@ -534,10 +534,16 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
 
       {opened && (
         <>
+          <div className="mt-5 mb-2 text-center">
+            <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué tu tarjeta vende por ti?</h3>
+          </div>
           <FeatureRow items={[
-            { icon: Star, text: "Reseñas 5★ de Google, pidiéndolas con un tap" },
-            { icon: MessageCircle, text: "Botón de WhatsApp para que te contacten al instante" },
-            { icon: Contact, text: "“Guardar contacto” deja tu info en su teléfono" },
+            { icon: BadgeCheck, text: "Te ves PROFESIONAL al instante y generas confianza — olvídate de las tarjetas de papel que se pierden." },
+            { icon: Star, text: "Consigue más reseñas 5★ de Google con un solo tap. Más reseñas = sales primero en Google y te eligen a ti." },
+            { icon: MessageCircle, text: "Nunca pierdas un cliente: te llaman, textean o mandan WhatsApp con un toque, sin teclear tu número." },
+            { icon: Contact, text: "El cliente guarda tu contacto en su teléfono al instante — te recuerda y te recomienda con sus amigos." },
+            { icon: Nfc, text: "Compártela sin apps: acerca el teléfono (NFC), escanea el QR o manda el link por mensaje. Funciona en cualquier celular." },
+            { icon: Sparkles, text: "Cámbiala cuando quieras: fotos, servicios, precios y ofertas se actualizan al momento, sin reimprimir nada." },
           ]} />
           <ModuleUpsell highlight="presencia" onSwitch={onSwitch} />
         </>
