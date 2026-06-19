@@ -141,20 +141,36 @@ export default function ClientDetail() {
         </DrawerContent>
       </Drawer>
       ) : (
-        <button
-          data-testid="client-upsell-negocio"
-          onClick={() => navigate("/precios")}
-          className="tap w-full flex items-center gap-3 p-4 rounded-2xl border border-dashed border-zinc-300 bg-white hover:bg-zinc-50 text-left transition-colors"
-        >
-          <span className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center flex-none">
-            <Receipt className="w-5 h-5" strokeWidth={2.4} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold text-zinc-900 text-sm">Activa el plan Negocio para cotizar y facturar</span>
-            <span className="block text-xs text-zinc-500">Crea cotizaciones, invoices y contratos para este cliente.</span>
-          </span>
-          <ChevronRight className="w-5 h-5 text-zinc-300 flex-none" />
-        </button>
+        <div className="space-y-2">
+          <button
+            data-testid="client-message-btn"
+            onClick={() => navigate(`/mensajes?client_id=${id}`)}
+            className="tap w-full flex items-center gap-3 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white transition-colors"
+          >
+            <span className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center flex-none">
+              <MessageSquare className="w-5 h-5" strokeWidth={2.2} />
+            </span>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block font-semibold text-sm">Mandar mensaje</span>
+              <span className="block text-[11px] text-zinc-300">Escríbelo en español y se manda en inglés</span>
+            </span>
+            <ChevronRight className="w-5 h-5 text-zinc-500 flex-none" />
+          </button>
+          <button
+            data-testid="client-upsell-negocio"
+            onClick={() => navigate("/precios")}
+            className="tap w-full flex items-center gap-3 p-4 rounded-2xl border border-dashed border-zinc-300 bg-white hover:bg-zinc-50 text-left transition-colors"
+          >
+            <span className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center flex-none">
+              <Receipt className="w-5 h-5" strokeWidth={2.4} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold text-zinc-900 text-sm">Activa el plan Negocio para cotizar y facturar</span>
+              <span className="block text-xs text-zinc-500">Crea cotizaciones, invoices y contratos para este cliente.</span>
+            </span>
+            <ChevronRight className="w-5 h-5 text-zinc-300 flex-none" />
+          </button>
+        </div>
       )}
 
       {/* ===== Stats (flat technical grid) — Negocio only ===== */}
@@ -175,7 +191,7 @@ export default function ClientDetail() {
           {hasBusiness && <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />}
           {hasBusiness && <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />}
           <Seg value="messages" label="Mensajes" count={history.messages.length} testid="history-tab-mensajes" />
-          <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />
+          {hasBusiness && <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />}
         </TabsList>
 
         <TabsContent value="info" className="mt-4">

@@ -7,12 +7,13 @@ import {
   UserPlus, Sparkles, ArrowRight, Wallet,
   Settings as SettingsIcon, Megaphone, Bell, ChevronRight,
   IdCard, Star, Eye, UserCheck, Image as ImageIcon, Video, Lock, Plus,
-  Building2, BarChart3,
+  Building2, BarChart3, MapPin, CheckCircle2,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
+import { toast } from "sonner";
 
 const money = (n) => `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
@@ -166,8 +167,13 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
 }
 
 // ---- Card / Presencia module block ----
-function CardBlock({ navigate, cardStats }) {
+function CardBlock({ navigate, cardStats, card, gbp, onConnectGbp }) {
   const views = cardStats?.totals?.profile_visit ?? cardStats?.all_events ?? 0;
+  const slug = card?.slug;
+  const ready = !!card && !!(
+    card.profile_photo_id || card.cover_photo_id || (card.services || []).length ||
+    (card.about_me || "").trim() || (card.tagline || "").trim() || (card.business_type || "").trim()
+  );
   return (
     <div>
       <SectionTitle>Tu Presencia</SectionTitle>
@@ -181,15 +187,68 @@ function CardBlock({ navigate, cardStats }) {
             <div className="text-xs text-slate-500">Tu mini-sitio, reseñas y contactos</div>
           </div>
         </div>
-        <div className="p-3 flex gap-2.5">
+
+        {/* Live mini-site preview (or setup CTA when not ready yet) */}
+        {card && (ready && slug ? (
+          <div className="p-3">
+            <button data-testid="card-live-preview" onClick={() => window.open(`/c/${slug}`, "_blank")}
+              className="tap block w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 relative group">
+              <div className="relative h-64 overflow-hidden">
+                <iframe
+                  src={`/c/${slug}?preview=1`}
+                  title="Vista en vivo de tu mini-sitio"
+                  loading="lazy"
+                  className="w-full pointer-events-none"
+                  style={{ height: 560, border: 0 }}
+                  scrolling="no"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 to-transparent" />
+              </div>
+              <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 bg-white/90 text-slate-900 text-[11px] font-bold px-2 py-1 rounded-full shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En vivo
+              </span>
+              <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 bg-slate-900/85 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                Abrir mini-sitio <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </button>
+          </div>
+        ) : (
+          <button data-testid="card-setup-cta" onClick={() => navigate("/tarjeta")}
+            className="tap m-3 w-[calc(100%-1.5rem)] rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-5 text-center transition-colors hover:bg-blue-50">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-2">
+              <IdCard className="w-6 h-6" strokeWidth={2.2} />
+            </div>
+            <div className="font-heading font-bold text-slate-900 text-sm">Configura tu mini-sitio</div>
+            <div className="text-xs text-slate-500 mt-1">Agrega tu foto, servicios y contacto para verlo en vivo aquí.</div>
+            <span className="mt-3 inline-flex items-center gap-1.5 bg-slate-900 text-white text-sm font-semibold px-4 h-10 rounded-xl">
+              Empezar <ArrowRight className="w-4 h-4" />
+            </span>
+          </button>
+        ))}
+
+        <div className="p-3 pt-0 flex gap-2.5">
           <MiniStat icon={Eye} label="Vistas" value={views} chip="bg-blue-50 text-blue-600" />
           <MiniStat icon={Star} label="Reseñas" value={cardStats?.reviews ?? 0} chip="bg-amber-50 text-amber-600" />
           <MiniStat icon={UserCheck} label="Leads" value={cardStats?.leads ?? 0} chip="bg-emerald-50 text-emerald-600" />
         </div>
         <button data-testid="card-view-btn" onClick={() => navigate("/tarjeta")}
           className="tap mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold h-11 transition-colors">
-          Ver mi tarjeta <ArrowRight className="w-4 h-4" />
+          {ready ? "Editar mi tarjeta" : "Ver mi tarjeta"} <ArrowRight className="w-4 h-4" />
         </button>
+
+        {/* Connect Google My Business */}
+        {gbp?.configured && !gbp?.connected && (
+          <button data-testid="card-connect-gbp-btn" onClick={onConnectGbp}
+            className="tap mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 text-sm font-semibold h-11 transition-colors">
+            <MapPin className="w-4 h-4 text-blue-600" /> Conectar Google My Business
+          </button>
+        )}
+        {gbp?.connected && (
+          <div data-testid="card-gbp-connected" className="mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-semibold h-11">
+            <CheckCircle2 className="w-4 h-4" /> Google My Business conectado
+          </div>
+        )}
+
         <div className="px-3 pb-3 grid grid-cols-3 gap-2.5">
           <CardTile testid="card-reviews-tile" icon={Star} chip="bg-amber-50 text-amber-600" label="Reseñas de Google" onClick={() => navigate("/reviews")} />
           <CardTile testid="card-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label="Publicar en Google" onClick={() => navigate("/reviews")} />
@@ -280,7 +339,9 @@ export default function Dashboard() {
   const [recentQuotes, setRecentQuotes] = useState([]);
   const [reminders, setReminders] = useState([]);
   const [cardStats, setCardStats] = useState(null);
+  const [card, setCard] = useState(null);
   const [mkt, setMkt] = useState({ posts: 0, reels: 0 });
+  const [gbp, setGbp] = useState(null);
 
   const hasBusiness = hasFeature("business");
   const hasCard = hasFeature("card");
@@ -297,6 +358,8 @@ export default function Dashboard() {
     }
     if (hasCard) {
       (async () => { try { const { data } = await api.get("/card/analytics"); setCardStats(data); } catch (e) { /* no card yet */ } })();
+      (async () => { try { const { data } = await api.get("/card/settings"); setCard(data); } catch (e) { /* ignore */ } })();
+      (async () => { try { const { data } = await api.get("/google-business/status"); setGbp(data); } catch (e) { setGbp({ configured: false, connected: false }); } })();
     }
     if (hasMarketing) {
       (async () => {
@@ -307,6 +370,15 @@ export default function Dashboard() {
       })();
     }
   }, [user, hasBusiness, hasCard, hasMarketing]);
+
+  const connectGbp = async () => {
+    try {
+      const { data } = await api.get("/google-business/connect");
+      window.location.href = data.auth_url;
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo iniciar la conexión con Google.");
+    }
+  };
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -343,7 +415,7 @@ export default function Dashboard() {
 
       {/* Module blocks — order: Negocio → Presencia → Marketing */}
       {hasBusiness && <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />}
-      {hasCard && <CardBlock navigate={navigate} cardStats={cardStats} />}
+      {hasCard && <CardBlock navigate={navigate} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />}
       {hasMarketing && <MarketingBlock navigate={navigate} mkt={mkt} />}
 
       {/* Onboarding checklist (auto-hides at 100%) */}

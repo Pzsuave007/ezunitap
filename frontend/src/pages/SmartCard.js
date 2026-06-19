@@ -145,8 +145,10 @@ export default function SmartCard() {
 
   useEffect(() => {
     if (data && !trackedVisit.current) {
-      track(slug, "profile_visit");
       const params = new URLSearchParams(window.location.search);
+      // Dashboard live-preview embed: don't count as a real visit.
+      if (params.get("preview") === "1") { trackedVisit.current = true; return; }
+      track(slug, "profile_visit");
       if (params.get("src") === "qr") track(slug, "qr_scan");
       trackedVisit.current = true;
     }

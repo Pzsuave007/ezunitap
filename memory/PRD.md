@@ -27,6 +27,14 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — PRESENCIA: dashboard enriquecido + acceso a Clientes/Mensajes [COMPLETO + PROBADO]
+- **Preview en vivo del mini-sitio** en el bloque Presencia del dashboard (`Dashboard.js` `CardBlock`): iframe a `/c/{slug}?preview=1` con badge "En vivo" + "Abrir mini-sitio". `SmartCard.js` ahora NO cuenta `profile_visit` cuando `preview=1` (no infla stats). Si la tarjeta no tiene contenido → CTA "Configura tu mini-sitio".
+- **Conectar Google My Business** desde el dashboard (usa `/google-business/status` y `/google-business/connect`; el callback regresa a `/reviews?gmb=connected`). Accesos: Reseñas de Google, Publicar en Google, Estadísticas.
+- **Plan Presencia (card) ahora accede a Clientes**: `require_any_feature("card","business")` en POST/PUT `/clients`; ruta `/clientes` y nav con `anyFeature`. Ve/gestiona los leads que la tarjeta crea automáticamente (Let's Connect / Request a Quote ya insertan un cliente + job).
+- **Perfil del cliente (plan Presencia)**: oculta el "+ Crear" (quotes/invoices/contratos) y muestra upsell de Negocio + botón **"Mandar mensaje"** (ES→EN, endpoints de mensajes no están gateados). Pestañas solo Info + Mensajes (sin Fotos ni stats de negocio).
+- **Checklist "Tus primeros pasos" adaptado por módulo** (`/onboarding/status`): cada item tiene `feature`; se filtran por `user_features`. Presencia ve info+tarjeta; Negocio ve info+cliente.
+
+
 ## ✅ Jun 2026 — DASHBOARD ADAPTATIVO POR MÓDULO + UI cleanup móvil [COMPLETO + PROBADO]
 Pedido de Paul: pulir la app móvil y resolver "¿qué ve un usuario que solo compró Tarjeta NFC o solo Marketing?" (el dashboard estaba 100% orientado a `business`).
 - **Dashboard adaptativo** (`Dashboard.js`): renderiza bloques SOLO de los módulos que el usuario tiene (`hasFeature`), en orden Negocio → Presencia(card) → Marketing.
