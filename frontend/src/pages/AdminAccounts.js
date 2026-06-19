@@ -1,11 +1,12 @@
 /**
- * AdminAccounts — Super-admin-only page for granting complimentary (free)
- * accounts to friends, beta testers, and reviewers.
+ * AdminAccounts — consolidated super-admin account management.
  *
- * Two tabs:
- *   1. Invitaciones — generate a single-use signup link that auto-grants
- *      comp access on signup.
- *   2. Usuarios — list of all users with a button to grant/revoke comp.
+ * The "Cuentas" view is a dense table (desktop) / stacked cards (mobile) of
+ * every user. Clicking a row opens a unified Drawer (AdminAccountDrawer) that
+ * manages EVERYTHING about that account (plan, NFC card limit, shipping,
+ * impersonate, delete) without leaving the page.
+ *
+ * A secondary "Invitaciones" view keeps the single-use comp invite generator.
  */
 import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
@@ -15,67 +16,51 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Gift, Loader2, Copy, Check, Plus, Trash2, Users, Link as LinkIcon,
-  X, Sparkles, AlertCircle, Calendar, UserPlus, IdCard,
+  Sparkles, AlertCircle, Calendar, UserPlus, IdCard, Search, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminTabs from "@/components/AdminTabs";
-import { useAuth } from "@/context/AuthContext";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import AdminAccountDrawer, {
+  PLAN_LABELS, currentPlan, fmtDate,
+} from "@/components/AdminAccountDrawer";
 
-const PLAN_OPTIONS = [
-  { value: "trial", label: "Prueba (14 días)" },
-  { value: "presencia", label: "Presencia (tarjeta)" },
-  { value: "negocio", label: "Negocio (CRM/IA)" },
-  { value: "marketing", label: "Marketing" },
-  { value: "presencia_negocio", label: "Presencia + Negocio" },
-  { value: "presencia_marketing", label: "Presencia + Marketing" },
-  { value: "negocio_marketing", label: "Negocio + Marketing" },
-  { value: "bundle", label: "Bundle — Todo" },
-  { value: "comp", label: "Cortesía (gratis)" },
-  { value: "locked", label: "Bloqueado" },
+const FILTERS = [
+  { v: "all", label: "Todos" },
+  { v: "active", label: "Activa" },
+  { v: "trialing", label: "Trial" },
+  { v: "comp", label: "Cortesía" },
+  { v: "locked", label: "Sin plan" },
 ];
 
-const PLAN_LABELS = PLAN_OPTIONS.reduce((m, o) => ({ ...m, [o.value]: o.label }), {});
+function planBadge(u) {
+  if (u.is_comp)
+    return { label: "Cortesía", cls: "bg-amber-100 text-amber-800" };
+  if (u.manual_plan)
+    return { label: `${PLAN_LABELS[u.manual_plan] || u.manual_plan} · manual`, cls: "bg-violet-100 text-violet-800" };
+  if (u.subscription_status === "active")
+    return { label: "Pagado", cls: "bg-emerald-100 text-emerald-800" };
+  if (u.subscription_status === "trialing")
+    return { label: "Trial", cls: "bg-blue-100 text-blue-800" };
+  if (Array.isArray(u.features) && u.features.length === 0)
+    return { label: "Bloqueado", cls: "bg-red-100 text-red-700" };
+  return { label: "Sin plan", cls: "bg-slate-100 text-slate-600" };
+}
 
-function currentPlan(u) {
+function effStatus(u) {
   if (u.is_comp) return "comp";
-  if (u.manual_plan) return u.manual_plan;
-  if (u.subscription_status === "trialing") return "trial";
-  if (["active", "past_due"].includes(u.subscription_status) && u.plan_type) {
-    const base = String(u.plan_type).replace(/_(monthly|yearly|manual)$/, "");
-    if (["presencia", "negocio", "marketing", "presencia_negocio", "presencia_marketing", "negocio_marketing", "bundle"].includes(base)) return base;
-  }
-  return "locked";
+  if (u.subscription_status === "active") return "active";
+  if (u.subscription_status === "trialing") return "trialing";
+  if (Array.isArray(u.features) && u.features.length === 0) return "locked";
+  if (!u.subscription_status || u.subscription_status === "canceled") return "locked";
+  return u.subscription_status;
 }
-
-function formatDate(ts) {
-  if (!ts) return "—";
-  try {
-    return new Date(typeof ts === "number" ? ts * 1000 : ts).toLocaleDateString(
-      "es-ES",
-      { year: "numeric", month: "short", day: "numeric" }
-    );
-  } catch {
-    return "—";
-  }
-}
-
-const DURATION_OPTIONS = [
-  { value: "", label: "Indefinido (sin expiración)" },
-  { value: 30, label: "30 días" },
-  { value: 90, label: "90 días" },
-  { value: 180, label: "6 meses" },
-  { value: 365, label: "1 año" },
-];
 
 export default function AdminAccounts() {
-  const [tab, setTab] = useState("invites");
+  const [view, setView] = useState("accounts"); // accounts | invites
   const [forbidden, setForbidden] = useState(false);
 
   if (forbidden) {
@@ -98,41 +83,249 @@ export default function AdminAccounts() {
       <AdminTabs />
       <div>
         <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">
-          Cuentas gratis
+          Cuentas
         </h1>
         <p className="text-slate-500 mt-2 max-w-2xl">
-          Regala acceso completo a amigos, beta-testers o reviewers sin
-          cobrarles. Genera un link de invitación o marca un usuario existente
-          como cuenta gratis.
+          Gestiona todo de cada cuenta en un solo lugar: toca una cuenta para
+          abrir su panel (plan, tarjetas, envíos, acceso) sin cambiar de página.
         </p>
       </div>
 
       <div className="inline-flex rounded-xl bg-slate-100 p-1">
         <button
-          data-testid="tab-invites"
-          onClick={() => setTab("invites")}
+          data-testid="view-accounts"
+          onClick={() => setView("accounts")}
           className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-            tab === "invites" ? "bg-white shadow-sm" : "text-slate-500"
+            view === "accounts" ? "bg-white shadow-sm" : "text-slate-500"
+          }`}
+        >
+          <Users className="w-4 h-4 inline mr-1" /> Cuentas
+        </button>
+        <button
+          data-testid="view-invites"
+          onClick={() => setView("invites")}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            view === "invites" ? "bg-white shadow-sm" : "text-slate-500"
           }`}
         >
           <LinkIcon className="w-4 h-4 inline mr-1" /> Invitaciones
         </button>
-        <button
-          data-testid="tab-users"
-          onClick={() => setTab("users")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-            tab === "users" ? "bg-white shadow-sm" : "text-slate-500"
-          }`}
-        >
-          <Users className="w-4 h-4 inline mr-1" /> Usuarios
-        </button>
       </div>
 
-      {tab === "invites" ? (
-        <InvitesTab onForbidden={() => setForbidden(true)} />
+      {view === "accounts" ? (
+        <AccountsView onForbidden={() => setForbidden(true)} />
       ) : (
-        <UsersTab onForbidden={() => setForbidden(true)} />
+        <InvitesTab onForbidden={() => setForbidden(true)} />
       )}
+    </div>
+  );
+}
+
+function AccountsView({ onForbidden }) {
+  const [users, setUsers] = useState([]);
+  const [shipMap, setShipMap] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [u, s] = await Promise.all([
+        api.get("/admin/users"),
+        api.get("/admin/shipments").catch(() => ({ data: { shipments: [] } })),
+      ]);
+      const list = u.data.users || [];
+      setUsers(list);
+      const map = {};
+      (s.data.shipments || []).forEach((sh) => {
+        map[sh.id] = sh;
+      });
+      setShipMap(map);
+      // keep the open drawer in sync after an action
+      setSelected((prev) => (prev ? list.find((x) => x.id === prev.id) || null : null));
+    } catch (e) {
+      if (e?.response?.status === 403) onForbidden();
+      else toast.error("Error al cargar cuentas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (filter !== "all" && effStatus(u) !== filter) return false;
+      if (!q) return true;
+      return (
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.business_name || "").toLowerCase().includes(q) ||
+        (u.owner_name || "").toLowerCase().includes(q)
+      );
+    });
+  }, [users, search, filter]);
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
+            data-testid="accounts-search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o correo..."
+            className="pl-9 h-10"
+          />
+        </div>
+        <Button
+          data-testid="create-account-btn"
+          onClick={() => setCreateOpen(true)}
+          className="h-10 bg-blue-900 hover:bg-blue-950 text-white"
+        >
+          <UserPlus className="w-4 h-4 mr-1.5" /> Crear cuenta
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5" data-testid="accounts-filter-status">
+        {FILTERS.map((f) => (
+          <button
+            key={f.v}
+            data-testid={`filter-${f.v}`}
+            onClick={() => setFilter(f.v)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              filter === f.v
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-10 text-center text-sm text-slate-500">
+          Sin resultados.
+        </Card>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <Card className="p-0 hidden md:block overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50">
+                  <th className="py-2.5 px-4 font-semibold">Cuenta</th>
+                  <th className="py-2.5 px-3 font-semibold">Plan</th>
+                  <th className="py-2.5 px-3 font-semibold">Tarjetas</th>
+                  <th className="py-2.5 px-3 font-semibold">Registro</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Gestionar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((u) => {
+                  const b = planBadge(u);
+                  return (
+                    <tr
+                      key={u.id}
+                      data-testid="accounts-table-row"
+                      onClick={() => setSelected(u)}
+                      className="border-b border-slate-100 hover:bg-amber-50/40 cursor-pointer transition"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="font-semibold truncate max-w-[260px]">
+                          {u.business_name || u.owner_name || "—"}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate">{u.email}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${b.cls}`}>
+                          {b.label}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-xs text-slate-600">
+                        <span className="inline-flex items-center gap-1">
+                          <IdCard className="w-3.5 h-3.5 text-slate-400" /> {u.card_limit || 1}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-xs text-slate-500 whitespace-nowrap">
+                        {fmtDate(u.created_at)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
+                          Abrir <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {filtered.map((u) => {
+              const b = planBadge(u);
+              return (
+                <button
+                  key={u.id}
+                  data-testid="accounts-table-row"
+                  onClick={() => setSelected(u)}
+                  className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white hover:border-amber-300 transition flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-heading font-bold flex-none">
+                    {(u.business_name || u.owner_name || u.email || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm truncate">
+                        {u.business_name || u.owner_name || "—"}
+                      </span>
+                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${b.cls}`}>
+                        {b.label}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 truncate">{u.email}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 inline-flex items-center gap-1">
+                      <IdCard className="w-3 h-3" /> {u.card_limit || 1} tarjeta(s) · {fmtDate(u.created_at)}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 flex-none" />
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <AdminAccountDrawer
+        user={selected}
+        shipment={selected ? shipMap[selected.id] : null}
+        onClose={() => setSelected(null)}
+        onChanged={load}
+      />
+
+      <CreateUserDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={async () => {
+          setCreateOpen(false);
+          await load();
+        }}
+      />
     </div>
   );
 }
@@ -165,9 +358,7 @@ function InvitesTab({ onForbidden }) {
   const submit = async () => {
     setSubmitting(true);
     try {
-      const body = {
-        note: form.note || "",
-      };
+      const body = { note: form.note || "" };
       if (form.email) body.email = form.email;
       if (form.duration_days) body.duration_days = Number(form.duration_days);
       await api.post("/admin/comp-invites", body);
@@ -192,8 +383,7 @@ function InvitesTab({ onForbidden }) {
     }
   };
 
-  const inviteUrl = (token) =>
-    `${window.location.origin}/register?invite=${token}`;
+  const inviteUrl = (token) => `${window.location.origin}/register?invite=${token}`;
 
   const copy = async (token, id) => {
     try {
@@ -216,16 +406,23 @@ function InvitesTab({ onForbidden }) {
           url,
         });
       } catch {
-        // user cancelled
+        /* user cancelled */
       }
     } else {
       copy(token, null);
     }
   };
 
+  const DURATION_OPTIONS = [
+    { value: "", label: "Indefinido (sin expiración)" },
+    { value: 30, label: "30 días" },
+    { value: 90, label: "90 días" },
+    { value: 180, label: "6 meses" },
+    { value: 365, label: "1 año" },
+  ];
+
   return (
     <div className="space-y-5">
-      {/* Create form */}
       <Card className="p-5">
         <h3 className="font-heading font-bold text-base flex items-center gap-2">
           <Plus className="w-4 h-4 text-emerald-600" /> Nueva invitación
@@ -236,9 +433,7 @@ function InvitesTab({ onForbidden }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           <div>
-            <label className="text-xs font-semibold text-slate-600">
-              Email (opcional)
-            </label>
+            <label className="text-xs font-semibold text-slate-600">Email (opcional)</label>
             <Input
               data-testid="invite-email"
               value={form.email}
@@ -250,23 +445,16 @@ function InvitesTab({ onForbidden }) {
               Si lo llenas, solo ese email puede usar el link.
             </p>
           </div>
-
           <div>
-            <label className="text-xs font-semibold text-slate-600">
-              Duración
-            </label>
+            <label className="text-xs font-semibold text-slate-600">Duración</label>
             <select
               data-testid="invite-duration"
               value={form.duration_days}
-              onChange={(e) =>
-                setForm({ ...form, duration_days: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, duration_days: e.target.value })}
               className="mt-1 w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white"
             >
               {DURATION_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </div>
@@ -292,16 +480,11 @@ function InvitesTab({ onForbidden }) {
           disabled={submitting}
           className="mt-4 w-full sm:w-auto h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
         >
-          {submitting ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          ) : (
-            <Gift className="w-4 h-4 mr-2" />
-          )}
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Gift className="w-4 h-4 mr-2" />}
           Generar link
         </Button>
       </Card>
 
-      {/* Invites list */}
       <Card className="p-5">
         <h3 className="font-heading font-bold text-base">
           Invitaciones creadas ({invites.length})
@@ -340,16 +523,10 @@ function InvitesTab({ onForbidden }) {
                             : "bg-red-200 text-red-900"
                         }`}
                       >
-                        {inv.status === "active"
-                          ? "Activa"
-                          : inv.status === "used"
-                          ? "Usada"
-                          : "Revocada"}
+                        {inv.status === "active" ? "Activa" : inv.status === "used" ? "Usada" : "Revocada"}
                       </span>
                       {inv.email && (
-                        <span className="text-xs text-slate-600 truncate">
-                          → {inv.email}
-                        </span>
+                        <span className="text-xs text-slate-600 truncate">→ {inv.email}</span>
                       )}
                       {inv.duration_days && (
                         <span className="text-[10px] text-slate-500 flex items-center gap-1">
@@ -359,13 +536,11 @@ function InvitesTab({ onForbidden }) {
                       )}
                     </div>
                     {inv.note && (
-                      <div className="text-xs text-slate-600 mt-1 italic">
-                        "{inv.note}"
-                      </div>
+                      <div className="text-xs text-slate-600 mt-1 italic">"{inv.note}"</div>
                     )}
                     <div className="text-[10px] text-slate-400 mt-1">
-                      Creada {formatDate(inv.created_at)}
-                      {inv.used_at && ` · Usada ${formatDate(inv.used_at)}`}
+                      Creada {fmtDate(inv.created_at)}
+                      {inv.used_at && ` · Usada ${fmtDate(inv.used_at)}`}
                     </div>
                   </div>
 
@@ -419,328 +594,6 @@ function InvitesTab({ onForbidden }) {
   );
 }
 
-function UsersTab({ onForbidden }) {
-  const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [grantingId, setGrantingId] = useState(null);
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get("/admin/users");
-      setUsers(data.users || []);
-    } catch (e) {
-      if (e?.response?.status === 403) onForbidden();
-      else toast.error("Error al cargar usuarios");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const setPlan = async (u, plan) => {
-    if (!plan || plan === currentPlan(u)) return;
-    if (
-      plan === "locked" &&
-      !window.confirm(
-        `¿Bloquear el acceso de ${u.email}?\nNo podrá crear ni editar nada (solo ver sus datos).`
-      )
-    )
-      return;
-    setGrantingId(u.id);
-    try {
-      await api.post(`/admin/users/${u.id}/set-plan`, { plan });
-      toast.success(`Plan actualizado: ${PLAN_LABELS[plan] || plan}`);
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error");
-    } finally {
-      setGrantingId(null);
-    }
-  };
-
-  const grant = async (userId) => {
-    const days = window.prompt(
-      "¿Por cuántos días? (deja vacío para indefinido)",
-      ""
-    );
-    if (days === null) return;
-    const note = window.prompt("Nota interna (opcional):", "") || "";
-    setGrantingId(userId);
-    try {
-      const body = { note };
-      if (days && !isNaN(Number(days))) body.duration_days = Number(days);
-      await api.post(`/admin/users/${userId}/grant-comp`, body);
-      toast.success("Acceso gratis otorgado");
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error");
-    } finally {
-      setGrantingId(null);
-    }
-  };
-
-  const revoke = async (userId) => {
-    if (!window.confirm("¿Revocar el acceso gratis de este usuario?")) return;
-    setGrantingId(userId);
-    try {
-      await api.post(`/admin/users/${userId}/revoke-comp`);
-      toast.success("Acceso revocado");
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error");
-    } finally {
-      setGrantingId(null);
-    }
-  };
-
-  // grant/revoke kept for backward-compat; primary control is now setPlan above.
-  void grant;
-  void revoke;
-
-  const setCardLimit = async (u) => {
-    const current = u.card_limit || 1;
-    const val = window.prompt(
-      `¿Cuántas tarjetas digitales en TOTAL para ${u.email}?\n(Actual: ${current})`,
-      String(current)
-    );
-    if (val === null) return;
-    const total = parseInt(val, 10);
-    if (isNaN(total) || total < 1) {
-      toast.error("Número inválido");
-      return;
-    }
-    const hasStripe = !u.is_comp && ["active", "trialing", "past_due"].includes(u.subscription_status);
-    let paid = false;
-    if (total > current && hasStripe) {
-      paid = window.confirm(
-        `¿Cobrar las tarjetas adicionales vía Stripe?\n\n` +
-        `Aceptar = COBRAR (+$15/mes c/u, sube el próximo pago del cliente)\n` +
-        `Cancelar = GRATIS (cortesía, no se cobra)`
-      );
-    }
-    setGrantingId(u.id);
-    try {
-      if (paid) {
-        await api.post(`/admin/users/${u.id}/card-seats`, { card_limit: total });
-        toast.success("Tarjetas actualizadas en Stripe (se cobra el próximo ciclo)");
-      } else {
-        await api.post(`/admin/users/${u.id}/card-limit`, { card_limit: total });
-        toast.success("Límite de tarjetas actualizado (gratis)");
-      }
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error");
-    } finally {
-      setGrantingId(null);
-    }
-  };
-
-  const deleteUser = async (u) => {
-    const confirmMsg =
-      `⚠️ ¿Eliminar PERMANENTEMENTE a ${u.email}?\n\n` +
-      `Esto borra su cuenta, clientes, quotes, invoices, contratos, trabajos y agenda.\n\n` +
-      `Esta acción NO se puede deshacer.`;
-    if (!window.confirm(confirmMsg)) return;
-    const typed = window.prompt(
-      `Para confirmar, escribe el email exacto:\n${u.email}`,
-      ""
-    );
-    if (typed !== u.email) {
-      if (typed !== null) toast.error("Email no coincide. Cancelado.");
-      return;
-    }
-    setGrantingId(u.id);
-    try {
-      await api.delete(`/admin/users/${u.id}`);
-      toast.success(`Cuenta de ${u.email} eliminada`);
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error al eliminar");
-    } finally {
-      setGrantingId(null);
-    }
-  };
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        (u.email || "").toLowerCase().includes(q) ||
-        (u.business_name || "").toLowerCase().includes(q) ||
-        (u.owner_name || "").toLowerCase().includes(q)
-    );
-  }, [users, search]);
-
-  return (
-    <div className="space-y-4">
-      <Card className="p-5">
-        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <h3 className="font-heading font-bold text-base">
-            Usuarios ({users.length})
-          </h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Input
-              data-testid="users-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar email o negocio..."
-              className="max-w-xs h-9"
-            />
-            <Button
-              data-testid="add-user-btn"
-              onClick={() => setCreateOpen(true)}
-              className="h-9 bg-blue-900 hover:bg-blue-950 text-white"
-            >
-              <UserPlus className="w-4 h-4 mr-1.5" /> Agregar usuario
-            </Button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-6">
-            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-sm text-slate-500 py-6 text-center">
-            Sin resultados.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map((u) => {
-              const isSelf = u.id === currentUser?.id;
-              return (
-                <div
-                  key={u.id}
-                  data-testid={`user-row-${u.id}`}
-                  className="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm truncate">
-                        {u.business_name || u.owner_name || "—"}
-                      </span>
-                      {isSelf && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                          Tú
-                        </span>
-                      )}
-                      {u.is_comp && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5" /> Gratis
-                        </span>
-                      )}
-                      {u.subscription_status === "active" && !u.is_comp && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                          Pagado
-                        </span>
-                      )}
-                      {u.subscription_status === "trialing" && !u.is_comp && !u.manual_plan && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                          Trial
-                        </span>
-                      )}
-                      {u.manual_plan && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-violet-100 text-violet-800 px-2 py-0.5 rounded-full">
-                          {PLAN_LABELS[u.manual_plan] || u.manual_plan} · manual
-                        </span>
-                      )}
-                      {Array.isArray(u.features) && u.features.length === 0 && !u.is_comp && (
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                          Bloqueado
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-500 truncate">
-                      {u.email}
-                    </div>
-                    {u.comp_note && (
-                      <div className="text-[10px] text-amber-700 italic mt-0.5">
-                        "{u.comp_note}"
-                        {u.comp_expires_at && (
-                          <> · expira {formatDate(u.comp_expires_at)}</>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-none flex items-center gap-1">
-                    <Button
-                      data-testid={`card-limit-${u.id}`}
-                      onClick={() => setCardLimit(u)}
-                      disabled={grantingId === u.id}
-                      variant="outline"
-                      size="sm"
-                      className="h-9"
-                      title="Tarjetas digitales permitidas"
-                    >
-                      <IdCard className="w-3.5 h-3.5 mr-1" /> Tarjetas: {u.card_limit || 1}
-                    </Button>
-                    <Select
-                      value={currentPlan(u)}
-                      onValueChange={(v) => setPlan(u, v)}
-                      disabled={grantingId === u.id}
-                    >
-                      <SelectTrigger
-                        data-testid={`plan-select-${u.id}`}
-                        className="h-9 w-[150px] text-xs"
-                      >
-                        <SelectValue placeholder="Plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PLAN_OPTIONS.map((o) => (
-                          <SelectItem
-                            key={o.value}
-                            value={o.value}
-                            data-testid={`plan-option-${u.id}-${o.value}`}
-                            className="text-xs"
-                          >
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {!isSelf && (
-                      <Button
-                        data-testid={`delete-user-${u.id}`}
-                        onClick={() => deleteUser(u)}
-                        disabled={grantingId === u.id}
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="Eliminar cuenta"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
-
-      <CreateUserDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={async () => {
-          setCreateOpen(false);
-          await load();
-        }}
-      />
-    </div>
-  );
-}
-
 function CreateUserDialog({ open, onClose, onCreated }) {
   const empty = {
     email: "",
@@ -760,8 +613,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const set = (k) => (e) =>
-    setForm({ ...form, [k]: e?.target ? e.target.value : e });
+  const set = (k) => (e) => setForm({ ...form, [k]: e?.target ? e.target.value : e });
 
   const submit = async (e) => {
     e?.preventDefault?.();
@@ -785,15 +637,10 @@ function CreateUserDialog({ open, onClose, onCreated }) {
       };
       if (form.grant_comp) {
         body.comp_note = form.comp_note || "";
-        if (form.comp_duration_days)
-          body.comp_duration_days = Number(form.comp_duration_days);
+        if (form.comp_duration_days) body.comp_duration_days = Number(form.comp_duration_days);
       }
       await api.post("/admin/users", body);
-      toast.success(
-        form.grant_comp
-          ? "Usuario creado con acceso gratis 🎁"
-          : "Usuario creado"
-      );
+      toast.success(form.grant_comp ? "Usuario creado con acceso gratis 🎁" : "Usuario creado");
       await onCreated();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error al crear usuario");
@@ -818,9 +665,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
 
         <form onSubmit={submit} className="space-y-3">
           <div>
-            <label className="text-xs font-semibold text-slate-600">
-              Email *
-            </label>
+            <label className="text-xs font-semibold text-slate-600">Email *</label>
             <Input
               data-testid="create-user-email"
               type="email"
@@ -848,9 +693,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-600">
-              Nombre del negocio *
-            </label>
+            <label className="text-xs font-semibold text-slate-600">Nombre del negocio *</label>
             <Input
               data-testid="create-user-business"
               value={form.business_name}
@@ -863,9 +706,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-semibold text-slate-600">
-                Nombre del dueño
-              </label>
+              <label className="text-xs font-semibold text-slate-600">Nombre del dueño</label>
               <Input
                 data-testid="create-user-owner"
                 value={form.owner_name}
@@ -875,9 +716,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600">
-                Teléfono
-              </label>
+              <label className="text-xs font-semibold text-slate-600">Teléfono</label>
               <Input
                 data-testid="create-user-phone"
                 value={form.phone}
@@ -909,9 +748,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
             {form.grant_comp && (
               <div className="space-y-2 pl-6">
                 <div>
-                  <label className="text-xs font-semibold text-amber-900">
-                    Duración
-                  </label>
+                  <label className="text-xs font-semibold text-amber-900">Duración</label>
                   <select
                     data-testid="create-user-comp-duration"
                     value={form.comp_duration_days}
@@ -926,9 +763,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-amber-900">
-                    Nota interna
-                  </label>
+                  <label className="text-xs font-semibold text-amber-900">Nota interna</label>
                   <Input
                     data-testid="create-user-comp-note"
                     value={form.comp_note}
@@ -957,11 +792,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
               data-testid="create-user-submit"
               className="bg-blue-900 hover:bg-blue-950 text-white"
             >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <UserPlus className="w-4 h-4 mr-2" />
-              )}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
               Crear cuenta
             </Button>
           </DialogFooter>
