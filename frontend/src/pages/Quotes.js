@@ -40,21 +40,21 @@ export default function Quotes() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Quotes</h1>
-          <p className="text-slate-500 mt-1">{quotes.length} en total</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">Quotes</h1>
+            <p className="text-slate-500 mt-1">{quotes.length} en total</p>
+          </div>
           <TourButton tourKey="quotes" />
-          <Button
-            data-testid="new-quote-btn"
-            onClick={() => navigate("/quotes/nuevo?ai=1")}
-            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
-          >
-            <Sparkles className="w-4 h-4 mr-1" /> Nuevo con AI
-          </Button>
         </div>
+        <Button
+          data-testid="new-quote-btn"
+          onClick={() => navigate("/quotes/nuevo?ai=1")}
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
+        >
+          <Sparkles className="w-4 h-4 mr-1" /> Nuevo con AI
+        </Button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">

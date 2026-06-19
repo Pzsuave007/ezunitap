@@ -41,21 +41,21 @@ export default function Invoices() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-slate-500 mt-1">{invoices.length} en total</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">Invoices</h1>
+            <p className="text-slate-500 mt-1">{invoices.length} en total</p>
+          </div>
           <TourButton tourKey="invoices" />
-          <Button
-            data-testid="new-invoice-btn"
-            onClick={() => navigate("/invoices/nuevo")}
-            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Nuevo
-          </Button>
         </div>
+        <Button
+          data-testid="new-invoice-btn"
+          onClick={() => navigate("/invoices/nuevo")}
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 mr-1" /> Nuevo invoice
+        </Button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
