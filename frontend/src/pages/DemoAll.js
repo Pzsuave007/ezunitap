@@ -121,13 +121,13 @@ export default function DemoAll() {
         {phase === "lead" && <LeadStep lead={lead} setLead={setLead} onStart={startDemo} loading={loading} />}
         {phase === "branch" && <BranchSelector onChoose={chooseBranch} />}
         {phase === "negocio" && (
-          <NegocioBranch demoId={demoId} business={business} lead={lead} onBack={() => setPhase("branch")} />
+          <NegocioBranch demoId={demoId} business={business} lead={lead} onBack={() => setPhase("branch")} onSwitch={chooseBranch} />
         )}
         {phase === "presencia" && (
-          <PresenciaBranch lead={lead} onBack={() => setPhase("branch")} />
+          <PresenciaBranch lead={lead} onBack={() => setPhase("branch")} onSwitch={chooseBranch} />
         )}
         {phase === "marketing" && (
-          <MarketingBranch lead={lead} onBack={() => setPhase("branch")} />
+          <MarketingBranch lead={lead} onBack={() => setPhase("branch")} onSwitch={chooseBranch} />
         )}
       </div>
     </div>
@@ -258,7 +258,7 @@ function BranchSelector({ onChoose }) {
 }
 
 /* ============================ NEGOCIO (real AI) ============================ */
-function NegocioBranch({ demoId, business, lead, onBack }) {
+function NegocioBranch({ demoId, business, lead, onBack, onSwitch }) {
   const [sub, setSub] = useState("describe"); // describe | quote | agreement | invoice
   const [desc, setDesc] = useState("");
   const [quote, setQuote] = useState(null);
@@ -342,7 +342,7 @@ function NegocioBranch({ demoId, business, lead, onBack }) {
       {sub === "invoice" && (
         <>
           <InvoiceStep quote={quote} business={biz} lead={lead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
-          {paid && <ModuleUpsell highlight="negocio" />}
+          {paid && <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />}
         </>
       )}
     </div>
@@ -350,7 +350,7 @@ function NegocioBranch({ demoId, business, lead, onBack }) {
 }
 
 /* ============================ PRESENCIA (tarjeta real) ============================ */
-function PresenciaBranch({ lead, onBack }) {
+function PresenciaBranch({ lead, onBack, onSwitch }) {
   const [opened, setOpened] = useState(false);
   const meta = tradeMeta(lead.trade);
   const name = brandName(lead);
@@ -410,7 +410,7 @@ function PresenciaBranch({ lead, onBack }) {
             { icon: MessageCircle, text: "Botón de WhatsApp para que te contacten al instante" },
             { icon: Contact, text: "“Guardar contacto” deja tu info en su teléfono" },
           ]} />
-          <ModuleUpsell highlight="presencia" />
+          <ModuleUpsell highlight="presencia" onSwitch={onSwitch} />
         </>
       )}
     </div>
@@ -418,7 +418,7 @@ function PresenciaBranch({ lead, onBack }) {
 }
 
 /* ============================ MARKETING (simulado) ============================ */
-function MarketingBranch({ lead, onBack }) {
+function MarketingBranch({ lead, onBack, onSwitch }) {
   const [picked, setPicked] = useState("");
   const [stage, setStage] = useState("input"); // input | generating | result
   const [copied, setCopied] = useState(false);
@@ -534,7 +534,7 @@ function MarketingBranch({ lead, onBack }) {
             { icon: PlayCircle, text: "Reels en video con voz en off en español nativo" },
             { icon: Sparkles, text: "¿No tienes foto? La IA te crea la imagen" },
           ]} />
-          <ModuleUpsell highlight="marketing" />
+          <ModuleUpsell highlight="marketing" onSwitch={onSwitch} />
         </div>
       )}
     </div>
@@ -673,29 +673,55 @@ const UPSELL_MODULES = {
   marketing: { icon: Megaphone, title: "Marketing con IA", desc: "Posts, reels e imágenes con tu marca" },
 };
 
-function ModuleUpsell({ highlight }) {
+function ModuleUpsell({ highlight, onSwitch }) {
+  const others = Object.keys(UPSELL_MODULES).filter((id) => id !== highlight);
   return (
     <Card className="mt-6 p-6 sm:p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0" data-testid="demo-module-upsell">
       <PartyPopper className="w-9 h-9 mx-auto mb-2" />
       <h2 className="font-heading text-2xl font-bold">Y eso es solo una parte</h2>
       <p className="text-white/85 mt-1 max-w-md mx-auto text-sm">
-        UniTech junta TODO lo que tu negocio necesita. Arma tu plan con los módulos que quieras:
+        UniTech junta TODO lo que tu negocio necesita. Toca otro módulo para ver su demo 👇
       </p>
       <div className="mt-5 grid gap-2 text-left">
-        {Object.entries(UPSELL_MODULES).map(([id, m]) => (
-          <div key={id} className={`flex items-center gap-3 p-3 rounded-xl ${id === highlight ? "bg-white/20 ring-2 ring-white/50" : "bg-white/10"}`}>
+        {/* current module (just shows what they saw) */}
+        {(() => { const m = UPSELL_MODULES[highlight]; return (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white/20 ring-2 ring-white/50">
             <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-none">
               <m.icon className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-heading font-bold text-sm flex items-center gap-2">
                 {m.title}
-                {id === highlight && <span className="text-[9px] uppercase tracking-wider bg-white text-blue-900 px-1.5 py-0.5 rounded-full">Lo que viste</span>}
+                <span className="text-[9px] uppercase tracking-wider bg-white text-blue-900 px-1.5 py-0.5 rounded-full">Lo que viste</span>
               </div>
               <div className="text-[11px] text-white/80">{m.desc}</div>
             </div>
           </div>
-        ))}
+        ); })()}
+
+        {/* other modules — clickable to jump to that demo */}
+        {others.map((id) => {
+          const m = UPSELL_MODULES[id];
+          return (
+            <button
+              key={id}
+              data-testid={`switch-to-${id}`}
+              onClick={() => onSwitch && onSwitch(id)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/10 hover:bg-white/20 transition text-left active:scale-[0.99]"
+            >
+              <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-none">
+                <m.icon className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-heading font-bold text-sm">{m.title}</div>
+                <div className="text-[11px] text-white/80">{m.desc}</div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-white text-blue-900 px-2.5 py-1 rounded-full flex-none">
+                Ver demo <ArrowRight className="w-3 h-3" />
+              </span>
+            </button>
+          );
+        })}
       </div>
       <Link data-testid="demo-all-final-cta" to="/register" className="inline-flex items-center gap-2 mt-6 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
         Crear mi cuenta gratis <ArrowRight className="w-4 h-4" />
