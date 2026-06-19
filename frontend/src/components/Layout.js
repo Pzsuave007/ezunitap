@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, MessageSquare, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, X, Lock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -13,20 +13,20 @@ import ImpersonationBanner from "@/components/ImpersonationBanner";
 // non-tech contractors; "Más" opens a full menu with everything else.
 const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true },
-  { to: "/marketing", label: "Marketing", icon: Megaphone },
+  { to: "/clientes", label: "Clientes", icon: Users, feature: "business" },
+  { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true, feature: "card" },
+  { to: "/marketing", label: "Marketing", icon: Megaphone, feature: "marketing" },
   { more: true, label: "Más", icon: Menu },
 ];
 
 // Everything reachable from the mobile "Más" menu (big, clearly-labeled rows).
 const MORE_ITEMS = [
-  { to: "/calendario", label: "Agenda", icon: CalendarDays },
-  { to: "/quotes", label: "Cotizaciones (Quotes)", icon: FileText },
-  { to: "/contratos", label: "Contratos", icon: FileSignature },
-  { to: "/invoices", label: "Facturas (Invoices)", icon: Receipt },
-  { to: "/trabajos", label: "Trabajos", icon: Briefcase },
-  { to: "/reviews", label: "Reseñas de Google", icon: Star },
+  { to: "/calendario", label: "Agenda", icon: CalendarDays, feature: "business" },
+  { to: "/quotes", label: "Cotizaciones (Quotes)", icon: FileText, feature: "business" },
+  { to: "/contratos", label: "Contratos", icon: FileSignature, feature: "business" },
+  { to: "/invoices", label: "Facturas (Invoices)", icon: Receipt, feature: "business" },
+  { to: "/trabajos", label: "Trabajos", icon: Briefcase, feature: "business" },
+  { to: "/reviews", label: "Reseñas de Google", icon: Star, feature: "card" },
   { to: "/ajustes", label: "Mi Perfil", icon: UserIcon },
   { to: "/precios", label: "Mi Suscripción", icon: CreditCard },
 ];
@@ -36,24 +36,24 @@ const MORE_ITEMS = [
 //   [Trabajos: Agenda] · Google Reviews · Tarjeta Digital
 const SIDEBAR = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users },
+  { to: "/clientes", label: "Clientes", icon: Users, feature: "business" },
   {
-    label: "Invoicing", icon: Receipt,
+    label: "Invoicing", icon: Receipt, feature: "business",
     children: [
-      { to: "/quotes", label: "Quotes", icon: FileText },
-      { to: "/contratos", label: "Contratos", icon: FileSignature },
-      { to: "/invoices", label: "Invoices", icon: Receipt },
+      { to: "/quotes", label: "Quotes", icon: FileText, feature: "business" },
+      { to: "/contratos", label: "Contratos", icon: FileSignature, feature: "business" },
+      { to: "/invoices", label: "Invoices", icon: Receipt, feature: "business" },
     ],
   },
   {
-    to: "/trabajos", label: "Trabajos", icon: Briefcase,
+    to: "/trabajos", label: "Trabajos", icon: Briefcase, feature: "business",
     children: [
-      { to: "/calendario", label: "Agenda", icon: CalendarDays },
+      { to: "/calendario", label: "Agenda", icon: CalendarDays, feature: "business" },
     ],
   },
-  { to: "/reviews", label: "Google Reviews", icon: Star },
-  { to: "/tarjeta", label: "Tarjeta Digital", icon: IdCard },
-  { to: "/marketing", label: "Marketing", icon: Megaphone },
+  { to: "/reviews", label: "Google Reviews", icon: Star, feature: "card" },
+  { to: "/tarjeta", label: "Tarjeta Digital", icon: IdCard, feature: "card" },
+  { to: "/marketing", label: "Marketing", icon: Megaphone, feature: "marketing" },
 ];
 
 const ACCOUNT = [
@@ -61,7 +61,7 @@ const ACCOUNT = [
   { to: "/ajustes#suscripcion", label: "Suscripción", icon: CreditCard },
 ];
 
-function SidebarLink({ item, nested }) {
+function SidebarLink({ item, nested, locked }) {
   return (
     <NavLink
       to={item.to}
@@ -74,25 +74,27 @@ function SidebarLink({ item, nested }) {
       }
     >
       <item.icon className={nested ? "w-4 h-4" : "w-5 h-5"} strokeWidth={2} />
-      {item.label}
+      <span className="flex-1">{item.label}</span>
+      {locked && <Lock className="w-3.5 h-3.5 text-slate-300 flex-none" />}
     </NavLink>
   );
 }
 
-function SidebarGroup({ group }) {
+function SidebarGroup({ group, hasFeature }) {
   return (
     <div>
       {group.to ? (
-        <SidebarLink item={group} />
+        <SidebarLink item={group} locked={group.feature && !hasFeature(group.feature)} />
       ) : (
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500">
           <group.icon className="w-5 h-5" strokeWidth={2} />
-          {group.label}
+          <span className="flex-1">{group.label}</span>
+          {group.feature && !hasFeature(group.feature) && <Lock className="w-3.5 h-3.5 text-slate-300 flex-none" />}
         </div>
       )}
       <div className="ml-[1.45rem] pl-3 border-l border-slate-200 space-y-1 mt-1 mb-1">
         {group.children.map((c) => (
-          <SidebarLink key={c.to} item={c} nested />
+          <SidebarLink key={c.to} item={c} nested locked={c.feature && !hasFeature(c.feature)} />
         ))}
       </div>
     </div>
@@ -133,7 +135,7 @@ function TrialPill({ user }) {
 }
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, hasFeature } = useAuth();
   const navigate = useNavigate();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -190,9 +192,9 @@ export default function Layout() {
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {SIDEBAR.map((n) =>
             n.children ? (
-              <SidebarGroup key={n.label} group={n} />
+              <SidebarGroup key={n.label} group={n} hasFeature={hasFeature} />
             ) : (
-              <SidebarLink key={n.to} item={n} />
+              <SidebarLink key={n.to} item={n} locked={n.feature && !hasFeature(n.feature)} />
             )
           )}
           <div className="h-px bg-slate-100 my-2" />
@@ -268,6 +270,7 @@ export default function Layout() {
               );
             }
             if (n.accent) {
+              const locked = n.feature && !hasFeature(n.feature);
               return (
                 <NavLink
                   key={n.to}
@@ -279,10 +282,15 @@ export default function Layout() {
                   {({ isActive }) => (
                     <>
                       <div
-                        className={`w-11 h-11 -mt-5 rounded-2xl flex items-center justify-center shadow-lg text-white ring-4 ring-white ${isActive ? "scale-105" : ""}`}
+                        className={`relative w-11 h-11 -mt-5 rounded-2xl flex items-center justify-center shadow-lg text-white ring-4 ring-white ${isActive ? "scale-105" : ""}`}
                         style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #10B981 100%)" }}
                       >
                         <n.icon className="w-5 h-5" strokeWidth={2.2} />
+                        {locked && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white border border-slate-200 flex items-center justify-center">
+                            <Lock className="w-2.5 h-2.5 text-slate-400" />
+                          </span>
+                        )}
                       </div>
                       <span className={`text-[10px] font-bold ${isActive ? "text-blue-900" : "text-slate-500"}`}>{n.label}</span>
                     </>
@@ -290,6 +298,7 @@ export default function Layout() {
                 </NavLink>
               );
             }
+            const locked = n.feature && !hasFeature(n.feature);
             return (
               <NavLink
                 key={n.to}
@@ -302,7 +311,14 @@ export default function Layout() {
                   }`
                 }
               >
-                <n.icon className="w-5 h-5" strokeWidth={2} />
+                <span className="relative">
+                  <n.icon className="w-5 h-5" strokeWidth={2} />
+                  {locked && (
+                    <span className="absolute -top-1.5 -right-2 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
+                      <Lock className="w-2.5 h-2.5 text-slate-400" />
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] font-semibold">{n.label}</span>
               </NavLink>
             );
@@ -318,19 +334,23 @@ export default function Layout() {
             <div className="text-xs text-slate-500 truncate">{user?.business_name}</div>
           </SheetHeader>
           <div className="px-3 pb-3 grid grid-cols-1 gap-1">
-            {MORE_ITEMS.map((n) => (
-              <button
-                key={n.to}
-                onClick={() => { setMoreOpen(false); navigate(n.to); }}
-                data-testid={`more-${n.to.replace(/[/#]/g, "-")}`}
-                className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-800 bg-slate-50 active:bg-slate-100 tap"
-              >
-                <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
-                  <n.icon className="w-5 h-5 text-blue-900" strokeWidth={2} />
-                </span>
-                {n.label}
-              </button>
-            ))}
+            {MORE_ITEMS.map((n) => {
+              const locked = n.feature && !hasFeature(n.feature);
+              return (
+                <button
+                  key={n.to}
+                  onClick={() => { setMoreOpen(false); navigate(n.to); }}
+                  data-testid={`more-${n.to.replace(/[/#]/g, "-")}`}
+                  className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-800 bg-slate-50 active:bg-slate-100 tap"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                    <n.icon className="w-5 h-5 text-blue-900" strokeWidth={2} />
+                  </span>
+                  <span className="flex-1 text-left">{n.label}</span>
+                  {locked && <Lock className="w-4 h-4 text-slate-300 flex-none" />}
+                </button>
+              );
+            })}
             {showAdminLink && (
               <button
                 onClick={() => { setMoreOpen(false); navigate("/admin/cuentas"); }}

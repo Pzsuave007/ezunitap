@@ -27,6 +27,19 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
+## ✅ Jun 2026 — DASHBOARD ADAPTATIVO POR MÓDULO + UI cleanup móvil [COMPLETO + PROBADO]
+Pedido de Paul: pulir la app móvil y resolver "¿qué ve un usuario que solo compró Tarjeta NFC o solo Marketing?" (el dashboard estaba 100% orientado a `business`).
+- **Dashboard adaptativo** (`Dashboard.js`): renderiza bloques SOLO de los módulos que el usuario tiene (`hasFeature`), en orden Negocio → Presencia(card) → Marketing.
+  - Negocio: hero oscuro "Pagos pendientes", flujo guiado 1-2-3 (cliente→quote→invoice), stats con chips, quotes recientes, recordatorios.
+  - Presencia (card): bloque "Tu Presencia" con vistas/reseñas/leads (`/card/analytics`) + Ver mi tarjeta / Reseñas.
+  - Marketing: CTA crear post/reel + conteo de posts/reels (`/social/posts`, `/social/reels`).
+  - **Upsell**: bloque "Agrega más a tu plan" con los módulos NO comprados → `/precios`.
+- **Nav con candados 🔒** (`Layout.js`): sidebar, bottom nav y menú "Más" muestran candado en items de módulos no comprados (siguen clickeables → upgrade wall). Mapeo: business=clientes/quotes/contratos/invoices/trabajos/agenda; card=tarjeta/reviews; marketing=marketing.
+- **Cleanup móvil**: ClientDetail (botón "+ Crear" con subtítulo, sin avatar, "Pedir reseña" al fondo, "Por cobrar" resta pagos parciales). Headers de Clientes/Quotes/Invoices/Trabajos ya no se amontonan (título+tour arriba, botón crear en su fila).
+- **Probado**: bundle (3 bloques), card-only (`cardonly_test@example.com`, manual_plan `presencia`) y marketing-only (`mktonly_test@example.com`, manual_plan `marketing`) vía screenshots. Build prod plano (relativo `/api`) + `git add -f`.
+- **Pendiente menor**: WelcomeModal + SetupChecklist siguen siendo business/card-centric (ej. "Crea tu primer cliente" aparece a un usuario marketing-only). Adaptarlos por módulo en una próxima iteración.
+
+
 ## ✅ Jun 2026 — INVOICE: descripción de ítem multilínea + fix due date + fix invoice sin cliente [COMPLETO + PROBADO]
 - **Descripción multilínea** (`InvoiceDetail.js`): el campo de descripción del line item era `<Input>` de una sola línea (texto largo se cortaba, había que hacer scroll lateral en móvil). Ahora es un `<AutoGrowTextarea>` que crece automáticamente y muestra TODO el texto en varias líneas (móvil y escritorio). Probado: descripción de 174 chars se ve en 4 líneas.
 - **Fix due date "un día antes"** (`lib/pdf.js`): `new Date("YYYY-MM-DD")` se interpretaba como UTC y mostraba el día anterior en zonas detrás de UTC. Nuevo helper `fmtDate` parsea fechas date-only como LOCAL. Verificado: 2026-06-20 → "6/20/2026" (antes 6/19).
