@@ -12,13 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   IdCard, QrCode, Copy, ExternalLink, Eye, Plus, Trash2, Loader2,
   Star, Sparkles, BarChart3, Download, Share2, ShieldCheck, BadgeCheck,
   Image as ImageIcon, Upload, X as XIcon, Camera,
   Phone, MessageSquare, Send, Mail, Globe, Save, Brain,
-  Sprout, Hammer, PaintBucket, Wind, Wrench, Home,
+  Sprout, Hammer, PaintBucket, Wind, Wrench, Home, ChevronDown, Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
@@ -53,6 +56,31 @@ const ACCENT_PRESETS = [
   "#84CC16", "#FFFFFF",
 ];
 
+// Collapsible "Ver opciones avanzadas" wrapper used inside each step.
+function Advanced({ children, label = "Ver opciones avanzadas", testid }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="pt-1">
+      <CollapsibleTrigger asChild>
+        <button data-testid={testid || "btn-opciones-avanzadas"} className="tap w-full flex items-center justify-between rounded-xl bg-slate-50 hover:bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors">
+          {open ? "Ocultar opciones avanzadas" : label}
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-4 pt-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+// Numbered step header shown inside each accordion trigger.
+function StepBadge({ n }) {
+  return (
+    <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-none">{n}</span>
+  );
+}
+
 export default function CardAdmin() {
   const [tab, setTab] = useState("design");
   const [card, setCard] = useState(null);
@@ -65,6 +93,7 @@ export default function CardAdmin() {
   const [activeCardId, setActiveCardId] = useState(null);
   const [cardMeta, setCardMeta] = useState({ limit: 1, count: 0, can_add: false });
   const [creating, setCreating] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { user } = useAuth();
 
   const baseUrl = window.location.origin;
@@ -256,313 +285,367 @@ export default function CardAdmin() {
           <TabsTrigger value="analytics" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-analytics">Métricas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="design" className="mt-4 space-y-3">
-          {/* Per-card person info */}
-          <Card className="card-elevated p-5 border-0 shadow-none space-y-3" data-testid="card-person-section">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-heading font-bold text-base">Persona de esta tarjeta</h3>
-              {!card.is_primary && (
-                <Button onClick={deleteCard} data-testid="card-delete-btn" variant="outline" size="sm" className="h-9 rounded-lg text-red-600 border-red-200">
-                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                </Button>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-400 -mt-1">
+        <TabsContent value="design" className="mt-4">
+          {/* Sticky "see preview" button — always reachable while editing */}
+          <div className="sticky top-2 z-30 mb-3">
+            <Button data-testid="btn-vista-previa" onClick={() => setPreviewOpen(true)}
+              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-semibold gap-2 shadow-lg">
+              <Smartphone className="w-5 h-5" /> Ver cómo va quedando
+            </Button>
+          </div>
+
+          {/* Per-card note + delete */}
+          <div className="flex items-start justify-between gap-2 mb-3 px-1">
+            <p className="text-xs text-slate-500 leading-relaxed">
               {card.is_primary
-                ? "Esta es tu tarjeta principal. Aquí editas la info de la compañía (website, redes, servicios) que se comparte con TODAS tus tarjetas."
-                : "Personaliza el nombre, foto y contacto de esta persona. La info de la compañía (nombre, website, redes, fotos de trabajos) se comparte desde tu Tarjeta Principal."}
+                ? "Esta es tu tarjeta principal. La info del negocio que pongas aquí se comparte con todas tus tarjetas."
+                : "Personaliza el nombre, foto y contacto de esta persona. La info del negocio se comparte desde tu Tarjeta Principal."}
             </p>
-            <div>
-              <Label>Nombre interno de la tarjeta</Label>
-              <Input data-testid="card-label" value={card.label || ""} onChange={(e) => update("label", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Vendedor Juan" />
-              <p className="text-[11px] text-slate-400 mt-1">Solo tú lo ves, para identificar la tarjeta.</p>
-            </div>
-            <div>
-              <Label>Nombre que se muestra al cliente</Label>
-              <Input data-testid="card-person-name" value={card.person_name || ""} onChange={(e) => update("person_name", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Juan Pérez" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label>Teléfono de esta persona</Label>
-                <Input data-testid="card-contact-phone" value={card.contact_phone || ""} onChange={(e) => update("contact_phone", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+1 305 555 1234" />
-              </div>
-              <div>
-                <Label>Email de esta persona</Label>
-                <Input data-testid="card-contact-email" value={card.contact_email || ""} onChange={(e) => update("contact_email", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="juan@empresa.com" />
-              </div>
-            </div>
-            <p className="text-[11px] text-slate-400">Si lo dejas vacío, se usa el teléfono/email del negocio. Los leads siempre caen en la misma cuenta.</p>
-          </Card>
+            {!card.is_primary && (
+              <Button onClick={deleteCard} data-testid="card-delete-btn" variant="outline" size="sm" className="h-9 rounded-lg text-red-600 border-red-200 flex-none">
+                <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+              </Button>
+            )}
+          </div>
 
-          <IndustryTemplatePicker card={card} onApply={async (tpl) => {
-            const payload = {
-              brand_color: tpl.brand,
-              accent_color: tpl.accent,
-              hero_layout: tpl.hero_layout || "logo_circle",
-            };
-            if (tpl.business_type && !card.business_type) payload.business_type = tpl.business_type;
-            try {
-              const { data } = await api.put(`/card/settings?card_id=${card.id}`, payload);
-              setCard(data);
-              toast.success(`Plantilla "${tpl.label}" aplicada`, {
-                description: tpl.hint,
-                duration: 4500,
-              });
-            } catch (err) {
-              toast.error(err?.response?.data?.detail || "Error aplicando plantilla");
-            }
-          }} />
-          <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
-          <CoverPhotoUploader card={card} onChange={load} />
-          <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
-          <LogoUploader card={card} onChange={load} />
-          <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
-            <h3 className="font-heading font-bold text-base">Lo básico</h3>
-            <div>
-              <Label>Link personalizado</Label>
-              <div className="flex items-center mt-1.5">
-                <span className="text-sm text-slate-500 mr-1">{baseUrl}/c/</span>
-                <Input data-testid="card-slug" value={card.slug} onChange={(e) => update("slug", e.target.value)} className="h-12 rounded-xl flex-1" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <Label>Tagline (frase corta en inglés)</Label>
-                <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder="Ej: Expertos en techos de confianza en Houston" />
-              </div>
-              <Input data-testid="card-tagline" value={card.tagline} onChange={(e) => update("tagline", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Trusted Roofing Experts in Houston" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <Label>Tu rol / título (inglés)</Label>
-                <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder="Ej: Dueño y contratista principal" />
-              </div>
-              <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <Label>Sobre ti / About Me (inglés)</Label>
-                <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder="Ej: Tengo 10 años de experiencia en techos, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
-              </div>
-              <Textarea data-testid="card-about" value={card.about_me || ""} onChange={(e) => update("about_me", e.target.value)} className="rounded-xl mt-1.5 min-h-[100px]" placeholder="With over 10 years of experience, we deliver quality work on every project..." />
-              <p className="text-[11px] text-slate-400 mt-1">Una breve descripción que aparece en tu tarjeta para que los clientes te conozcan.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Tipo de negocio</Label>
-                <Input data-testid="card-businesstype" value={card.business_type} onChange={(e) => update("business_type", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Roofing" />
-              </div>
-              <div>
-                <Label>Años en negocio</Label>
-                <Input type="number" data-testid="card-years" value={card.years_in_business} onChange={(e) => update("years_in_business", Number(e.target.value) || 0)} className="h-12 rounded-xl mt-1.5" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <Label>Área de servicio</Label>
-                <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder="Ej: Houston y ciudades alrededor: Katy, Sugar Land, Pearland" />
-              </div>
-              <Input data-testid="card-area" value={card.service_area} onChange={(e) => update("service_area", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Houston, TX and surrounding areas" />
-            </div>
-            <div>
-              <Label>Horario</Label>
-              <Input data-testid="card-hours" value={card.hours} onChange={(e) => update("hours", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Mon-Fri 8am-6pm" />
-            </div>
+          <Accordion type="single" collapsible defaultValue="step1" className="space-y-3">
+            {/* ===== Paso 1: Fotos y color ===== */}
+            <AccordionItem value="step1" data-testid="step-fotos" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <StepBadge n={1} />
+                  <div>
+                    <div className="font-heading font-bold text-base text-slate-900">Fotos y color</div>
+                    <div className="text-xs text-slate-500 font-normal">Lo primero que ve la gente</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
+                <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
+                <CoverPhotoUploader card={card} onChange={load} />
+                <div>
+                  <Label>Color de tu negocio</Label>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {BRAND_PRESETS.map((p) => {
+                      const active = (card.brand_color || "").toLowerCase() === p.brand.toLowerCase();
+                      return (
+                        <button
+                          key={p.name}
+                          type="button"
+                          data-testid={`brand-preset-${p.name.toLowerCase()}`}
+                          onClick={() => { update("brand_color", p.brand); update("accent_color", p.accent); }}
+                          className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border tap text-[11px] font-semibold transition-all ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"}`}
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm" style={{ background: p.brand }} />
+                          <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm -ml-2" style={{ background: p.accent }} />
+                          {p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1.5">Elige una combinación que combine con tu marca. ¡Listo!</p>
+                </div>
 
-            {/* AI Knowledge Base — private, only fed to the chat AI */}
-            <div className="rounded-2xl border-2 border-violet-200 bg-violet-50/50 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+                <Advanced testid="adv-step1">
+                  <IndustryTemplatePicker card={card} onApply={async (tpl) => {
+                    const payload = {
+                      brand_color: tpl.brand,
+                      accent_color: tpl.accent,
+                      hero_layout: tpl.hero_layout || "logo_circle",
+                    };
+                    if (tpl.business_type && !card.business_type) payload.business_type = tpl.business_type;
+                    try {
+                      const { data } = await api.put(`/card/settings?card_id=${card.id}`, payload);
+                      setCard(data);
+                      toast.success(`Plantilla "${tpl.label}" aplicada`, { description: tpl.hint, duration: 4500 });
+                    } catch (err) {
+                      toast.error(err?.response?.data?.detail || "Error aplicando plantilla");
+                    }
+                  }} />
+                  <HeroLayoutPicker card={card} user={user} onChange={(v) => update("hero_layout", v)} />
+                  <LogoUploader card={card} onChange={load} />
+                  <div>
+                    <Label>Color exacto de marca</Label>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <input type="color" data-testid="card-color" value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
+                      <Input value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Color de detalle (botones)</Label>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <input type="color" data-testid="card-accent-color" value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
+                      <Input value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {ACCENT_PRESETS.map((c) => {
+                        const active = (card.accent_color || "").toLowerCase() === c.toLowerCase();
+                        return (
+                          <button key={c} type="button" data-testid={`accent-preset-${c.replace("#", "")}`} onClick={() => update("accent_color", c)} style={{ background: c }}
+                            className={`w-8 h-8 rounded-full border-2 tap transition-transform ${active ? "border-slate-900 scale-110 ring-2 ring-offset-2 ring-slate-900" : "border-white shadow-sm hover:scale-105"}`} aria-label={`Accent ${c}`} />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label>Oscuridad de la foto de fondo</Label>
+                      <span className="text-[11px] font-mono text-slate-500 tabular-nums">{card.hero_overlay ?? 60}%</span>
+                    </div>
+                    <input type="range" min="0" max="100" step="5" data-testid="card-hero-overlay" value={card.hero_overlay ?? 60} onChange={(e) => update("hero_overlay", Number(e.target.value))} className="w-full mt-2 accent-slate-900" />
+                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                      <span>Foto clara</span><span>Texto legible</span><span>Muy oscuro</span>
+                    </div>
+                  </div>
+                </Advanced>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ===== Paso 2: Tu información ===== */}
+            <AccordionItem value="step2" data-testid="step-info" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <StepBadge n={2} />
+                  <div>
+                    <div className="font-heading font-bold text-base text-slate-900">Tu información</div>
+                    <div className="text-xs text-slate-500 font-normal">Nombre, teléfono y a qué te dedicas</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
+                <div>
+                  <Label>Nombre que se muestra al cliente</Label>
+                  <Input data-testid="card-person-name" value={card.person_name || ""} onChange={(e) => update("person_name", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Juan Pérez" />
                 </div>
                 <div>
-                  <Label className="text-base font-bold">Base de conocimiento de la IA</Label>
-                  <p className="text-[11px] text-slate-500">Privado — solo lo lee la IA del chat, los clientes NO lo ven.</p>
+                  <Label>Tu teléfono</Label>
+                  <Input data-testid="card-contact-phone" value={card.contact_phone || ""} onChange={(e) => update("contact_phone", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+1 305 555 1234" />
                 </div>
-              </div>
-              <Textarea
-                data-testid="card-ai-context"
-                value={card.ai_context || ""}
-                onChange={(e) => update("ai_context", e.target.value)}
-                className="rounded-xl min-h-[180px] bg-white"
-                placeholder={`Escribe TODO lo que la IA debe saber sobre tu negocio. Ejemplos:\n\n- Áreas que cubrimos: Houston, Sugar Land, Katy, Pearland\n- Horario: lunes a sábado 7am-6pm, cerrado domingos\n- Cotización GRATIS y sin compromiso\n- Garantía: 5 años en techos nuevos, 1 año en reparaciones\n- Aceptamos efectivo, cheque y tarjetas (Visa/MC/Amex)\n- Rangos de precio: reparación de gotera desde $300, techo completo desde $5,000\n- Marcas que usamos: GAF, Owens Corning, CertainTeed\n- Tenemos seguro de $1M de responsabilidad civil\n- El dueño Juan tiene 25 años de experiencia\n- Ofrecemos planes de pago a 0% por 6 meses con buen crédito\n- Lo que nos hace diferentes: limpieza total al terminar, supervisor bilingüe en cada obra`}
-              />
-              <p className="text-[11px] text-slate-500">
-                💡 Mientras más detalles le des, mejor responderá la IA. Incluye: áreas que cubres, garantías, formas de pago, rangos de precio, qué te hace diferente, certificaciones, y cualquier dato que un cliente pregunte seguido.
-              </p>
-            </div>
-            <div>
-              <Label>Color de marca</Label>
-              <div className="flex items-center gap-3 mt-1.5">
-                <input type="color" data-testid="card-color" value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
-                <Input value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {BRAND_PRESETS.map((p) => {
-                  const active = (card.brand_color || "").toLowerCase() === p.brand.toLowerCase();
-                  return (
-                    <button
-                      key={p.name}
-                      type="button"
-                      data-testid={`brand-preset-${p.name.toLowerCase()}`}
-                      onClick={() => { update("brand_color", p.brand); update("accent_color", p.accent); }}
-                      className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border tap text-[11px] font-semibold transition-all ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"}`}
-                    >
-                      <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm" style={{ background: p.brand }} />
-                      <span className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-sm -ml-2" style={{ background: p.accent }} />
-                      {p.name}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1.5">Las paletas curadas combinan color de marca + acento que se ven premium.</p>
-            </div>
-
-            <div>
-              <Label>Color de acento</Label>
-              <div className="flex items-center gap-3 mt-1.5">
-                <input type="color" data-testid="card-accent-color" value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
-                <Input value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {ACCENT_PRESETS.map((c) => {
-                  const active = (card.accent_color || "").toLowerCase() === c.toLowerCase();
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      data-testid={`accent-preset-${c.replace("#", "")}`}
-                      onClick={() => update("accent_color", c)}
-                      style={{ background: c }}
-                      className={`w-8 h-8 rounded-full border-2 tap transition-transform ${active ? "border-slate-900 scale-110 ring-2 ring-offset-2 ring-slate-900" : "border-white shadow-sm hover:scale-105"}`}
-                      aria-label={`Accent ${c}`}
-                    />
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1.5">Se usa para botones, badges y los detalles brillantes de tu tarjeta.</p>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <Label>Oscuridad del hero</Label>
-                <span className="text-[11px] font-mono text-slate-500 tabular-nums">{card.hero_overlay ?? 60}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                data-testid="card-hero-overlay"
-                value={card.hero_overlay ?? 60}
-                onChange={(e) => update("hero_overlay", Number(e.target.value))}
-                className="w-full mt-2 accent-slate-900"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                <span>Foto clara</span>
-                <span>Texto legible</span>
-                <span>Muy oscuro</span>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1.5">Controla cuánto se oscurece tu foto de hero para que el texto blanco se lea bien.</p>
-            </div>
-          </Card>
-
-          <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
-            <h3 className="font-heading font-bold text-base">Insignias y enlaces</h3>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-              <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> <span className="font-medium text-sm">Licencia</span></div>
-              <Switch data-testid="card-licensed" checked={card.is_licensed} onCheckedChange={(v) => update("is_licensed", v)} />
-            </div>
-            {card.is_licensed && (
-              <Input value={card.license_number} onChange={(e) => update("license_number", e.target.value)} placeholder="License #" className="h-11 rounded-xl" />
-            )}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-              <div className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-700" /> <span className="font-medium text-sm">Asegurado</span></div>
-              <Switch data-testid="card-insured" checked={card.is_insured} onCheckedChange={(v) => update("is_insured", v)} />
-            </div>
-            <div>
-              <Label>WhatsApp (con código de país)</Label>
-              <Input data-testid="card-whatsapp" value={card.whatsapp} onChange={(e) => update("whatsapp", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+15551234567" />
-            </div>
-            <div>
-              <Label>Website</Label>
-              <Input value={card.website} onChange={(e) => update("website", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://..." />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Facebook</Label>
-                <Input value={card.facebook} onChange={(e) => update("facebook", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
-              </div>
-              <div>
-                <Label>Instagram</Label>
-                <Input value={card.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
-              </div>
-            </div>
-            <div>
-              <Label>Link para reseñas de Google</Label>
-              <Input value={card.google_review_url} onChange={(e) => update("google_review_url", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://g.page/r/..." />
-            </div>
-          </Card>
-
-          <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading font-bold text-base">Servicios</h3>
-              <Button size="sm" data-testid="card-add-service" onClick={() => update("services", [...(card.services || []), { name: "", description: "", starting_price: "", icon: "" }])} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-                <Plus className="w-3 h-3 mr-1" /> Agregar
-              </Button>
-            </div>
-            {(card.services || []).length === 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-slate-500">Plantillas rápidas (toca para agregar):</p>
-                <div className="flex flex-wrap gap-2">
-                  {SERVICE_TEMPLATES.map((s) => (
-                    <button
-                      key={s.name}
-                      onClick={() => update("services", [...(card.services || []), s])}
-                      className="px-3 py-2 rounded-full bg-slate-100 text-xs font-semibold tap"
-                    >
-                      {s.icon} {s.name}
-                    </button>
-                  ))}
+                <div>
+                  <Label>¿A qué te dedicas?</Label>
+                  <Input data-testid="card-businesstype" value={card.business_type} onChange={(e) => update("business_type", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Techos, Plomería, Jardinería" />
                 </div>
-              </div>
-            )}
-            {(card.services || []).map((s, i) => (
-              <div key={i} className="rounded-xl bg-slate-50 p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold tracking-[0.18em] text-slate-400 w-6">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <Input value={s.name} onChange={(e) => {
-                    const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr);
-                  }} placeholder="Service name (e.g., Roofing)" className="flex-1 h-11 rounded-xl bg-white" />
-                </div>
-                <div className="flex items-center justify-between gap-2 px-0.5">
-                  <span className="text-[11px] font-semibold text-slate-500">Descripción (inglés)</span>
-                  <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder="Ej: Reparamos goteras e instalamos techos nuevos con garantía" />
-                </div>
-                <Input value={s.description} onChange={(e) => {
-                  const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr);
-                }} placeholder="Short description (English)" className="h-11 rounded-xl bg-white" />
-                <div className="flex gap-2">
-                  <Input value={s.starting_price} onChange={(e) => {
-                    const arr = [...card.services]; arr[i] = { ...arr[i], starting_price: e.target.value }; update("services", arr);
-                  }} placeholder="Starting at $... (optional)" className="h-11 rounded-xl bg-white flex-1" />
-                  <Input value={s.icon} onChange={(e) => {
-                    const arr = [...card.services]; arr[i] = { ...arr[i], icon: e.target.value }; update("services", arr);
-                  }} placeholder="🔨 opt" className="w-20 h-11 rounded-xl bg-white text-center" maxLength={2} />
-                  <button type="button" onClick={() => update("services", card.services.filter((_, idx) => idx !== i))} className="w-11 h-11 rounded-xl bg-white border border-red-200 text-red-600 flex items-center justify-center flex-shrink-0">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <p className="text-[10px] text-slate-400 px-1">Si no pones emoji, mostramos un número elegante (01, 02…)</p>
-              </div>
-            ))}
-          </Card>
 
-          <Button data-testid="card-save" onClick={save} disabled={saving} className="w-full h-14 rounded-2xl bg-blue-900 hover:bg-blue-950 text-white font-semibold text-base">
+                <Advanced testid="adv-step2">
+                  <div>
+                    <Label>Nombre interno de la tarjeta</Label>
+                    <Input data-testid="card-label" value={card.label || ""} onChange={(e) => update("label", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Vendedor Juan" />
+                    <p className="text-[11px] text-slate-400 mt-1">Solo tú lo ves, para identificar la tarjeta.</p>
+                  </div>
+                  <div>
+                    <Label>Tu email</Label>
+                    <Input data-testid="card-contact-email" value={card.contact_email || ""} onChange={(e) => update("contact_email", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="juan@empresa.com" />
+                    <p className="text-[11px] text-slate-400 mt-1">Si lo dejas vacío, se usa el del negocio. Los leads siempre caen en tu cuenta.</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Frase corta (eslogan)</Label>
+                      <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder="Ej: Expertos en techos de confianza en Houston" />
+                    </div>
+                    <Input data-testid="card-tagline" value={card.tagline} onChange={(e) => update("tagline", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Trusted Roofing Experts in Houston" />
+                    <p className="text-[11px] text-slate-400 mt-1">Escríbela en español y toca ✨ para traducirla.</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Tu puesto o título</Label>
+                      <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder="Ej: Dueño y contratista principal" />
+                    </div>
+                    <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Sobre tu negocio</Label>
+                      <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder="Ej: Tengo 10 años de experiencia, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
+                    </div>
+                    <Textarea data-testid="card-about" value={card.about_me || ""} onChange={(e) => update("about_me", e.target.value)} className="rounded-xl mt-1.5 min-h-[100px]" placeholder="With over 10 years of experience, we deliver quality work on every project..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Años en el negocio</Label>
+                      <Input type="number" data-testid="card-years" value={card.years_in_business} onChange={(e) => update("years_in_business", Number(e.target.value) || 0)} className="h-12 rounded-xl mt-1.5" />
+                    </div>
+                    <div>
+                      <Label>Horario</Label>
+                      <Input data-testid="card-hours" value={card.hours} onChange={(e) => update("hours", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Lun-Vie 8am-6pm" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Área de servicio</Label>
+                      <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder="Ej: Houston y ciudades alrededor: Katy, Sugar Land, Pearland" />
+                    </div>
+                    <Input data-testid="card-area" value={card.service_area} onChange={(e) => update("service_area", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Houston, TX and surrounding areas" />
+                  </div>
+                </Advanced>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ===== Paso 3: Servicios ===== */}
+            <AccordionItem value="step3" data-testid="step-servicios" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <StepBadge n={3} />
+                  <div>
+                    <div className="font-heading font-bold text-base text-slate-900">Servicios que ofreces</div>
+                    <div className="text-xs text-slate-500 font-normal">Lo que haces para tus clientes</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-3">
+                <div className="flex justify-end">
+                  <Button size="sm" data-testid="card-add-service" onClick={() => update("services", [...(card.services || []), { name: "", description: "", starting_price: "", icon: "" }])} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="w-3 h-3 mr-1" /> Agregar servicio
+                  </Button>
+                </div>
+                {(card.services || []).length === 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-500">Toca para agregar rápido:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {SERVICE_TEMPLATES.map((s) => (
+                        <button key={s.name} onClick={() => update("services", [...(card.services || []), s])} className="px-3 py-2 rounded-full bg-slate-100 text-xs font-semibold tap">
+                          {s.icon} {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(card.services || []).map((s, i) => (
+                  <div key={i} className="rounded-xl bg-slate-50 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold tracking-[0.18em] text-slate-400 w-6">{String(i + 1).padStart(2, "0")}</span>
+                      <Input value={s.name} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr); }} placeholder="Nombre del servicio (ej: Techos)" className="flex-1 h-11 rounded-xl bg-white" />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-0.5">
+                      <span className="text-[11px] font-semibold text-slate-500">Descripción</span>
+                      <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder="Ej: Reparamos goteras e instalamos techos nuevos con garantía" />
+                    </div>
+                    <Input value={s.description} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr); }} placeholder="Descripción corta" className="h-11 rounded-xl bg-white" />
+                    <div className="flex gap-2">
+                      <Input value={s.starting_price} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], starting_price: e.target.value }; update("services", arr); }} placeholder="Desde $... (opcional)" className="h-11 rounded-xl bg-white flex-1" />
+                      <Input value={s.icon} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], icon: e.target.value }; update("services", arr); }} placeholder="🔨 opt" className="w-20 h-11 rounded-xl bg-white text-center" maxLength={2} />
+                      <button type="button" onClick={() => update("services", card.services.filter((_, idx) => idx !== i))} className="w-11 h-11 rounded-xl bg-white border border-red-200 text-red-600 flex items-center justify-center flex-shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ===== Paso 4: Contacto y redes ===== */}
+            <AccordionItem value="step4" data-testid="step-contacto" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <StepBadge n={4} />
+                  <div>
+                    <div className="font-heading font-bold text-base text-slate-900">Contacto y credenciales</div>
+                    <div className="text-xs text-slate-500 font-normal">WhatsApp, reseñas e insignias</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                  <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> <span className="font-medium text-sm">Tengo licencia</span></div>
+                  <Switch data-testid="card-licensed" checked={card.is_licensed} onCheckedChange={(v) => update("is_licensed", v)} />
+                </div>
+                {card.is_licensed && (
+                  <Input value={card.license_number} onChange={(e) => update("license_number", e.target.value)} placeholder="Número de licencia" className="h-11 rounded-xl" />
+                )}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                  <div className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-700" /> <span className="font-medium text-sm">Tengo seguro</span></div>
+                  <Switch data-testid="card-insured" checked={card.is_insured} onCheckedChange={(v) => update("is_insured", v)} />
+                </div>
+                <div>
+                  <Label>WhatsApp (con código de país)</Label>
+                  <Input data-testid="card-whatsapp" value={card.whatsapp} onChange={(e) => update("whatsapp", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+15551234567" />
+                </div>
+                <div>
+                  <Label>Link para reseñas de Google</Label>
+                  <Input value={card.google_review_url} onChange={(e) => update("google_review_url", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://g.page/r/..." />
+                </div>
+                <Advanced testid="adv-step4">
+                  <div>
+                    <Label>Website</Label>
+                    <Input value={card.website} onChange={(e) => update("website", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Facebook</Label>
+                      <Input value={card.facebook} onChange={(e) => update("facebook", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
+                    </div>
+                    <div>
+                      <Label>Instagram</Label>
+                      <Input value={card.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
+                    </div>
+                  </div>
+                </Advanced>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ===== Paso 5: Asistente IA (avanzado) ===== */}
+            <AccordionItem value="step5" data-testid="step-ia" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <StepBadge n={5} />
+                  <div>
+                    <div className="font-heading font-bold text-base text-slate-900">Asistente IA del chat</div>
+                    <div className="text-xs text-slate-500 font-normal">Opcional — responde a tus clientes</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
+                <div className="rounded-2xl border-2 border-violet-200 bg-violet-50/50 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-base font-bold">Base de conocimiento de la IA</Label>
+                      <p className="text-[11px] text-slate-500">Privado — solo lo lee la IA del chat, los clientes NO lo ven.</p>
+                    </div>
+                  </div>
+                  <Textarea
+                    data-testid="card-ai-context"
+                    value={card.ai_context || ""}
+                    onChange={(e) => update("ai_context", e.target.value)}
+                    className="rounded-xl min-h-[180px] bg-white"
+                    placeholder={`Escribe TODO lo que la IA debe saber sobre tu negocio. Ejemplos:\n\n- Áreas que cubrimos: Houston, Sugar Land, Katy, Pearland\n- Horario: lunes a sábado 7am-6pm, cerrado domingos\n- Cotización GRATIS y sin compromiso\n- Garantía: 5 años en techos nuevos, 1 año en reparaciones\n- Aceptamos efectivo, cheque y tarjetas (Visa/MC/Amex)\n- Rangos de precio: reparación de gotera desde $300, techo completo desde $5,000\n- Marcas que usamos: GAF, Owens Corning, CertainTeed\n- Tenemos seguro de $1M de responsabilidad civil\n- El dueño Juan tiene 25 años de experiencia`}
+                  />
+                  <p className="text-[11px] text-slate-500">💡 Mientras más detalles le des, mejor responderá la IA a tus clientes.</p>
+                </div>
+                <div>
+                  <Label>Link personalizado</Label>
+                  <div className="flex items-center mt-1.5">
+                    <span className="text-sm text-slate-500 mr-1">{baseUrl}/c/</span>
+                    <Input data-testid="card-slug" value={card.slug} onChange={(e) => update("slug", e.target.value)} className="h-12 rounded-xl flex-1" />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <Button data-testid="card-save" onClick={save} disabled={saving} className="w-full h-14 rounded-2xl bg-blue-900 hover:bg-blue-950 text-white font-semibold text-base mt-4">
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar cambios"}
           </Button>
+
+          {/* ===== Live preview sheet ===== */}
+          <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
+            <SheetContent side="bottom" className="rounded-t-3xl max-h-[92vh] overflow-y-auto" data-testid="sheet-phone-preview">
+              <SheetHeader className="text-left">
+                <SheetTitle className="font-heading">Así se ve tu tarjeta</SheetTitle>
+              </SheetHeader>
+              <div className="mt-3 pb-8 flex flex-col items-center">
+                <div className="w-[230px]">
+                  <PhoneFrame>
+                    <LiveCardPreview card={card} user={user} variant={card.hero_layout || "photo"} />
+                  </PhoneFrame>
+                </div>
+                <Button onClick={() => window.open(publicUrl, "_blank")} className="mt-5 rounded-full bg-slate-900 hover:bg-slate-800 text-white px-5 h-10 gap-1.5">
+                  Abrir mini-sitio <ExternalLink className="w-4 h-4" />
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </TabsContent>
 
         <TabsContent value="qr" className="mt-4">
