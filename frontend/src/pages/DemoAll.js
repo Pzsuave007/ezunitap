@@ -471,7 +471,22 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
       {sub === "invoice" && job && (
         <>
           <InvoiceStep quote={job.quote} business={demoBiz} lead={client} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
-          {paid && <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />}
+          {paid && (
+            <>
+              <div className="mt-5 mb-2 text-center">
+                <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué cotizar y cobrar con UniTech?</h3>
+              </div>
+              <FeatureRow items={[
+                { icon: Sparkles, text: "Cotiza en minutos, no en horas: la IA arma cotización, contrato y factura en inglés mientras tú sigues trabajando." },
+                { icon: Check, text: "Cobra más rápido: la factura lleva link de pago. El cliente paga con tarjeta y el dinero te llega directo a ti." },
+                { icon: BadgeCheck, text: "Te ves profesional con documentos en inglés que dan confianza — cierras más trabajos y a mejor precio." },
+                { icon: FileText, text: "Protégete legalmente: cada trabajo lleva su contrato firmado digitalmente por el cliente." },
+                { icon: Star, text: "Cobra el depósito por adelantado para asegurar el trabajo y no quedarte gastando de tu bolsa." },
+                { icon: Smartphone, text: "Todo desde tu celular y en español — sin computadora, sin Excel, sin complicaciones." },
+              ]} />
+              <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />
+            </>
+          )}
         </>
       )}
     </div>
@@ -664,10 +679,16 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
             </span>
           </div>
 
+          <div className="mt-5 mb-2 text-center">
+            <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué te conviene el Marketing con IA?</h3>
+          </div>
           <FeatureRow items={[
-            { icon: ImageIcon, text: "Posts con tu logo, colores, teléfono y CTA" },
-            { icon: PlayCircle, text: "Reels en video con voz en off en español nativo" },
-            { icon: Sparkles, text: "¿No tienes foto? La IA te crea la imagen" },
+            { icon: ImageIcon, text: "Publica como profesional sin pagar diseñador: posts con tu logo, colores, teléfono y botón de acción." },
+            { icon: Megaphone, text: "Atrae más clientes: contenido constante te mantiene visible y te llegan más llamadas y mensajes." },
+            { icon: PlayCircle, text: "Reels en video con voz en off en español nativo — el formato que más vende hoy en redes." },
+            { icon: Sparkles, text: "¿No tienes una buena foto? La IA te crea la imagen perfecta para tu post." },
+            { icon: Check, text: "Ahorra horas: solo describes la idea y en segundos tienes el post listo para subir." },
+            { icon: Smartphone, text: "Promociones, ofertas y antes/después listos para Instagram, Facebook y WhatsApp." },
           ]} />
           <ModuleUpsell highlight="marketing" onSwitch={onSwitch} />
         </div>
