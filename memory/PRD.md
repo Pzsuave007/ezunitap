@@ -27,7 +27,7 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
-- **Negocio** (ejemplos pre-armados, SIN IA real — ahorra créditos y elimina la espera): el usuario elige 1 de 3 trabajos de ejemplo (Reemplazo de techo $9,417.75 / Pintura interior $3,312.45 / Driveway de concreto $6,819.75), cada uno con cotización (line items, scope, totales, depósito), contrato (Service Agreement completo) y factura pre-armados. Loader falso `GeneratingOverlay` (~1.6s) da el "feeling" de IA. Flujo verificado: cotización → contrato → firma → factura → pagado → cross-sell. (El `/public/demo/start` se sigue llamando para capturar el lead.)
+- **Negocio** (ejemplos pre-armados, SIN IA real — ahorra créditos y elimina la espera): paso "pick" muestra un CAMPO DE DESCRIPCIÓN editable + copy "Con solo esa descripción, la IA crea cotización, contrato y factura" y panel "✓ Cotización ✓ Contrato ✓ Factura con link de pago" (para que NO parezca que hay botones predeterminados). Los 3 ejemplos (Techo/Pintura/Driveway) son chips que LLENAN la descripción (`descText`) y seleccionan los datos pre-armados. Loader "Generando tu cotización…" (paso 1) / "Generando tu Service Agreement…" (paso 2). Flujo: descripción → cotización → contrato → firma → factura → cross-sell.
 - **Negocio (versión anterior con IA real)** reemplazada en `/demo-all`. El `/demo` original sigue usando IA real e intacto.
 
 ## ✅ Jun 2026 — DEMO `/demo-all`: tarjeta NFC real + posts de Marketing diseñados (3 tipos) [COMPLETO + PROBADO]

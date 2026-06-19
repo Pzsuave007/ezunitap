@@ -13,6 +13,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, FileText,
   Smartphone, Megaphone, MapPin, MessageCircle, Phone, BadgeCheck,
@@ -53,6 +54,7 @@ const NEG_JOBS = [
     id: "roofing",
     label: "Reemplazo de techo",
     trade: "Roofing · 1,500 sq ft",
+    descText: "Reemplazar el techo completo de una casa de 1,500 pies cuadrados. Quitar las tejas viejas y tirarlas, poner papel sintético nuevo con ice & water shield, instalar tejas arquitectónicas GAF, cambiar boots y flashing, poner ridge vent y hacer limpieza completa con barrido magnético. Costos: tear-off $1.20 por pie, tejas instaladas $3.50 por pie, underlayment $950, flashing y ventilación $700. Depósito del 50% para agendar.",
     quote: {
       number: "Q-1042",
       job_title: "Complete Roof Replacement — 1,500 sq ft",
@@ -86,6 +88,7 @@ const NEG_JOBS = [
     id: "painting",
     label: "Pintura interior",
     trade: "Painting · 3 bed / 2 bath",
+    descText: "Pintar el interior de una casa de 3 recámaras y 2 baños. Proteger pisos y muebles, resanar hoyos y reparaciones menores de drywall, sellar molduras y lijar, aplicar 2 manos de pintura premium en paredes, techos y molduras, y hacer limpieza final. Costos: preparación $450, paredes $0.95 por pie (2,200 pies), techos y molduras $520. Depósito del 30%.",
     quote: {
       number: "Q-1043",
       job_title: "Interior Painting — 3 Bed / 2 Bath Home",
@@ -118,6 +121,7 @@ const NEG_JOBS = [
     id: "concrete",
     label: "Driveway de concreto",
     trade: "Concrete · 600 sq ft",
+    descText: "Hacer un driveway nuevo de concreto de 600 pies cuadrados. Excavar y quitar la superficie vieja, nivelar y compactar la base, poner formas y refuerzo de varilla, vaciar concreto de 4 pulgadas con acabado de escoba y sellarlo. Costos: excavación y nivelación $1,200, concreto $7.50 por pie, acabado y sellado $600. Depósito del 50%.",
     quote: {
       number: "Q-1044",
       job_title: "Concrete Driveway — 600 sq ft",
@@ -373,6 +377,7 @@ function BranchSelector({ onChoose }) {
 function NegocioBranch({ lead, onBack, onSwitch }) {
   const [sub, setSub] = useState("pick"); // pick | quote | agreement | invoice
   const [picked, setPicked] = useState("");
+  const [desc, setDesc] = useState("");
   const [loading, setLoading] = useState(false);
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -411,30 +416,51 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
 
       {sub === "pick" && (
         <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-          <h2 className="font-heading text-2xl font-bold">Elige un trabajo de ejemplo</h2>
-          <p className="text-slate-600 mt-1">Toca uno y la IA arma la cotización con números reales, lista para enviar.</p>
-          <div className="mt-4 space-y-2">
-            {NEG_JOBS.map((j, i) => (
-              <button key={j.id} data-testid={`demo-all-example-${i}`} onClick={() => setPicked(j.id)}
-                className={`w-full text-left p-3 rounded-xl border-2 flex items-center gap-3 transition ${
-                  picked === j.id ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-slate-300"
-                }`}>
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-none ${picked === j.id ? "bg-emerald-600" : "bg-slate-100"}`}>
-                  <FileText className={`w-5 h-5 ${picked === j.id ? "text-white" : "text-slate-500"}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm text-slate-900">{j.label}</div>
-                  <div className="text-xs text-slate-500">{j.trade}</div>
-                </div>
-                <span className="text-xs font-extrabold text-emerald-700 flex-none">{usd(j.quote.total)}</span>
-                {picked === j.id && <Check className="w-5 h-5 text-emerald-600 flex-none" />}
-              </button>
-            ))}
+          <h2 className="font-heading text-2xl font-bold">Describe el trabajo y los costos</h2>
+          <p className="text-slate-600 mt-1">
+            Escríbelo en español como se lo dirías a un amigo. Con <strong>solo esa descripción</strong>, la IA te crea la cotización, el contrato y la factura — listos para enviar.
+          </p>
+
+          <Textarea
+            data-testid="demo-all-desc"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            rows={6}
+            placeholder="Ej: Reemplazar el techo de una casa de 1,500 pies cuadrados, quitar las tejas viejas, poner papel nuevo y tejas GAF… incluye los costos por pie y el depósito."
+            className="mt-4 rounded-xl text-base"
+          />
+
+          <div className="mt-3">
+            <div className="text-xs font-semibold text-slate-500 mb-1.5">¿No sabes qué escribir? Toca un ejemplo y míralo:</div>
+            <div className="flex flex-wrap gap-2">
+              {NEG_JOBS.map((j, i) => (
+                <button key={j.id} data-testid={`demo-all-example-${i}`}
+                  onClick={() => { setPicked(j.id); setDesc(j.descText); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                    picked === j.id ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+                  }`}>
+                  {j.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">Con esa descripción, la IA genera:</div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-emerald-800">
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Cotización</span>
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Contrato</span>
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Factura con link de pago</span>
+            </div>
+          </div>
+
           <Button data-testid="demo-all-gen-quote-btn" onClick={genQuote} disabled={!picked || loading}
             className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base disabled:opacity-50">
-            <Sparkles className="w-5 h-5 mr-2" /> Generar cotización con IA
+            <Sparkles className="w-5 h-5 mr-2" /> Generar con IA
           </Button>
+          {!picked && desc.trim().length > 0 && (
+            <p className="text-[11px] text-slate-400 mt-2 text-center">En este demo, toca uno de los ejemplos de arriba para ver el resultado. En tu cuenta real, la IA lee cualquier descripción que escribas. ✨</p>
+          )}
         </Card>
       )}
 
