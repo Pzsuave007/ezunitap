@@ -27,7 +27,18 @@ The build MUST use a RELATIVE `/api` (empty `REACT_APP_BACKEND_URL`) so the SAME
 3. **FORCE-add the build folder to git**: `cd /app && git add -f frontend/build/`
 4. The Emergent platform auto-commits tracked files after each step (force-add ensures the build is tracked).
 
-## ✅ Jun 2026 — ADMIN: Área consolidada (tabla de Cuentas + Drawer unificado) [COMPLETO + PROBADO 100%]
+## ✅ Jun 2026 — DEMO: nuevo `/demo-all` unificado con ramificación (3 módulos) [COMPLETO + PROBADO 30/30]
+El `/demo` original NO se tocó (sigue con su Meta Pixel y los anuncios activos). Se creó una ruta SEPARADA `/demo-all` (`pages/DemoAll.js`) como demo de conversión que muestra los 3 productos:
+- **Captura de lead** → reusa `POST /api/public/demo/start` (dispara Pixel Lead + DemoStarted).
+- **Selector "¿Cuál es tu mayor necesidad?"**: Presencia / Negocio / Marketing (deep-link `?need=presencia|negocio|marketing` entra directo a la rama tras la captura).
+- **Negocio** (IA real): reusa endpoints `/public/demo/quote` y `/public/demo/agreement` y los componentes `QuoteStep/AgreementStep/InvoiceStep/GeneratingOverlay` (ahora exportados desde `DemoFlow.js`; `InvoiceStep` tiene prop opcional `hideFinalCta`, default false → `/demo` intacto).
+- **Presencia** (simulado, $0): tap NFC animado → mini-sitio personalizado con el nombre/oficio del lead (ej. "García Roofing"), 5.0★/127 reseñas, Licensed/Insured, WhatsApp/Llamar/Guardar contacto, servicios por oficio.
+- **Marketing** (simulado, $0): brief en español → loader IA falso (~2s) → post estilo Instagram con foto real del oficio + overlay de marca ("Roofing Done Right · FREE ESTIMATE") + caption en inglés + Copiar. Sin consumo de Universal Key, sin riesgo de abuso.
+- **Cierre unificado** `ModuleUpsell`: vende los 3 módulos (resalta el que vio) → CTA `/register` (14 días gratis, sin tarjeta).
+- Mapa de imágenes por oficio (Unsplash/Pexels) coherente; oficios variados. Eventos Pixel custom: DemoBranch, DemoPresenciaViewed, DemoMarketingGenerate.
+- **Probado** (testing_agent iteration_22): 30/30 asserts OK incluyendo validación de lead, las 3 ramas, deep-links, back, cross-sell y REGRESIÓN del `/demo` original. Build prod plano (relativo `/api`) + `git add -f frontend/build/`.
+
+
 Pedido de Paul: el panel admin obligaba a saltar entre 5 pestañas (Métricas/Cuentas/Leads/Envíos/Mensajes) para manejar UNA cuenta. Rediseño basado en `design_guidelines.json` (Swiss/amber, Sheet lateral).
 - **Página "Cuentas"** (`AdminAccounts.js` reescrito): tabla densa (desktop) / tarjetas apilables (móvil) de TODOS los usuarios, con buscador (`accounts-search-input`), filtros de estado (Todos/Activa/Trial/Cortesía/Sin plan), badge de plan por fila, columna de tarjetas y botón "Crear cuenta". Toggle a vista "Invitaciones" (generador de comp-invites preservado). `CreateUserDialog` conservado.
 - **Drawer unificado** (`components/AdminAccountDrawer.js` nuevo): al tocar una cuenta abre un `Sheet` lateral (`user-detail-drawer`) con header (avatar/nombre/email/estado) y 4 pestañas:
