@@ -28,10 +28,15 @@ _FONT_FILES = {
 }
 _font_cache: dict = {}
 
-# Active render style (set per render_post call) controlling text legibility
-# (stroke/outline depth + color) and vertical text position on supported designs.
+# Active render style (set per render_post call) controlling text legibility via
+# an elegant soft drop shadow (blur radius, y-offset, alpha — all relative to the
+# font size) and vertical text position on supported designs.
 _STYLE: dict = {}
-_LEGIBILITY = {"none": 0.0, "soft": 0.045, "medium": 0.07, "strong": 0.10}
+_SHADOW = {
+    "soft":   (0.055, 0.040, 200),
+    "medium": (0.085, 0.055, 220),
+    "strong": (0.120, 0.070, 235),
+}
 
 # Designs whose headline/subtext sits directly over a full-bleed photo — these
 # always get an automatic outline so the text stays readable on any background.
@@ -77,29 +82,39 @@ def _text_on(rgb: tuple) -> tuple:
     return (17, 24, 39) if _luminance(rgb) > 0.62 else (255, 255, 255)
 
 
-def _stroke_w(font) -> int:
-    """Outline width (px) for the active legibility depth, scaled to font size."""
-    f = _LEGIBILITY.get(_STYLE.get("legibility", "soft"), 0.0)
-    if f <= 0:
-        return 0
-    return max(2, int(font.size * f))
+def _shadow_params(font):
+    """(blur_radius, y_offset, alpha) for the active legibility level, scaled to font."""
+    mode = _STYLE.get("legibility", "soft")
+    cfg = _SHADOW.get(mode)
+    if not cfg:
+        return None
+    blur_f, off_f, alpha = cfg
+    return (max(3, int(font.size * blur_f)), max(2, int(font.size * off_f)), alpha)
 
 
-def _stroke_fill(fill: tuple) -> tuple:
-    """Outline color: explicit override, else dark for light text / light for dark."""
-    sc = _STYLE.get("stroke_color")
-    if sc:
-        return _hex_to_rgb(sc, (0, 0, 0))
-    return (0, 0, 0) if _luminance(fill[:3]) > 0.5 else (255, 255, 255)
+def _shadow_lines(draw, lines, font, x, y, line_h, anchor="la"):
+    """Composite ONE soft, blurred drop shadow behind a block of text lines.
+    Much more elegant than a hard outline; falls back to nothing if the canvas
+    isn't RGBA or legibility is off."""
+    canvas = getattr(draw, "_image", None)
+    p = _shadow_params(font)
+    if p is None or canvas is None or canvas.mode != "RGBA":
+        return
+    blur, off, alpha = p
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    yy = y
+    for ln in lines:
+        ld.text((x, yy), ln, font=font, fill=(0, 0, 0, alpha), anchor=anchor)
+        yy += line_h
+    layer = layer.filter(ImageFilter.GaussianBlur(blur))
+    canvas.alpha_composite(layer, (0, off))
 
 
 def _draw_text(draw, xy, text, font, fill, anchor="la"):
-    """draw.text that auto-applies the active legibility stroke for readability."""
-    sw = _stroke_w(font)
-    if sw:
-        draw.text(xy, text, font=font, fill=fill, anchor=anchor, stroke_width=sw, stroke_fill=_stroke_fill(fill))
-    else:
-        draw.text(xy, text, font=font, fill=fill, anchor=anchor)
+    """draw.text with an elegant soft drop shadow for legibility over photos."""
+    _shadow_lines(draw, [text], font, xy[0], xy[1], font.size, anchor=anchor)
+    draw.text(xy, text, font=font, fill=fill, anchor=anchor)
 
 
 def _darken(rgb: tuple, factor: float = 0.55) -> tuple:
@@ -175,13 +190,9 @@ def _fit_text(draw, text: str, weight: str, max_w: int, max_h: int, start: int, 
 
 
 def _draw_lines(draw, lines, font, x, y, line_h, fill, anchor="la"):
-    sw = _stroke_w(font)
-    sf = _stroke_fill(fill) if sw else None
+    _shadow_lines(draw, lines, font, x, y, line_h, anchor=anchor)
     for ln in lines:
-        if sw:
-            draw.text((x, y), ln, font=font, fill=fill, anchor=anchor, stroke_width=sw, stroke_fill=sf)
-        else:
-            draw.text((x, y), ln, font=font, fill=fill, anchor=anchor)
+        draw.text((x, y), ln, font=font, fill=fill, anchor=anchor)
         y += line_h
     return y
 
