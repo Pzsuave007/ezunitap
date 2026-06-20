@@ -11,10 +11,11 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
-  SlidersHorizontal, Languages, Palette, Star, MapPin, ChevronLeft, ChevronRight,
+  SlidersHorizontal, Languages, Palette, Star, MapPin, ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import ReelStudio from "@/components/ReelStudio";
 import AiImageStudio from "@/components/AiImageStudio";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
@@ -133,6 +134,15 @@ export default function SocialStudio() {
   const [post, setPost] = useState(null);
   const [history, setHistory] = useState([]);
   const [rerendering, setRerendering] = useState(false);
+  // Optional customization (collapsed by default so it never wastes space)
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [legibility, setLegibility] = useState("auto");
+  const [textPosition, setTextPosition] = useState("auto");
+  const [editAccent, setEditAccent] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [labelBefore, setLabelBefore] = useState("");
+  const [labelAfter, setLabelAfter] = useState("");
+  const [promoLabel, setPromoLabel] = useState("");
   const [enhanceIdx, setEnhanceIdx] = useState(null); // slot being enhanced (loading)
   const [enhancePreview, setEnhancePreview] = useState(null); // { index, originalPreview, enhancedUrl }
   const [applyingEnhance, setApplyingEnhance] = useState(false);
@@ -237,6 +247,20 @@ export default function SocialStudio() {
   };
   useEffect(() => { loadHistory(); loadCardIds(); }, []);
 
+  // Sync customization controls whenever a different post is opened (kept collapsed).
+  useEffect(() => {
+    if (!post) return;
+    setCustomizeOpen(false);
+    setLegibility(post.style?.legibility || "auto");
+    setTextPosition(post.style?.text_position || "auto");
+    setEditAccent(post.accent_color || "");
+    setEditBrand(post.brand_color || "");
+    setLabelBefore(post.label_before || "");
+    setLabelAfter(post.label_after || "");
+    setPromoLabel(post.promo_label || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post?.id]);
+
   const toggleOnCard = async (photoId) => {
     if (!photoId) return;
     const isOn = cardIds.includes(photoId);
@@ -335,13 +359,25 @@ export default function SocialStudio() {
     if (!post) return;
     setRerendering(true);
     try {
-      const { data } = await api.post(`/social/posts/${post.id}/rerender`, {
+      const body = {
         headline: post.copy.headline,
         subheadline: post.copy.subheadline,
         cta: post.copy.cta,
         caption: post.copy.caption,
         hashtags: post.copy.hashtags,
-      });
+      };
+      const style = {};
+      if (legibility !== "auto") style.legibility = legibility;
+      if (["showcase", "center_stage"].includes(post.template) && textPosition !== "auto") style.text_position = textPosition;
+      if (Object.keys(style).length) body.style = style;
+      if (editBrand) body.brand_color = editBrand;
+      if (editAccent) body.accent_color = editAccent;
+      if (post.template === "before_after") {
+        if (labelBefore) body.label_before = labelBefore;
+        if (labelAfter) body.label_after = labelAfter;
+      }
+      if (["promo", "seasonal"].includes(post.template) && promoLabel) body.promo_label = promoLabel;
+      const { data } = await api.post(`/social/posts/${post.id}/rerender`, body);
       setPost(data);
       toast.success("Diseño actualizado");
     } catch (err) {
@@ -755,6 +791,89 @@ export default function SocialStudio() {
                 <Input data-testid="edit-cta" value={post.copy.cta || ""} onChange={(e) => updateCopy("cta", e.target.value)} className="rounded-xl mt-1" />
               </div>
             </div>
+
+            {/* Optional advanced customization — collapsed by default (no wasted space) */}
+            <Collapsible open={customizeOpen} onOpenChange={setCustomizeOpen} className="rounded-2xl border border-slate-200 overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <button data-testid="customize-toggle" className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/70 hover:bg-slate-100 transition-colors tap">
+                  <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-600" /> Personaliza el diseño
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${customizeOpen ? "rotate-180" : ""}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-4 space-y-4 border-t border-slate-200" data-testid="customize-panel">
+                  <p className="text-[10px] text-slate-400 -mt-1">Opcional — los diseños ya salen con sombra automática. Aquí solo si quieres afinar.</p>
+
+                  {/* Sombra / legibilidad */}
+                  <div>
+                    <Label className="text-[11px] font-bold text-slate-600">Sombra del texto</Label>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5" data-testid="legibility-group">
+                      {[["auto", "Auto"], ["none", "Sin sombra"], ["soft", "Suave"], ["medium", "Media"], ["strong", "Fuerte"]].map(([id, lbl]) => (
+                        <button key={id} onClick={() => setLegibility(id)} data-testid={`legibility-${id}`}
+                          className={`px-3 py-2 rounded-lg text-[11px] font-semibold border tap transition-colors ${legibility === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600"}`}>
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Posición del texto (solo diseños sobre foto completa) */}
+                  {["showcase", "center_stage"].includes(post.template) && (
+                    <div>
+                      <Label className="text-[11px] font-bold text-slate-600">Posición del texto</Label>
+                      <div className="grid grid-cols-4 gap-1.5 mt-1.5" data-testid="position-group">
+                        {[["auto", "Auto"], ["top", "Arriba"], ["center", "Centro"], ["bottom", "Abajo"]].map(([id, lbl]) => (
+                          <button key={id} onClick={() => setTextPosition(id)} data-testid={`position-${id}`}
+                            className={`py-2 rounded-lg text-[11px] font-semibold border tap transition-colors ${textPosition === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600"}`}>
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Colores */}
+                  <div>
+                    <Label className="text-[11px] font-bold text-slate-600">Colores</Label>
+                    <div className="flex gap-3 mt-1.5">
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                        Barra / botón
+                        <input type="color" value={editAccent || "#10b981"} onChange={(e) => setEditAccent(e.target.value)} data-testid="edit-accent-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
+                      </label>
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                        Fondo
+                        <input type="color" value={editBrand || "#0f5f46"} onChange={(e) => setEditBrand(e.target.value)} data-testid="edit-brand-input" className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer" />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Etiquetas — Antes/Después */}
+                  {post.template === "before_after" && (
+                    <div className="grid grid-cols-2 gap-3" data-testid="ba-labels">
+                      <div>
+                        <Label className="text-[11px] font-bold text-slate-600">Etiqueta 1</Label>
+                        <Input data-testid="edit-label-before" value={labelBefore} onChange={(e) => setLabelBefore(e.target.value)} placeholder="ANTES" className="rounded-xl mt-1 h-9 text-sm" />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] font-bold text-slate-600">Etiqueta 2</Label>
+                        <Input data-testid="edit-label-after" value={labelAfter} onChange={(e) => setLabelAfter(e.target.value)} placeholder="DESPUÉS" className="rounded-xl mt-1 h-9 text-sm" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Etiqueta de oferta — promo / temporada */}
+                  {["promo", "seasonal"].includes(post.template) && (
+                    <div data-testid="promo-label-wrap">
+                      <Label className="text-[11px] font-bold text-slate-600">Etiqueta de oferta</Label>
+                      <Input data-testid="edit-promo-label" value={promoLabel} onChange={(e) => setPromoLabel(e.target.value)} placeholder="OFERTA ESPECIAL" className="rounded-xl mt-1 h-9 text-sm" />
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             <Button onClick={rerender} disabled={rerendering} data-testid="rerender-btn" variant="outline" className="rounded-xl">
               {rerendering ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
               Volver a generar diseño

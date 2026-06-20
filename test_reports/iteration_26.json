@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only re-test of the 'Personaliza el diseño' collapsible accordion in the post-result drawer on /marketing as admin pzsuave007@gmail.com. All seven sub-cases pass.\n\n(1) Login OK; loaded /marketing; 6 history thumbnails found in 'Mis posts'.\n(2) Clicked first thumbnail (showcase) → post-result-drawer opened.\n(3) customize-toggle button present; data-testid='customize-panel' has visibility=False on first open (COLLAPSED BY DEFAULT — confirmed).\n(4) Clicked customize-toggle → panel becomes visible (True). All expected inner controls visible: legibility-group, edit-accent-input, edit-brand-input. Because the post is a showcase, position-group IS rendered; ba-labels and edit-promo-label correctly absent.\n(5) Clicked customize-toggle a second time → panel hides again (visible=False) — toggle behavior works both ways.\n(6) Re-expanded, selected legibility-strong + position-top, clicked rerender-btn. Intercepted POST /api/social/posts/{id}/rerender body:\n    {\"headline\":..., \"subheadline\":..., \"cta\":..., \"caption\":..., \"hashtags\":[...], \"style\":{\"legibility\":\"strong\",\"text_position\":\"top\"}, \"brand_color\":\"#7c3aed\", \"accent_color\":\"#ff0000\"}\n    Response 200, success toast 'Diseño actualizado' shown, image refreshed.\n(7) Closed drawer (Escape), opened a DIFFERENT history post → customize-panel visibility=False on fresh open (RESET TO COLLAPSED — confirmed via useEffect at SocialStudio.js:251-253).\n(8) On post #2, opened panel, selected legibility-auto (and position-auto where applicable), clicked rerender-btn. Intercepted body omits the style field ENTIRELY (full keys: ['headline','subheadline','cta','caption','hashtags','brand_color','accent_color'] — NO 'style', NO 'legibility'). This matches the spec: when legibility==='auto' AND text_position==='auto', neither is sent so backend auto-applies an elegant soft shadow per template. Response 200 + toast.\n\nNo console errors beyond pre-existing benign 404 (favicon-like) and the unrelated Radix DialogContent aria-describedby warning. No regressions vs iteration_25.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SocialStudio.js is now 1012 lines — still exceeds the 700-line guideline. Recommend extracting <PostResultDrawer /> (and the CustomizePanel collapsible) into separate components for maintainability. Non-blocking.",
+    "(Carryover from iter_25) rerender() unconditionally sends brand_color/accent_color whenever the editBrand/editAccent state is truthy, and the useEffect at line 256-257 hydrates them from post.* on every open — so the next rerender will always echo back the existing values. Harmless but means there is no UI path to 'reset to template default brand'. Consider a dirty-flag if that becomes a product requirement."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (frontend-only per request)",
+    "frontend": "100% — Collapsed by default 2/2 posts (post1, post2); Expand on 1st click 1/1; Collapse on 2nd click 1/1; Rerender with style.legibility+text_position 200+toast 1/1; Auto omits style 1/1 (body keys verified); Panel resets to collapsed on opening different post 1/1; All conditional controls (legibility/accent/brand/position) rendered correctly for showcase template"
+  },
+  "test_credentials": "Admin pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None — used existing 6 history posts in admin's account.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Collapsible 'Personaliza el diseño' accordion in /marketing post-result-drawer fully functional. data-testid contract: customize-toggle (trigger button), customize-panel (collapsible content). Default state: collapsed. State resets to collapsed when switching posts (useEffect on post?.id in SocialStudio.js:251). rerender() body verified via page.on('request') interception — when legibility=='auto' AND text_position=='auto' the style object is omitted entirely (not sent as empty {}). brand_color and accent_color are always sent when editBrand/editAccent are non-empty (which is always true once post loads, due to hydration useEffect). Recommend in future iterations to extract a <PostResultDrawer /> component (file is now 1012 lines).",
+  "rca of the issue": "n/a — feature verified working as designed. No bug found."
+}
