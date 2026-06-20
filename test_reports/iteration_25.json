@@ -1,0 +1,27 @@
+{
+  "summary": "RE-TESTED the iteration_24 CRITICAL bug (rerender() body missing customization fields) on /marketing as admin pzsuave007@gmail.com. The fix is confirmed working across all three template families. Showcase post (history-e8ada05c-92d7-4158-9dbf-e8dac06f6363): selected legibility-strong + position-top + accent #ff0000, clicked rerender-btn; intercepted POST /api/social/posts/{id}/rerender contained style:{legibility:'strong',text_position:'top'} AND accent_color:'#ff0000' AND brand_color (loaded from post) — response 200. Persistence verified: closing and reopening the same showcase item shows legibility-strong and position-top still highlighted and accent input still '#ff0000' (useEffect re-sync working). Before_after post (6a1359be...): ba-labels visible, position-group correctly absent; typed PRIMERO/AHORA, clicked Aplicar — POST body included label_before='PRIMERO', label_after='AHORA' — 200. Promo post (4d863995...): edit-promo-label visible, position-group AND ba-labels correctly absent; typed GRAN OFERTA, clicked Aplicar — POST body included promo_label='GRAN OFERTA' — 200. All conditional rendering rules satisfied. No regressions observed.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SocialStudio.js still 1009 lines — exceeds 700-line guideline. Recommend splitting the post-result-drawer + customize-panel into a dedicated <PostResultDrawer /> component for maintainability. Non-blocking.",
+    "rerender() now sends brand_color whenever editBrand is truthy. Because useEffect at line 254 hydrates editBrand from post.brand_color on every open, the next rerender will ALWAYS send brand_color back (even if the user did not interact with the picker). This is harmless functionally (backend just re-persists the same value) but means it is not possible to 'reset to template default brand' via the UI. Consider gating the body field on a dirty-flag if that becomes a requirement.",
+    "Same observation for accent_color when post.accent_color was previously set. Cosmetic only."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (frontend-only per request)",
+    "frontend": "100% — Rerender payload correctness 3/3 templates (showcase, before_after, promo); Conditional UI 3/3 (position-group shown only for showcase/center_stage, hidden for before_after and promo; ba-labels only for before_after; edit-promo-label only for promo/seasonal); Persistence 3/3 (legibility, text_position, accent all rehydrated on reopen); Rerender HTTP 200 on all three"
+  },
+  "test_credentials": "Admin: pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None — admin history already contained the required showcase, before_after (6a1359be-5da7-44b8-b44f-0d3ef551674f), and promo (4d863995-d691-45bf-bb8a-73f9bea140ee) posts.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Customization panel + rerender integration is fully functional as of iteration_25. Intercepted bodies verified via Playwright page.on('request'). Specifically confirmed: showcase rerender body = {headline,subheadline,cta,caption,hashtags, style:{legibility,text_position}, brand_color, accent_color}; before_after adds label_before/label_after (no position field rendering, but style still sent with default soft/bottom which backend will ignore for ba template — verify on backend if that's intentional, but no visible regression); promo adds promo_label. All three returned 200. Persistence proven by closing drawer (Escape) and reopening same history thumbnail — controls reflect saved state via the useEffect at SocialStudio.js line 249. No console errors beyond the pre-existing benign Radix DialogContent aria-describedby warning. If future iterations add new templates with bespoke customization (e.g., review_5star, coupon), mirror the conditional JSX pattern at SocialStudio.js lines 815-872 and extend rerender() body conditions at lines 369-373.",
+  "rca of the issue": "Iteration_24 bug: rerender() body in SocialStudio.js omitted the customization state variables. Main agent fixed it by extending the body object (lines 359-373) to include style:{legibility,text_position}, conditionally brand_color/accent_color/label_before/label_after/promo_label based on template. Re-tested end-to-end via Playwright request interception — fix verified across showcase, before_after, and promo templates with 200 responses and full persistence on reopen."
+}

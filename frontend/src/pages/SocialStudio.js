@@ -356,13 +356,22 @@ export default function SocialStudio() {
     if (!post) return;
     setRerendering(true);
     try {
-      const { data } = await api.post(`/social/posts/${post.id}/rerender`, {
+      const body = {
         headline: post.copy.headline,
         subheadline: post.copy.subheadline,
         cta: post.copy.cta,
         caption: post.copy.caption,
         hashtags: post.copy.hashtags,
-      });
+        style: { legibility, text_position: textPosition },
+      };
+      if (editBrand) body.brand_color = editBrand;
+      if (editAccent) body.accent_color = editAccent;
+      if (post.template === "before_after") {
+        if (labelBefore) body.label_before = labelBefore;
+        if (labelAfter) body.label_after = labelAfter;
+      }
+      if (["promo", "seasonal"].includes(post.template) && promoLabel) body.promo_label = promoLabel;
+      const { data } = await api.post(`/social/posts/${post.id}/rerender`, body);
       setPost(data);
       toast.success("Diseño actualizado");
     } catch (err) {
