@@ -105,7 +105,7 @@ export default function MarketingStart() {
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-none text-emerald-600" />
-                  <span className="truncate">{c.label}</span>
+                  <span className="leading-tight">{c.label}</span>
                 </button>
               );
             })}
