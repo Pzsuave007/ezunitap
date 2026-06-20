@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import {
   Megaphone, Sparkles, Loader2, Camera, ImagePlus, Video, ArrowRight,
   CheckCircle2, Hammer, Tag, Star, Repeat, Users, Snowflake, Lightbulb, Wand2,
@@ -32,22 +33,25 @@ export default function MarketingStart() {
   const [loading, setLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
   const [ideas, setIdeas] = useState([]);
+  const [ideasOpen, setIdeasOpen] = useState(false);
 
   const getIdeas = async (category) => {
     setActiveCat(category || "all");
-    setLoading(true);
     setIdeas([]);
+    setIdeasOpen(true);
+    setLoading(true);
     try {
       const { data } = await api.post("/social/post-ideas", {
         category: category || "",
         extra_context: extra.trim(),
-        count: 6,
+        count: 3,
         language: "es",
       });
       setIdeas(data.ideas || []);
       if (!data.ideas?.length) toast.error("No salieron ideas, intenta de nuevo");
     } catch (e) {
       toast.error(e?.response?.data?.detail || "No se pudieron generar ideas");
+      setIdeasOpen(false);
     } finally {
       setLoading(false);
     }
@@ -131,56 +135,64 @@ export default function MarketingStart() {
         </button>
       </Card>
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-12 text-center" data-testid="ideas-loading">
-          <Loader2 className="w-9 h-9 animate-spin text-emerald-600 mb-3" />
-          <p className="text-sm font-semibold text-slate-600">Pensando ideas para ti…</p>
-        </div>
-      )}
-
-      {/* Ideas */}
-      {!loading && ideas.length > 0 && (
-        <div className="space-y-3" data-testid="ideas-list">
-          <h2 className="font-heading text-lg font-bold flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" /> Ideas para ti
-            {activeCat && activeCat !== "all" && (
-              <span className="text-xs font-semibold text-slate-400">· {CAT_LABEL[activeCat]}</span>
-            )}
-          </h2>
-          {ideas.map((it, i) => (
-            <Card key={i} className="p-4 border-0 shadow-sm" data-testid={`idea-card-${i}`}>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-none mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-slate-900 text-sm">{it.title}</div>
-                  <p className="text-sm text-slate-600 mt-0.5">{it.idea}</p>
-                  {it.photo_tip && (
-                    <div className="mt-2 flex items-start gap-1.5 text-[12px] text-blue-700 bg-blue-50 rounded-lg px-2.5 py-1.5">
-                      <Camera className="w-3.5 h-3.5 flex-none mt-0.5" />
-                      <span><b>Toma esto:</b> {it.photo_tip}</span>
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Button onClick={() => openPost(it)} size="sm" data-testid={`idea-use-post-${i}`}
-                      className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-8 text-xs">
-                      <ImagePlus className="w-3.5 h-3.5 mr-1.5" /> Usar en Post
-                    </Button>
-                    <Button onClick={() => openAi(it)} size="sm" variant="outline" data-testid={`idea-use-ai-${i}`}
-                      className="rounded-lg h-8 text-xs border-violet-300 text-violet-700 hover:bg-violet-50">
-                      <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Crear imagen IA
-                    </Button>
-                    <Button onClick={() => openReel(it)} size="sm" variant="outline" data-testid={`idea-use-reel-${i}`}
-                      className="rounded-lg h-8 text-xs">
-                      <Video className="w-3.5 h-3.5 mr-1.5" /> Hacer Reel
-                    </Button>
-                  </div>
-                </div>
+      {/* Ideas — slide-up drawer: shows "preparando…" then the ideas, no scroll needed */}
+      <Drawer open={ideasOpen} onOpenChange={setIdeasOpen}>
+        <DrawerContent data-testid="ideas-drawer" className="max-h-[88vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-amber-500" />
+              {loading ? "Preparando ideas…" : "Ideas para ti"}
+              {!loading && activeCat && activeCat !== "all" && (
+                <span className="text-xs font-semibold text-slate-400">· {CAT_LABEL[activeCat]}</span>
+              )}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-lg mx-auto w-full" data-testid="ideas-drawer-body">
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-14 text-center" data-testid="ideas-loading">
+                <Loader2 className="w-9 h-9 animate-spin text-emerald-600 mb-3" />
+                <p className="text-sm font-semibold text-slate-600">Preparando ideas para ti…</p>
+                <p className="text-xs text-slate-400 mt-1">Dame unos segundos ✨</p>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+            )}
+            {!loading && ideas.length > 0 && (
+              <div className="space-y-3" data-testid="ideas-list">
+                {ideas.map((it, i) => (
+                  <Card key={i} className="p-4 border border-slate-100 shadow-sm" data-testid={`idea-card-${i}`}>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-none mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-slate-900 text-sm">{it.title}</div>
+                        <p className="text-sm text-slate-600 mt-0.5">{it.idea}</p>
+                        {it.photo_tip && (
+                          <div className="mt-2 flex items-start gap-1.5 text-[12px] text-blue-700 bg-blue-50 rounded-lg px-2.5 py-1.5">
+                            <Camera className="w-3.5 h-3.5 flex-none mt-0.5" />
+                            <span><b>Toma esto:</b> {it.photo_tip}</span>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <Button onClick={() => openPost(it)} size="sm" data-testid={`idea-use-post-${i}`}
+                            className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-8 text-xs">
+                            <ImagePlus className="w-3.5 h-3.5 mr-1.5" /> Usar en Post
+                          </Button>
+                          <Button onClick={() => openAi(it)} size="sm" variant="outline" data-testid={`idea-use-ai-${i}`}
+                            className="rounded-lg h-8 text-xs border-violet-300 text-violet-700 hover:bg-violet-50">
+                            <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Crear imagen IA
+                          </Button>
+                          <Button onClick={() => openReel(it)} size="sm" variant="outline" data-testid={`idea-use-reel-${i}`}
+                            className="rounded-lg h-8 text-xs">
+                            <Video className="w-3.5 h-3.5 mr-1.5" /> Hacer Reel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
