@@ -28,6 +28,11 @@ _FONT_FILES = {
 }
 _font_cache: dict = {}
 
+# Active render style (set per render_post call) controlling text legibility
+# (stroke/outline depth + color) and vertical text position on supported designs.
+_STYLE: dict = {}
+_LEGIBILITY = {"none": 0.0, "soft": 0.05, "medium": 0.075, "strong": 0.11}
+
 
 def _font(weight: str, size: int) -> ImageFont.FreeTypeFont:
     key = (weight, size)
@@ -61,6 +66,31 @@ def _luminance(rgb: tuple) -> float:
 
 def _text_on(rgb: tuple) -> tuple:
     return (17, 24, 39) if _luminance(rgb) > 0.62 else (255, 255, 255)
+
+
+def _stroke_w(font) -> int:
+    """Outline width (px) for the active legibility depth, scaled to font size."""
+    f = _LEGIBILITY.get(_STYLE.get("legibility", "soft"), 0.0)
+    if f <= 0:
+        return 0
+    return max(2, int(font.size * f))
+
+
+def _stroke_fill(fill: tuple) -> tuple:
+    """Outline color: explicit override, else dark for light text / light for dark."""
+    sc = _STYLE.get("stroke_color")
+    if sc:
+        return _hex_to_rgb(sc, (0, 0, 0))
+    return (0, 0, 0) if _luminance(fill[:3]) > 0.5 else (255, 255, 255)
+
+
+def _draw_text(draw, xy, text, font, fill, anchor="la"):
+    """draw.text that auto-applies the active legibility stroke for readability."""
+    sw = _stroke_w(font)
+    if sw:
+        draw.text(xy, text, font=font, fill=fill, anchor=anchor, stroke_width=sw, stroke_fill=_stroke_fill(fill))
+    else:
+        draw.text(xy, text, font=font, fill=fill, anchor=anchor)
 
 
 def _darken(rgb: tuple, factor: float = 0.55) -> tuple:
@@ -136,8 +166,13 @@ def _fit_text(draw, text: str, weight: str, max_w: int, max_h: int, start: int, 
 
 
 def _draw_lines(draw, lines, font, x, y, line_h, fill, anchor="la"):
+    sw = _stroke_w(font)
+    sf = _stroke_fill(fill) if sw else None
     for ln in lines:
-        draw.text((x, y), ln, font=font, fill=fill, anchor=anchor)
+        if sw:
+            draw.text((x, y), ln, font=font, fill=fill, anchor=anchor, stroke_width=sw, stroke_fill=sf)
+        else:
+            draw.text((x, y), ln, font=font, fill=fill, anchor=anchor)
         y += line_h
     return y
 
@@ -211,36 +246,60 @@ def _render_showcase(size, photos, copy, brand) -> Image.Image:
     w, h = size
     brand_rgb = brand["brand"]
     accent_rgb = brand["accent"]
+    pos = _STYLE.get("text_position", "bottom")
     base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
     canvas = base.convert("RGBA")
-    canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.35), start_frac=0.55))
     draw = ImageDraw.Draw(canvas)
     margin = int(w * 0.075)
 
-    # text block bottom (clean: no top logo chip, no phone)
-    y = h - margin
-    cta = copy.get("cta", "")
+    # Measure the full text block first so it can be placed top / center / bottom.
+    cta = copy.get("cta", "") or "Contáctanos"
     cta_font = _font("bold", int(w * 0.042))
     cta_h = cta_font.size + 28
-    y_cta = y - cta_h
-    _pill(draw, (margin, y_cta), cta or "Contáctanos", cta_font, accent_rgb, _text_on(accent_rgb))
-    y = y_cta - int(h * 0.025)
-
     sub = copy.get("subheadline", "")
+    sub_font = sub_lines = None
+    sub_lh = 0
     if sub:
         sub_font, sub_lines, sub_lh = _fit_text(draw, sub, "semibold", w - margin * 2, int(h * 0.12), int(w * 0.05), 30)
-        sub_total = sub_lh * len(sub_lines)
-        y -= sub_total
-        _draw_lines(draw, sub_lines, sub_font, margin, y, sub_lh, (235, 240, 245))
-        y -= int(h * 0.012)
-
     head = copy.get("headline", "") or brand.get("business_name", "")
     hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.30), int(w * 0.115), 48)
     htotal = hlh * len(hlines)
-    y -= htotal
-    # accent underline bar
-    draw.rounded_rectangle([margin, y - int(h * 0.022), margin + int(w * 0.14), y - int(h * 0.022) + 10], radius=5, fill=accent_rgb)
-    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    sub_total = sub_lh * len(sub_lines) if sub_lines else 0
+
+    underline_h = 10
+    block_h = underline_h + int(h * 0.018) + htotal
+    if sub_lines:
+        block_h += int(h * 0.012) + sub_total
+    block_h += int(h * 0.025) + cta_h
+
+    if pos == "top":
+        top = margin
+    elif pos == "center":
+        top = max(margin, (h - block_h) // 2)
+    else:
+        top = h - margin - block_h
+
+    # Scrim for legibility: full bottom gradient when bottom, else a soft box.
+    if pos == "bottom":
+        canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.35), start_frac=0.55))
+    else:
+        sb = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        ImageDraw.Draw(sb).rectangle(
+            [0, top - int(h * 0.025), w, top + block_h + int(h * 0.025)],
+            fill=_darken(brand_rgb, 0.35) + (165,),
+        )
+        canvas.alpha_composite(sb)
+    draw = ImageDraw.Draw(canvas)
+
+    y = top
+    draw.rounded_rectangle([margin, y, margin + int(w * 0.14), y + underline_h], radius=5, fill=accent_rgb)
+    y += underline_h + int(h * 0.018)
+    y = _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    if sub_lines:
+        y += int(h * 0.012)
+        y = _draw_lines(draw, sub_lines, sub_font, margin, y, sub_lh, (235, 240, 245))
+    y += int(h * 0.025)
+    _pill(draw, (margin, y), cta, cta_font, accent_rgb, _text_on(accent_rgb))
     return canvas.convert("RGB")
 
 
@@ -409,11 +468,17 @@ def _render_center_stage(size, photos, copy, brand) -> Image.Image:
     cta_h = cta_font.size + 30
     htotal = hlh * len(hlines)
     block = int(h * 0.04) + htotal + (int(h * 0.02) + sub_font.size if sub else 0) + int(h * 0.045) + cta_h
-    y = (h - block) // 2
+    pos = _STYLE.get("text_position", "center")
+    if pos == "top":
+        y = int(h * 0.10)
+    elif pos == "bottom":
+        y = h - block - int(h * 0.10)
+    else:
+        y = (h - block) // 2
     _accent_bar(draw, cx - int(w * 0.07), y, int(w * 0.14), accent)
     y += int(h * 0.04)
     for ln in hlines:
-        draw.text((cx, y), ln, font=hf, fill=(255, 255, 255), anchor="ma")
+        _draw_text(draw, (cx, y), ln, hf, (255, 255, 255), anchor="ma")
         y += hlh
     if sub:
         y += int(h * 0.02)
@@ -943,6 +1008,8 @@ DESIGN_PHOTOS = {d["id"]: d["photos"] for d in DESIGNS}
 
 
 def render_post(template: str, size_key: str, photos: List[Image.Image], copy: dict, brand: dict) -> bytes:
+    global _STYLE
+    _STYLE = dict(brand.get("style") or {})
     size = SIZES.get(size_key, SIZES["1x1"])
     renderer = _RENDERERS.get(template, _render_showcase)
     img = renderer(size, photos, copy, brand)
@@ -952,15 +1019,20 @@ def render_post(template: str, size_key: str, photos: List[Image.Image], copy: d
 
 
 def build_brand(card: dict, user: dict, logo_bytes: Optional[bytes], language: str = "en",
-                brand_override: Optional[str] = None, accent_override: Optional[str] = None) -> dict:
-    ba = ("ANTES", "DESPUÉS") if language == "es" else ("BEFORE", "AFTER")
-    promo_label = "OFERTA ESPECIAL" if language == "es" else "SPECIAL OFFER"
+                brand_override: Optional[str] = None, accent_override: Optional[str] = None,
+                style: Optional[dict] = None, label_before: Optional[str] = None,
+                label_after: Optional[str] = None, promo_label_override: Optional[str] = None) -> dict:
+    ba_def = ("ANTES", "DESPUÉS") if language == "es" else ("BEFORE", "AFTER")
+    lb = (label_before or "").strip() or ba_def[0]
+    la = (label_after or "").strip() or ba_def[1]
+    promo_label = (promo_label_override or "").strip() or ("OFERTA ESPECIAL" if language == "es" else "SPECIAL OFFER")
     return {
         "brand": _hex_to_rgb(brand_override or card.get("brand_color"), (30, 58, 138)),
         "accent": _hex_to_rgb(accent_override or card.get("accent_color"), (16, 185, 129)),
         "logo": _open_logo(logo_bytes),
         "business_name": user.get("business_name", "") or "",
         "phone": card.get("contact_phone") or user.get("phone", "") or "",
-        "ba_labels": ba,
+        "ba_labels": (lb, la),
         "promo_label": promo_label,
+        "style": style or {},
     }

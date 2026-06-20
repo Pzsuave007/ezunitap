@@ -2880,7 +2880,8 @@ def _valid_hex(value: str) -> str:
     return "#" + body.lower()
 
 
-async def _social_brand(user_id: str, language: str, brand_override: str = None, accent_override: str = None):
+async def _social_brand(user_id: str, language: str, brand_override: str = None, accent_override: str = None,
+                        style: dict = None, label_before: str = None, label_after: str = None, promo_label: str = None):
     card = await _ensure_card(user_id)
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     logo_bytes = None
@@ -2894,6 +2895,8 @@ async def _social_brand(user_id: str, language: str, brand_override: str = None,
     return social_service.build_brand(
         card, user, logo_bytes, language=language,
         brand_override=brand_override, accent_override=accent_override,
+        style=style, label_before=label_before, label_after=label_after,
+        promo_label_override=promo_label,
     )
 
 
@@ -3009,18 +3012,31 @@ async def create_social_post(
     return _strip_id(doc)
 
 
+class SocialStyleIn(BaseModel):
+    legibility: Optional[str] = None        # none | soft | medium | strong
+    text_position: Optional[str] = None     # top | center | bottom
+    stroke_color: Optional[str] = None      # hex outline color override
+
+
 class SocialCopyIn(BaseModel):
     headline: Optional[str] = None
     subheadline: Optional[str] = None
     cta: Optional[str] = None
     caption: Optional[str] = None
     hashtags: Optional[List[str]] = None
+    brand_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    label_before: Optional[str] = None
+    label_after: Optional[str] = None
+    promo_label: Optional[str] = None
+    style: Optional[SocialStyleIn] = None
 
 
 @api_router.post("/social/posts/{post_id}/rerender")
 async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
-    """Re-render a post's graphics after the user edits the copy (reuses the
-    already-uploaded source photos)."""
+    """Re-render a post's graphics after the user edits the copy, colors, labels
+    or legibility/position styling (reuses the already-uploaded source photos —
+    no AI credits consumed)."""
     post = await db.social_posts.find_one({"id": post_id, "user_id": user_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Post no encontrado")
@@ -3031,20 +3047,40 @@ async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str
             copy[k] = v
     if payload.hashtags is not None:
         copy["hashtags"] = ["#" + h.lstrip("#") for h in payload.hashtags if h][:8]
+
+    # Color overrides (fall back to the post's stored brand colors).
+    brand_color = _valid_hex(payload.brand_color) if payload.brand_color is not None else (post.get("brand_color") or "")
+    accent_color = _valid_hex(payload.accent_color) if payload.accent_color is not None else (post.get("accent_color") or "")
+
+    # Legibility / position styling merged onto whatever the post already had.
+    style = dict(post.get("style") or {})
+    if payload.style is not None:
+        for k in ("legibility", "text_position", "stroke_color"):
+            v = getattr(payload.style, k)
+            if v is not None:
+                style[k] = v
+
+    label_before = payload.label_before if payload.label_before is not None else post.get("label_before")
+    label_after = payload.label_after if payload.label_after is not None else post.get("label_after")
+    promo_label = payload.promo_label if payload.promo_label is not None else post.get("promo_label")
+
     # soft-delete previous output images
     for img in post.get("images", []):
         await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
     brand = await _social_brand(
         user_id, post.get("language", "en"),
-        brand_override=post.get("brand_color") or None,
-        accent_override=post.get("accent_color") or None,
+        brand_override=brand_color or None,
+        accent_override=accent_color or None,
+        style=style, label_before=label_before, label_after=label_after, promo_label=promo_label,
     )
     images = await _render_social_images(post["template"], post.get("formats", ["1x1"]), post.get("source_photo_ids", []), copy, brand, user_id)
-    await db.social_posts.update_one(
-        {"id": post_id, "user_id": user_id},
-        {"$set": {"copy": copy, "images": images, "updated_at": _now_iso()}},
-    )
-    post.update({"copy": copy, "images": images})
+    update = {
+        "copy": copy, "images": images, "brand_color": brand_color, "accent_color": accent_color,
+        "style": style, "label_before": label_before, "label_after": label_after,
+        "promo_label": promo_label, "updated_at": _now_iso(),
+    }
+    await db.social_posts.update_one({"id": post_id, "user_id": user_id}, {"$set": update})
+    post.update(update)
     return post
 
 

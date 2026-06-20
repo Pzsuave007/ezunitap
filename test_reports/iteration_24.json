@@ -1,0 +1,46 @@
+{
+  "summary": "Tested SocialStudio (/marketing) Customization Panel on admin pzsuave007@gmail.com (6 history posts). Verified: customize-panel renders below copy inputs inside post-result-drawer for all opened posts; legibility-group with all 4 buttons (none/soft/medium/strong) selectable; position-group correctly shows for showcase/center_stage templates (3 of 6 history posts) and is correctly absent for other templates (3 of 6); accent + brand color inputs render; rerender-btn click successfully hits POST /api/social/posts/{id}/rerender and returns 200 and the result image src changes (no error, no AI-credit consumption). HOWEVER a CRITICAL frontend bug was observed: the rerender() function in SocialStudio.js DOES NOT include the customization fields in its POST body — only headline/subheadline/cta/caption/hashtags are sent. That means user choices for legibility, text_position, brand_color, accent_color, label_before/after, promo_label are silently dropped and never reach the backend. Backend defaults are re-applied on every rerender, so the user's complaint (illegible AI text → wanting to fix it via the panel) is NOT actually addressable through this UI. None of the existing history posts are before_after or promo/seasonal, so ba-labels/edit-promo-label conditional rendering could not be exercised at runtime (code inspection only).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Customization Panel -> Aplicar cambios al diseño (rerender)",
+        "issue": "rerender() in /app/frontend/src/pages/SocialStudio.js (lines 355-373) sends ONLY { headline, subheadline, cta, caption, hashtags } to POST /api/social/posts/{id}/rerender. It does NOT send style {legibility, text_position}, brand_color, accent_color, label_before, label_after, promo_label. As a result, every customization control in the panel is a UI-only no-op: user can highlight legibility-strong, position-top, change accent to red, etc., click Aplicar, see image refresh, but the rerendered image is generated with default/original style+colors+labels. This defeats the purpose of the entire panel and the user's original complaint about illegible text. Backend SocialCopyIn already accepts these fields per the review_request notes, so the fix is purely on the client.",
+        "affected_selectors": [
+          "[data-testid=\"rerender-btn\"]",
+          "[data-testid=\"legibility-group\"]",
+          "[data-testid=\"position-group\"]",
+          "[data-testid=\"edit-accent-input\"]",
+          "[data-testid=\"edit-brand-input\"]",
+          "[data-testid=\"ba-labels\"]",
+          "[data-testid=\"edit-promo-label\"]"
+        ],
+        "priority": "CRITICAL"
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX (CRITICAL): Update rerender() in /app/frontend/src/pages/SocialStudio.js to include the customization payload. Replace the api.post body with: { headline: post.copy.headline, subheadline: post.copy.subheadline, cta: post.copy.cta, caption: post.copy.caption, hashtags: post.copy.hashtags, style: { legibility, text_position: textPosition }, brand_color: editBrand || undefined, accent_color: editAccent || undefined, label_before: labelBefore || undefined, label_after: labelAfter || undefined, promo_label: promoLabel || undefined }. After the fix, re-test by selecting legibility-strong + position-top on a showcase post and verifying the new image visibly has stroked text and top-positioned overlay (and that the post.style/brand_color/accent_color are persisted on a subsequent reopen of the same history item — the existing useEffect at line 249 already syncs controls from post.style, post.accent_color, etc., so persistence will be auto-verified).",
+    "Seed test data: admin has NO before_after and NO promo/seasonal posts in history (all 6 are showcase/center_stage or other photo-overlay templates). To validate ba-labels and edit-promo-label conditional rendering end-to-end, either generate fresh posts of those templates or seed them. Code inspection of lines 843-862 confirms the conditional JSX is correct.",
+    "Minor: result drawer DialogContent is missing Description / aria-describedby (Radix UI warning logged in console on every drawer open). Add a DrawerDescription or aria-describedby={undefined} explicit prop to silence."
+  ],
+  "critical_code_review_comments": [
+    "BUG (CRITICAL): rerender() body is incomplete — see action_items. This is the primary defect of the iteration.",
+    "Customization state is declared but only consumed inside the JSX className/value bindings; nothing reads legibility/textPosition/editAccent/editBrand/labelBefore/labelAfter/promoLabel when constructing the API call. Suggests the panel JSX was added but the wire-up step was missed.",
+    "SocialStudio.js is 1000 lines — over the 700-line guideline. Consider splitting the result drawer + customization panel into a separate <PostResultDrawer /> component.",
+    "rerender() error path uses toast.error(err?.response?.data?.detail) which is good; consider also clearing the rerendering flag in a finally-only path which it does (line 371), OK.",
+    "useEffect at line 249 re-syncs controls on post.id change which is correct, but the default textPosition derivation `post.template === 'center_stage' ? 'center' : 'bottom'` does not consider showcase which legitimately allows top/center/bottom; this is fine since the user will pick, but consider reading post.style.text_position first (already done) — OK.",
+    "Color picker fallback values '#10b981' (accent) and '#0f5f46' (brand) are hardcoded in the input value prop only as fallback display; not sent until user actually changes them. Once rerender body is fixed, decide if undefined (use brand default) vs explicit hex should be sent — recommend sending only when editAccent/editBrand is truthy to preserve brand defaults."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend-only per request)", "frontend": "Panel rendering: 100% (6/6 history posts); Conditional groups: 100% (position-group correctly shown on 3 showcase posts, hidden on 3 non-showcase); Rerender API call: 100% success (200); Customization effect: 0% (CRITICAL — fields not transmitted)" },
+  "test_credentials": "Admin: pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None. Recommend seeding a before_after and a promo (or seasonal) post under this admin to enable end-to-end testing of ba-labels and edit-promo-label conditional UI in the next iteration.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Reproduction: Login as pzsuave007@gmail.com, open /marketing, click any history thumbnail under 'Mis posts'. The post-result-drawer opens. Open browser DevTools Network tab, click 'Aplicar cambios al diseño' and inspect the POST /api/social/posts/{id}/rerender request body — current code only sends headline/subheadline/cta/caption/hashtags. After main agent fixes rerender() to include style/brand_color/accent_color/labels, re-test by: (1) open showcase post history-e8ada05c-92d7-4158-9dbf-e8dac06f6363 (vertical 9:16), (2) click legibility-strong, position-top, change accent to #ff0000, (3) click Aplicar — verify the new POST body contains style:{legibility:'strong',text_position:'top'} and accent_color:'#ff0000'; (4) close + reopen the same history item and confirm controls reflect the saved state (useEffect line 249 wires this). Also: a Radix DialogContent aria-describedby warning logs on every drawer open — non-blocking. Admin history (6 posts) contains 3 showcase/center_stage (position-group visible) and 3 other templates; NO before_after or promo/seasonal posts exist, so ba-labels and edit-promo-label rendering must be validated via fresh post creation or seeded data.",
+  "rca of the issue": "Root cause: When the Customization Panel JSX was added to SocialStudio.js (after the copy inputs), the corresponding state variables (legibility, textPosition, editAccent, editBrand, labelBefore, labelAfter, promoLabel) were declared (lines 137-143) and synced in useEffect (lines 249-259), but the rerender() async function (lines 355-373) was not updated to include them in its api.post body. Backend already supports these fields (per review_request: SocialCopyIn extended in server.py line ~3012 + _draw_lines/_render_showcase/_render_center_stage updated in social_service.py). Fix is one localized edit to rerender() body — see action_items[0] for the exact payload."
+}
