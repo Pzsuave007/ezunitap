@@ -32,10 +32,13 @@ _font_cache: dict = {}
 # an elegant soft drop shadow (blur radius, y-offset, alpha — all relative to the
 # font size) and vertical text position on supported designs.
 _STYLE: dict = {}
+# (blur, y_offset, alpha, spread) all relative to font size. `spread` thickens the
+# glyph before blurring → a soft dark halo/gradient that hugs the text so letters
+# always sit inside a darker zone (not just a thin drop shadow).
 _SHADOW = {
-    "soft":   (0.055, 0.040, 200),
-    "medium": (0.085, 0.055, 220),
-    "strong": (0.120, 0.070, 235),
+    "soft":   (0.090, 0.030, 130, 0.10),
+    "medium": (0.140, 0.040, 150, 0.16),
+    "strong": (0.190, 0.050, 175, 0.22),
 }
 
 # Designs whose headline/subtext sits directly over a full-bleed photo — these
@@ -83,29 +86,46 @@ def _text_on(rgb: tuple) -> tuple:
 
 
 def _shadow_params(font):
-    """(blur_radius, y_offset, alpha) for the active legibility level, scaled to font."""
-    mode = _STYLE.get("legibility", "soft")
-    cfg = _SHADOW.get(mode)
+    """(blur, y_offset, alpha, spread) in px for the active legibility level."""
+    cfg = _SHADOW.get(_STYLE.get("legibility", "medium"))
     if not cfg:
         return None
-    blur_f, off_f, alpha = cfg
-    return (max(3, int(font.size * blur_f)), max(2, int(font.size * off_f)), alpha)
+    blur_f, off_f, alpha, spread_f = cfg
+    return (max(4, int(font.size * blur_f)), int(font.size * off_f), alpha, max(0, int(font.size * spread_f)))
+
+
+def _shape_shadow(draw, render_fn, blur, off=4, _force=False):
+    """Composite a soft blurred shadow for arbitrary shapes (stars, badges, bars)
+    so any symbol over a photo reads as clearly as the text. `render_fn(d)` draws
+    the shape (in any dark color) onto a transparent layer."""
+    if not _force and _STYLE.get("legibility", "medium") not in _SHADOW:
+        return
+    canvas = getattr(draw, "_image", None)
+    if canvas is None or canvas.mode != "RGBA":
+        return
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    render_fn(ImageDraw.Draw(layer))
+    layer = layer.filter(ImageFilter.GaussianBlur(max(2, int(blur))))
+    canvas.alpha_composite(layer, (0, max(0, off)))
 
 
 def _shadow_lines(draw, lines, font, x, y, line_h, anchor="la"):
-    """Composite ONE soft, blurred drop shadow behind a block of text lines.
-    Much more elegant than a hard outline; falls back to nothing if the canvas
-    isn't RGBA or legibility is off."""
+    """Composite ONE soft, blurred drop-shadow/halo behind a block of text lines —
+    elegant and ensures letters sit inside a darker gradient zone."""
     canvas = getattr(draw, "_image", None)
     p = _shadow_params(font)
     if p is None or canvas is None or canvas.mode != "RGBA":
         return
-    blur, off, alpha = p
+    blur, off, alpha, spread = p
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
     yy = y
     for ln in lines:
-        ld.text((x, yy), ln, font=font, fill=(0, 0, 0, alpha), anchor=anchor)
+        if spread:
+            ld.text((x, yy), ln, font=font, fill=(0, 0, 0, alpha), anchor=anchor,
+                    stroke_width=spread, stroke_fill=(0, 0, 0, alpha))
+        else:
+            ld.text((x, yy), ln, font=font, fill=(0, 0, 0, alpha), anchor=anchor)
         yy += line_h
     layer = layer.filter(ImageFilter.GaussianBlur(blur))
     canvas.alpha_composite(layer, (0, off))
@@ -505,7 +525,7 @@ def _render_center_stage(size, photos, copy, brand) -> Image.Image:
         st = sub
         while st and draw.textlength(st, font=sub_font) > w - margin * 2:
             st = st[:-1]
-        draw.text((cx, y), st, font=sub_font, fill=(235, 240, 245), anchor="ma")
+        _draw_text(draw, (cx, y), st, sub_font, (235, 240, 245), anchor="ma")
         y += sub_font.size
     y += int(h * 0.045)
     tw = draw.textlength(cta, font=cta_font)
@@ -665,7 +685,7 @@ def _render_magazine(size, photos, copy, brand) -> Image.Image:
     sub = copy.get("subheadline", "")
     if sub:
         sf = _font("semibold", int(w * 0.034))
-        draw.text((margin, y - int(h * 0.038)), sub.upper(), font=sf, fill=accent, anchor="lb")
+        _draw_text(draw, (margin, y - int(h * 0.038)), sub.upper(), sf, accent, anchor="lb")
     return canvas.convert("RGB")
 
 
@@ -694,7 +714,7 @@ def _render_elegant_dark(size, photos, copy, brand) -> Image.Image:
     sub = copy.get("subheadline", "")
     if sub:
         sf = _font("regular", int(w * 0.034))
-        draw.text((margin, y - int(h * 0.025)), sub, font=sf, fill=(220, 225, 230), anchor="lb")
+        _draw_text(draw, (margin, y - int(h * 0.025)), sub, sf, (220, 225, 230), anchor="lb")
     return canvas.convert("RGB")
 
 
@@ -740,7 +760,9 @@ def _render_review_5star(size, photos, copy, brand) -> Image.Image:
     hf, hlines, hlh = _fit_text(draw, '“' + head + '”', "extrabold", w - margin * 2, int(h * 0.28), int(w * 0.082), 34)
     y -= hlh * len(hlines)
     _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
-    _draw_stars(draw, margin, y - int(h * 0.05), int(w * 0.028), 5, (255, 199, 44))
+    sr = int(w * 0.028); sy = y - int(h * 0.05)
+    _shape_shadow(draw, lambda d: _draw_stars(d, margin, sy, sr, 5, (0, 0, 0, 190)), blur=int(w * 0.012), off=int(h * 0.006))
+    _draw_stars(draw, margin, sy, sr, 5, (255, 199, 44))
     return canvas.convert("RGB")
 
 
@@ -1033,7 +1055,7 @@ def render_post(template: str, size_key: str, photos: List[Image.Image], copy: d
     # Auto legibility: text over a full-bleed photo always gets a clean outline so
     # it reads on any background; text on solid bands/cards stays crisp (no stroke).
     if "legibility" not in _STYLE:
-        _STYLE["legibility"] = "soft" if template in _OVERLAY_TEMPLATES else "none"
+        _STYLE["legibility"] = "medium" if template in _OVERLAY_TEMPLATES else "none"
     size = SIZES.get(size_key, SIZES["1x1"])
     renderer = _RENDERERS.get(template, _render_showcase)
     img = renderer(size, photos, copy, brand)
