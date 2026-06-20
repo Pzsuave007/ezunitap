@@ -59,7 +59,7 @@ export default function MarketingStart() {
 
   const openPost = (idea) => navigate(`/marketing?mode=image&brief=${encodeURIComponent(idea.idea || idea.title)}`);
   const openReel = (idea) => navigate(`/marketing?mode=reel&brief=${encodeURIComponent(idea.idea || idea.title)}`);
-  const openAi = (idea) => navigate(`/marketing?mode=ai&imgprompt=${encodeURIComponent(idea.image_prompt || idea.idea || idea.title)}`);
+  const openAi = (idea) => navigate(`/marketing?mode=ai&imgprompt=${encodeURIComponent(idea.image_prompt || idea.idea || idea.title)}&brief=${encodeURIComponent(idea.idea || idea.title)}`);
 
   return (
     <div className="space-y-6 pb-10" data-testid="marketing-start">

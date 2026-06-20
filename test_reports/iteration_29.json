@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only verification of two requested fixes on /marketing (SocialStudio).\n\nFIX A (Idioma del post on main form): PASS — lang-toggle is visible on the main post form right under brief-input (brief.bottom=1219px, lang.top=1282px). Exactly ONE lang-es and ONE lang-en exist in the DOM. Clicking lang-en activates the emerald highlight on EN and removes it from ES; clicking lang-es reverses it. Opening 'Más opciones' (more-options-btn) shows advanced-settings-drawer with ONLY 'Colores personalizados' inside — 0 lang-es and 0 lang-en within that drawer. Confirmed no duplicates and no requirement to open the drawer to choose language.\n\nFIX B (idea → Crear imagen IA → Usar en Post preserves brief): PASS — From /marketing/inicio, clicking cat-trabajo_terminado loads 3 ideas; clicking idea-use-ai-0 navigated to /marketing?mode=ai&imgprompt=…&brief=… (both params present and Spanish-encoded). Clicked 'Crear imagen' to generate; the real Emergent-LLM AI image completed in ~12s; 'Usar en Post' became visible on the result card; clicking it switched to Imagen mode (mode-image active) and brief-input was PRE-FILLED with the original Spanish idea (168 chars, starts: 'Publica un carrusel mostrando el paquete final entregado al cliente (feed optimizado, calendario de contenido y 3 creati…'). A success toast 'Imagen lista en el Post ✨' appeared.\n\nNo critical console errors during either run (1 unrelated 404 for a resource — pre-existing, not from these fixes).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SocialStudio.js still ~1015 lines (carryover from iter_27/28). Consider extracting the Más opciones drawer, the result drawer, and the searchParams initial-state hydration into separate components for maintainability.",
+    "useAiImageInPost(file, preview) intentionally leaves brief untouched so a brief seeded via ?brief= (or already typed) is preserved — this is exactly what fixes B; good targeted change.",
+    "Idioma del post section is positioned between brief (#3) and Formato (#4) without a numeric label; minor UX nit — consider numbering it (e.g. '3b' or move to '4') so the numbered steps stay consecutive. Non-blocking."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A — frontend-only as instructed.",
+    "frontend": "100% — both FIX A and FIX B verified end-to-end (lang selector on main form + no duplicates + drawer cleaned; idea→AI→Usar en Post preserves Spanish brief)."
+  },
+  "test_credentials": "Admin pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None — used live LLM idea generation and live AI image generation (Emergent key).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "On /marketing (Imagen mode), 'Idioma del post' is now rendered on the MAIN form between brief-input (#3) and Formato (#4) with data-testid='lang-toggle' wrapping data-testid='lang-es' and data-testid='lang-en'. The 'Más opciones' drawer (data-testid='advanced-settings-drawer', opened via data-testid='more-options-btn') now contains ONLY 'Colores personalizados' (custom-accent-input + custom-brand-input). MarketingStart.js openAi() navigates to /marketing?mode=ai&imgprompt=<image_prompt>&brief=<idea>. SocialStudio reads searchParams.brief into initial brief state and useAiImageInPost(file, preview) switches mode→'image' WITHOUT resetting brief, so any brief seeded from URL or typed text is preserved across the AI-generate → Usar en Post flow. AI image generation took ~12s in this run; allow up to 25-30s for variance.",
+  "rca of the issue": "n/a — both fixes verified working as specified."
+}

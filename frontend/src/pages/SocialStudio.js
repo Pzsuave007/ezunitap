@@ -598,6 +598,28 @@ export default function SocialStudio() {
           />
         </div>
 
+        {/* Idioma del post — visible (es importante) */}
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <Languages className="w-3.5 h-3.5" /> Idioma del post
+          </Label>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-2">En qué idioma se escribirá el texto del post.</p>
+          <div className="flex gap-2" data-testid="lang-toggle">
+            {[["es", "Español"], ["en", "Inglés"]].map(([id, lbl]) => (
+              <button
+                key={id}
+                onClick={() => setLanguage(id)}
+                data-testid={`lang-${id}`}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border tap transition-colors ${
+                  language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
+                }`}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 4. Formato (chips horizontales) */}
         <div>
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Formato</Label>
@@ -677,27 +699,6 @@ export default function SocialStudio() {
             </DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-8 space-y-6 max-w-lg mx-auto w-full">
-            {/* Idioma */}
-            <div>
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Languages className="w-3.5 h-3.5" /> Idioma del post
-              </Label>
-              <div className="flex gap-2 mt-2">
-                {[["en", "Inglés"], ["es", "Español"]].map(([id, lbl]) => (
-                  <button
-                    key={id}
-                    onClick={() => setLanguage(id)}
-                    data-testid={`lang-${id}`}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold border tap ${
-                      language === id ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Colores personalizados */}
             <div>
               <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
