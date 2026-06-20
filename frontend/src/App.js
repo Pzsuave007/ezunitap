@@ -21,6 +21,7 @@ import PublicQuote from "@/pages/PublicQuote";
 import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
 import SocialStudio from "@/pages/SocialStudio";
+import MarketingStart from "@/pages/MarketingStart";
 import Landing from "@/pages/Landing";
 import AdminLeads from "@/pages/AdminLeads";
 import Agreements from "@/pages/Agreements";
@@ -112,6 +113,7 @@ function App() {
               <Route path="/calendario" element={<FeatureGate feature="business"><Calendar /></FeatureGate>} />
               <Route path="/tarjeta" element={<FeatureGate feature="card"><CardAdmin /></FeatureGate>} />
               <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
+              <Route path="/marketing/inicio" element={<FeatureGate feature="marketing"><MarketingStart /></FeatureGate>} />
               <Route path="/reviews" element={<FeatureGate feature="card"><GoogleReviewsPage /></FeatureGate>} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />

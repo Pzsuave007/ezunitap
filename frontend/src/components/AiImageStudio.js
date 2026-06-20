@@ -28,8 +28,8 @@ const STYLES = [
 const authedUrl = (photoId) =>
   `${BACKEND}/api/photos/${photoId}/file?auth=${localStorage.getItem("sf_token")}`;
 
-export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onToggleCard, cardIds = [], cardBusy = null }) {
-  const [prompt, setPrompt] = useState("");
+export default function AiImageStudio({ onUseInPost, onUseInReel, onUseIdea, onToggleCard, cardIds = [], cardBusy = null, initialPrompt = "" }) {
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [aspect, setAspect] = useState("1x1");
   const [style, setStyle] = useState("realistic");
   const [loading, setLoading] = useState(false);

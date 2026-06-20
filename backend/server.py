@@ -3219,8 +3219,10 @@ async def delete_ai_image(image_id: str, user_id: str = Depends(get_current_user
 
 class PostIdeasIn(BaseModel):
     topic: Optional[str] = ""
-    count: int = 8
+    count: int = 6
     language: str = "es"
+    category: Optional[str] = ""
+    extra_context: Optional[str] = ""
 
 
 @api_router.post("/social/post-ideas")
@@ -3233,6 +3235,9 @@ async def social_post_ideas(payload: PostIdeasIn, user_id: str = Depends(get_cur
         topic=payload.topic or "",
         count=payload.count,
         language="es" if payload.language == "es" else "en",
+        category=payload.category or "",
+        service_area=card.get("service_area", ""),
+        extra_context=payload.extra_context or "",
     )
     if not ideas:
         raise HTTPException(502, "No se pudieron generar ideas. Intenta de nuevo.")

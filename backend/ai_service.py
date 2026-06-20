@@ -723,22 +723,41 @@ async def generate_post_ideas(
     business_type: str = "",
     business_name: str = "",
     topic: str = "",
-    count: int = 8,
+    count: int = 6,
     language: str = "es",
+    category: str = "",
+    service_area: str = "",
+    extra_context: str = "",
 ) -> list[dict]:
-    """Return a list of practical social post ideas tailored to the contractor's
-    trade. Each item: {"title": str, "idea": str}."""
-    count = max(3, min(int(count or 8), 12))
+    """Return practical, personalized social post ideas for the contractor's trade.
+    Each item: {category, title, idea (ES brief), photo_tip (what to shoot),
+    image_prompt (EN prompt to generate the image with AI)}."""
+    count = max(3, min(int(count or 6), 10))
     lang_name = {"en": "English", "es": "Spanish"}.get(language, "Spanish")
+    cat_map = {
+        "trabajo_terminado": "showing off a finished / completed job",
+        "oferta": "a promotion, discount or special offer",
+        "resena": "a happy customer review / testimonial",
+        "antes_despues": "a before & after transformation",
+        "contratando": "a 'now hiring / we are hiring' post",
+        "temporada": "a seasonal / holiday themed post",
+        "tips": "an educational tip that builds trust",
+    }
+    focus = cat_map.get(category, "")
     chat = _new_chat("You are a social media marketing expert for local home-services contractors.")
     ctx = (
-        f"Generate {count} short, practical social media post ideas in {lang_name} for a "
-        f"{business_type or 'home services / contractor'} business named "
-        f"'{business_name or 'the business'}'. "
-        + (f"Focus the ideas around this topic: {topic}. " if (topic or '').strip() else "")
-        + "Mix promotional, educational tips, before/after, seasonal, and trust-building ideas. "
-        'Output ONLY valid JSON (no markdown): {"ideas": [{"title": "short catchy title", '
-        '"idea": "one practical sentence describing what to post"}]}'
+        f"Generate {count} practical social media post ideas for a "
+        f"{business_type or 'home services / contractor'} business named '{business_name or 'the business'}'"
+        + (f", serving {service_area}" if (service_area or '').strip() else "")
+        + ". "
+        + (f"EVERY idea must be about: {focus}. " if focus else
+           "Mix finished-job, offer, review, before/after, seasonal, hiring and educational-tip ideas. ")
+        + (f"Use this extra context from the owner: {topic or extra_context}. " if (topic or extra_context or '').strip() else "")
+        + f"For EACH idea provide: 'title' (short catchy, in {lang_name}); "
+        + f"'idea' (ONE practical sentence in {lang_name} the owner can paste as a brief describing what to post); "
+        + f"'photo_tip' (in {lang_name}: exactly what photo or short video they should take with their phone for this post); "
+        + "'image_prompt' (in ENGLISH: a vivid prompt to generate this image with AI in case they have no photo). "
+        + 'Output ONLY valid JSON (no markdown): {"ideas":[{"category":"trabajo_terminado|oferta|resena|antes_despues|contratando|temporada|tips","title":"...","idea":"...","photo_tip":"...","image_prompt":"..."}]}'
     )
     try:
         response = await chat.send_message(UserMessage(text=ctx))
@@ -750,6 +769,13 @@ async def generate_post_ideas(
     for it in (data.get("ideas") or []):
         title = (it.get("title") or "").strip()
         idea = (it.get("idea") or "").strip()
-        if title or idea:
-            out.append({"title": title or idea[:40], "idea": idea or title})
+        if not (title or idea):
+            continue
+        out.append({
+            "category": (it.get("category") or category or "tips").strip(),
+            "title": title or idea[:40],
+            "idea": idea or title,
+            "photo_tip": (it.get("photo_tip") or "").strip(),
+            "image_prompt": (it.get("image_prompt") or "").strip(),
+        })
     return out[:count]

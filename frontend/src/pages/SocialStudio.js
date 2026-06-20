@@ -124,7 +124,8 @@ export default function SocialStudio() {
     if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" });
   };
   const [photos, setPhotos] = useState([null, null]);
-  const [brief, setBrief] = useState("");
+  const [brief, setBrief] = useState(() => searchParams.get("brief") || "");
+  const [aiInitialPrompt] = useState(() => searchParams.get("imgprompt") || "");
   const [language, setLanguage] = useState("en");
   const [formats, setFormats] = useState(["9x16", "1x1"]);
   const [colorTheme, setColorTheme] = useState("card");
@@ -491,6 +492,7 @@ export default function SocialStudio() {
           onToggleCard={toggleOnCard}
           cardIds={cardIds}
           cardBusy={cardBusy}
+          initialPrompt={aiInitialPrompt}
         />
       )}
 

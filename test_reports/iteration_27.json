@@ -1,0 +1,28 @@
+{
+  "summary": "Full E2E test of the new Marketing Studio welcome/idea-assistant page (/marketing/inicio). All 8 spec items pass.\n\n(1) Login as admin pzsuave007@gmail.com OK. Both sidebar (data-testid='nav-marketing/inicio') AND bottom-nav (data-testid='bottomnav-marketing/inicio') 'Marketing' links resolve to href='/marketing/inicio'. Page loads with data-testid='marketing-start' container and hero greeting containing '¿Qué vas a postear hoy?'.\n(2) All 7 category buttons present (cat-trabajo_terminado, cat-oferta, cat-resena, cat-antes_despues, cat-contratando, cat-temporada, cat-tips). extra-context-input, surprise-btn, skip-to-studio all visible.\n(3) Filled extra-context-input='oferta de invierno 20%' + clicked cat-oferta → ideas-loading appeared → ideas-list rendered with 6 idea-card-0..5 (~14s LLM latency). Each card contains title, Spanish idea sentence, '📸 Toma esto' photo_tip (verified literal text 'Toma esto' in card0), and 3 buttons (idea-use-post-0, idea-use-ai-0, idea-use-reel-0).\n(4) surprise-btn (no category) returned 6 mixed ideas correctly.\n(5) Clicked idea-use-post-0 → navigated to /marketing?mode=image&brief=<encoded Spanish idea>. data-testid='brief-input' textarea pre-filled with the idea text (verified substring match: 'Publica un gráfico simple anunciando la Oferta de Invierno: 20% de descuento en tu primer mes…').\n(6) Returned to /marketing/inicio, regenerated ideas for cat-trabajo_terminado, clicked idea-use-ai-0 → navigated to /marketing?mode=ai&imgprompt=<encoded English prompt>. data-testid='ai-image-prompt' textarea pre-filled with the English image_prompt ('A realistic suburban house in Auburn with a newly finished roof, clean modern shingles, bright daytime lighting…').\n(7) skip-to-studio → navigated to /marketing with brief-input EMPTY (no prefill) — confirmed.\n(8) No critical console errors. Only benign noise: 2× 404 (likely favicon/manifest), 5× Meta pixel traffic permission warnings — all pre-existing and unrelated to this feature.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MarketingStart.js (186 lines) is well-factored and within size guideline. No issues.",
+    "(Carryover) SocialStudio.js is 1012 lines — still exceeds the 700-line guideline. Recommend extracting <PostResultDrawer />, <CustomizePanel />, and the new searchParams brief/imgprompt initial-state read into smaller modules.",
+    "Minor: openPost/openReel in MarketingStart.js fall back to idea.title when idea.idea is missing, but openAi falls back through image_prompt → idea → title. Consistent enough; non-blocking. The LLM has so far always returned all four fields.",
+    "Minor: The user's first name in the hero is derived from business_name (`firstName = user?.business_name || 'compa'`). For 'Uni2 Marketing Agency' that renders as '¡Hola, Uni2 Marketing Agency!' which is a bit long. Consider using owner_name's first token instead — non-blocking copy nit."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% — /api/social/post-ideas verified with category=oferta + extra_context returning 3 well-formed ideas (each with category/title/idea/photo_tip/image_prompt).",
+    "frontend": "100% — 20/20 steps passed across 4 phases (welcome page render, post-prefill flow, ai-prefill flow, surprise+skip flow, nav-link verification)."
+  },
+  "test_credentials": "Admin pzsuave007@gmail.com / Uni2mkt007! (used)",
+  "seed_data_creation": "None — feature is stateless (ideas generated on-demand by LLM).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Marketing welcome/idea-assistant feature at /marketing/inicio fully working. data-testid contract: marketing-start (root), extra-context-input, surprise-btn, skip-to-studio, cat-{trabajo_terminado|oferta|resena|antes_despues|contratando|temporada|tips}, ideas-loading, ideas-list, idea-card-{i}, idea-use-post-{i}, idea-use-ai-{i}, idea-use-reel-{i}. Navigation contract: idea-use-post → /marketing?mode=image&brief=…; idea-use-ai → /marketing?mode=ai&imgprompt=…; idea-use-reel → /marketing?mode=reel&brief=… . Studio reads searchParams.brief into brief-input initial state (SocialStudio.js:127) and searchParams.imgprompt into aiInitialPrompt prop passed to AiImageStudio's `initialPrompt` (AiImageStudio.js:31-32 → useState(initialPrompt)). LLM latency: 8-20s for 6 ideas. Both sidebar and bottom-nav Marketing links route to /marketing/inicio (NOT directly to /marketing).",
+  "rca of the issue": "n/a — new feature verified working end-to-end as designed."
+}

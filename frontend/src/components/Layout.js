@@ -15,7 +15,7 @@ const NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users, anyFeature: ["card", "business"] },
   { to: "/tarjeta", label: "Tarjeta", icon: IdCard, accent: true, feature: "card" },
-  { to: "/marketing", label: "Marketing", icon: Megaphone, feature: "marketing" },
+  { to: "/marketing/inicio", label: "Marketing", icon: Megaphone, feature: "marketing" },
   { more: true, label: "Más", icon: Menu },
 ];
 
@@ -53,7 +53,7 @@ const SIDEBAR = [
   },
   { to: "/reviews", label: "Google Reviews", icon: Star, feature: "card" },
   { to: "/tarjeta", label: "Tarjeta Digital", icon: IdCard, feature: "card" },
-  { to: "/marketing", label: "Marketing", icon: Megaphone, feature: "marketing" },
+  { to: "/marketing/inicio", label: "Marketing", icon: Megaphone, feature: "marketing" },
 ];
 
 const ACCOUNT = [
