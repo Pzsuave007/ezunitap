@@ -15,6 +15,14 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jun 2026 — MARKETING STUDIO: Panel de Personalización + Legibilidad [COMPLETO + PROBADO 100% iter_25]
+Texto de los posts IA a veces ilegible → se agregó control granular sobre el diseño generado (sin gastar créditos IA).
+- Backend `social_service.py`: `_draw_lines`/`_draw_text` aplican contorno (stroke) auto según luminancia. `_STYLE` global (legibility: none/soft/medium/strong; text_position; stroke_color) seteado en `render_post`. `_render_showcase` y `_render_center_stage` respetan `text_position` (arriba/centro/abajo). `build_brand` acepta `style`, `label_before`, `label_after`, `promo_label_override`. Default legibility = soft (mejora todos los posts).
+- Backend `server.py`: `SocialCopyIn` + `SocialStyleIn` extendidos; `rerender_social_post` acepta y persiste `brand_color`, `accent_color`, `label_before/after`, `promo_label`, `style{}`. `_social_brand` reenvía estos params.
+- Frontend `SocialStudio.js`: nuevo `customize-panel` debajo del post (dentro del result drawer): legibilidad (4 niveles), posición (solo showcase/center_stage), colores (barra/fondo), etiquetas Antes/Después (before_after) y etiqueta de oferta (promo/seasonal). Botón "Aplicar cambios al diseño" → rerender con todo el payload. Estado se rehidrata desde `post` al reabrir (useEffect).
+- Probado: backend curl (top/center/bottom + colores persisten) + testing agent frontend 100% (showcase/before_after/promo, payload + persistencia verificados).
+
+
 ## ✅ Jun 2026 — MARKETING STUDIO: +10 diseños nuevos de posts [COMPLETO]
 Se agregaron 10 templates nuevos al Estudio (render server-side Pillow en `social_service.py`), distintos a los 10 existentes:
 `review_5star` (Reseña 5★), `framed_pro` (Marco Pro), `split_diagonal` (Diagonal), `now_hiring` (Contratando), `quote_offer` (Cotización Gratis), `seasonal` (Temporada), `trust_badge` (Garantía, badge circular), `coupon` (Cupón con descuento), `duo_grid` (Galería Dúo, 2 fotos), `clean_band` (Cinta Limpia).
