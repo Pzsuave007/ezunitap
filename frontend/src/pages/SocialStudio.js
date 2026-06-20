@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
-  SlidersHorizontal, Languages, Palette, Star, MapPin,
+  SlidersHorizontal, Languages, Palette, Star, MapPin, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
@@ -117,6 +117,11 @@ export default function SocialStudio() {
     return ["image", "reel", "ai"].includes(m) ? m : "image";
   });
   const [template, setTemplate] = useState("before_after");
+  const tplScrollRef = useRef(null);
+  const scrollTpl = (dir) => {
+    const el = tplScrollRef.current;
+    if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" });
+  };
   const [photos, setPhotos] = useState([null, null]);
   const [brief, setBrief] = useState("");
   const [language, setLanguage] = useState("en");
@@ -461,7 +466,26 @@ export default function SocialStudio() {
         <div>
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Elige un diseño</Label>
           <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Desliza → y toca uno. Tu foto y marca reemplazan el ejemplo.</p>
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" data-testid="template-carousel">
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="template-prev-btn"
+              onClick={() => scrollTpl(-1)}
+              aria-label="Anterior"
+              className="hidden sm:flex absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md items-center justify-center text-slate-700 hover:bg-slate-50 hover:border-emerald-300 transition"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              data-testid="template-next-btn"
+              onClick={() => scrollTpl(1)}
+              aria-label="Siguiente"
+              className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md items-center justify-center text-slate-700 hover:bg-slate-50 hover:border-emerald-300 transition"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <div ref={tplScrollRef} className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" data-testid="template-carousel">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
@@ -496,6 +520,7 @@ export default function SocialStudio() {
                 </div>
               </button>
             ))}
+            </div>
           </div>
         </div>
 
