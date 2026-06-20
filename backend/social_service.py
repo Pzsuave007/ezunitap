@@ -389,13 +389,25 @@ def _render_before_after(size, photos, copy, brand) -> Image.Image:
     cta_y = by0 + (band_h - cta_h) // 2 + int(h * 0.012)
     _pill(draw, (cta_x, cta_y), cta, cta_font, accent_rgb, _text_on(accent_rgb))
 
-    # Headline on the LEFT, width capped so it never collides with the CTA.
+    # Headline (+ optional subheadline) on the LEFT, width capped so they never
+    # collide with the CTA on the right.
     head = copy.get("headline", "") or ("ANTES Y DESPUÉS" if labels[0] == "ANTES" else "BEFORE & AFTER")
     head_max_w = cta_x - margin - int(w * 0.03)
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", head_max_w, band_h - int(h * 0.05), int(w * 0.056), 30)
+    sub = copy.get("subheadline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", head_max_w, int(band_h * 0.52), int(w * 0.052), 30)
     htotal = hlh * len(hlines)
-    ty = by0 + (band_h - htotal) // 2
-    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    sf = _font("semibold", int(w * 0.030))
+    slines = _wrap(draw, sub, sf, head_max_w)[:2] if sub else []
+    slh = int(sf.size * 1.15)
+    gap = int(h * 0.012) if slines else 0
+    block = htotal + gap + slh * len(slines)
+    ty = by0 + (band_h - block) // 2
+    ty = _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    if slines:
+        ty += gap
+        for ln in slines:
+            draw.text((margin, ty), ln, font=sf, fill=fg)
+            ty += slh
     return canvas.convert("RGB")
 
 
@@ -481,10 +493,20 @@ def _render_bold_bar(size, photos, copy, brand) -> Image.Image:
     cta_h = cta_font.size + 26
     cta_y = h - margin - cta_h
     head = copy.get("headline", "")
+    sub = copy.get("subheadline", "")
     head_top = photo_h + int(h * 0.045)
     head_maxh = cta_y - int(h * 0.02) - head_top
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, max(int(h * 0.08), head_maxh), int(w * 0.072), 32)
-    _draw_lines(draw, hlines, hf, margin, head_top, hlh, fg)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, max(int(h * 0.07), int(head_maxh * (0.62 if sub else 1.0))), int(w * 0.072), 32)
+    ty = _draw_lines(draw, hlines, hf, margin, head_top, hlh, fg)
+    if sub:
+        sf = _font("semibold", int(w * 0.038))
+        slines = _wrap(draw, sub, sf, w - margin * 2)[:2]
+        ty += int(h * 0.014)
+        for ln in slines:
+            if ty + sf.size > cta_y - int(h * 0.015):
+                break
+            draw.text((margin, ty), ln, font=sf, fill=fg)
+            ty += int(sf.size * 1.15)
     _pill(draw, (margin, cta_y), cta, cta_font, accent, _text_on(accent), pad_x=40)
     return canvas.convert("RGB")
 
@@ -756,8 +778,14 @@ def _render_review_5star(size, photos, copy, brand) -> Image.Image:
     cta_font = _font("bold", int(w * 0.034)); cta_h = cta_font.size + 26
     _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
     y = y - cta_h - int(h * 0.03)
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf, slines, slh = _fit_text(draw, sub, "semibold", w - margin * 2, int(h * 0.12), int(w * 0.04), 26)
+        y -= slh * len(slines)
+        _draw_lines(draw, slines, sf, margin, y, slh, (228, 233, 240))
+        y -= int(h * 0.014)
     head = copy.get("headline", "")
-    hf, hlines, hlh = _fit_text(draw, '“' + head + '”', "extrabold", w - margin * 2, int(h * 0.28), int(w * 0.082), 34)
+    hf, hlines, hlh = _fit_text(draw, '“' + head + '”', "extrabold", w - margin * 2, int(h * 0.24), int(w * 0.082), 34)
     y -= hlh * len(hlines)
     _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
     sr = int(w * 0.028); sy = y - int(h * 0.05)
@@ -778,12 +806,23 @@ def _render_framed_pro(size, photos, copy, brand) -> Image.Image:
     _brand_chip(canvas, draw, brand, inset + int(w * 0.03), inset + int(w * 0.03))
     fg = _text_on(brand_rgb); margin = int(w * 0.07); by = h - bar_h
     head = copy.get("headline", "")
+    sub = copy.get("subheadline", "")
     cta = copy.get("cta", "") or "Llámanos"
     cta_font = _font("bold", int(w * 0.03)); cta_h = cta_font.size + 26
     pw = draw.textlength(cta, font=cta_font) + 72
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2 - pw - int(w * 0.03), bar_h - int(h * 0.05), int(w * 0.05), 28)
-    ty = by + (bar_h - hlh * len(hlines)) // 2
-    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    text_w = w - margin * 2 - pw - int(w * 0.03)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", text_w, int(bar_h * (0.55 if sub else 0.9)), int(w * 0.05), 28)
+    sf = _font("semibold", int(w * 0.028))
+    slines = _wrap(draw, sub, sf, text_w)[:1] if sub else []
+    slh = int(sf.size * 1.15)
+    block = hlh * len(hlines) + (int(h * 0.008) + slh * len(slines) if slines else 0)
+    ty = by + (bar_h - block) // 2
+    ty = _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    if slines:
+        ty += int(h * 0.008)
+        for ln in slines:
+            draw.text((margin, ty), ln, font=sf, fill=fg)
+            ty += slh
     _pill(draw, (w - margin - pw, by + (bar_h - cta_h) // 2), cta, cta_font, accent, _text_on(accent), pad_x=36)
     return canvas.convert("RGB")
 
@@ -805,8 +844,14 @@ def _render_split_diagonal(size, photos, copy, brand) -> Image.Image:
     cta_font = _font("bold", int(w * 0.034)); cta_h = cta_font.size + 26
     _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
     y = y - cta_h - int(h * 0.03)
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf, slines, slh = _fit_text(draw, sub, "semibold", w - margin * 2, int(h * 0.11), int(w * 0.038), 26)
+        y -= slh * len(slines)
+        _draw_lines(draw, slines, sf, margin, y, slh, fg)
+        y -= int(h * 0.012)
     head = copy.get("headline", "")
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.22), int(w * 0.075), 32)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.20), int(w * 0.075), 32)
     y -= hlh * len(hlines)
     _draw_lines(draw, hlines, hf, margin, y, hlh, fg)
     return canvas.convert("RGB")
@@ -880,8 +925,14 @@ def _render_seasonal(size, photos, copy, brand) -> Image.Image:
     cta_font = _font("bold", int(w * 0.036)); cta_h = cta_font.size + 28
     _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=42)
     y = y - cta_h - int(h * 0.03)
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf, slines, slh = _fit_text(draw, sub, "semibold", w - margin * 2, int(h * 0.12), int(w * 0.04), 26)
+        y -= slh * len(slines)
+        _draw_lines(draw, slines, sf, margin, y, slh, (228, 233, 240))
+        y -= int(h * 0.014)
     head = copy.get("headline", "")
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.30), int(w * 0.095), 36)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.26), int(w * 0.095), 36)
     y -= hlh * len(hlines)
     draw.rectangle([margin, y - int(h * 0.02), margin + int(w * 0.14), y - int(h * 0.02) + 8], fill=accent)
     _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
@@ -961,12 +1012,23 @@ def _render_duo_grid(size, photos, copy, brand) -> Image.Image:
     _brand_chip(canvas, draw, brand, int(w * 0.05), int(w * 0.05))
     fg = _text_on(brand_rgb); margin = int(w * 0.07); by = h - bar_h
     head = copy.get("headline", "")
+    sub = copy.get("subheadline", "")
     cta = copy.get("cta", "") or "Contáctanos"
     cta_font = _font("bold", int(w * 0.03)); cta_h = cta_font.size + 24
     pw = draw.textlength(cta, font=cta_font) + 72
-    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2 - pw - int(w * 0.03), bar_h - int(h * 0.04), int(w * 0.048), 28)
-    ty = by + (bar_h - hlh * len(hlines)) // 2
-    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    text_w = w - margin * 2 - pw - int(w * 0.03)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", text_w, int(bar_h * (0.52 if sub else 0.9)), int(w * 0.048), 28)
+    sf = _font("semibold", int(w * 0.026))
+    slines = _wrap(draw, sub, sf, text_w)[:1] if sub else []
+    slh = int(sf.size * 1.15)
+    block = hlh * len(hlines) + (int(h * 0.006) + slh * len(slines) if slines else 0)
+    ty = by + (bar_h - block) // 2
+    ty = _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    if slines:
+        ty += int(h * 0.006)
+        for ln in slines:
+            draw.text((margin, ty), ln, font=sf, fill=fg)
+            ty += slh
     _pill(draw, (w - margin - pw, by + (bar_h - cta_h) // 2), cta, cta_font, accent, _text_on(accent), pad_x=36)
     return canvas.convert("RGB")
 
@@ -981,9 +1043,14 @@ def _render_clean_band(size, photos, copy, brand) -> Image.Image:
     head = copy.get("headline", "")
     margin = int(w * 0.08)
     hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.16), int(w * 0.062), 30)
+    subtitle = copy.get("subheadline", "")
+    subf = _font("semibold", int(w * 0.034))
+    sub_lines = _wrap(draw, subtitle, subf, w - margin * 2)[:2] if subtitle else []
+    sub_lh = int(subf.size * 1.18)
     band_pad = int(h * 0.03)
-    band_h = hlh * len(hlines) + band_pad * 2
-    by = int(h * 0.64)
+    sub_block = (int(h * 0.01) + sub_lh * len(sub_lines)) if sub_lines else 0
+    band_h = hlh * len(hlines) + sub_block + band_pad * 2
+    by = int(h * 0.60)
     band = Image.new("RGBA", (w, band_h), accent + (235,))
     canvas.alpha_composite(band, (0, by))
     draw = ImageDraw.Draw(canvas)
@@ -991,10 +1058,16 @@ def _render_clean_band(size, photos, copy, brand) -> Image.Image:
     for ln in hlines:
         draw.text((w / 2, ty), ln, font=hf, fill=_text_on(accent), anchor="ma")
         ty += hlh
+    if sub_lines:
+        ty += int(h * 0.01)
+        tc = _text_on(accent)
+        for ln in sub_lines:
+            draw.text((w / 2, ty), ln, font=subf, fill=tc, anchor="ma")
+            ty += sub_lh
     phone = brand.get("phone", "")
-    sub = copy.get("cta", "") or phone or "Contáctanos"
+    cta_line = copy.get("cta", "") or phone or "Contáctanos"
     sf = _font("bold", int(w * 0.038))
-    draw.text((w / 2, by + band_h + int(h * 0.035)), sub, font=sf, fill=(255, 255, 255), anchor="ma")
+    draw.text((w / 2, by + band_h + int(h * 0.035)), cta_line, font=sf, fill=(255, 255, 255), anchor="ma")
     canvas2 = canvas.convert("RGBA")
     # subtle top scrim so brand chip pops
     return canvas2.convert("RGB")
