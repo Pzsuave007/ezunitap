@@ -9,7 +9,7 @@ Auto-create Job when an agreement is signed + scheduling tests.
 import os
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://presencia-negocio.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-preview-1.preview.emergentagent.com").rstrip("/")
 EMAIL = "pzsuave007@gmail.com"
 PASS = "Uni2mkt007!"
 
