@@ -8,6 +8,7 @@ Pure local rendering — no external API. AI copy lives in ai_service.
 """
 import io
 import os
+import math
 from typing import List, Optional
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -612,6 +613,286 @@ def _render_elegant_dark(size, photos, copy, brand) -> Image.Image:
     return canvas.convert("RGB")
 
 
+# ---------------------------------------------------------------------------
+# NEW templates (batch 2)
+# ---------------------------------------------------------------------------
+
+def _star_points(cx, cy, r):
+    pts = []
+    for i in range(10):
+        ang = math.pi / 2 + i * math.pi / 5
+        rad = r if i % 2 == 0 else r * 0.42
+        pts.append((cx + rad * math.cos(ang), cy - rad * math.sin(ang)))
+    return pts
+
+
+def _draw_stars(draw, x, y, r, n, fill):
+    gap = r * 2.45
+    for i in range(n):
+        draw.polygon(_star_points(x + r + i * gap, y, r), fill=fill)
+
+
+def _brand_chip(canvas, draw, brand, x, y, scale_frac=0.042):
+    w = canvas.size[0]
+    _paste_logo_chip(canvas, draw, brand.get("logo"), brand.get("business_name", ""), x, y, int(w * scale_frac))
+
+
+def _render_review_5star(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand["brand"])
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(_bottom_scrim((w, h), (0, 0, 0), start_frac=0.66, max_alpha=228))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    _brand_chip(canvas, draw, brand, margin, margin)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.034)); cta_h = cta_font.size + 26
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, '“' + head + '”', "extrabold", w - margin * 2, int(h * 0.28), int(w * 0.082), 34)
+    y -= hlh * len(hlines)
+    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    _draw_stars(draw, margin, y - int(h * 0.05), int(w * 0.028), 5, (255, 199, 44))
+    return canvas.convert("RGB")
+
+
+def _render_framed_pro(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]; accent = brand["accent"]
+    canvas = Image.new("RGBA", (w, h), brand_rgb + (255,))
+    inset = int(w * 0.05); bar_h = int(h * 0.20)
+    if photos:
+        canvas.paste(_cover_crop(photos[0], w - inset * 2, h - bar_h - inset * 2), (inset, inset))
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([inset, inset, w - inset, h - bar_h - inset], outline=accent, width=12)
+    _brand_chip(canvas, draw, brand, inset + int(w * 0.03), inset + int(w * 0.03))
+    fg = _text_on(brand_rgb); margin = int(w * 0.07); by = h - bar_h
+    head = copy.get("headline", "")
+    cta = copy.get("cta", "") or "Llámanos"
+    cta_font = _font("bold", int(w * 0.03)); cta_h = cta_font.size + 26
+    pw = draw.textlength(cta, font=cta_font) + 72
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2 - pw - int(w * 0.03), bar_h - int(h * 0.05), int(w * 0.05), 28)
+    ty = by + (bar_h - hlh * len(hlines)) // 2
+    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    _pill(draw, (w - margin - pw, by + (bar_h - cta_h) // 2), cta, cta_font, accent, _text_on(accent), pad_x=36)
+    return canvas.convert("RGB")
+
+
+def _render_split_diagonal(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]; accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(overlay).polygon([(0, int(h * 0.60)), (w, int(h * 0.48)), (w, h), (0, h)], fill=brand_rgb + (240,))
+    canvas.alpha_composite(overlay)
+    draw = ImageDraw.Draw(canvas)
+    draw.line([(0, int(h * 0.60)), (w, int(h * 0.48))], fill=accent, width=12)
+    _brand_chip(canvas, draw, brand, int(w * 0.07), int(w * 0.07))
+    fg = _text_on(brand_rgb); margin = int(w * 0.07)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.034)); cta_h = cta_font.size + 26
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.22), int(w * 0.075), 32)
+    y -= hlh * len(hlines)
+    _draw_lines(draw, hlines, hf, margin, y, hlh, fg)
+    return canvas.convert("RGB")
+
+
+def _render_now_hiring(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]; accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(Image.new("RGBA", (w, h), (0, 0, 0, 120)))
+    canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.4), start_frac=0.5))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    band_h = int(h * 0.155); by = int(h * 0.40)
+    draw.rectangle([0, by, w, by + band_h], fill=accent)
+    txt = (copy.get("headline", "") or "NOW HIRING").upper()
+    fs = int(w * 0.10)
+    while fs > 34 and draw.textlength(txt, font=_font("extrabold", fs)) > w - margin * 2:
+        fs -= 4
+    draw.text((w / 2, by + band_h / 2), txt, font=_font("extrabold", fs), fill=_text_on(accent), anchor="mm")
+    sub = copy.get("subheadline", "")
+    if sub:
+        sf = _font("semibold", int(w * 0.042))
+        for i, ln in enumerate(_wrap(draw, sub, sf, w - margin * 2)[:2]):
+            draw.text((w / 2, by + band_h + int(h * 0.035) + i * int(sf.size * 1.2)), ln, font=sf, fill=(255, 255, 255), anchor="ma")
+    cta = copy.get("cta", "") or "Aplica hoy"
+    cta_font = _font("bold", int(w * 0.04)); cta_h = cta_font.size + 30
+    pw = draw.textlength(cta, font=cta_font) + 88
+    _pill(draw, ((w - pw) / 2, h - margin - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=44)
+    return canvas.convert("RGB")
+
+
+def _render_quote_offer(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand["brand"])
+    canvas = base.convert("RGBA")
+    panel_h = int(h * 0.36); py = h - panel_h
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([0, py, w, h], fill=accent)
+    _brand_chip(canvas, draw, brand, int(w * 0.07), int(w * 0.07))
+    fg = _text_on(accent); margin = int(w * 0.07)
+    label = (copy.get("subheadline", "") or "FREE ESTIMATE").upper()
+    lf = _font("bold", int(w * 0.036))
+    draw.text((margin, py + int(h * 0.045)), label, font=lf, fill=fg)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.13), int(w * 0.07), 32)
+    ty = py + int(h * 0.10)
+    ty = _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    phone = brand.get("phone", "")
+    if phone:
+        pf = _font("extrabold", int(w * 0.072))
+        draw.text((margin, h - margin - pf.size), phone, font=pf, fill=fg)
+    return canvas.convert("RGB")
+
+
+def _render_seasonal(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand["brand"])
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(_bottom_scrim((w, h), (0, 0, 0), start_frac=0.55, max_alpha=205))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    ribbon = (brand.get("promo_label", "") or "SPECIAL").upper()
+    rf = _font("bold", int(w * 0.04))
+    _chip(draw, (margin, margin), ribbon, rf, accent, _text_on(accent), pad_x=28, pad_y=16)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.036)); cta_h = cta_font.size + 28
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=42)
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.30), int(w * 0.095), 36)
+    y -= hlh * len(hlines)
+    draw.rectangle([margin, y - int(h * 0.02), margin + int(w * 0.14), y - int(h * 0.02) + 8], fill=accent)
+    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    return canvas.convert("RGB")
+
+
+def _render_trust_badge(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand["brand"])
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(_bottom_scrim((w, h), (0, 0, 0), start_frac=0.58, max_alpha=218))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    _brand_chip(canvas, draw, brand, margin, margin)
+    # circular guarantee badge top-right
+    bd = int(w * 0.26); bx = w - margin - bd; byy = margin
+    draw.ellipse([bx, byy, bx + bd, byy + bd], fill=accent)
+    badge = (copy.get("subheadline", "") or "100% GUARANTEE").upper().split()
+    bf = _font("extrabold", int(w * 0.05))
+    lines = badge[:3]
+    tot = len(lines) * int(bf.size * 1.05)
+    cy = byy + bd / 2 - tot / 2 + bf.size / 2
+    for ln in lines:
+        draw.text((bx + bd / 2, cy), ln, font=bf, fill=_text_on(accent), anchor="mm")
+        cy += int(bf.size * 1.05)
+    y = h - margin
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.034)); cta_h = cta_font.size + 26
+    _pill(draw, (margin, y - cta_h), cta, cta_font, accent, _text_on(accent), pad_x=40)
+    y = y - cta_h - int(h * 0.03)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.26), int(w * 0.08), 34)
+    y -= hlh * len(hlines)
+    _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    return canvas.convert("RGB")
+
+
+def _render_coupon(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]; accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(Image.new("RGBA", (w, h), _darken(brand_rgb, 0.35) + (150,)))
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.09)
+    cardx, cardy = margin, int(h * 0.27)
+    cardw, cardh = w - margin * 2, int(h * 0.46)
+    draw.rounded_rectangle([cardx, cardy, cardx + cardw, cardy + cardh], radius=36, fill=(255, 255, 255, 248))
+    draw.rounded_rectangle([cardx + 16, cardy + 16, cardx + cardw - 16, cardy + cardh - 16], radius=26, outline=accent, width=6)
+    pad = int(w * 0.05); tx = cardx + pad; ty = cardy + pad
+    lf = _font("bold", int(w * 0.034))
+    draw.text((tx, ty), (copy.get("subheadline", "") or "LIMITED OFFER").upper(), font=lf, fill=accent)
+    ty += int(lf.size * 1.6)
+    head = copy.get("headline", "")
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", cardw - pad * 2, int(cardh * 0.42), int(w * 0.10), 40)
+    ty = _draw_lines(draw, hlines, hf, tx, ty, hlh, (17, 24, 39))
+    ty += int(h * 0.02)
+    cta = copy.get("cta", "") or "Llámanos hoy"
+    cta_font = _font("bold", int(w * 0.036))
+    _pill(draw, (tx, ty), cta, cta_font, accent, _text_on(accent), pad_x=42)
+    return canvas.convert("RGB")
+
+
+def _render_duo_grid(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    brand_rgb = brand["brand"]; accent = brand["accent"]
+    canvas = Image.new("RGBA", (w, h), brand_rgb + (255,))
+    bar_h = int(h * 0.17); ph = (h - bar_h) // 2
+    if photos and len(photos) >= 2:
+        canvas.paste(_cover_crop(photos[0], w, ph), (0, 0))
+        canvas.paste(_cover_crop(photos[1], w, ph), (0, ph))
+    elif photos:
+        canvas.paste(_cover_crop(photos[0], w, ph * 2), (0, 0))
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([0, ph - 6, w, ph + 6], fill=accent)
+    _brand_chip(canvas, draw, brand, int(w * 0.05), int(w * 0.05))
+    fg = _text_on(brand_rgb); margin = int(w * 0.07); by = h - bar_h
+    head = copy.get("headline", "")
+    cta = copy.get("cta", "") or "Contáctanos"
+    cta_font = _font("bold", int(w * 0.03)); cta_h = cta_font.size + 24
+    pw = draw.textlength(cta, font=cta_font) + 72
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2 - pw - int(w * 0.03), bar_h - int(h * 0.04), int(w * 0.048), 28)
+    ty = by + (bar_h - hlh * len(hlines)) // 2
+    _draw_lines(draw, hlines, hf, margin, ty, hlh, fg)
+    _pill(draw, (w - margin - pw, by + (bar_h - cta_h) // 2), cta, cta_font, accent, _text_on(accent), pad_x=36)
+    return canvas.convert("RGB")
+
+
+def _render_clean_band(size, photos, copy, brand) -> Image.Image:
+    w, h = size
+    accent = brand["accent"]
+    base = _cover_crop(photos[0], w, h) if photos else Image.new("RGB", (w, h), brand["brand"])
+    canvas = base.convert("RGBA")
+    draw = ImageDraw.Draw(canvas)
+    _brand_chip(canvas, draw, brand, int(w * 0.07), int(w * 0.07))
+    head = copy.get("headline", "")
+    margin = int(w * 0.08)
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.16), int(w * 0.062), 30)
+    band_pad = int(h * 0.03)
+    band_h = hlh * len(hlines) + band_pad * 2
+    by = int(h * 0.64)
+    band = Image.new("RGBA", (w, band_h), accent + (235,))
+    canvas.alpha_composite(band, (0, by))
+    draw = ImageDraw.Draw(canvas)
+    ty = by + band_pad
+    for ln in hlines:
+        draw.text((w / 2, ty), ln, font=hf, fill=_text_on(accent), anchor="ma")
+        ty += hlh
+    phone = brand.get("phone", "")
+    sub = copy.get("cta", "") or phone or "Contáctanos"
+    sf = _font("bold", int(w * 0.038))
+    draw.text((w / 2, by + band_h + int(h * 0.035)), sub, font=sf, fill=(255, 255, 255), anchor="ma")
+    canvas2 = canvas.convert("RGBA")
+    # subtle top scrim so brand chip pops
+    return canvas2.convert("RGB")
+
+
 _RENDERERS = {
     "before_after": _render_before_after,
     "showcase": _render_showcase,
@@ -623,6 +904,16 @@ _RENDERERS = {
     "boxed": _render_boxed,
     "magazine": _render_magazine,
     "elegant_dark": _render_elegant_dark,
+    "review_5star": _render_review_5star,
+    "framed_pro": _render_framed_pro,
+    "split_diagonal": _render_split_diagonal,
+    "now_hiring": _render_now_hiring,
+    "quote_offer": _render_quote_offer,
+    "seasonal": _render_seasonal,
+    "trust_badge": _render_trust_badge,
+    "coupon": _render_coupon,
+    "duo_grid": _render_duo_grid,
+    "clean_band": _render_clean_band,
 }
 
 # Design catalog (id -> label + how many photos it needs). Order = display order.
@@ -637,6 +928,16 @@ DESIGNS = [
     {"id": "side_panel", "label": "Panel Lateral", "photos": 1},
     {"id": "before_after", "label": "Antes / Después", "photos": 2},
     {"id": "promo", "label": "Oferta / Promo", "photos": 1},
+    {"id": "review_5star", "label": "Reseña 5★", "photos": 1},
+    {"id": "framed_pro", "label": "Marco Pro", "photos": 1},
+    {"id": "split_diagonal", "label": "Diagonal", "photos": 1},
+    {"id": "now_hiring", "label": "Contratando", "photos": 1},
+    {"id": "quote_offer", "label": "Cotización Gratis", "photos": 1},
+    {"id": "seasonal", "label": "Temporada", "photos": 1},
+    {"id": "trust_badge", "label": "Garantía", "photos": 1},
+    {"id": "coupon", "label": "Cupón", "photos": 1},
+    {"id": "duo_grid", "label": "Galería Dúo", "photos": 2},
+    {"id": "clean_band", "label": "Cinta Limpia", "photos": 1},
 ]
 DESIGN_PHOTOS = {d["id"]: d["photos"] for d in DESIGNS}
 

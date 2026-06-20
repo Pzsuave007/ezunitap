@@ -32,6 +32,16 @@ const TEMPLATES = [
   { id: "side_panel", label: "Panel Lateral", photos: 1 },
   { id: "before_after", label: "Antes / Después", photos: 2 },
   { id: "promo", label: "Oferta / Promo", photos: 1 },
+  { id: "review_5star", label: "Reseña 5★", photos: 1 },
+  { id: "framed_pro", label: "Marco Pro", photos: 1 },
+  { id: "split_diagonal", label: "Diagonal", photos: 1 },
+  { id: "now_hiring", label: "Contratando", photos: 1 },
+  { id: "quote_offer", label: "Cotización Gratis", photos: 1 },
+  { id: "seasonal", label: "Temporada", photos: 1 },
+  { id: "trust_badge", label: "Garantía", photos: 1 },
+  { id: "coupon", label: "Cupón", photos: 1 },
+  { id: "duo_grid", label: "Galería Dúo", photos: 2 },
+  { id: "clean_band", label: "Cinta Limpia", photos: 1 },
 ].map((t) => ({ ...t, preview: `/social-previews/${t.id}.jpg` }));
 
 const FORMATS = [
