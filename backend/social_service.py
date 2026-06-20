@@ -31,7 +31,16 @@ _font_cache: dict = {}
 # Active render style (set per render_post call) controlling text legibility
 # (stroke/outline depth + color) and vertical text position on supported designs.
 _STYLE: dict = {}
-_LEGIBILITY = {"none": 0.0, "soft": 0.05, "medium": 0.075, "strong": 0.11}
+_LEGIBILITY = {"none": 0.0, "soft": 0.045, "medium": 0.07, "strong": 0.10}
+
+# Designs whose headline/subtext sits directly over a full-bleed photo — these
+# always get an automatic outline so the text stays readable on any background.
+# Designs that place text on solid color bands/cards are intentionally excluded
+# (a stroke there would look worse, not better).
+_OVERLAY_TEMPLATES = {
+    "showcase", "center_stage", "magazine", "elegant_dark",
+    "review_5star", "split_diagonal", "seasonal", "trust_badge",
+}
 
 
 def _font(weight: str, size: int) -> ImageFont.FreeTypeFont:
@@ -1010,6 +1019,10 @@ DESIGN_PHOTOS = {d["id"]: d["photos"] for d in DESIGNS}
 def render_post(template: str, size_key: str, photos: List[Image.Image], copy: dict, brand: dict) -> bytes:
     global _STYLE
     _STYLE = dict(brand.get("style") or {})
+    # Auto legibility: text over a full-bleed photo always gets a clean outline so
+    # it reads on any background; text on solid bands/cards stays crisp (no stroke).
+    if "legibility" not in _STYLE:
+        _STYLE["legibility"] = "soft" if template in _OVERLAY_TEMPLATES else "none"
     size = SIZES.get(size_key, SIZES["1x1"])
     renderer = _RENDERERS.get(template, _render_showcase)
     img = renderer(size, photos, copy, brand)
