@@ -744,15 +744,16 @@ async def generate_post_ideas(
         "tips": "an educational tip that builds trust",
     }
     focus = cat_map.get(category, "")
-    chat = _new_chat("You are a social media marketing expert for local home-services contractors.")
+    chat = _new_chat("You are a social media marketing expert helping a local small business grow.")
     ctx = (
         f"Generate {count} practical social media post ideas for a "
-        f"{business_type or 'home services / contractor'} business named '{business_name or 'the business'}'"
+        f"{business_type or 'local small business'} business named '{business_name or 'the business'}'"
         + (f", serving {service_area}" if (service_area or '').strip() else "")
         + ". "
         + (f"EVERY idea must be about: {focus}. " if focus else
-           "Mix finished-job, offer, review, before/after, seasonal, hiring and educational-tip ideas. ")
+           "Mix finished-work, offer, review, before/after, seasonal, hiring and educational-tip ideas. ")
         + (f"Use this extra context from the owner: {topic or extra_context}. " if (topic or extra_context or '').strip() else "")
+        + "STRICT RULE: base ideas ONLY on this business's own industry and services. Do NOT invent or assume specific client niches/industries (e.g. plumbing, HVAC, roofing) that the owner did not mention. "
         + f"For EACH idea provide: 'title' (short catchy, in {lang_name}); "
         + f"'idea' (ONE practical sentence in {lang_name} the owner can paste as a brief describing what to post); "
         + f"'photo_tip' (in {lang_name}: exactly what photo or short video they should take with their phone for this post); "
@@ -797,15 +798,14 @@ async def generate_idea_topics(
     Each item: {label (short, in the user's language), category (one of the 7 types)}."""
     count = max(4, min(int(count or 6), 8))
     lang_name = {"en": "English", "es": "Spanish"}.get(language, "Spanish")
-    chat = _new_chat("You are a social media marketing expert for local home-services contractors.")
+    chat = _new_chat("You are a social media marketing expert helping a local small business grow.")
     ctx = (
-        f"A {business_type or 'home services / contractor'} business"
-        + (f" named '{business_name}'" if (business_name or '').strip() else "")
-        + (f", serving {service_area}" if (service_area or '').strip() else "")
-        + ". "
-        + (f"Their services: {services}. " if (services or '').strip() else "")
-        + f"Suggest exactly {count} SHORT post-topic buttons (max 4 words each) in {lang_name}, each VERY specific to THIS trade "
-        + "(things this exact business could post about — not generic). "
+        f"This business's industry is: {business_type or 'general local services'}."
+        + (f" Business name: '{business_name}'." if (business_name or '').strip() else "")
+        + (f" Service area: {service_area}." if (service_area or '').strip() else "")
+        + (f" Their OWN services/offer: {services}." if (services or '').strip() else "")
+        + f" Suggest exactly {count} SHORT post-topic buttons (max 4 words each) in {lang_name}, each specific to what THIS business itself does or offers. "
+        + "STRICT RULE: base topics ONLY on this business's own industry and listed services. Do NOT invent or assume specific client niches/industries (e.g. plumbing, HVAC, roofing, landscaping) that are NOT explicitly listed in their services — talk about what the business does in general, not about made-up clients. "
         + "Map each topic to ONE type from: trabajo_terminado, oferta, resena, antes_despues, contratando, temporada, tips. "
         + 'Output ONLY valid JSON (no markdown): {"topics":[{"label":"short topic","category":"one_type"}]}'
     )
