@@ -3244,6 +3244,45 @@ async def social_post_ideas(payload: PostIdeasIn, user_id: str = Depends(get_cur
     return {"ideas": ideas}
 
 
+class IndustryIn(BaseModel):
+    business_type: str = ""
+
+
+@api_router.post("/social/industry")
+async def set_social_industry(payload: IndustryIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
+    """Save the account's industry/trade (shared field on the primary card) so the
+    idea assistant can tailor topics. Accessible to marketing users."""
+    bt = (payload.business_type or "").strip()[:60]
+    if not bt:
+        raise HTTPException(400, "Industria requerida")
+    await _ensure_card(user_id)
+    await db.cards.update_one(
+        {"user_id": user_id, "is_primary": True},
+        {"$set": {"business_type": bt, "updated_at": _now_iso()}},
+    )
+    return {"business_type": bt}
+
+
+@api_router.get("/social/idea-topics")
+async def social_idea_topics(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("marketing"))):
+    """Return post-topic chips tailored to the account's trade. If no industry is
+    set yet, signal the UI to ask for it once."""
+    card = await _ensure_card(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    business_type = (card.get("business_type") or "").strip()
+    if not business_type:
+        return {"business_type": "", "needs_industry": True, "topics": []}
+    services = ", ".join([s.get("name", "") for s in card.get("services", []) if s.get("name")])
+    topics = await ai_service.generate_idea_topics(
+        business_type=business_type,
+        business_name=(user or {}).get("business_name", ""),
+        service_area=card.get("service_area", ""),
+        services=services,
+        language="es",
+    )
+    return {"business_type": business_type, "needs_industry": False, "topics": topics}
+
+
 
 # ---------------------------------------------------------------------------
 # Reels (vertical video) — Marketing Studio Phase 2

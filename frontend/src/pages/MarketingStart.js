@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -10,20 +10,25 @@ import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import {
   Megaphone, Sparkles, Loader2, Camera, ImagePlus, Video, ArrowRight,
-  CheckCircle2, Hammer, Tag, Star, Repeat, Users, Snowflake, Lightbulb, Wand2,
+  CheckCircle2, Hammer, Tag, Star, Repeat, Users, Snowflake, Lightbulb, Wand2, Briefcase, Check,
 } from "lucide-react";
 
-const CATEGORIES = [
-  { id: "trabajo_terminado", label: "Trabajo terminado", icon: Hammer, color: "emerald" },
-  { id: "oferta", label: "Oferta / Promo", icon: Tag, color: "orange" },
-  { id: "resena", label: "Reseña de cliente", icon: Star, color: "amber" },
-  { id: "antes_despues", label: "Antes / Después", icon: Repeat, color: "blue" },
-  { id: "contratando", label: "Contratando", icon: Users, color: "violet" },
-  { id: "temporada", label: "Temporada", icon: Snowflake, color: "sky" },
-  { id: "tips", label: "Consejo / Tip", icon: Lightbulb, color: "lime" },
-];
+// Icon per post-type so dynamic, trade-specific topic chips still get a fitting glyph.
+const CAT_ICON = {
+  trabajo_terminado: Hammer, oferta: Tag, resena: Star, antes_despues: Repeat,
+  contratando: Users, temporada: Snowflake, tips: Lightbulb,
+};
+const CAT_LABEL = {
+  trabajo_terminado: "Trabajo terminado", oferta: "Oferta", resena: "Reseña",
+  antes_despues: "Antes / Después", contratando: "Contratando", temporada: "Temporada", tips: "Consejo",
+};
 
-const CAT_LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+// Common contractor trades shown when the account has no industry set yet.
+const INDUSTRIES = [
+  "Techos / Roofing", "Plomería", "Electricidad", "Jardinería / Landscaping",
+  "Pintura", "Concreto", "Limpieza", "HVAC / Climas", "Remodelación",
+  "Construcción", "Pisos", "Cercas / Fencing",
+];
 
 export default function MarketingStart() {
   const navigate = useNavigate();
@@ -34,16 +39,58 @@ export default function MarketingStart() {
   const [activeCat, setActiveCat] = useState(null);
   const [ideas, setIdeas] = useState([]);
   const [ideasOpen, setIdeasOpen] = useState(false);
+  // Industry-tailored topic chips
+  const [topics, setTopics] = useState([]);
+  const [businessType, setBusinessType] = useState("");
+  const [needsIndustry, setNeedsIndustry] = useState(false);
+  const [loadingTopics, setLoadingTopics] = useState(true);
+  const [showIndustry, setShowIndustry] = useState(false);
+  const [customIndustry, setCustomIndustry] = useState("");
+  const [savingIndustry, setSavingIndustry] = useState(false);
 
-  const getIdeas = async (category) => {
-    setActiveCat(category || "all");
+  const loadTopics = async () => {
+    setLoadingTopics(true);
+    try {
+      const { data } = await api.get("/social/idea-topics");
+      setBusinessType(data.business_type || "");
+      setNeedsIndustry(!!data.needs_industry);
+      setTopics(data.topics || []);
+      setShowIndustry(!!data.needs_industry);
+    } catch (e) {
+      setTopics([]);
+    } finally {
+      setLoadingTopics(false);
+    }
+  };
+  useEffect(() => { loadTopics(); }, []);
+
+  const saveIndustry = async (value) => {
+    const bt = (value || "").trim();
+    if (!bt) return;
+    setSavingIndustry(true);
+    try {
+      await api.post("/social/industry", { business_type: bt });
+      setShowIndustry(false);
+      setCustomIndustry("");
+      await loadTopics();
+      toast.success("Industria guardada — temas personalizados ✨");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo guardar");
+    } finally {
+      setSavingIndustry(false);
+    }
+  };
+
+  const getIdeas = async (category, topicLabel = "") => {
+    setActiveCat(topicLabel || category || "all");
     setIdeas([]);
     setIdeasOpen(true);
     setLoading(true);
+    const ctx = [topicLabel, extra.trim()].filter(Boolean).join(" — ");
     try {
       const { data } = await api.post("/social/post-ideas", {
         category: category || "",
-        extra_context: extra.trim(),
+        extra_context: ctx,
         count: 3,
         language: "es",
       });
@@ -93,28 +140,78 @@ export default function MarketingStart() {
           <p className="text-[11px] text-slate-400 mt-1">Mientras más nos cuentes de tu negocio, mejores ideas. ✨</p>
         </div>
 
-        <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Elige un tema</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2">
-            {CATEGORIES.map((c) => {
-              const Icon = c.icon;
-              const active = activeCat === c.id;
-              return (
+        {/* Industry selector (only when not set yet, or when changing it) */}
+        {showIndustry ? (
+          <div data-testid="industry-selector">
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5" /> ¿Cuál es tu industria?
+            </Label>
+            <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Así los temas e ideas salen específicos para tu oficio.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {INDUSTRIES.map((ind) => (
                 <button
-                  key={c.id}
-                  onClick={() => getIdeas(c.id)}
-                  data-testid={`cat-${c.id}`}
-                  className={`flex items-center gap-2 px-3 py-3 rounded-2xl border text-left text-sm font-semibold tap transition-all ${
-                    active ? "border-emerald-500 ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-emerald-300 text-slate-700"
-                  }`}
+                  key={ind}
+                  onClick={() => saveIndustry(ind)}
+                  disabled={savingIndustry}
+                  data-testid={`industry-${ind}`}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 text-sm font-semibold text-slate-700 text-left tap transition-colors"
                 >
-                  <Icon className="w-4 h-4 flex-none text-emerald-600" />
-                  <span className="leading-tight">{c.label}</span>
+                  {ind}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Input
+                data-testid="custom-industry-input"
+                value={customIndustry}
+                onChange={(e) => setCustomIndustry(e.target.value)}
+                placeholder="Otra… (ej: Albañilería, Detallado de autos)"
+                className="rounded-xl"
+                onKeyDown={(e) => e.key === "Enter" && saveIndustry(customIndustry)}
+              />
+              <Button onClick={() => saveIndustry(customIndustry)} disabled={savingIndustry || !customIndustry.trim()} data-testid="save-industry-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                {savingIndustry ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Elige un tema</Label>
+              {businessType && (
+                <button onClick={() => setShowIndustry(true)} data-testid="change-industry-btn" className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 tap">
+                  {businessType} · cambiar
+                </button>
+              )}
+            </div>
+            {loadingTopics ? (
+              <div className="flex items-center gap-2 text-sm text-slate-400 py-4" data-testid="topics-loading">
+                <Loader2 className="w-4 h-4 animate-spin" /> Cargando temas para tu negocio…
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2" data-testid="topics-grid">
+                {topics.map((t, i) => {
+                  const Icon = CAT_ICON[t.category] || Lightbulb;
+                  const active = activeCat === t.label;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => getIdeas(t.category, t.label)}
+                      data-testid={`topic-${i}`}
+                      title={CAT_LABEL[t.category]}
+                      className={`flex items-center gap-2 px-3 py-3 rounded-2xl border text-left text-sm font-semibold tap transition-all ${
+                        active ? "border-emerald-500 ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-emerald-300 text-slate-700"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 flex-none text-emerald-600" />
+                      <span className="leading-tight">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           onClick={() => getIdeas("")}
@@ -143,7 +240,7 @@ export default function MarketingStart() {
               <Lightbulb className="w-5 h-5 text-amber-500" />
               {loading ? "Preparando ideas…" : "Ideas para ti"}
               {!loading && activeCat && activeCat !== "all" && (
-                <span className="text-xs font-semibold text-slate-400">· {CAT_LABEL[activeCat]}</span>
+                <span className="text-xs font-semibold text-slate-400">· {activeCat}</span>
               )}
             </DrawerTitle>
           </DrawerHeader>

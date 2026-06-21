@@ -779,3 +779,49 @@ async def generate_post_ideas(
             "image_prompt": (it.get("image_prompt") or "").strip(),
         })
     return out[:count]
+
+
+
+_TOPIC_CATEGORIES = ["trabajo_terminado", "oferta", "resena", "antes_despues", "contratando", "temporada", "tips"]
+
+
+async def generate_idea_topics(
+    business_type: str = "",
+    business_name: str = "",
+    service_area: str = "",
+    services: str = "",
+    language: str = "es",
+    count: int = 6,
+) -> list[dict]:
+    """Short post-topic 'chips' tailored to the contractor's specific trade.
+    Each item: {label (short, in the user's language), category (one of the 7 types)}."""
+    count = max(4, min(int(count or 6), 8))
+    lang_name = {"en": "English", "es": "Spanish"}.get(language, "Spanish")
+    chat = _new_chat("You are a social media marketing expert for local home-services contractors.")
+    ctx = (
+        f"A {business_type or 'home services / contractor'} business"
+        + (f" named '{business_name}'" if (business_name or '').strip() else "")
+        + (f", serving {service_area}" if (service_area or '').strip() else "")
+        + ". "
+        + (f"Their services: {services}. " if (services or '').strip() else "")
+        + f"Suggest exactly {count} SHORT post-topic buttons (max 4 words each) in {lang_name}, each VERY specific to THIS trade "
+        + "(things this exact business could post about — not generic). "
+        + "Map each topic to ONE type from: trabajo_terminado, oferta, resena, antes_despues, contratando, temporada, tips. "
+        + 'Output ONLY valid JSON (no markdown): {"topics":[{"label":"short topic","category":"one_type"}]}'
+    )
+    try:
+        response = await chat.send_message(UserMessage(text=ctx))
+        data = _extract_json(response) or {}
+    except Exception as e:
+        logger.warning("generate_idea_topics failed: %s", e)
+        data = {}
+    out = []
+    for it in (data.get("topics") or []):
+        label = (it.get("label") or "").strip()
+        cat = (it.get("category") or "tips").strip()
+        if not label:
+            continue
+        if cat not in _TOPIC_CATEGORIES:
+            cat = "tips"
+        out.append({"label": label[:40], "category": cat})
+    return out[:count]

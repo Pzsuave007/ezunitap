@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend-only testing of /marketing/inicio dynamic topics by industry. All 7 user-listed scenarios PASS. Admin account (industry='Digital Marketing') shows dynamic SEO/ads/leads topics — not the old generic 7. mktonly_test (no industry) correctly shows industry-selector FIRST; after picking 'Techos / Roofing', topics reload with roofing-specific labels and ideas-drawer yields roofing-specific ideas. Custom industry 'Detallado de autos' also tailors topics correctly. surprise-btn and skip-to-studio present.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MarketingStart.js lines 192-211: 'Cargando temas para tu negocio…' shows only on initial load; when saving a new industry via saveIndustry(), loadTopics() is awaited but the topics-grid is briefly empty in between. Acceptable, but could show a small inline spinner over the grid for nicer UX.",
+    "saveIndustry() (line 67) trims+validates but does not block 1-character or numeric-only inputs. Minor — backend likely guards this.",
+    "INDUSTRIES list is hardcoded in component (line 27). For maintainability, consider centralizing this list (also used implicitly by backend trade detection) in a single config or returning from backend."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "100%"},
+  "test_credentials": "Admin pzsuave007@gmail.com / Uni2mkt007! ; Marketing-only mktonly_test@example.com / Test1234 (industry mutated to 'Detallado de autos' during run — per request this account is OK to mutate)",
+  "seed_data_creation": "None. Did mutate mktonly_test_account's business_type to 'Techos / Roofing' then 'Detallado de autos' as part of test flow (allowed per request).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Dynamic industry-topics flow on /marketing/inicio is fully working as of iteration 30. Test results from this run: ADMIN got 6 Digital Marketing topics (e.g. 'Auditoría SEO local', 'Campaña Google Ads'), ideas-drawer returned 3 cards relevant to SEO. mktonly post-roofing got 6 roofing topics ('Reparación gotera teja', 'Oferta impermeabilización azotea', ...). Custom 'Detallado de autos' got 6 detailing topics. mktonly_test now has business_type='Detallado de autos' — if you need needs_industry=true again, clear it in DB.",
+  "verified_scenarios": [
+    "Admin: no industry-selector shown; topics-grid renders 6 dynamic 'Digital Marketing' topics; change-industry-btn shows 'Digital Marketing · cambiar'",
+    "Admin: clicking topic-0 opens ideas-drawer; 3 idea-card-* render with SEO-relevant content",
+    "Admin: change-industry-btn opens industry-selector with 12 INDUSTRIES buttons + custom-industry-input + save-industry-btn",
+    "mktonly: industry-selector shown FIRST (no business_type)",
+    "mktonly: clicking 'industry-Techos / Roofing' hides selector, loads roofing-specific topics-grid (6 topics about techos/goteras/tejas)",
+    "mktonly: roofing topic-0 → ideas-drawer → 3 roofing-specific idea cards",
+    "mktonly: change-industry-btn + custom-industry-input 'Detallado de autos' + save-industry-btn → topics-grid reloads tailored (pulido, encerado, detallado, etc.)",
+    "Both: surprise-btn and skip-to-studio present and visible"
+  ]
+}
