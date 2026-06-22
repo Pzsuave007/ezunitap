@@ -224,15 +224,18 @@ class MessageIn(BaseModel):
 class AIQuoteRequest(BaseModel):
     description_es: str
     client_id: Optional[str] = None
+    language: Optional[str] = "es"
 
 
 class AIScopeRequest(BaseModel):
     description_es: str
+    language: Optional[str] = "es"
 
 
 class AIPhotoRequest(BaseModel):
     image_base64: str
     extra_note_es: Optional[str] = ""
+    language: Optional[str] = "es"
 
 
 class AIAgreementRequest(BaseModel):
@@ -2215,7 +2218,7 @@ async def ai_photo(payload: AIPhotoRequest, user_id: str = Depends(get_current_u
     if "," in b64 and b64.strip().startswith("data:"):
         b64 = b64.split(",", 1)[1]
     try:
-        data = await ai_service.analyze_photo_for_quote(b64, payload.extra_note_es or "")
+        data = await ai_service.analyze_photo_for_quote(b64, payload.extra_note_es or "", language=payload.language or "es")
     except Exception as e:
         logger.exception("AI photo failed")
         raise HTTPException(500, f"AI error: {e}")

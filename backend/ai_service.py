@@ -163,9 +163,10 @@ WRONG (do NOT do this): a single line "Week 1 Labor ... $6,500".
 """
 
 
-async def generate_quote_from_text(description_es: str) -> dict:
+async def generate_quote_from_text(description_es: str, language: str = "es") -> dict:
     chat = _new_chat(QUOTE_SYSTEM)
-    msg = UserMessage(text=f"Descripcion del trabajo (espanol):\n{description_es}")
+    in_lang = "Spanish/Spanglish" if language == "es" else "English"
+    msg = UserMessage(text=f"Job description (input language: {in_lang}). Always produce the quote in English:\n{description_es}")
     response = await chat.send_message(msg)
     data = _extract_json(response)
     if not data:
@@ -312,12 +313,13 @@ All output strings in ENGLISH.
 """
 
 
-async def analyze_photo_for_quote(image_base64: str, extra_note_es: str = "") -> dict:
+async def analyze_photo_for_quote(image_base64: str, extra_note_es: str = "", language: str = "es") -> dict:
     chat = _new_chat(PHOTO_QUOTE_SYSTEM)
     img = ImageContent(image_base64=image_base64)
     text = "Analyze this job-site photo and propose a quote draft."
     if extra_note_es:
-        text += f"\n\nContractor's note (Spanish): {extra_note_es}"
+        in_lang = "Spanish" if language == "es" else "English"
+        text += f"\n\nContractor's note ({in_lang}): {extra_note_es}"
     response = await chat.send_message(UserMessage(text=text, file_contents=[img]))
     data = _extract_json(response)
     if not data:

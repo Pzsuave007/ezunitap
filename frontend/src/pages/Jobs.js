@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,14 +17,11 @@ import { useAuth } from "@/context/AuthContext";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import RequestReviewButton from "@/components/RequestReviewButton";
 
-const labelFor = (s) => ({
-  new_lead: "Nuevo Lead", estimate_sent: "Quote enviado", approved: "Aprobado",
-  scheduled: "Agendado", in_progress: "En progreso", waiting_payment: "Esperando pago",
-  completed: "Completado",
-}[s] || s);
-
 export default function Jobs() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const labelFor = (s) => t(`jobs.status.${s}`, { defaultValue: s });
+  const dateLocale = i18n.language?.startsWith("es") ? "es-ES" : "en-US";
   const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [clients, setClients] = useState([]);
@@ -31,12 +29,10 @@ export default function Jobs() {
   const [form, setForm] = useState({ client_id: "", title: "", status: "new_lead", scheduled_date: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
-  // Auto-prompt to request a review when a job is marked completed.
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewClient, setReviewClient] = useState(null);
   const [reviewJobTitle, setReviewJobTitle] = useState("");
 
-  // Per-job photo upload (Antes / Durante / Después)
   const photoInput = useRef(null);
   const [photoJob, setPhotoJob] = useState(null);
   const [photoLabel, setPhotoLabel] = useState("during");
@@ -54,10 +50,10 @@ export default function Jobs() {
       await api.post(`/photos?${params.toString()}`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success("Foto subida al trabajo");
+      toast.success(t("jobs.photoUploaded"));
       setPhotoJob(null);
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error subiendo foto");
+      toast.error(err?.response?.data?.detail || t("jobs.photoError"));
     } finally {
       setUploadingPhoto(false);
       e.target.value = "";
@@ -71,14 +67,12 @@ export default function Jobs() {
   };
   useEffect(() => { load(); }, []);
 
-  const reviewUrl = user?.card_slug
-    ? `${window.location.origin}/r/${user.card_slug}`
-    : "";
+  const reviewUrl = user?.card_slug ? `${window.location.origin}/r/${user.card_slug}` : "";
 
   const promptReview = (job) => {
     if (!user?.google_review_url) {
-      toast("¡Trabajo completado! 🎉 Configura tu link de Google Reviews para pedir reseñas.", {
-        action: { label: "Configurar", onClick: () => navigate("/reviews") },
+      toast(t("jobs.reviewSetup"), {
+        action: { label: t("jobs.setup"), onClick: () => navigate("/reviews") },
       });
       return;
     }
@@ -89,16 +83,16 @@ export default function Jobs() {
   };
 
   const save = async () => {
-    if (!form.client_id || !form.title) return toast.error("Falta cliente o título");
+    if (!form.client_id || !form.title) return toast.error(t("jobs.missingClientTitle"));
     setSaving(true);
     try {
       await api.post("/jobs", form);
-      toast.success("Trabajo creado");
+      toast.success(t("jobs.created"));
       setOpen(false);
       setForm({ client_id: "", title: "", status: "new_lead", scheduled_date: "", notes: "" });
       load();
     } catch {
-      toast.error("Error");
+      toast.error(t("jobs.error"));
     } finally { setSaving(false); }
   };
 
@@ -110,7 +104,6 @@ export default function Jobs() {
     }
   };
 
-  // --- Scheduling -----------------------------------------------------------
   const [scheduleJob, setScheduleJob] = useState(null);
   const [sched, setSched] = useState({ scheduled_date: "", end_date: "", all_day: true, start_time: "", end_time: "" });
 
@@ -126,7 +119,7 @@ export default function Jobs() {
   };
 
   const saveSchedule = async () => {
-    if (!sched.scheduled_date) return toast.error("Elige una fecha");
+    if (!sched.scheduled_date) return toast.error(t("jobs.chooseDate"));
     try {
       await api.put(`/jobs/${scheduleJob.id}`, {
         ...scheduleJob,
@@ -137,11 +130,11 @@ export default function Jobs() {
         end_time: sched.all_day ? "" : sched.end_time,
         status: ["new_lead", "estimate_sent", "approved"].includes(scheduleJob.status) ? "scheduled" : scheduleJob.status,
       });
-      toast.success("Trabajo agendado — ya aparece en tu Agenda 📅");
+      toast.success(t("jobs.scheduledOk"));
       setScheduleJob(null);
       load();
     } catch {
-      toast.error("No se pudo agendar");
+      toast.error(t("jobs.scheduleError"));
     }
   };
 
@@ -149,17 +142,17 @@ export default function Jobs() {
     if (!j.scheduled_date) return null;
     try {
       const d = new Date(j.scheduled_date + "T00:00:00");
-      let s = d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+      let s = d.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" });
       if (j.end_date && j.end_date !== j.scheduled_date) {
         const e = new Date(j.end_date + "T00:00:00");
-        s += " – " + e.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+        s += " – " + e.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       }
       if (!j.all_day && j.start_time) s += ` · ${j.start_time}${j.end_time ? "–" + j.end_time : ""}`;
       return s;
     } catch { return null; }
   };
 
-  const clientName = (id) => clients.find((c) => c.id === id)?.name || "Cliente";
+  const clientName = (id) => clients.find((c) => c.id === id)?.name || t("jobs.client");
 
   const grouped = JOB_STATUSES.reduce((acc, s) => {
     acc[s] = jobs.filter((j) => j.status === s);
@@ -171,21 +164,21 @@ export default function Jobs() {
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="font-heading text-3xl font-bold tracking-tight">Trabajos</h1>
-            <p className="text-slate-500 mt-1">{jobs.length} en total</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">{t("jobs.title")}</h1>
+            <p className="text-slate-500 mt-1">{t("jobs.total", { count: jobs.length })}</p>
           </div>
           <TourButton tourKey="jobs" />
         </div>
         <Button onClick={() => setOpen(true)} data-testid="new-job-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap">
-          <Plus className="w-4 h-4 mr-1" /> Nuevo trabajo
+          <Plus className="w-4 h-4 mr-1" /> {t("jobs.newJob")}
         </Button>
       </div>
 
       {jobs.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 mb-4">Sin trabajos.</p>
-          <Button onClick={() => setOpen(true)} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">Crear trabajo</Button>
+          <p className="text-slate-500 mb-4">{t("jobs.empty")}</p>
+          <Button onClick={() => setOpen(true)} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">{t("jobs.create")}</Button>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -220,7 +213,7 @@ export default function Jobs() {
                       >
                         <CalendarIcon className="w-4 h-4 flex-none" />
                         <span className="capitalize">{fmtSched(j)}</span>
-                        <span className="ml-auto text-emerald-600 underline">Reagendar</span>
+                        <span className="ml-auto text-emerald-600 underline">{t("jobs.reschedule")}</span>
                       </button>
                     ) : (
                       j.status !== "completed" && (
@@ -229,7 +222,7 @@ export default function Jobs() {
                           data-testid={`job-schedule-${j.id}`}
                           className="h-10 rounded-xl text-xs w-full mb-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
                         >
-                          <CalendarClock className="w-4 h-4 mr-1.5" /> Agendar trabajo
+                          <CalendarClock className="w-4 h-4 mr-1.5" /> {t("jobs.scheduleJob")}
                         </Button>
                       )
                     )}
@@ -248,7 +241,7 @@ export default function Jobs() {
                       data-testid={`job-photo-${j.id}`}
                       className="h-10 rounded-xl text-xs w-full mt-2 border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
                     >
-                      <Camera className="w-4 h-4 mr-1.5 text-emerald-600" /> Subir foto
+                      <Camera className="w-4 h-4 mr-1.5 text-emerald-600" /> {t("jobs.uploadPhoto")}
                     </Button>
                     {j.status === "completed" && (
                       <div className="mt-2">
@@ -270,81 +263,81 @@ export default function Jobs() {
 
       <Dialog open={!!scheduleJob} onOpenChange={(o) => !o && setScheduleJob(null)}>
         <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader><DialogTitle className="font-heading">Agendar trabajo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-heading">{t("jobs.scheduleJob")}</DialogTitle></DialogHeader>
           {scheduleJob && (
             <div className="space-y-3">
               <div className="text-sm text-slate-600">{scheduleJob.title} · {clientName(scheduleJob.client_id)}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Fecha inicio *</Label>
+                  <Label>{t("jobs.startDate")} *</Label>
                   <Input type="date" value={sched.scheduled_date} onChange={(e) => setSched({ ...sched, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-date" />
                 </div>
                 <div>
-                  <Label>Fecha fin</Label>
+                  <Label>{t("jobs.endDate")}</Label>
                   <Input type="date" value={sched.end_date} min={sched.scheduled_date || undefined} onChange={(e) => setSched({ ...sched, end_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-date" />
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={sched.all_day} onChange={(e) => setSched({ ...sched, all_day: e.target.checked })} className="w-4 h-4 rounded accent-emerald-600" data-testid="sched-allday" />
-                <span className="text-sm">Todo el día</span>
+                <span className="text-sm">{t("jobs.allDay")}</span>
               </label>
               {!sched.all_day && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Hora inicio</Label>
+                    <Label>{t("jobs.startTime")}</Label>
                     <Input type="time" value={sched.start_time} onChange={(e) => setSched({ ...sched, start_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-time" />
                   </div>
                   <div>
-                    <Label>Hora fin</Label>
+                    <Label>{t("jobs.endTime")}</Label>
                     <Input type="time" value={sched.end_time} onChange={(e) => setSched({ ...sched, end_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-time" />
                   </div>
                 </div>
               )}
-              <p className="text-xs text-slate-400">Al guardar, el trabajo aparecerá en tu Agenda/Calendario.</p>
+              <p className="text-xs text-slate-400">{t("jobs.scheduleHint")}</p>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl">Cancelar</Button>
-            <Button onClick={saveSchedule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">Guardar agenda</Button>
+            <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl">{t("common.cancel")}</Button>
+            <Button onClick={saveSchedule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">{t("jobs.saveSchedule")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader><DialogTitle className="font-heading">Nuevo trabajo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-heading">{t("jobs.newJob")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Cliente *</Label>
+              <Label>{t("jobs.client")} *</Label>
               <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="job-client-select"><SelectValue placeholder="Selecciona" /></SelectTrigger>
+                <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="job-client-select"><SelectValue placeholder={t("jobs.select")} /></SelectTrigger>
                 <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Título *</Label>
+              <Label>{t("jobs.titleField")} *</Label>
               <Input data-testid="job-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="h-12 rounded-xl mt-1.5" />
             </div>
             <div>
-              <Label>Estado</Label>
+              <Label>{t("jobs.statusField")}</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger className="h-12 rounded-xl mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>{JOB_STATUSES.map((s) => <SelectItem key={s} value={s}>{labelFor(s)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Fecha programada</Label>
+              <Label>{t("jobs.scheduledDate")}</Label>
               <Input type="date" value={form.scheduled_date} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" />
             </div>
             <div>
-              <Label>Notas</Label>
+              <Label>{t("jobs.notes")}</Label>
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl mt-1.5" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl">Cancelar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl">{t("common.cancel")}</Button>
             <Button onClick={save} data-testid="save-job" disabled={saving} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -360,14 +353,13 @@ export default function Jobs() {
         jobTitle={reviewJobTitle}
       />
 
-      {/* Per-job photo upload */}
       <Dialog open={!!photoJob} onOpenChange={(o) => !o && setPhotoJob(null)}>
         <DialogContent className="rounded-2xl max-w-sm">
-          <DialogHeader><DialogTitle className="font-heading">Subir foto del trabajo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-heading">{t("jobs.uploadJobPhotoTitle")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-slate-500 -mt-1">{photoJob?.title}</p>
             <div>
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Etiqueta</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("jobs.labelField")}</Label>
               <div className="flex gap-2 mt-2">
                 {["before", "during", "after"].map((l) => (
                   <button
@@ -377,7 +369,7 @@ export default function Jobs() {
                     data-testid={`job-photo-label-${l}`}
                     className={`flex-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                   >
-                    {l === "before" ? "Antes" : l === "during" ? "Durante" : "Después"}
+                    {t(`jobs.${l}`)}
                   </button>
                 ))}
               </div>
@@ -389,7 +381,7 @@ export default function Jobs() {
               className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700"
             >
               {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Camera className="w-4 h-4 mr-2" />}
-              Elegir foto
+              {t("jobs.choosePhoto")}
             </Button>
             <input ref={photoInput} type="file" accept="image/*" hidden onChange={uploadJobPhoto} />
           </div>
