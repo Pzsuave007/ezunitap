@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import {
@@ -75,6 +76,7 @@ const MiniStat = ({ icon: Icon, label, value, chip }) => (
 
 // ---- Business module block ----
 function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
+  const { t, i18n } = useTranslation();
   return (
     <>
       {/* Hero KPI — Pagos pendientes */}
@@ -82,56 +84,56 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
         <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl" />
         <div className="relative">
           <div className="text-sm font-medium text-slate-400 flex items-center gap-2">
-            <Wallet className="w-4 h-4" /> Pagos pendientes
+            <Wallet className="w-4 h-4" /> {t("dashboard.pendingPayments")}
           </div>
           <div className="font-heading text-4xl font-black tracking-tighter mt-2" data-testid="hero-pending-amount">
             {money(stats.pending_amount)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">Total que te deben tus clientes</div>
+          <div className="text-xs text-slate-400 mt-1">{t("dashboard.pendingPaymentsDesc")}</div>
           <button
             data-testid="view-invoices-btn"
             onClick={() => navigate("/invoices")}
             className="mt-4 inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold backdrop-blur-md transition-colors"
           >
-            Ver invoices <ArrowRight className="w-4 h-4" />
+            {t("dashboard.viewInvoices")} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Guided ordered flow */}
       <div>
-        <SectionTitle action={<TourButton tourKey="dashboard" />}>Empieza un trabajo</SectionTitle>
+        <SectionTitle action={<TourButton tourKey="dashboard" />}>{t("dashboard.startJob")}</SectionTitle>
         <div className="space-y-2">
           <FlowAction step={1} testid="quick-new-client" icon={UserPlus} chip="bg-blue-50 text-blue-600 border border-blue-100"
-            title="Agregar cliente" desc="Empieza aquí: registra a tu cliente" onClick={() => navigate("/clientes?new=1")} />
+            title={t("dashboard.step1Title")} desc={t("dashboard.step1Desc")} onClick={() => navigate("/clientes?new=1")} />
           <FlowAction step={2} testid="quick-ai-quote" icon={Sparkles} chip="bg-purple-50 text-purple-600 border border-purple-100"
-            title="Crear cotización con AI" desc="Manda un presupuesto en segundos" onClick={() => navigate("/quotes/nuevo?ai=1")} />
+            title={t("dashboard.step2Title")} desc={t("dashboard.step2Desc")} onClick={() => navigate("/quotes/nuevo?ai=1")} />
           <FlowAction step={3} testid="quick-new-invoice" icon={Receipt} chip="bg-emerald-50 text-emerald-600 border border-emerald-100"
-            title="Crear invoice" desc="Cobra por tu trabajo" onClick={() => navigate("/invoices/nuevo")} />
+            title={t("dashboard.step3Title")} desc={t("dashboard.step3Desc")} onClick={() => navigate("/invoices/nuevo")} />
         </div>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
-        <StatChip testid="stat-clients" icon={Users} label="Clientes" value={stats.total_clients} chip="bg-blue-50 text-blue-600 border border-blue-100" onClick={() => navigate("/clientes")} />
-        <StatChip testid="stat-quotes" icon={FileText} label="Quotes enviados" value={stats.quotes_sent} chip="bg-purple-50 text-purple-600 border border-purple-100" onClick={() => navigate("/quotes")} />
-        <StatChip testid="stat-invoices" icon={Receipt} label="Invoices pendientes" value={stats.invoices_pending} chip="bg-amber-50 text-amber-600 border border-amber-100" onClick={() => navigate("/invoices")} />
-        <StatChip testid="stat-jobs" icon={Briefcase} label="Trabajos activos" value={stats.active_jobs} chip="bg-emerald-50 text-emerald-600 border border-emerald-100" onClick={() => navigate("/trabajos")} />
+        <StatChip testid="stat-clients" icon={Users} label={t("dashboard.statClients")} value={stats.total_clients} chip="bg-blue-50 text-blue-600 border border-blue-100" onClick={() => navigate("/clientes")} />
+        <StatChip testid="stat-quotes" icon={FileText} label={t("dashboard.statQuotes")} value={stats.quotes_sent} chip="bg-purple-50 text-purple-600 border border-purple-100" onClick={() => navigate("/quotes")} />
+        <StatChip testid="stat-invoices" icon={Receipt} label={t("dashboard.statInvoices")} value={stats.invoices_pending} chip="bg-amber-50 text-amber-600 border border-amber-100" onClick={() => navigate("/invoices")} />
+        <StatChip testid="stat-jobs" icon={Briefcase} label={t("dashboard.statJobs")} value={stats.active_jobs} chip="bg-emerald-50 text-emerald-600 border border-emerald-100" onClick={() => navigate("/trabajos")} />
       </div>
 
       {/* Recent quotes */}
       <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
-          <h2 className="font-heading text-base font-bold tracking-tight text-slate-900">Quotes recientes</h2>
-          <button onClick={() => navigate("/quotes")} className="text-sm text-blue-700 font-semibold tap">Ver todos</button>
+          <h2 className="font-heading text-base font-bold tracking-tight text-slate-900">{t("dashboard.recentQuotes")}</h2>
+          <button onClick={() => navigate("/quotes")} className="text-sm text-blue-700 font-semibold tap">{t("common.viewAll")}</button>
         </div>
         {recentQuotes.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <FileText className="w-9 h-9 text-slate-300 mx-auto mb-2" />
-            <p className="text-slate-500 text-sm mb-4">Aún no tienes quotes. Crea el primero con AI.</p>
+            <p className="text-slate-500 text-sm mb-4">{t("dashboard.noQuotes")}</p>
             <button data-testid="empty-create-quote" onClick={() => navigate("/quotes/nuevo?ai=1")}
               className="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 h-11 transition-colors">
-              <Sparkles className="w-4 h-4" /> Crear con AI
+              <Sparkles className="w-4 h-4" /> {t("dashboard.createWithAI")}
             </button>
           </div>
         ) : (
@@ -153,12 +155,12 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
         <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2 bg-slate-50/60">
             <Bell className="w-4 h-4 text-slate-500" />
-            <h2 className="font-heading text-base font-bold tracking-tight text-slate-900">Recordatorios</h2>
+            <h2 className="font-heading text-base font-bold tracking-tight text-slate-900">{t("dashboard.reminders")}</h2>
           </div>
           {reminders.map((r) => (
             <div key={r.id} className="px-5 py-4 border-b border-slate-100 last:border-0 flex items-center justify-between gap-3">
               <div className="font-semibold text-sm text-slate-900">{r.title}</div>
-              <div className="text-xs text-slate-500 flex-none">{new Date(r.due_date).toLocaleDateString("es")}</div>
+              <div className="text-xs text-slate-500 flex-none">{new Date(r.due_date).toLocaleDateString(i18n.language)}</div>
             </div>
           ))}
         </div>
@@ -169,6 +171,7 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
 
 // ---- Card / Presencia module block ----
 function CardBlock({ navigate, user, cardStats, card, gbp, onConnectGbp }) {
+  const { t } = useTranslation();
   const views = cardStats?.totals?.profile_visit ?? cardStats?.all_events ?? 0;
   const slug = card?.slug;
   const ready = !!card && !!(
@@ -177,19 +180,18 @@ function CardBlock({ navigate, user, cardStats, card, gbp, onConnectGbp }) {
   );
   return (
     <div>
-      <SectionTitle>Tu Presencia</SectionTitle>
+      <SectionTitle>{t("dashboard.yourPresence")}</SectionTitle>
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 flex items-center gap-3 border-b border-slate-100">
           <div className="w-11 h-11 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center flex-none">
             <IdCard className="w-5 h-5" strokeWidth={2.4} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-heading font-bold text-slate-900">Tarjeta Digital</div>
-            <div className="text-xs text-slate-500">Tu mini-sitio, reseñas y contactos</div>
+            <div className="font-heading font-bold text-slate-900">{t("dashboard.digitalCard")}</div>
+            <div className="text-xs text-slate-500">{t("dashboard.digitalCardDesc")}</div>
           </div>
         </div>
 
-        {/* Live mini-site preview inside a phone mockup (or setup CTA when not ready) */}
         {card && (ready ? (
           <div className="px-3 py-4 flex flex-col items-center bg-gradient-to-b from-slate-50 to-white">
             <button data-testid="card-live-preview" onClick={() => slug && window.open(`/c/${slug}`, "_blank")}
@@ -198,12 +200,12 @@ function CardBlock({ navigate, user, cardStats, card, gbp, onConnectGbp }) {
                 <LiveCardPreview card={card} user={user} variant={card.hero_layout || "photo"} />
               </PhoneFrame>
               <span className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 bg-white shadow-md ring-1 ring-slate-200 text-slate-900 text-[11px] font-bold px-2.5 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En vivo
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {t("dashboard.live")}
               </span>
             </button>
             <button onClick={() => slug && window.open(`/c/${slug}`, "_blank")}
               className="tap mt-4 inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 h-10 rounded-full transition-colors">
-              Abrir mini-sitio <ArrowRight className="w-4 h-4" />
+              {t("dashboard.openMiniSite")} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         ) : (
@@ -212,41 +214,41 @@ function CardBlock({ navigate, user, cardStats, card, gbp, onConnectGbp }) {
             <div className="w-12 h-12 rounded-2xl bg-white border border-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-2">
               <IdCard className="w-6 h-6" strokeWidth={2.2} />
             </div>
-            <div className="font-heading font-bold text-slate-900 text-sm">Configura tu mini-sitio</div>
-            <div className="text-xs text-slate-500 mt-1">Agrega tu foto, servicios y contacto para verlo en vivo aquí.</div>
+            <div className="font-heading font-bold text-slate-900 text-sm">{t("dashboard.setupMiniSite")}</div>
+            <div className="text-xs text-slate-500 mt-1">{t("dashboard.setupMiniSiteDesc")}</div>
             <span className="mt-3 inline-flex items-center gap-1.5 bg-slate-900 text-white text-sm font-semibold px-4 h-10 rounded-xl">
-              Empezar <ArrowRight className="w-4 h-4" />
+              {t("dashboard.start")} <ArrowRight className="w-4 h-4" />
             </span>
           </button>
         ))}
 
         <div className="p-3 pt-0 flex gap-2.5">
-          <MiniStat icon={Eye} label="Vistas" value={views} chip="bg-blue-50 text-blue-600" />
-          <MiniStat icon={Star} label="Reseñas" value={cardStats?.reviews ?? 0} chip="bg-amber-50 text-amber-600" />
-          <MiniStat icon={UserCheck} label="Leads" value={cardStats?.leads ?? 0} chip="bg-emerald-50 text-emerald-600" />
+          <MiniStat icon={Eye} label={t("dashboard.views")} value={views} chip="bg-blue-50 text-blue-600" />
+          <MiniStat icon={Star} label={t("dashboard.reviews")} value={cardStats?.reviews ?? 0} chip="bg-amber-50 text-amber-600" />
+          <MiniStat icon={UserCheck} label={t("dashboard.leads")} value={cardStats?.leads ?? 0} chip="bg-emerald-50 text-emerald-600" />
         </div>
         <button data-testid="card-view-btn" onClick={() => navigate("/tarjeta")}
           className="tap mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold h-11 transition-colors">
-          {ready ? "Editar mi tarjeta" : "Ver mi tarjeta"} <ArrowRight className="w-4 h-4" />
+          {ready ? t("dashboard.editMyCard") : t("dashboard.viewMyCard")} <ArrowRight className="w-4 h-4" />
         </button>
 
         {/* Connect Google My Business */}
         {gbp?.configured && !gbp?.connected && (
           <button data-testid="card-connect-gbp-btn" onClick={onConnectGbp}
             className="tap mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 text-sm font-semibold h-11 transition-colors">
-            <MapPin className="w-4 h-4 text-blue-600" /> Conectar Google My Business
+            <MapPin className="w-4 h-4 text-blue-600" /> {t("dashboard.connectGbp")}
           </button>
         )}
         {gbp?.connected && (
           <div data-testid="card-gbp-connected" className="mx-3 mb-2.5 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-semibold h-11">
-            <CheckCircle2 className="w-4 h-4" /> Google My Business conectado
+            <CheckCircle2 className="w-4 h-4" /> {t("dashboard.gbpConnected")}
           </div>
         )}
 
         <div className="px-3 pb-3 grid grid-cols-3 gap-2.5">
-          <CardTile testid="card-reviews-tile" icon={Star} chip="bg-amber-50 text-amber-600" label="Reseñas de Google" onClick={() => navigate("/reviews")} />
-          <CardTile testid="card-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label="Publicar en Google" onClick={() => navigate("/reviews")} />
-          <CardTile testid="card-stats-tile" icon={BarChart3} chip="bg-violet-50 text-violet-600" label="Estadísticas" onClick={() => navigate("/tarjeta")} />
+          <CardTile testid="card-reviews-tile" icon={Star} chip="bg-amber-50 text-amber-600" label={t("dashboard.reviewsTile")} onClick={() => navigate("/reviews")} />
+          <CardTile testid="card-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label={t("dashboard.publishGoogle")} onClick={() => navigate("/reviews")} />
+          <CardTile testid="card-stats-tile" icon={BarChart3} chip="bg-violet-50 text-violet-600" label={t("dashboard.statsTile")} onClick={() => navigate("/tarjeta")} />
         </div>
       </div>
     </div>
@@ -265,28 +267,28 @@ const CardTile = ({ icon: Icon, label, chip, onClick, testid }) => (
 
 // ---- Marketing module block ----
 function MarketingBlock({ navigate, mkt, posts }) {
+  const { t } = useTranslation();
   const BACKEND = process.env.REACT_APP_BACKEND_URL;
   const recent = (posts || []).filter((p) => p.images?.[0]?.url).slice(0, 8);
   return (
     <div>
-      <SectionTitle>Estudio de Marketing</SectionTitle>
+      <SectionTitle>{t("dashboard.marketingStudio")}</SectionTitle>
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 flex items-center gap-3 border-b border-slate-100">
           <div className="w-11 h-11 rounded-full bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center flex-none">
             <Megaphone className="w-5 h-5" strokeWidth={2.4} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-heading font-bold text-slate-900">Marketing</div>
-            <div className="text-xs text-slate-500">Posts y reels con IA para tus redes</div>
+            <div className="font-heading font-bold text-slate-900">{t("nav.marketing")}</div>
+            <div className="text-xs text-slate-500">{t("dashboard.marketingDesc")}</div>
           </div>
         </div>
 
-        {/* Recent designs carousel */}
         {recent.length > 0 ? (
           <div className="px-3 pt-3">
             <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Diseños recientes</span>
-              <button onClick={() => navigate("/marketing")} className="text-xs text-purple-700 font-semibold tap">Ver todos</button>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("dashboard.recentDesigns")}</span>
+              <button onClick={() => navigate("/marketing")} className="text-xs text-purple-700 font-semibold tap">{t("common.viewAll")}</button>
             </div>
             <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide snap-x">
               {recent.map((p) => (
@@ -306,26 +308,24 @@ function MarketingBlock({ navigate, mkt, posts }) {
                 <Sparkles className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-heading font-bold text-base">Crea tu primer diseño</div>
-                <div className="text-sm text-white/85">Posts y reels profesionales con IA en segundos.</div>
+                <div className="font-heading font-bold text-base">{t("dashboard.createFirstDesign")}</div>
+                <div className="text-sm text-white/85">{t("dashboard.createFirstDesignDesc")}</div>
               </div>
               <ArrowRight className="w-5 h-5 flex-shrink-0" />
             </button>
           </div>
         )}
 
-        {/* Quick action tiles */}
         <div className="px-3 pt-3 grid grid-cols-2 gap-2.5">
-          <MktTile testid="mkt-post-tile" icon={ImageIcon} chip="bg-purple-50 text-purple-600" label="Crear Post" onClick={() => navigate("/marketing?mode=image")} />
-          <MktTile testid="mkt-reel-tile" icon={Video} chip="bg-pink-50 text-pink-600" label="Crear Reel" onClick={() => navigate("/marketing?mode=reel")} />
-          <MktTile testid="mkt-ai-tile" icon={Sparkles} chip="bg-violet-50 text-violet-600" label="Imagen con IA" onClick={() => navigate("/marketing?mode=ai")} />
-          <MktTile testid="mkt-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label="Publicar en Google" onClick={() => navigate("/marketing?mode=image")} />
+          <MktTile testid="mkt-post-tile" icon={ImageIcon} chip="bg-purple-50 text-purple-600" label={t("dashboard.createPost")} onClick={() => navigate("/marketing?mode=image")} />
+          <MktTile testid="mkt-reel-tile" icon={Video} chip="bg-pink-50 text-pink-600" label={t("dashboard.createReel")} onClick={() => navigate("/marketing?mode=reel")} />
+          <MktTile testid="mkt-ai-tile" icon={Sparkles} chip="bg-violet-50 text-violet-600" label={t("dashboard.aiImage")} onClick={() => navigate("/marketing?mode=ai")} />
+          <MktTile testid="mkt-gbp-tile" icon={Building2} chip="bg-emerald-50 text-emerald-600" label={t("dashboard.publishGoogle")} onClick={() => navigate("/marketing?mode=image")} />
         </div>
 
-        {/* Stats */}
         <div className="p-3 flex gap-2.5">
-          <MiniStat icon={ImageIcon} label="Posts" value={mkt?.posts ?? 0} chip="bg-purple-50 text-purple-600" />
-          <MiniStat icon={Video} label="Reels" value={mkt?.reels ?? 0} chip="bg-pink-50 text-pink-600" />
+          <MiniStat icon={ImageIcon} label={t("dashboard.posts")} value={mkt?.posts ?? 0} chip="bg-purple-50 text-purple-600" />
+          <MiniStat icon={Video} label={t("dashboard.reels")} value={mkt?.reels ?? 0} chip="bg-pink-50 text-pink-600" />
         </div>
       </div>
     </div>
@@ -344,16 +344,17 @@ const MktTile = ({ icon: Icon, label, chip, onClick, testid }) => (
 
 // ---- Upsell: modules the user does NOT have yet ----
 const UPSELL_META = {
-  business: { label: "Negocio", desc: "Quotes, invoices y contratos con IA + CRM", icon: Receipt, chip: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
-  card: { label: "Tarjeta Digital", desc: "Tarjeta NFC, mini-sitio y reseñas de Google", icon: IdCard, chip: "bg-blue-50 text-blue-600 border border-blue-100" },
-  marketing: { label: "Estudio de Marketing", desc: "Posts y reels con IA para tus redes", icon: Megaphone, chip: "bg-purple-50 text-purple-600 border border-purple-100" },
+  business: { labelKey: "dashboard.upsellBusiness", descKey: "dashboard.upsellBusinessDesc", icon: Receipt, chip: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
+  card: { labelKey: "dashboard.upsellCard", descKey: "dashboard.upsellCardDesc", icon: IdCard, chip: "bg-blue-50 text-blue-600 border border-blue-100" },
+  marketing: { labelKey: "dashboard.upsellMarketing", descKey: "dashboard.upsellMarketingDesc", icon: Megaphone, chip: "bg-purple-50 text-purple-600 border border-purple-100" },
 };
 
 function UpsellBlock({ navigate, missing }) {
+  const { t } = useTranslation();
   if (missing.length === 0) return null;
   return (
     <div>
-      <SectionTitle>Agrega más a tu plan</SectionTitle>
+      <SectionTitle>{t("dashboard.addToPlan")}</SectionTitle>
       <div className="space-y-2">
         {missing.map((f) => {
           const m = UPSELL_META[f];
@@ -365,12 +366,12 @@ function UpsellBlock({ navigate, missing }) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-900 text-sm">
-                  {m.label} <Lock className="w-3 h-3 text-slate-400" />
+                  {t(m.labelKey)} <Lock className="w-3 h-3 text-slate-400" />
                 </span>
-                <span className="block text-xs text-slate-500 truncate">{m.desc}</span>
+                <span className="block text-xs text-slate-500 truncate">{t(m.descKey)}</span>
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 flex-none">
-                <Plus className="w-3.5 h-3.5" /> Agregar
+                <Plus className="w-3.5 h-3.5" /> {t("dashboard.addModule")}
               </span>
             </button>
           );
@@ -381,6 +382,7 @@ function UpsellBlock({ navigate, missing }) {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user, hasFeature } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total_clients: 0, quotes_sent: 0, invoices_pending: 0, active_jobs: 0, pending_amount: 0 });
@@ -426,15 +428,15 @@ export default function Dashboard() {
       const { data } = await api.get("/google-business/connect");
       window.location.href = data.auth_url;
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo iniciar la conexión con Google.");
+      toast.error(e?.response?.data?.detail || t("dashboard.gbpConnectError"));
     }
   };
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return "Buenos días";
-    if (h < 19) return "Buenas tardes";
-    return "Buenas noches";
+    if (h < 12) return t("dashboard.greetingMorning");
+    if (h < 19) return t("dashboard.greetingAfternoon");
+    return t("dashboard.greetingEvening");
   };
 
   const missing = ["business", "card", "marketing"].filter((f) => !hasFeature(f));
@@ -449,16 +451,16 @@ export default function Dashboard() {
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-slate-500">{greeting()},</div>
           <h1 className="font-heading text-3xl font-bold tracking-tight truncate text-slate-900">
-            {user?.owner_name || user?.business_name || "Hola"} 👋
+            {user?.owner_name || user?.business_name || t("dashboard.hello")} 👋
           </h1>
           <button data-testid="dashboard-business-name" onClick={() => navigate("/ajustes")}
             className="mt-1 text-sm text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 tap">
-            {user?.business_name || "Aquí está tu negocio hoy."}
+            {user?.business_name || t("dashboard.businessFallback")}
             <span className="text-[10px] opacity-60">✎</span>
           </button>
         </div>
         <button data-testid="dashboard-settings-btn" onClick={() => navigate("/ajustes")}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 tap shadow-sm" aria-label="Ajustes">
+          className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 tap shadow-sm" aria-label={t("dashboard.settings")}>
           <SettingsIcon className="w-5 h-5" />
         </button>
       </div>

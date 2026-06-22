@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,14 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Hammer, Loader2, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
+import LanguageToggle from "@/components/LanguageToggle";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { register } = useAuth();
   const [params] = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const selectedPlan = params.get("plan") || "";
-  const planLabels = { presencia: "Presencia Digital", negocio: "Gestión de Negocio", marketing: "Marketing Studio", presencia_negocio: "Presencia + Negocio", presencia_marketing: "Presencia + Marketing", negocio_marketing: "Negocio + Marketing", bundle: "Todo UniTech (Bundle)" };
+  const planLabel = selectedPlan ? t(`auth.register.plans.${selectedPlan}`, { defaultValue: "" }) : "";
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",
@@ -29,7 +32,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+      toast.error(t("auth.register.errorShortPassword"));
       return;
     }
     setLoading(true);
@@ -38,11 +41,7 @@ export default function Register() {
       // Meta Pixel: account created (free 14-day trial, no card).
       fbTrack("CompleteRegistration", { content_name: selectedPlan || "trial", status: true });
       fbTrackCustom("StartTrial", { plan: selectedPlan || "" });
-      toast.success(
-        inviteToken
-          ? "¡Cuenta creada con acceso gratis! 🎁"
-          : "¡Cuenta creada! Tienes 14 días gratis 🎁"
-      );
+      toast.success(inviteToken ? t("auth.register.createdInvite") : t("auth.register.createdTrial"));
       const planParam = params.get("plan");
       if (planParam) {
         const billingParam = params.get("billing") === "year" ? "year" : "month";
@@ -51,7 +50,7 @@ export default function Register() {
         navigate("/");
       }
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error al crear cuenta");
+      toast.error(err?.response?.data?.detail || t("auth.register.error"));
     } finally {
       setLoading(false);
     }
@@ -60,11 +59,14 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
-            <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center">
+              <Hammer className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-heading font-bold text-xl">UniTech</span>
           </div>
-          <span className="font-heading font-bold text-xl">UniTech</span>
+          <LanguageToggle />
         </div>
 
         {inviteToken && (
@@ -74,18 +76,16 @@ export default function Register() {
           >
             <Gift className="w-5 h-5 text-amber-700 flex-none" />
             <div className="text-xs text-amber-900">
-              <div className="font-semibold">¡Tienes una invitación!</div>
-              <div className="text-amber-800">
-                Al registrarte tendrás acceso gratis a todo UniTech.
-              </div>
+              <div className="font-semibold">{t("auth.register.inviteTitle")}</div>
+              <div className="text-amber-800">{t("auth.register.inviteDesc")}</div>
             </div>
           </div>
         )}
 
-        <h2 className="font-heading text-3xl font-bold tracking-tight">Crea tu cuenta</h2>
-        {selectedPlan && planLabels[selectedPlan] && (
+        <h2 className="font-heading text-3xl font-bold tracking-tight">{t("auth.register.createAccount")}</h2>
+        {selectedPlan && planLabel && (
           <div data-testid="plan-banner" className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
-            <span className="font-semibold">Plan elegido: {planLabels[selectedPlan]}.</span> Crea tu cuenta y te llevamos al pago.
+            <span className="font-semibold">{t("auth.register.planChosen", { plan: planLabel })}</span> {t("auth.register.planContinue")}
           </div>
         )}
         {!inviteToken && (
@@ -93,16 +93,14 @@ export default function Register() {
             data-testid="trial-badge"
             className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold"
           >
-            <Gift className="w-3.5 h-3.5" /> 14 días gratis · Sin tarjeta de crédito
+            <Gift className="w-3.5 h-3.5" /> {t("auth.register.trialBadge")}
           </div>
         )}
-        <p className="text-slate-500 mt-2 text-sm">
-          Prueba todo UniTech gratis por 14 días. Cancela cuando quieras.
-        </p>
+        <p className="text-slate-500 mt-2 text-sm">{t("auth.register.trialSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           <div>
-            <Label>Nombre del negocio</Label>
+            <Label>{t("auth.register.businessName")}</Label>
             <Input
               data-testid="reg-business"
               required
@@ -113,7 +111,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>Tu nombre</Label>
+            <Label>{t("auth.register.yourName")}</Label>
             <Input
               data-testid="reg-owner"
               value={form.owner_name}
@@ -123,7 +121,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>Email</Label>
+            <Label>{t("auth.register.email")}</Label>
             <Input
               data-testid="reg-email"
               type="email"
@@ -135,7 +133,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>Teléfono</Label>
+            <Label>{t("auth.register.phone")}</Label>
             <Input
               data-testid="reg-phone"
               value={form.phone}
@@ -145,7 +143,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>Contraseña</Label>
+            <Label>{t("auth.register.password")}</Label>
             <Input
               data-testid="reg-password"
               type="password"
@@ -153,7 +151,7 @@ export default function Register() {
               value={form.password}
               onChange={onChange("password")}
               className="h-12 rounded-xl mt-1.5"
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t("auth.register.passwordPlaceholder")}
             />
           </div>
           <Button
@@ -162,20 +160,20 @@ export default function Register() {
             disabled={loading}
             className="w-full h-14 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base mt-2"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Crear cuenta"}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("auth.register.submit")}
           </Button>
           <p className="text-[11px] text-slate-500 text-center mt-1">
-            Al crear una cuenta aceptas nuestros{" "}
-            <Link to="/terminos" className="underline hover:text-slate-700">Términos</Link>
-            {" "}y{" "}
-            <Link to="/privacidad" className="underline hover:text-slate-700">Política de Privacidad</Link>.
+            {t("auth.register.terms")}{" "}
+            <Link to="/terminos" className="underline hover:text-slate-700">{t("auth.register.termsLink")}</Link>
+            {" "}{t("auth.register.and")}{" "}
+            <Link to="/privacidad" className="underline hover:text-slate-700">{t("auth.register.privacyLink")}</Link>.
           </p>
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-600">
-          ¿Ya tienes cuenta?{" "}
+          {t("auth.register.haveAccount")}{" "}
           <Link to="/login" data-testid="link-login" className="font-semibold text-blue-900 hover:underline">
-            Inicia sesión
+            {t("auth.register.signIn")}
           </Link>
         </p>
       </div>
