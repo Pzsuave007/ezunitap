@@ -211,14 +211,19 @@ MESSAGE_TEMPLATES = {
 }
 
 
-async def generate_message(message_type: str, user_input_es: str, client_name: Optional[str] = None) -> str:
+async def generate_message(message_type: str, user_input_es: str, client_name: Optional[str] = None, sender_name: str = "") -> str:
     intent = MESSAGE_TEMPLATES.get(message_type, MESSAGE_TEMPLATES["custom"])
     name_hint = f"Address the client by name: {client_name}." if client_name else "Use a generic greeting."
+    sign_hint = (
+        f"End with a sign-off on its own line exactly: '— {sender_name}'. Do NOT use any other name."
+        if sender_name else
+        "Do NOT add any sign-off line or invented name."
+    )
     system = (
         "You write professional client-facing messages in ENGLISH for U.S. customers of a "
         "Latino-owned service business (roofing, drywall, painting, cleaning, etc.). "
         "Keep it short (under 120 words), warm, professional, and clear. "
-        "Sign with: '— [Your Name]'. "
+        f"{sign_hint} "
         f"Intent: {intent} {name_hint}"
     )
     chat = _new_chat(system)

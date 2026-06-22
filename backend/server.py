@@ -2133,8 +2133,12 @@ async def generate_message(payload: MessageIn, user_id: str = Depends(get_curren
         c = await db.clients.find_one({"id": payload.client_id, "user_id": user_id}, {"_id": 0})
         if c:
             client_name = c.get("name")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0}) or {}
+    card = await _ensure_card(user_id)
+    sender_full = (card.get("person_name") or user.get("owner_name") or user.get("business_name") or "").strip()
+    sender_name = sender_full.split()[0] if sender_full else ""
     try:
-        text_en = await ai_service.generate_message(payload.message_type, payload.user_input_es or "", client_name)
+        text_en = await ai_service.generate_message(payload.message_type, payload.user_input_es or "", client_name, sender_name)
     except Exception as e:
         logger.exception("AI message gen failed")
         raise HTTPException(500, f"AI error: {e}")

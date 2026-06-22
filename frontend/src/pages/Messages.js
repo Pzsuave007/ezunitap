@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageSquare, Sparkles, Copy, Loader2, Save, MessageCircle, Smartphone, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import TourButton from "@/components/TourButton";
 
 function cleanPhone(phone) {
@@ -31,6 +32,7 @@ export default function Messages() {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const loadHistory = async () => {
     const { data } = await api.get("/messages");
@@ -46,6 +48,8 @@ export default function Messages() {
   const email = selectedClient?.email || "";
 
   const generate = async () => {
+    setOutput("");
+    setDrawerOpen(true);
     setGenerating(true);
     try {
       const { data } = await api.post("/messages/generate", {
@@ -54,10 +58,19 @@ export default function Messages() {
         user_input_es: userInput,
       });
       setOutput(data.message_en);
-      toast.success("Mensaje generado");
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Error generando");
+      setDrawerOpen(false);
     } finally { setGenerating(false); }
+  };
+
+  // Reopen a saved message in the drawer to send it again.
+  const openHistory = (m) => {
+    setClientId(m.client_id || "");
+    setUserInput(m.user_input_es || "");
+    setOutput(m.message_en || "");
+    setGenerating(false);
+    setDrawerOpen(true);
   };
 
   // Save quietly to history so every sent message is logged.
@@ -159,66 +172,86 @@ export default function Messages() {
         >
           {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-5 h-5 mr-2" /> Generar en inglés</>}
         </Button>
-
-        {output && (
-          <Card className="p-4 rounded-xl border border-blue-200 bg-blue-50/40">
-            <div className="text-xs font-bold uppercase tracking-wider text-blue-900 mb-2">Mensaje en inglés</div>
-            <Textarea value={output} onChange={(e) => setOutput(e.target.value)} className="rounded-xl bg-white min-h-[140px]" />
-
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-4 mb-2">Mandar al cliente</div>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={sendWhatsApp}
-                data-testid="msg-send-whatsapp"
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition tap"
-              >
-                <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-white" /></div>
-                <span className="text-xs font-semibold">WhatsApp</span>
-              </button>
-              <button
-                onClick={sendSMS}
-                disabled={!phone}
-                data-testid="msg-send-sms"
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition tap disabled:opacity-40"
-              >
-                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center"><Smartphone className="w-5 h-5 text-white" /></div>
-                <span className="text-xs font-semibold">Texto (SMS)</span>
-              </button>
-              <button
-                onClick={sendEmail}
-                disabled={!email}
-                data-testid="msg-send-email"
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition tap disabled:opacity-40"
-              >
-                <div className="w-9 h-9 rounded-xl bg-amber-600 flex items-center justify-center"><Mail className="w-5 h-5 text-white" /></div>
-                <span className="text-xs font-semibold">Email</span>
-              </button>
-            </div>
-            {!selectedClient && (
-              <p className="text-[11px] text-slate-400 mt-2">Tip: elige un cliente arriba para mandar directo a su teléfono o email.</p>
-            )}
-
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <Button onClick={copy} variant="outline" className="rounded-xl h-11" data-testid="msg-copy">
-                <Copy className="w-4 h-4 mr-1" /> Copiar
-              </Button>
-              <Button onClick={save} disabled={saving} variant="outline" className="rounded-xl h-11" data-testid="msg-save">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Guardar</>}
-              </Button>
-            </div>
-          </Card>
-        )}
       </Card>
+
+      {/* Slide-up drawer: shows "Preparando tu mensaje…" then the message + send options with room to read */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent data-testid="message-drawer" className="max-h-[92vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-blue-700" />
+              {generating ? "Preparando tu mensaje…" : "Tu mensaje (inglés)"}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-lg mx-auto w-full">
+            {generating ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center" data-testid="message-loading">
+                <Loader2 className="w-9 h-9 animate-spin text-blue-700 mb-3" />
+                <p className="text-sm font-semibold text-slate-600">Preparando tu mensaje…</p>
+                <p className="text-xs text-slate-400 mt-1">Un momento ✨</p>
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  data-testid="message-output"
+                  value={output}
+                  onChange={(e) => setOutput(e.target.value)}
+                  className="rounded-xl bg-white min-h-[200px] text-base leading-relaxed"
+                />
+
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-5 mb-2">Mandar al cliente</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <button onClick={sendWhatsApp} data-testid="msg-send-whatsapp"
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition tap">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center"><MessageCircle className="w-6 h-6 text-white" /></div>
+                    <span className="text-sm font-semibold">WhatsApp</span>
+                  </button>
+                  <button onClick={sendSMS} disabled={!phone} data-testid="msg-send-sms"
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition tap disabled:opacity-40">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center"><Smartphone className="w-6 h-6 text-white" /></div>
+                    <span className="text-sm font-semibold">Texto</span>
+                  </button>
+                  <button onClick={sendEmail} disabled={!email} data-testid="msg-send-email"
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition tap disabled:opacity-40">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-600 flex items-center justify-center"><Mail className="w-6 h-6 text-white" /></div>
+                    <span className="text-sm font-semibold">Email</span>
+                  </button>
+                </div>
+                {!selectedClient && (
+                  <p className="text-[11px] text-slate-400 mt-2">Tip: elige un cliente para mandar directo a su teléfono o email.</p>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <Button onClick={copy} variant="outline" className="rounded-xl h-12" data-testid="msg-copy">
+                    <Copy className="w-4 h-4 mr-1" /> Copiar
+                  </Button>
+                  <Button onClick={save} disabled={saving} variant="outline" className="rounded-xl h-12" data-testid="msg-save">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Guardar</>}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {history.length > 0 && (
         <div>
           <h2 className="font-heading text-xl font-bold mb-3">Historial</h2>
           <div className="space-y-2">
             {history.map((m) => (
-              <Card key={m.id} className="card-elevated p-4 border-0 shadow-none">
-                <div className="text-sm whitespace-pre-wrap">{m.message_en}</div>
-                <div className="text-xs text-slate-400 mt-2">{new Date(m.created_at).toLocaleString("es")}</div>
-              </Card>
+              <button
+                key={m.id}
+                onClick={() => openHistory(m)}
+                data-testid={`history-msg-${m.id}`}
+                className="w-full text-left card-elevated p-4 border-0 rounded-xl bg-white hover:bg-slate-50 transition tap"
+              >
+                <div className="text-sm whitespace-pre-wrap line-clamp-3">{m.message_en}</div>
+                <div className="text-xs text-emerald-600 font-semibold mt-2 flex items-center gap-1">
+                  <MessageCircle className="w-3.5 h-3.5" /> Toca para mandar de nuevo
+                </div>
+                <div className="text-xs text-slate-400 mt-1">{new Date(m.created_at).toLocaleString("es")}</div>
+              </button>
             ))}
           </div>
         </div>

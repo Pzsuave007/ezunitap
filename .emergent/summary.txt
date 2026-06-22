@@ -1,54 +1,47 @@
-<analysis><problem_statement>
-SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
-</problem_statement>
+<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
 
 **User's preferred language**: Spanish
 *(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)*
 
 **what currently exists?** 
-A live React/FastAPI/MongoDB application tailored for Latino contractors. Features modular paywalls, AI Spanish voiceovers (ElevenLabs), Marketing Studio with AI image generation, mobile-optimized component layouts (Drawers, Horizontal scrolls), and auto-calculating invoices. The app operates across two domains ( and ). Google Business Profile (GBP) OAuth is fully integrated, currently displaying business performance metrics (Views, Calls, etc.). Invoice UI is mobile-optimized with collapsible bottom sections, and Invoice states follow a logical Draft -> Created -> Sent flow for accurate dashboard metrics. 
+A live React/FastAPI/MongoDB multi-tenant application. Modularized by paywalls (Presencia, Negocio, Marketing). It features a Marketing Studio that renders high-quality branded social media posts entirely server-side via Python (Pillow). It now includes a dedicated Marketing Assistant page () to generate industry-specific post ideas, and an AI Messages generator for client communication.
 
-**Last working item**:
-- **Last item agent was working**: Redesigning  to be mobile-first. The user complained that the client profile had over 30 buttons, making it a nightmare on mobile. The agent utilized the  to create a Swiss/High-Contrast mobile-first blueprint () and implemented a cleaner UI that hides the 5 creation actions inside a single + Nuevo Floating Action Drawer.
-- **Status**: IN PROGRESS (Code changes and tests are complete, but the session ended before the agent could call the  tool, update the user, and ask for the next task).
-- **Agent Testing Done**: Y
-- **Which testing method agent to use?**: Frontend screenshot tool (Already verified).
+**Last working item**: 
+- **Last item agent was working**: Refactoring the AI Messages UI (). The agent moved the generated AI message from a small inline card to a spacious slide-up , added direct share buttons (WhatsApp/SMS/Email) similar to the invoice flow, and updated the backend ( and ) to sign the message with the user's actual name ( or ) instead of a hardcoded -Alex.
+- **Status**: USER VERIFICATION PENDING
+- **Agent Testing Done**: N (User explicitly requested to skip the testing agent for this change to save credits).
+- **Which testing method agent to use?**: Manual frontend testing by user / Screenshot tool if further UI adjustments are needed.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Wrap up  mobile UX refactor (P0)
-     - Attempted fixes: The refactor is fully coded and verified via screenshot. 
-     - Next debug checklist: Inform the user that the Client Profile has been cleaned up and is ready for them to test, then ask for the next task.
-     - Why fix this issue and what will be achieved with the fix?: Drastically reduces cognitive load and button clutter for mobile users.
-     - Status: TESTING PENDING / USER VERIFICATION PENDING
+  Issue 1: Google My Business Legacy API Error 110002 (P3)
+     - Attempted fixes: Investigated Google API 403 error. Confirmed it's an authorization issue on Google's end.
+     - Next debug checklist: Google must manually whitelist the project  for the legacy  API.
+     - Why fix this issue and what will be achieved with the fix?: Unblocks AI direct publishing to Google Business.
+     - Status: BLOCKED (Waiting on Google API approval; user informed).
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: NA (Already self-tested).
-     - Blocked on other issue: None.
+     - Should Test frontend/backend/both after fix?: Both (when unblocked)
+     - Blocked on other issue: Google API access
 
-  Issue 2: Google My Business Legacy API Error 110002 (P3)
-     - Attempted fixes: Agent wrote the backend code for AI Review Replies and GMB Image Posts. However, production returns a .
-     - Next debug checklist: None at the moment. Google must manually whitelist the project  for the legacy My Business API.
-     - Why fix this issue and what will be achieved with the fix?: Unblocks AI review replies and automated posts.
-     - Status: BLOCKED (Waiting on Google).
-     - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Both (when unblocked).
-     - Blocked on other issue: Google API access.
-
-  Issue 3:  needs refactoring (P3)
-     - Attempted fixes: None.
-     - Next debug checklist: Break down  (>6100 lines) into modular routers.
-     - Why fix this issue and what will be achieved with the fix?: Code maintainability.
-     - Status: NOT STARTED
-
-  Issue 4: Duplicate DB records (Clients/Users) (P3)
-     - Attempted fixes: None.
+  Issue 2: Duplicate DB records (Clients/Users) (P3)
+     - Attempted fixes: None
      - Next debug checklist: Search MongoDB  and  collections. Write and run a deduplication python script.
+     - Why fix this issue and what will be achieved with the fix?: Clean up database.
      - Status: NOT STARTED
+     - Is recurring issue?: N
+     - Should Test frontend/backend/both after fix?: Backend
+     - Blocked on other issue: None
 
-**In progress Task List**: 
-None
+**In progress Task List**:
+  Task 1: Add 📲 Enviarme esto por WhatsApp CTA to 
+     - Where to resume: Modify the final closing screens of the  branches to include a WhatsApp button. 
+     - What will be achieved with this?: Captures hot lead phone numbers by texting them the sample they just viewed.
+     - Status: NOT STARTED (Skipped again due to user pivoting to Marketing Assistant & Reel features).
+     - Should Test frontend/backend/both after fix?: Frontend
+     - Blocked on something: None
 
 **Upcoming and Future Tasks**
+- **P0**: Add Video Upload support to Reel Builder (MVP: Allow 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding/text using the existing FFmpeg logic). *Discussed and agreed upon with user.*
 - **P1**: In-app referral program (Invita un compa → ambos reciben 1 mes gratis) with unique sharing links.
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
@@ -58,101 +51,101 @@ None
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - **P3**: Live preview for the Reel Builder (mini player showing changes before generation).
 - **P3**: Add a drag-and-drop or reordering UI in the Smart Card admin panel for the Recent work photos.
+- **P3**: Break down  (>6200 lines) into modular routers.
 - **Future**: Stripe webhook implementation for bulletproof invoice payment marking.
-- **Future**: GBP Profile Editor (Edit hours, descriptions via AI). Put on hold until the app passes Google Verification to allow end-clients to connect their profiles.
 
 **Completed work in this session**
-- iOS Safari Decimal Edit Fix (DONE): Ensured all numeric inputs in  use  +  and clean strings.
-- AI Invoice Prompt Logic (DONE): Updated  to itemize line items day-by-day exactly as the user inputs them, rather than grouping by week.
-- GBP OAuth Deployment Fixes (DONE): Added GBP keys to >>> [user=ezunitap] fix.sh starting.... Fixed missing  directory in git by enforcing a relative build ().
-- GBP Python 3.9 Compatibility (DONE): Removed  syntax in  and replaced it with  to prevent production 404s.
-- GBP Account Pagination (DONE): Updated  to loop through all pages to retrieve >10 locations (Growth Ally added).
-- GBP Performance Metrics Panel (DONE): Implemented the Business Profile Performance API to show Views, Calls, and Clicks in .
-- Mobile UX for Invoice Detail (DONE): Moved Invoice line item editor to the top; made Payments, Jobs, and Payment Requests collapsible sections at the bottom.
-- Invoice Draft/Created Workflow (DONE): Replaced instant Send/Download buttons with a Crear Invoice button. Transitions status from  to  so it accurately counts in dashboard metrics before sending.
-- Mobile UX for Client Detail (DONE): Replaced 30+ buttons with a clean Swiss UI and a bottom + Nuevo drawer.
+- Marketing Studio Legibility: Replaced standard text stroke with an elegant Gaussian blur drop-shadow (Halo effect) on all image-overlay templates and review stars. (DONE)
+- Marketing Studio Customization Panel: Integrated design options into a collapsible  to save screen space. (DONE)
+- Marketing Idea Assistant (): Built a new welcome screen generating 3 dynamic, industry-specific post ideas inside a slide-up drawer, complete with photo tips and AI image prompts. (DONE)
+- Social Studio UX Fixes: Exposed Post Language selector to main view; fixed bug where AI image prompts were lost when switching back to Post mode. (DONE)
+- Pillow Rendering Fixes: Updated 8 backend templates () to properly render subtitles that were previously missing. (DONE)
+- AI Messages Refactor: Migrated AI message output to a Drawer, added WhatsApp/SMS/Email quick-send buttons, and fixed AI signature to use the account owner's real name. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--  monolith (6100+ lines).
-- Duplicate DB records requiring cleanup script.
-- GMB Legacy API 403 Error (Requires Google Whitelisting).
+-  monolith (6200+ lines) is hard to maintain and needs refactoring.
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs.
-- Recurrence count: 2
-- Status: RESOLVED
-- Note: Production uses a single backend for two domains ( and ). You **MUST** compile the frontend with a blank relative URL (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) so that  calls resolve relative to whatever domain the user is visiting. If you don't track the  directory in git via , the  script will fail.
-- Note 2: Production runs **Python 3.9**. Do not use Python 3.10+ typing syntax like  in backend files, it will crash routes silently. Use .
+- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs. 
+- Recurrence count: 1
+- Status: RESOLVED (Agent correctly built frontend with relative paths by emptying  and forcing . User deploys via ). Ensure this process is ALWAYS followed.
 
 **Code Architecture**
-- Frontend: React SPA (), TailwindCSS, Shadcn UI.
+- Frontend: React SPA (), TailwindCSS, Shadcn UI, Vaul (Drawers).
 - Backend: FastAPI (), MongoDB.
-- Scripts:  (Main deployment), >>> [user=ezunitap] fix.sh starting... (Env variable injector).
+- Scripts:  (Main deployment).
 
 **Key Technical Concepts**
-- **Mobile-first UI UX**: Use Shadcn Drawers instead of Modals on mobile. Consolidate repetitive action buttons into Floating Action Drawers to preserve screen real estate.
-- **GBP Integration**: Uses OAuth. The My Business Account Management and Business Information APIs work perfectly. The Legacy Google My Business API (needed for Reviews and Posts) is currently giving a 403 and cannot be used until Google manually enables it.
+- **Pillow Image Rendering**: Marketing Studio templates are drawn server-side using the Python Pillow library ().
+- **FFmpeg Reels**: The current Reel Builder uses  to call  to stitch photos with zoom/pan effects. This infrastructure is ready to accept video clips in future tasks.
+- **Adaptive UI**: Frontend relies heavily on Shadcn/Vaul  and  components for a mobile-first app-like feel.
 
 **key DB schema**
-- :  goes from  ->  (now counts in dashboard) ->  -> .
-- : Houses client information.
+- :  used for message signing.
+- :  dictates the specific AI topics in the Marketing Idea Assistant.
 
 **changes in tech stack**
-- Added  as a persistent blueprint guide.
+- None.
 
 **All files of reference**
--  (UX logic for Draft -> Created, Collapsible panels).
--  (Heavily refactored to remove button clutter).
--  (Contains OAuth callbacks, pagination, and Performance Metrics).
--  (UI for connecting GBP and viewing metrics).
--  (Updated  to respect daily line items).
+-  (New Idea Assistant welcome page).
+-  (Updated with collapsible panel and state carry-over).
+-  (Updated text rendering logic for Gaussian blur drop shadow and subtitles).
+-  (Refactored to use Drawer and quick-send buttons).
+-  (Updated to ensure sender name is correct and idea topics don't invent niches).
+-  (Updated AI endpoints).
 
 **Areas that need refactoring**
-- 
+-  (Over 6200 lines).
 
 **key api endpoints**
--  (Paginated locations)
--  (Fetches daily metrics array)
--  (Updates draft/created/sent).
+-  (Generates 3 tailored ideas based on ).
+-  (Generates client messages).
 
 **Critical Info for New Agent**
-- **Production Python Version**: PRODUCTION RUNS PYTHON 3.9. Never use , always use .
-- **Deployments**: Ensure  is actually tracked in git () and compiled with relative paths, otherwise  will push a broken or non-existent build.
-- **GBP Restrictions**: Do NOT attempt to debug the  error for Reviews/Posts. This is a known Google whitelist restriction, not a code issue. Work around it.
-- **Auth**: Always test frontend UI using the designated admin account.
+- **Production Python Version**: Production runs Python 3.9. Never use , always use .
+- **Deployments**: Ensure  is tracked in git () and compiled with relative paths (No absolute URLs in  during build). The user handles deployment by running  on their server.
+- **User Preference (Cost saving)**: The user explicitly requested NOT to use the  for minor frontend UI fixes at the end of the session to save their credits. Rely on self-testing (screenshots/curl) unless it's a major multi-endpoint feature.
 
 **documents and test reports created in this job**
--  (Mobile UX guidelines created by design agent).
+-  through 
+-  (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-- User requested to redesign the Invoice mobile UX because the top sections (Payments, Jobs) were hiding the actual invoice editor.
-- Agent moved the Invoice editor to the top and made the secondary sections collapsible bottom cards.
-- User noted that invoices shouldn't instantly show Send/Download. They should stay as Drafts until a Create Invoice button is clicked, after which they count on the dashboard.
-- Agent modified the DB status pipeline ( -> ) and updated the dashboard metric aggregations.
-- User asked to fix the  page next, stating it has like 30 buttons and is highly confusing on mobile.
-- Agent called the design agent, generated a clean UX blueprint, and implemented a + Nuevo Drawer in  to hide the clutter.
-- *Pending Human Action*: The agent verified the Client Detail page via screenshot but ran out of time to . Start by notifying the user that the Client Profile page is now beautifully clean and ready for them to deploy/test, then ask what to tackle next (like the P1 Referral Program).
+- User requested gradient drop shadow instead of harsh text stroke.
+- Agent implemented Gaussian blur halo effect.
+- User requested Customization panel be made collapsible to save space.
+- Agent implemented Vaul Drawer/Collapsible.
+- User encountered Google Business API error 110002; Agent explained it's a Google Cloud permission block.
+- User requested an Idea Assistant welcome page (Qué vas a postear hoy?).
+- Agent implemented it. User refined it (requested bottom Drawer, exactly 3 ideas, and industry-specific topics).
+- User noted missing subtitles on some generated images. Agent audited and fixed 8 Pillow templates.
+- User asked about video support in Reels. Agent explained FFmpeg supports it, and they agreed on an MVP (1 clip max 5s) to be built *after* current changes are deployed.
+- User requested fixes to the  UI (larger Drawer, WhatsApp/SMS send buttons, fix -Alex hardcoded signature).
+- Agent implemented all Messages fixes.
+- *Pending Human Action*: The user is likely verifying the latest  deploy on their production server. Stand by to confirm if it works, and if so, propose starting the **P0 Video Upload for Reels** task.
 
 **Project Health Check:**
-Healthy (Production and Preview parity maintained).
+Healthy
 
 **3rd Party Integrations**
 - Stripe (Payments & Connect) — requires User API Key.
 - Meta / Facebook Pixel — requires User ID.
 - ElevenLabs (TTS Voiceovers) — requires User API Key.
-- Google Business Profile (OAuth) — requires User API Key.
+- Google Business Profile (OAuth) — requires User API Key (Currently blocked by Google API permissions).
 - OpenAI GPT-5.2 (Text/Vision Gen) — uses Emergent LLM Key.
 - Gemini 3.1 Flash Image Preview — uses Emergent LLM Key.
 
 **Testing status**
-- Testing agent used after significant changes: NO (Self-tested via bash/screenshots).
+- Testing agent used after significant changes: YES (but disabled for the very last UI tweak per user request).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None
+- Test files created:  through 
 - Known regressions: None
 
 **Credentials to test flow:**
-Admin:  / 
+Admin (Super-Admin):  / 
+Card-Only Test:  / 
+Marketing-Only Test:  / 
 
 **What agent forgot to execute**
-The agent completely refactored  based on the design agent's blueprint and verified it via screenshot, but did not call the  tool or inform the user. The next agent should immediately tell the user that the Client page has been decluttered and is ready for deploy, and subsequently ask to move onto the next P1 task.</analysis>
+The agent suggested adding a 📲 Enviarme esto por WhatsApp button to the  flow in previous sessions, but it continues to be skipped due to the user driving focus entirely toward Marketing Studio features. Keep it in the backlog.</analysis>
