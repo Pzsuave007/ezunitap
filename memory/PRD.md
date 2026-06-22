@@ -15,6 +15,17 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jun 2026 — Marketing Studio: Asistente de Ideas + legibilidad + Mensajes [LISTO, probado iter 25-30; pendiente deploy]
+- **Sombra automática elegante** (halo difuso, no stroke) en diseños con texto sobre foto (`social_service.py` `_shadow_lines`/`_draw_text`, `_STYLE`, `_OVERLAY_TEMPLATES`, default "medium"). Símbolos (estrellas) también con sombra (`_shape_shadow`).
+- **Subtítulo en los 20 diseños**: se agregó render del subheadline a before_after, bold_bar, review_5star, framed_pro, split_diagonal, seasonal, duo_grid, clean_band.
+- **Panel "Personaliza el diseño"** colapsable (Collapsible) en `SocialStudio.js`; rerender acepta style/colores/labels (`server.py` rerender_social_post + SocialStyleIn).
+- **Página de bienvenida `/marketing/inicio`** (`MarketingStart.js`): asistente de ideas. Temas DINÁMICOS por industria (`GET /social/idea-topics`, `ai_service.generate_idea_topics`); si no hay industria → selector que guarda vía `POST /social/industry` (business_type en card primaria). Ideas con tip de foto + prompt imagen (`generate_post_ideas` ampliado, count 3). Guardrail: NO inventar nichos de clientes no listados. Popup drawer "Preparando ideas…".
+- Idea→Crear imagen IA conserva el brief (param `brief` en URL ai mode); **Idioma del post** visible en el form principal (sacado del drawer avanzado).
+- **Mensajes AI** (`Messages.js`): después de generar, botones **Mandar** WhatsApp/SMS/Email (URL schemes, prefill con el texto + tel/email del cliente), auto-guarda en historial. Guardar/Copiar secundarios.
+- Nav "Marketing" → `/marketing/inicio`. Build recompilado (rutas relativas) y staged.
+- PENDIENTE backlog usuario: **subir videos a Reels** (MVP: 1 clip ≤5s, normalizar con ffmpeg en cola, chunked upload). ffmpeg ya es el motor de reels.
+
+
 ## ✅ Jun 2026 — MARKETING STUDIO: Panel de Personalización + Legibilidad [COMPLETO + PROBADO 100% iter_25]
 Texto de los posts IA a veces ilegible → se agregó control granular sobre el diseño generado (sin gastar créditos IA).
 - Backend `social_service.py`: `_draw_lines`/`_draw_text` aplican contorno (stroke) auto según luminancia. `_STYLE` global (legibility: none/soft/medium/strong; text_position; stroke_color) seteado en `render_post`. `_render_showcase` y `_render_center_stage` respetan `text_position` (arriba/centro/abajo). `build_brand` acepta `style`, `label_before`, `label_after`, `promo_label_override`. Default legibility = soft (mejora todos los posts).
