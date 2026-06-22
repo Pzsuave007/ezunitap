@@ -694,7 +694,11 @@ export default function Landing() {
             <span className="font-heading font-bold text-slate-900">UniTech</span>
             <span className="text-slate-400">— Tecnología para tu negocio · QR + NFC</span>
           </div>
-          <div className="text-xs">© {new Date().getFullYear()} UniTech. Todos los derechos reservados.</div>
+          <div className="flex items-center gap-4 text-xs">
+            <Link to="/privacidad" className="hover:text-slate-900 transition-colors" data-testid="footer-privacy-link">Privacidad</Link>
+            <Link to="/terminos" className="hover:text-slate-900 transition-colors" data-testid="footer-terms-link">Términos</Link>
+            <span>© {new Date().getFullYear()} UniTech. Todos los derechos reservados.</span>
+          </div>
         </div>
       </footer>
     </div>

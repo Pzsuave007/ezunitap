@@ -29,7 +29,7 @@ function PageShell({ icon: Icon, title, children }) {
           {children}
         </div>
         <div className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500">
-          Last updated: May 2026 · UniTech by Uni2 Marketing Agency LLC ·
+          Last updated: June 2026 · UniTech by Uni2 Marketing Agency LLC ·
           <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline ml-1">
             support@ezunitech.com
           </a>
@@ -213,18 +213,64 @@ export function PrivacyPage() {
         provider unless you explicitly include it in the prompt.
       </p>
 
-      <h2>4. Third-Party Services</h2>
+      <h2>4. Google User Data (Google Business Profile)</h2>
+      <p>
+        If you choose to connect your Google Business Profile to UniTech, we
+        request the <code>https://www.googleapis.com/auth/business.manage</code>{" "}
+        scope through Google OAuth. This connection lets you, the business
+        owner, manage your own Google Business Profile from inside UniTech.
+      </p>
+      <ul>
+        <li>
+          <strong>What we access:</strong> your Google Business Profile account
+          and location details, your customer reviews, and the ability to
+          create business posts/updates — only for the account you explicitly
+          authorize.
+        </li>
+        <li>
+          <strong>How we use it:</strong> to display your reviews inside
+          UniTech, help you reply to reviews, and publish business posts on
+          your behalf when you ask us to. We act only at your direction.
+        </li>
+        <li>
+          <strong>Storage:</strong> we securely store the OAuth tokens needed
+          to keep your connection active. You can disconnect at any time, which
+          revokes our access and deletes the stored tokens.
+        </li>
+        <li>
+          <strong>Sharing:</strong> we never sell, rent, or transfer your
+          Google data, and we never use it for advertising or to train AI/ML
+          models.
+        </li>
+      </ul>
+      <p>
+        UniTech&apos;s use and transfer of information received from Google
+        APIs to any other app will adhere to the{" "}
+        <a
+          href="https://developers.google.com/terms/api-services-user-data-policy"
+          target="_blank"
+          rel="noreferrer"
+          className="text-emerald-700 hover:underline"
+        >
+          Google API Services User Data Policy
+        </a>
+        , including the Limited Use requirements.
+      </p>
+
+      <h2>5. Third-Party Services</h2>
       <ul>
         <li><strong>Stripe</strong> — payments and subscription billing</li>
         <li><strong>OpenAI</strong> — AI text generation</li>
         <li><strong>Resend</strong> — transactional email delivery</li>
+        <li><strong>Google</strong> — Google Business Profile connection (only if you connect it)</li>
+        <li><strong>Meta (Facebook) Pixel</strong> — measuring ad/marketing conversions on our public marketing pages</li>
       </ul>
       <p>
         Each provider has its own privacy policy. We only share what is
         necessary to provide the Service.
       </p>
 
-      <h2>5. Data Retention</h2>
+      <h2>6. Data Retention</h2>
       <p>
         We retain your account data for as long as your account is active.
         If you delete your account, we delete your business data within 30
@@ -232,7 +278,7 @@ export function PrivacyPage() {
         records).
       </p>
 
-      <h2>6. Your Rights</h2>
+      <h2>7. Your Rights</h2>
       <p>
         You can access, correct, export, or delete your data at any time
         from Settings, or by emailing{" "}
@@ -242,33 +288,36 @@ export function PrivacyPage() {
         .
       </p>
 
-      <h2>7. Security</h2>
+      <h2>8. Security</h2>
       <p>
         We use industry-standard security: HTTPS everywhere, hashed
         passwords, encrypted backups, and least-privilege access controls.
         No system is 100% secure, but we take this seriously.
       </p>
 
-      <h2>8. Cookies</h2>
+      <h2>9. Cookies &amp; Tracking</h2>
       <p>
-        We use a single first-party cookie / localStorage entry to keep you
-        logged in. We do not use third-party tracking or advertising
-        cookies.
+        We use a first-party cookie / localStorage entry to keep you logged in.
+        On our public marketing pages (such as our landing and demo pages) we
+        also load the <strong>Meta (Facebook) Pixel</strong> to measure
+        advertising and marketing conversions. The Pixel is not loaded inside
+        the logged-in app, and we do not use it with your Google or client
+        data.
       </p>
 
-      <h2>9. Children</h2>
+      <h2>10. Children</h2>
       <p>
         The Service is not directed to anyone under 18. We do not knowingly
         collect data from minors.
       </p>
 
-      <h2>10. Changes to This Policy</h2>
+      <h2>11. Changes to This Policy</h2>
       <p>
         We may update this policy. Material changes will be announced
         in-app or by email.
       </p>
 
-      <h2>11. Contact</h2>
+      <h2>12. Contact</h2>
       <p>
         Privacy questions:{" "}
         <a href="mailto:support@ezunitech.com" className="text-emerald-700 hover:underline">
