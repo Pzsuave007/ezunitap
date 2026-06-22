@@ -158,5 +158,106 @@
     "upsellMarketingDesc": "AI posts and reels for your social media",
     "addModule": "Add",
     "gbpConnectError": "Could not start the connection with Google."
+  },
+  "clients": {
+    "title": "Clients",
+    "count_one": "{{count}} client",
+    "count_other": "{{count}} clients",
+    "newClient": "New client",
+    "search": "Search client...",
+    "empty": "No clients yet. Add your first one.",
+    "nameRequired": "Name is required",
+    "added": "Client added",
+    "error": "Error",
+    "name": "Name",
+    "company": "Business name (optional)",
+    "companyHint": "If filled, the invoice will be in the business name.",
+    "companyPlaceholder": "e.g. Lopez Construction LLC",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "jobType": "Job type",
+    "jobTypePlaceholder": "e.g. Roofing, Drywall, Painting...",
+    "notes": "Internal notes"
+  },
+  "quotes": {
+    "title": "Quotes",
+    "total": "{{count}} total",
+    "newAI": "New with AI",
+    "all": "All",
+    "empty": "No quotes. Create one with AI in seconds.",
+    "create": "Create quote",
+    "deleteConfirm": "Delete quote {{number}}? This can't be undone.",
+    "deleted": "Quote deleted",
+    "deleteError": "Delete failed",
+    "deleteAria": "Delete quote",
+    "client": "Client",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "approved": "Approved",
+      "declined": "Declined",
+      "converted": "Converted"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "total": "{{count}} total",
+    "newInvoice": "New invoice",
+    "empty": "No invoices. Convert a quote or create a new one.",
+    "create": "Create invoice",
+    "deleteConfirm": "Delete invoice {{number}}? This can't be undone.",
+    "deleted": "Invoice deleted",
+    "deleteError": "Delete failed",
+    "deleteAria": "Delete invoice",
+    "client": "Client",
+    "status": {
+      "draft": "Draft",
+      "created": "Created",
+      "sent": "Sent",
+      "paid": "Paid",
+      "partial": "Partial",
+      "overdue": "Overdue"
+    }
+  },
+  "agreements": {
+    "title": "Agreements",
+    "subtitle": "{{count}} total · legally binding digital signatures",
+    "newAI": "New with AI",
+    "all": "All",
+    "empty": "No agreements yet. Generate one with AI in seconds — it protects you legally against disputes.",
+    "createAI": "Create with AI",
+    "deleteConfirm": "Delete agreement {{number}}?",
+    "deleted": "Agreement deleted",
+    "deleteError": "Delete failed",
+    "deleteAria": "Delete",
+    "client": "Client",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "signed": "Signed",
+      "declined": "Declined"
+    }
+  },
+  "jobs": {
+    "status": {
+      "new_lead": "New Lead",
+      "estimate_sent": "Quote sent",
+      "approved": "Approved",
+      "scheduled": "Scheduled",
+      "in_progress": "In progress",
+      "waiting_payment": "Awaiting payment",
+      "completed": "Completed"
+    }
+  },
+  "tour": {
+    "howItWorks": "How it works?",
+    "viewTour": "View this section's tour",
+    "stepOf": "Step {{n}} of {{total}}",
+    "close": "Close tour",
+    "back": "Back",
+    "skip": "Skip tour",
+    "done": "Done!",
+    "next": "Next"
   }
 }

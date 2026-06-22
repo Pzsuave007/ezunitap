@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import TourButton from "@/components/TourButton";
 
 export default function Quotes() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [quotes, setQuotes] = useState([]);
   const [clients, setClients] = useState({});
   const [filter, setFilter] = useState("all");
@@ -28,13 +30,13 @@ export default function Quotes() {
 
   const deleteQuote = async (e, q) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Borrar el quote ${q.number}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(t("quotes.deleteConfirm", { number: q.number }))) return;
     try {
       await api.delete(`/quotes/${q.id}`);
       setQuotes((qs) => qs.filter((x) => x.id !== q.id));
-      toast.success("Quote borrado");
+      toast.success(t("quotes.deleted"));
     } catch {
-      toast.error("Error al borrar");
+      toast.error(t("quotes.deleteError"));
     }
   };
 
@@ -43,8 +45,8 @@ export default function Quotes() {
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="font-heading text-3xl font-bold tracking-tight">Quotes</h1>
-            <p className="text-slate-500 mt-1">{quotes.length} en total</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">{t("quotes.title")}</h1>
+            <p className="text-slate-500 mt-1">{t("quotes.total", { count: quotes.length })}</p>
           </div>
           <TourButton tourKey="quotes" />
         </div>
@@ -53,7 +55,7 @@ export default function Quotes() {
           onClick={() => navigate("/quotes/nuevo?ai=1")}
           className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
         >
-          <Sparkles className="w-4 h-4 mr-1" /> Nuevo con AI
+          <Sparkles className="w-4 h-4 mr-1" /> {t("quotes.newAI")}
         </Button>
       </div>
 
@@ -67,7 +69,7 @@ export default function Quotes() {
               filter === s ? "bg-blue-900 text-white" : "bg-white border border-slate-200 text-slate-700"
             }`}
           >
-            {s === "all" ? "Todos" : labelFor(s)}
+            {s === "all" ? t("quotes.all") : t(`quotes.status.${s}`)}
           </button>
         ))}
       </div>
@@ -75,9 +77,9 @@ export default function Quotes() {
       {list.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 mb-4">No hay quotes. Crea uno con AI en segundos.</p>
+          <p className="text-slate-500 mb-4">{t("quotes.empty")}</p>
           <Button onClick={() => navigate("/quotes/nuevo?ai=1")} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-            <Sparkles className="w-4 h-4 mr-1" /> Crear quote
+            <Sparkles className="w-4 h-4 mr-1" /> {t("quotes.create")}
           </Button>
         </Card>
       ) : (
@@ -97,14 +99,14 @@ export default function Quotes() {
                   </div>
                   <div className="font-semibold truncate">{q.job_title}</div>
                   <div className="text-xs text-slate-500 mt-0.5">
-                    {clients[q.client_id]?.name || "Cliente"} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {clients[q.client_id]?.name || t("quotes.client")} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     data-testid={`quote-delete-${q.id}`}
                     onClick={(e) => deleteQuote(e, q)}
-                    aria-label="Borrar quote"
+                    aria-label={t("quotes.deleteAria")}
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -119,8 +121,3 @@ export default function Quotes() {
     </div>
   );
 }
-
-const labelFor = (s) => ({
-  draft: "Borrador", sent: "Enviado", approved: "Aprobado",
-  declined: "Rechazado", converted: "Convertido",
-}[s] || s);

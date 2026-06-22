@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Search, Phone, Mail, MapPin, ChevronRight, Loader2, Building2 } from "lucide-react";
+import { Plus, Search, Phone, MapPin, ChevronRight, Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
@@ -15,6 +16,7 @@ const EMPTY = { name: "", company: "", phone: "", email: "", address: "", job_ty
 
 export default function Clients() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState([]);
   const [filter, setFilter] = useState("");
@@ -39,15 +41,15 @@ export default function Clients() {
 
   const save = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return toast.error("El nombre es requerido");
+    if (!form.name.trim()) return toast.error(t("clients.nameRequired"));
     setSaving(true);
     try {
       await api.post("/clients", form);
-      toast.success("Cliente agregado");
+      toast.success(t("clients.added"));
       close();
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("clients.error"));
     } finally {
       setSaving(false);
     }
@@ -64,8 +66,8 @@ export default function Clients() {
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="font-heading text-3xl font-bold tracking-tight">Clientes</h1>
-            <p className="text-slate-500 mt-1">{clients.length} cliente{clients.length !== 1 ? "s" : ""}</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">{t("clients.title")}</h1>
+            <p className="text-slate-500 mt-1">{t("clients.count", { count: clients.length })}</p>
           </div>
           <TourButton tourKey="clients" />
         </div>
@@ -74,7 +76,7 @@ export default function Clients() {
           onClick={() => setOpen(true)}
           className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
         >
-          <Plus className="w-4 h-4 mr-1" /> Nuevo cliente
+          <Plus className="w-4 h-4 mr-1" /> {t("clients.newClient")}
         </Button>
       </div>
 
@@ -84,14 +86,14 @@ export default function Clients() {
           data-testid="search-clients"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Buscar cliente..."
+          placeholder={t("clients.search")}
           className="h-12 pl-10 rounded-xl"
         />
       </div>
 
       {filtered.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
-          <p className="text-slate-500">No hay clientes. Agrega el primero.</p>
+          <p className="text-slate-500">{t("clients.empty")}</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -122,49 +124,49 @@ export default function Clients() {
       <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
         <DialogContent className="rounded-2xl max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-heading">Nuevo cliente</DialogTitle>
+            <DialogTitle className="font-heading">{t("clients.newClient")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={save} className="space-y-3">
             <div>
-              <Label>Nombre *</Label>
+              <Label>{t("clients.name")} *</Label>
               <Input data-testid="cli-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl mt-1.5" required />
             </div>
             <div>
-              <Label>Nombre del negocio (opcional)</Label>
-              <Input data-testid="cli-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Construcciones López LLC" />
-              <p className="text-[11px] text-slate-500 mt-1">Si lo llenas, el invoice se hará a nombre del negocio.</p>
+              <Label>{t("clients.company")}</Label>
+              <Input data-testid="cli-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("clients.companyPlaceholder")} />
+              <p className="text-[11px] text-slate-500 mt-1">{t("clients.companyHint")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Teléfono</Label>
+                <Label>{t("clients.phone")}</Label>
                 <Input data-testid="cli-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl mt-1.5" />
               </div>
               <div>
-                <Label>Email</Label>
+                <Label>{t("clients.email")}</Label>
                 <Input data-testid="cli-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-12 rounded-xl mt-1.5" />
               </div>
             </div>
             <div>
-              <Label>Dirección</Label>
+              <Label>{t("clients.address")}</Label>
               <Input data-testid="cli-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-12 rounded-xl mt-1.5" />
             </div>
             <div>
-              <Label>Tipo de trabajo</Label>
-              <Input data-testid="cli-jobtype" value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Roofing, Drywall, Painting..." />
+              <Label>{t("clients.jobType")}</Label>
+              <Input data-testid="cli-jobtype" value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("clients.jobTypePlaceholder")} />
             </div>
             <div>
-              <Label>Notas internas (español)</Label>
+              <Label>{t("clients.notes")}</Label>
               <Textarea data-testid="cli-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl mt-1.5 min-h-[80px]" />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={close} className="rounded-xl">Cancelar</Button>
+              <Button type="button" variant="outline" onClick={close} className="rounded-xl">{t("common.cancel")}</Button>
               <Button
                 type="submit"
                 data-testid="cli-save"
                 disabled={saving}
                 className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
               </Button>
             </DialogFooter>
           </form>

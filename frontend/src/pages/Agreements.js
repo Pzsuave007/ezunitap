@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
 const STATUSES = ["draft", "sent", "signed", "declined"];
-const STATUS_LABEL = { draft: "Borrador", sent: "Enviado", signed: "Firmado", declined: "Rechazado" };
 const STATUS_STYLES = {
   draft: "bg-slate-100 text-slate-700",
   sent: "bg-blue-100 text-blue-800",
@@ -19,6 +19,7 @@ const STATUS_ICON = { draft: Clock, sent: Clock, signed: CheckCircle2, declined:
 
 export default function Agreements() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [clients, setClients] = useState({});
   const [filter, setFilter] = useState("all");
@@ -41,13 +42,13 @@ export default function Agreements() {
 
   const remove = async (e, a) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Borrar el contrato ${a.number}?`)) return;
+    if (!window.confirm(t("agreements.deleteConfirm", { number: a.number }))) return;
     try {
       await api.delete(`/agreements/${a.id}`);
       setList((xs) => xs.filter((x) => x.id !== a.id));
-      toast.success("Contrato borrado");
+      toast.success(t("agreements.deleted"));
     } catch {
-      toast.error("Error al borrar");
+      toast.error(t("agreements.deleteError"));
     }
   };
 
@@ -55,8 +56,8 @@ export default function Agreements() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Contratos</h1>
-          <p className="text-slate-500 mt-1">{list.length} en total · firmas digitales legalmente vinculantes</p>
+          <h1 className="font-heading text-3xl font-bold tracking-tight">{t("agreements.title")}</h1>
+          <p className="text-slate-500 mt-1">{t("agreements.subtitle", { count: list.length })}</p>
         </div>
         <div className="flex items-center gap-2">
           <TourButton tourKey="agreements" />
@@ -65,7 +66,7 @@ export default function Agreements() {
             onClick={() => navigate("/contratos/nuevo")}
             className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5"
           >
-            <Plus className="w-4 h-4 mr-1" /> Nuevo con AI
+            <Plus className="w-4 h-4 mr-1" /> {t("agreements.newAI")}
           </Button>
         </div>
       </div>
@@ -82,7 +83,7 @@ export default function Agreements() {
                 : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
             }`}
           >
-            {s === "all" ? "Todos" : STATUS_LABEL[s]}
+            {s === "all" ? t("agreements.all") : t(`agreements.status.${s}`)}
           </button>
         ))}
       </div>
@@ -90,15 +91,13 @@ export default function Agreements() {
       {filtered.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <FileSignature className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm mb-4">
-            Aún no tienes contratos. Genera uno con AI en segundos — te protege legalmente contra disputas.
-          </p>
+          <p className="text-slate-500 text-sm mb-4">{t("agreements.empty")}</p>
           <Button
             data-testid="empty-create-agreement"
             onClick={() => navigate("/contratos/nuevo")}
             className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11"
           >
-            <Plus className="w-4 h-4 mr-2" /> Crear con AI
+            <Plus className="w-4 h-4 mr-2" /> {t("agreements.createAI")}
           </Button>
         </Card>
       ) : (
@@ -117,18 +116,18 @@ export default function Agreements() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold truncate">{a.title}</span>
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${STATUS_STYLES[a.status]}`}>
-                        <Icon className="inline w-3 h-3 mr-1 -mt-0.5" />{STATUS_LABEL[a.status]}
+                        <Icon className="inline w-3 h-3 mr-1 -mt-0.5" />{t(`agreements.status.${a.status}`)}
                       </span>
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {a.number} · {clients[a.client_id]?.name || "Cliente"} · ${(a.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      {a.number} · {clients[a.client_id]?.name || t("agreements.client")} · ${(a.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </div>
                   </div>
                   <button
                     data-testid={`delete-agreement-${a.id}`}
                     onClick={(e) => remove(e, a)}
                     className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                    aria-label="Borrar"
+                    aria-label={t("agreements.deleteAria")}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

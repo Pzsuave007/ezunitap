@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 
 export default function Invoices() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState({});
   const [filter, setFilter] = useState("all");
@@ -25,17 +27,16 @@ export default function Invoices() {
   }, []);
 
   const list = filter === "all" ? invoices : invoices.filter((q) => q.status === filter);
-  const labelFor = (s) => ({ draft: "Borrador", created: "Creado", sent: "Enviado", paid: "Pagado", partial: "Parcial", overdue: "Atrasado" }[s] || s);
 
   const deleteInvoice = async (e, inv) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Borrar el invoice ${inv.number}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(t("invoices.deleteConfirm", { number: inv.number }))) return;
     try {
       await api.delete(`/invoices/${inv.id}`);
       setInvoices((xs) => xs.filter((x) => x.id !== inv.id));
-      toast.success("Invoice borrado");
+      toast.success(t("invoices.deleted"));
     } catch {
-      toast.error("Error al borrar");
+      toast.error(t("invoices.deleteError"));
     }
   };
 
@@ -44,8 +45,8 @@ export default function Invoices() {
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="font-heading text-3xl font-bold tracking-tight">Invoices</h1>
-            <p className="text-slate-500 mt-1">{invoices.length} en total</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">{t("invoices.title")}</h1>
+            <p className="text-slate-500 mt-1">{t("invoices.total", { count: invoices.length })}</p>
           </div>
           <TourButton tourKey="invoices" />
         </div>
@@ -54,7 +55,7 @@ export default function Invoices() {
           onClick={() => navigate("/invoices/nuevo")}
           className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
         >
-          <Plus className="w-4 h-4 mr-1" /> Nuevo invoice
+          <Plus className="w-4 h-4 mr-1" /> {t("invoices.newInvoice")}
         </Button>
       </div>
 
@@ -68,7 +69,7 @@ export default function Invoices() {
               filter === s ? "bg-blue-900 text-white" : "bg-white border border-slate-200 text-slate-700"
             }`}
           >
-            {s === "all" ? "Todos" : labelFor(s)}
+            {s === "all" ? t("invoices.all", { defaultValue: "All" }) : t(`invoices.status.${s}`)}
           </button>
         ))}
       </div>
@@ -76,8 +77,8 @@ export default function Invoices() {
       {list.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <Receipt className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 mb-4">Sin invoices. Convierte un quote o crea uno nuevo.</p>
-          <Button onClick={() => navigate("/invoices/nuevo")} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">Crear invoice</Button>
+          <p className="text-slate-500 mb-4">{t("invoices.empty")}</p>
+          <Button onClick={() => navigate("/invoices/nuevo")} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">{t("invoices.create")}</Button>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -96,14 +97,14 @@ export default function Invoices() {
                   </div>
                   <div className="font-semibold truncate">{q.job_title}</div>
                   <div className="text-xs text-slate-500 mt-0.5">
-                    {clients[q.client_id]?.name || "Cliente"} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {clients[q.client_id]?.name || t("invoices.client")} · ${q.total?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     data-testid={`invoice-delete-${q.id}`}
                     onClick={(e) => deleteInvoice(e, q)}
-                    aria-label="Borrar invoice"
+                    aria-label={t("invoices.deleteAria")}
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />

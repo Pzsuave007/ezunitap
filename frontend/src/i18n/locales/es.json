@@ -158,5 +158,106 @@
     "upsellMarketingDesc": "Posts y reels con IA para tus redes",
     "addModule": "Agregar",
     "gbpConnectError": "No se pudo iniciar la conexión con Google."
+  },
+  "clients": {
+    "title": "Clientes",
+    "count_one": "{{count}} cliente",
+    "count_other": "{{count}} clientes",
+    "newClient": "Nuevo cliente",
+    "search": "Buscar cliente...",
+    "empty": "No hay clientes. Agrega el primero.",
+    "nameRequired": "El nombre es requerido",
+    "added": "Cliente agregado",
+    "error": "Error",
+    "name": "Nombre",
+    "company": "Nombre del negocio (opcional)",
+    "companyHint": "Si lo llenas, el invoice se hará a nombre del negocio.",
+    "companyPlaceholder": "Ej: Construcciones López LLC",
+    "phone": "Teléfono",
+    "email": "Email",
+    "address": "Dirección",
+    "jobType": "Tipo de trabajo",
+    "jobTypePlaceholder": "Ej: Roofing, Drywall, Painting...",
+    "notes": "Notas internas"
+  },
+  "quotes": {
+    "title": "Quotes",
+    "total": "{{count}} en total",
+    "newAI": "Nuevo con AI",
+    "all": "Todos",
+    "empty": "No hay quotes. Crea uno con AI en segundos.",
+    "create": "Crear quote",
+    "deleteConfirm": "¿Borrar el quote {{number}}? Esta acción no se puede deshacer.",
+    "deleted": "Quote borrado",
+    "deleteError": "Error al borrar",
+    "deleteAria": "Borrar quote",
+    "client": "Cliente",
+    "status": {
+      "draft": "Borrador",
+      "sent": "Enviado",
+      "approved": "Aprobado",
+      "declined": "Rechazado",
+      "converted": "Convertido"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "total": "{{count}} en total",
+    "newInvoice": "Nuevo invoice",
+    "empty": "Sin invoices. Convierte un quote o crea uno nuevo.",
+    "create": "Crear invoice",
+    "deleteConfirm": "¿Borrar el invoice {{number}}? Esta acción no se puede deshacer.",
+    "deleted": "Invoice borrado",
+    "deleteError": "Error al borrar",
+    "deleteAria": "Borrar invoice",
+    "client": "Cliente",
+    "status": {
+      "draft": "Borrador",
+      "created": "Creado",
+      "sent": "Enviado",
+      "paid": "Pagado",
+      "partial": "Parcial",
+      "overdue": "Atrasado"
+    }
+  },
+  "agreements": {
+    "title": "Contratos",
+    "subtitle": "{{count}} en total · firmas digitales legalmente vinculantes",
+    "newAI": "Nuevo con AI",
+    "all": "Todos",
+    "empty": "Aún no tienes contratos. Genera uno con AI en segundos — te protege legalmente contra disputas.",
+    "createAI": "Crear con AI",
+    "deleteConfirm": "¿Borrar el contrato {{number}}?",
+    "deleted": "Contrato borrado",
+    "deleteError": "Error al borrar",
+    "deleteAria": "Borrar",
+    "client": "Cliente",
+    "status": {
+      "draft": "Borrador",
+      "sent": "Enviado",
+      "signed": "Firmado",
+      "declined": "Rechazado"
+    }
+  },
+  "jobs": {
+    "status": {
+      "new_lead": "Nuevo Lead",
+      "estimate_sent": "Quote enviado",
+      "approved": "Aprobado",
+      "scheduled": "Agendado",
+      "in_progress": "En progreso",
+      "waiting_payment": "Esperando pago",
+      "completed": "Completado"
+    }
+  },
+  "tour": {
+    "howItWorks": "¿Cómo funciona?",
+    "viewTour": "Ver tour de esta sección",
+    "stepOf": "Paso {{n}} de {{total}}",
+    "close": "Cerrar tour",
+    "back": "Atrás",
+    "skip": "Saltar tour",
+    "done": "¡Listo!",
+    "next": "Siguiente"
   }
 }

@@ -5,6 +5,7 @@
  * highlights the current target. Bulletproof on any page length.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { HelpCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { TOURS } from "@/lib/tours";
 
@@ -61,7 +62,8 @@ function Spotlight({ rect }) {
   );
 }
 
-export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
+export default function TourButton({ tourKey, label }) {
+  const { t } = useTranslation();
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState(null);
@@ -139,10 +141,10 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
         data-testid={`tour-btn-${tourKey}`}
         onClick={start}
         className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors whitespace-nowrap"
-        aria-label="Ver tour de esta sección"
+        aria-label={t("tour.viewTour")}
       >
         <HelpCircle className="w-3.5 h-3.5" />
-        {label}
+        {label || t("tour.howItWorks")}
       </button>
 
       {run && current && (
@@ -168,12 +170,12 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                    Paso {stepIndex + 1} de {total}
+                    {t("tour.stepOf", { n: stepIndex + 1, total })}
                   </span>
                   <button
                     data-testid="custom-tour-close"
                     onClick={close}
-                    aria-label="Cerrar tour"
+                    aria-label={t("tour.close")}
                     className="text-slate-400 hover:text-slate-700 p-1 -mr-1"
                   >
                     <X className="w-4 h-4" />
@@ -193,21 +195,21 @@ export default function TourButton({ tourKey, label = "¿Cómo funciona?" }) {
                     disabled={isFirst}
                     className="inline-flex items-center gap-1 h-10 px-3 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" /> Atrás
+                    <ChevronLeft className="w-4 h-4" /> {t("tour.back")}
                   </button>
                   <button
                     data-testid="custom-tour-skip"
                     onClick={close}
                     className="text-xs text-slate-500 hover:text-slate-800 font-medium"
                   >
-                    Saltar tour
+                    {t("tour.skip")}
                   </button>
                   <button
                     data-testid="custom-tour-next"
                     onClick={next}
                     className="inline-flex items-center gap-1 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm"
                   >
-                    {isLast ? "¡Listo!" : "Siguiente"}
+                    {isLast ? t("tour.done") : t("tour.next")}
                     {!isLast && <ChevronRight className="w-4 h-4" />}
                   </button>
                 </div>
