@@ -1,9 +1,11 @@
 /**
- * Calendar — Mes / Semana / Día / Lista views for jobs.
+ * Calendar — Month / Week / Day / List views for jobs.
  * Mobile-first. Reads from /api/calendar/events which expands recurrences.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,16 +24,18 @@ import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
 const VIEWS = [
-  { key: "day", label: "Hoy" },
-  { key: "week", label: "Semana" },
-  { key: "month", label: "Mes" },
-  { key: "list", label: "Lista" },
+  { key: "day", labelKey: "calendar.vToday" },
+  { key: "week", labelKey: "calendar.vWeek" },
+  { key: "month", labelKey: "calendar.vMonth" },
+  { key: "list", labelKey: "calendar.vList" },
 ];
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-const DAY_LABELS_ES = { mon: "Lu", tue: "Ma", wed: "Mi", thu: "Ju", fri: "Vi", sat: "Sá", sun: "Do" };
-const WEEKDAYS_LONG_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const MONTHS_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+// Jan 1 2024 is a Monday — reference dates for localized weekday short names.
+const DOW_REF = {
+  mon: new Date(2024, 0, 1), tue: new Date(2024, 0, 2), wed: new Date(2024, 0, 3),
+  thu: new Date(2024, 0, 4), fri: new Date(2024, 0, 5), sat: new Date(2024, 0, 6), sun: new Date(2024, 0, 7),
+};
 
 const STATUS_COLORS = {
   new_lead: { bg: "#FEF3C7", text: "#92400E", dot: "#F59E0B" },
@@ -42,12 +46,12 @@ const STATUS_COLORS = {
   waiting_payment: { bg: "#FFEDD5", text: "#9A3412", dot: "#F97316" },
   completed: { bg: "#F1F5F9", text: "#475569", dot: "#94A3B8" },
 };
+const STATUS_KEYS = Object.keys(STATUS_COLORS);
 
-const STATUS_LABEL = {
-  new_lead: "Nuevo Lead", estimate_sent: "Quote enviado", approved: "Aprobado",
-  scheduled: "Agendado", in_progress: "En progreso", waiting_payment: "Esperando pago",
-  completed: "Completado",
-};
+const LOCALE = () => (i18n.language && i18n.language.startsWith("es") ? "es-ES" : "en-US");
+const mkDate = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+const dayShort = (key) => DOW_REF[key].toLocaleDateString(LOCALE(), { weekday: "short" });
+const jobStatusLabel = (s) => i18n.t(`jobs.status.${s}`, { defaultValue: s });
 
 const todayISO = () => {
   const d = new Date();
@@ -73,7 +77,6 @@ const endOfMonth = (iso) => {
 };
 
 const startOfWeek = (iso) => {
-  // Monday-anchored week
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   const w = (dt.getDay() + 6) % 7;
@@ -81,16 +84,9 @@ const startOfWeek = (iso) => {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 };
 
-const fmtMonthYear = (iso) => {
-  const [y, m] = iso.split("-").map(Number);
-  return `${MONTHS_ES[m - 1]} ${y}`;
-};
-
-const fmtLongDate = (iso) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  const dt = new Date(y, m - 1, d);
-  return `${WEEKDAYS_LONG_ES[dt.getDay()]} ${d} de ${MONTHS_ES[m - 1]}`;
-};
+const fmtMonthYear = (iso) => mkDate(startOfMonth(iso)).toLocaleDateString(LOCALE(), { month: "long", year: "numeric" });
+const fmtLongDate = (iso) => mkDate(iso).toLocaleDateString(LOCALE(), { weekday: "long", day: "numeric", month: "long" });
+const monthShort = (iso) => mkDate(iso).toLocaleDateString(LOCALE(), { month: "short" });
 
 const fmtTime = (t) => {
   if (!t) return "";
@@ -102,16 +98,16 @@ const fmtTime = (t) => {
 
 export default function Calendar() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [view, setView] = useState("day");
   const [anchor, setAnchor] = useState(todayISO());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
-  const [selected, setSelected] = useState(null); // { event, job }
+  const [selected, setSelected] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingJobId, setEditingJobId] = useState(null);
 
-  // Range based on view
   const range = useMemo(() => {
     if (view === "day") return { start: anchor, end: anchor };
     if (view === "week") {
@@ -119,7 +115,6 @@ export default function Calendar() {
       return { start: s, end: addDays(s, 6) };
     }
     if (view === "month") {
-      // Include leading/trailing days from adjacent months so the grid covers full weeks
       const s = startOfMonth(anchor);
       const e = endOfMonth(anchor);
       return { start: addDays(startOfWeek(s), 0), end: addDays(startOfWeek(addDays(e, 7)), -1) };
@@ -137,7 +132,7 @@ export default function Calendar() {
       setEvents(evRes.data.events || []);
       if (clients.length === 0) setClients(cRes.data);
     } catch (err) {
-      toast.error("Error cargando calendario");
+      toast.error(t("calendar.errorLoad"));
     } finally {
       setLoading(false);
     }
@@ -181,10 +176,10 @@ export default function Calendar() {
     if (view === "week") {
       const s = startOfWeek(anchor);
       const e = addDays(s, 6);
-      return `${s.slice(8)} – ${e.slice(8)} ${MONTHS_ES[Number(s.split("-")[1]) - 1]}`;
+      return `${s.slice(8)} – ${e.slice(8)} ${monthShort(s)}`;
     }
     if (view === "month") return fmtMonthYear(anchor);
-    return "Próximos";
+    return t("calendar.upcoming");
   };
 
   const openEvent = async (ev) => {
@@ -192,7 +187,7 @@ export default function Calendar() {
       const { data } = await api.get(`/jobs/${ev.job_id}`);
       setSelected({ event: ev, job: data });
     } catch {
-      toast.error("Error cargando trabajo");
+      toast.error(t("calendar.errorLoadJob"));
     }
   };
 
@@ -211,9 +206,9 @@ export default function Calendar() {
   };
 
   const deleteJob = async (jobId) => {
-    if (!window.confirm("¿Eliminar este trabajo? Si es recurrente, se eliminarán todas las visitas.")) return;
+    if (!window.confirm(t("calendar.deleteConfirm"))) return;
     await api.delete(`/jobs/${jobId}`);
-    toast.success("Trabajo eliminado");
+    toast.success(t("calendar.deleted"));
     closeEvent();
     load();
   };
@@ -223,25 +218,24 @@ export default function Calendar() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-7 h-7 text-emerald-600" /> Calendario
+            <CalendarDays className="w-7 h-7 text-emerald-600" /> {t("calendar.title")}
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
             {todayCount > 0 ? (
-              <span className="font-semibold text-blue-900">{todayCount} trabajo{todayCount !== 1 ? "s" : ""} hoy</span>
+              <span className="font-semibold text-blue-900">{t("calendar.jobsToday", { count: todayCount })}</span>
             ) : (
-              <span>Sin trabajos hoy</span>
+              <span>{t("calendar.noJobsToday")}</span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <TourButton tourKey="calendar" />
           <Button data-testid="new-event-btn" onClick={() => startNew()} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11 px-4">
-            <Plus className="w-4 h-4 mr-1" /> Nuevo
+            <Plus className="w-4 h-4 mr-1" /> {t("calendar.new")}
           </Button>
         </div>
       </div>
 
-      {/* View switcher */}
       <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
         {VIEWS.map((v) => (
           <button
@@ -252,12 +246,11 @@ export default function Calendar() {
               view === v.key ? "bg-white text-blue-900 shadow-sm" : "text-slate-500"
             }`}
           >
-            {v.label}
+            {t(v.labelKey)}
           </button>
         ))}
       </div>
 
-      {/* Date nav strip */}
       {view !== "list" && (
         <div className="flex items-center justify-between gap-2">
           <button onClick={navPrev} data-testid="cal-prev" className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center tap">
@@ -266,10 +259,10 @@ export default function Calendar() {
           <button
             onClick={() => setAnchor(todayISO())}
             data-testid="cal-today"
-            className="flex-1 h-10 rounded-xl bg-white border border-slate-200 font-semibold text-sm text-slate-800 tap"
+            className="flex-1 h-10 rounded-xl bg-white border border-slate-200 font-semibold text-sm text-slate-800 tap capitalize"
           >
             {headerTitle()}
-            <span className="ml-2 text-[10px] text-slate-400">• Hoy</span>
+            <span className="ml-2 text-[10px] text-slate-400">• {t("calendar.today")}</span>
           </button>
           <button onClick={navNext} data-testid="cal-next" className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center tap">
             <ChevronRight className="w-5 h-5 text-slate-600" />
@@ -289,7 +282,6 @@ export default function Calendar() {
         <ListView events={events} onOpen={openEvent} />
       )}
 
-      {/* Event detail bottom sheet */}
       <Sheet open={!!selected} onOpenChange={(v) => !v && closeEvent()}>
         <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-0">
           {selected && (
@@ -316,17 +308,15 @@ export default function Calendar() {
   );
 }
 
-// ============================================================================
-// VIEWS
-// ============================================================================
 function DayView({ events, onOpen, onCreate }) {
+  const { t } = useTranslation();
   if (events.length === 0) {
     return (
       <Card className="card-elevated p-10 text-center border-0 shadow-none">
         <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-        <p className="text-slate-500 mb-4">No tienes trabajos este día.</p>
+        <p className="text-slate-500 mb-4">{t("calendar.noJobsThisDay")}</p>
         <Button onClick={onCreate} data-testid="day-empty-create" className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-1" /> Agendar trabajo
+          <Plus className="w-4 h-4 mr-1" /> {t("calendar.scheduleJob")}
         </Button>
       </Card>
     );
@@ -341,14 +331,15 @@ function DayView({ events, onOpen, onCreate }) {
 }
 
 function WeekView({ start, eventsByDate, onOpen, onPickDay }) {
+  const { t } = useTranslation();
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   return (
     <div className="space-y-3">
       {days.map((d) => {
         const list = eventsByDate[d] || [];
         const isToday = d === todayISO();
-        const [_y, _m, dd] = d.split("-").map(Number);
-        const dt = new Date(_y, _m - 1, dd);
+        const dt = mkDate(d);
+        const dd = dt.getDate();
         return (
           <div key={d} data-testid={`week-day-${d}`}>
             <button
@@ -356,11 +347,11 @@ function WeekView({ start, eventsByDate, onOpen, onPickDay }) {
               className={`flex items-baseline gap-2 mb-1.5 tap ${isToday ? "text-blue-900" : "text-slate-700"}`}
             >
               <span className="font-heading font-bold text-base">{dd}</span>
-              <span className="text-xs uppercase tracking-wider font-bold">
-                {WEEKDAYS_LONG_ES[dt.getDay()].slice(0, 3)}
+              <span className="text-xs uppercase tracking-wider font-bold capitalize">
+                {dt.toLocaleDateString(LOCALE(), { weekday: "short" })}
               </span>
-              {isToday && <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-900 text-white px-2 py-0.5 rounded-full">Hoy</span>}
-              <span className="text-xs text-slate-400 ml-1">{list.length > 0 ? `${list.length} trabajo${list.length !== 1 ? "s" : ""}` : "—"}</span>
+              {isToday && <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-900 text-white px-2 py-0.5 rounded-full">{t("calendar.today")}</span>}
+              <span className="text-xs text-slate-400 ml-1">{list.length > 0 ? t("calendar.jobsCount", { count: list.length }) : "—"}</span>
             </button>
             {list.length > 0 && (
               <div className="space-y-1.5 pl-1">
@@ -375,6 +366,7 @@ function WeekView({ start, eventsByDate, onOpen, onPickDay }) {
 }
 
 function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay, onOpen }) {
+  const { t } = useTranslation();
   const days = [];
   let d = rangeStart;
   while (d <= rangeEnd) { days.push(d); d = addDays(d, 1); }
@@ -385,8 +377,8 @@ function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay, onOp
     <Card className="card-elevated p-2 sm:p-3 border-0 shadow-none overflow-hidden">
       <div className="grid grid-cols-7 gap-1 mb-1.5">
         {DAY_KEYS.map((k) => (
-          <div key={k} className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 py-1">
-            {DAY_LABELS_ES[k]}
+          <div key={k} className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 py-1 capitalize">
+            {dayShort(k)}
           </div>
         ))}
       </div>
@@ -437,7 +429,7 @@ function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay, onOp
                   );
                 })}
                 {list.length > MAX_CHIPS && (
-                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 px-1">+{list.length - MAX_CHIPS} más</div>
+                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 px-1">+{list.length - MAX_CHIPS} {t("calendar.more")}</div>
                 )}
               </div>
             </div>
@@ -449,11 +441,12 @@ function MonthView({ anchor, rangeStart, rangeEnd, eventsByDate, onPickDay, onOp
 }
 
 function ListView({ events, onOpen }) {
+  const { t } = useTranslation();
   if (events.length === 0) {
     return (
       <Card className="card-elevated p-10 text-center border-0 shadow-none">
         <ListChecks className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-        <p className="text-slate-500">Sin trabajos próximos en los próximos 60 días.</p>
+        <p className="text-slate-500">{t("calendar.noUpcoming")}</p>
       </Card>
     );
   }
@@ -465,7 +458,7 @@ function ListView({ events, onOpen }) {
     <div className="space-y-4">
       {Object.entries(groups).map(([d, list]) => (
         <div key={d}>
-          <div className="text-xs uppercase tracking-[0.16em] font-bold text-slate-500 mb-2">{fmtLongDate(d)}</div>
+          <div className="text-xs uppercase tracking-[0.16em] font-bold text-slate-500 mb-2 capitalize">{fmtLongDate(d)}</div>
           <div className="space-y-1.5">
             {list.map((e, i) => <EventCard key={`${e.job_id}-${i}`} event={e} onClick={() => onOpen(e)} />)}
           </div>
@@ -475,10 +468,8 @@ function ListView({ events, onOpen }) {
   );
 }
 
-// ============================================================================
-// EVENT CARD + DETAIL
-// ============================================================================
 function EventCard({ event, onClick, compact }) {
+  const { t } = useTranslation();
   const c = STATUS_COLORS[event.status] || STATUS_COLORS.scheduled;
   return (
     <button
@@ -494,7 +485,7 @@ function EventCard({ event, onClick, compact }) {
             <Repeat className="w-3 h-3 text-slate-400 flex-shrink-0" />
           )}
           {event.is_project && (
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Proyecto</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">{t("calendar.project")}</span>
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
@@ -502,7 +493,7 @@ function EventCard({ event, onClick, compact }) {
           {event.start_time && !event.all_day && (
             <span className="inline-flex items-center gap-0.5"><Clock className="w-3 h-3" /> {fmtTime(event.start_time)}{event.end_time ? `–${fmtTime(event.end_time)}` : ""}</span>
           )}
-          {event.all_day && <span className="text-emerald-700 font-semibold">Todo el día</span>}
+          {event.all_day && <span className="text-emerald-700 font-semibold">{t("calendar.allDay")}</span>}
         </div>
         {!compact && event.address && (
           <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1 truncate">
@@ -514,47 +505,47 @@ function EventCard({ event, onClick, compact }) {
         className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md self-start whitespace-nowrap"
         style={{ background: c.bg, color: c.text }}
       >
-        {STATUS_LABEL[event.status] || event.status}
+        {jobStatusLabel(event.status)}
       </span>
     </button>
   );
 }
 
 function EventDetail({ event, job, onEdit, onDelete, onClose }) {
+  const { t } = useTranslation();
   const phone = (event.client_phone || "").replace(/\D/g, "");
+  const recLabel = event.recurrence === "weekly" ? t("calendar.weekly") : event.recurrence === "biweekly" ? t("calendar.biweekly") : t("calendar.monthly");
   return (
     <div>
       <SheetHeader className="px-5 pt-5 pb-3 border-b border-slate-100">
         <SheetTitle className="font-heading text-xl text-left">{event.title}</SheetTitle>
-        <p className="text-sm text-slate-500 text-left">{fmtLongDate(event.date)}</p>
+        <p className="text-sm text-slate-500 text-left capitalize">{fmtLongDate(event.date)}</p>
       </SheetHeader>
       <div className="px-5 py-4 space-y-4">
-        {/* Time + status */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
             className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md"
             style={{ background: STATUS_COLORS[event.status]?.bg, color: STATUS_COLORS[event.status]?.text }}
           >
-            {STATUS_LABEL[event.status]}
+            {jobStatusLabel(event.status)}
           </span>
           {event.start_time && !event.all_day ? (
             <span className="text-sm font-semibold text-slate-700 inline-flex items-center gap-1">
               <Clock className="w-4 h-4 text-slate-400" /> {fmtTime(event.start_time)}{event.end_time ? ` – ${fmtTime(event.end_time)}` : ""}
             </span>
           ) : (
-            <span className="text-sm font-semibold text-emerald-700">Todo el día</span>
+            <span className="text-sm font-semibold text-emerald-700">{t("calendar.allDay")}</span>
           )}
           {event.recurrence && event.recurrence !== "none" && (
             <span className="text-xs text-slate-500 inline-flex items-center gap-1">
-              <Repeat className="w-3 h-3" /> {event.recurrence === "weekly" ? "Semanal" : event.recurrence === "biweekly" ? "Quincenal" : "Mensual"}
+              <Repeat className="w-3 h-3" /> {recLabel}
             </span>
           )}
         </div>
 
-        {/* Client */}
         {event.client_name && (
           <div className="rounded-2xl bg-slate-50 p-4">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Cliente</div>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">{t("calendar.client")}</div>
             <div className="font-semibold text-slate-900">{event.client_name}</div>
             {event.address && (
               <div className="text-xs text-slate-500 mt-1 flex items-start gap-1">
@@ -564,31 +555,29 @@ function EventDetail({ event, job, onEdit, onDelete, onClose }) {
             {phone && (
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <a href={`tel:${phone}`} className="h-11 rounded-xl bg-blue-900 text-white flex items-center justify-center gap-1.5 font-semibold text-sm tap" data-testid="call-client-btn">
-                  <Phone className="w-4 h-4" /> Llamar
+                  <Phone className="w-4 h-4" /> {t("calendar.call")}
                 </a>
                 <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer" className="h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 font-semibold text-sm tap" data-testid="whatsapp-client-btn">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                  <MessageCircle className="w-4 h-4" /> {t("calendar.whatsapp")}
                 </a>
               </div>
             )}
           </div>
         )}
 
-        {/* Notes */}
         {event.notes && (
           <div>
-            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Notas</div>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">{t("calendar.notes")}</div>
             <p className="text-sm text-slate-700 whitespace-pre-wrap">{event.notes}</p>
           </div>
         )}
 
-        {/* Actions */}
         <div className="grid grid-cols-2 gap-2 pt-2">
           <Button variant="outline" onClick={onEdit} data-testid="edit-job-btn" className="h-11 rounded-xl">
-            <Pencil className="w-4 h-4 mr-1" /> Editar
+            <Pencil className="w-4 h-4 mr-1" /> {t("calendar.edit")}
           </Button>
           <Button variant="outline" onClick={onDelete} data-testid="delete-job-btn" className="h-11 rounded-xl text-red-600 border-red-200">
-            <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+            <Trash2 className="w-4 h-4 mr-1" /> {t("calendar.delete")}
           </Button>
         </div>
       </div>
@@ -596,9 +585,6 @@ function EventDetail({ event, job, onEdit, onDelete, onClose }) {
   );
 }
 
-// ============================================================================
-// JOB EDITOR (create + edit)
-// ============================================================================
 const EMPTY_FORM = {
   client_id: "", title: "", status: "scheduled",
   scheduled_date: todayISO(), end_date: "", start_time: "", end_time: "",
@@ -607,9 +593,10 @@ const EMPTY_FORM = {
 };
 
 function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ ...EMPTY_FORM, scheduled_date: defaultDate || todayISO() });
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState("single"); // single | project | recurring
+  const [mode, setMode] = useState("single");
 
   useEffect(() => {
     if (!open) return;
@@ -643,11 +630,10 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
   };
 
   const save = async () => {
-    if (!form.client_id || !form.title) return toast.error("Falta cliente o título");
+    if (!form.client_id || !form.title) return toast.error(t("calendar.missingClientTitle"));
     setSaving(true);
     const payload = { ...form };
 
-    // Normalize by mode
     if (mode === "single") {
       payload.recurrence = "none";
       payload.recurrence_days = [];
@@ -661,21 +647,21 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
       payload.end_date = "";
       if ((payload.recurrence === "weekly" || payload.recurrence === "biweekly") && payload.recurrence_days.length === 0) {
         setSaving(false);
-        return toast.error("Selecciona al menos un día de la semana");
+        return toast.error(t("calendar.selectDay"));
       }
       if (!payload.recurrence_end_date) {
         setSaving(false);
-        return toast.error("Pon fecha en que termina la recurrencia");
+        return toast.error(t("calendar.setRecEnd"));
       }
     }
 
     try {
       if (jobId) await api.put(`/jobs/${jobId}`, payload);
       else await api.post("/jobs", payload);
-      toast.success(jobId ? "Trabajo actualizado" : "Trabajo creado");
+      toast.success(jobId ? t("calendar.updated") : t("calendar.created"));
       onSaved();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("calendar.error"));
     } finally { setSaving(false); }
   };
 
@@ -683,16 +669,15 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-heading">{jobId ? "Editar trabajo" : "Nuevo trabajo"}</DialogTitle>
+          <DialogTitle className="font-heading">{jobId ? t("calendar.editJob") : t("calendar.newJob")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Mode picker */}
           <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
             {[
-              { k: "single", label: "Una vez" },
-              { k: "project", label: "Proyecto" },
-              { k: "recurring", label: "Recurrente" },
+              { k: "single", label: t("calendar.once") },
+              { k: "project", label: t("calendar.project") },
+              { k: "recurring", label: t("calendar.recurring") },
             ].map((m) => (
               <button
                 key={m.k}
@@ -711,21 +696,21 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
           </div>
 
           <div>
-            <Label>Cliente *</Label>
+            <Label>{t("calendar.client")} *</Label>
             <Select value={form.client_id} onValueChange={(v) => update("client_id", v)}>
-              <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="editor-client"><SelectValue placeholder="Selecciona" /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="editor-client"><SelectValue placeholder={t("calendar.selectClient")} /></SelectTrigger>
               <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Título *</Label>
-            <Input data-testid="editor-title" value={form.title} onChange={(e) => update("title", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej. Limpieza, Reemplazo de techo..." />
+            <Label>{t("calendar.titleField")} *</Label>
+            <Input data-testid="editor-title" value={form.title} onChange={(e) => update("title", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("calendar.titlePlaceholder")} />
           </div>
 
           {mode === "single" && (
             <div>
-              <Label>Fecha</Label>
+              <Label>{t("calendar.date")}</Label>
               <Input type="date" data-testid="editor-date" value={form.scheduled_date} onChange={(e) => update("scheduled_date", e.target.value)} className="h-12 rounded-xl mt-1.5" />
             </div>
           )}
@@ -733,11 +718,11 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
           {mode === "project" && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>Inicia</Label>
+                <Label>{t("calendar.starts")}</Label>
                 <Input type="date" data-testid="editor-start" value={form.scheduled_date} onChange={(e) => update("scheduled_date", e.target.value)} className="h-12 rounded-xl mt-1.5" />
               </div>
               <div>
-                <Label>Termina</Label>
+                <Label>{t("calendar.ends")}</Label>
                 <Input type="date" data-testid="editor-end" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} className="h-12 rounded-xl mt-1.5" />
               </div>
             </div>
@@ -746,19 +731,19 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
           {mode === "recurring" && (
             <>
               <div>
-                <Label>Frecuencia</Label>
+                <Label>{t("calendar.frequency")}</Label>
                 <Select value={form.recurrence === "none" ? "weekly" : form.recurrence} onValueChange={(v) => update("recurrence", v)}>
                   <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="editor-recurrence"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weekly">Semanal</SelectItem>
-                    <SelectItem value="biweekly">Quincenal (cada 2 semanas)</SelectItem>
-                    <SelectItem value="monthly">Mensual</SelectItem>
+                    <SelectItem value="weekly">{t("calendar.weekly")}</SelectItem>
+                    <SelectItem value="biweekly">{t("calendar.biweeklyLong")}</SelectItem>
+                    <SelectItem value="monthly">{t("calendar.monthly")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {(form.recurrence === "weekly" || form.recurrence === "biweekly") && (
                 <div>
-                  <Label>Días de la semana</Label>
+                  <Label>{t("calendar.weekdays")}</Label>
                   <div className="grid grid-cols-7 gap-1 mt-1.5">
                     {DAY_KEYS.map((d) => {
                       const active = form.recurrence_days.includes(d);
@@ -768,9 +753,9 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
                           type="button"
                           data-testid={`day-${d}`}
                           onClick={() => toggleDay(d)}
-                          className={`h-11 rounded-xl text-xs font-bold tap transition-all ${active ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-500"}`}
+                          className={`h-11 rounded-xl text-xs font-bold tap transition-all capitalize ${active ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-500"}`}
                         >
-                          {DAY_LABELS_ES[d]}
+                          {dayShort(d)}
                         </button>
                       );
                     })}
@@ -779,60 +764,59 @@ function JobEditor({ open, onOpenChange, jobId, defaultDate, clients, onSaved })
               )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label>Inicia</Label>
+                  <Label>{t("calendar.starts")}</Label>
                   <Input type="date" value={form.scheduled_date} onChange={(e) => update("scheduled_date", e.target.value)} className="h-12 rounded-xl mt-1.5" />
                 </div>
                 <div>
-                  <Label>Termina</Label>
+                  <Label>{t("calendar.ends")}</Label>
                   <Input type="date" data-testid="editor-rec-end" value={form.recurrence_end_date || ""} onChange={(e) => update("recurrence_end_date", e.target.value)} className="h-12 rounded-xl mt-1.5" />
                 </div>
               </div>
             </>
           )}
 
-          {/* Time */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-            <Label className="text-sm">Todo el día</Label>
+            <Label className="text-sm">{t("calendar.allDay")}</Label>
             <Switch data-testid="editor-allday" checked={form.all_day} onCheckedChange={(v) => update("all_day", v)} />
           </div>
           {!form.all_day && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>Hora inicio</Label>
+                <Label>{t("calendar.startTime")}</Label>
                 <Input type="time" data-testid="editor-start-time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} className="h-12 rounded-xl mt-1.5" />
               </div>
               <div>
-                <Label>Hora fin</Label>
+                <Label>{t("calendar.endTime")}</Label>
                 <Input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} className="h-12 rounded-xl mt-1.5" />
               </div>
             </div>
           )}
 
           <div>
-            <Label>Dirección del trabajo</Label>
-            <Input value={form.address} onChange={(e) => update("address", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Si lo dejas vacío, usamos la dirección del cliente" />
+            <Label>{t("calendar.jobAddress")}</Label>
+            <Input value={form.address} onChange={(e) => update("address", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("calendar.addressPlaceholder")} />
           </div>
 
           <div>
-            <Label>Estado</Label>
+            <Label>{t("calendar.status")}</Label>
             <Select value={form.status} onValueChange={(v) => update("status", v)}>
               <SelectTrigger className="h-12 rounded-xl mt-1.5"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                {STATUS_KEYS.map((k) => <SelectItem key={k} value={k}>{jobStatusLabel(k)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Notas</Label>
-            <Textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} className="rounded-xl mt-1.5" placeholder="Cualquier nota interna sobre el trabajo..." />
+            <Label>{t("calendar.notes")}</Label>
+            <Textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} className="rounded-xl mt-1.5" placeholder={t("calendar.notesPlaceholder")} />
           </div>
         </div>
 
         <DialogFooter className="mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">{t("common.cancel")}</Button>
           <Button data-testid="editor-save" onClick={save} disabled={saving} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
