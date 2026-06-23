@@ -554,9 +554,24 @@
     "cancelled": "Payment cancelled. Try again whenever you want.",
     "errLoadPlans": "Error loading plans",
     "errCheckout": "Error starting payment",
-    "bPresencia": ["Digital card with QR + NFC", "Professional mini-website", "Google Reviews ⭐", "Automatic lead capture"],
-    "bNegocio": ["AI estimates in seconds", "Professional invoices and agreements", "Client CRM", "Job calendar"],
-    "bMarketing": ["AI social media posts", "AI videos / Reels", "Your brand templates and colors", "Voiceovers and subtitles"]
+    "bPresencia": [
+      "Digital card with QR + NFC",
+      "Professional mini-website",
+      "Google Reviews ⭐",
+      "Automatic lead capture"
+    ],
+    "bNegocio": [
+      "AI estimates in seconds",
+      "Professional invoices and agreements",
+      "Client CRM",
+      "Job calendar"
+    ],
+    "bMarketing": [
+      "AI social media posts",
+      "AI videos / Reels",
+      "Your brand templates and colors",
+      "Voiceovers and subtitles"
+    ]
   },
   "welcome": {
     "badge": "Welcome to UniTech",
@@ -606,8 +621,29 @@
     "createAiImage": "Create AI image",
     "makeReel": "Make Reel",
     "businessFallback": "friend",
-    "industries": ["Roofing", "Plumbing", "Electrical", "Landscaping", "Painting", "Concrete", "Cleaning", "HVAC", "Remodeling", "Construction", "Flooring", "Fencing"],
-    "catLabels": { "trabajo_terminado": "Finished work", "oferta": "Offer", "resena": "Review", "antes_despues": "Before / After", "contratando": "Hiring", "temporada": "Seasonal", "tips": "Tip" }
+    "industries": [
+      "Roofing",
+      "Plumbing",
+      "Electrical",
+      "Landscaping",
+      "Painting",
+      "Concrete",
+      "Cleaning",
+      "HVAC",
+      "Remodeling",
+      "Construction",
+      "Flooring",
+      "Fencing"
+    ],
+    "catLabels": {
+      "trabajo_terminado": "Finished work",
+      "oferta": "Offer",
+      "resena": "Review",
+      "antes_despues": "Before / After",
+      "contratando": "Hiring",
+      "temporada": "Seasonal",
+      "tips": "Tip"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -719,7 +755,13 @@
     "heroCreateFree": "Create free account",
     "heroHaveAccount": "I already have an account",
     "resultsTitle": "Results you get",
-    "results": ["Win more clients", "Quote in seconds", "Get paid faster", "Organize your jobs", "Earn more 5★ reviews"],
+    "results": [
+      "Win more clients",
+      "Quote in seconds",
+      "Get paid faster",
+      "Organize your jobs",
+      "Earn more 5★ reviews"
+    ],
     "noCard": "No credit card",
     "worksPhone": "Works from your phone",
     "cancelAnytime": "Cancel anytime",
@@ -729,22 +771,103 @@
     "painTitle": "Forget Excel, Word, notes and ",
     "painTitle2": "paper invoices.",
     "painSubtitle": "Your info scattered across Excel, Word, phone notes, papers and QuickBooks is money and time you lose. With UniTech you run <b>everything from one place.</b>",
-    "painTags": ["Excel", "Word", "Notes", "Paper invoice", "QuickBooks", "More apps"],
+    "painTags": [
+      "Excel",
+      "Word",
+      "Notes",
+      "Paper invoice",
+      "QuickBooks",
+      "More apps"
+    ],
     "howEyebrow": "How it works",
     "howTitle": "Your complete business, ",
     "howTitleHighlight": "step by step.",
     "howSubtitle": "From the moment the client finds you to when they leave a 5★ review — each step connected to the next.",
     "stepLabel": "Step",
     "flow": [
-      { "title": "Win new clients", "lead": "Share your Smart Card via QR code, NFC, direct link or social media.", "points": ["They see your services and job photos", "They save your contact instantly", "They request a quote and reach you easily", "Everything flows automatically into your system"] },
-      { "title": "Create quotes in seconds", "lead": "Describe the job and AI does the rest.", "points": ["Automatic professional quote", "Detailed Scope of Work", "Polished document for your client", "PDF ready to send"] },
-      { "title": "Your client accepts the quote", "lead": "They get a professional proposal and approve it from their phone.", "points": ["Reviews services, terms and scope of work", "Approves with one tap", "Everything documented in the system"] },
-      { "title": "The invoice generates itself", "lead": "When the quote is approved, UniTech creates the professional invoice automatically.", "points": ["Professional invoice instantly", "Ready to send and to get paid", "No re-typing the same info"] },
-      { "title": "Collect deposits and payments", "lead": "Keep full control of the money, without a dollar slipping away.", "points": ["Connect your own Stripe account to accept card payments directly — money lands in your account", "Deposit, partial payments and pending balance", "Get paid via Venmo, PayPal, CashApp, Zelle, cash or check", "You always know who paid and who owes"] },
-      { "title": "Schedule the job", "lead": "Put them on your calendar and keep your jobs well organized.", "points": ["One-time or recurring jobs", "Weekly, every two weeks or once a month", "Scheduled, in progress, completed and payment pending"] },
-      { "title": "Save photos and evidence", "lead": "Upload before, during and after photos of every project.", "points": ["Your portfolio tied to each client and job", "Organized for you and your clients"] },
-      { "title": "Share it on your social media", "lead": "When the job is done, AI creates a professional post or Reel for you to publish on your channels.", "points": ["Video posts and Reels with your photos and brand", "Ready for Instagram, Facebook and TikTok", "Show your work and attract more new clients"] },
-      { "title": "Ask for reviews automatically", "lead": "When the job is done, UniTech generates the message to request the review.", "points": ["Automatic professional message", "Includes NFC card: ask for reviews in person with one tap", "More reviews, more trust, more new clients"] }
+      {
+        "title": "Win new clients",
+        "lead": "Share your Smart Card via QR code, NFC, direct link or social media.",
+        "points": [
+          "They see your services and job photos",
+          "They save your contact instantly",
+          "They request a quote and reach you easily",
+          "Everything flows automatically into your system"
+        ]
+      },
+      {
+        "title": "Create quotes in seconds",
+        "lead": "Describe the job and AI does the rest.",
+        "points": [
+          "Automatic professional quote",
+          "Detailed Scope of Work",
+          "Polished document for your client",
+          "PDF ready to send"
+        ]
+      },
+      {
+        "title": "Your client accepts the quote",
+        "lead": "They get a professional proposal and approve it from their phone.",
+        "points": [
+          "Reviews services, terms and scope of work",
+          "Approves with one tap",
+          "Everything documented in the system"
+        ]
+      },
+      {
+        "title": "The invoice generates itself",
+        "lead": "When the quote is approved, UniTech creates the professional invoice automatically.",
+        "points": [
+          "Professional invoice instantly",
+          "Ready to send and to get paid",
+          "No re-typing the same info"
+        ]
+      },
+      {
+        "title": "Collect deposits and payments",
+        "lead": "Keep full control of the money, without a dollar slipping away.",
+        "points": [
+          "Connect your own Stripe account to accept card payments directly — money lands in your account",
+          "Deposit, partial payments and pending balance",
+          "Get paid via Venmo, PayPal, CashApp, Zelle, cash or check",
+          "You always know who paid and who owes"
+        ]
+      },
+      {
+        "title": "Schedule the job",
+        "lead": "Put them on your calendar and keep your jobs well organized.",
+        "points": [
+          "One-time or recurring jobs",
+          "Weekly, every two weeks or once a month",
+          "Scheduled, in progress, completed and payment pending"
+        ]
+      },
+      {
+        "title": "Save photos and evidence",
+        "lead": "Upload before, during and after photos of every project.",
+        "points": [
+          "Your portfolio tied to each client and job",
+          "Organized for you and your clients"
+        ]
+      },
+      {
+        "title": "Share it on your social media",
+        "lead": "When the job is done, AI creates a professional post or Reel for you to publish on your channels.",
+        "points": [
+          "Video posts and Reels with your photos and brand",
+          "Ready for Instagram, Facebook and TikTok",
+          "Show your work and attract more new clients"
+        ]
+      },
+      {
+        "title": "Ask for reviews automatically",
+        "lead": "When the job is done, UniTech generates the message to request the review.",
+        "points": [
+          "Automatic professional message",
+          "Includes NFC card: ask for reviews in person with one tap",
+          "More reviews, more trust, more new clients"
+        ]
+      }
     ],
     "flywheelTitle": "And the cycle repeats. ",
     "flywheelHighlight": "Every review brings your next client.",
@@ -755,9 +878,37 @@
     "productsTitleHighlight": "Take them separately or all together.",
     "productsSubtitle": "Start with what you need most today and add the rest whenever you want — or get the complete bundle and save.",
     "products": [
-      { "name": "Digital Presence", "tagline": "Your NFC Smart Card", "desc": "Your professional mini-website with QR and physical NFC card to win clients and 5★ reviews.", "points": ["Physical NFC card + digital page", "Capture clients and Google reviews", "AI chat that answers 24/7"] },
-      { "name": "Business Management", "tagline": "Quote, invoice, get paid and schedule", "desc": "Your whole business organized: AI quotes, contracts, invoices, payments and calendar.", "points": ["AI English quotes and contracts", "Invoices and payment links", "Clients, jobs and schedule"] },
-      { "name": "Marketing Studio", "tagline": "Posts and Reels of your jobs", "desc": "AI creates professional posts and videos (Reels) with your brand, ready for Instagram and Facebook.", "points": ["Video Reels with voice and music", "Posts with your photos and colors", "Before/After, Promo, Testimonials"], "badge": "New" }
+      {
+        "name": "Digital Presence",
+        "tagline": "Your NFC Smart Card",
+        "desc": "Your professional mini-website with QR and physical NFC card to win clients and 5★ reviews.",
+        "points": [
+          "Physical NFC card + digital page",
+          "Capture clients and Google reviews",
+          "AI chat that answers 24/7"
+        ]
+      },
+      {
+        "name": "Business Management",
+        "tagline": "Quote, invoice, get paid and schedule",
+        "desc": "Your whole business organized: AI quotes, contracts, invoices, payments and calendar.",
+        "points": [
+          "AI English quotes and contracts",
+          "Invoices and payment links",
+          "Clients, jobs and schedule"
+        ]
+      },
+      {
+        "name": "Marketing Studio",
+        "tagline": "Posts and Reels of your jobs",
+        "desc": "AI creates professional posts and videos (Reels) with your brand, ready for Instagram and Facebook.",
+        "points": [
+          "Video Reels with voice and music",
+          "Posts with your photos and colors",
+          "Before/After, Promo, Testimonials"
+        ],
+        "badge": "New"
+      }
     ],
     "subscribe": "Subscribe",
     "perMonth": "/mo",
@@ -770,32 +921,66 @@
     "mktTitle": "Turn your jobs into ",
     "mktTitleHighlight": "content that sells.",
     "mktSubtitle": "Upload your job photos and AI creates professional <b>posts and video Reels</b> with your brand, ready for Instagram, Facebook and TikTok.",
-    "mktPoints": ["Video Reels with motion, voiceover and music", "Posts with your photos, your logo and your colors", "Templates: Before/After, Promo, Service list and Testimonials", "Download and publish them in seconds"],
+    "mktPoints": [
+      "Video Reels with motion, voiceover and music",
+      "Posts with your photos, your logo and your colors",
+      "Templates: Before/After, Promo, Service list and Testimonials",
+      "Download and publish them in seconds"
+    ],
     "mktExample": "Examples created with UniTech's AI",
     "nfcBadge": "Step 1 — Win clients",
     "nfcTitle": "Your Smart Card. ",
     "nfcHighlight": "Your best salesperson.",
     "nfcSubtitle": "<b>You get a professional physical NFC card</b> — it's your professional mini-website with photo, services, reviews and QR. Tap it to any client's phone and it opens instantly: they call you, WhatsApp you or request a quote. And an AI chat answers 24/7 in their language.",
-    "nfcFeatures": ["1-tap call", "Direct WhatsApp", "Google Reviews", "AI chat 24/7", "Client capture", "English + Spanish"],
+    "nfcFeatures": [
+      "1-tap call",
+      "Direct WhatsApp",
+      "Google Reviews",
+      "AI chat 24/7",
+      "Client capture",
+      "English + Spanish"
+    ],
     "nfcCreateCard": "Create my card free",
     "nfcWhatBadge": "You get a physical card",
     "nfcWhatTitle": "What is an NFC card? Here's how easy it works.",
     "nfcWhatSubtitle": "NFC is the same technology as Apple Pay. Your client <b>doesn't need to download any app</b> — they just hold their phone near your card.",
     "nfcCards": [
-      { "tag": "Smart Card", "title": "Smart Business Card NFC", "desc": "Your professional mini-website in one tap: services, call, WhatsApp, AI chat and client capture." },
-      { "tag": "Google Reviews", "title": "NFC Review Card", "desc": "Ask for 5★ reviews in person with one tap. More reviews, more trust, more new clients." }
+      {
+        "tag": "Smart Card",
+        "title": "Smart Business Card NFC",
+        "desc": "Your professional mini-website in one tap: services, call, WhatsApp, AI chat and client capture."
+      },
+      {
+        "tag": "Google Reviews",
+        "title": "NFC Review Card",
+        "desc": "Ask for 5★ reviews in person with one tap. More reviews, more trust, more new clients."
+      }
     ],
     "nfcSteps": [
-      { "t": "It arrives at your home", "d": "You get a professional physical NFC card, ready to use." },
-      { "t": "You tap it to the phone", "d": "Just one tap on the client's phone. No apps or setup — works on iPhone and Android." },
-      { "t": "Your profile opens instantly", "d": "The client sees your services, calls you, WhatsApps you, saves your contact or requests a quote." }
+      {
+        "t": "It arrives at your home",
+        "d": "You get a professional physical NFC card, ready to use."
+      },
+      {
+        "t": "You tap it to the phone",
+        "d": "Just one tap on the client's phone. No apps or setup — works on iPhone and Android."
+      },
+      {
+        "t": "Your profile opens instantly",
+        "d": "The client sees your services, calls you, WhatsApps you, saves your contact or requests a quote."
+      }
     ],
     "nfcFootnote": "<b>Goodbye paper cards</b> that get lost or tossed. One NFC card forever — and you update it whenever you want (new services, photos or phone) <b>without reprinting anything</b>.",
     "esEyebrow": "Built for you",
     "esTitle": "You work in Spanish. ",
     "esHighlight": "Your clients get English.",
     "esSubtitle": "UniTech is designed especially for Latino business owners. You run everything in Spanish; your clients get professional documents in English.",
-    "esPoints": ["No translators, no hassle, no wasted time", "100% of the software in Spanish, 100% of the documents in English", "Mobile-first: it feels native on your phone", "You send the PDF and get paid as always — no paperwork"],
+    "esPoints": [
+      "No translators, no hassle, no wasted time",
+      "100% of the software in Spanish, 100% of the documents in English",
+      "Mobile-first: it feels native on your phone",
+      "You send the PDF and get paid as always — no paperwork"
+    ],
     "esYouWrite": "You write (Spanish)",
     "esYouWriteEx": "“Living room drywall repair, includes texture and paint.”",
     "esClientGets": "Your client gets (English)",
@@ -946,7 +1131,28 @@
     "gmbCaptionPh": "Write your update in English (or use the AI button above)...",
     "gmbLinkPh": "Optional link (e.g.: https://ezunitech.com/your-card)",
     "publishNow": "Publish now",
-    "templates": { "showcase": "Minimal", "bold_bar": "Bold Bar", "center_stage": "Center Stage", "boxed": "Card", "magazine": "Editorial", "elegant_dark": "Elegant", "top_banner": "Top Banner", "side_panel": "Side Panel", "before_after": "Before / After", "promo": "Offer / Promo", "review_5star": "5★ Review", "framed_pro": "Pro Frame", "split_diagonal": "Diagonal", "now_hiring": "Now Hiring", "quote_offer": "Free Quote", "seasonal": "Seasonal", "trust_badge": "Guarantee", "coupon": "Coupon", "duo_grid": "Duo Gallery", "clean_band": "Clean Band" },
+    "templates": {
+      "showcase": "Minimal",
+      "bold_bar": "Bold Bar",
+      "center_stage": "Center Stage",
+      "boxed": "Card",
+      "magazine": "Editorial",
+      "elegant_dark": "Elegant",
+      "top_banner": "Top Banner",
+      "side_panel": "Side Panel",
+      "before_after": "Before / After",
+      "promo": "Offer / Promo",
+      "review_5star": "5★ Review",
+      "framed_pro": "Pro Frame",
+      "split_diagonal": "Diagonal",
+      "now_hiring": "Now Hiring",
+      "quote_offer": "Free Quote",
+      "seasonal": "Seasonal",
+      "trust_badge": "Guarantee",
+      "coupon": "Coupon",
+      "duo_grid": "Duo Gallery",
+      "clean_band": "Clean Band"
+    },
     "fmtVertical": "Vertical 9:16",
     "fmtVerticalHint": "Reels / TikTok / Stories",
     "fmtSquare": "Square 1:1",
@@ -1166,12 +1372,19 @@
     "seePlansSubscribe": "See plans and subscribe",
     "portalError": "Couldn't open the subscription portal",
     "plans": {
-      "presencia_monthly": "Presence (Monthly)", "presencia_yearly": "Presence (Annual)",
-      "negocio_monthly": "Business (Monthly)", "negocio_yearly": "Business (Annual)",
-      "marketing_monthly": "Marketing (Monthly)", "marketing_yearly": "Marketing (Annual)",
-      "bundle_monthly": "All UniTech (Monthly)", "bundle_yearly": "All UniTech (Annual)",
-      "comp": "Free (Lifetime)", "pro_monthly": "Pro Monthly", "pro_yearly": "Pro Annual",
-      "founder": "Founder Deal", "pro": "Pro"
+      "presencia_monthly": "Presence (Monthly)",
+      "presencia_yearly": "Presence (Annual)",
+      "negocio_monthly": "Business (Monthly)",
+      "negocio_yearly": "Business (Annual)",
+      "marketing_monthly": "Marketing (Monthly)",
+      "marketing_yearly": "Marketing (Annual)",
+      "bundle_monthly": "All UniTech (Monthly)",
+      "bundle_yearly": "All UniTech (Annual)",
+      "comp": "Free (Lifetime)",
+      "pro_monthly": "Pro Monthly",
+      "pro_yearly": "Pro Annual",
+      "founder": "Founder Deal",
+      "pro": "Pro"
     }
   },
   "payments": {
@@ -1214,5 +1427,194 @@
     "openingStripe": "Opening Stripe…",
     "connectMyStripe": "Connect my Stripe",
     "footnote": "This is optional and adds to your other payment methods. We don't charge a commission for using your Stripe."
+  },
+  "demo": {
+    "signupTop": "Sign up",
+    "liveBadge": "Live demo · 2 minutes",
+    "leadName": "Your name",
+    "leadEmail": "Email",
+    "leadPhone": "Phone",
+    "leadTrade": "Your trade",
+    "choose": "Choose…",
+    "startBtn": "Start the demo",
+    "freeNote": "Free, no commitment. We only use your email to show you how it works.",
+    "errEmail": "Enter your name and a valid email to start.",
+    "errStart": "Couldn't start the demo. Please try again."
+  },
+  "demoFlow": {
+    "steps": [
+      "Your info",
+      "The job",
+      "Quote",
+      "Contract",
+      "Invoice"
+    ],
+    "leadTitle": "Experience the full UniTech flow",
+    "leadDesc": "Describe a job and watch the AI create a <3>professional quote</3>, then your client approves it, signs the contract and gets an invoice with payment links. All live.",
+    "back": "Back",
+    "describeTitle": "Describe the job",
+    "describeDesc": "Just like you'd tell a friend. The AI does the rest.",
+    "examples": {
+      "roof": {
+        "label": "Roof",
+        "text": "Replace a 1,500 sq ft roof with new shingles, including tear-off of the old roof, new underlayment and full cleanup."
+      },
+      "drywall": {
+        "label": "Drywall",
+        "text": "Install and finish drywall in a 12x14 ft bedroom, including sanding and leaving it ready to paint."
+      },
+      "paint": {
+        "label": "Painting",
+        "text": "Paint the interior of a 3-bed, 2-bath home — walls and ceilings, 2 coats, owner supplies the paint color."
+      }
+    },
+    "descPlaceholder": "E.g.: Replace a 1,500 sq ft roof with new shingles…",
+    "errDesc": "Please describe the job with a bit more detail.",
+    "errQuote": "The AI couldn't generate the quote. Please try again.",
+    "errAgreement": "The AI couldn't generate the contract. Please try again.",
+    "genQuoteLoading": "The AI is quoting…",
+    "genQuoteBtn": "Generate quote with AI",
+    "overlayTitle": "Generating your Service Agreement…",
+    "overlaySubtitle": "The AI is drafting your legal contract. It takes a few seconds — <1>don't close this page.</1>",
+    "quoteBanner": "This is how your client receives and approves the quote 👇",
+    "tryAnother": "Try another job",
+    "agreementBanner": "The legal contract is built by the AI. Your client signs it with a finger 👇",
+    "invoiceBanner": "Done! The signed contract generates the invoice automatically, with a payment link 👇",
+    "paidTitle": "✅ This is a demo!",
+    "paidDesc": "In your real account, the client pays right here by card and the money goes straight to you.",
+    "orPayWith": "or pay with",
+    "downloadPdf": "Download PDF",
+    "print": "Print",
+    "pdfNote": "📄 Your clients can <1>download as PDF or print</1> anything you send them to keep their records.",
+    "finalTitle": "That's it. That easy.",
+    "finalDesc": "Quote, contract and payment — all in minutes. Create your free account (14 days, no card) and start getting paid like a pro.",
+    "finalCta": "Create your free account"
+  },
+  "demoAll": {
+    "leadTitle": "See what UniTech can do for your business",
+    "leadDesc": "Your digital card with reviews, your AI-powered quotes, and your social content — all from your phone. Try it live.",
+    "branchTitle": "What do you need most right now?",
+    "branchDesc": "Pick one and I'll show you the magic. At the end you'll see everything UniTech does for you.",
+    "change": "Change",
+    "branches": {
+      "presencia": {
+        "title": "Digital presence",
+        "desc": "NFC card + mini-site with 5★ reviews",
+        "tagline": "I want to look professional and get more reviews"
+      },
+      "negocio": {
+        "title": "Quote & get paid",
+        "desc": "AI quote, contract and invoice",
+        "tagline": "I want to quote fast and get paid like a pro"
+      },
+      "marketing": {
+        "title": "AI marketing",
+        "desc": "Posts and reels with your brand, in seconds",
+        "tagline": "I want social content without the hassle"
+      }
+    },
+    "negJobs": {
+      "roofing": {
+        "label": "Roof Replacement",
+        "descText": "Replace the entire roof of a 1,500 sq ft house. Tear off and dispose of the old shingles, install new synthetic underlayment with ice & water shield, install GAF architectural shingles, replace boots and flashing, add a ridge vent and do a full cleanup with a magnetic sweep. Costs: tear-off $1.20/sq ft, installed shingles $3.50/sq ft, underlayment $950, flashing & ventilation $700. 50% deposit to schedule."
+      },
+      "painting": {
+        "label": "Interior Painting",
+        "descText": "Paint the interior of a 3-bedroom, 2-bath house. Protect floors and furniture, patch holes and minor drywall repairs, caulk trim and sand, apply 2 coats of premium paint on walls, ceilings and trim, and do a final cleanup. Costs: prep $450, walls $0.95/sq ft (2,200 sq ft), ceilings & trim $520. 30% deposit."
+      },
+      "concrete": {
+        "label": "Concrete Driveway",
+        "descText": "Build a new 600 sq ft concrete driveway. Excavate and remove the old surface, grade and compact the base, set forms and rebar reinforcement, pour 4-inch concrete with a broom finish and seal it. Costs: excavation & grading $1,200, concrete $7.50/sq ft, finishing & sealing $600. 50% deposit."
+      }
+    },
+    "postTypes": {
+      "showcase": {
+        "label": "Finished job",
+        "ex": "Just finished this job, came out amazing"
+      },
+      "promo": {
+        "label": "Promotion / offer",
+        "ex": "15% off this month"
+      },
+      "before_after": {
+        "label": "Before & after",
+        "ex": "Before and after of this job"
+      }
+    },
+    "negOverlayQuoteTitle": "Generating your quote…",
+    "negOverlayAgreementTitle": "Generating your Service Agreement…",
+    "negOverlayQuoteSub": "The AI is building your professional quote. A few seconds — <1>don't close this page.</1>",
+    "negOverlayAgreementSub": "The AI is drafting your legal contract. A few seconds — <1>don't close this page.</1>",
+    "negPickTitle": "This is how you describe your job",
+    "negPickDesc": "Tap an example to see how a job is described. From <1>just that description</1>, the AI creates your quote, contract and invoice — ready to send.",
+    "negTapExample": "Tap an example:",
+    "negExampleLabel": "Example description",
+    "negExamplePlaceholder": "👆 Tap one of the examples above to see what a description looks like.",
+    "negGenerates": "From that description, the AI generates:",
+    "negChipQuote": "Quote",
+    "negChipContract": "Contract",
+    "negChipInvoice": "Invoice with payment link",
+    "negGenBtn": "Generate with AI",
+    "negGenNote": "In your real account you write your own description and the AI does the rest. ✨",
+    "negFeaturesTitle": "Why quote & get paid with UniTech?",
+    "negFeatures": [
+      "Quote in minutes, not hours: the AI builds the quote, contract and invoice while you keep working.",
+      "Get paid faster: the invoice includes a payment link. The client pays by card and the money goes straight to you.",
+      "Look professional with documents that build trust — close more jobs at better prices.",
+      "Protect yourself legally: every job gets a contract digitally signed by the client.",
+      "Collect the deposit up front to lock in the job and stop paying out of your own pocket.",
+      "All from your phone — no computer, no Excel, no headaches."
+    ],
+    "presTitle": "Your NFC card + mini-site",
+    "presDesc": "Your clients tap their phone to your card and instantly see your professional mini-site. No apps.",
+    "presCardLabel": "NFC card",
+    "presTap": "📲 Tap the card to open your mini-site",
+    "presFeaturesTitle": "Why your card sells for you",
+    "presFeatures": [
+      "Look PROFESSIONAL instantly and build trust — forget paper cards that get lost.",
+      "Get more 5★ Google reviews with a single tap. More reviews = you rank higher on Google and win the job.",
+      "Never lose a client: they call, text or WhatsApp you with one tap, no typing your number.",
+      "Clients save your contact instantly — they remember you and refer you to their friends.",
+      "Share it with no apps: tap the phone (NFC), scan the QR or send the link. Works on any phone.",
+      "Update it anytime: photos, services, prices and offers change instantly, no reprinting."
+    ],
+    "mktInputTitle": "Choose the post type",
+    "mktInputDesc": "Tap an example and the AI creates it with your brand, ready to post.",
+    "mktGenBtn": "Create post with AI",
+    "mktGeneratingTitle": "The AI is creating your post…",
+    "mktGeneratingSub": "Design with your brand + caption. A few seconds.",
+    "mktResultBanner": "Done! Your post for Instagram/Facebook, with your brand 👇",
+    "mktCopyCaption": "Copy caption",
+    "mktReel": "+Video reel",
+    "mktImage": "+AI image",
+    "mktFeaturesTitle": "Why AI Marketing pays off",
+    "mktFeatures": [
+      "Post like a pro without paying a designer: posts with your logo, colors, phone and call-to-action.",
+      "Attract more clients: consistent content keeps you visible and brings more calls and messages.",
+      "Video reels with a natural voiceover — the format that sells most on social today.",
+      "No good photo? The AI creates the perfect image for your post.",
+      "Save hours: just describe the idea and in seconds your post is ready to publish.",
+      "Promotions, offers and before/after posts ready for Instagram, Facebook and WhatsApp."
+    ],
+    "upsellTitle": "And that's just part of it",
+    "upsellDesc": "UniTech brings together EVERYTHING your business needs. Tap another module to see its demo 👇",
+    "upsellSaw": "What you saw",
+    "upsellSeeDemo": "See demo",
+    "upsellModules": {
+      "presencia": {
+        "title": "Digital presence",
+        "desc": "NFC card + mini-site + 5★ reviews"
+      },
+      "negocio": {
+        "title": "Quote & get paid",
+        "desc": "AI quote, contract and invoice"
+      },
+      "marketing": {
+        "title": "AI marketing",
+        "desc": "Posts, reels and images with your brand"
+      }
+    },
+    "upsellCta": "Create your free account",
+    "upsellFootnote": "14 days free · no card · cancel anytime"
   }
 }

@@ -8,6 +8,7 @@
  * backend endpoints. Presencia & Marketing branches are simulated ($0 cost).
  */
 import { useState, useEffect } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
   Contact, PlayCircle, Image as ImageIcon, Copy, Check, PartyPopper, Nfc,
 } from "lucide-react";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
-import { QuoteStep, AgreementStep, InvoiceStep, GeneratingOverlay } from "./DemoFlow";
+import { QuoteStep, AgreementStep, InvoiceStep, GeneratingOverlay, tradeLabel } from "./DemoFlow";
 import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -181,6 +182,7 @@ function brandName(lead) {
 }
 
 export default function DemoAll() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [phase, setPhase] = useState("lead"); // lead | branch | presencia | negocio | marketing
   const [demoId, setDemoId] = useState(null);
@@ -193,7 +195,7 @@ export default function DemoAll() {
   const startDemo = async () => {
     setErr("");
     if (!lead.name.trim() || !lead.email.includes("@")) {
-      setErr("Pon tu nombre y un email válido para empezar.");
+      setErr(t("demo.errEmail"));
       return;
     }
     setLoading(true);
@@ -211,7 +213,7 @@ export default function DemoAll() {
       }
       window.scrollTo(0, 0);
     } catch (e) {
-      setErr(e?.response?.data?.detail || "No se pudo iniciar el demo. Intenta de nuevo.");
+      setErr(e?.response?.data?.detail || t("demo.errStart"));
     } finally {
       setLoading(false);
     }
@@ -250,6 +252,7 @@ export default function DemoAll() {
 }
 
 function TopBar() {
+  const { t } = useTranslation();
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -261,7 +264,7 @@ function TopBar() {
           <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
         <Link to="/register" data-testid="demo-all-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
-          Crear mi cuenta
+          {t("demo.signupTop")}
         </Link>
       </div>
     </header>
@@ -269,84 +272,65 @@ function TopBar() {
 }
 
 function LeadStep({ lead, setLead, onStart, loading }) {
+  const { t, i18n } = useTranslation();
   const set = (k) => (e) => setLead({ ...lead, [k]: e.target.value });
   return (
     <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
-        <Sparkles className="w-3.5 h-3.5" /> Demo en vivo · 2 minutos
+        <Sparkles className="w-3.5 h-3.5" /> {t("demo.liveBadge")}
       </div>
       <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">
-        Mira lo que UniTech puede hacer por tu negocio
+        {t("demoAll.leadTitle")}
       </h1>
       <p className="text-slate-600 mt-2 leading-relaxed">
-        Tu tarjeta digital con reseñas, tu cotización en inglés con IA, y tu contenido para redes — todo en español, hecho desde tu celular. Vívelo en vivo.
+        {t("demoAll.leadDesc")}
       </p>
       <div className="mt-6 space-y-3">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tu nombre</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadName")}</label>
           <Input data-testid="demo-all-name" value={lead.name} onChange={set("name")} placeholder="Carlos García" className="mt-1 h-12 rounded-xl" />
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadEmail")}</label>
           <Input data-testid="demo-all-email" type="email" value={lead.email} onChange={set("email")} placeholder="tu@email.com" className="mt-1 h-12 rounded-xl" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Teléfono</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadPhone")}</label>
             <Input data-testid="demo-all-phone" value={lead.phone} onChange={set("phone")} placeholder="(555) 123-4567" className="mt-1 h-12 rounded-xl" />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tu oficio</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadTrade")}</label>
             <select data-testid="demo-all-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-sm bg-white">
-              <option value="">Elige…</option>
-              {TRADES.map((t) => <option key={t} value={t}>{t}</option>)}
+              <option value="">{t("demo.choose")}</option>
+              {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
             </select>
           </div>
         </div>
       </div>
       <Button data-testid="demo-all-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Empezar el demo <ArrowRight className="w-4 h-4 ml-2" /></>}
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demo.startBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
       </Button>
-      <p className="text-[11px] text-slate-400 mt-3 text-center">Gratis y sin compromiso. Usamos tu email solo para mostrarte cómo funciona.</p>
+      <p className="text-[11px] text-slate-400 mt-3 text-center">{t("demo.freeNote")}</p>
     </Card>
   );
 }
 
 const BRANCHES = [
-  {
-    id: "presencia",
-    icon: Star,
-    title: "Presencia digital",
-    desc: "Tarjeta NFC + mini-sitio con reseñas 5★",
-    color: "from-amber-500 to-orange-500",
-    tagline: "Quiero verme profesional y conseguir más reseñas",
-  },
-  {
-    id: "negocio",
-    icon: FileText,
-    title: "Cotizar y cobrar",
-    desc: "Cotización IA en inglés, contrato y factura",
-    color: "from-blue-700 to-blue-900",
-    tagline: "Quiero cotizar rápido y cobrar como profesional",
-  },
-  {
-    id: "marketing",
-    icon: Megaphone,
-    title: "Marketing con IA",
-    desc: "Posts y reels con tu marca, en segundos",
-    color: "from-violet-600 to-fuchsia-600",
-    tagline: "Quiero contenido para redes sin batallar",
-  },
+  { id: "presencia", icon: Star, color: "from-amber-500 to-orange-500" },
+  { id: "negocio", icon: FileText, color: "from-blue-700 to-blue-900" },
+  { id: "marketing", icon: Megaphone, color: "from-violet-600 to-fuchsia-600" },
 ];
 
 function BranchSelector({ onChoose }) {
+  const { t } = useTranslation();
   return (
     <div data-testid="demo-branch-selector">
       <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-center">
-        ¿Cuál es tu mayor necesidad ahorita?
+        {t("demoAll.branchTitle")}
       </h2>
       <p className="text-slate-600 mt-2 text-center max-w-md mx-auto">
-        Elige una y te enseño la magia. Al final ves todo lo que UniTech hace por ti.
+        {t("demoAll.branchDesc")}
       </p>
       <div className="mt-6 space-y-3">
         {BRANCHES.map((b) => (
@@ -360,9 +344,9 @@ function BranchSelector({ onChoose }) {
               <b.icon className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-heading font-bold text-base text-slate-900">{b.title}</div>
-              <div className="text-xs text-slate-500">{b.desc}</div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">“{b.tagline}”</div>
+              <div className="font-heading font-bold text-base text-slate-900">{t(`demoAll.branches.${b.id}.title`)}</div>
+              <div className="text-xs text-slate-500">{t(`demoAll.branches.${b.id}.desc`)}</div>
+              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">“{t(`demoAll.branches.${b.id}.tagline`)}”</div>
             </div>
             <ArrowRight className="w-5 h-5 text-slate-300 flex-none" />
           </button>
@@ -374,6 +358,7 @@ function BranchSelector({ onChoose }) {
 
 /* ============================ NEGOCIO (ejemplos pre-armados, sin IA real) ============================ */
 function NegocioBranch({ lead, onBack, onSwitch }) {
+  const { t } = useTranslation();
   const [sub, setSub] = useState("pick"); // pick | quote | agreement | invoice
   const [picked, setPicked] = useState("");
   const [desc, setDesc] = useState("");
@@ -405,31 +390,31 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
     <div>
       {loading && (
         <GeneratingOverlay
-          title={sub === "pick" ? "Generando tu cotización…" : "Generando tu Service Agreement…"}
+          title={sub === "pick" ? t("demoAll.negOverlayQuoteTitle") : t("demoAll.negOverlayAgreementTitle")}
           subtitle={sub === "pick"
-            ? (<>La IA está armando tu cotización profesional en inglés. Unos segundos — <strong>no cierres esta página.</strong></>)
-            : (<>La IA está redactando tu contrato legal en inglés. Unos segundos — <strong>no cierres esta página.</strong></>)}
+            ? (<Trans i18nKey="demoAll.negOverlayQuoteSub" components={{ 1: <strong /> }} />)
+            : (<Trans i18nKey="demoAll.negOverlayAgreementSub" components={{ 1: <strong /> }} />)}
         />
       )}
-      <BackBar onBack={onBack} label="Cotizar y cobrar" />
+      <BackBar onBack={onBack} label={t("demoAll.branches.negocio.title")} />
 
       {sub === "pick" && (
         <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-          <h2 className="font-heading text-2xl font-bold">Así describes tu trabajo</h2>
+          <h2 className="font-heading text-2xl font-bold">{t("demoAll.negPickTitle")}</h2>
           <p className="text-slate-600 mt-1">
-            Toca un ejemplo para ver cómo se describe un trabajo. Con <strong>solo esa descripción</strong>, la IA te crea la cotización, el contrato y la factura — listos para enviar.
+            <Trans i18nKey="demoAll.negPickDesc" components={{ 1: <strong /> }} />
           </p>
 
           <div className="mt-4">
-            <div className="text-xs font-semibold text-slate-500 mb-1.5">Toca un ejemplo:</div>
+            <div className="text-xs font-semibold text-slate-500 mb-1.5">{t("demoAll.negTapExample")}</div>
             <div className="flex flex-wrap gap-2">
               {NEG_JOBS.map((j, i) => (
                 <button key={j.id} data-testid={`demo-all-example-${i}`}
-                  onClick={() => { setPicked(j.id); setDesc(j.descText); }}
+                  onClick={() => { setPicked(j.id); setDesc(t(`demoAll.negJobs.${j.id}.descText`)); }}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
                     picked === j.id ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
                   }`}>
-                  {j.label}
+                  {t(`demoAll.negJobs.${j.id}.label`)}
                 </button>
               ))}
             </div>
@@ -437,28 +422,28 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
 
           {/* Read-only example display (not typeable) */}
           <div className="mt-3 relative rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <span className="absolute -top-2 left-3 bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Ejemplo de descripción</span>
+            <span className="absolute -top-2 left-3 bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">{t("demoAll.negExampleLabel")}</span>
             {desc ? (
               <p data-testid="demo-all-desc" className="text-[15px] leading-relaxed text-slate-800 whitespace-pre-wrap">{desc}</p>
             ) : (
-              <p className="text-sm text-slate-400 italic py-6 text-center">👆 Toca uno de los ejemplos de arriba para ver cómo se ve una descripción.</p>
+              <p className="text-sm text-slate-400 italic py-6 text-center">{t("demoAll.negExamplePlaceholder")}</p>
             )}
           </div>
 
           <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">Con esa descripción, la IA genera:</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">{t("demoAll.negGenerates")}</div>
             <div className="flex flex-wrap gap-2 text-xs font-semibold text-emerald-800">
-              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Cotización</span>
-              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Contrato</span>
-              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Factura con link de pago</span>
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {t("demoAll.negChipQuote")}</span>
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {t("demoAll.negChipContract")}</span>
+              <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {t("demoAll.negChipInvoice")}</span>
             </div>
           </div>
 
           <Button data-testid="demo-all-gen-quote-btn" onClick={genQuote} disabled={!picked || loading}
             className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base disabled:opacity-50">
-            <Sparkles className="w-5 h-5 mr-2" /> Generar con IA
+            <Sparkles className="w-5 h-5 mr-2" /> {t("demoAll.negGenBtn")}
           </Button>
-          <p className="text-[11px] text-slate-400 mt-2 text-center">En tu cuenta real escribes tu propia descripción y la IA hace todo. ✨</p>
+          <p className="text-[11px] text-slate-400 mt-2 text-center">{t("demoAll.negGenNote")}</p>
         </Card>
       )}
 
@@ -474,16 +459,9 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
           {paid && (
             <>
               <div className="mt-5 mb-2 text-center">
-                <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué cotizar y cobrar con UniTech?</h3>
+                <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.negFeaturesTitle")}</h3>
               </div>
-              <FeatureRow items={[
-                { icon: Sparkles, text: "Cotiza en minutos, no en horas: la IA arma cotización, contrato y factura en inglés mientras tú sigues trabajando." },
-                { icon: Check, text: "Cobra más rápido: la factura lleva link de pago. El cliente paga con tarjeta y el dinero te llega directo a ti." },
-                { icon: BadgeCheck, text: "Te ves profesional con documentos en inglés que dan confianza — cierras más trabajos y a mejor precio." },
-                { icon: FileText, text: "Protégete legalmente: cada trabajo lleva su contrato firmado digitalmente por el cliente." },
-                { icon: Star, text: "Cobra el depósito por adelantado para asegurar el trabajo y no quedarte gastando de tu bolsa." },
-                { icon: Smartphone, text: "Todo desde tu celular y en español — sin computadora, sin Excel, sin complicaciones." },
-              ]} />
+              <FeatureRow items={[Sparkles, Check, BadgeCheck, FileText, Star, Smartphone].map((icon, i) => ({ icon, text: t("demoAll.negFeatures", { returnObjects: true })[i] }))} />
               <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />
             </>
           )}
@@ -495,6 +473,7 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
 
 /* ============================ PRESENCIA (tarjeta real) ============================ */
 function PresenciaBranch({ lead, onBack, onSwitch }) {
+  const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
   const meta = tradeMeta(lead.trade);
   const name = brandName(lead);
@@ -517,11 +496,11 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
 
   return (
     <div data-testid="demo-presencia-branch">
-      <BackBar onBack={onBack} label="Presencia digital" />
+      <BackBar onBack={onBack} label={t("demoAll.branches.presencia.title")} />
       <div className="text-center mb-4">
-        <h2 className="font-heading text-2xl font-bold">Tu tarjeta NFC + mini-sitio</h2>
+        <h2 className="font-heading text-2xl font-bold">{t("demoAll.presTitle")}</h2>
         <p className="text-slate-600 mt-1 text-sm max-w-md mx-auto">
-          Tus clientes acercan el teléfono a tu tarjeta y al instante ven tu mini-sitio profesional. Sin apps.
+          {t("demoAll.presDesc")}
         </p>
       </div>
 
@@ -535,9 +514,9 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
             <span className="absolute inset-0 rounded-2xl ring-4 ring-emerald-400/40 animate-ping" />
             <Nfc className="w-8 h-8 mb-1" />
             <span className="font-heading font-bold text-sm">{name}</span>
-            <span className="text-[10px] text-white/70">Tarjeta NFC</span>
+            <span className="text-[10px] text-white/70">{t("demoAll.presCardLabel")}</span>
           </button>
-          <p className="mt-4 text-sm font-semibold text-emerald-700">📲 Toca la tarjeta para abrir tu mini-sitio</p>
+          <p className="mt-4 text-sm font-semibold text-emerald-700">{t("demoAll.presTap")}</p>
         </div>
       ) : (
         <div className="max-w-[300px] mx-auto animate-in fade-in zoom-in-95 duration-500" data-testid="demo-interactive-mockup">
@@ -550,16 +529,9 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
       {opened && (
         <>
           <div className="mt-5 mb-2 text-center">
-            <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué tu tarjeta vende por ti?</h3>
+            <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.presFeaturesTitle")}</h3>
           </div>
-          <FeatureRow items={[
-            { icon: BadgeCheck, text: "Te ves PROFESIONAL al instante y generas confianza — olvídate de las tarjetas de papel que se pierden." },
-            { icon: Star, text: "Consigue más reseñas 5★ de Google con un solo tap. Más reseñas = sales primero en Google y te eligen a ti." },
-            { icon: MessageCircle, text: "Nunca pierdas un cliente: te llaman, textean o mandan WhatsApp con un toque, sin teclear tu número." },
-            { icon: Contact, text: "El cliente guarda tu contacto en su teléfono al instante — te recuerda y te recomienda con sus amigos." },
-            { icon: Nfc, text: "Compártela sin apps: acerca el teléfono (NFC), escanea el QR o manda el link por mensaje. Funciona en cualquier celular." },
-            { icon: Sparkles, text: "Cámbiala cuando quieras: fotos, servicios, precios y ofertas se actualizan al momento, sin reimprimir nada." },
-          ]} />
+          <FeatureRow items={[BadgeCheck, Star, MessageCircle, Contact, Nfc, Sparkles].map((icon, i) => ({ icon, text: t("demoAll.presFeatures", { returnObjects: true })[i] }))} />
           <ModuleUpsell highlight="presencia" onSwitch={onSwitch} />
         </>
       )}
@@ -569,6 +541,7 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
 
 /* ============================ MARKETING (simulado) ============================ */
 function MarketingBranch({ lead, onBack, onSwitch }) {
+  const { t } = useTranslation();
   const [picked, setPicked] = useState("");
   const [stage, setStage] = useState("input"); // input | generating | result
   const [copied, setCopied] = useState(false);
@@ -599,32 +572,32 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
 
   return (
     <div data-testid="demo-marketing-branch">
-      <BackBar onBack={onBack} label="Marketing con IA" />
+      <BackBar onBack={onBack} label={t("demoAll.branches.marketing.title")} />
 
       {stage === "input" && (
         <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-          <h2 className="font-heading text-2xl font-bold">Elige el tipo de post</h2>
-          <p className="text-slate-600 mt-1">Toca un ejemplo y la IA lo crea con tu marca, en inglés, listo para subir.</p>
+          <h2 className="font-heading text-2xl font-bold">{t("demoAll.mktInputTitle")}</h2>
+          <p className="text-slate-600 mt-1">{t("demoAll.mktInputDesc")}</p>
           <div className="mt-4 space-y-2">
-            {POST_TYPES.map((t, i) => (
-              <button key={t.id} data-testid={`demo-mkt-example-${i}`} onClick={() => setPicked(t.id)}
+            {POST_TYPES.map((pt, i) => (
+              <button key={pt.id} data-testid={`demo-mkt-example-${i}`} onClick={() => setPicked(pt.id)}
                 className={`w-full text-left p-3 rounded-xl border-2 flex items-center gap-3 transition ${
-                  picked === t.id ? "border-violet-500 bg-violet-50" : "border-slate-200 bg-white hover:border-slate-300"
+                  picked === pt.id ? "border-violet-500 bg-violet-50" : "border-slate-200 bg-white hover:border-slate-300"
                 }`}>
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-none ${picked === t.id ? "bg-violet-600" : "bg-slate-100"}`}>
-                  <t.icon className={`w-5 h-5 ${picked === t.id ? "text-white" : "text-slate-500"}`} />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-none ${picked === pt.id ? "bg-violet-600" : "bg-slate-100"}`}>
+                  <pt.icon className={`w-5 h-5 ${picked === pt.id ? "text-white" : "text-slate-500"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm text-slate-900">{t.label}</div>
-                  <div className="text-xs text-slate-500">“{t.ex}”</div>
+                  <div className="font-bold text-sm text-slate-900">{t(`demoAll.postTypes.${pt.id}.label`)}</div>
+                  <div className="text-xs text-slate-500">“{t(`demoAll.postTypes.${pt.id}.ex`)}”</div>
                 </div>
-                {picked === t.id && <Check className="w-5 h-5 text-violet-600 flex-none" />}
+                {picked === pt.id && <Check className="w-5 h-5 text-violet-600 flex-none" />}
               </button>
             ))}
           </div>
           <Button data-testid="demo-mkt-generate-btn" onClick={generate} disabled={!picked}
             className="mt-5 w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-base disabled:opacity-50">
-            <Sparkles className="w-5 h-5 mr-2" /> Crear post con IA
+            <Sparkles className="w-5 h-5 mr-2" /> {t("demoAll.mktGenBtn")}
           </Button>
         </Card>
       )}
@@ -636,15 +609,15 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
             <div className="absolute inset-0 rounded-full border-4 border-violet-500 border-t-transparent animate-spin" />
             <Sparkles className="w-6 h-6 text-violet-600 absolute inset-0 m-auto" />
           </div>
-          <h3 className="font-heading text-xl font-bold">La IA está creando tu post…</h3>
-          <p className="text-sm text-slate-500 mt-2">Diseño con tu marca + caption en inglés. Unos segundos.</p>
+          <h3 className="font-heading text-xl font-bold">{t("demoAll.mktGeneratingTitle")}</h3>
+          <p className="text-sm text-slate-500 mt-2">{t("demoAll.mktGeneratingSub")}</p>
         </div>
       )}
 
       {stage === "result" && (
         <div data-testid="demo-mkt-result">
           <div className="mb-3 rounded-xl bg-violet-50 border border-violet-200 text-violet-800 text-sm font-semibold px-4 py-2.5 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 flex-none" /> ¡Listo! Tu post para Instagram/Facebook, con tu marca 👇
+            <Sparkles className="w-4 h-4 flex-none" /> {t("demoAll.mktResultBanner")}
           </div>
           <div className="max-w-[340px] mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-white">
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
@@ -669,27 +642,20 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
 
           <div className="mt-4 flex gap-2 justify-center">
             <Button data-testid="demo-mkt-copy" onClick={copy} variant="outline" size="sm" className="rounded-xl">
-              {copied ? <Check className="w-4 h-4 mr-1 text-emerald-600" /> : <Copy className="w-4 h-4 mr-1" />} Copiar caption
+              {copied ? <Check className="w-4 h-4 mr-1 text-emerald-600" /> : <Copy className="w-4 h-4 mr-1" />} {t("demoAll.mktCopyCaption")}
             </Button>
             <span className="inline-flex items-center gap-1 px-3 h-9 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold">
-              <PlayCircle className="w-4 h-4" /> +Reel en video
+              <PlayCircle className="w-4 h-4" /> {t("demoAll.mktReel")}
             </span>
             <span className="inline-flex items-center gap-1 px-3 h-9 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold">
-              <ImageIcon className="w-4 h-4" /> +Imagen IA
+              <ImageIcon className="w-4 h-4" /> {t("demoAll.mktImage")}
             </span>
           </div>
 
           <div className="mt-5 mb-2 text-center">
-            <h3 className="font-heading text-lg font-bold text-slate-900">¿Por qué te conviene el Marketing con IA?</h3>
+            <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.mktFeaturesTitle")}</h3>
           </div>
-          <FeatureRow items={[
-            { icon: ImageIcon, text: "Publica como profesional sin pagar diseñador: posts con tu logo, colores, teléfono y botón de acción." },
-            { icon: Megaphone, text: "Atrae más clientes: contenido constante te mantiene visible y te llegan más llamadas y mensajes." },
-            { icon: PlayCircle, text: "Reels en video con voz en off en español nativo — el formato que más vende hoy en redes." },
-            { icon: Sparkles, text: "¿No tienes una buena foto? La IA te crea la imagen perfecta para tu post." },
-            { icon: Check, text: "Ahorra horas: solo describes la idea y en segundos tienes el post listo para subir." },
-            { icon: Smartphone, text: "Promociones, ofertas y antes/después listos para Instagram, Facebook y WhatsApp." },
-          ]} />
+          <FeatureRow items={[ImageIcon, Megaphone, PlayCircle, Sparkles, Check, Smartphone].map((icon, i) => ({ icon, text: t("demoAll.mktFeatures", { returnObjects: true })[i] }))} />
           <ModuleUpsell highlight="marketing" onSwitch={onSwitch} />
         </div>
       )}
@@ -798,10 +764,11 @@ function DesignedPost({ meta, name, lead, type = "showcase" }) {
 
 /* ============================ Shared ============================ */
 function BackBar({ onBack, label }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between mb-4">
       <button data-testid="demo-all-back" onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1">
-        <ArrowLeft className="w-4 h-4" /> Cambiar
+        <ArrowLeft className="w-4 h-4" /> {t("demoAll.change")}
       </button>
       <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</span>
     </div>
@@ -824,19 +791,20 @@ function FeatureRow({ items }) {
 }
 
 const UPSELL_MODULES = {
-  presencia: { icon: Star, title: "Presencia digital", desc: "Tarjeta NFC + mini-sitio + reseñas 5★" },
-  negocio: { icon: FileText, title: "Cotizar y cobrar", desc: "Cotización IA, contrato y factura" },
-  marketing: { icon: Megaphone, title: "Marketing con IA", desc: "Posts, reels e imágenes con tu marca" },
+  presencia: { icon: Star },
+  negocio: { icon: FileText },
+  marketing: { icon: Megaphone },
 };
 
 function ModuleUpsell({ highlight, onSwitch }) {
+  const { t } = useTranslation();
   const others = Object.keys(UPSELL_MODULES).filter((id) => id !== highlight);
   return (
     <Card className="mt-6 p-6 sm:p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0" data-testid="demo-module-upsell">
       <PartyPopper className="w-9 h-9 mx-auto mb-2" />
-      <h2 className="font-heading text-2xl font-bold">Y eso es solo una parte</h2>
+      <h2 className="font-heading text-2xl font-bold">{t("demoAll.upsellTitle")}</h2>
       <p className="text-white/85 mt-1 max-w-md mx-auto text-sm">
-        UniTech junta TODO lo que tu negocio necesita. Toca otro módulo para ver su demo 👇
+        {t("demoAll.upsellDesc")}
       </p>
       <div className="mt-5 grid gap-2 text-left">
         {/* current module (just shows what they saw) */}
@@ -847,10 +815,10 @@ function ModuleUpsell({ highlight, onSwitch }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-heading font-bold text-sm flex items-center gap-2">
-                {m.title}
-                <span className="text-[9px] uppercase tracking-wider bg-white text-blue-900 px-1.5 py-0.5 rounded-full">Lo que viste</span>
+                {t(`demoAll.upsellModules.${highlight}.title`)}
+                <span className="text-[9px] uppercase tracking-wider bg-white text-blue-900 px-1.5 py-0.5 rounded-full">{t("demoAll.upsellSaw")}</span>
               </div>
-              <div className="text-[11px] text-white/80">{m.desc}</div>
+              <div className="text-[11px] text-white/80">{t(`demoAll.upsellModules.${highlight}.desc`)}</div>
             </div>
           </div>
         ); })()}
@@ -869,20 +837,20 @@ function ModuleUpsell({ highlight, onSwitch }) {
                 <m.icon className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-heading font-bold text-sm">{m.title}</div>
-                <div className="text-[11px] text-white/80">{m.desc}</div>
+                <div className="font-heading font-bold text-sm">{t(`demoAll.upsellModules.${id}.title`)}</div>
+                <div className="text-[11px] text-white/80">{t(`demoAll.upsellModules.${id}.desc`)}</div>
               </div>
               <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-white text-blue-900 px-2.5 py-1 rounded-full flex-none">
-                Ver demo <ArrowRight className="w-3 h-3" />
+                {t("demoAll.upsellSeeDemo")} <ArrowRight className="w-3 h-3" />
               </span>
             </button>
           );
         })}
       </div>
       <Link data-testid="demo-all-final-cta" to="/register" className="inline-flex items-center gap-2 mt-6 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
-        Crear mi cuenta gratis <ArrowRight className="w-4 h-4" />
+        {t("demoAll.upsellCta")} <ArrowRight className="w-4 h-4" />
       </Link>
-      <p className="text-[11px] text-white/70 mt-3">14 días gratis · sin tarjeta · cancela cuando quieras</p>
+      <p className="text-[11px] text-white/70 mt-3">{t("demoAll.upsellFootnote")}</p>
     </Card>
   );
 }

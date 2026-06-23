@@ -1,0 +1,47 @@
+{
+  "summary": "Frontend-only verification of the bilingual EN/ES refactor of the two public no-login demos (/demo DemoFlow and /demo-all DemoAll) plus the LanguageSuggestBanner. Tested via REACT_APP_BACKEND_URL with localStorage 'unitech_lang' and 'unitech_lang_dismiss' set BEFORE reload. RESULT: All acceptance criteria met. ZERO Spanish words and ZERO 'translate from Spanish' references found anywhere in the app UI when unitech_lang='en' on either route, including all 3 /demo-all branches (Negocio / Presencia / Marketing). Spanish mode shows the expected ES copy (lead H1s, describe step, branch selector). The suggestion banner renders with correct data-testids, switches the whole UI to Spanish on click, and disappears (writes unitech_lang='es' + unitech_lang_dismiss='1' to localStorage).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/demo lead step (DemoFlow) in EN mode", "issues": [
+        "The EMAIL input placeholder is 'tu@email.com' (Spanish 'tu' = 'your') even when unitech_lang='en'. All other lead-form labels/buttons are correctly English. Consider switching the placeholder to 'you@email.com' for the English locale. Same placeholder appears on /demo-all lead in EN mode."
+      ]},
+      {"screen": "/demo-all Marketing branch (EN) generated post template", "issues": [
+        "The bottom-right corner badge baked into the generated social post graphic shows 'IA' (Spanish for AI) instead of 'AI' when locale is English. This is part of the rendered post image, not surrounding UI. Confirm whether the watermark should be locale-aware; left as-is by main agent."
+      ]},
+      {"screen": "/demo-all Presencia branch (EN) NFC card preview", "issues": [
+        "A small 'ES' chip appears inside the mini-site phone preview (top-right of the device frame). This is the mini-site's own language selector (in-product preview), not app chrome, so it is acceptable. Flagging only for awareness."
+      ]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL: change the email input placeholder from 'tu@email.com' to 'you@email.com' when i18n locale is 'en' (DemoFlow.js and DemoAll.js lead forms).",
+    "OPTIONAL: consider making the 'IA' watermark on the generated marketing post template locale-aware ('AI' for EN)."
+  ],
+  "critical_code_review_comments": [
+    "EN/ES copy parity for /demo and /demo-all is clean. No raw i18n keys leaked; namespaces demo / demoFlow / demoAll resolve in both languages.",
+    "data-testids are present and correct for all critical actions: demo-name, demo-email, demo-trade, demo-start-btn, demo-example-roof, demo-gen-quote-btn, demo-accept-quote-btn, demo-sign-btn, demo-pay-btn, demo-all-name, demo-all-email, demo-all-start-btn, select-negocio-branch, select-presencia-branch, select-marketing-branch, demo-all-example-0, demo-all-gen-quote-btn, demo-nfc-tap, demo-mkt-example-0, demo-mkt-generate-btn, lang-suggest-banner, lang-suggest-switch-es.",
+    "Banner correctly persists dismissal via unitech_lang_dismiss='1' and language via unitech_lang in localStorage; reading happens before mount so no FOUC observed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "100%"},
+  "test_credentials": "N/A — public no-auth routes",
+  "seed_data_creation": "None (used demo lead names 'John Smith' / 'Jane Doe' / 'Pedro García', all transient, no persistence)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bilingual EN/ES refactor of /demo and /demo-all PASSED end-to-end. /demo EN: full flow Your info → The job → Quote (real AI ~10-15s wait) → Contract (AI ~10-20s wait) → Invoice → Paid block + FinalCTA 'Create your free account' — ALL English. /demo ES: lead H1 'Vive el flujo completo de UniTech', describe step 'Describe el trabajo… en español' confirmed. /demo-all EN: H1 'See what UniTech can do for your business'; branch selector 'What do you need most right now?'; all 3 branches: (a) Negocio Quote & Get Paid pre-built docs → Accept → Sign → Pay → 'Why quote & get paid with UniTech?' features + ModuleUpsell 'And that's just part of it'; (b) Presencia DIGITAL PRESENCE → 'Your NFC card + mini-site' → tap card → 'Why your card sells for you'; (c) Marketing AI MARKETING → 'Choose the post type' → tap example → 'Create post with AI' → result post + 'Why AI Marketing pays off'. /demo-all ES: H1 'Mira lo que UniTech puede hacer por tu negocio', branch selector '¿Cuál es tu mayor necesidad ahorita?' confirmed. Banner: with unitech_lang='en' and dismiss removed, lang-suggest-banner renders text '¿Hablas español? Mira UniTech en tu idioma.' with button 'Ver en español' (data-testid='lang-suggest-switch-es'); clicking switches UI to Spanish, hides banner, sets unitech_lang='es' and unitech_lang_dismiss='1'. Only minor copy nits are the 'tu@email.com' placeholder and 'IA' watermark on marketing post (see design_issues).",
+  "verified_scenarios": [
+    "/demo EN full flow: lead form → describe step (Describe the job, Just like you'd tell a friend.) → pick roof example → Generate quote with AI → real AI quote rendered (~10s) → Accept this Quote → Service Agreement modal 'Generating your Service Agreement…' → 'SIGN HERE' + 'Sign Agreement & Continue' → Invoice screen with PAY SECURELY + Venmo/Zelle/CashApp/PayPal → Pay $X by card → 'This is a demo!' + 'Create your free account' FinalCTA. ZERO Spanish words detected at every screen.",
+    "/demo ES lead: 'Vive el flujo completo de UniTech' + describe 'Describe el trabajo… en español' + 'Generar cotización con IA' confirmed.",
+    "/demo-all EN lead: H1 'See what UniTech can do for your business' confirmed.",
+    "/demo-all EN branch selector: 'What do you need most right now?' + 3 cards (Digital presence / Quote & get paid / AI marketing).",
+    "/demo-all EN Negocio: pre-built quote → accept → sign → pay → 'Why quote & get paid with UniTech?' (6 bullets) + ModuleUpsell 'And that's just part of it'. ZERO Spanish.",
+    "/demo-all EN Presencia: 'Your NFC card + mini-site' intro → tap card → contact actions (Call/Text/WhatsApp/Email/Save Contact) → 'Why your card sells for you' (6 bullets) + ModuleUpsell. ZERO Spanish in app chrome.",
+    "/demo-all EN Marketing: 'Choose the post type' + 3 examples (Finished job/Promotion/Before & after) → tap example → 'Create post with AI' → rendered post with English caption + hashtags → 'Why AI Marketing pays off' (6 bullets) + ModuleUpsell. ZERO Spanish in surrounding UI.",
+    "/demo-all ES: H1 'Mira lo que UniTech puede hacer por tu negocio' + branch selector '¿Cuál es tu mayor necesidad ahorita?' + Presencia 'Tu tarjeta NFC + mini-sitio' confirmed.",
+    "Language banner: visible with unitech_lang='en' and no dismiss; text '¿Hablas español? Mira UniTech en tu idioma.' + button 'Ver en español'; clicking switches UI to ES, hides banner, persists unitech_lang='es' and unitech_lang_dismiss='1' in localStorage."
+  ]
+}

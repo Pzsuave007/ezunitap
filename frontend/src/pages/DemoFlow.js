@@ -5,6 +5,7 @@
  * Designed to be shared so prospects "feel" the product before signing up.
  */
 import { useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -27,15 +28,24 @@ const TRADES = [
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
 ];
 
-const EXAMPLES = [
-  { label: "Techo", text: "Reemplazar techo de 1500 pies cuadrados con shingles nuevos, incluye remover el viejo, papel nuevo y limpieza completa." },
-  { label: "Drywall", text: "Instalar y resanar drywall en una recámara de 12x14 pies, incluye lijado y dejarlo listo para pintar." },
-  { label: "Pintura", text: "Pintar interior de casa de 3 recámaras y 2 baños, paredes y techos, 2 manos de pintura, dueño compra el color." },
-];
+// Localized display label for a trade (the stored value stays bilingual for lookups).
+export const TRADE_LABELS = {
+  "Techos / Roofing": { es: "Techos", en: "Roofing" },
+  "Drywall": { es: "Drywall", en: "Drywall" },
+  "Pintura / Painting": { es: "Pintura", en: "Painting" },
+  "Concreto / Concrete": { es: "Concreto", en: "Concrete" },
+  "Jardinería / Landscaping": { es: "Jardinería", en: "Landscaping" },
+  "Limpieza / Cleaning": { es: "Limpieza", en: "Cleaning" },
+  "Plomería / Plumbing": { es: "Plomería", en: "Plumbing" },
+  "Otro": { es: "Otro", en: "Other" },
+};
+export const tradeLabel = (val, lng) =>
+  (TRADE_LABELS[val]?.[lng?.startsWith("es") ? "es" : "en"]) || val;
 
-const STEPS = ["Tus datos", "El trabajo", "Cotización", "Contrato", "Factura"];
+const EXAMPLE_IDS = ["roof", "drywall", "paint"];
 
 export default function DemoFlow() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [demoId, setDemoId] = useState(null);
   const [lead, setLead] = useState({ name: "", email: "", phone: "", trade: "" });
@@ -53,7 +63,7 @@ export default function DemoFlow() {
   const startDemo = async () => {
     setErr("");
     if (!lead.name.trim() || !lead.email.includes("@")) {
-      setErr("Pon tu nombre y un email válido para empezar.");
+      setErr(t("demo.errEmail"));
       return;
     }
     setLoading(true);
@@ -66,7 +76,7 @@ export default function DemoFlow() {
       fbTrackCustom("DemoStarted", { trade: lead.trade || "" });
       setStep(1);
     } catch (e) {
-      apiErr(e, "No se pudo iniciar el demo. Intenta de nuevo.");
+      apiErr(e, t("demo.errStart"));
     } finally {
       setLoading(false);
     }
@@ -75,7 +85,7 @@ export default function DemoFlow() {
   const genQuote = async () => {
     setErr("");
     if (desc.trim().length < 6) {
-      setErr("Describe el trabajo con un poco más de detalle.");
+      setErr(t("demoFlow.errDesc"));
       return;
     }
     setLoading(true);
@@ -89,7 +99,7 @@ export default function DemoFlow() {
       setStep(2);
       window.scrollTo(0, 0);
     } catch (e) {
-      apiErr(e, "La IA no pudo generar la cotización. Intenta de nuevo.");
+      apiErr(e, t("demoFlow.errQuote"));
     } finally {
       setLoading(false);
     }
@@ -110,7 +120,7 @@ export default function DemoFlow() {
       setStep(3);
       window.scrollTo(0, 0);
     } catch (e) {
-      apiErr(e, "La IA no pudo generar el contrato. Intenta de nuevo.");
+      apiErr(e, t("demoFlow.errAgreement"));
     } finally {
       setLoading(false);
     }
@@ -137,10 +147,12 @@ export default function DemoFlow() {
   );
 }
 
-export function GeneratingOverlay({
-  title = "Generando tu Service Agreement…",
-  subtitle = (<>La IA está redactando tu contrato legal en inglés. Toma unos segundos — <strong>no cierres esta página.</strong></>),
-} = {}) {
+export function GeneratingOverlay({ title, subtitle } = {}) {
+  const { t } = useTranslation();
+  const finalTitle = title ?? t("demoFlow.overlayTitle");
+  const finalSubtitle = subtitle ?? (
+    <Trans i18nKey="demoFlow.overlaySubtitle" components={{ 1: <strong /> }} />
+  );
   return (
     <div data-testid="demo-generating-overlay" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
@@ -149,14 +161,15 @@ export function GeneratingOverlay({
           <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
           <Sparkles className="w-6 h-6 text-emerald-600 absolute inset-0 m-auto" />
         </div>
-        <h3 className="font-heading text-xl font-bold text-slate-900">{title}</h3>
-        <p className="text-sm text-slate-500 mt-2">{subtitle}</p>
+        <h3 className="font-heading text-xl font-bold text-slate-900">{finalTitle}</h3>
+        <p className="text-sm text-slate-500 mt-2">{finalSubtitle}</p>
       </div>
     </div>
   );
 }
 
 function TopBar() {
+  const { t } = useTranslation();
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -168,7 +181,7 @@ function TopBar() {
           <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
         <Link to="/register" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
-          Crear mi cuenta
+          {t("demo.signupTop")}
         </Link>
       </div>
     </header>
@@ -176,9 +189,11 @@ function TopBar() {
 }
 
 function StepBar({ step }) {
+  const { t } = useTranslation();
+  const steps = t("demoFlow.steps", { returnObjects: true });
   return (
     <div className="flex items-center gap-1.5 mb-6" data-testid="demo-stepbar">
-      {STEPS.map((label, i) => (
+      {steps.map((label, i) => (
         <div key={label} className="flex-1">
           <div className={`h-1.5 rounded-full transition-colors ${i <= step ? "bg-emerald-500" : "bg-slate-200"}`} />
           <div className={`text-[10px] mt-1 font-semibold ${i <= step ? "text-emerald-700" : "text-slate-400"}`}>{label}</div>
@@ -189,67 +204,68 @@ function StepBar({ step }) {
 }
 
 function LeadStep({ lead, setLead, onStart, loading }) {
+  const { t, i18n } = useTranslation();
   const set = (k) => (e) => setLead({ ...lead, [k]: e.target.value });
   return (
     <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
-        <Sparkles className="w-3.5 h-3.5" /> Demo en vivo · 2 minutos
+        <Sparkles className="w-3.5 h-3.5" /> {t("demo.liveBadge")}
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight">Vive el flujo completo de UniTech</h1>
+      <h1 className="font-heading text-3xl font-bold tracking-tight">{t("demoFlow.leadTitle")}</h1>
       <p className="text-slate-600 mt-2 leading-relaxed">
-        Escribe un trabajo en <strong>español</strong> y mira cómo la IA crea una cotización en
-        <strong> inglés profesional</strong>, el cliente la aprueba, firma el contrato y recibe la factura con links de pago. Todo en vivo.
+        <Trans i18nKey="demoFlow.leadDesc" components={{ 1: <strong />, 3: <strong /> }} />
       </p>
       <div className="mt-6 space-y-3">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tu nombre</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadName")}</label>
           <Input data-testid="demo-name" value={lead.name} onChange={set("name")} placeholder="Carlos García" className="mt-1 h-12 rounded-xl" />
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadEmail")}</label>
           <Input data-testid="demo-email" type="email" value={lead.email} onChange={set("email")} placeholder="tu@email.com" className="mt-1 h-12 rounded-xl" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Teléfono</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadPhone")}</label>
             <Input data-testid="demo-phone" value={lead.phone} onChange={set("phone")} placeholder="(555) 123-4567" className="mt-1 h-12 rounded-xl" />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tu oficio</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadTrade")}</label>
             <select data-testid="demo-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-sm bg-white">
-              <option value="">Elige…</option>
-              {TRADES.map((t) => <option key={t} value={t}>{t}</option>)}
+              <option value="">{t("demo.choose")}</option>
+              {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
             </select>
           </div>
         </div>
       </div>
       <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Empezar el demo <ArrowRight className="w-4 h-4 ml-2" /></>}
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demo.startBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
       </Button>
-      <p className="text-[11px] text-slate-400 mt-3 text-center">Gratis y sin compromiso. Usamos tu email solo para mostrarte cómo funciona.</p>
+      <p className="text-[11px] text-slate-400 mt-3 text-center">{t("demo.freeNote")}</p>
     </Card>
   );
 }
 
 function DescribeStep({ desc, setDesc, onGen, loading, onBack }) {
+  const { t } = useTranslation();
   return (
     <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
-      <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mb-4"><ArrowLeft className="w-4 h-4" /> Atrás</button>
-      <h2 className="font-heading text-2xl font-bold">Describe el trabajo… en español</h2>
-      <p className="text-slate-600 mt-1">Como se lo dirías a un amigo. La IA hace el resto.</p>
+      <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mb-4"><ArrowLeft className="w-4 h-4" /> {t("demoFlow.back")}</button>
+      <h2 className="font-heading text-2xl font-bold">{t("demoFlow.describeTitle")}</h2>
+      <p className="text-slate-600 mt-1">{t("demoFlow.describeDesc")}</p>
       <div className="flex flex-wrap gap-2 mt-4">
-        {EXAMPLES.map((ex) => (
-          <button key={ex.label} data-testid={`demo-example-${ex.label}`} onClick={() => setDesc(ex.text)}
+        {EXAMPLE_IDS.map((id) => (
+          <button key={id} data-testid={`demo-example-${id}`} onClick={() => setDesc(t(`demoFlow.examples.${id}.text`))}
             className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
-            {ex.label}
+            {t(`demoFlow.examples.${id}.label`)}
           </button>
         ))}
       </div>
       <Textarea data-testid="demo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={5}
-        placeholder="Ej: Reemplazar techo de 1500 pies cuadrados con shingles nuevos…"
+        placeholder={t("demoFlow.descPlaceholder")}
         className="mt-3 rounded-xl text-base" />
       <Button data-testid="demo-gen-quote-btn" onClick={onGen} disabled={loading} className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base">
-        {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> La IA está cotizando…</> : <><Sparkles className="w-5 h-5 mr-2" /> Generar cotización con IA</>}
+        {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlow.genQuoteLoading")}</> : <><Sparkles className="w-5 h-5 mr-2" /> {t("demoFlow.genQuoteBtn")}</>}
       </Button>
     </Card>
   );
@@ -279,6 +295,7 @@ function DocHeader({ business, badge }) {
 }
 
 export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
+  const { t } = useTranslation();
   const [dl, setDl] = useState(false);
   if (!quote) return null;
   const downloadPdf = async () => {
@@ -291,7 +308,7 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
   };
   return (
     <div>
-      <ClientBanner text="Así es como tu cliente recibe y aprueba la cotización 👇" />
+      <ClientBanner text={t("demoFlow.quoteBanner")} />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <DocHeader business={business} badge="QUOTE" />
         <div className="p-6 space-y-5">
@@ -348,7 +365,7 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
         </div>
       </Card>
       <PdfActions onDownload={downloadPdf} downloading={dl} />
-      <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mt-4"><ArrowLeft className="w-4 h-4" /> Probar con otro trabajo</button>
+      <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mt-4"><ArrowLeft className="w-4 h-4" /> {t("demoFlow.tryAnother")}</button>
     </div>
   );
 }
@@ -366,10 +383,11 @@ function Clause({ title, children }) {
 }
 
 export function AgreementStep({ agreement, business, lead, signed, onSign }) {
+  const { t } = useTranslation();
   if (!agreement) return null;
   return (
     <div>
-      <ClientBanner text="El contrato legal lo arma la IA solo. Tu cliente lo firma con el dedo 👇" />
+      <ClientBanner text={t("demoFlow.agreementBanner")} />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <DocHeader business={business} badge="AGREEMENT" />
         <div className="p-6 space-y-4">
@@ -402,6 +420,7 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
 }
 
 export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta = false }) {
+  const { t } = useTranslation();
   const [dl, setDl] = useState(false);
   const total = Number(quote?.total || 0);
   const deposit = Number(quote?.deposit_amount || 0) || Math.round(total * 0.5 * 100) / 100;
@@ -423,7 +442,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
   };
   return (
     <div>
-      <ClientBanner text="¡Listo! El contrato firmado genera la factura solo, con link de pago 👇" />
+      <ClientBanner text={t("demoFlow.invoiceBanner")} />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <DocHeader business={business} badge="INVOICE" />
         <div className="p-6 space-y-5">
@@ -471,8 +490,8 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
           {paid ? (
             <div data-testid="demo-paid-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-6 text-center space-y-2">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-              <div className="font-heading text-xl font-bold text-emerald-800">✅ ¡Esto es un demo!</div>
-              <p className="text-sm text-emerald-700">En tu cuenta real, el cliente paga aquí mismo con tarjeta y el dinero te llega directo.</p>
+              <div className="font-heading text-xl font-bold text-emerald-800">{t("demoFlow.paidTitle")}</div>
+              <p className="text-sm text-emerald-700">{t("demoFlow.paidDesc")}</p>
             </div>
           ) : (
             <div className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
@@ -481,7 +500,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
                 <CreditCard className="w-5 h-5 mr-2" /> Pay {fmtMoney(due)} by card
               </Button>
               <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500">
-                <Lock className="w-3.5 h-3.5" /> o paga con
+                <Lock className="w-3.5 h-3.5" /> {t("demoFlow.orPayWith")}
                 {["Venmo", "Zelle", "CashApp", "PayPal"].map((m) => (
                   <span key={m} className="px-2 py-0.5 rounded-full bg-white border border-slate-200">{m}</span>
                 ))}
@@ -507,6 +526,7 @@ function ClientBanner({ text }) {
 }
 
 function PdfActions({ onDownload, downloading }) {
+  const { t } = useTranslation();
   return (
     <div data-testid="demo-pdf-actions" className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
       <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -518,7 +538,7 @@ function PdfActions({ onDownload, downloading }) {
           size="sm"
           className="rounded-xl"
         >
-          {downloading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileDown className="w-4 h-4 mr-1" />} Descargar PDF
+          {downloading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileDown className="w-4 h-4 mr-1" />} {t("demoFlow.downloadPdf")}
         </Button>
         <Button
           data-testid="demo-print"
@@ -527,26 +547,27 @@ function PdfActions({ onDownload, downloading }) {
           size="sm"
           className="rounded-xl"
         >
-          <Printer className="w-4 h-4 mr-1" /> Imprimir
+          <Printer className="w-4 h-4 mr-1" /> {t("demoFlow.print")}
         </Button>
       </div>
       <p className="text-[11px] text-slate-500 text-center mt-2">
-        📄 Tus clientes pueden <strong>descargar en PDF o imprimir</strong> todo lo que les mandes para guardar sus records.
+        <Trans i18nKey="demoFlow.pdfNote" components={{ 1: <strong /> }} />
       </p>
     </div>
   );
 }
 
 function FinalCTA() {
+  const { t } = useTranslation();
   return (
     <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
       <PartyPopper className="w-10 h-10 mx-auto mb-3" />
-      <h2 className="font-heading text-2xl font-bold">Eso fue todo. Así de fácil.</h2>
+      <h2 className="font-heading text-2xl font-bold">{t("demoFlow.finalTitle")}</h2>
       <p className="text-white/85 mt-2 max-w-md mx-auto">
-        Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta gratis (14 días, sin tarjeta) y empieza a cobrar como un profesional.
+        {t("demoFlow.finalDesc")}
       </p>
       <Link data-testid="demo-final-cta" to="/register" className="inline-flex items-center gap-2 mt-5 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
-        Crear mi cuenta gratis <ArrowRight className="w-4 h-4" />
+        {t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
       </Link>
     </Card>
   );

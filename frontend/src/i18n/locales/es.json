@@ -554,9 +554,24 @@
     "cancelled": "Pago cancelado. Puedes intentar de nuevo cuando quieras.",
     "errLoadPlans": "Error al cargar los planes",
     "errCheckout": "Error al iniciar el pago",
-    "bPresencia": ["Tarjeta digital con QR + NFC", "Mini-sitio web profesional", "Reseñas de Google ⭐", "Captura de leads automática"],
-    "bNegocio": ["Presupuestos con IA (español → inglés)", "Facturas y contratos profesionales", "CRM de clientes", "Calendario de trabajos"],
-    "bMarketing": ["Posts para redes con IA", "Videos / Reels con IA", "Plantillas y colores de tu marca", "Voz en off y subtítulos"]
+    "bPresencia": [
+      "Tarjeta digital con QR + NFC",
+      "Mini-sitio web profesional",
+      "Reseñas de Google ⭐",
+      "Captura de leads automática"
+    ],
+    "bNegocio": [
+      "Presupuestos con IA (español → inglés)",
+      "Facturas y contratos profesionales",
+      "CRM de clientes",
+      "Calendario de trabajos"
+    ],
+    "bMarketing": [
+      "Posts para redes con IA",
+      "Videos / Reels con IA",
+      "Plantillas y colores de tu marca",
+      "Voz en off y subtítulos"
+    ]
   },
   "welcome": {
     "badge": "Bienvenido a UniTech",
@@ -606,8 +621,29 @@
     "createAiImage": "Crear imagen IA",
     "makeReel": "Hacer Reel",
     "businessFallback": "compa",
-    "industries": ["Techos / Roofing", "Plomería", "Electricidad", "Jardinería / Landscaping", "Pintura", "Concreto", "Limpieza", "HVAC / Climas", "Remodelación", "Construcción", "Pisos", "Cercas / Fencing"],
-    "catLabels": { "trabajo_terminado": "Trabajo terminado", "oferta": "Oferta", "resena": "Reseña", "antes_despues": "Antes / Después", "contratando": "Contratando", "temporada": "Temporada", "tips": "Consejo" }
+    "industries": [
+      "Techos / Roofing",
+      "Plomería",
+      "Electricidad",
+      "Jardinería / Landscaping",
+      "Pintura",
+      "Concreto",
+      "Limpieza",
+      "HVAC / Climas",
+      "Remodelación",
+      "Construcción",
+      "Pisos",
+      "Cercas / Fencing"
+    ],
+    "catLabels": {
+      "trabajo_terminado": "Trabajo terminado",
+      "oferta": "Oferta",
+      "resena": "Reseña",
+      "antes_despues": "Antes / Después",
+      "contratando": "Contratando",
+      "temporada": "Temporada",
+      "tips": "Consejo"
+    }
   },
   "profile": {
     "title": "Perfil",
@@ -719,7 +755,13 @@
     "heroCreateFree": "Crear cuenta gratis",
     "heroHaveAccount": "Ya tengo cuenta",
     "resultsTitle": "Resultados que obtienes",
-    "results": ["Consigue más clientes", "Cotiza en segundos", "Cobra más rápido", "Organiza tus trabajos", "Obtén más reseñas 5★"],
+    "results": [
+      "Consigue más clientes",
+      "Cotiza en segundos",
+      "Cobra más rápido",
+      "Organiza tus trabajos",
+      "Obtén más reseñas 5★"
+    ],
     "noCard": "Sin tarjeta de crédito",
     "worksPhone": "Funciona desde el celular",
     "cancelAnytime": "Cancela cuando quieras",
@@ -729,22 +771,103 @@
     "painTitle": "Olvídate de Excel, Word, notas y ",
     "painTitle2": "invoices de papel.",
     "painSubtitle": "Tu información regada entre Excel, Word, notas del celular, papeles y QuickBooks es dinero y tiempo que pierdes. Con UniTech manejas <b>todo desde un solo lugar.</b>",
-    "painTags": ["Excel", "Word", "Notas", "Invoice de papel", "QuickBooks", "Más apps"],
+    "painTags": [
+      "Excel",
+      "Word",
+      "Notas",
+      "Invoice de papel",
+      "QuickBooks",
+      "Más apps"
+    ],
     "howEyebrow": "Así funciona",
     "howTitle": "Tu negocio completo, ",
     "howTitleHighlight": "paso a paso.",
     "howSubtitle": "Desde que el cliente te encuentra hasta que te deja una reseña 5★ — cada paso conectado con el siguiente.",
     "stepLabel": "Paso",
     "flow": [
-      { "title": "Consigue nuevos clientes", "lead": "Comparte tu Tarjeta Inteligente por código QR, NFC, link directo o redes sociales.", "points": ["Ven tus servicios y fotos de tus trabajos", "Guardan tu contacto al instante", "Solicitan una cotización y te contactan fácil", "Todo entra automático a tu sistema"] },
-      { "title": "Crea presupuestos “quote” en segundos", "lead": "Describe el trabajo en español — la inteligencia artificial hace el resto.", "points": ["Presupuesto “quote” profesional automático", "Alcance del trabajo “Scope of Work” detallado", "Documento en inglés para tu cliente", "PDF listo para enviar"] },
-      { "title": "Tu cliente acepta el presupuesto “quote”", "lead": "Recibe una propuesta profesional y la aprueba desde su celular.", "points": ["Revisa servicios, términos y alcance del trabajo", "Aprueba con un tap", "Todo queda documentado en el sistema"] },
-      { "title": "La factura “invoice” se genera sola", "lead": "Al aprobar el presupuesto, UniTech crea la factura “invoice” profesional automáticamente.", "points": ["Factura “invoice” profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"] },
-      { "title": "Recibe depósitos y pagos", "lead": "Lleva el control total del dinero, sin que se te escape un dólar.", "points": ["Conecta tu propia cuenta de Stripe y cobra con tarjeta — el dinero cae directo a tu cuenta", "Pago inicial, pagos parciales y balance pendiente", "Cobra por Venmo, PayPal, CashApp, Zelle, efectivo o cheque", "Siempre sabes quién pagó y quién debe"] },
-      { "title": "Agenda el trabajo", "lead": "Agéndalos en tu calendario y mantén tus trabajos bien organizados.", "points": ["Trabajos de una sola vez o recurrentes", "Semanales, cada dos semanas o una vez al mes", "Programados, en progreso, completados y pendientes de pago"] },
-      { "title": "Guarda fotos y evidencia", "lead": "Sube fotos del antes, durante y después de cada proyecto.", "points": ["Tu portafolio ligado a cada cliente y trabajo", "Organizado para ti y para tus clientes"] },
-      { "title": "Compártelo en tus redes sociales", "lead": "Al terminar el trabajo, la IA crea un post o Reel profesional para que lo publiques en tus redes.", "points": ["Posts y Reels en video con tus fotos y tu marca", "Listos para Instagram, Facebook y TikTok", "Muestra tu trabajo y atrae más clientes nuevos"] },
-      { "title": "Pide reseñas automáticamente", "lead": "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.", "points": ["Mensaje profesional automático", "Incluye tarjeta NFC: pide reseñas en persona con un solo tap", "Más reseñas, más confianza, más clientes nuevos"] }
+      {
+        "title": "Consigue nuevos clientes",
+        "lead": "Comparte tu Tarjeta Inteligente por código QR, NFC, link directo o redes sociales.",
+        "points": [
+          "Ven tus servicios y fotos de tus trabajos",
+          "Guardan tu contacto al instante",
+          "Solicitan una cotización y te contactan fácil",
+          "Todo entra automático a tu sistema"
+        ]
+      },
+      {
+        "title": "Crea presupuestos “quote” en segundos",
+        "lead": "Describe el trabajo en español — la inteligencia artificial hace el resto.",
+        "points": [
+          "Presupuesto “quote” profesional automático",
+          "Alcance del trabajo “Scope of Work” detallado",
+          "Documento en inglés para tu cliente",
+          "PDF listo para enviar"
+        ]
+      },
+      {
+        "title": "Tu cliente acepta el presupuesto “quote”",
+        "lead": "Recibe una propuesta profesional y la aprueba desde su celular.",
+        "points": [
+          "Revisa servicios, términos y alcance del trabajo",
+          "Aprueba con un tap",
+          "Todo queda documentado en el sistema"
+        ]
+      },
+      {
+        "title": "La factura “invoice” se genera sola",
+        "lead": "Al aprobar el presupuesto, UniTech crea la factura “invoice” profesional automáticamente.",
+        "points": [
+          "Factura “invoice” profesional al instante",
+          "Listo para enviar y para cobrar",
+          "Sin volver a escribir la misma información"
+        ]
+      },
+      {
+        "title": "Recibe depósitos y pagos",
+        "lead": "Lleva el control total del dinero, sin que se te escape un dólar.",
+        "points": [
+          "Conecta tu propia cuenta de Stripe y cobra con tarjeta — el dinero cae directo a tu cuenta",
+          "Pago inicial, pagos parciales y balance pendiente",
+          "Cobra por Venmo, PayPal, CashApp, Zelle, efectivo o cheque",
+          "Siempre sabes quién pagó y quién debe"
+        ]
+      },
+      {
+        "title": "Agenda el trabajo",
+        "lead": "Agéndalos en tu calendario y mantén tus trabajos bien organizados.",
+        "points": [
+          "Trabajos de una sola vez o recurrentes",
+          "Semanales, cada dos semanas o una vez al mes",
+          "Programados, en progreso, completados y pendientes de pago"
+        ]
+      },
+      {
+        "title": "Guarda fotos y evidencia",
+        "lead": "Sube fotos del antes, durante y después de cada proyecto.",
+        "points": [
+          "Tu portafolio ligado a cada cliente y trabajo",
+          "Organizado para ti y para tus clientes"
+        ]
+      },
+      {
+        "title": "Compártelo en tus redes sociales",
+        "lead": "Al terminar el trabajo, la IA crea un post o Reel profesional para que lo publiques en tus redes.",
+        "points": [
+          "Posts y Reels en video con tus fotos y tu marca",
+          "Listos para Instagram, Facebook y TikTok",
+          "Muestra tu trabajo y atrae más clientes nuevos"
+        ]
+      },
+      {
+        "title": "Pide reseñas automáticamente",
+        "lead": "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
+        "points": [
+          "Mensaje profesional automático",
+          "Incluye tarjeta NFC: pide reseñas en persona con un solo tap",
+          "Más reseñas, más confianza, más clientes nuevos"
+        ]
+      }
     ],
     "flywheelTitle": "Y el ciclo se repite. ",
     "flywheelHighlight": "Cada reseña te trae el siguiente cliente.",
@@ -755,9 +878,37 @@
     "productsTitleHighlight": "Tómalas por separado o todas juntas.",
     "productsSubtitle": "Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.",
     "products": [
-      { "name": "Presencia Digital", "tagline": "Tu Tarjeta Inteligente NFC", "desc": "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.", "points": ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"] },
-      { "name": "Gestión de Negocio", "tagline": "Cotiza, factura, cobra y agenda", "desc": "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.", "points": ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"] },
-      { "name": "Marketing Studio", "tagline": "Posts y Reels de tus trabajos", "desc": "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.", "points": ["Reels en video con voz y música", "Posts con tus fotos y colores", "Antes/Después, Promo, Testimonios"], "badge": "Nuevo" }
+      {
+        "name": "Presencia Digital",
+        "tagline": "Tu Tarjeta Inteligente NFC",
+        "desc": "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
+        "points": [
+          "Tarjeta física NFC + página digital",
+          "Captura clientes y reseñas en Google",
+          "AI chat que responde 24/7"
+        ]
+      },
+      {
+        "name": "Gestión de Negocio",
+        "tagline": "Cotiza, factura, cobra y agenda",
+        "desc": "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
+        "points": [
+          "Quotes y contratos en inglés con IA",
+          "Invoices y links de pago",
+          "Clientes, trabajos y agenda"
+        ]
+      },
+      {
+        "name": "Marketing Studio",
+        "tagline": "Posts y Reels de tus trabajos",
+        "desc": "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
+        "points": [
+          "Reels en video con voz y música",
+          "Posts con tus fotos y colores",
+          "Antes/Después, Promo, Testimonios"
+        ],
+        "badge": "Nuevo"
+      }
     ],
     "subscribe": "Suscribirme",
     "perMonth": "/mes",
@@ -770,32 +921,66 @@
     "mktTitle": "Convierte tus trabajos en ",
     "mktTitleHighlight": "contenido que vende.",
     "mktSubtitle": "Escribe en español lo que hiciste y sube tus fotos — la IA crea <b>posts y Reels en video</b> profesionales con tu marca, listos para Instagram, Facebook y TikTok.",
-    "mktPoints": ["Reels en video con movimiento, voz en off y música", "Posts con tus fotos, tu logo y tus colores", "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios", "Descárgalos y publícalos en segundos"],
+    "mktPoints": [
+      "Reels en video con movimiento, voz en off y música",
+      "Posts con tus fotos, tu logo y tus colores",
+      "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios",
+      "Descárgalos y publícalos en segundos"
+    ],
     "mktExample": "Ejemplos creados con la IA de UniTech",
     "nfcBadge": "Paso 1 — Consigue clientes",
     "nfcTitle": "Tu Tarjeta Inteligente. ",
     "nfcHighlight": "Tu mejor vendedor.",
     "nfcSubtitle": "<b>Recibes una tarjeta física NFC profesional</b> — es tu mini-sitio profesional con foto, servicios, reseñas y QR. La acercas al celular de cualquier cliente y se abre al instante: te llaman, te mandan WhatsApp o piden presupuesto. Y un AI chat les responde 24/7 en su idioma.",
-    "nfcFeatures": ["Llamada con 1 tap", "WhatsApp directo", "Reseñas de Google", "AI chat 24/7", "Captura de clientes", "Inglés + Español"],
+    "nfcFeatures": [
+      "Llamada con 1 tap",
+      "WhatsApp directo",
+      "Reseñas de Google",
+      "AI chat 24/7",
+      "Captura de clientes",
+      "Inglés + Español"
+    ],
     "nfcCreateCard": "Crear mi tarjeta gratis",
     "nfcWhatBadge": "Recibes una tarjeta física",
     "nfcWhatTitle": "¿Qué es una tarjeta NFC? Así de fácil funciona.",
     "nfcWhatSubtitle": "NFC es la misma tecnología de Apple Pay. Tu cliente <b>no necesita bajar ninguna app</b> — solo acerca su teléfono a tu tarjeta.",
     "nfcCards": [
-      { "tag": "Tarjeta Inteligente", "title": "Smart Business Card NFC", "desc": "Tu mini-sitio profesional en un tap: servicios, llamada, WhatsApp, AI chat y captura de clientes." },
-      { "tag": "Reseñas Google", "title": "Tarjeta de Reseñas NFC", "desc": "Pide reseñas 5★ en persona con un solo tap. Más reseñas, más confianza, más clientes nuevos." }
+      {
+        "tag": "Tarjeta Inteligente",
+        "title": "Smart Business Card NFC",
+        "desc": "Tu mini-sitio profesional en un tap: servicios, llamada, WhatsApp, AI chat y captura de clientes."
+      },
+      {
+        "tag": "Reseñas Google",
+        "title": "Tarjeta de Reseñas NFC",
+        "desc": "Pide reseñas 5★ en persona con un solo tap. Más reseñas, más confianza, más clientes nuevos."
+      }
     ],
     "nfcSteps": [
-      { "t": "Te llega a tu casa", "d": "Recibes una tarjeta física NFC profesional, lista para usar." },
-      { "t": "La acercas al celular", "d": "Solo un toque (tap) en el teléfono del cliente. Sin apps ni configuración — funciona en iPhone y Android." },
-      { "t": "Se abre tu perfil al instante", "d": "El cliente ve tus servicios, te llama, te manda WhatsApp, guarda tu contacto o pide un presupuesto." }
+      {
+        "t": "Te llega a tu casa",
+        "d": "Recibes una tarjeta física NFC profesional, lista para usar."
+      },
+      {
+        "t": "La acercas al celular",
+        "d": "Solo un toque (tap) en el teléfono del cliente. Sin apps ni configuración — funciona en iPhone y Android."
+      },
+      {
+        "t": "Se abre tu perfil al instante",
+        "d": "El cliente ve tus servicios, te llama, te manda WhatsApp, guarda tu contacto o pide un presupuesto."
+      }
     ],
     "nfcFootnote": "<b>Adiós a las tarjetas de papel</b> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <b>sin reimprimir nada</b>.",
     "esEyebrow": "Hecho para ti",
     "esTitle": "Tú trabajas en español. ",
     "esHighlight": "Tus clientes reciben inglés.",
     "esSubtitle": "UniTech está diseñado especialmente para dueños de negocios latinos. Tú manejas todo en español; tus clientes reciben documentos profesionales en inglés.",
-    "esPoints": ["Sin traductores, sin complicaciones, sin perder tiempo", "100% del software en español, 100% de los documentos en inglés", "Mobile-first: se siente nativo en tu celular", "Mandas PDF y cobras como siempre — sin trámites"],
+    "esPoints": [
+      "Sin traductores, sin complicaciones, sin perder tiempo",
+      "100% del software en español, 100% de los documentos en inglés",
+      "Mobile-first: se siente nativo en tu celular",
+      "Mandas PDF y cobras como siempre — sin trámites"
+    ],
     "esYouWrite": "Tú escribes (Español)",
     "esYouWriteEx": "“Reparación de drywall en sala, incluye textura y pintura.”",
     "esClientGets": "Tu cliente recibe (English)",
@@ -946,7 +1131,28 @@
     "gmbCaptionPh": "Write your update in English (or use the AI button above)...",
     "gmbLinkPh": "Link opcional (ej: https://ezunitech.com/tu-tarjeta)",
     "publishNow": "Publicar ahora",
-    "templates": { "showcase": "Minimalista", "bold_bar": "Barra Bold", "center_stage": "Centro Impacto", "boxed": "Tarjeta", "magazine": "Editorial", "elegant_dark": "Elegante", "top_banner": "Banner Arriba", "side_panel": "Panel Lateral", "before_after": "Antes / Después", "promo": "Oferta / Promo", "review_5star": "Reseña 5★", "framed_pro": "Marco Pro", "split_diagonal": "Diagonal", "now_hiring": "Contratando", "quote_offer": "Cotización Gratis", "seasonal": "Temporada", "trust_badge": "Garantía", "coupon": "Cupón", "duo_grid": "Galería Dúo", "clean_band": "Cinta Limpia" },
+    "templates": {
+      "showcase": "Minimalista",
+      "bold_bar": "Barra Bold",
+      "center_stage": "Centro Impacto",
+      "boxed": "Tarjeta",
+      "magazine": "Editorial",
+      "elegant_dark": "Elegante",
+      "top_banner": "Banner Arriba",
+      "side_panel": "Panel Lateral",
+      "before_after": "Antes / Después",
+      "promo": "Oferta / Promo",
+      "review_5star": "Reseña 5★",
+      "framed_pro": "Marco Pro",
+      "split_diagonal": "Diagonal",
+      "now_hiring": "Contratando",
+      "quote_offer": "Cotización Gratis",
+      "seasonal": "Temporada",
+      "trust_badge": "Garantía",
+      "coupon": "Cupón",
+      "duo_grid": "Galería Dúo",
+      "clean_band": "Cinta Limpia"
+    },
     "fmtVertical": "Vertical 9:16",
     "fmtVerticalHint": "Reels / TikTok / Stories",
     "fmtSquare": "Cuadrado 1:1",
@@ -1166,12 +1372,19 @@
     "seePlansSubscribe": "Ver planes y suscribirme",
     "portalError": "No se pudo abrir el portal de suscripción",
     "plans": {
-      "presencia_monthly": "Presencia (Mensual)", "presencia_yearly": "Presencia (Anual)",
-      "negocio_monthly": "Negocio (Mensual)", "negocio_yearly": "Negocio (Anual)",
-      "marketing_monthly": "Marketing (Mensual)", "marketing_yearly": "Marketing (Anual)",
-      "bundle_monthly": "Todo UniTech (Mensual)", "bundle_yearly": "Todo UniTech (Anual)",
-      "comp": "Gratis (Lifetime)", "pro_monthly": "Pro Mensual", "pro_yearly": "Pro Anual",
-      "founder": "Founder Deal", "pro": "Pro"
+      "presencia_monthly": "Presencia (Mensual)",
+      "presencia_yearly": "Presencia (Anual)",
+      "negocio_monthly": "Negocio (Mensual)",
+      "negocio_yearly": "Negocio (Anual)",
+      "marketing_monthly": "Marketing (Mensual)",
+      "marketing_yearly": "Marketing (Anual)",
+      "bundle_monthly": "Todo UniTech (Mensual)",
+      "bundle_yearly": "Todo UniTech (Anual)",
+      "comp": "Gratis (Lifetime)",
+      "pro_monthly": "Pro Mensual",
+      "pro_yearly": "Pro Anual",
+      "founder": "Founder Deal",
+      "pro": "Pro"
     }
   },
   "payments": {
@@ -1214,5 +1427,194 @@
     "openingStripe": "Abriendo Stripe…",
     "connectMyStripe": "Conectar mi Stripe",
     "footnote": "Esto es opcional y se suma a tus otras formas de pago. No cobramos comisión por usar tu Stripe."
+  },
+  "demo": {
+    "signupTop": "Crear mi cuenta",
+    "liveBadge": "Demo en vivo · 2 minutos",
+    "leadName": "Tu nombre",
+    "leadEmail": "Email",
+    "leadPhone": "Teléfono",
+    "leadTrade": "Tu oficio",
+    "choose": "Elige…",
+    "startBtn": "Empezar el demo",
+    "freeNote": "Gratis y sin compromiso. Usamos tu email solo para mostrarte cómo funciona.",
+    "errEmail": "Pon tu nombre y un email válido para empezar.",
+    "errStart": "No se pudo iniciar el demo. Intenta de nuevo."
+  },
+  "demoFlow": {
+    "steps": [
+      "Tus datos",
+      "El trabajo",
+      "Cotización",
+      "Contrato",
+      "Factura"
+    ],
+    "leadTitle": "Vive el flujo completo de UniTech",
+    "leadDesc": "Escribe un trabajo en <1>español</1> y mira cómo la IA crea una cotización en <3>inglés profesional</3>, el cliente la aprueba, firma el contrato y recibe la factura con links de pago. Todo en vivo.",
+    "back": "Atrás",
+    "describeTitle": "Describe el trabajo… en español",
+    "describeDesc": "Como se lo dirías a un amigo. La IA hace el resto.",
+    "examples": {
+      "roof": {
+        "label": "Techo",
+        "text": "Reemplazar techo de 1500 pies cuadrados con shingles nuevos, incluye remover el viejo, papel nuevo y limpieza completa."
+      },
+      "drywall": {
+        "label": "Drywall",
+        "text": "Instalar y resanar drywall en una recámara de 12x14 pies, incluye lijado y dejarlo listo para pintar."
+      },
+      "paint": {
+        "label": "Pintura",
+        "text": "Pintar interior de casa de 3 recámaras y 2 baños, paredes y techos, 2 manos de pintura, dueño compra el color."
+      }
+    },
+    "descPlaceholder": "Ej: Reemplazar techo de 1500 pies cuadrados con shingles nuevos…",
+    "errDesc": "Describe el trabajo con un poco más de detalle.",
+    "errQuote": "La IA no pudo generar la cotización. Intenta de nuevo.",
+    "errAgreement": "La IA no pudo generar el contrato. Intenta de nuevo.",
+    "genQuoteLoading": "La IA está cotizando…",
+    "genQuoteBtn": "Generar cotización con IA",
+    "overlayTitle": "Generando tu Service Agreement…",
+    "overlaySubtitle": "La IA está redactando tu contrato legal en inglés. Toma unos segundos — <1>no cierres esta página.</1>",
+    "quoteBanner": "Así es como tu cliente recibe y aprueba la cotización 👇",
+    "tryAnother": "Probar con otro trabajo",
+    "agreementBanner": "El contrato legal lo arma la IA solo. Tu cliente lo firma con el dedo 👇",
+    "invoiceBanner": "¡Listo! El contrato firmado genera la factura solo, con link de pago 👇",
+    "paidTitle": "✅ ¡Esto es un demo!",
+    "paidDesc": "En tu cuenta real, el cliente paga aquí mismo con tarjeta y el dinero te llega directo.",
+    "orPayWith": "o paga con",
+    "downloadPdf": "Descargar PDF",
+    "print": "Imprimir",
+    "pdfNote": "📄 Tus clientes pueden <1>descargar en PDF o imprimir</1> todo lo que les mandes para guardar sus records.",
+    "finalTitle": "Eso fue todo. Así de fácil.",
+    "finalDesc": "Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta gratis (14 días, sin tarjeta) y empieza a cobrar como un profesional.",
+    "finalCta": "Crear mi cuenta gratis"
+  },
+  "demoAll": {
+    "leadTitle": "Mira lo que UniTech puede hacer por tu negocio",
+    "leadDesc": "Tu tarjeta digital con reseñas, tu cotización en inglés con IA, y tu contenido para redes — todo en español, hecho desde tu celular. Vívelo en vivo.",
+    "branchTitle": "¿Cuál es tu mayor necesidad ahorita?",
+    "branchDesc": "Elige una y te enseño la magia. Al final ves todo lo que UniTech hace por ti.",
+    "change": "Cambiar",
+    "branches": {
+      "presencia": {
+        "title": "Presencia digital",
+        "desc": "Tarjeta NFC + mini-sitio con reseñas 5★",
+        "tagline": "Quiero verme profesional y conseguir más reseñas"
+      },
+      "negocio": {
+        "title": "Cotizar y cobrar",
+        "desc": "Cotización IA en inglés, contrato y factura",
+        "tagline": "Quiero cotizar rápido y cobrar como profesional"
+      },
+      "marketing": {
+        "title": "Marketing con IA",
+        "desc": "Posts y reels con tu marca, en segundos",
+        "tagline": "Quiero contenido para redes sin batallar"
+      }
+    },
+    "negJobs": {
+      "roofing": {
+        "label": "Reemplazo de techo",
+        "descText": "Reemplazar el techo completo de una casa de 1,500 pies cuadrados. Quitar las tejas viejas y tirarlas, poner papel sintético nuevo con ice & water shield, instalar tejas arquitectónicas GAF, cambiar boots y flashing, poner ridge vent y hacer limpieza completa con barrido magnético. Costos: tear-off $1.20 por pie, tejas instaladas $3.50 por pie, underlayment $950, flashing y ventilación $700. Depósito del 50% para agendar."
+      },
+      "painting": {
+        "label": "Pintura interior",
+        "descText": "Pintar el interior de una casa de 3 recámaras y 2 baños. Proteger pisos y muebles, resanar hoyos y reparaciones menores de drywall, sellar molduras y lijar, aplicar 2 manos de pintura premium en paredes, techos y molduras, y hacer limpieza final. Costos: preparación $450, paredes $0.95 por pie (2,200 pies), techos y molduras $520. Depósito del 30%."
+      },
+      "concrete": {
+        "label": "Driveway de concreto",
+        "descText": "Hacer un driveway nuevo de concreto de 600 pies cuadrados. Excavar y quitar la superficie vieja, nivelar y compactar la base, poner formas y refuerzo de varilla, vaciar concreto de 4 pulgadas con acabado de escoba y sellarlo. Costos: excavación y nivelación $1,200, concreto $7.50 por pie, acabado y sellado $600. Depósito del 50%."
+      }
+    },
+    "postTypes": {
+      "showcase": {
+        "label": "Trabajo terminado",
+        "ex": "Terminé este trabajo, quedó increíble"
+      },
+      "promo": {
+        "label": "Promoción / oferta",
+        "ex": "15% de descuento este mes"
+      },
+      "before_after": {
+        "label": "Antes y después",
+        "ex": "Antes y después de este trabajo"
+      }
+    },
+    "negOverlayQuoteTitle": "Generando tu cotización…",
+    "negOverlayAgreementTitle": "Generando tu Service Agreement…",
+    "negOverlayQuoteSub": "La IA está armando tu cotización profesional en inglés. Unos segundos — <1>no cierres esta página.</1>",
+    "negOverlayAgreementSub": "La IA está redactando tu contrato legal en inglés. Unos segundos — <1>no cierres esta página.</1>",
+    "negPickTitle": "Así describes tu trabajo",
+    "negPickDesc": "Toca un ejemplo para ver cómo se describe un trabajo. Con <1>solo esa descripción</1>, la IA te crea la cotización, el contrato y la factura — listos para enviar.",
+    "negTapExample": "Toca un ejemplo:",
+    "negExampleLabel": "Ejemplo de descripción",
+    "negExamplePlaceholder": "👆 Toca uno de los ejemplos de arriba para ver cómo se ve una descripción.",
+    "negGenerates": "Con esa descripción, la IA genera:",
+    "negChipQuote": "Cotización",
+    "negChipContract": "Contrato",
+    "negChipInvoice": "Factura con link de pago",
+    "negGenBtn": "Generar con IA",
+    "negGenNote": "En tu cuenta real escribes tu propia descripción y la IA hace todo. ✨",
+    "negFeaturesTitle": "¿Por qué cotizar y cobrar con UniTech?",
+    "negFeatures": [
+      "Cotiza en minutos, no en horas: la IA arma cotización, contrato y factura en inglés mientras tú sigues trabajando.",
+      "Cobra más rápido: la factura lleva link de pago. El cliente paga con tarjeta y el dinero te llega directo a ti.",
+      "Te ves profesional con documentos en inglés que dan confianza — cierras más trabajos y a mejor precio.",
+      "Protégete legalmente: cada trabajo lleva su contrato firmado digitalmente por el cliente.",
+      "Cobra el depósito por adelantado para asegurar el trabajo y no quedarte gastando de tu bolsa.",
+      "Todo desde tu celular y en español — sin computadora, sin Excel, sin complicaciones."
+    ],
+    "presTitle": "Tu tarjeta NFC + mini-sitio",
+    "presDesc": "Tus clientes acercan el teléfono a tu tarjeta y al instante ven tu mini-sitio profesional. Sin apps.",
+    "presCardLabel": "Tarjeta NFC",
+    "presTap": "📲 Toca la tarjeta para abrir tu mini-sitio",
+    "presFeaturesTitle": "¿Por qué tu tarjeta vende por ti?",
+    "presFeatures": [
+      "Te ves PROFESIONAL al instante y generas confianza — olvídate de las tarjetas de papel que se pierden.",
+      "Consigue más reseñas 5★ de Google con un solo tap. Más reseñas = sales primero en Google y te eligen a ti.",
+      "Nunca pierdas un cliente: te llaman, textean o mandan WhatsApp con un toque, sin teclear tu número.",
+      "El cliente guarda tu contacto en su teléfono al instante — te recuerda y te recomienda con sus amigos.",
+      "Compártela sin apps: acerca el teléfono (NFC), escanea el QR o manda el link por mensaje. Funciona en cualquier celular.",
+      "Cámbiala cuando quieras: fotos, servicios, precios y ofertas se actualizan al momento, sin reimprimir nada."
+    ],
+    "mktInputTitle": "Elige el tipo de post",
+    "mktInputDesc": "Toca un ejemplo y la IA lo crea con tu marca, en inglés, listo para subir.",
+    "mktGenBtn": "Crear post con IA",
+    "mktGeneratingTitle": "La IA está creando tu post…",
+    "mktGeneratingSub": "Diseño con tu marca + caption en inglés. Unos segundos.",
+    "mktResultBanner": "¡Listo! Tu post para Instagram/Facebook, con tu marca 👇",
+    "mktCopyCaption": "Copiar caption",
+    "mktReel": "+Reel en video",
+    "mktImage": "+Imagen IA",
+    "mktFeaturesTitle": "¿Por qué te conviene el Marketing con IA?",
+    "mktFeatures": [
+      "Publica como profesional sin pagar diseñador: posts con tu logo, colores, teléfono y botón de acción.",
+      "Atrae más clientes: contenido constante te mantiene visible y te llegan más llamadas y mensajes.",
+      "Reels en video con voz en off en español nativo — el formato que más vende hoy en redes.",
+      "¿No tienes una buena foto? La IA te crea la imagen perfecta para tu post.",
+      "Ahorra horas: solo describes la idea y en segundos tienes el post listo para subir.",
+      "Promociones, ofertas y antes/después listos para Instagram, Facebook y WhatsApp."
+    ],
+    "upsellTitle": "Y eso es solo una parte",
+    "upsellDesc": "UniTech junta TODO lo que tu negocio necesita. Toca otro módulo para ver su demo 👇",
+    "upsellSaw": "Lo que viste",
+    "upsellSeeDemo": "Ver demo",
+    "upsellModules": {
+      "presencia": {
+        "title": "Presencia digital",
+        "desc": "Tarjeta NFC + mini-sitio + reseñas 5★"
+      },
+      "negocio": {
+        "title": "Cotizar y cobrar",
+        "desc": "Cotización IA, contrato y factura"
+      },
+      "marketing": {
+        "title": "Marketing con IA",
+        "desc": "Posts, reels e imágenes con tu marca"
+      }
+    },
+    "upsellCta": "Crear mi cuenta gratis",
+    "upsellFootnote": "14 días gratis · sin tarjeta · cancela cuando quieras"
   }
 }
