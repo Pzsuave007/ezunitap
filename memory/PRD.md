@@ -70,7 +70,15 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 
 ---
 
+## ✅ Jun 2026 — Demos /demo y /demo-all bilingües EN/ES [LISTO, probado iter_32 100%; pendiente deploy]
+- `DemoFlow.js` (/demo) y `DemoAll.js` (/demo-all) ahora 100% bilingües con `react-i18next` (`useTranslation`/`Trans`), SIN duplicar componentes. Namespaces nuevos: `demo` (común: TopBar, lead form, badges), `demoFlow`, `demoAll` en en.json/es.json.
+- **En inglés se eliminó por completo el ángulo "escribe en español → inglés"**: copy vende capacidades genéricas (Anglo). Ej: "Describe the job" (sin "en español"), "AI quote/contract/invoice", reels con "natural voiceover" (sin español nativo). Probado: CERO texto en español en modo EN en los 3 branches de /demo-all.
+- Trades localizados vía `tradeLabel()` (valor interno sigue bilingüe para lookups de TRADE_META). Sello "IA"→"AI" y placeholder de email locale-aware.
+- Los documentos de muestra (cotización/factura: Bill To, Scope, line items) quedan en inglés en ambos idiomas (correcto — son cara al cliente US).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
+
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
 - 🟢 P2: Botón "📲 Enviarme esto por WhatsApp" al final de cada rama del demo (captura lead + entrega sample); upsell 1-clic en Perfil→Suscripción; auto-enviar links de pago.
 - 🟢 P3/Tech-debt: refactor `server.py` (6100+ líneas) en routers; script dedupe clientes/usuarios.

@@ -292,7 +292,7 @@ function LeadStep({ lead, setLead, onStart, loading }) {
         </div>
         <div>
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadEmail")}</label>
-          <Input data-testid="demo-all-email" type="email" value={lead.email} onChange={set("email")} placeholder="tu@email.com" className="mt-1 h-12 rounded-xl" />
+          <Input data-testid="demo-all-email" type="email" value={lead.email} onChange={set("email")} placeholder={t("demo.emailPlaceholder")} className="mt-1 h-12 rounded-xl" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -665,6 +665,7 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
 
 /* Professional designed social post — 3 variants (mimics the real Marketing Studio output) */
 function DesignedPost({ meta, name, lead, type = "showcase" }) {
+  const { t } = useTranslation();
   const phone = lead.phone || "(555) 123-4567";
   const initial = (name || "U").charAt(0).toUpperCase();
 
@@ -678,7 +679,7 @@ function DesignedPost({ meta, name, lead, type = "showcase" }) {
   );
   const AiBadge = () => (
     <div className="absolute bottom-3 right-3 bg-white/90 text-blue-900 text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
-      <Sparkles className="w-2.5 h-2.5" /> IA
+      <Sparkles className="w-2.5 h-2.5" /> {t("demo.aiBadge")}
     </div>
   );
 

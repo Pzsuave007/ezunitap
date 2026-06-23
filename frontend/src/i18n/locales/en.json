@@ -1439,7 +1439,9 @@
     "startBtn": "Start the demo",
     "freeNote": "Free, no commitment. We only use your email to show you how it works.",
     "errEmail": "Enter your name and a valid email to start.",
-    "errStart": "Couldn't start the demo. Please try again."
+    "errStart": "Couldn't start the demo. Please try again.",
+    "emailPlaceholder": "you@email.com",
+    "aiBadge": "AI"
   },
   "demoFlow": {
     "steps": [
