@@ -9,6 +9,8 @@ export default function LanguageToggle({ className = "", variant = "default" }) 
 
   const setLang = (lng) => {
     if (lng !== current) i18n.changeLanguage(lng);
+    // Any explicit choice silences the "switch to Spanish" suggestion banner.
+    localStorage.setItem("unitech_lang_dismiss", "1");
   };
 
   const dark = variant === "dark";

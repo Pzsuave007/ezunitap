@@ -43,6 +43,7 @@ import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
 import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
 import { FeatureGate } from "@/components/FeatureGate";
+import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -81,6 +82,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <LanguageSuggestBanner />
           <Routes>
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />

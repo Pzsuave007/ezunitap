@@ -62,6 +62,12 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Namespaces nuevos en diccionarios: landing, socialStudio, cardAdmin, profile, marketingStart, welcome, setupChecklist, tours, aiTranslate, subscription, payments, stripeConnect.
 - Verificado: webpack compila limpio; JSON válido; testing agent 100% (sin claves crudas, toggle funciona en todas las páginas, sin crashes). Landing + Login confirmados visualmente en inglés.
 
+## ✅ Jun 2026 — Auto-detección de idioma + Banner "Ver en español" [LISTO, probado screenshot; pendiente deploy]
+- Auto-detección del navegador YA existía en `i18n/index.js` (orden `localStorage`→`navigator`, fallback `en`, `load: languageOnly`). Visitante con navegador ES ve español; con EN ve inglés.
+- NUEVO `LanguageSuggestBanner.js`: barra slim superior (montada global en `App.js` dentro de `AuthProvider`) que aparece SOLO cuando el idioma activo es inglés y no hay elección previa. Texto "¿Hablas español? Mira UniTech en tu idioma." + botón "Ver en español" (cambia TODO el sitio a `es`) + X cerrar. Marca `localStorage unitech_lang_dismiss=1` al actuar → no vuelve a molestar.
+- `LanguageToggle.js`: cualquier elección explícita también setea `unitech_lang_dismiss` para silenciar el banner.
+- Build prod recompilado (rutas relativas) + `git add -f frontend/build`. Pendiente: usuario "Save to Github" + `bash /home/ezunitap/repo/deploy.sh`.
+
 ---
 
 ## 🔜 Backlog
