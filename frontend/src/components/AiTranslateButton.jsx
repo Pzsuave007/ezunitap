@@ -7,6 +7,7 @@
  *      onResult={(en) => update("about_me", en)} testId="ai-about" />
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Sparkles, Loader2 } from "lucide-react";
 import {
   Popover,
@@ -23,15 +24,17 @@ export function AiTranslateButton({
   businessType = "",
   onResult,
   testId = "ai-translate",
-  placeholder = "Escribe aquí en español...",
+  placeholder = "",
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [es, setEs] = useState("");
   const [loading, setLoading] = useState(false);
+  const ph = placeholder || t("aiTranslate.writeHerePlaceholder");
 
   const generate = async () => {
     if (!es.trim()) {
-      toast.error("Escribe algo en español primero");
+      toast.error(t("aiTranslate.writeFirst"));
       return;
     }
     setLoading(true);
@@ -44,9 +47,9 @@ export function AiTranslateButton({
       onResult?.(data.text_en || "");
       setOpen(false);
       setEs("");
-      toast.success("¡Listo! Texto generado en inglés ✨");
+      toast.success(t("aiTranslate.done"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo generar el texto");
+      toast.error(e?.response?.data?.detail || t("aiTranslate.genError"));
     } finally {
       setLoading(false);
     }
@@ -60,7 +63,7 @@ export function AiTranslateButton({
           data-testid={testId}
           className="inline-flex flex-none items-center gap-1 whitespace-nowrap text-[11px] font-bold text-emerald-700 hover:text-emerald-800 transition-colors"
         >
-          <Sparkles className="w-3.5 h-3.5" /> Traducir con IA
+          <Sparkles className="w-3.5 h-3.5" /> {t("aiTranslate.button")}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -71,12 +74,12 @@ export function AiTranslateButton({
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            Escribe en español, AI lo redacta en inglés
+            {t("aiTranslate.popoverTitle")}
           </div>
           <Textarea
             value={es}
             onChange={(e) => setEs(e.target.value)}
-            placeholder={placeholder}
+            placeholder={ph}
             className="rounded-xl min-h-[96px] text-sm"
             data-testid={`${testId}-input`}
           />
@@ -91,10 +94,10 @@ export function AiTranslateButton({
             ) : (
               <Sparkles className="w-4 h-4 mr-2" />
             )}
-            Generar en inglés
+            {t("aiTranslate.generate")}
           </Button>
           <p className="text-[10px] text-slate-400 leading-snug">
-            El resultado se pondrá en el campo y podrás editarlo.
+            {t("aiTranslate.resultNote")}
           </p>
         </div>
       </PopoverContent>

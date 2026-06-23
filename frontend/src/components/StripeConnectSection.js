@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
  */
 export default function StripeConnectSection() {
   const location = useLocation();
+  const { t } = useTranslation();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -35,9 +37,9 @@ export default function StripeConnectSection() {
     const params = new URLSearchParams(location.search);
     if (params.get("connect")) {
       loadStatus();
-      if (params.get("connect") === "done") toast.success("Volviste de Stripe. Verificando tu cuenta…");
+      if (params.get("connect") === "done") toast.success(t("stripeConnect.backFromStripe"));
     }
-  }, [location.search, loadStatus]);
+  }, [location.search, loadStatus, t]);
 
   const startOnboarding = async () => {
     setConnecting(true);
@@ -45,7 +47,7 @@ export default function StripeConnectSection() {
       const { data } = await api.post("/connect/onboard", { origin_url: window.location.origin });
       window.location.assign(data.url);
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo conectar Stripe");
+      toast.error(e?.response?.data?.detail || t("stripeConnect.connectError"));
       setConnecting(false);
     }
   };
@@ -55,14 +57,14 @@ export default function StripeConnectSection() {
       const { data } = await api.post("/connect/login-link");
       window.open(data.url, "_blank");
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo abrir el panel de Stripe");
+      toast.error(e?.response?.data?.detail || t("stripeConnect.dashboardError"));
     }
   };
 
   if (loading) {
     return (
       <Card className="card-elevated p-5 border-0 shadow-none flex items-center gap-3 text-slate-500">
-        <Loader2 className="w-5 h-5 animate-spin" /> Cargando cobros con tarjeta…
+        <Loader2 className="w-5 h-5 animate-spin" /> {t("stripeConnect.loading")}
       </Card>
     );
   }
@@ -81,9 +83,9 @@ export default function StripeConnectSection() {
           <CreditCard className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1">
-          <h3 className="font-heading font-bold text-lg tracking-tight">Cobra invoices con tu propia cuenta de Stripe</h3>
+          <h3 className="font-heading font-bold text-lg tracking-tight">{t("stripeConnect.title")}</h3>
           <p className="text-sm text-slate-500 mt-0.5 leading-snug">
-            Conecta tu Stripe y los pagos de tus invoices caen <strong className="text-slate-700">directo a tu cuenta</strong>, con el nombre de tu negocio en el recibo.
+            {t("stripeConnect.sub1")}<strong className="text-slate-700">{t("stripeConnect.subBold")}</strong>{t("stripeConnect.sub2")}
           </p>
         </div>
       </div>
@@ -91,15 +93,15 @@ export default function StripeConnectSection() {
       {charges && (
         <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4" data-testid="connect-status-active">
           <div className="flex items-center gap-2 text-emerald-800 font-semibold">
-            <CheckCircle2 className="w-5 h-5" /> Stripe conectado y listo para cobrar
+            <CheckCircle2 className="w-5 h-5" /> {t("stripeConnect.connected")}
           </div>
           {status.business_name && (
-            <p className="text-sm text-emerald-700 mt-1">Cuenta: <strong>{status.business_name}</strong></p>
+            <p className="text-sm text-emerald-700 mt-1">{t("stripeConnect.account")} <strong>{status.business_name}</strong></p>
           )}
           <div className="flex gap-2 mt-3">
             <Button onClick={openDashboard} variant="outline" size="sm" data-testid="connect-dashboard-btn"
               className="rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-100">
-              <ExternalLink className="w-4 h-4 mr-1.5" /> Ver mi panel de Stripe
+              <ExternalLink className="w-4 h-4 mr-1.5" /> {t("stripeConnect.viewDashboard")}
             </Button>
           </div>
         </div>
@@ -108,12 +110,12 @@ export default function StripeConnectSection() {
       {pending && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4" data-testid="connect-status-pending">
           <div className="flex items-center gap-2 text-amber-800 font-semibold">
-            <AlertCircle className="w-5 h-5" /> Falta completar tu verificación en Stripe
+            <AlertCircle className="w-5 h-5" /> {t("stripeConnect.pendingTitle")}
           </div>
-          <p className="text-sm text-amber-700 mt-1">Termina los datos que pide Stripe para empezar a recibir pagos.</p>
+          <p className="text-sm text-amber-700 mt-1">{t("stripeConnect.pendingBody")}</p>
           <Button onClick={startOnboarding} disabled={connecting} size="sm" data-testid="connect-continue-btn"
             className="mt-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
-            {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null} Continuar verificación
+            {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null} {t("stripeConnect.continueVerification")}
           </Button>
         </div>
       )}
@@ -121,12 +123,12 @@ export default function StripeConnectSection() {
       {!status.connected && (
         <Button onClick={startOnboarding} disabled={connecting} data-testid="connect-start-btn"
           className="w-full h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 hover:opacity-95 text-white font-bold">
-          {connecting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Abriendo Stripe…</> : <><CreditCard className="w-5 h-5 mr-2" /> Conectar mi Stripe</>}
+          {connecting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> {t("stripeConnect.openingStripe")}</> : <><CreditCard className="w-5 h-5 mr-2" /> {t("stripeConnect.connectMyStripe")}</>}
         </Button>
       )}
 
       <p className="text-xs text-slate-400">
-        Esto es opcional y se suma a tus otras formas de pago. No cobramos comisión por usar tu Stripe.
+        {t("stripeConnect.footnote")}
       </p>
     </Card>
   );

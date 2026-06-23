@@ -12,6 +12,7 @@
  *   check   → payable-to text ("Pagable a: Uni2 Marketing Agency LLC")
  */
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,50 +22,12 @@ import { Loader2, Save, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 const METHODS = [
-  {
-    key: "venmo",
-    label: "Venmo",
-    placeholder: "@tuusuario",
-    helper: "Tu @usuario de Venmo (sin el @ está bien también).",
-    color: "bg-sky-500",
-  },
-  {
-    key: "paypal",
-    label: "PayPal",
-    placeholder: "tuusuario",
-    helper: "Tu usuario de PayPal.Me (sin paypal.me/).",
-    color: "bg-blue-700",
-  },
-  {
-    key: "cashapp",
-    label: "Cash App",
-    placeholder: "$tucashtag",
-    helper: "Tu $cashtag (con o sin el signo $).",
-    color: "bg-emerald-600",
-  },
-  {
-    key: "zelle",
-    label: "Zelle",
-    placeholder: "tuemail@dominio.com o 555-123-4567",
-    helper: "Tu email o teléfono donde recibes Zelle. Lo verá el cliente.",
-    color: "bg-violet-600",
-  },
-  {
-    key: "cash",
-    label: "Efectivo",
-    placeholder: "",
-    helper: "Acepta pagos en efectivo (no necesita campo, solo activa).",
-    color: "bg-slate-700",
-    noteOnly: true,
-  },
-  {
-    key: "check",
-    label: "Cheque",
-    placeholder: "Pagable a: Tu Negocio LLC",
-    helper: "A nombre de quién debe escribir el cheque.",
-    color: "bg-amber-600",
-    valueField: true,
-  },
+  { key: "venmo", label: "Venmo", color: "bg-sky-500" },
+  { key: "paypal", label: "PayPal", color: "bg-blue-700" },
+  { key: "cashapp", label: "Cash App", color: "bg-emerald-600" },
+  { key: "zelle", label: "Zelle", color: "bg-violet-600" },
+  { key: "cash", labelKey: "payments.cashLabel", color: "bg-slate-700", noteOnly: true },
+  { key: "check", labelKey: "payments.checkLabel", color: "bg-amber-600", valueField: true },
 ];
 
 const empty = () => Object.fromEntries(
@@ -72,6 +35,7 @@ const empty = () => Object.fromEntries(
 );
 
 export default function PaymentMethodsSection() {
+  const { t } = useTranslation();
   const [methods, setMethods] = useState(empty());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,9 +46,9 @@ export default function PaymentMethodsSection() {
         const filled = { ...empty(), ...(data.payment_methods || {}) };
         setMethods(filled);
       })
-      .catch(() => toast.error("Error al cargar"))
+      .catch(() => toast.error(t("payments.loadError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const update = (k, patch) =>
     setMethods((m) => ({ ...m, [k]: { ...m[k], ...patch } }));
@@ -93,9 +57,9 @@ export default function PaymentMethodsSection() {
     setSaving(true);
     try {
       await api.put("/payment-methods", { payment_methods: methods });
-      toast.success("Formas de pago guardadas");
+      toast.success(t("payments.saved"));
     } catch {
-      toast.error("Error al guardar");
+      toast.error(t("payments.saveError"));
     } finally {
       setSaving(false);
     }
@@ -116,16 +80,18 @@ export default function PaymentMethodsSection() {
     >
       <div className="flex items-center gap-2 mb-1">
         <Wallet className="w-5 h-5 text-blue-900" />
-        <h3 className="font-heading font-bold text-base">Formas de pago</h3>
+        <h3 className="font-heading font-bold text-base">{t("payments.title")}</h3>
       </div>
       <p className="text-xs text-slate-500 -mt-2">
-        Tus clientes verán botones de pago en sus invoices con los métodos
-        que actives aquí.
+        {t("payments.subtitle")}
       </p>
 
       <div className="space-y-3">
         {METHODS.map((m) => {
           const entry = methods[m.key] || { enabled: false, value: "", note: "" };
+          const label = m.labelKey ? t(m.labelKey) : m.label;
+          const helper = t(`payments.${m.key}Helper`);
+          const placeholder = m.key === "cash" ? "" : t(`payments.${m.key}Ph`);
           return (
             <div
               key={m.key}
@@ -136,11 +102,11 @@ export default function PaymentMethodsSection() {
             >
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg ${m.color} text-white text-xs font-bold flex items-center justify-center flex-none`}>
-                  {m.label.slice(0, 1)}
+                  {label.slice(0, 1)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm">{m.label}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{m.helper}</div>
+                  <div className="font-semibold text-sm">{label}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{helper}</div>
                 </div>
                 <Switch
                   data-testid={`pm-toggle-${m.key}`}
@@ -154,7 +120,7 @@ export default function PaymentMethodsSection() {
                     data-testid={`pm-input-${m.key}`}
                     value={entry.value}
                     onChange={(e) => update(m.key, { value: e.target.value })}
-                    placeholder={m.placeholder}
+                    placeholder={placeholder}
                     className="h-9 text-sm"
                   />
                 </div>
@@ -165,7 +131,7 @@ export default function PaymentMethodsSection() {
                     data-testid={`pm-note-${m.key}`}
                     value={entry.note}
                     onChange={(e) => update(m.key, { note: e.target.value })}
-                    placeholder="Nota opcional (ej. solo en mano)"
+                    placeholder={t("payments.noteOptional")}
                     className="h-9 text-sm"
                   />
                 </div>
@@ -182,7 +148,7 @@ export default function PaymentMethodsSection() {
         className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-        Guardar formas de pago
+        {t("payments.save")}
       </Button>
     </Card>
   );

@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-function formatDate(ts) {
+function formatDate(ts, lang) {
   if (!ts) return "—";
   try {
-    return new Date(ts * 1000).toLocaleDateString("es-ES", {
+    return new Date(ts * 1000).toLocaleDateString(lang === "en" ? "en-US" : "es-ES", {
       year: "numeric", month: "short", day: "numeric",
     });
   } catch {
@@ -30,24 +31,11 @@ function daysLeft(ts) {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
-const PLAN_LABELS = {
-  presencia_monthly: "Presencia (Mensual)",
-  presencia_yearly: "Presencia (Anual)",
-  negocio_monthly: "Negocio (Mensual)",
-  negocio_yearly: "Negocio (Anual)",
-  marketing_monthly: "Marketing (Mensual)",
-  marketing_yearly: "Marketing (Anual)",
-  bundle_monthly: "Todo UniTech (Mensual)",
-  bundle_yearly: "Todo UniTech (Anual)",
-  comp: "Gratis (Lifetime)",
-  // legacy
-  pro_monthly: "Pro Mensual",
-  pro_yearly: "Pro Anual",
-  founder: "Founder Deal",
-};
-
 export default function SubscriptionSection() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("en") ? "en" : "es";
+  const planLabel = (key) => t(`subscription.plans.${key}`, { defaultValue: t("subscription.plans.pro") });
   const [sub, setSub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -78,7 +66,7 @@ export default function SubscriptionSection() {
     } catch (e) {
       toast.error(
         e?.response?.data?.detail ||
-          "No se pudo abrir el portal de suscripción"
+          t("subscription.portalError")
       );
       setPortalLoading(false);
     }
@@ -121,9 +109,9 @@ export default function SubscriptionSection() {
       >
         <div className="flex items-center gap-2 mb-1">
           <CreditCard className="w-5 h-5 text-blue-900" />
-          <h3 className="font-heading font-bold text-base">Suscripción</h3>
+          <h3 className="font-heading font-bold text-base">{t("subscription.title")}</h3>
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
-            <Gift className="w-3 h-3" /> Cortesía
+            <Gift className="w-3 h-3" /> {t("subscription.courtesy")}
           </span>
         </div>
         <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
@@ -131,17 +119,16 @@ export default function SubscriptionSection() {
             <Crown className="w-5 h-5 text-amber-600 mt-0.5 flex-none" />
             <div>
               <div className="font-semibold text-sm text-amber-900">
-                Acceso PRO de cortesía
+                {t("subscription.compTitle")}
               </div>
               <div className="text-xs text-amber-800 mt-1">
-                Tienes acceso completo sin costo
-                {sub?.comp_note ? ` — "${sub.comp_note}"` : ""}.
-                No tienes una suscripción de Stripe asociada, así que el portal
-                de gestión no aplica para ti.
+                {t("subscription.compBody")}
+                {sub?.comp_note ? ` — "${sub.comp_note}"` : ""}.{" "}
+                {t("subscription.compNoStripe")}
               </div>
               {sub?.comp_expires_at && (
                 <div className="text-[11px] text-amber-700 mt-2 italic">
-                  Acceso hasta: {formatDate(sub.comp_expires_at)}
+                  {t("subscription.accessUntil")} {formatDate(sub.comp_expires_at, lang)}
                 </div>
               )}
             </div>
@@ -158,20 +145,20 @@ export default function SubscriptionSection() {
     >
       <div className="flex items-center gap-2 mb-1">
         <CreditCard className="w-5 h-5 text-blue-900" />
-        <h3 className="font-heading font-bold text-base">Suscripción</h3>
+        <h3 className="font-heading font-bold text-base">{t("subscription.title")}</h3>
         {isPaid && (
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-            <Crown className="w-3 h-3" /> {PLAN_LABELS[sub.plan_type] || "Pro"}
+            <Crown className="w-3 h-3" /> {planLabel(sub.plan_type)}
           </span>
         )}
         {isTrialing && (
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-            <Crown className="w-3 h-3" /> {PLAN_LABELS[sub.plan_type] || "Pro"}
+            <Crown className="w-3 h-3" /> {planLabel(sub.plan_type)}
           </span>
         )}
         {isLocalTrial && (
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-            <Gift className="w-3 h-3" /> Prueba gratis
+            <Gift className="w-3 h-3" /> {t("subscription.freeTrial")}
           </span>
         )}
       </div>
@@ -187,11 +174,10 @@ export default function SubscriptionSection() {
                 <Sparkles className="w-4 h-4 text-emerald-700 mt-0.5 flex-none" />
                 <div className="text-sm text-emerald-900">
                   <div className="font-semibold">
-                    Plan activo · Pro
+                    {t("subscription.planActivePro")}
                   </div>
                   <div className="text-emerald-800 text-xs mt-1">
-                    Tienes todas las funciones Pro desbloqueadas. Puedes
-                    gestionar o cancelar en cualquier momento desde el portal.
+                    {t("subscription.allProUnlocked")}
                   </div>
                 </div>
               </div>
@@ -201,20 +187,20 @@ export default function SubscriptionSection() {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Estado
+                {t("subscription.statusLabel")}
               </div>
               <div className="text-sm font-semibold mt-1">
-                {status === "trialing" ? "Activa" :
-                 status === "active" ? "Activa" :
-                 "Pago pendiente"}
+                {status === "trialing" ? t("subscription.active") :
+                 status === "active" ? t("subscription.active") :
+                 t("subscription.paymentPending")}
               </div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Próxima renovación
+                {t("subscription.nextRenewal")}
               </div>
               <div className="text-sm font-semibold mt-1">
-                {formatDate(sub.trial_ends_at || sub.current_period_end)}
+                {formatDate(sub.trial_ends_at || sub.current_period_end, lang)}
               </div>
             </div>
           </div>
@@ -222,7 +208,7 @@ export default function SubscriptionSection() {
           {sub.shipping_address && (
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
               <div className="font-semibold mb-1 flex items-center gap-1">
-                📦 Dirección de envío de tu tarjeta NFC
+                {t("subscription.shippingTitle")}
               </div>
               <div>
                 {sub.shipping_address.line1}
@@ -234,7 +220,7 @@ export default function SubscriptionSection() {
                 {sub.shipping_address.country}
               </div>
               <div className="text-[11px] mt-2 italic opacity-80">
-                Te enviaremos tu tarjeta NFC física a esta dirección.
+                {t("subscription.shippingNote")}
               </div>
             </div>
           )}
@@ -251,7 +237,7 @@ export default function SubscriptionSection() {
             ) : (
               <ExternalLink className="w-4 h-4 mr-2" />
             )}
-            Gestionar suscripción
+            {t("subscription.manageSub")}
           </Button>
         </>
       )}
@@ -264,13 +250,13 @@ export default function SubscriptionSection() {
             <div className="flex items-start gap-2">
               <Sparkles className="w-4 h-4 text-emerald-700 mt-0.5 flex-none" />
               <div className="text-sm text-emerald-900">
-                <div className="font-semibold">Tu cuenta está activa 🎉</div>
+                <div className="font-semibold">{t("subscription.accountActive")}</div>
                 <div className="text-emerald-800 text-xs mt-1">
-                  Tienes <strong>todas las funciones Pro desbloqueadas</strong>
+                  {t("subscription.youHave")}<strong>{t("subscription.allProFeatures")}</strong>
                   {trialDays !== null ? (
-                    <> — te quedan <strong>{trialDays} {trialDays === 1 ? "día" : "días"}</strong> de tu prueba gratis</>
+                    <>{t("subscription.trialRemainingMid")}<strong>{trialDays} {trialDays === 1 ? t("subscription.dayUnit") : t("subscription.daysUnit")}</strong>{t("subscription.trialRemainingEnd")}</>
                   ) : null}
-                  . Úsalas sin límites; no necesitas hacer nada más por ahora.
+                  {t("subscription.useNoLimits")}
                 </div>
               </div>
             </div>
@@ -279,16 +265,16 @@ export default function SubscriptionSection() {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Estado
+                {t("subscription.statusLabel")}
               </div>
-              <div className="text-sm font-semibold mt-1 text-emerald-700">Activa</div>
+              <div className="text-sm font-semibold mt-1 text-emerald-700">{t("subscription.active")}</div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Tu prueba termina
+                {t("subscription.trialEnds")}
               </div>
               <div className="text-sm font-semibold mt-1">
-                {formatDate(sub.trial_ends_at)}
+                {formatDate(sub.trial_ends_at, lang)}
               </div>
             </div>
           </div>
@@ -299,7 +285,7 @@ export default function SubscriptionSection() {
             variant="outline"
             className="w-full h-12 rounded-xl"
           >
-            Ver planes
+            {t("subscription.seePlans")}
           </Button>
         </>
       )}
@@ -309,15 +295,15 @@ export default function SubscriptionSection() {
         <>
           <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
             {isLocalTrialExpired
-              ? "Tu prueba gratis terminó. Suscríbete para seguir usando todas las funciones y conservar tu trabajo."
-              : "No tienes un plan activo. Suscríbete para desbloquear todas las funciones."}
+              ? t("subscription.trialExpiredMsg")
+              : t("subscription.noPlanMsg")}
           </div>
           <Button
             data-testid="goto-pricing-2"
             onClick={() => navigate("/precios")}
             className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
           >
-            Ver planes y suscribirme
+            {t("subscription.seePlansSubscribe")}
           </Button>
         </>
       )}

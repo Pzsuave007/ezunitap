@@ -54,6 +54,14 @@ Página "Cuentas" (tabla/cards + buscador + filtros) + Drawer unificado (`AdminA
 ## ✅ Mobile UX (tarjeta NFC)
 Botón "Traducir con IA" compacto (no se desborda), popover responsivo; uploaders con `flex-wrap` (logo/foto dueño/fondo); Logo movido fuera de opciones avanzadas.
 
+## ✅ Jun 2026 — i18n BILINGÜE EN/ES completo (Olas 1-4 + extras) [COMPLETO]
+App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `LanguageToggle` (EN/ES) en Login + Layout; idioma persiste en `localStorage` (`i18nextLng`). Diccionarios en `/app/frontend/src/i18n/locales/{en,es}.json`.
+- **Olas 1-3** (sesión previa): App/Layout/Login/Register/Dashboard, Clients/Quotes/Invoices/Agreements/StatusBadge/TourButton, QuoteBuilder/Jobs/Calendar/InvoiceDetail. Backend acepta `language` en `/ai/quote`, `/messages/generate` → IA genera inglés NATIVO sin frasing de "traducido".
+- **Ola 4** (esta sesión, PROBADO testing agent iteration_31 = 100% frontend): `Landing.js` (incl. arrays vía `t(...,{returnObjects:true})`: flow/products/nfcCards/nfcSteps/results + phone mockups decorativos), `SocialStudio.js` (+PhotoSlot; templates/formatos vía t()), `CardAdmin.js` (+sub-componentes Advanced/IndustryTemplatePicker/HeroLayoutPicker/AssetUploader/NewReviewForm), `Settings.js` (Profile + AssetUploader), `MarketingStart.js`, `WelcomeModal.js`, `SetupChecklist.js`, `tours.js` (convertido a `getTours(t)`; consumer `TourButton.js` actualizado).
+- **Extras (esta sesión)**: componentes de Settings traducidos para paridad 100% → `AiTranslateButton.jsx` ("Translate with AI"), `SubscriptionSection.js` (+plans), `PaymentMethodsSection.js`, `StripeConnectSection.js`. Fechas respetan idioma (`en-US`/`es-ES`).
+- Namespaces nuevos en diccionarios: landing, socialStudio, cardAdmin, profile, marketingStart, welcome, setupChecklist, tours, aiTranslate, subscription, payments, stripeConnect.
+- Verificado: webpack compila limpio; JSON válido; testing agent 100% (sin claves crudas, toggle funciona en todas las páginas, sin crashes). Landing + Login confirmados visualmente en inglés.
+
 ---
 
 ## 🔜 Backlog
