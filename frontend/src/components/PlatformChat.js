@@ -3,6 +3,7 @@
  * Captures leads automatically when the AI detects LEAD_READY.
  */
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
 
@@ -11,6 +12,8 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const newSessionId = () => "sess_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 export default function PlatformChat() {
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language || "es").startsWith("es") ? "es" : "en";
   const [open, setOpen] = useState(false);
   const [sessionId] = useState(() => {
     const saved = localStorage.getItem("unitap_chat_sid");
@@ -20,10 +23,7 @@ export default function PlatformChat() {
     return sid;
   });
   const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: "¡Hola! 👋 Soy el asistente de UniTech. ¿En qué puedo ayudarte? Puedo contarte sobre las funciones, precios, o agendar una llamada con el fundador.",
-    },
+    { role: "assistant", content: t("platformChat.greeting") },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +33,14 @@ export default function PlatformChat() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open]);
+
+  // Keep the (only) greeting in sync with the active language until the user
+  // sends their first message — after that we never overwrite the conversation.
+  useEffect(() => {
+    setMessages((m) => (m.length === 1 && m[0].role === "assistant"
+      ? [{ role: "assistant", content: t("platformChat.greeting") }]
+      : m));
+  }, [lang, t]);
 
   const send = async () => {
     const text = input.trim();
@@ -44,12 +52,12 @@ export default function PlatformChat() {
       const { data } = await axios.post(`${API}/api/public/unitap/chat`, {
         session_id: sessionId,
         message: text,
-        language: "es",
+        language: lang,
       });
       setMessages((m) => [...m, { role: "assistant", content: data.reply || "..." }]);
       if (!open) setUnread((u) => u + 1);
     } catch (e) {
-      setMessages((m) => [...m, { role: "assistant", content: "Disculpa, tuve un problema. ¿Puedes intentar de nuevo?" }]);
+      setMessages((m) => [...m, { role: "assistant", content: t("platformChat.error") }]);
     } finally {
       setLoading(false);
     }
@@ -63,7 +71,7 @@ export default function PlatformChat() {
           data-testid="platform-chat-bubble"
           onClick={() => { setOpen(true); setUnread(0); }}
           className="fixed bottom-6 right-6 z-50 group"
-          aria-label="Abrir chat con asistente de UniTech"
+          aria-label={t("platformChat.openAria")}
         >
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-emerald-400 blur-xl opacity-50 animate-pulse" />
@@ -77,7 +85,7 @@ export default function PlatformChat() {
             )}
           </div>
           <span className="absolute right-full top-1/2 -translate-y-1/2 mr-3 px-3 py-1.5 rounded-full bg-slate-900 text-white text-sm font-semibold whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            ¿Tienes preguntas? 💬
+            {t("platformChat.tooltip")}
           </span>
         </button>
       )}
@@ -95,15 +103,15 @@ export default function PlatformChat() {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-bold leading-none">Asistente UniTech</div>
-                <div className="text-[11px] text-white/75 mt-0.5">Responde 24/7</div>
+                <div className="font-bold leading-none">{t("platformChat.title")}</div>
+                <div className="text-[11px] text-white/75 mt-0.5">{t("platformChat.subtitle")}</div>
               </div>
             </div>
             <button
               data-testid="platform-chat-close"
               onClick={() => setOpen(false)}
               className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              aria-label="Cerrar chat"
+              aria-label={t("platformChat.closeAria")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -128,7 +136,7 @@ export default function PlatformChat() {
               <div className="flex justify-start">
                 <div className="bg-white text-slate-500 rounded-2xl rounded-bl-sm shadow-sm border border-slate-100 px-3.5 py-2.5 text-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Escribiendo…
+                  {t("platformChat.typing")}
                 </div>
               </div>
             )}
@@ -142,7 +150,7 @@ export default function PlatformChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Escribe tu pregunta…"
+                placeholder={t("platformChat.placeholder")}
                 disabled={loading}
                 className="flex-1 h-11 px-4 rounded-full bg-slate-100 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
@@ -151,13 +159,13 @@ export default function PlatformChat() {
                 onClick={send}
                 disabled={loading || !input.trim()}
                 className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-700 transition-colors"
-                aria-label="Enviar"
+                aria-label={t("platformChat.sendAria")}
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
             <p className="text-[10px] text-slate-400 text-center mt-2">
-              Powered by UniTech AI · Tu info está segura
+              {t("platformChat.footer")}
             </p>
           </div>
         </div>

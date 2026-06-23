@@ -1625,5 +1625,18 @@
     },
     "upsellCta": "Crear mi cuenta gratis",
     "upsellFootnote": "14 días gratis · sin tarjeta · cancela cuando quieras"
+  },
+  "platformChat": {
+    "greeting": "¡Hola! 👋 Soy el asistente de UniTech. ¿En qué puedo ayudarte? Puedo contarte sobre las funciones, precios, o agendar una llamada con el fundador.",
+    "title": "Asistente UniTech",
+    "subtitle": "Responde 24/7",
+    "typing": "Escribiendo…",
+    "placeholder": "Escribe tu pregunta…",
+    "footer": "Powered by UniTech AI · Tu info está segura",
+    "tooltip": "¿Tienes preguntas? 💬",
+    "error": "Disculpa, tuve un problema. ¿Puedes intentar de nuevo?",
+    "openAria": "Abrir chat con asistente de UniTech",
+    "closeAria": "Cerrar chat",
+    "sendAria": "Enviar"
   }
 }
