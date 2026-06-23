@@ -1441,7 +1441,14 @@
     "errEmail": "Enter your name and a valid email to start.",
     "errStart": "Couldn't start the demo. Please try again.",
     "emailPlaceholder": "you@email.com",
-    "aiBadge": "AI"
+    "aiBadge": "AI",
+    "sendTitle": "📲 Want me to send it so you do not lose it?",
+    "sendWhatsapp": "Send it to me on WhatsApp",
+    "sendSms": "Text it to me",
+    "sendMsg": "Hi! Here is {{sample}} I made with UniTech 💪 Create your free account and start today: {{url}}",
+    "sampleQuote": "the quote",
+    "sampleCard": "my digital card",
+    "samplePost": "the post"
   },
   "demoFlow": {
     "steps": [

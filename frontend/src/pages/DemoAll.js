@@ -20,7 +20,7 @@ import {
   Contact, PlayCircle, Image as ImageIcon, Copy, Check, PartyPopper, Nfc,
 } from "lucide-react";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
-import { QuoteStep, AgreementStep, InvoiceStep, GeneratingOverlay, tradeLabel } from "./DemoFlow";
+import { QuoteStep, AgreementStep, InvoiceStep, GeneratingOverlay, tradeLabel, SendToMeCTA } from "./DemoFlow";
 import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -462,6 +462,7 @@ function NegocioBranch({ lead, onBack, onSwitch }) {
                 <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.negFeaturesTitle")}</h3>
               </div>
               <FeatureRow items={[Sparkles, Check, BadgeCheck, FileText, Star, Smartphone].map((icon, i) => ({ icon, text: t("demoAll.negFeatures", { returnObjects: true })[i] }))} />
+              <SendToMeCTA phone={lead.phone} sample={t("demo.sampleQuote")} branch="negocio" />
               <ModuleUpsell highlight="negocio" onSwitch={onSwitch} />
             </>
           )}
@@ -532,6 +533,7 @@ function PresenciaBranch({ lead, onBack, onSwitch }) {
             <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.presFeaturesTitle")}</h3>
           </div>
           <FeatureRow items={[BadgeCheck, Star, MessageCircle, Contact, Nfc, Sparkles].map((icon, i) => ({ icon, text: t("demoAll.presFeatures", { returnObjects: true })[i] }))} />
+          <SendToMeCTA phone={lead.phone} sample={t("demo.sampleCard")} branch="presencia" />
           <ModuleUpsell highlight="presencia" onSwitch={onSwitch} />
         </>
       )}
@@ -656,6 +658,7 @@ function MarketingBranch({ lead, onBack, onSwitch }) {
             <h3 className="font-heading text-lg font-bold text-slate-900">{t("demoAll.mktFeaturesTitle")}</h3>
           </div>
           <FeatureRow items={[ImageIcon, Megaphone, PlayCircle, Sparkles, Check, Smartphone].map((icon, i) => ({ icon, text: t("demoAll.mktFeatures", { returnObjects: true })[i] }))} />
+          <SendToMeCTA phone={lead.phone} sample={t("demo.samplePost")} branch="marketing" />
           <ModuleUpsell highlight="marketing" onSwitch={onSwitch} />
         </div>
       )}

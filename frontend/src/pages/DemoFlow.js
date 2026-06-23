@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
+  MessageCircle, Smartphone,
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
@@ -512,7 +513,38 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
 
       <PdfActions onDownload={downloadPdf} downloading={dl} />
 
-      {paid && !hideFinalCta && <FinalCTA />}
+      {paid && !hideFinalCta && (
+        <>
+          <SendToMeCTA phone={lead.phone} sample={t("demo.sampleQuote")} branch="demo-flow" />
+          <FinalCTA />
+        </>
+      )}
+    </div>
+  );
+}
+
+export function SendToMeCTA({ phone, sample, branch }) {
+  const { t } = useTranslation();
+  const digits = (phone || "").replace(/\D/g, "");
+  const url = `${window.location.origin}/register`;
+  const msg = t("demo.sendMsg", { sample, url });
+  const enc = encodeURIComponent(msg);
+  const wa = digits ? `https://wa.me/${digits}?text=${enc}` : `https://wa.me/?text=${enc}`;
+  const sms = `sms:${digits}?&body=${enc}`;
+  const track = (channel) => fbTrackCustom("DemoSendToMe", { channel, branch: branch || "" });
+  return (
+    <div data-testid="demo-send-to-me" className="mt-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4 text-center">
+      <div className="font-heading font-bold text-slate-900 text-sm mb-3">{t("demo.sendTitle")}</div>
+      <div className="flex flex-wrap gap-2 justify-center">
+        <a data-testid="demo-send-whatsapp" href={wa} target="_blank" rel="noreferrer" onClick={() => track("whatsapp")}
+           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm tap">
+          <MessageCircle className="w-4 h-4" /> {t("demo.sendWhatsapp")}
+        </a>
+        <a data-testid="demo-send-sms" href={sms} onClick={() => track("sms")}
+           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-700 font-bold text-sm tap">
+          <Smartphone className="w-4 h-4" /> {t("demo.sendSms")}
+        </a>
+      </div>
     </div>
   );
 }

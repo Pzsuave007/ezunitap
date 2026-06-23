@@ -77,6 +77,10 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Los documentos de muestra (cotización/factura: Bill To, Scope, line items) quedan en inglés en ambos idiomas (correcto — son cara al cliente US).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — CTA "📲 Mándamelo por WhatsApp/SMS" en demos [LISTO; pendiente deploy]
+- Componente compartido `SendToMeCTA` (exportado de `DemoFlow.js`) al final de cada cierre: rama Negocio/Presencia/Marketing de `/demo-all` (antes de ModuleUpsell) y en el paso de factura pagada de `/demo`. Bilingüe (claves `demo.send*`).
+- Prellena WhatsApp (`wa.me/<tel>`) y SMS (`sms:`) con el teléfono del lead + link a `/register` y el sample que vio (cotización/tarjeta/post). Trackea `DemoSendToMe` (canal+rama) en Pixel. Captura el lead caliente.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
