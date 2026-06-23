@@ -4,6 +4,7 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Check, ArrowRight, Sparkles, X } from "lucide-react";
@@ -11,6 +12,7 @@ import { Check, ArrowRight, Sparkles, X } from "lucide-react";
 export default function SetupChecklist() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [hiding, setHiding] = useState(false);
 
@@ -53,7 +55,7 @@ export default function SetupChecklist() {
         data-testid="checklist-dismiss"
         onClick={dismiss}
         className="absolute top-3 right-3 w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-white flex items-center justify-center transition-colors z-10"
-        aria-label="Esconder guía"
+        aria-label={t("setupChecklist.dismissAria")}
       >
         <X className="w-4 h-4" />
       </button>
@@ -65,10 +67,10 @@ export default function SetupChecklist() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-slate-900">
-              Tus primeros pasos
+              {t("setupChecklist.title")}
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
-              {data.done_count} de {data.total} completados · activa tu negocio en UniTech
+              {t("setupChecklist.subtitle", { done: data.done_count, total: data.total })}
             </p>
           </div>
           <div className="hidden sm:block text-right">
@@ -111,7 +113,7 @@ export default function SetupChecklist() {
                 <div className={`text-sm font-semibold ${it.done ? "text-slate-500 line-through" : "text-slate-900"}`}>
                   {it.label}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">{it.minutes} min</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">{t("setupChecklist.minutes", { n: it.minutes })}</div>
               </div>
               {!it.done && (
                 <button
@@ -119,7 +121,7 @@ export default function SetupChecklist() {
                   onClick={(e) => { e.stopPropagation(); navigate(it.path); }}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
                 >
-                  Ir <ArrowRight className="w-3 h-3" />
+                  {t("setupChecklist.go")} <ArrowRight className="w-3 h-3" />
                 </button>
               )}
             </li>

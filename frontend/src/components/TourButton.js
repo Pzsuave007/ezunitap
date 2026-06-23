@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { TOURS } from "@/lib/tours";
+import { getTours } from "@/lib/tours";
 
 function getTargetRect(selector) {
   if (!selector || selector === "body") return null;
@@ -68,7 +68,7 @@ export default function TourButton({ tourKey, label }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState(null);
   const rafRef = useRef(null);
-  const steps = TOURS[tourKey] || [];
+  const steps = getTours(t)[tourKey] || [];
   const current = steps[stepIndex];
 
   // Continuously recompute target rect (handles layout shifts, scroll, resize)

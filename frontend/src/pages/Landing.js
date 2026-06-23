@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation, Trans } from "react-i18next";
 import PlatformChat from "@/components/PlatformChat";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, Receipt, Users,
@@ -20,56 +21,22 @@ const SERVICES = [
   "Landscaping", "Catering", "Plumbing", "Electrical", "HVAC",
 ];
 
-// ── "Así Funciona" — el flujo completo del negocio, conectado ──
-const FLOW = [
-  {
-    n: "01", icon: IdCard, title: "Consigue nuevos clientes",
-    lead: "Comparte tu Tarjeta Inteligente por código QR, NFC, link directo o redes sociales.",
-    points: ["Ven tus servicios y fotos de tus trabajos", "Guardan tu contacto al instante", "Solicitan una cotización y te contactan fácil", "Todo entra automático a tu sistema"],
-  },
-  {
-    n: "02", icon: Sparkles, title: "Crea presupuestos “quote” en segundos",
-    lead: "Describe el trabajo en español — la inteligencia artificial hace el resto.",
-    points: ["Presupuesto “quote” profesional automático", "Alcance del trabajo “Scope of Work” detallado", "Documento en inglés para tu cliente", "PDF listo para enviar"],
-  },
-  {
-    n: "03", icon: FileBadge, title: "Tu cliente acepta el presupuesto “quote”",
-    lead: "Recibe una propuesta profesional y la aprueba desde su celular.",
-    points: ["Revisa servicios, términos y alcance del trabajo", "Aprueba con un tap", "Todo queda documentado en el sistema"],
-  },
-  {
-    n: "04", icon: Receipt, title: "La factura “invoice” se genera sola",
-    lead: "Al aprobar el presupuesto, UniTech crea la factura “invoice” profesional automáticamente.",
-    points: ["Factura “invoice” profesional al instante", "Listo para enviar y para cobrar", "Sin volver a escribir la misma información"],
-  },
-  {
-    n: "05", icon: DollarSign, title: "Recibe depósitos y pagos",
-    lead: "Lleva el control total del dinero, sin que se te escape un dólar.",
-    points: ["Pago inicial, pagos parciales y balance pendiente", "Cobra por Venmo, PayPal, CashApp, Zelle, efectivo o cheque", "Siempre sabes quién pagó y quién debe"],
-  },
-  {
-    n: "06", icon: CalendarDays, title: "Agenda el trabajo",
-    lead: "Agéndalos en tu calendario y mantén tus trabajos bien organizados.",
-    points: ["Trabajos de una sola vez o recurrentes", "Semanales, cada dos semanas o una vez al mes", "Programados, en progreso, completados y pendientes de pago"],
-  },
-  {
-    n: "07", icon: Camera, title: "Guarda fotos y evidencia",
-    lead: "Sube fotos del antes, durante y después de cada proyecto.",
-    points: ["Tu portafolio ligado a cada cliente y trabajo", "Organizado para ti y para tus clientes"],
-  },
-  {
-    n: "08", icon: Share2, title: "Compártelo en tus redes sociales",
-    lead: "Al terminar el trabajo, la IA crea un post o Reel profesional para que lo publiques en tus redes.",
-    points: ["Posts y Reels en video con tus fotos y tu marca", "Listos para Instagram, Facebook y TikTok", "Muestra tu trabajo y atrae más clientes nuevos"],
-  },
-  {
-    n: "09", icon: Star, title: "Pide reseñas automáticamente",
-    lead: "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
-    points: ["Mensaje profesional automático", "Incluye tarjeta NFC: pide reseñas en persona con un solo tap", "Más reseñas, más confianza, más clientes nuevos"],
-  },
+// ── "Así Funciona" — icons per step (text comes from i18n landing.flow) ──
+const FLOW_ICONS = [IdCard, Sparkles, FileBadge, Receipt, DollarSign, CalendarDays, Camera, Share2, Star];
+// Product modules — meta (text comes from i18n landing.products)
+const PRODUCT_META = [
+  { id: "presencia", icon: IdCard, price: "$19.99" },
+  { id: "negocio", icon: LayoutDashboard, price: "$39.99" },
+  { id: "marketing", icon: Sparkles, price: "$29.99" },
 ];
+const NFC_CARD_IMGS = ["/nfc-sample.png", "/nfc-google-review.png"];
+const NFC_STEP_ICONS = [Package, Smartphone, Sparkles];
 
 export default function Landing() {
+  const { t } = useTranslation();
+  const FLOW = t("landing.flow", { returnObjects: true }).map((s, i) => ({
+    ...s, n: String(i + 1).padStart(2, "0"), icon: FLOW_ICONS[i],
+  }));
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
       <PlatformChat />
@@ -82,22 +49,22 @@ export default function Landing() {
             </div>
             <div className="leading-none">
               <div className="font-heading font-bold text-base">UniTech</div>
-              <div className="text-[10px] text-slate-500">Tecnología para tu negocio</div>
+              <div className="text-[10px] text-slate-500">{t("common.brandTagline")}</div>
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-            <a href="#como-funciona" className="hover:text-slate-900 tap">Cómo funciona</a>
-            <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">Demo en vivo</Link>
-            <a href="#tarjeta" className="hover:text-slate-900 tap">Tarjeta NFC</a>
-            <a href="#productos" className="hover:text-slate-900 tap">Herramientas</a>
-            <a href="#espanol" className="hover:text-slate-900 tap">En español</a>
+            <a href="#como-funciona" className="hover:text-slate-900 tap">{t("landing.navHow")}</a>
+            <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">{t("landing.navDemo")}</Link>
+            <a href="#tarjeta" className="hover:text-slate-900 tap">{t("landing.navNfc")}</a>
+            <a href="#productos" className="hover:text-slate-900 tap">{t("landing.navTools")}</a>
+            <a href="#espanol" className="hover:text-slate-900 tap">{t("landing.navSpanish")}</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" data-testid="nav-login" className="hidden sm:inline-flex items-center px-4 h-10 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 tap">
-              Iniciar sesión
+              {t("landing.signIn")}
             </Link>
             <Link to="/register" data-testid="nav-register" className="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-black tap">
-              Crear cuenta <ArrowRight className="w-3.5 h-3.5" />
+              {t("landing.createAccount")} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -119,13 +86,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6">
-              <Languages className="w-3.5 h-3.5" /> Tú en español · tus clientes en inglés
+              <Languages className="w-3.5 h-3.5" /> {t("landing.heroBadge")}
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              El sistema completo para tu <span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">negocio de servicios.</span>
+              {t("landing.heroTitle")}<span className="bg-gradient-to-br from-blue-900 via-blue-700 to-emerald-500 bg-clip-text text-transparent">{t("landing.heroTitleHighlight")}</span>
             </h1>
             <p className="mt-7 text-lg lg:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Desde que consigues el cliente hasta la reseña 5★: cotiza, factura y haz contratos en <strong className="text-slate-900">inglés perfecto escribiendo en español</strong>, cobra, agenda y crea contenido — <strong className="text-slate-900">todo desde tu celular.</strong>
+              <Trans i18nKey="landing.heroSubtitle" components={{ b: <strong className="text-slate-900" /> }} />
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 max-w-2xl">
@@ -134,34 +101,28 @@ export default function Landing() {
                 data-testid="hero-demo"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
               >
-                <Play className="w-4 h-4" fill="currentColor" /> Pruébalo en vivo
+                <Play className="w-4 h-4" fill="currentColor" /> {t("landing.heroTryLive")}
               </Link>
               <Link
                 to="/register"
                 data-testid="hero-register"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold text-base hover:bg-emerald-100 transition-all tap"
               >
-                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
+                {t("landing.heroCreateFree")} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/login"
                 data-testid="hero-login"
                 className="inline-flex items-center justify-center h-14 px-7 rounded-2xl border border-slate-200 bg-white text-slate-900 font-bold text-base hover:border-slate-400 tap"
               >
-                Ya tengo cuenta
+                {t("landing.heroHaveAccount")}
               </Link>
             </div>
 
             <div className="mt-8 max-w-xl" data-testid="hero-results">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-3">Resultados que obtienes</div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-3">{t("landing.resultsTitle")}</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
-                {[
-                  "Consigue más clientes",
-                  "Cotiza en segundos",
-                  "Cobra más rápido",
-                  "Organiza tus trabajos",
-                  "Obtén más reseñas 5★",
-                ].map((r) => (
+                {t("landing.results", { returnObjects: true }).map((r) => (
                   <div key={r} className="flex items-center gap-2 text-slate-700 font-medium">
                     <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                       <Check className="w-3.5 h-3.5 text-emerald-700" strokeWidth={3} />
@@ -174,9 +135,9 @@ export default function Landing() {
 
 
             <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
-              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> Sin tarjeta de crédito</div>
-              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> Funciona desde el celular</div>
-              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> Cancela cuando quieras</div>
+              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> {t("landing.noCard")}</div>
+              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> {t("landing.worksPhone")}</div>
+              <div className="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> {t("landing.cancelAnytime")}</div>
             </div>
           </div>
 
@@ -189,9 +150,9 @@ export default function Landing() {
       {/* ====== ¿PARA QUIÉN ES? — filtro de audiencia ====== */}
       <section id="para-quien" className="py-14 lg:py-20 bg-white border-y border-slate-100">
         <div className="max-w-5xl mx-auto px-5 lg:px-8 text-center">
-          <h2 className="font-heading text-3xl lg:text-4xl font-bold tracking-tight">¿Para quién es UniTech?</h2>
+          <h2 className="font-heading text-3xl lg:text-4xl font-bold tracking-tight">{t("landing.whoTitle")}</h2>
           <p className="mt-3 text-slate-600 max-w-2xl mx-auto">
-            Para contratistas y negocios de servicios que quieren verse más profesionales, ahorrar tiempo y conseguir más clientes.
+            {t("landing.whoSubtitle")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
             {SERVICES.map((s) => (
@@ -200,7 +161,7 @@ export default function Landing() {
               </span>
             ))}
           </div>
-          <p className="mt-6 text-sm text-slate-400">¿No ves tu oficio? UniTech funciona para cualquier negocio de servicios.</p>
+          <p className="mt-6 text-sm text-slate-400">{t("landing.whoNote")}</p>
         </div>
       </section>
 
@@ -209,13 +170,13 @@ export default function Landing() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="max-w-4xl mx-auto px-5 lg:px-8 text-center relative">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-            Olvídate de Excel, Word, notas y <br className="hidden lg:block" />invoices de papel.
+            {t("landing.painTitle")}<br className="hidden lg:block" />{t("landing.painTitle2")}
           </h2>
           <p className="mt-5 text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Tu información regada entre Excel, Word, notas del celular, papeles y QuickBooks es dinero y tiempo que pierdes. Con UniTech manejas <strong className="text-white">todo desde un solo lugar.</strong>
+            <Trans i18nKey="landing.painSubtitle" components={{ b: <strong className="text-white" /> }} />
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3 text-sm">
-            {["Excel", "Word", "Notas", "Invoice de papel", "QuickBooks", "Más apps"].map((x) => (
+            {t("landing.painTags", { returnObjects: true }).map((x) => (
               <span key={x} className="px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 text-white/50 line-through">{x}</span>
             ))}
             <ArrowRight className="w-5 h-5 text-emerald-400 hidden sm:block" />
@@ -230,12 +191,12 @@ export default function Landing() {
       <section id="como-funciona" className="py-20 lg:py-28">
         <div className="max-w-4xl mx-auto px-5 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Así funciona</div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{t("landing.howEyebrow")}</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Tu negocio completo, <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">paso a paso.</span>
+              {t("landing.howTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.howTitleHighlight")}</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Desde que el cliente te encuentra hasta que te deja una reseña 5★ — cada paso conectado con el siguiente.
+              {t("landing.howSubtitle")}
             </p>
           </div>
 
@@ -251,7 +212,7 @@ export default function Landing() {
                     </div>
                   </div>
                   <div className="flex-1 rounded-2xl bg-white border border-slate-200 p-5 lg:p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Paso {step.n}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">{t("landing.stepLabel")} {step.n}</div>
                     <h3 className="font-heading font-bold text-xl lg:text-2xl tracking-tight">{step.title}</h3>
                     <p className="text-slate-600 mt-1.5 leading-relaxed">{step.lead}</p>
                     <ul className="mt-4 grid sm:grid-cols-2 gap-2.5">
@@ -274,17 +235,17 @@ export default function Landing() {
             <div className="relative">
               <TrendingUp className="w-10 h-10 text-emerald-300 mx-auto mb-4" strokeWidth={2} />
               <h3 className="font-heading text-2xl lg:text-3xl font-bold leading-tight">
-                Y el ciclo se repite. <span className="text-emerald-300">Cada reseña te trae el siguiente cliente.</span>
+                {t("landing.flywheelTitle")}<span className="text-emerald-300">{t("landing.flywheelHighlight")}</span>
               </h3>
               <p className="mt-4 text-white/75 max-w-2xl mx-auto leading-relaxed">
-                UniTech no es un gasto más: es una máquina que hace crecer tu negocio sola — más reseñas, más visibilidad en Google, más clientes, más trabajos.
+                {t("landing.flywheelSubtitle")}
               </p>
               <Link
                 to="/register"
                 data-testid="flow-register"
                 className="mt-7 inline-flex items-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
               >
-                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
+                {t("landing.flywheelCta")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -295,39 +256,19 @@ export default function Landing() {
       <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
         <div className="max-w-6xl mx-auto px-5 lg:px-8">
           <div className="max-w-2xl">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Arma tu UniTech</div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{t("landing.productsEyebrow")}</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              3 herramientas. <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">Tómalas por separado o todas juntas.</span>
+              {t("landing.productsTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.productsTitleHighlight")}</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Empieza con lo que más necesitas hoy y agrega los demás cuando quieras — o llévate el paquete completo y ahorra.
+              {t("landing.productsSubtitle")}
             </p>
           </div>
 
           <div className="mt-10 grid md:grid-cols-3 gap-5">
-            {[
-              {
-                id: "presencia", icon: IdCard, name: "Presencia Digital",
-                tagline: "Tu Tarjeta Inteligente NFC",
-                desc: "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
-                points: ["Tarjeta física NFC + página digital", "Captura clientes y reseñas en Google", "AI chat que responde 24/7"],
-                price: "$19.99",
-              },
-              {
-                id: "negocio", icon: LayoutDashboard, name: "Gestión de Negocio",
-                tagline: "Cotiza, factura, cobra y agenda",
-                desc: "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
-                points: ["Quotes y contratos en inglés con IA", "Invoices y links de pago", "Clientes, trabajos y agenda"],
-                price: "$39.99",
-              },
-              {
-                id: "marketing", icon: Sparkles, name: "Marketing Studio",
-                tagline: "Posts y Reels de tus trabajos",
-                desc: "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
-                points: ["Reels en video con voz y música", "Posts con tus fotos y colores", "Antes/Después, Promo, Testimonios"],
-                price: "$29.99", badge: "Nuevo",
-              },
-            ].map((p) => (
+            {PRODUCT_META.map((meta, i) => {
+              const p = { ...t("landing.products", { returnObjects: true })[i], ...meta };
+              return (
               <div key={p.id} data-testid={`product-card-${p.id}`}
                 className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
                 {p.badge && (
@@ -350,40 +291,41 @@ export default function Landing() {
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
                   <div>
                     <span className="font-heading text-2xl font-bold">{p.price}</span>
-                    <span className="text-sm text-slate-400">/mes</span>
+                    <span className="text-sm text-slate-400">{t("landing.perMonth")}</span>
                   </div>
                   <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
                     className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
-                    Suscribirme <ArrowRight className="w-3.5 h-3.5" />
+                    {t("landing.subscribe")} <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Bundle highlight */}
           <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
             <div className="flex-1">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
-                <Zap className="w-3.5 h-3.5" /> Mejor valor
+                <Zap className="w-3.5 h-3.5" /> {t("landing.bundleBadge")}
               </div>
-              <h3 className="font-heading text-2xl lg:text-3xl font-bold">Todo UniTech — las 3 herramientas juntas</h3>
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold">{t("landing.bundleTitle")}</h3>
               <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
-                Presencia + Negocio + Marketing en un solo paquete. Ahorra cerca de <strong className="text-white">$30 al mes</strong> vs. comprarlos por separado.
+                <Trans i18nKey="landing.bundleDesc" components={{ b: <strong className="text-white" /> }} />
               </p>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-3">
               <div>
                 <span className="font-heading text-4xl font-bold">$59.99</span>
-                <span className="text-white/70">/mes</span>
+                <span className="text-white/70">{t("landing.perMonth")}</span>
               </div>
               <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
                 className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
-                Suscribirme al Bundle <ArrowRight className="w-4 h-4" />
+                {t("landing.bundleCta")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
-          <p className="mt-4 text-center text-xs text-slate-400">Anual disponible con 2 meses gratis · Sin tarjeta de crédito para empezar la prueba</p>
+          <p className="mt-4 text-center text-xs text-slate-400">{t("landing.bundleNote")}</p>
         </div>
       </section>
 
@@ -392,21 +334,16 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> Estudio de Marketing
+              <Sparkles className="w-3.5 h-3.5" /> {t("landing.mktEyebrow")}
             </div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              Convierte tus trabajos en <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">contenido que vende.</span>
+              {t("landing.mktTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.mktTitleHighlight")}</span>
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              Escribe en español lo que hiciste y sube tus fotos — la IA crea <strong className="text-slate-900">posts y Reels en video</strong> profesionales con tu marca, listos para Instagram, Facebook y TikTok.
+              <Trans i18nKey="landing.mktSubtitle" components={{ b: <strong className="text-slate-900" /> }} />
             </p>
             <ul className="mt-7 space-y-3">
-              {[
-                "Reels en video con movimiento, voz en off y música",
-                "Posts con tus fotos, tu logo y tus colores",
-                "Plantillas: Antes/Después, Promo, Lista de servicios y Testimonios",
-                "Descárgalos y publícalos en segundos",
-              ].map((p) => (
+              {t("landing.mktPoints", { returnObjects: true }).map((p) => (
                 <li key={p} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
                   <span className="text-slate-700">{p}</span>
@@ -445,7 +382,7 @@ export default function Landing() {
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Ejemplos creados con la IA de UniTech
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> {t("landing.mktExample")}
               </div>
             </div>
           </div>
@@ -466,28 +403,21 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-12 items-center relative">
           <div className="lg:col-span-6 text-white">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-xs font-bold uppercase tracking-wider mb-6">
-              <Star className="w-3.5 h-3.5 text-amber-300" /> Paso 1 — Consigue clientes
+              <Star className="w-3.5 h-3.5 text-amber-300" /> {t("landing.nfcBadge")}
             </div>
             <h2 className="font-heading text-4xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-              Tu Tarjeta Inteligente. <span className="text-emerald-300">Tu mejor vendedor.</span>
+              {t("landing.nfcTitle")}<span className="text-emerald-300">{t("landing.nfcHighlight")}</span>
             </h2>
             <p className="mt-6 text-lg text-white/75 leading-relaxed">
-              <strong className="text-white">Recibes una tarjeta física NFC profesional</strong> — es tu mini-sitio profesional con foto, servicios, reseñas y QR. La acercas al celular de cualquier cliente y se abre al instante: te llaman, te mandan WhatsApp o piden presupuesto. Y un AI chat les responde 24/7 en su idioma.
+              <Trans i18nKey="landing.nfcSubtitle" components={{ b: <strong className="text-white" /> }} />
             </p>
             <div className="grid grid-cols-2 gap-4 mt-8">
-              {[
-                { i: Phone, t: "Llamada con 1 tap" },
-                { i: MessageSquare, t: "WhatsApp directo" },
-                { i: Star, t: "Reseñas de Google" },
-                { i: Bot, t: "AI chat 24/7" },
-                { i: MapPin, t: "Captura de clientes" },
-                { i: Globe, t: "Inglés + Español" },
-              ].map((x) => (
-                <div key={x.t} className="flex items-center gap-2.5 text-white/90 text-sm">
+              {[Phone, MessageSquare, Star, Bot, MapPin, Globe].map((Icon, i) => (
+                <div key={i} className="flex items-center gap-2.5 text-white/90 text-sm">
                   <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
-                    <x.i className="w-4 h-4" />
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <span className="font-medium">{x.t}</span>
+                  <span className="font-medium">{t("landing.nfcFeatures", { returnObjects: true })[i]}</span>
                 </div>
               ))}
             </div>
@@ -496,7 +426,7 @@ export default function Landing() {
               data-testid="card-register"
               className="mt-10 inline-flex items-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
             >
-              Crear mi tarjeta gratis <ArrowRight className="w-4 h-4" />
+              {t("landing.nfcCreateCard")} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
@@ -509,35 +439,24 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto px-5 lg:px-8 mt-16 lg:mt-24 relative">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-4 text-white">
-              <Package className="w-3.5 h-3.5 text-emerald-300" /> Recibes una tarjeta física
+              <Package className="w-3.5 h-3.5 text-emerald-300" /> {t("landing.nfcWhatBadge")}
             </div>
             <h3 className="font-heading text-3xl lg:text-4xl font-bold text-white tracking-tight">
-              ¿Qué es una tarjeta NFC? Así de fácil funciona.
+              {t("landing.nfcWhatTitle")}
             </h3>
             <p className="mt-4 text-white/70 leading-relaxed">
-              NFC es la misma tecnología de Apple Pay. Tu cliente <strong className="text-white">no necesita bajar ninguna app</strong> — solo acerca su teléfono a tu tarjeta.
+              <Trans i18nKey="landing.nfcWhatSubtitle" components={{ b: <strong className="text-white" /> }} />
             </p>
           </div>
 
           {/* Two physical NFC cards showcase */}
           <div className="grid sm:grid-cols-2 gap-5 mb-12 max-w-3xl mx-auto">
-            {[
-              {
-                img: "/nfc-sample.png",
-                tag: "Tarjeta Inteligente",
-                title: "Smart Business Card NFC",
-                desc: "Tu mini-sitio profesional en un tap: servicios, llamada, WhatsApp, AI chat y captura de clientes.",
-              },
-              {
-                img: "/nfc-google-review.png",
-                tag: "Reseñas Google",
-                title: "Tarjeta de Reseñas NFC",
-                desc: "Pide reseñas 5★ en persona con un solo tap. Más reseñas, más confianza, más clientes nuevos.",
-              },
-            ].map((c) => (
+            {NFC_CARD_IMGS.map((img, i) => {
+              const c = { ...t("landing.nfcCards", { returnObjects: true })[i], img };
+              return (
               <div
-                key={c.title}
-                data-testid={`nfc-card-${c.tag.toLowerCase().replace(/\s+/g, "-")}`}
+                key={i}
+                data-testid={`nfc-card-${i}`}
                 className="rounded-3xl bg-white/[0.05] border border-white/10 p-5 text-white"
               >
                 <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/10 mb-4 flex items-center justify-center aspect-[16/10]">
@@ -554,32 +473,32 @@ export default function Landing() {
                 <h4 className="font-heading font-bold text-lg">{c.title}</h4>
                 <p className="text-white/70 text-sm mt-1.5 leading-relaxed">{c.desc}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { icon: Package, n: "1", t: "Te llega a tu casa", d: "Recibes una tarjeta física NFC profesional, lista para usar." },
-              { icon: Smartphone, n: "2", t: "La acercas al celular", d: "Solo un toque (tap) en el teléfono del cliente. Sin apps ni configuración — funciona en iPhone y Android." },
-              { icon: Sparkles, n: "3", t: "Se abre tu perfil al instante", d: "El cliente ve tus servicios, te llama, te manda WhatsApp, guarda tu contacto o pide un presupuesto." },
-            ].map((s) => (
-              <div key={s.n} className="rounded-2xl bg-white/[0.05] border border-white/10 p-6 text-white">
+            {NFC_STEP_ICONS.map((Icon, i) => {
+              const s = { ...t("landing.nfcSteps", { returnObjects: true })[i], n: String(i + 1) };
+              return (
+              <div key={i} className="rounded-2xl bg-white/[0.05] border border-white/10 p-6 text-white">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
-                    <s.icon className="w-5 h-5 text-white" strokeWidth={2} />
+                    <Icon className="w-5 h-5 text-white" strokeWidth={2} />
                   </div>
                   <span className="font-heading text-3xl font-bold text-white/15">{s.n}</span>
                 </div>
                 <h4 className="font-heading font-bold text-lg">{s.t}</h4>
                 <p className="text-white/70 text-sm mt-1.5 leading-relaxed">{s.d}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-7 rounded-2xl bg-white/[0.05] border border-white/10 p-5 flex items-start gap-3 text-white/85">
             <Sparkles className="w-5 h-5 text-emerald-300 flex-shrink-0 mt-0.5" />
             <p className="text-sm leading-relaxed">
-              <strong className="text-white">Adiós a las tarjetas de papel</strong> que se pierden o se tiran. Una sola tarjeta NFC para siempre — y la actualizas cuando quieras (nuevos servicios, fotos o teléfono) <strong className="text-white">sin reimprimir nada</strong>.
+              <Trans i18nKey="landing.nfcFootnote" components={{ b: <strong className="text-white" /> }} />
             </p>
           </div>
         </div>
@@ -617,9 +536,9 @@ export default function Landing() {
               <div className="rounded-2xl bg-white border border-slate-200 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Languages className="w-4 h-4 text-blue-700" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tú escribes (Español)</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t("landing.esYouWrite")}</span>
                 </div>
-                <p className="text-slate-700 text-sm">“Reparación de drywall en sala, incluye textura y pintura.”</p>
+                <p className="text-slate-700 text-sm">{t("landing.esYouWriteEx")}</p>
               </div>
               <div className="flex items-center justify-center">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg">
@@ -629,9 +548,9 @@ export default function Landing() {
               <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 p-5 text-white shadow-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Globe className="w-4 h-4 text-emerald-200" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Tu cliente recibe (English)</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">{t("landing.esClientGets")}</span>
                 </div>
-                <p className="text-sm font-medium leading-relaxed">“Living room drywall repair, including texture and paint. Materials and labor included. Professional finish guaranteed.”</p>
+                <p className="text-sm font-medium leading-relaxed">{t("landing.esClientGetsEx")}</p>
               </div>
             </div>
           </div>
@@ -642,10 +561,10 @@ export default function Landing() {
       <section id="beneficios" className="py-20 lg:py-28 bg-slate-50">
         <div className="max-w-6xl mx-auto px-5 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
-            <StatCard icon={Clock} label="Crear un presupuesto “quote”" value="< 30s" accent="emerald" />
-            <StatCard icon={Languages} label="Idiomas soportados" value="EN + ES" accent="blue" />
-            <StatCard icon={Smartphone} label="Acceso 100% mobile" value="iOS + Android" accent="purple" />
-            <StatCard icon={Zap} label="Setup inicial" value="2 minutos" accent="amber" />
+            <StatCard icon={Clock} label={t("landing.statsQuote")} value="< 30s" accent="emerald" />
+            <StatCard icon={Languages} label={t("landing.statsLangs")} value="EN + ES" accent="blue" />
+            <StatCard icon={Smartphone} label={t("landing.statsMobile")} value="iOS + Android" accent="purple" />
+            <StatCard icon={Zap} label={t("landing.statsSetup")} value={t("landing.statsSetupVal")} accent="amber" />
           </div>
         </div>
       </section>
@@ -658,10 +577,10 @@ export default function Landing() {
             <div className="relative">
               <Zap className="w-12 h-12 text-emerald-300 mx-auto mb-5" strokeWidth={2} />
               <h2 className="font-heading text-4xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Todo tu negocio. Conectado.
+                {t("landing.finalTitle")}
               </h2>
               <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-                Desde el primer contacto hasta la reseña final, UniTech te ayuda a administrar tu negocio como un profesional. Se paga solo con un trabajo.
+                {t("landing.finalSubtitle")}
               </p>
               <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
                 <Link
@@ -669,16 +588,16 @@ export default function Landing() {
                   data-testid="final-register"
                   className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
                 >
-                  Crear cuenta gratis <ArrowRight className="w-4 h-4" />
+                  {t("landing.heroCreateFree")} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   to="/login"
                   className="inline-flex items-center justify-center h-14 px-8 rounded-2xl border border-white/30 text-white font-bold text-base hover:bg-white/10 tap"
                 >
-                  Iniciar sesión
+                  {t("landing.signIn")}
                 </Link>
               </div>
-              <div className="mt-6 text-xs text-white/60">Sin tarjeta de crédito · Cancela cuando quieras</div>
+              <div className="mt-6 text-xs text-white/60">{t("landing.finalNote")}</div>
             </div>
           </div>
         </div>
@@ -692,12 +611,12 @@ export default function Landing() {
               <Hammer className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
             </div>
             <span className="font-heading font-bold text-slate-900">UniTech</span>
-            <span className="text-slate-400">— Tecnología para tu negocio · QR + NFC</span>
+            <span className="text-slate-400">{t("landing.footerTagline")}</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <Link to="/privacidad" className="hover:text-slate-900 transition-colors" data-testid="footer-privacy-link">Privacidad</Link>
-            <Link to="/terminos" className="hover:text-slate-900 transition-colors" data-testid="footer-terms-link">Términos</Link>
-            <span>© {new Date().getFullYear()} UniTech. Todos los derechos reservados.</span>
+            <Link to="/privacidad" className="hover:text-slate-900 transition-colors" data-testid="footer-privacy-link">{t("landing.footerPrivacy")}</Link>
+            <Link to="/terminos" className="hover:text-slate-900 transition-colors" data-testid="footer-terms-link">{t("landing.footerTerms")}</Link>
+            <span>© {new Date().getFullYear()} UniTech. {t("landing.footerRights")}</span>
           </div>
         </div>
       </footer>
@@ -709,6 +628,7 @@ export default function Landing() {
 // VISUAL COMPONENTS
 // ============================================================================
 function PhoneMockup() {
+  const { t } = useTranslation();
   return (
     <div className="relative mx-auto max-w-xs lg:max-w-sm">
       <div className="aspect-[9/19] rounded-[3rem] bg-slate-900 p-3 shadow-2xl shadow-blue-900/30 relative">
@@ -730,7 +650,7 @@ function PhoneMockup() {
             {/* Greeting */}
             <div className="flex items-start justify-between">
               <div className="min-w-0">
-                <div className="text-[11px] text-slate-400 leading-none">Buenas tardes,</div>
+                <div className="text-[11px] text-slate-400 leading-none">{t("landing.mockGreeting")}</div>
                 <h3 className="font-heading text-lg font-bold leading-tight mt-1 truncate">Carlos García 👋</h3>
                 <div className="text-[11px] text-slate-400 leading-none">García Landscaping</div>
               </div>
@@ -742,7 +662,7 @@ function PhoneMockup() {
             {/* Earnings hero (slim) */}
             <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 px-3 py-2.5 text-white shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-white/70">Cobrado este mes</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-white/70">{t("landing.mockEarned")}</div>
                 <div className="font-heading text-xl font-bold leading-none">$8,940</div>
               </div>
               <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-200 bg-white/10 rounded-full px-2 py-1">
@@ -755,15 +675,15 @@ function PhoneMockup() {
               {/* Spanish input */}
               <div className="px-2.5 py-2.5 bg-slate-50/80 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Tú escribes · Español</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{t("landing.mockWriteEs")}</span>
                   <span className="text-[11px]">🇲🇽</span>
                 </div>
-                <p className="text-[12px] text-slate-700 leading-snug">“Cambié 20 tejas y sellé el techo. Cobrar $1,450.”</p>
+                <p className="text-[12px] text-slate-700 leading-snug">{t("landing.mockInputEx")}</p>
               </div>
               {/* Transform */}
               <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-blue-900 to-emerald-600">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white">AI lo redacta en inglés profesional</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">{t("landing.mockAiWrites")}</span>
               </div>
               {/* Quote document */}
               <div className="px-3 py-2.5">
@@ -806,10 +726,10 @@ function PhoneMockup() {
             {/* Stat grid (real dashboard) */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: Users, label: "Clientes", value: "24", color: "text-blue-700", bg: "bg-blue-50" },
-                { icon: FileBadge, label: "Quotes enviados", value: "8", color: "text-purple-700", bg: "bg-purple-50" },
-                { icon: DollarSign, label: "Por cobrar", value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
-                { icon: Star, label: "Reseñas Google", value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
+                { icon: Users, label: t("landing.mockStatClients"), value: "24", color: "text-blue-700", bg: "bg-blue-50" },
+                { icon: FileBadge, label: t("landing.mockStatQuotes"), value: "8", color: "text-purple-700", bg: "bg-purple-50" },
+                { icon: DollarSign, label: t("landing.mockStatDue"), value: "$1,200", color: "text-amber-700", bg: "bg-amber-50" },
+                { icon: Star, label: t("landing.mockStatReviews"), value: "4.9★", color: "text-emerald-700", bg: "bg-emerald-50" },
               ].map((s) => (
                 <div key={s.label} className="rounded-xl bg-white border border-slate-100 shadow-sm p-2.5 flex items-center gap-2">
                   <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
@@ -839,8 +759,8 @@ function PhoneMockup() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700">Próximo trabajo</span>
-                  <span className="text-[9px] font-semibold text-slate-400">Mañana 8:00 AM</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700">{t("landing.mockNextJob")}</span>
+                  <span className="text-[9px] font-semibold text-slate-400">{t("landing.mockTomorrow")}</span>
                 </div>
                 <div className="text-[11px] font-bold text-slate-900 leading-tight mt-0.5 truncate">Sod &amp; sprinkler install · Houston</div>
               </div>
@@ -850,8 +770,8 @@ function PhoneMockup() {
           {/* Bottom navigation (like real app) */}
           <div className="flex-shrink-0 bg-white border-t border-slate-100 px-2 pt-1.5 pb-2 flex items-end justify-around relative">
             {[
-              { icon: LayoutDashboard, label: "Inicio" },
-              { icon: Users, label: "Clientes" },
+              { icon: LayoutDashboard, label: t("landing.mockNavHome") },
+              { icon: Users, label: t("landing.mockNavClients") },
             ].map((n) => (
               <div key={n.label} className="flex flex-col items-center gap-0.5 text-slate-400">
                 <n.icon className="w-4 h-4" />
@@ -863,11 +783,11 @@ function PhoneMockup() {
               <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-4 ring-white">
                 <IdCard className="w-5 h-5 text-white" strokeWidth={2} />
               </div>
-              <span className="text-[8px] font-bold text-emerald-700">Tarjeta</span>
+              <span className="text-[8px] font-bold text-emerald-700">{t("landing.mockNavCard")}</span>
             </div>
             {[
-              { icon: CalendarDays, label: "Agenda" },
-              { icon: User, label: "Perfil" },
+              { icon: CalendarDays, label: t("landing.mockNavSchedule") },
+              { icon: User, label: t("landing.mockNavProfile") },
             ].map((n) => (
               <div key={n.label} className="flex flex-col items-center gap-0.5 text-slate-400">
                 <n.icon className="w-4 h-4" />
@@ -883,8 +803,8 @@ function PhoneMockup() {
           <Languages className="w-4 h-4 text-purple-600" />
         </div>
         <div className="text-[11px]">
-          <div className="font-bold leading-tight">Español → Inglés</div>
-          <div className="text-slate-500">en 2 segundos</div>
+          <div className="font-bold leading-tight">{t("landing.chipEsEn")}</div>
+          <div className="text-slate-500">{t("landing.chipSeconds")}</div>
         </div>
       </div>
       <div className="absolute -left-4 lg:-left-10 bottom-[6%] bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 border border-slate-100">
@@ -892,7 +812,7 @@ function PhoneMockup() {
           <Smartphone className="w-4 h-4 text-emerald-600" />
         </div>
         <div className="text-[11px]">
-          <div className="font-bold leading-tight">Hecho desde la obra</div>
+          <div className="font-bold leading-tight">{t("landing.chipFromSite")}</div>
           <div className="text-slate-500">📍 Houston, TX</div>
         </div>
       </div>

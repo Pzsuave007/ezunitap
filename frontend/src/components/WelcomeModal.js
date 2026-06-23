@@ -4,12 +4,14 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation, Trans } from "react-i18next";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles, Rocket, Compass } from "lucide-react";
 
 export default function WelcomeModal() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   const [firstName, setFirstName] = useState("");
 
@@ -79,22 +81,22 @@ export default function WelcomeModal() {
         <div className="px-6 sm:px-8 pt-12 pb-7">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="text-xs uppercase tracking-wider font-bold text-slate-500">Bienvenido a UniTech</span>
+            <span className="text-xs uppercase tracking-wider font-bold text-slate-500">{t("welcome.badge")}</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
 
           <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-center text-slate-900 leading-tight">
-            ¡Hola{firstName ? ` ${firstName}` : ""}! 👋
+            {firstName ? t("welcome.helloName", { name: firstName }) : t("welcome.hello")}
           </h2>
           <p className="text-center text-slate-600 mt-3 leading-relaxed">
-            Tienes <strong className="text-emerald-600">14 días gratis</strong> para probar todo. Vamos a dejar tu negocio listo en <strong className="text-slate-900">unos minutos</strong> para que hoy mismo mandes tu primer quote profesional en inglés. 🚀
+            <Trans i18nKey="welcome.intro" components={{ b: <strong className="text-emerald-600" />, s: <strong className="text-slate-900" /> }} />
           </p>
 
           <div className="mt-6 grid grid-cols-3 gap-2 text-center">
             {[
-              { n: "01", l: "Tu info" },
-              { n: "02", l: "Tu tarjeta" },
-              { n: "03", l: "Primer cliente" },
+              { n: "01", l: t("welcome.step1") },
+              { n: "02", l: t("welcome.step2") },
+              { n: "03", l: t("welcome.step3") },
             ].map((s) => (
               <div key={s.n} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">{s.n}</div>
@@ -110,7 +112,7 @@ export default function WelcomeModal() {
               className="w-full h-13 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-base font-bold gap-2 shadow-lg shadow-emerald-500/20"
             >
               <Rocket className="w-4 h-4" />
-              Empezar mis primeros pasos
+              {t("welcome.start")}
             </Button>
             <button
               data-testid="welcome-explore"
@@ -118,7 +120,7 @@ export default function WelcomeModal() {
               className="w-full h-11 rounded-xl text-slate-500 hover:text-slate-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <Compass className="w-4 h-4" />
-              Explorar por mi cuenta
+              {t("welcome.explore")}
             </button>
           </div>
         </div>

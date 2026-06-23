@@ -1,0 +1,47 @@
+{
+  "summary": "Frontend-only smoke test of Wave-4 i18n refactor. Logged in as Super-Admin and visited the 4 newly-translated authenticated routes (/tarjeta, /marketing, /marketing/inicio, /ajustes) plus the public Landing (/). For each route, toggled EN -> ES -> EN via [data-testid=lang-en|lang-es] and scanned document.body.innerText with a regex matching the 8 Wave-4 namespaces (landing, cardAdmin, socialStudio, marketingStart, profile, welcome, setupChecklist, tours). Zero raw i18n keys (e.g. 'cardAdmin.title') detected on ANY route in EITHER language. No runtime crashes, no console errors (only an unrelated Meta-pixel warning), no blank pages. Language toggle updates text live without reload and persists across navigation.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/ajustes (Settings/Profile)", "issues": [
+        "Below the Wave-4 translated Profile section, the 'Suscripción / CORTESÍA / Acceso PRO de cortesía', 'Formas de pago' (Venmo/PayPal/Cash App/Zelle/Efectivo/Cheque descriptions), 'Guardar formas de pago', 'Cobra invoices con tu propia cuenta de Stripe', 'Stripe conectado y listo para cobrar', 'Ver mi panel de Stripe' blocks remain HARDCODED Spanish even when UI is in English. Not a Wave-4 regression (Wave 4 covered Your info / Business / About you / Save all / Log out which DO translate correctly), but flag for a future i18n wave.",
+        "'Traducir con IA' button next to the bio/role fields is also hardcoded Spanish in EN mode."
+      ]},
+      {"screen": "/marketing/inicio (MarketingStart)", "issues": [
+        "Greeting hero, 'PICK A TOPIC' / 'Digital Marketing · change', 'Not sure what to post — give me ideas ✨', and 'I know what to post, go to the studio →' translate correctly. The topic-chip LABELS themselves ('SEO local USA', 'Anuncios en Google', 'Gestión de redes', 'Campañas exitosas', 'Reseñas de clientes', 'Auditoría web gratis') remain in Spanish in EN mode because they are dynamic content served by the backend per industry (documented in iteration_30). This is by design, not a Wave-4 bug."
+      ]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL future wave: translate the lower Settings sections (Suscripción / Formas de pago / Stripe Connect / 'Traducir con IA' button) so EN mode is fully English on /ajustes.",
+    "OPTIONAL: consider backend-side i18n for marketing topic chips so EN UI also shows English topic labels."
+  ],
+  "critical_code_review_comments": [
+    "Wave-4 i18n implementation is clean: every page guarded by useTranslation, namespaces well-organized (landing/cardAdmin/socialStudio/marketingStart/profile/welcome/setupChecklist/tours), en.json and es.json have identical key trees, LanguageToggle.js uses i18n.changeLanguage with browser-detector persistence in localStorage (i18nextLng).",
+    "LanguageToggle component is properly identified by data-testid='language-toggle' with child buttons data-testid='lang-en' / 'lang-es' — good testability.",
+    "Settings.js mixes translated and hardcoded-Spanish blocks. Recommend extracting the Subscription/Payments/Stripe sections into a single 'profile.subscription.*' and 'profile.payments.*' namespace to finish parity."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "100%"},
+  "test_credentials": "Super-Admin pzsuave007@gmail.com / Uni2mkt007! (used; no data was mutated)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Wave-4 i18n smoke test PASSED on all 4 authenticated routes plus Landing. Verified pages: /tarjeta (Smart Card EN / Tarjeta Inteligente ES with Design|QR|Reviews|Stats tabs translating to Diseño|QR|Reseñas|Métricas, step sections 'Photos and color/Your info/Services you offer/Contact and credentials/Chat AI assistant' <-> 'Fotos y color/Tu información/Servicios que ofreces/Contacto y credenciales/Asistente IA del chat', 'Save changes' <-> 'Guardar cambios'); /marketing (Marketing Studio EN with Image/Video (Reel)/Create with AI tabs, design carousel templates Minimal/Bold Bar/Center Stage/Card/Editorial/Elegant, 'WHAT DO YOU WANT TO COMMUNICATE?' brief, 'POST LANGUAGE' Spanish/English, 'FORMAT' Vertical 9:16/Square 1:1, 'DESIGN COLOR', 'Generate Post' <-> 'Generar Post'); /marketing/inicio (greeting 'Hi, Uni2 Marketing Agency! What will you post today?' <-> Spanish equivalent, 'Not sure what to post — give me ideas ✨' <-> 'give me ideas' button); /ajustes (Profile/Owner photo/Business logo/Your info/Your name/Your role/Account email/Business name/Phone/Business email/Business address/About you/Bio/Save all/Log out all translate). Body innerText scanner reported small lengths for some routes due to slow API hydration but screenshots confirmed full render with translated content. Known untranslated-but-out-of-scope areas: /ajustes Subscription+Payments+Stripe blocks and 'Traducir con IA' button remain Spanish in EN mode; /marketing/inicio dynamic topic-chip labels remain Spanish (backend-served).",
+  "verified_scenarios": [
+    "Login: Super-Admin credentials accepted, lands on dashboard at /",
+    "/tarjeta EN: Smart Card title, 4 tabs (Design/QR/Reviews/Stats), 5 numbered step sections, color picker, 'See advanced options', 'Save changes' all in English; 0 raw keys",
+    "/tarjeta ES: Tarjeta Inteligente title + Diseño/QR/Reseñas/Métricas tabs + Fotos y color/Tu información/Servicios que ofreces/Contacto y credenciales/Asistente IA del chat + Guardar cambios; 0 raw keys",
+    "/marketing EN: Marketing Studio + Image/Video (Reel)/Create with AI tabs + design carousel + photo uploaders + brief textarea + POST LANGUAGE picker + FORMAT (Vertical 9:16 / Square 1:1) + DESIGN COLOR + Generate Post; 0 raw keys",
+    "/marketing ES: Marketing Studio + IDIOMA DEL POST + ¿QUÉ QUIERES COMUNICAR? + FORMATO + COLOR DEL DISEÑO + Generar Post + Mis posts; 0 raw keys",
+    "/marketing/inicio EN: greeting + industry indicator 'Digital Marketing · change' + topic chips + 'Not sure what to post — give me ideas ✨' + 'I know what to post, go to the studio →'; 0 raw keys",
+    "/marketing/inicio ES: Spanish equivalents; 0 raw keys",
+    "/ajustes EN: Profile/Owner photo/Business logo/Your info (Your name/role/Account email)/Business (Business name/Phone/Business email/Business address)/About you/Bio/Save all/Log out; 0 raw keys",
+    "/ajustes ES: Perfil/Foto del propietario/Logo del negocio/Tu información/Negocio/Sobre ti/Guardar todo/Cerrar sesión + ATAJOS/Gestionar Tarjeta Inteligente; 0 raw keys",
+    "Language toggle persists: navigating between routes after switching to ES kept Spanish active",
+    "Live update: clicking lang-es then lang-en updated text instantly without a full page reload"
+  ]
+}

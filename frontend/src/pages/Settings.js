@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export default function Profile() {
   const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -87,9 +89,9 @@ export default function Profile() {
         }),
       ]);
       await refreshUser();
-      toast.success("Perfil actualizado");
+      toast.success(t("profile.saved"));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error guardando");
+      toast.error(err?.response?.data?.detail || t("profile.saveError"));
     } finally {
       setSaving(false);
     }
@@ -106,15 +108,15 @@ export default function Profile() {
     <div className="space-y-5">
       <div>
         <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-          <UserIcon className="w-7 h-7 text-blue-900" /> Perfil
+          <UserIcon className="w-7 h-7 text-blue-900" /> {t("profile.title")}
         </h1>
-        <p className="text-slate-500 mt-1">Tu información personal y de negocio. Aparece en quotes, invoices y tu Tarjeta.</p>
+        <p className="text-slate-500 mt-1">{t("profile.subtitle")}</p>
       </div>
 
       {/* Photos */}
       <AssetUploader
-        title="Foto del dueño"
-        helper="Aparece como hero en tu Tarjeta. Vertical funciona mejor. Máx 8MB."
+        title={t("profile.photoOwnerTitle")}
+        helper={t("profile.photoOwnerHelper")}
         kind="profile_photo"
         idField="profile_photo_id"
         endpoint="/card/profile-photo"
@@ -126,8 +128,8 @@ export default function Profile() {
       />
 
       <AssetUploader
-        title="Logo del negocio"
-        helper="Aparece en quotes, invoices y tu Tarjeta. Cuadrado y con fondo transparente queda mejor. Máx 8MB."
+        title={t("profile.logoTitle")}
+        helper={t("profile.logoHelper")}
         kind="logo"
         idField="logo_photo_id"
         endpoint="/card/logo"
@@ -136,17 +138,17 @@ export default function Profile() {
         currentId={user?.logo_photo_id}
         onChange={load}
         icon={ImageIcon}
-        badge="Aparece en tus PDFs"
+        badge={t("profile.logoBadge")}
       />
 
       {/* Personal Info */}
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <UserIcon className="w-5 h-5 text-blue-900" />
-          <h3 className="font-heading font-bold text-base">Tu información</h3>
+          <h3 className="font-heading font-bold text-base">{t("profile.yourInfo")}</h3>
         </div>
         <div>
-          <Label>Tu nombre</Label>
+          <Label>{t("profile.yourName")}</Label>
           <Input
             data-testid="profile-owner-name"
             value={form.owner_name}
@@ -154,12 +156,12 @@ export default function Profile() {
             className="h-12 rounded-xl mt-1.5"
             placeholder="Juan Pérez"
           />
-          <p className="text-[11px] text-slate-400 mt-1">Es como te identificas en la app y en la Tarjeta.</p>
+          <p className="text-[11px] text-slate-400 mt-1">{t("profile.yourNameHint")}</p>
         </div>
         <div>
           <div className="flex items-center justify-between gap-2">
-            <Label>Tu rol / título (inglés, opcional)</Label>
-            <AiTranslateButton fieldType="role" businessType={form.business_name} onResult={(en) => update("role", en)} testId="ai-profile-role" placeholder="Ej: Dueño y contratista principal" />
+            <Label>{t("profile.roleLabel")}</Label>
+            <AiTranslateButton fieldType="role" businessType={form.business_name} onResult={(en) => update("role", en)} testId="ai-profile-role" placeholder={t("profile.rolePlaceholder")} />
           </div>
           <Input
             data-testid="profile-role"
@@ -168,10 +170,10 @@ export default function Profile() {
             className="h-12 rounded-xl mt-1.5"
             placeholder="Owner & Lead Contractor"
           />
-          <p className="text-[11px] text-slate-400 mt-1">Aparece debajo de tu nombre en la Tarjeta.</p>
+          <p className="text-[11px] text-slate-400 mt-1">{t("profile.roleHint")}</p>
         </div>
         <div>
-          <Label>Email de la cuenta (no editable aquí)</Label>
+          <Label>{t("profile.accountEmail")}</Label>
           <Input value={user?.email || ""} disabled className="h-12 rounded-xl mt-1.5 bg-slate-50" />
         </div>
       </Card>
@@ -180,10 +182,10 @@ export default function Profile() {
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Building2 className="w-5 h-5 text-emerald-700" />
-          <h3 className="font-heading font-bold text-base">Negocio</h3>
+          <h3 className="font-heading font-bold text-base">{t("profile.business")}</h3>
         </div>
         <div>
-          <Label>Nombre del negocio</Label>
+          <Label>{t("profile.businessName")}</Label>
           <Input
             data-testid="profile-business-name"
             value={form.business_name}
@@ -194,7 +196,7 @@ export default function Profile() {
         </div>
         <div className="grid grid-cols-1 gap-3">
           <div>
-            <Label>Teléfono</Label>
+            <Label>{t("profile.phone")}</Label>
             <Input
               data-testid="profile-phone"
               value={form.phone}
@@ -204,7 +206,7 @@ export default function Profile() {
             />
           </div>
           <div>
-            <Label>Email de negocio</Label>
+            <Label>{t("profile.businessEmail")}</Label>
             <Input
               data-testid="profile-business-email"
               value={form.business_email}
@@ -214,7 +216,7 @@ export default function Profile() {
             />
           </div>
           <div>
-            <Label>Dirección de negocio</Label>
+            <Label>{t("profile.businessAddress")}</Label>
             <Input
               data-testid="profile-address"
               value={form.business_address}
@@ -225,7 +227,7 @@ export default function Profile() {
           </div>
         </div>
         <div className="p-3 rounded-xl bg-blue-50 text-xs text-blue-900">
-          ℹ️ Estos datos aparecen automáticamente en cada <strong>quote</strong> e <strong>invoice</strong> que generes.
+          ℹ️ {t("profile.businessNote")}
         </div>
       </Card>
 
@@ -233,12 +235,12 @@ export default function Profile() {
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-5 h-5 text-violet-600" />
-          <h3 className="font-heading font-bold text-base">Sobre ti</h3>
+          <h3 className="font-heading font-bold text-base">{t("profile.aboutYou")}</h3>
         </div>
         <div>
           <div className="flex items-center justify-between gap-2">
-            <Label>Bio / About Me (inglés)</Label>
-            <AiTranslateButton fieldType="about" businessType={form.business_name} onResult={(en) => update("about_me", en)} testId="ai-profile-about" placeholder="Ej: Tengo 10 años de experiencia, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
+            <Label>{t("profile.bioLabel")}</Label>
+            <AiTranslateButton fieldType="about" businessType={form.business_name} onResult={(en) => update("about_me", en)} testId="ai-profile-about" placeholder={t("profile.bioPlaceholder")} />
           </div>
           <Textarea
             data-testid="profile-about"
@@ -247,7 +249,7 @@ export default function Profile() {
             className="rounded-xl mt-1.5 min-h-[120px]"
             placeholder="With over 10 years of experience, we deliver quality work on every project. Licensed, insured, and committed to your satisfaction."
           />
-          <p className="text-[11px] text-slate-400 mt-1">Aparece en la sección "About" de tu Tarjeta pública.</p>
+          <p className="text-[11px] text-slate-400 mt-1">{t("profile.bioHint")}</p>
         </div>
       </Card>
 
@@ -257,7 +259,7 @@ export default function Profile() {
         disabled={saving}
         className="w-full h-14 rounded-2xl bg-blue-900 hover:bg-blue-950 text-white font-semibold text-base"
       >
-        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar todo"}
+        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : t("profile.saveAll")}
       </Button>
 
       <div id="suscripcion" className="scroll-mt-20">
@@ -272,7 +274,7 @@ export default function Profile() {
 
       {/* Quick links */}
       <Card className="card-elevated p-5 border-0 shadow-none">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Atajos</div>
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t("profile.shortcuts")}</div>
         <button
           onClick={() => navigate("/tarjeta")}
           className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 tap"
@@ -280,7 +282,7 @@ export default function Profile() {
         >
           <span className="flex items-center gap-3">
             <IdCard className="w-5 h-5 text-emerald-600" />
-            <span className="font-semibold text-sm">Gestionar Tarjeta Inteligente</span>
+            <span className="font-semibold text-sm">{t("profile.manageCard")}</span>
           </span>
           <span className="text-slate-400">›</span>
         </button>
@@ -293,7 +295,7 @@ export default function Profile() {
         variant="outline"
         className="w-full h-12 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
       >
-        <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
+        <LogOut className="w-4 h-4 mr-2" /> {t("profile.logout")}
       </Button>
     </div>
   );
@@ -302,6 +304,7 @@ export default function Profile() {
 // ============= Asset uploader =============
 function AssetUploader({ title, helper, endpoint, currentId, rounded, size, onChange, icon: Icon, badge, kind }) {
   const inputRef = useRef(null);
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
 
   const url = currentId ? `${API_URL}/api/public/card/photo/${currentId}` : null;
@@ -314,10 +317,10 @@ function AssetUploader({ title, helper, endpoint, currentId, rounded, size, onCh
       const fd = new FormData();
       fd.append("file", file);
       await api.post(endpoint, fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success(`${title} subido`);
+      toast.success(`${title} ${t("profile.uploaded")}`);
       onChange();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("profile.error"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -325,9 +328,9 @@ function AssetUploader({ title, helper, endpoint, currentId, rounded, size, onCh
   };
 
   const remove = async () => {
-    if (!window.confirm(`¿Quitar ${title.toLowerCase()}?`)) return;
+    if (!window.confirm(t("profile.removeConfirm", { title: title.toLowerCase() }))) return;
     await api.delete(endpoint);
-    toast.success("Removido");
+    toast.success(t("profile.removed"));
     onChange();
   };
 
@@ -368,7 +371,7 @@ function AssetUploader({ title, helper, endpoint, currentId, rounded, size, onCh
               className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
-              {url ? "Cambiar" : "Subir"}
+              {url ? t("profile.change") : t("profile.upload")}
             </Button>
             {url && (
               <Button
@@ -378,7 +381,7 @@ function AssetUploader({ title, helper, endpoint, currentId, rounded, size, onCh
                 onClick={remove}
                 className="rounded-xl text-red-600"
               >
-                <XIcon className="w-3.5 h-3.5 mr-1" /> Quitar
+                <XIcon className="w-3.5 h-3.5 mr-1" /> {t("profile.remove")}
               </Button>
             )}
           </div>

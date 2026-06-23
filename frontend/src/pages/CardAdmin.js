@@ -28,6 +28,7 @@ import TourButton from "@/components/TourButton";
 import SmartCardPaywall from "@/components/SmartCardPaywall";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
+import { useTranslation } from "react-i18next";
 
 const SERVICE_TEMPLATES = [
   { name: "Roofing", icon: "🏠", description: "Repairs, replacements, inspections." },
@@ -57,13 +58,15 @@ const ACCENT_PRESETS = [
 ];
 
 // Collapsible "Ver opciones avanzadas" wrapper used inside each step.
-function Advanced({ children, label = "Ver opciones avanzadas", testid }) {
+function Advanced({ children, label, testid }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const lbl = label || t("cardAdmin.showAdvanced");
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="pt-1">
       <CollapsibleTrigger asChild>
         <button data-testid={testid || "btn-opciones-avanzadas"} className="tap w-full flex items-center justify-between rounded-xl bg-slate-50 hover:bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors">
-          {open ? "Ocultar opciones avanzadas" : label}
+          {open ? t("cardAdmin.hideAdvanced") : lbl}
           <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </CollapsibleTrigger>
@@ -82,6 +85,7 @@ function StepBadge({ n }) {
 }
 
 export default function CardAdmin() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState("design");
   const [card, setCard] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -137,23 +141,23 @@ export default function CardAdmin() {
   const createCard = async () => {
     setCreating(true);
     try {
-      const { data } = await api.post("/card", { label: "Nueva tarjeta", person_name: "" });
-      toast.success("Tarjeta creada");
+      const { data } = await api.post("/card", { label: t("cardAdmin.newCardLabel"), person_name: "" });
+      toast.success(t("cardAdmin.cardCreated"));
       await load(data.id);
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "No se pudo crear la tarjeta");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.cardCreateError"));
     } finally { setCreating(false); }
   };
 
   const deleteCard = async () => {
     if (!card || card.is_primary) return;
-    if (!window.confirm(`¿Eliminar la tarjeta "${card.label || card.slug}"? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(t("cardAdmin.deleteCardConfirm", { name: card.label || card.slug }))) return;
     try {
       await api.delete(`/card/${card.id}`);
-      toast.success("Tarjeta eliminada");
+      toast.success(t("cardAdmin.cardDeleted"));
       await load(null);
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error al eliminar");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.deleteError"));
     }
   };
 
@@ -165,20 +169,20 @@ export default function CardAdmin() {
       const { data } = await api.put(`/card/settings?card_id=${card.id}`, card);
       setCard(data);
       await loadCards();
-      toast.success("Tarjeta actualizada");
+      toast.success(t("cardAdmin.cardUpdated"));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.error"));
     } finally { setSaving(false); }
   };
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(publicUrl);
-    toast.success("Link copiado");
+    toast.success(t("cardAdmin.linkCopied"));
   };
 
   const shareCard = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: "My business card", url: publicUrl }); } catch {}
+      try { await navigator.share({ title: t("cardAdmin.myCard"), url: publicUrl }); } catch {}
     } else {
       copyLink();
     }
@@ -195,9 +199,9 @@ export default function CardAdmin() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-              <IdCard className="w-7 h-7 text-emerald-600" /> Tarjeta Inteligente
+              <IdCard className="w-7 h-7 text-emerald-600" /> {t("cardAdmin.title")}
             </h1>
-            <p className="text-slate-500 mt-1">Tu mini-sitio profesional que captura leads automáticamente.</p>
+            <p className="text-slate-500 mt-1">{t("cardAdmin.subtitle")}</p>
           </div>
         </div>
         <SmartCardPaywall user={user} />
@@ -210,9 +214,9 @@ export default function CardAdmin() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-            <IdCard className="w-7 h-7 text-emerald-600" /> Tarjeta Inteligente
+            <IdCard className="w-7 h-7 text-emerald-600" /> {t("cardAdmin.title")}
           </h1>
-          <p className="text-slate-500 mt-1">Tu mini-sitio profesional que captura leads automáticamente.</p>
+          <p className="text-slate-500 mt-1">{t("cardAdmin.subtitle")}</p>
         </div>
         <TourButton tourKey="card" />
       </div>
@@ -221,7 +225,7 @@ export default function CardAdmin() {
       <Card className="card-elevated p-3 border-0 shadow-none" data-testid="card-selector">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Tus tarjetas ({cardMeta.count}/{cardMeta.limit})
+            {t("cardAdmin.yourCards", { count: cardMeta.count, limit: cardMeta.limit })}
           </div>
           <Button
             onClick={createCard}
@@ -229,9 +233,9 @@ export default function CardAdmin() {
             data-testid="card-new-btn"
             size="sm"
             className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-9"
-            title={cardMeta.can_add ? "Crear nueva tarjeta" : "Alcanzaste tu límite de tarjetas"}
+            title={cardMeta.can_add ? t("cardAdmin.createNewTooltip") : t("cardAdmin.limitReachedTooltip")}
           >
-            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Nueva</>}
+            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> {t("cardAdmin.newCard")}</>}
           </Button>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -246,13 +250,13 @@ export default function CardAdmin() {
             >
               <IdCard className="w-4 h-4 text-slate-400" />
               <span className="text-sm font-semibold text-slate-800 whitespace-nowrap">{c.label}</span>
-              {c.is_primary && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Principal</span>}
+              {c.is_primary && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{t("cardAdmin.primary")}</span>}
             </button>
           ))}
         </div>
         {!cardMeta.can_add && (
           <p className="text-[11px] text-slate-400 mt-2">
-            Llegaste a tu límite de {cardMeta.limit} tarjeta{cardMeta.limit !== 1 ? "s" : ""}. Agrega más tarjetas a tu plan para tu equipo (+$15/mes c/u).
+            {t("cardAdmin.limitNote", { limit: cardMeta.limit, s: cardMeta.limit !== 1 ? "s" : "" })}
           </p>
         )}
       </Card>
@@ -264,25 +268,25 @@ export default function CardAdmin() {
             <Share2 className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Tu link</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("cardAdmin.yourLink")}</div>
             <div className="font-semibold text-sm truncate" data-testid="card-public-url">{publicUrl}</div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Button onClick={copyLink} data-testid="card-copy-link" variant="outline" className="h-11 rounded-xl"><Copy className="w-4 h-4 mr-1" /> Copiar</Button>
-          <Button onClick={shareCard} data-testid="card-share" variant="outline" className="h-11 rounded-xl"><Share2 className="w-4 h-4 mr-1" /> Compartir</Button>
+          <Button onClick={copyLink} data-testid="card-copy-link" variant="outline" className="h-11 rounded-xl"><Copy className="w-4 h-4 mr-1" /> {t("cardAdmin.copy")}</Button>
+          <Button onClick={shareCard} data-testid="card-share" variant="outline" className="h-11 rounded-xl"><Share2 className="w-4 h-4 mr-1" /> {t("cardAdmin.share")}</Button>
           <a href={publicUrl} target="_blank" rel="noreferrer" data-testid="card-preview">
-            <Button variant="outline" className="h-11 rounded-xl w-full"><Eye className="w-4 h-4 mr-1" /> Ver</Button>
+            <Button variant="outline" className="h-11 rounded-xl w-full"><Eye className="w-4 h-4 mr-1" /> {t("cardAdmin.view")}</Button>
           </a>
         </div>
       </Card>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid grid-cols-4 rounded-xl bg-slate-100 p-1 h-auto gap-0.5">
-          <TabsTrigger value="design" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-design">Diseño</TabsTrigger>
-          <TabsTrigger value="qr" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-qr">QR</TabsTrigger>
-          <TabsTrigger value="reviews" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-reviews">Reseñas</TabsTrigger>
-          <TabsTrigger value="analytics" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-analytics">Métricas</TabsTrigger>
+          <TabsTrigger value="design" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-design">{t("cardAdmin.tabDesign")}</TabsTrigger>
+          <TabsTrigger value="qr" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-qr">{t("cardAdmin.tabQr")}</TabsTrigger>
+          <TabsTrigger value="reviews" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-reviews">{t("cardAdmin.tabReviews")}</TabsTrigger>
+          <TabsTrigger value="analytics" className="rounded-lg text-[11px] lg:text-xs px-1 py-2" data-testid="card-tab-analytics">{t("cardAdmin.tabAnalytics")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="design" className="mt-4">
@@ -290,7 +294,7 @@ export default function CardAdmin() {
           <div className="sticky top-2 z-30 mb-3">
             <Button data-testid="btn-vista-previa" onClick={() => setPreviewOpen(true)}
               className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-semibold gap-2 shadow-lg">
-              <Smartphone className="w-5 h-5" /> Ver cómo va quedando
+              <Smartphone className="w-5 h-5" /> {t("cardAdmin.seeProgress")}
             </Button>
           </div>
 
@@ -298,12 +302,12 @@ export default function CardAdmin() {
           <div className="flex items-start justify-between gap-2 mb-3 px-1">
             <p className="text-xs text-slate-500 leading-relaxed">
               {card.is_primary
-                ? "Esta es tu tarjeta principal. La info del negocio que pongas aquí se comparte con todas tus tarjetas."
-                : "Personaliza el nombre, foto y contacto de esta persona. La info del negocio se comparte desde tu Tarjeta Principal."}
+                ? t("cardAdmin.primaryNote")
+                : t("cardAdmin.secondaryNote")}
             </p>
             {!card.is_primary && (
               <Button onClick={deleteCard} data-testid="card-delete-btn" variant="outline" size="sm" className="h-9 rounded-lg text-red-600 border-red-200 flex-none">
-                <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                <Trash2 className="w-4 h-4 mr-1" /> {t("cardAdmin.delete")}
               </Button>
             )}
           </div>
@@ -315,8 +319,8 @@ export default function CardAdmin() {
                 <div className="flex items-center gap-3 text-left">
                   <StepBadge n={1} />
                   <div>
-                    <div className="font-heading font-bold text-base text-slate-900">Fotos y color</div>
-                    <div className="text-xs text-slate-500 font-normal">Lo primero que ve la gente</div>
+                    <div className="font-heading font-bold text-base text-slate-900">{t("cardAdmin.step1Title")}</div>
+                    <div className="text-xs text-slate-500 font-normal">{t("cardAdmin.step1Sub")}</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -326,7 +330,7 @@ export default function CardAdmin() {
                 <ProfilePhotoUploader card={card} onChange={load} heroLayout={card.hero_layout} />
                 <CoverPhotoUploader card={card} onChange={load} />
                 <div>
-                  <Label>Color de tu negocio</Label>
+                  <Label>{t("cardAdmin.businessColor")}</Label>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {BRAND_PRESETS.map((p) => {
                       const active = (card.brand_color || "").toLowerCase() === p.brand.toLowerCase();
@@ -345,7 +349,7 @@ export default function CardAdmin() {
                       );
                     })}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">Elige una combinación que combine con tu marca. ¡Listo!</p>
+                  <p className="text-[11px] text-slate-400 mt-1.5">{t("cardAdmin.businessColorHint")}</p>
                 </div>
 
                 <Advanced testid="adv-step1">
@@ -359,20 +363,20 @@ export default function CardAdmin() {
                     try {
                       const { data } = await api.put(`/card/settings?card_id=${card.id}`, payload);
                       setCard(data);
-                      toast.success(`Plantilla "${tpl.label}" aplicada`, { description: tpl.hint, duration: 4500 });
+                      toast.success(t("cardAdmin.templateApplied", { label: tpl.label }), { description: tpl.hint, duration: 4500 });
                     } catch (err) {
-                      toast.error(err?.response?.data?.detail || "Error aplicando plantilla");
+                      toast.error(err?.response?.data?.detail || t("cardAdmin.templateError"));
                     }
                   }} />
                   <div>
-                    <Label>Color exacto de marca</Label>
+                    <Label>{t("cardAdmin.exactBrandColor")}</Label>
                     <div className="flex items-center gap-3 mt-1.5">
                       <input type="color" data-testid="card-color" value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
                       <Input value={card.brand_color} onChange={(e) => update("brand_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
                     </div>
                   </div>
                   <div>
-                    <Label>Color de detalle (botones)</Label>
+                    <Label>{t("cardAdmin.accentColor")}</Label>
                     <div className="flex items-center gap-3 mt-1.5">
                       <input type="color" data-testid="card-accent-color" value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="w-14 h-12 rounded-xl border border-slate-200 cursor-pointer" />
                       <Input value={card.accent_color || "#10B981"} onChange={(e) => update("accent_color", e.target.value)} className="h-12 rounded-xl flex-1 font-mono" />
@@ -389,12 +393,12 @@ export default function CardAdmin() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between">
-                      <Label>Oscuridad de la foto de fondo</Label>
+                      <Label>{t("cardAdmin.bgDarkness")}</Label>
                       <span className="text-[11px] font-mono text-slate-500 tabular-nums">{card.hero_overlay ?? 60}%</span>
                     </div>
                     <input type="range" min="0" max="100" step="5" data-testid="card-hero-overlay" value={card.hero_overlay ?? 60} onChange={(e) => update("hero_overlay", Number(e.target.value))} className="w-full mt-2 accent-slate-900" />
                     <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                      <span>Foto clara</span><span>Texto legible</span><span>Muy oscuro</span>
+                      <span>{t("cardAdmin.bgPhotoClear")}</span><span>{t("cardAdmin.bgTextReadable")}</span><span>{t("cardAdmin.bgVeryDark")}</span>
                     </div>
                   </div>
                 </Advanced>
@@ -407,72 +411,72 @@ export default function CardAdmin() {
                 <div className="flex items-center gap-3 text-left">
                   <StepBadge n={2} />
                   <div>
-                    <div className="font-heading font-bold text-base text-slate-900">Tu información</div>
-                    <div className="text-xs text-slate-500 font-normal">Nombre, teléfono y a qué te dedicas</div>
+                    <div className="font-heading font-bold text-base text-slate-900">{t("cardAdmin.step2Title")}</div>
+                    <div className="text-xs text-slate-500 font-normal">{t("cardAdmin.step2Sub")}</div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
                 <div>
-                  <Label>Nombre que se muestra al cliente</Label>
+                  <Label>{t("cardAdmin.displayName")}</Label>
                   <Input data-testid="card-person-name" value={card.person_name || ""} onChange={(e) => update("person_name", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Juan Pérez" />
                 </div>
                 <div>
-                  <Label>Tu teléfono</Label>
+                  <Label>{t("cardAdmin.yourPhone")}</Label>
                   <Input data-testid="card-contact-phone" value={card.contact_phone || ""} onChange={(e) => update("contact_phone", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+1 305 555 1234" />
                 </div>
                 <div>
-                  <Label>¿A qué te dedicas?</Label>
-                  <Input data-testid="card-businesstype" value={card.business_type} onChange={(e) => update("business_type", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Techos, Plomería, Jardinería" />
+                  <Label>{t("cardAdmin.whatYouDo")}</Label>
+                  <Input data-testid="card-businesstype" value={card.business_type} onChange={(e) => update("business_type", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("cardAdmin.whatYouDoPh")} />
                 </div>
 
                 <Advanced testid="adv-step2">
                   <div>
-                    <Label>Nombre interno de la tarjeta</Label>
-                    <Input data-testid="card-label" value={card.label || ""} onChange={(e) => update("label", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Ej: Vendedor Juan" />
-                    <p className="text-[11px] text-slate-400 mt-1">Solo tú lo ves, para identificar la tarjeta.</p>
+                    <Label>{t("cardAdmin.internalName")}</Label>
+                    <Input data-testid="card-label" value={card.label || ""} onChange={(e) => update("label", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("cardAdmin.internalNamePh")} />
+                    <p className="text-[11px] text-slate-400 mt-1">{t("cardAdmin.internalNameHint")}</p>
                   </div>
                   <div>
-                    <Label>Tu email</Label>
+                    <Label>{t("cardAdmin.yourEmail")}</Label>
                     <Input data-testid="card-contact-email" value={card.contact_email || ""} onChange={(e) => update("contact_email", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="juan@empresa.com" />
-                    <p className="text-[11px] text-slate-400 mt-1">Si lo dejas vacío, se usa el del negocio. Los leads siempre caen en tu cuenta.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">{t("cardAdmin.yourEmailHint")}</p>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label>Frase corta (eslogan)</Label>
-                      <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder="Ej: Expertos en techos de confianza en Houston" />
+                      <Label>{t("cardAdmin.tagline")}</Label>
+                      <AiTranslateButton fieldType="tagline" businessType={card.business_type} onResult={(en) => update("tagline", en)} testId="ai-tagline" placeholder={t("cardAdmin.taglineAiPh")} />
                     </div>
                     <Input data-testid="card-tagline" value={card.tagline} onChange={(e) => update("tagline", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Trusted Roofing Experts in Houston" />
-                    <p className="text-[11px] text-slate-400 mt-1">Escríbela en español y toca ✨ para traducirla.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">{t("cardAdmin.taglineHint")}</p>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label>Tu puesto o título</Label>
-                      <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder="Ej: Dueño y contratista principal" />
+                      <Label>{t("cardAdmin.roleTitle")}</Label>
+                      <AiTranslateButton fieldType="role" businessType={card.business_type} onResult={(en) => update("role", en)} testId="ai-role" placeholder={t("cardAdmin.roleAiPh")} />
                     </div>
                     <Input data-testid="card-role" value={card.role || ""} onChange={(e) => update("role", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Owner & Lead Contractor" />
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label>Sobre tu negocio</Label>
-                      <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder="Ej: Tengo 10 años de experiencia, trabajo limpio y garantizado, atiendo personalmente cada proyecto..." />
+                      <Label>{t("cardAdmin.aboutBusiness")}</Label>
+                      <AiTranslateButton fieldType="about" businessType={card.business_type} onResult={(en) => update("about_me", en)} testId="ai-about" placeholder={t("cardAdmin.aboutAiPh")} />
                     </div>
                     <Textarea data-testid="card-about" value={card.about_me || ""} onChange={(e) => update("about_me", e.target.value)} className="rounded-xl mt-1.5 min-h-[100px]" placeholder="With over 10 years of experience, we deliver quality work on every project..." />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Años en el negocio</Label>
+                      <Label>{t("cardAdmin.yearsInBusiness")}</Label>
                       <Input type="number" data-testid="card-years" value={card.years_in_business} onChange={(e) => update("years_in_business", Number(e.target.value) || 0)} className="h-12 rounded-xl mt-1.5" />
                     </div>
                     <div>
-                      <Label>Horario</Label>
-                      <Input data-testid="card-hours" value={card.hours} onChange={(e) => update("hours", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Lun-Vie 8am-6pm" />
+                      <Label>{t("cardAdmin.hours")}</Label>
+                      <Input data-testid="card-hours" value={card.hours} onChange={(e) => update("hours", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("cardAdmin.hoursPh")} />
                     </div>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label>Área de servicio</Label>
-                      <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder="Ej: Houston y ciudades alrededor: Katy, Sugar Land, Pearland" />
+                      <Label>{t("cardAdmin.serviceArea")}</Label>
+                      <AiTranslateButton fieldType="service_area" businessType={card.business_type} onResult={(en) => update("service_area", en)} testId="ai-area" placeholder={t("cardAdmin.serviceAreaAiPh")} />
                     </div>
                     <Input data-testid="card-area" value={card.service_area} onChange={(e) => update("service_area", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="Houston, TX and surrounding areas" />
                   </div>
@@ -486,20 +490,20 @@ export default function CardAdmin() {
                 <div className="flex items-center gap-3 text-left">
                   <StepBadge n={3} />
                   <div>
-                    <div className="font-heading font-bold text-base text-slate-900">Servicios que ofreces</div>
-                    <div className="text-xs text-slate-500 font-normal">Lo que haces para tus clientes</div>
+                    <div className="font-heading font-bold text-base text-slate-900">{t("cardAdmin.step3Title")}</div>
+                    <div className="text-xs text-slate-500 font-normal">{t("cardAdmin.step3Sub")}</div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-5 pt-1 space-y-3">
                 <div className="flex justify-end">
                   <Button size="sm" data-testid="card-add-service" onClick={() => update("services", [...(card.services || []), { name: "", description: "", starting_price: "", icon: "" }])} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-                    <Plus className="w-3 h-3 mr-1" /> Agregar servicio
+                    <Plus className="w-3 h-3 mr-1" /> {t("cardAdmin.addService")}
                   </Button>
                 </div>
                 {(card.services || []).length === 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-slate-500">Toca para agregar rápido:</p>
+                    <p className="text-xs text-slate-500">{t("cardAdmin.tapToAdd")}</p>
                     <div className="flex flex-wrap gap-2">
                       {SERVICE_TEMPLATES.map((s) => (
                         <button key={s.name} onClick={() => update("services", [...(card.services || []), s])} className="px-3 py-2 rounded-full bg-slate-100 text-xs font-semibold tap">
@@ -513,15 +517,15 @@ export default function CardAdmin() {
                   <div key={i} className="rounded-xl bg-slate-50 p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold tracking-[0.18em] text-slate-400 w-6">{String(i + 1).padStart(2, "0")}</span>
-                      <Input value={s.name} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr); }} placeholder="Nombre del servicio (ej: Techos)" className="flex-1 h-11 rounded-xl bg-white" />
+                      <Input value={s.name} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], name: e.target.value }; update("services", arr); }} placeholder={t("cardAdmin.serviceNamePh")} className="flex-1 h-11 rounded-xl bg-white" />
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
-                      <span className="text-[11px] font-semibold text-slate-500">Descripción</span>
-                      <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder="Ej: Reparamos goteras e instalamos techos nuevos con garantía" />
+                      <span className="text-[11px] font-semibold text-slate-500">{t("cardAdmin.description")}</span>
+                      <AiTranslateButton fieldType="service" businessType={card.business_type} onResult={(en) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: en }; update("services", arr); }} testId={`ai-service-${i}`} placeholder={t("cardAdmin.serviceAiPh")} />
                     </div>
-                    <Input value={s.description} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr); }} placeholder="Descripción corta" className="h-11 rounded-xl bg-white" />
+                    <Input value={s.description} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], description: e.target.value }; update("services", arr); }} placeholder={t("cardAdmin.shortDescPh")} className="h-11 rounded-xl bg-white" />
                     <div className="flex gap-2">
-                      <Input value={s.starting_price} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], starting_price: e.target.value }; update("services", arr); }} placeholder="Desde $... (opcional)" className="h-11 rounded-xl bg-white flex-1" />
+                      <Input value={s.starting_price} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], starting_price: e.target.value }; update("services", arr); }} placeholder={t("cardAdmin.fromPricePh")} className="h-11 rounded-xl bg-white flex-1" />
                       <Input value={s.icon} onChange={(e) => { const arr = [...card.services]; arr[i] = { ...arr[i], icon: e.target.value }; update("services", arr); }} placeholder="🔨 opt" className="w-20 h-11 rounded-xl bg-white text-center" maxLength={2} />
                       <button type="button" onClick={() => update("services", card.services.filter((_, idx) => idx !== i))} className="w-11 h-11 rounded-xl bg-white border border-red-200 text-red-600 flex items-center justify-center flex-shrink-0">
                         <Trash2 className="w-4 h-4" />
@@ -538,44 +542,44 @@ export default function CardAdmin() {
                 <div className="flex items-center gap-3 text-left">
                   <StepBadge n={4} />
                   <div>
-                    <div className="font-heading font-bold text-base text-slate-900">Contacto y credenciales</div>
-                    <div className="text-xs text-slate-500 font-normal">WhatsApp, reseñas e insignias</div>
+                    <div className="font-heading font-bold text-base text-slate-900">{t("cardAdmin.step4Title")}</div>
+                    <div className="text-xs text-slate-500 font-normal">{t("cardAdmin.step4Sub")}</div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-5 pt-1 space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-                  <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> <span className="font-medium text-sm">Tengo licencia</span></div>
+                  <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> <span className="font-medium text-sm">{t("cardAdmin.iHaveLicense")}</span></div>
                   <Switch data-testid="card-licensed" checked={card.is_licensed} onCheckedChange={(v) => update("is_licensed", v)} />
                 </div>
                 {card.is_licensed && (
-                  <Input value={card.license_number} onChange={(e) => update("license_number", e.target.value)} placeholder="Número de licencia" className="h-11 rounded-xl" />
+                  <Input value={card.license_number} onChange={(e) => update("license_number", e.target.value)} placeholder={t("cardAdmin.licenseNumberPh")} className="h-11 rounded-xl" />
                 )}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-                  <div className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-700" /> <span className="font-medium text-sm">Tengo seguro</span></div>
+                  <div className="flex items-center gap-2"><BadgeCheck className="w-5 h-5 text-blue-700" /> <span className="font-medium text-sm">{t("cardAdmin.iHaveInsurance")}</span></div>
                   <Switch data-testid="card-insured" checked={card.is_insured} onCheckedChange={(v) => update("is_insured", v)} />
                 </div>
                 <div>
-                  <Label>WhatsApp (con código de país)</Label>
+                  <Label>{t("cardAdmin.whatsapp")}</Label>
                   <Input data-testid="card-whatsapp" value={card.whatsapp} onChange={(e) => update("whatsapp", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="+15551234567" />
                 </div>
                 <div>
-                  <Label>Link para reseñas de Google</Label>
+                  <Label>{t("cardAdmin.googleReviewLink")}</Label>
                   <Input value={card.google_review_url} onChange={(e) => update("google_review_url", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://g.page/r/..." />
                 </div>
                 <Advanced testid="adv-step4">
                   <div>
-                    <Label>Website</Label>
+                    <Label>{t("cardAdmin.website")}</Label>
                     <Input value={card.website} onChange={(e) => update("website", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="https://..." />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Facebook</Label>
-                      <Input value={card.facebook} onChange={(e) => update("facebook", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
+                      <Label>{t("cardAdmin.facebook")}</Label>
+                      <Input value={card.facebook} onChange={(e) => update("facebook", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("cardAdmin.urlPh")} />
                     </div>
                     <div>
-                      <Label>Instagram</Label>
-                      <Input value={card.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder="URL" />
+                      <Label>{t("cardAdmin.instagram")}</Label>
+                      <Input value={card.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-12 rounded-xl mt-1.5" placeholder={t("cardAdmin.urlPh")} />
                     </div>
                   </div>
                 </Advanced>
@@ -588,8 +592,8 @@ export default function CardAdmin() {
                 <div className="flex items-center gap-3 text-left">
                   <StepBadge n={5} />
                   <div>
-                    <div className="font-heading font-bold text-base text-slate-900">Asistente IA del chat</div>
-                    <div className="text-xs text-slate-500 font-normal">Opcional — responde a tus clientes</div>
+                    <div className="font-heading font-bold text-base text-slate-900">{t("cardAdmin.step5Title")}</div>
+                    <div className="text-xs text-slate-500 font-normal">{t("cardAdmin.step5Sub")}</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -600,8 +604,8 @@ export default function CardAdmin() {
                       <Brain className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <Label className="text-base font-bold">Base de conocimiento de la IA</Label>
-                      <p className="text-[11px] text-slate-500">Privado — solo lo lee la IA del chat, los clientes NO lo ven.</p>
+                      <Label className="text-base font-bold">{t("cardAdmin.aiKnowledge")}</Label>
+                      <p className="text-[11px] text-slate-500">{t("cardAdmin.aiKnowledgeNote")}</p>
                     </div>
                   </div>
                   <Textarea
@@ -609,12 +613,12 @@ export default function CardAdmin() {
                     value={card.ai_context || ""}
                     onChange={(e) => update("ai_context", e.target.value)}
                     className="rounded-xl min-h-[180px] bg-white"
-                    placeholder={`Escribe TODO lo que la IA debe saber sobre tu negocio. Ejemplos:\n\n- Áreas que cubrimos: Houston, Sugar Land, Katy, Pearland\n- Horario: lunes a sábado 7am-6pm, cerrado domingos\n- Cotización GRATIS y sin compromiso\n- Garantía: 5 años en techos nuevos, 1 año en reparaciones\n- Aceptamos efectivo, cheque y tarjetas (Visa/MC/Amex)\n- Rangos de precio: reparación de gotera desde $300, techo completo desde $5,000\n- Marcas que usamos: GAF, Owens Corning, CertainTeed\n- Tenemos seguro de $1M de responsabilidad civil\n- El dueño Juan tiene 25 años de experiencia`}
+                    placeholder={t("cardAdmin.aiContextPh")}
                   />
-                  <p className="text-[11px] text-slate-500">💡 Mientras más detalles le des, mejor responderá la IA a tus clientes.</p>
+                  <p className="text-[11px] text-slate-500">{t("cardAdmin.aiContextTip")}</p>
                 </div>
                 <div>
-                  <Label>Link personalizado</Label>
+                  <Label>{t("cardAdmin.customLink")}</Label>
                   <div className="flex items-center mt-1.5">
                     <span className="text-sm text-slate-500 mr-1 flex-none max-w-[45%] truncate">{baseUrl}/c/</span>
                     <Input data-testid="card-slug" value={card.slug} onChange={(e) => update("slug", e.target.value)} className="h-12 rounded-xl flex-1 min-w-0" />
@@ -625,14 +629,14 @@ export default function CardAdmin() {
           </Accordion>
 
           <Button data-testid="card-save" onClick={save} disabled={saving} className="w-full h-14 rounded-2xl bg-blue-900 hover:bg-blue-950 text-white font-semibold text-base mt-4">
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar cambios"}
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : t("cardAdmin.saveChanges")}
           </Button>
 
           {/* ===== Live preview sheet ===== */}
           <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
             <SheetContent side="bottom" className="rounded-t-3xl max-h-[92vh] overflow-y-auto" data-testid="sheet-phone-preview">
               <SheetHeader className="text-left">
-                <SheetTitle className="font-heading">Así se ve tu tarjeta</SheetTitle>
+                <SheetTitle className="font-heading">{t("cardAdmin.cardLooksLike")}</SheetTitle>
               </SheetHeader>
               <div className="mt-3 pb-8 flex flex-col items-center">
                 <div className="w-[230px]">
@@ -641,7 +645,7 @@ export default function CardAdmin() {
                   </PhoneFrame>
                 </div>
                 <Button onClick={() => window.open(publicUrl, "_blank")} className="mt-5 rounded-full bg-slate-900 hover:bg-slate-800 text-white px-5 h-10 gap-1.5">
-                  Abrir mini-sitio <ExternalLink className="w-4 h-4" />
+                  {t("cardAdmin.openMiniSite")} <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
             </SheetContent>
@@ -650,8 +654,8 @@ export default function CardAdmin() {
 
         <TabsContent value="qr" className="mt-4">
           <Card className="card-elevated p-6 border-0 shadow-none text-center">
-            <h3 className="font-heading font-bold text-lg mb-1">Tu código QR</h3>
-            <p className="text-sm text-slate-500 mb-4">Imprímelo en tarjetas, vehículos, uniformes.</p>
+            <h3 className="font-heading font-bold text-lg mb-1">{t("cardAdmin.qrTitle")}</h3>
+            <p className="text-sm text-slate-500 mb-4">{t("cardAdmin.qrSubtitle")}</p>
             <div className="inline-block p-5 bg-white border-2 rounded-3xl" style={{ borderColor: card.brand_color }}>
               <QRCodeCanvas
                 id="card-qr-canvas"
@@ -675,15 +679,15 @@ export default function CardAdmin() {
                 variant="outline"
                 className="h-12 rounded-xl"
               >
-                <Download className="w-4 h-4 mr-1" /> Descargar PNG
+                <Download className="w-4 h-4 mr-1" /> {t("cardAdmin.downloadPng")}
               </Button>
               <Button onClick={() => window.open(publicUrl + "?src=qr", "_blank")} variant="outline" className="h-12 rounded-xl">
-                <ExternalLink className="w-4 h-4 mr-1" /> Probar
+                <ExternalLink className="w-4 h-4 mr-1" /> {t("cardAdmin.test")}
               </Button>
             </div>
             <div className="mt-6 p-4 bg-slate-50 rounded-xl text-left">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Próximamente</div>
-              <p className="text-sm text-slate-700">Tarjeta NFC física con tu QR — toca con el celular del cliente para abrir tu perfil al instante.</p>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{t("cardAdmin.comingSoon")}</div>
+              <p className="text-sm text-slate-700">{t("cardAdmin.comingSoonDesc")}</p>
             </div>
           </Card>
         </TabsContent>
@@ -693,7 +697,7 @@ export default function CardAdmin() {
           {reviews.length === 0 ? (
             <Card className="card-elevated p-8 text-center border-0 shadow-none">
               <Star className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Sin reseñas todavía. Pídele a tus mejores clientes que te dejen una.</p>
+              <p className="text-sm text-slate-500">{t("cardAdmin.noReviews")}</p>
             </Card>
           ) : (
             reviews.map((r) => (
@@ -701,7 +705,7 @@ export default function CardAdmin() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="font-semibold text-sm">{r.customer_name}</div>
                   <button onClick={async () => {
-                    if (!window.confirm("¿Eliminar reseña?")) return;
+                    if (!window.confirm(t("cardAdmin.deleteReviewConfirm"))) return;
                     await api.delete(`/card/reviews/${r.id}`);
                     load();
                   }} className="text-red-500"><Trash2 className="w-4 h-4" /></button>
@@ -719,20 +723,20 @@ export default function CardAdmin() {
 
         <TabsContent value="analytics" className="mt-4 space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <StatTile label="Visitas" value={(analytics.totals?.profile_visit || 0)} />
-            <StatTile label="Clicks llamada" value={(analytics.totals?.call_click || 0)} />
-            <StatTile label="Clicks WhatsApp" value={(analytics.totals?.whatsapp_click || 0)} />
-            <StatTile label="Contactos guardados" value={(analytics.totals?.contact_save || 0)} />
-            <StatTile label="Cotizaciones" value={analytics.leads} accent="emerald" />
-            <StatTile label="Reseñas" value={analytics.reviews} accent="emerald" />
+            <StatTile label={t("cardAdmin.statVisits")} value={(analytics.totals?.profile_visit || 0)} />
+            <StatTile label={t("cardAdmin.statCallClicks")} value={(analytics.totals?.call_click || 0)} />
+            <StatTile label={t("cardAdmin.statWhatsappClicks")} value={(analytics.totals?.whatsapp_click || 0)} />
+            <StatTile label={t("cardAdmin.statContactsSaved")} value={(analytics.totals?.contact_save || 0)} />
+            <StatTile label={t("cardAdmin.statQuotes")} value={analytics.leads} accent="emerald" />
+            <StatTile label={t("cardAdmin.statReviews")} value={analytics.reviews} accent="emerald" />
           </div>
 
           <Card className="card-elevated p-5 border-0 shadow-none">
             <h3 className="font-heading font-bold text-base mb-3 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-900" /> Leads recientes
+              <BarChart3 className="w-5 h-5 text-blue-900" /> {t("cardAdmin.recentLeads")}
             </h3>
             {leads.length === 0 ? (
-              <p className="text-sm text-slate-500">Aún sin leads. Comparte tu link para empezar.</p>
+              <p className="text-sm text-slate-500">{t("cardAdmin.noLeads")}</p>
             ) : (
               <div className="space-y-2">
                 {leads.slice(0, 8).map((l) => (
@@ -744,7 +748,7 @@ export default function CardAdmin() {
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         {l.card_label && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" title="Tarjeta de origen" data-testid={`lead-source-${l.id}`}>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" data-testid={`lead-source-${l.id}`}>
                             {l.card_label}
                           </span>
                         )}
@@ -829,38 +833,42 @@ const INDUSTRY_TEMPLATES = [
 ];
 
 function IndustryTemplatePicker({ card, onApply }) {
+  const { t } = useTranslation();
   return (
     <Card className="card-elevated p-5 border-0 shadow-none">
       <div className="flex items-baseline justify-between mb-1">
-        <h3 className="font-heading font-bold text-base">Plantillas por oficio</h3>
-        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Onboarding rápido</span>
+        <h3 className="font-heading font-bold text-base">{t("cardAdmin.industryTemplates")}</h3>
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">{t("cardAdmin.quickOnboarding")}</span>
       </div>
-      <p className="text-xs text-slate-500 mb-3">Toca una plantilla y te aplicamos los colores y estilo. Luego solo subes fotos.</p>
+      <p className="text-xs text-slate-500 mb-3">{t("cardAdmin.industryTemplatesHint")}</p>
       <div className="-mx-1 px-1 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 pb-1" style={{ minWidth: "max-content" }}>
-          {INDUSTRY_TEMPLATES.map((t) => {
+          {INDUSTRY_TEMPLATES.map((tpl) => {
+            const tplKey = tpl.key.charAt(0).toUpperCase() + tpl.key.slice(1);
+            const label = t(`cardAdmin.tpl${tplKey}`);
+            const hint = t(`cardAdmin.tpl${tplKey}Hint`);
             const active =
-              (card.brand_color || "").toLowerCase() === t.brand.toLowerCase() &&
-              (card.accent_color || "").toLowerCase() === t.accent.toLowerCase();
+              (card.brand_color || "").toLowerCase() === tpl.brand.toLowerCase() &&
+              (card.accent_color || "").toLowerCase() === tpl.accent.toLowerCase();
             return (
               <button
-                key={t.key}
+                key={tpl.key}
                 type="button"
-                data-testid={`template-${t.key}`}
-                onClick={() => onApply(t)}
+                data-testid={`template-${tpl.key}`}
+                onClick={() => onApply({ ...tpl, label, hint })}
                 className={`flex-shrink-0 w-24 rounded-2xl p-2 border-2 transition-all tap ${
                   active ? "border-slate-900 bg-slate-50 shadow-sm" : "border-slate-100 bg-white hover:border-slate-300"
                 }`}
               >
                 <div
                   className="aspect-[3/4] rounded-xl flex items-center justify-center relative overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, ${t.brand} 0%, ${t.brandDeep} 100%)` }}
+                  style={{ background: `linear-gradient(135deg, ${tpl.brand} 0%, ${tpl.brandDeep} 100%)` }}
                 >
                   <div className="absolute inset-0 opacity-30" style={{
-                    background: `radial-gradient(ellipse at top right, ${t.accent} 0%, transparent 60%)`,
+                    background: `radial-gradient(ellipse at top right, ${tpl.accent} 0%, transparent 60%)`,
                   }} />
                   <div className="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center shadow-lg relative z-10">
-                    <t.Icon className="w-5 h-5" style={{ color: t.brand }} strokeWidth={2.5} />
+                    <tpl.Icon className="w-5 h-5" style={{ color: tpl.brand }} strokeWidth={2.5} />
                   </div>
                   {active && (
                     <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow">
@@ -868,10 +876,10 @@ function IndustryTemplatePicker({ card, onApply }) {
                     </div>
                   )}
                 </div>
-                <div className="text-[11px] font-bold text-slate-800 mt-1.5 text-center leading-tight">{t.label}</div>
+                <div className="text-[11px] font-bold text-slate-800 mt-1.5 text-center leading-tight">{label}</div>
                 <div className="flex items-center justify-center gap-0.5 mt-1">
-                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: t.brand }} />
-                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: t.accent }} />
+                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: tpl.brand }} />
+                  <span className="w-2 h-2 rounded-full border border-white/50 shadow-sm" style={{ background: tpl.accent }} />
                 </div>
               </button>
             );
@@ -883,23 +891,24 @@ function IndustryTemplatePicker({ card, onApply }) {
 }
 
 function HeroLayoutPicker({ card, user, onChange }) {
+  const { t } = useTranslation();
   const options = [
     {
       key: "photo",
-      label: "Foto Grande",
-      desc: "Tu foto llena la portada. Look premium.",
+      label: t("cardAdmin.heroPhotoBig"),
+      desc: t("cardAdmin.heroPhotoBigDesc"),
     },
     {
       key: "logo_circle",
-      label: "Foto/Logo + Avatar",
-      desc: "Foto de tu trabajo o logo de fondo + foto chica en círculo.",
+      label: t("cardAdmin.heroLogoCircle"),
+      desc: t("cardAdmin.heroLogoCircleDesc"),
     },
   ];
   const current = card.hero_layout || "photo";
   return (
     <Card className="card-elevated p-5 border-0 shadow-none">
-      <h3 className="font-heading font-bold text-base mb-1">Estilo de tu tarjeta</h3>
-      <p className="text-xs text-slate-500 mb-3">Preview en vivo con tu data. Cambia entre estilos hasta encontrar el que más te late.</p>
+      <h3 className="font-heading font-bold text-base mb-1">{t("cardAdmin.cardStyle")}</h3>
+      <p className="text-xs text-slate-500 mb-3">{t("cardAdmin.cardStyleHint")}</p>
       <div className="grid grid-cols-2 gap-2.5">
         {options.map((o) => {
           const active = current === o.key;
@@ -932,6 +941,7 @@ function HeroLayoutPicker({ card, user, onChange }) {
 function AssetUploader({ card, onChange, kind, heroLayout }) {
   const inputRef = useRef(null);
   const enhanceRef = useRef(null);
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -940,31 +950,31 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
 
   const config = kind === "profile_photo"
     ? {
-        title: heroLayout === "logo_circle" ? "Tu foto (avatar)" : "Foto del dueño",
+        title: heroLayout === "logo_circle" ? t("cardAdmin.avatarTitle") : t("cardAdmin.ownerPhotoTitle"),
         endpoint: "/card/profile-photo",
         idField: "profile_photo_id",
         helper: heroLayout === "logo_circle"
-          ? "Tu foto aparece pequeña en un círculo bonito en medio de tu tarjeta. Cuadrada se ve mejor. Máx 8MB."
-          : "Foto tuya o del equipo. Vertical funciona mejor. Aparece como hero gigante en tu tarjeta. Máx 8MB.",
+          ? t("cardAdmin.avatarHelper")
+          : t("cardAdmin.ownerPhotoHelper"),
         roundedClass: heroLayout === "logo_circle" ? "rounded-full" : "rounded-3xl",
         size: heroLayout === "logo_circle" ? "w-20 h-20" : "w-24 h-32",
         testid: "profile",
       }
     : kind === "cover"
     ? {
-        title: "Foto de fondo / portada",
+        title: t("cardAdmin.coverTitle"),
         endpoint: "/card/cover-photo",
         idField: "cover_photo_id",
-        helper: "Una foto de tu trabajo (techo terminado, jardín bonito, cocina pintada...) que se use como fondo de tu tarjeta. Si no subes ninguna, mostramos tu logo grande sobre un fondo con tus colores.",
+        helper: t("cardAdmin.coverHelper"),
         roundedClass: "rounded-2xl",
         size: "w-28 h-20",
         testid: "cover",
       }
     : {
-        title: "Logo del negocio",
+        title: t("cardAdmin.logoTitle"),
         endpoint: "/card/logo",
         idField: "logo_photo_id",
-        helper: "PNG, JPEG o WEBP. Cuadrado se ve mejor. Máx 8MB.",
+        helper: t("cardAdmin.logoHelper"),
         roundedClass: "rounded-2xl",
         size: "w-20 h-20",
         testid: "logo",
@@ -982,10 +992,10 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
       const fd = new FormData();
       fd.append("file", file);
       await api.post(`${config.endpoint}?card_id=${card.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success(`${config.title} subido`);
+      toast.success(`${config.title} ${t("cardAdmin.uploaded")}`);
       onChange();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error subiendo imagen");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.imageUploadError"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -993,9 +1003,9 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
   };
 
   const remove = async () => {
-    if (!window.confirm(`¿Quitar ${config.title.toLowerCase()}?`)) return;
+    if (!window.confirm(t("cardAdmin.removeConfirm", { title: config.title.toLowerCase() }))) return;
     await api.delete(`${config.endpoint}?card_id=${card.id}`);
-    toast.success("Removido");
+    toast.success(t("cardAdmin.removed"));
     onChange();
   };
 
@@ -1018,7 +1028,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
         enhanced: { ...data.enhanced, full: `${BACKEND}${data.enhanced.url}` },
       });
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "No se pudo mejorar la imagen");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.enhanceImgError"));
     } finally {
       setEnhancing(false);
       e.target.value = "";
@@ -1036,11 +1046,11 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
         photo_id: chosen.photo_id,
         discard_photo_id: discard.photo_id,
       });
-      toast.success(which === "enhanced" ? "¡Foto mejorada aplicada!" : "Foto original aplicada");
+      toast.success(which === "enhanced" ? t("cardAdmin.photoEnhancedApplied") : t("cardAdmin.photoOriginalApplied"));
       setPreview(null);
       onChange();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error al aplicar");
+      toast.error(err?.response?.data?.detail || t("cardAdmin.applyError"));
     } finally {
       setApplying(false);
     }
@@ -1079,7 +1089,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
               className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
-              {url ? "Cambiar" : "Subir"}
+              {url ? t("cardAdmin.change") : t("cardAdmin.upload")}
             </Button>
             {url && (
               <Button
@@ -1089,7 +1099,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
                 onClick={remove}
                 className="rounded-xl text-red-600"
               >
-                <XIcon className="w-3.5 h-3.5 mr-1" /> Quitar
+                <XIcon className="w-3.5 h-3.5 mr-1" /> {t("cardAdmin.remove")}
               </Button>
             )}
           </div>
@@ -1103,7 +1113,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
               className="rounded-xl mt-2 border-violet-300 text-violet-700 hover:bg-violet-50"
             >
               {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
-              {enhancing ? "Mejorando..." : "Mejorar con IA"}
+              {enhancing ? t("cardAdmin.enhancing") : t("cardAdmin.enhanceWithAi")}
             </Button>
           )}
           <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleFile} />
@@ -1118,22 +1128,22 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
         <DialogContent className="rounded-2xl max-w-lg" data-testid={`${config.testid}-ai-dialog`}>
           <DialogHeader>
             <DialogTitle className="font-heading flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-violet-600" /> Antes y Después
+              <Sparkles className="w-5 h-5 text-violet-600" /> {t("cardAdmin.beforeAfter")}
             </DialogTitle>
           </DialogHeader>
           {preview && (
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Original</div>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">{t("cardAdmin.original")}</div>
                 <img src={preview.original.full} alt="original" className="w-full aspect-square object-cover rounded-xl border border-slate-200" />
               </div>
               <div className="text-center">
-                <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-1.5">Mejorada ✨</div>
-                <img src={preview.enhanced.full} alt="mejorada" className="w-full aspect-square object-cover rounded-xl border-2 border-violet-400" />
+                <div className="text-xs font-bold uppercase tracking-wider text-violet-600 mb-1.5">{t("cardAdmin.enhanced")}</div>
+                <img src={preview.enhanced.full} alt="enhanced" className="w-full aspect-square object-cover rounded-xl border-2 border-violet-400" />
               </div>
             </div>
           )}
-          <p className="text-[11px] text-slate-400 text-center">La IA mejora luz, color y nitidez. Tú decides cuál usar.</p>
+          <p className="text-[11px] text-slate-400 text-center">{t("cardAdmin.enhanceNote")}</p>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-2">
             <Button
               variant="outline"
@@ -1142,7 +1152,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
               disabled={applying}
               className="rounded-xl h-11"
             >
-              Usar original
+              {t("cardAdmin.useOriginal")}
             </Button>
             <Button
               data-testid={`${config.testid}-use-enhanced`}
@@ -1150,7 +1160,7 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
               disabled={applying}
               className="rounded-xl h-11 bg-violet-600 hover:bg-violet-700"
             >
-              {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Usar mejorada ✨"}
+              {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : t("cardAdmin.useEnhanced")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1160,35 +1170,36 @@ function AssetUploader({ card, onChange, kind, heroLayout }) {
 }
 
 function NewReviewForm({ onCreated }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ customer_name: "", rating: 5, text: "", job_title: "" });
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    if (!form.customer_name.trim() || !form.text.trim()) return toast.error("Faltan campos");
+    if (!form.customer_name.trim() || !form.text.trim()) return toast.error(t("cardAdmin.missingFields"));
     setSaving(true);
     try {
       await api.post("/card/reviews", form);
-      toast.success("Reseña agregada");
+      toast.success(t("cardAdmin.reviewAdded"));
       setForm({ customer_name: "", rating: 5, text: "", job_title: "" });
       setOpen(false);
       onCreated();
     } catch {
-      toast.error("Error");
+      toast.error(t("cardAdmin.error"));
     } finally { setSaving(false); }
   };
 
   if (!open) {
     return (
       <Button data-testid="add-review-btn" onClick={() => setOpen(true)} className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
-        <Plus className="w-4 h-4 mr-1" /> Agregar reseña manual
+        <Plus className="w-4 h-4 mr-1" /> {t("cardAdmin.addManualReview")}
       </Button>
     );
   }
 
   return (
     <Card className="card-elevated p-4 border-0 shadow-none space-y-3">
-      <Input data-testid="review-name" placeholder="Nombre del cliente" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} className="h-12 rounded-xl" />
+      <Input data-testid="review-name" placeholder={t("cardAdmin.customerNamePh")} value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} className="h-12 rounded-xl" />
       <div className="flex items-center gap-2">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} onClick={() => setForm({ ...form, rating: n })} data-testid={`review-star-${n}`} className="tap">
@@ -1196,11 +1207,11 @@ function NewReviewForm({ onCreated }) {
           </button>
         ))}
       </div>
-      <Textarea data-testid="review-text" placeholder="Reseña (en inglés se ve mejor)" value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} className="rounded-xl" />
+      <Textarea data-testid="review-text" placeholder={t("cardAdmin.reviewTextPh")} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} className="rounded-xl" />
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={() => setOpen(false)} className="h-11 rounded-xl">Cancelar</Button>
+        <Button variant="outline" onClick={() => setOpen(false)} className="h-11 rounded-xl">{t("cardAdmin.cancel")}</Button>
         <Button data-testid="review-save" onClick={save} disabled={saving} className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("cardAdmin.save")}
         </Button>
       </div>
     </Card>

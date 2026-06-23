@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -18,22 +19,12 @@ const CAT_ICON = {
   trabajo_terminado: Hammer, oferta: Tag, resena: Star, antes_despues: Repeat,
   contratando: Users, temporada: Snowflake, tips: Lightbulb,
 };
-const CAT_LABEL = {
-  trabajo_terminado: "Trabajo terminado", oferta: "Oferta", resena: "Reseña",
-  antes_despues: "Antes / Después", contratando: "Contratando", temporada: "Temporada", tips: "Consejo",
-};
-
-// Common contractor trades shown when the account has no industry set yet.
-const INDUSTRIES = [
-  "Techos / Roofing", "Plomería", "Electricidad", "Jardinería / Landscaping",
-  "Pintura", "Concreto", "Limpieza", "HVAC / Climas", "Remodelación",
-  "Construcción", "Pisos", "Cercas / Fencing",
-];
 
 export default function MarketingStart() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const firstName = (user?.business_name || "").trim() || "compa";
+  const firstName = (user?.business_name || "").trim() || t("marketingStart.businessFallback");
   const [extra, setExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
@@ -73,9 +64,9 @@ export default function MarketingStart() {
       setShowIndustry(false);
       setCustomIndustry("");
       await loadTopics();
-      toast.success("Industria guardada — temas personalizados ✨");
+      toast.success(t("marketingStart.industrySaved"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo guardar");
+      toast.error(e?.response?.data?.detail || t("marketingStart.industrySaveError"));
     } finally {
       setSavingIndustry(false);
     }
@@ -92,12 +83,12 @@ export default function MarketingStart() {
         category: category || "",
         extra_context: ctx,
         count: 3,
-        language: "es",
+        language: i18n.language?.startsWith("en") ? "en" : "es",
       });
       setIdeas(data.ideas || []);
-      if (!data.ideas?.length) toast.error("No salieron ideas, intenta de nuevo");
+      if (!data.ideas?.length) toast.error(t("marketingStart.noIdeas"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudieron generar ideas");
+      toast.error(e?.response?.data?.detail || t("marketingStart.ideasError"));
       setIdeasOpen(false);
     } finally {
       setLoading(false);
@@ -115,13 +106,13 @@ export default function MarketingStart() {
         <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-white/15 px-3 py-1 rounded-full">
-            <Megaphone className="w-3.5 h-3.5" /> Estudio de Marketing
+            <Megaphone className="w-3.5 h-3.5" /> {t("marketingStart.heroBadge")}
           </div>
           <h1 className="font-heading text-3xl sm:text-4xl font-bold mt-3 leading-tight">
-            ¡Hola, {firstName}! 👋<br />¿Qué vas a postear hoy?
+            {t("marketingStart.heroTitle", { name: firstName })}<br />{t("marketingStart.heroTitle2")}
           </h1>
           <p className="text-emerald-50/90 text-sm mt-2 max-w-md">
-            Elige un tema y la IA te da ideas listas, te dice qué foto tomar, o te crea la imagen. Y si no sabes… deja que la IA te sorprenda.
+            {t("marketingStart.heroSubtitle")}
           </p>
         </div>
       </div>
@@ -129,26 +120,26 @@ export default function MarketingStart() {
       {/* Optional context */}
       <Card className="p-5 border-0 shadow-sm space-y-4">
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">¿Algo especial hoy? (opcional)</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("marketingStart.specialToday")}</Label>
           <Input
             data-testid="extra-context-input"
             value={extra}
             onChange={(e) => setExtra(e.target.value)}
-            placeholder="Ej: oferta de invierno 20% off, acabamos un techo en Auburn, busco ayudante…"
+            placeholder={t("marketingStart.specialPlaceholder")}
             className="mt-2 rounded-xl"
           />
-          <p className="text-[11px] text-slate-400 mt-1">Mientras más nos cuentes de tu negocio, mejores ideas. ✨</p>
+          <p className="text-[11px] text-slate-400 mt-1">{t("marketingStart.specialHint")}</p>
         </div>
 
         {/* Industry selector (only when not set yet, or when changing it) */}
         {showIndustry ? (
           <div data-testid="industry-selector">
             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5" /> ¿Cuál es tu industria?
+              <Briefcase className="w-3.5 h-3.5" /> {t("marketingStart.industryQuestion")}
             </Label>
-            <p className="text-[11px] text-slate-400 mt-0.5 mb-2">Así los temas e ideas salen específicos para tu oficio.</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 mb-2">{t("marketingStart.industryHint")}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {INDUSTRIES.map((ind) => (
+              {t("marketingStart.industries", { returnObjects: true }).map((ind) => (
                 <button
                   key={ind}
                   onClick={() => saveIndustry(ind)}
@@ -165,7 +156,7 @@ export default function MarketingStart() {
                 data-testid="custom-industry-input"
                 value={customIndustry}
                 onChange={(e) => setCustomIndustry(e.target.value)}
-                placeholder="Otra… (ej: Albañilería, Detallado de autos)"
+                placeholder={t("marketingStart.industryOther")}
                 className="rounded-xl"
                 onKeyDown={(e) => e.key === "Enter" && saveIndustry(customIndustry)}
               />
@@ -177,34 +168,34 @@ export default function MarketingStart() {
         ) : (
           <div>
             <div className="flex items-center justify-between gap-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Elige un tema</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("marketingStart.chooseTheme")}</Label>
               {businessType && (
                 <button onClick={() => setShowIndustry(true)} data-testid="change-industry-btn" className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 tap">
-                  {businessType} · cambiar
+                  {businessType} · {t("marketingStart.change")}
                 </button>
               )}
             </div>
             {loadingTopics ? (
               <div className="flex items-center gap-2 text-sm text-slate-400 py-4" data-testid="topics-loading">
-                <Loader2 className="w-4 h-4 animate-spin" /> Cargando temas para tu negocio…
+                <Loader2 className="w-4 h-4 animate-spin" /> {t("marketingStart.loadingThemes")}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2" data-testid="topics-grid">
-                {topics.map((t, i) => {
-                  const Icon = CAT_ICON[t.category] || Lightbulb;
-                  const active = activeCat === t.label;
+                {topics.map((tp, i) => {
+                  const Icon = CAT_ICON[tp.category] || Lightbulb;
+                  const active = activeCat === tp.label;
                   return (
                     <button
                       key={i}
-                      onClick={() => getIdeas(t.category, t.label)}
+                      onClick={() => getIdeas(tp.category, tp.label)}
                       data-testid={`topic-${i}`}
-                      title={CAT_LABEL[t.category]}
+                      title={t(`marketingStart.catLabels.${tp.category}`)}
                       className={`flex items-center gap-2 px-3 py-3 rounded-2xl border text-left text-sm font-semibold tap transition-all ${
                         active ? "border-emerald-500 ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-emerald-300 text-slate-700"
                       }`}
                     >
                       <Icon className="w-4 h-4 flex-none text-emerald-600" />
-                      <span className="leading-tight">{t.label}</span>
+                      <span className="leading-tight">{tp.label}</span>
                     </button>
                   );
                 })}
@@ -220,7 +211,7 @@ export default function MarketingStart() {
           className="w-full h-12 rounded-xl bg-violet-600 hover:bg-violet-700 text-base"
         >
           {loading && activeCat === "all" ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2" />}
-          No sé qué postear — dame ideas ✨
+          {t("marketingStart.surprise")}
         </Button>
 
         <button
@@ -228,7 +219,7 @@ export default function MarketingStart() {
           data-testid="skip-to-studio"
           className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 tap flex items-center justify-center gap-1.5"
         >
-          Ya sé qué postear, ir al estudio <ArrowRight className="w-3.5 h-3.5" />
+          {t("marketingStart.skipToStudio")} <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </Card>
 
@@ -238,7 +229,7 @@ export default function MarketingStart() {
           <DrawerHeader className="text-left">
             <DrawerTitle className="font-heading flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              {loading ? "Preparando ideas…" : "Ideas para ti"}
+              {loading ? t("marketingStart.preparingIdeasShort") : t("marketingStart.ideasForYou")}
               {!loading && activeCat && activeCat !== "all" && (
                 <span className="text-xs font-semibold text-slate-400">· {activeCat}</span>
               )}
@@ -248,8 +239,8 @@ export default function MarketingStart() {
             {loading && (
               <div className="flex flex-col items-center justify-center py-14 text-center" data-testid="ideas-loading">
                 <Loader2 className="w-9 h-9 animate-spin text-emerald-600 mb-3" />
-                <p className="text-sm font-semibold text-slate-600">Preparando ideas para ti…</p>
-                <p className="text-xs text-slate-400 mt-1">Dame unos segundos ✨</p>
+                <p className="text-sm font-semibold text-slate-600">{t("marketingStart.preparingIdeasBody")}</p>
+                <p className="text-xs text-slate-400 mt-1">{t("marketingStart.giveSeconds")}</p>
               </div>
             )}
             {!loading && ideas.length > 0 && (
@@ -264,21 +255,21 @@ export default function MarketingStart() {
                         {it.photo_tip && (
                           <div className="mt-2 flex items-start gap-1.5 text-[12px] text-blue-700 bg-blue-50 rounded-lg px-2.5 py-1.5">
                             <Camera className="w-3.5 h-3.5 flex-none mt-0.5" />
-                            <span><b>Toma esto:</b> {it.photo_tip}</span>
+                            <span><b>{t("marketingStart.takeThis")}</b> {it.photo_tip}</span>
                           </div>
                         )}
                         <div className="flex flex-wrap gap-2 mt-3">
                           <Button onClick={() => openPost(it)} size="sm" data-testid={`idea-use-post-${i}`}
                             className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-8 text-xs">
-                            <ImagePlus className="w-3.5 h-3.5 mr-1.5" /> Usar en Post
+                            <ImagePlus className="w-3.5 h-3.5 mr-1.5" /> {t("marketingStart.useInPost")}
                           </Button>
                           <Button onClick={() => openAi(it)} size="sm" variant="outline" data-testid={`idea-use-ai-${i}`}
                             className="rounded-lg h-8 text-xs border-violet-300 text-violet-700 hover:bg-violet-50">
-                            <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Crear imagen IA
+                            <Wand2 className="w-3.5 h-3.5 mr-1.5" /> {t("marketingStart.createAiImage")}
                           </Button>
                           <Button onClick={() => openReel(it)} size="sm" variant="outline" data-testid={`idea-use-reel-${i}`}
                             className="rounded-lg h-8 text-xs">
-                            <Video className="w-3.5 h-3.5 mr-1.5" /> Hacer Reel
+                            <Video className="w-3.5 h-3.5 mr-1.5" /> {t("marketingStart.makeReel")}
                           </Button>
                         </div>
                       </div>
