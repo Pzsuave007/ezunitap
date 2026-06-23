@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -91,6 +93,8 @@ function AutoGrowTextarea({ value, onChange, placeholder, className = "", testid
 
 export default function InvoiceDetail() {
   const { id } = useParams();
+  const { t } = useTranslation();
+  const lang = i18n.language?.startsWith("es") ? "es" : "en";
   const [params] = useSearchParams();
   const isNew = !id;
   const navigate = useNavigate();
@@ -104,10 +108,10 @@ export default function InvoiceDetail() {
   const [sendOpen, setSendOpen] = useState(false);
 
   const generateWithAI = async () => {
-    if (!aiDescription.trim()) return toast.error("Escribe una descripción primero");
+    if (!aiDescription.trim()) return toast.error(t("invoiceDetail.aiErrWrite"));
     setAiLoading(true);
     try {
-      const { data } = await api.post("/ai/quote", { description_es: aiDescription });
+      const { data } = await api.post("/ai/quote", { description_es: aiDescription, language: lang });
       const lineItems = (data.line_items || []).map((li) => ({
         description: li.description || "",
         quantity: Number(li.quantity) || 1,
@@ -123,9 +127,9 @@ export default function InvoiceDetail() {
         notes: data.notes || invoice.notes,
       };
       recompute(next);
-      toast.success("¡Invoice generado con AI en inglés!");
+      toast.success(t("invoiceDetail.aiOk"));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error de AI");
+      toast.error(err?.response?.data?.detail || t("invoiceDetail.aiError"));
     } finally {
       setAiLoading(false);
     }
@@ -147,7 +151,7 @@ export default function InvoiceDetail() {
         } else {
           setClient(null);
         }
-      }).catch(() => { toast.error("No encontrado"); navigate("/invoices"); });
+      }).catch(() => { toast.error(t("invoiceDetail.notFound")); navigate("/invoices"); });
     }
   }, [id]);
 
@@ -169,8 +173,8 @@ export default function InvoiceDetail() {
   const round2 = (n) => Math.round(n * 100) / 100;
 
   const save = async () => {
-    if (!invoice.client_id) return toast.error("Selecciona un cliente");
-    if (!invoice.job_title.trim()) return toast.error("Falta título");
+    if (!invoice.client_id) return toast.error(t("invoiceDetail.selectClientErr"));
+    if (!invoice.job_title.trim()) return toast.error(t("invoiceDetail.missingTitle"));
     setSaving(true);
     try {
       // Normalize numeric fields (they're edited as free text for iOS-friendliness).
@@ -193,14 +197,14 @@ export default function InvoiceDetail() {
       };
       if (isNew) {
         const { data } = await api.post("/invoices", payload);
-        toast.success("Invoice creado");
+        toast.success(t("invoiceDetail.created"));
         navigate(`/invoices/${data.id}`);
       } else {
         await api.put(`/invoices/${id}`, payload);
-        toast.success("Guardado");
+        toast.success(t("invoiceDetail.saved"));
       }
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("invoiceDetail.error"));
     } finally {
       setSaving(false);
     }
@@ -209,17 +213,17 @@ export default function InvoiceDetail() {
   const setStatus = async (status) => {
     const { data } = await api.post(`/invoices/${id}/status?status=${status}`);
     setInvoice(data);
-    toast.success("Estado actualizado");
+    toast.success(t("invoiceDetail.statusUpdated"));
   };
 
   const deleteInvoice = async () => {
-    if (!window.confirm(`¿Borrar el invoice ${invoice.number}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(t("invoiceDetail.deleteConfirm", { number: invoice.number }))) return;
     try {
       await api.delete(`/invoices/${id}`);
-      toast.success("Invoice borrado");
+      toast.success(t("invoiceDetail.deleted"));
       navigate("/invoices");
     } catch {
-      toast.error("Error al borrar");
+      toast.error(t("invoiceDetail.deleteError"));
     }
   };
 
@@ -239,7 +243,7 @@ export default function InvoiceDetail() {
   return (
     <div className="space-y-5">
       <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-sm text-slate-600 tap" data-testid="back-invoices">
-        <ArrowLeft className="w-4 h-4" /> Invoices
+        <ArrowLeft className="w-4 h-4" /> {t("invoiceDetail.back")}
       </button>
 
       {/* AI Generation (only for new invoices) */}
@@ -250,8 +254,8 @@ export default function InvoiceDetail() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <Label className="text-base font-bold">Generar Invoice con AI</Label>
-              <p className="text-[11px] text-slate-500">Describe el trabajo en español — la IA lo traduce a inglés profesional para tu cliente.</p>
+              <Label className="text-base font-bold">{t("invoiceDetail.aiTitle")}</Label>
+              <p className="text-[11px] text-slate-500">{t("invoiceDetail.aiSubtitle")}</p>
             </div>
           </div>
           <Textarea
@@ -259,7 +263,7 @@ export default function InvoiceDetail() {
             value={aiDescription}
             onChange={(e) => setAiDescription(e.target.value)}
             className="rounded-xl min-h-[100px] bg-white"
-            placeholder="Ej: Reparé el techo de Carlos, cambié 8 tejas, sellé alrededor de la chimenea. 3 horas de trabajo. Material costó $120."
+            placeholder={t("invoiceDetail.aiPlaceholder")}
           />
           <Button
             data-testid="inv-ai-generate"
@@ -268,7 +272,7 @@ export default function InvoiceDetail() {
             className="mt-3 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 w-full gap-2"
           >
             {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {aiLoading ? "Generando..." : "Generar con AI (en inglés)"}
+            {aiLoading ? t("invoiceDetail.generating") : t("invoiceDetail.generateBtn")}
           </Button>
         </Card>
       )}
@@ -281,7 +285,7 @@ export default function InvoiceDetail() {
               {!isNew && <StatusBadge kind="invoice" status={invoice.status} />}
             </div>
             <h1 className="font-heading text-2xl font-bold tracking-tight">
-              {isNew ? "Nuevo Invoice" : invoice.job_title}
+              {isNew ? t("invoiceDetail.newInvoice") : invoice.job_title}
             </h1>
           </div>
           {!isNew && (
@@ -290,16 +294,16 @@ export default function InvoiceDetail() {
                 <Button variant="outline" size="icon" className="rounded-xl" data-testid="invoice-menu"><MoreVertical className="w-4 h-4" /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-xl">
-                <DropdownMenuItem onClick={() => setStatus("sent")}>Marcar Enviado</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatus("paid")} data-testid="mark-paid"><Check className="w-3 h-3 mr-1" /> Marcar Pagado</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatus("partial")}>Pago parcial</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatus("overdue")}>Atrasado</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatus("sent")}>{t("invoiceDetail.markSent")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatus("paid")} data-testid="mark-paid"><Check className="w-3 h-3 mr-1" /> {t("invoiceDetail.markPaid")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatus("partial")}>{t("invoiceDetail.partialPay")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatus("overdue")}>{t("invoiceDetail.overdue")}</DropdownMenuItem>
                 <DropdownMenuItem
                   data-testid="invoice-delete"
                   onClick={deleteInvoice}
                   className="text-red-600 focus:text-red-700 focus:bg-red-50"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> Borrar invoice
+                  <Trash2 className="w-4 h-4 mr-2" /> {t("invoiceDetail.deleteInvoice")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -313,10 +317,10 @@ export default function InvoiceDetail() {
               onClick={() => setStatus("created")}
               className="w-full h-12 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold"
             >
-              <Check className="w-4 h-4 mr-1.5" /> Crear Invoice
+              <Check className="w-4 h-4 mr-1.5" /> {t("invoiceDetail.createInvoice")}
             </Button>
             <p className="text-[11px] text-slate-400 text-center mt-2">
-              Está en Borrador. Al crearlo cuenta en tu dashboard y podrás mandarlo o descargar el PDF.
+              {t("invoiceDetail.draftHint")}
             </p>
           </div>
         )}
@@ -331,10 +335,10 @@ export default function InvoiceDetail() {
               }}
               className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              <Send className="w-4 h-4 mr-1" /> Mandar Invoice
+              <Send className="w-4 h-4 mr-1" /> {t("invoiceDetail.sendInvoice")}
             </Button>
             <Button data-testid="inv-download-pdf" onClick={downloadPDF} variant="outline" className="h-12 rounded-xl border-slate-200">
-              <FileDown className="w-4 h-4 mr-1" /> Descargar PDF
+              <FileDown className="w-4 h-4 mr-1" /> {t("invoiceDetail.downloadPdf")}
             </Button>
           </div>
         )}
@@ -342,9 +346,9 @@ export default function InvoiceDetail() {
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
         <div>
-          <Label>Cliente</Label>
+          <Label>{t("invoiceDetail.client")}</Label>
           <Select value={invoice.client_id} onValueChange={(v) => setInvoice({ ...invoice, client_id: v })}>
-            <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="inv-client-select"><SelectValue placeholder="Selecciona" /></SelectTrigger>
+            <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="inv-client-select"><SelectValue placeholder={t("invoiceDetail.selectPlaceholder")} /></SelectTrigger>
             <SelectContent>
               {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
@@ -362,38 +366,38 @@ export default function InvoiceDetail() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label>Line Items</Label>
-            <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> Agregar</Button>
+            <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> {t("invoiceDetail.addItem")}</Button>
           </div>
           {invoice.line_items.length === 0 && (
-            <p className="text-xs text-slate-400 mb-2">Toca "Agregar" para añadir tu primer concepto (ej. mano de obra, materiales).</p>
+            <p className="text-xs text-slate-400 mb-2">{t("invoiceDetail.itemsHint")}</p>
           )}
           {invoice.line_items.map((li, i) => (
             <div key={i} className="bg-slate-50 rounded-xl p-3 mb-2 lg:bg-transparent lg:p-0">
               {/* Mobile: friendly labeled layout */}
               <div className="lg:hidden space-y-2">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Descripción</span>
-                  <AutoGrowTextarea value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Ej: Cambio de techo" className="mt-0.5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">{t("invoiceDetail.description")}</span>
+                  <AutoGrowTextarea value={li.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder={t("invoiceDetail.itemDescPlaceholder")} className="mt-0.5" />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Cant.</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">{t("invoiceDetail.qty")}</span>
                     <Input type="text" inputMode="decimal" value={li.quantity} onChange={(e) => updateItem(i, "quantity", numClean(e.target.value))} placeholder="1" className="h-11 rounded-xl bg-white mt-0.5" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Unidad</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">{t("invoiceDetail.unit")}</span>
                     <Input value={li.unit} onChange={(e) => updateItem(i, "unit", e.target.value)} placeholder="ea" className="h-11 rounded-xl bg-white mt-0.5" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">Precio $</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 ml-1">{t("invoiceDetail.price")}</span>
                     <Input type="text" inputMode="decimal" value={li.unit_price} onChange={(e) => updateItem(i, "unit_price", numClean(e.target.value))} placeholder="0.00" className="h-11 rounded-xl bg-white mt-0.5" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-0.5">
                   <button type="button" onClick={() => removeItem(i)} className="flex items-center gap-1 text-red-500 text-xs font-semibold tap">
-                    <Trash2 className="w-3.5 h-3.5" /> Quitar ítem
+                    <Trash2 className="w-3.5 h-3.5" /> {t("invoiceDetail.removeItem")}
                   </button>
-                  <div className="text-sm font-bold text-slate-800">Total: ${((Number(li.quantity) || 0) * (Number(li.unit_price) || 0)).toFixed(2)}</div>
+                  <div className="text-sm font-bold text-slate-800">{t("invoiceDetail.totalInline")}: ${((Number(li.quantity) || 0) * (Number(li.unit_price) || 0)).toFixed(2)}</div>
                 </div>
               </div>
               {/* Desktop: compact grid */}
@@ -425,7 +429,7 @@ export default function InvoiceDetail() {
               className="h-12 rounded-xl mt-1.5"
             />
             <p className="text-[10px] text-slate-400 mt-1">
-              Cantidad solicitada antes de empezar el trabajo.
+              {t("invoiceDetail.depositHint")}
             </p>
           </div>
         </div>
@@ -463,7 +467,7 @@ export default function InvoiceDetail() {
         )}
 
         <Button data-testid="save-invoice" onClick={save} disabled={saving} className="w-full h-14 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-semibold">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? "Guardar borrador" : "Guardar cambios")}
+          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? t("invoiceDetail.saveDraft") : t("invoiceDetail.saveChanges"))}
         </Button>
       </Card>
 
@@ -497,6 +501,7 @@ export default function InvoiceDetail() {
 }
 
 function PaymentStatusCard({ invoice, invoiceId, onReload }) {
+  const { t } = useTranslation();
   const total = Number(invoice.total) || 0;
   const payments = invoice.payments || [];
   const plan = invoice.payment_plan || [];
@@ -516,7 +521,7 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
   const addPayment = async (preset = null) => {
     const amt = preset ? preset.amount : Number(amount);
     if (!amt || isNaN(amt) || amt <= 0) {
-      toast.error("Escribe un monto válido");
+      toast.error(t("invoiceDetail.amountValid"));
       return;
     }
     setBusy(true);
@@ -527,22 +532,22 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
       const { data } = await api.post(`/invoices/${invoiceId}/payments`, body);
       onReload(data);
       setAmount(""); setNote(""); setShowForm(false);
-      toast.success(data.status === "paid" ? "¡Invoice pagado completo! 🎉" : "Abono registrado");
+      toast.success(data.status === "paid" ? t("invoiceDetail.paidFull") : t("invoiceDetail.paymentAdded"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo registrar el abono");
+      toast.error(e?.response?.data?.detail || t("invoiceDetail.paymentError"));
     } finally {
       setBusy(false);
     }
   };
 
   const removePayment = async (pid) => {
-    if (!window.confirm("¿Borrar este abono?")) return;
+    if (!window.confirm(t("invoiceDetail.deletePaymentConfirm"))) return;
     try {
       const { data } = await api.delete(`/invoices/${invoiceId}/payments/${pid}`);
       onReload(data);
-      toast.success("Abono eliminado");
+      toast.success(t("invoiceDetail.paymentDeleted"));
     } catch {
-      toast.error("No se pudo eliminar");
+      toast.error(t("invoiceDetail.couldntDelete"));
     }
   };
 
@@ -551,7 +556,7 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
       const { data } = await api.post(`/invoices/${invoiceId}/status?status=${next}`);
       onReload(data);
     } catch {
-      toast.error("Error al actualizar estado");
+      toast.error(t("invoiceDetail.statusUpdError"));
     }
   };
 
@@ -561,8 +566,8 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
     <CollapsibleSection
       icon={Wallet}
       iconColor="bg-emerald-100 text-emerald-700"
-      title="Pagos"
-      summary={`Saldo $${remaining.toFixed(2)} · Pagado $${paid.toFixed(2)} de $${total.toFixed(2)}`}
+      title={t("invoiceDetail.payments")}
+      summary={t("invoiceDetail.balanceSummary", { rem: remaining.toFixed(2), paid: paid.toFixed(2), total: total.toFixed(2) })}
       testId="payment-status-card"
     >
       <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
@@ -579,7 +584,7 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-slate-800">
-                  ${Number(p.amount).toFixed(2)} · {METHOD_LABEL[p.method] || p.method}
+                  ${Number(p.amount).toFixed(2)} · {methodLabel(p.method)}
                 </div>
                 <div className="text-[11px] text-slate-500 truncate">
                   {fmtPayDate(p.date)}{p.note ? ` · ${p.note}` : ""}
@@ -598,40 +603,40 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
         <div className="rounded-2xl border border-slate-200 p-3 space-y-2" data-testid="payment-form">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Monto ($)</Label>
+              <Label className="text-xs">{t("invoiceDetail.amount")}</Label>
               <Input type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={remaining.toFixed(2)} className="h-11 rounded-xl mt-1" data-testid="payment-amount" autoFocus />
             </div>
             <div>
-              <Label className="text-xs">Método</Label>
+              <Label className="text-xs">{t("invoiceDetail.method")}</Label>
               <Select value={method} onValueChange={setMethod}>
                 <SelectTrigger className="h-11 rounded-xl mt-1" data-testid="payment-method"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(METHOD_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                  {METHOD_KEYS.map((v) => <SelectItem key={v} value={v}>{methodLabel(v)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Fecha</Label>
+              <Label className="text-xs">{t("invoiceDetail.date")}</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 rounded-xl mt-1" data-testid="payment-date" />
             </div>
             <div>
-              <Label className="text-xs">Nota (opcional)</Label>
-              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: mensualidad 1" className="h-11 rounded-xl mt-1" data-testid="payment-note" />
+              <Label className="text-xs">{t("invoiceDetail.noteOptional")}</Label>
+              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("invoiceDetail.notePlaceholder")} className="h-11 rounded-xl mt-1" data-testid="payment-note" />
             </div>
           </div>
           <div className="flex gap-2 pt-1">
             <Button onClick={() => addPayment()} disabled={busy} className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold" data-testid="payment-save">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Registrar abono
+              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} {t("invoiceDetail.recordPayment")}
             </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)} className="h-11 rounded-xl">Cancelar</Button>
+            <Button variant="outline" onClick={() => setShowForm(false)} className="h-11 rounded-xl">{t("common.cancel")}</Button>
           </div>
         </div>
       ) : (
         remaining > 0 && (
           <Button onClick={() => setShowForm(true)} className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold" data-testid="add-payment">
-            <Plus className="w-4 h-4 mr-1" /> Registrar abono
+            <Plus className="w-4 h-4 mr-1" /> {t("invoiceDetail.recordPayment")}
           </Button>
         )
       )}
@@ -639,14 +644,14 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
       {/* Fully paid banner */}
       {status === "paid" && remaining <= 0 && (
         <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
-          <Check className="w-4 h-4" /> Invoice pagado completo. Se creó un Trabajo automáticamente.
+          <Check className="w-4 h-4" /> {t("invoiceDetail.paidBanner")}
         </div>
       )}
 
       {/* Optional fixed installment plan */}
       <div className="pt-1">
         <button onClick={() => setShowPlan(!showPlan)} className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1" data-testid="toggle-plan">
-          {showPlan ? "▾" : "▸"} Plan de mensualidades (opcional)
+          {showPlan ? "▾" : "▸"} {t("invoiceDetail.planToggle")}
         </button>
         {showPlan && (
           <PaymentPlanEditor
@@ -662,36 +667,32 @@ function PaymentStatusCard({ invoice, invoiceId, onReload }) {
 
       {/* Quick status overrides */}
       <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-        <span className="text-[11px] text-slate-400">Estado:</span>
-        <button onClick={() => quickStatus("sent")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "sent" ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-unpaid">No pagado</button>
-        <button onClick={() => quickStatus("overdue")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "overdue" ? "bg-red-100 text-red-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-overdue">Atrasado</button>
-        <button onClick={() => quickStatus("paid")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "paid" ? "bg-emerald-100 text-emerald-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-paid">Pagado todo</button>
+        <span className="text-[11px] text-slate-400">{t("invoiceDetail.statusLabelTxt")}</span>
+        <button onClick={() => quickStatus("sent")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "sent" ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-unpaid">{t("invoiceDetail.unpaid")}</button>
+        <button onClick={() => quickStatus("overdue")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "overdue" ? "bg-red-100 text-red-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-overdue">{t("invoiceDetail.overdue")}</button>
+        <button onClick={() => quickStatus("paid")} className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${status === "paid" ? "bg-emerald-100 text-emerald-700" : "text-slate-500 hover:bg-slate-100"}`} data-testid="status-paid">{t("invoiceDetail.paidAll")}</button>
       </div>
     </CollapsibleSection>
   );
 }
 
-const METHOD_LABEL = {
-  cash: "Efectivo",
-  check: "Cheque",
-  zelle: "Zelle",
-  transfer: "Transferencia",
-  card: "Tarjeta",
-  other: "Otro",
-};
+const METHOD_KEYS = ["cash", "check", "zelle", "transfer", "card", "other"];
+const methodLabel = (m) => i18n.t(`invoiceDetail.m${m.charAt(0).toUpperCase()}${m.slice(1)}`, { defaultValue: m });
 const METHOD_SHORT = { cash: "💵", check: "🧾", zelle: "Z", transfer: "↔", card: "💳", other: "$" };
 
 function fmtPayDate(iso) {
   try {
-    return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+    const loc = i18n.language && i18n.language.startsWith("es") ? "es-ES" : "en-US";
+    return new Date(iso).toLocaleDateString(loc, { day: "numeric", month: "short", year: "numeric" });
   } catch { return ""; }
 }
 
 function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMarkPaid }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState(plan.length > 0 ? plan : []);
   const [saving, setSaving] = useState(false);
 
-  const addRow = () => setItems([...items, { id: `tmp-${Date.now()}`, label: `Pago ${items.length + 1}`, amount: 0, due_date: "" }]);
+  const addRow = () => setItems([...items, { id: `tmp-${Date.now()}`, label: t("invoiceDetail.paymentLabel", { n: items.length + 1 }), amount: 0, due_date: "" }]);
   const updateRow = (i, key, val) => setItems(items.map((it, idx) => (idx === i ? { ...it, [key]: val } : it)));
   const removeRow = (i) => setItems(items.filter((_, idx) => idx !== i));
 
@@ -699,7 +700,7 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
     const per = Math.round((total / n) * 100) / 100;
     const rows = Array.from({ length: n }, (_, i) => ({
       id: `tmp-${Date.now()}-${i}`,
-      label: `Pago ${i + 1}`,
+      label: t("invoiceDetail.paymentLabel", { n: i + 1 }),
       amount: i === n - 1 ? Math.round((total - per * (n - 1)) * 100) / 100 : per,
       due_date: "",
     }));
@@ -712,9 +713,9 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
       const installments = items.map((it) => ({ label: it.label, amount: Number(it.amount) || 0, due_date: it.due_date || null }));
       const { data } = await api.put(`/invoices/${invoiceId}/payment-plan`, { installments });
       onReload(data);
-      toast.success("Plan guardado");
+      toast.success(t("invoiceDetail.planSaved"));
     } catch {
-      toast.error("No se pudo guardar el plan");
+      toast.error(t("invoiceDetail.planError"));
     } finally {
       setSaving(false);
     }
@@ -726,7 +727,7 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
         <div className="flex gap-2">
           {[2, 3, 4].map((n) => (
             <Button key={n} variant="outline" size="sm" onClick={() => splitEvenly(n)} className="rounded-lg text-xs" data-testid={`split-${n}`}>
-              Dividir en {n}
+              {t("invoiceDetail.splitInto", { n })}
             </Button>
           ))}
         </div>
@@ -735,13 +736,13 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
         const isPaid = it.id && paidPlanIds.has(it.id);
         return (
           <div key={it.id || i} className="flex flex-wrap items-center gap-2" data-testid={`plan-row-${i}`}>
-            <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={`Pago ${i + 1}`} className="h-10 rounded-lg text-sm flex-1 min-w-[120px]" />
+            <Input value={it.label} onChange={(e) => updateRow(i, "label", e.target.value)} placeholder={t("invoiceDetail.paymentLabel", { n: i + 1 })} className="h-10 rounded-lg text-sm flex-1 min-w-[120px]" />
             <Input type="text" inputMode="decimal" value={it.amount} onChange={(e) => updateRow(i, "amount", numClean(e.target.value))} placeholder="$" className="h-10 rounded-lg text-sm w-20" />
             <Input type="date" value={it.due_date || ""} onChange={(e) => updateRow(i, "due_date", e.target.value)} className="h-10 rounded-lg text-sm flex-1 min-w-[130px]" />
             {isPaid ? (
-              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 w-20 justify-center"><Check className="w-3.5 h-3.5" />Pagado</span>
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 w-20 justify-center"><Check className="w-3.5 h-3.5" />{t("invoiceDetail.paid")}</span>
             ) : it.id && !String(it.id).startsWith("tmp-") ? (
-              <Button size="sm" onClick={() => onMarkPaid(it)} className="h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2 w-20" data-testid={`plan-pay-${i}`}>Marcar pagado</Button>
+              <Button size="sm" onClick={() => onMarkPaid(it)} className="h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2 w-20" data-testid={`plan-pay-${i}`}>{t("invoiceDetail.markPaidShort")}</Button>
             ) : (
               <button onClick={() => removeRow(i)} className="text-slate-400 hover:text-rose-600 p-1 w-20 flex justify-center"><Trash2 className="w-4 h-4" /></button>
             )}
@@ -749,10 +750,10 @@ function PaymentPlanEditor({ invoiceId, total, plan, paidPlanIds, onReload, onMa
         );
       })}
       <div className="flex gap-2 pt-1">
-        <Button variant="outline" size="sm" onClick={addRow} className="rounded-lg text-xs" data-testid="plan-add-row"><Plus className="w-3.5 h-3.5 mr-1" />Cuota</Button>
+        <Button variant="outline" size="sm" onClick={addRow} className="rounded-lg text-xs" data-testid="plan-add-row"><Plus className="w-3.5 h-3.5 mr-1" />{t("invoiceDetail.installment")}</Button>
         {items.length > 0 && (
           <Button size="sm" onClick={savePlan} disabled={saving} className="rounded-lg text-xs bg-slate-800 hover:bg-slate-900 text-white" data-testid="plan-save">
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Guardar plan"}
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t("invoiceDetail.savePlan")}
           </Button>
         )}
       </div>
@@ -811,6 +812,7 @@ function AgreementTermsBlock({ terms, depositAmount, agreementId }) {
 // Each request = a focused amount the client can pay via a shareable link.
 // ============================================================================
 function PaymentRequestsCard({ invoiceId, invoice }) {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
@@ -842,7 +844,7 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
   const create = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) {
-      toast.error("Escribe un monto válido");
+      toast.error(t("invoiceDetail.amountValid"));
       return;
     }
     setBusy(true);
@@ -853,33 +855,37 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
         plan_item_id: planItemId,
       });
       setAmount(""); setDesc(""); setPlanItemId(null);
-      toast.success("Solicitud creada. ¡Compártela con tu cliente!");
+      toast.success(t("invoiceDetail.requestCreated"));
       load();
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "No se pudo crear la solicitud");
+      toast.error(e?.response?.data?.detail || t("invoiceDetail.couldntCreate"));
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (rid) => {
-    if (!window.confirm("¿Borrar esta solicitud de pago?")) return;
+    if (!window.confirm(t("invoiceDetail.deleteRequestConfirm"))) return;
     try {
       await api.delete(`/payment-requests/${rid}`);
-      toast.success("Solicitud eliminada");
+      toast.success(t("invoiceDetail.requestDeleted"));
       load();
     } catch {
-      toast.error("No se pudo eliminar");
+      toast.error(t("invoiceDetail.couldntDelete"));
     }
   };
 
   const linkFor = (rid) => `${window.location.origin}/p/pay/${rid}`;
   const copyLink = (rid) => {
     navigator.clipboard?.writeText(linkFor(rid));
-    toast.success("Link copiado");
+    toast.success(t("invoiceDetail.linkCopied"));
   };
   const shareWhatsApp = (req) => {
-    const msg = `Hola! Aquí está tu solicitud de pago${req.description ? ` (${req.description})` : ""} por $${Number(req.amount).toFixed(2)}: ${linkFor(req.id)}`;
+    const msg = t("invoiceDetail.waMsg", {
+      desc: req.description ? ` (${req.description})` : "",
+      amount: Number(req.amount).toFixed(2),
+      link: linkFor(req.id),
+    });
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
   };
 
@@ -887,8 +893,8 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
     <CollapsibleSection
       icon={Receipt}
       iconColor="bg-indigo-100 text-indigo-600"
-      title="Pedir un pago"
-      summary={requests.length > 0 ? `${requests.length} solicitud(es) creada(s)` : "Manda un cobro con todas las formas de pago"}
+      title={t("invoiceDetail.askPayment")}
+      summary={requests.length > 0 ? t("invoiceDetail.requestsSummary", { count: requests.length }) : t("invoiceDetail.requestsEmpty")}
       testId="payment-requests-card"
     >
       {/* Quick-pick from installment plan */}
@@ -901,7 +907,7 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
               className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
               data-testid={`pr-pick-${it.id}`}
             >
-              Pedir {it.label}: ${Number(it.amount).toFixed(2)}
+              {t("invoiceDetail.requestPick", { label: it.label, amount: Number(it.amount).toFixed(2) })}
             </button>
           ))}
         </div>
@@ -910,16 +916,16 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
       {/* Create form */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-xs">Monto ($)</Label>
+          <Label className="text-xs">{t("invoiceDetail.amount")}</Label>
           <Input type="number" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setPlanItemId(null); }} placeholder="0.00" className="h-11 rounded-xl mt-1" data-testid="pr-amount-input" />
         </div>
         <div>
-          <Label className="text-xs">Descripción</Label>
-          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ej: Pago 1 de 4" className="h-11 rounded-xl mt-1" data-testid="pr-desc-input" />
+          <Label className="text-xs">{t("invoiceDetail.descLabel")}</Label>
+          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("invoiceDetail.descPlaceholder")} className="h-11 rounded-xl mt-1" data-testid="pr-desc-input" />
         </div>
       </div>
       <Button onClick={create} disabled={busy} className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold" data-testid="pr-create-btn">
-        {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} Crear solicitud de pago
+        {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />} {t("invoiceDetail.createRequest")}
       </Button>
 
       {/* Existing requests */}
@@ -934,13 +940,13 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
                   <div className="font-semibold text-sm text-slate-800">${Number(r.amount).toFixed(2)}{r.description ? ` · ${r.description}` : ""}</div>
                 </div>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full flex-none ${r.status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                  {r.status === "paid" ? "Pagado" : "Pendiente"}
+                  {r.status === "paid" ? t("invoiceDetail.paid") : t("invoiceDetail.pending")}
                 </span>
               </div>
               {r.status !== "paid" && (
                 <div className="flex items-center gap-2 mt-2">
                   <Button size="sm" variant="outline" onClick={() => copyLink(r.id)} className="h-8 rounded-lg text-xs flex-1" data-testid={`pr-copy-${r.id}`}>
-                    <Copy className="w-3.5 h-3.5 mr-1" /> Copiar link
+                    <Copy className="w-3.5 h-3.5 mr-1" /> {t("invoiceDetail.copyLink")}
                   </Button>
                   <Button size="sm" onClick={() => shareWhatsApp(r)} className="h-8 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex-1" data-testid={`pr-wa-${r.id}`}>
                     WhatsApp
@@ -965,6 +971,7 @@ function PaymentRequestsCard({ invoiceId, invoice }) {
 // ============================================================================
 function JobFromInvoiceCard({ invoiceId }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -983,7 +990,7 @@ function JobFromInvoiceCard({ invoiceId }) {
     try {
       const { data } = await api.post(`/invoices/${invoiceId}/create-job`);
       setJob(data.job);
-      toast.success(data.created ? "Trabajo creado — ya lo puedes agendar" : "Ya existía un trabajo para este invoice");
+      toast.success(data.created ? t("invoiceDetail.jobCreated") : t("invoiceDetail.jobExisted"));
     } catch (e) {
       toast.error(e?.response?.data?.detail || "No se pudo crear el trabajo");
     } finally {
@@ -997,8 +1004,8 @@ function JobFromInvoiceCard({ invoiceId }) {
     <CollapsibleSection
       icon={Briefcase}
       iconColor="bg-emerald-100 text-emerald-600"
-      title="Trabajo"
-      summary={job ? "Trabajo ligado — toca para agendar" : "Crea un trabajo para agendarlo"}
+      title={t("invoiceDetail.jobTitle")}
+      summary={job ? t("invoiceDetail.jobLinked") : t("invoiceDetail.jobCreate")}
       testId="job-from-invoice-card"
     >
       {job ? (
@@ -1007,7 +1014,7 @@ function JobFromInvoiceCard({ invoiceId }) {
           className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
           data-testid="goto-job-btn"
         >
-          <CalendarClock className="w-4 h-4 mr-1.5" /> Ir a agendar el trabajo
+          <CalendarClock className="w-4 h-4 mr-1.5" /> {t("invoiceDetail.gotoSchedule")}
         </Button>
       ) : (
         <Button
@@ -1016,7 +1023,7 @@ function JobFromInvoiceCard({ invoiceId }) {
           className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
           data-testid="create-job-btn"
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />} Crear Trabajo
+          {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />} {t("invoiceDetail.createJob")}
         </Button>
       )}
     </CollapsibleSection>

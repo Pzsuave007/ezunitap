@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,18 +26,9 @@ const COMBO_MAP = {
 };
 
 const MODULE_UI = {
-  presencia: {
-    icon: <IdCard className="w-6 h-6" />, color: "sky",
-    bullets: ["Tarjeta digital con QR + NFC", "Mini-sitio web profesional", "Reseñas de Google ⭐", "Captura de leads automática"],
-  },
-  negocio: {
-    icon: <FileText className="w-6 h-6" />, color: "emerald",
-    bullets: ["Presupuestos con IA (español → inglés)", "Facturas y contratos profesionales", "CRM de clientes", "Calendario de trabajos"],
-  },
-  marketing: {
-    icon: <Megaphone className="w-6 h-6" />, color: "violet",
-    bullets: ["Posts para redes con IA", "Videos / Reels con IA", "Plantillas y colores de tu marca", "Voz en off y subtítulos"],
-  },
+  presencia: { icon: <IdCard className="w-6 h-6" />, color: "sky", bulletsKey: "bPresencia" },
+  negocio: { icon: <FileText className="w-6 h-6" />, color: "emerald", bulletsKey: "bNegocio" },
+  marketing: { icon: <Megaphone className="w-6 h-6" />, color: "violet", bulletsKey: "bMarketing" },
 };
 
 const COLOR = {
@@ -49,6 +41,7 @@ const money = (cents) => `$${(cents / 100).toFixed(2)}`;
 
 export default function Pricing() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [byBase, setByBase] = useState({});
@@ -59,7 +52,7 @@ export default function Pricing() {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (params.get("cancelled")) toast.info("Pago cancelado. Puedes intentar de nuevo cuando quieras.");
+    if (params.get("cancelled")) toast.info(t("pricing.cancelled"));
     (async () => {
       try {
         const { data } = await api.get("/payments/plans");
@@ -67,7 +60,7 @@ export default function Pricing() {
         (data.plans || []).forEach((p) => { map[p.base] = p; });
         setByBase(map);
       } catch {
-        toast.error("Error al cargar los planes");
+        toast.error(t("pricing.errLoadPlans"));
       } finally {
         setLoading(false);
       }
@@ -123,7 +116,7 @@ export default function Pricing() {
       });
       window.location.assign(data.url);
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "Error al iniciar el pago");
+      toast.error(e?.response?.data?.detail || t("pricing.errCheckout"));
       setCheckoutLoading(false);
     }
   };
@@ -153,12 +146,11 @@ export default function Pricing() {
       <div>
         <button onClick={() => navigate(-1)} data-testid="pricing-back"
           className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Atrás
+          <ArrowLeft className="w-4 h-4" /> {t("pricing.back")}
         </button>
-        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">Arma tu plan</h1>
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">{t("pricing.title")}</h1>
         <p className="text-slate-500 mt-2 max-w-2xl">
-          Elige solo las herramientas que necesitas. Combina <strong>2 y ahorra 30%</strong>, o
-          llévate <strong>las 3</strong> por $59.99/mes. Empieza con <strong>14 días gratis</strong>.
+          {t("pricing.subtitle")}
         </p>
       </div>
 
@@ -202,10 +194,10 @@ export default function Pricing() {
                 <div className="mt-3 font-heading text-lg font-bold">{p?.label || m}</div>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="font-heading text-2xl font-bold tabular-nums">{o?.display_price}</span>
-                  <span className="text-slate-400 text-xs">{billing === "year" ? "/año" : "/mes"}</span>
+                  <span className="text-slate-400 text-xs">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span>
                 </div>
                 <ul className="mt-3 space-y-1.5">
-                  {ui.bullets.map((b, i) => (
+                  {(t(`pricing.${ui.bulletsKey}`, { returnObjects: true }) || []).map((b, i) => (
                     <li key={i} className="flex items-start gap-2 text-[13px] text-slate-600">
                       <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-none" />
                       <span>{b}</span>
@@ -222,25 +214,25 @@ export default function Pricing() {
           <div className="flex items-center gap-2">
             {isBundle ? <Crown className="w-5 h-5 text-amber-500" /> : <Sparkles className="w-5 h-5 text-emerald-600" />}
             <h2 className="font-heading text-lg font-bold">
-              {count === 0 ? "Tu plan" : (derivedPlan?.label || "Tu plan")}
+              {count === 0 ? t("pricing.yourPlan") : (derivedPlan?.label || t("pricing.yourPlan"))}
             </h2>
           </div>
 
           {count === 0 ? (
-            <p className="text-sm text-slate-500 mt-3">Selecciona uno o más módulos para ver tu precio.</p>
+            <p className="text-sm text-slate-500 mt-3">{t("pricing.selectModules")}</p>
           ) : (
             <>
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="font-heading text-4xl font-bold tabular-nums" data-testid="summary-price">{opt?.display_price}</span>
-                <span className="text-slate-500 text-sm">{billing === "year" ? "/año" : "/mes"}</span>
+                <span className="text-slate-500 text-sm">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span>
               </div>
               {billing === "year" && opt?.per_month && (
-                <div className="text-xs text-emerald-700 font-semibold mt-1">≈ {opt.per_month}/mes</div>
+                <div className="text-xs text-emerald-700 font-semibold mt-1">{t("pricing.approxMonth", { price: opt.per_month })}</div>
               )}
               {savePct > 0 && (
                 <div className="mt-2 flex items-center gap-2" data-testid="summary-savings">
                   <span className="text-sm text-slate-400 line-through">{money(regularCents)}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">AHORRAS {savePct}%</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">{t("pricing.save", { pct: savePct })}</span>
                 </div>
               )}
 
@@ -255,7 +247,7 @@ export default function Pricing() {
 
               {derivedPlan?.ships_card && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <Truck className="w-3.5 h-3.5" /> <span>Tarjeta NFC física incluida</span>
+                  <Truck className="w-3.5 h-3.5" /> <span>{t("pricing.cardIncluded")}</span>
                 </div>
               )}
             </>
@@ -267,19 +259,19 @@ export default function Pricing() {
             disabled={count === 0 || checkoutLoading}
             className={`hidden lg:flex w-full mt-6 h-12 rounded-xl font-semibold text-white ${isBundle ? "bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
           >
-            {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isBundle ? "Llevar todo" : count === 0 ? "Elige un módulo" : "Suscribirme"}
+            {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isBundle ? t("pricing.takeAll") : count === 0 ? t("pricing.chooseModule") : t("pricing.subscribe")}
           </Button>
         </Card>
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm text-slate-600">
-        <div className="font-semibold text-slate-900 mb-1">¿Cómo funciona?</div>
+        <div className="font-semibold text-slate-900 mb-1">{t("pricing.howTitle")}</div>
         <ol className="list-decimal list-inside space-y-1">
-          <li>Pruebas <strong>14 días gratis</strong>, sin tarjeta.</li>
-          <li>Al terminar, eliges los módulos que necesites (combina 2 y ahorra 30%).</li>
-          <li>Agregas tu tarjeta de pago en Stripe (seguro) y se activa al instante.</li>
-          <li>Si tu plan incluye tarjeta NFC, te la enviamos a tu dirección.</li>
-          <li>Cancela o cambia de plan cuando quieras desde Perfil → Suscripción.</li>
+          <li>{t("pricing.how1")}</li>
+          <li>{t("pricing.how2")}</li>
+          <li>{t("pricing.how3")}</li>
+          <li>{t("pricing.how4")}</li>
+          <li>{t("pricing.how5")}</li>
         </ol>
       </div>
 
@@ -287,11 +279,11 @@ export default function Pricing() {
       <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200 p-4 flex items-center justify-between gap-3" data-testid="pricing-mobile-cta">
         <div>
           {count === 0 ? (
-            <span className="text-sm text-slate-500">Elige tus módulos</span>
+            <span className="text-sm text-slate-500">{t("pricing.chooseModules")}</span>
           ) : (
             <>
-              <div className="font-heading text-xl font-bold leading-none">{opt?.display_price}<span className="text-xs text-slate-400 font-normal">{billing === "year" ? "/año" : "/mes"}</span></div>
-              {savePct > 0 && <div className="text-[11px] text-emerald-700 font-semibold">Ahorras {savePct}%</div>}
+              <div className="font-heading text-xl font-bold leading-none">{opt?.display_price}<span className="text-xs text-slate-400 font-normal">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span></div>
+              {savePct > 0 && <div className="text-[11px] text-emerald-700 font-semibold">{t("pricing.saveShort", { pct: savePct })}</div>}
             </>
           )}
         </div>
@@ -301,7 +293,7 @@ export default function Pricing() {
           data-testid="pricing-subscribe-btn-mobile"
           className={`h-11 px-6 rounded-xl font-semibold text-white ${isBundle ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
         >
-          {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Suscribirme"}
+          {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("pricing.subscribe")}
         </Button>
       </div>
     </div>

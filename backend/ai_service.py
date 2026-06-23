@@ -212,7 +212,7 @@ MESSAGE_TEMPLATES = {
 }
 
 
-async def generate_message(message_type: str, user_input_es: str, client_name: Optional[str] = None, sender_name: str = "") -> str:
+async def generate_message(message_type: str, user_input_es: str, client_name: Optional[str] = None, sender_name: str = "", language: str = "es") -> str:
     intent = MESSAGE_TEMPLATES.get(message_type, MESSAGE_TEMPLATES["custom"])
     name_hint = f"Address the client by name: {client_name}." if client_name else "Use a generic greeting."
     sign_hint = (
@@ -222,14 +222,15 @@ async def generate_message(message_type: str, user_input_es: str, client_name: O
     )
     system = (
         "You write professional client-facing messages in ENGLISH for U.S. customers of a "
-        "Latino-owned service business (roofing, drywall, painting, cleaning, etc.). "
+        "service business (roofing, drywall, painting, cleaning, etc.). "
         "Keep it short (under 120 words), warm, professional, and clear. "
         f"{sign_hint} "
         f"Intent: {intent} {name_hint}"
     )
     chat = _new_chat(system)
+    in_lang = "Spanish" if language == "es" else "English"
     response = await chat.send_message(
-        UserMessage(text=f"Contractor's note (Spanish): {user_input_es or '(none)'}")
+        UserMessage(text=f"Contractor's note ({in_lang}). Always reply in English: {user_input_es or '(none)'}")
     )
     return (response or "").strip()
 

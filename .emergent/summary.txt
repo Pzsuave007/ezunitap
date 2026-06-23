@@ -1,27 +1,26 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
+<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, implement comprehensive i18n (English/Spanish) for Anglo market expansion without duplicating the app, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
 
 **User's preferred language**: Spanish
-*(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)*
+(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)
 
 **what currently exists?** 
-A live React/FastAPI/MongoDB multi-tenant application. Modularized by paywalls (Presencia, Negocio, Marketing). It features a Marketing Studio that renders high-quality branded social media posts entirely server-side via Python (Pillow). It now includes a dedicated Marketing Assistant page () to generate industry-specific post ideas, and an AI Messages generator for client communication.
+A live React/FastAPI/MongoDB multi-tenant application. Modularized by paywalls (Presencia, Negocio, Marketing). It features a robust AI Marketing Studio, AI Message generation, quoting/invoicing with Stripe, and OAuth Google Business connection. Currently, the application is undergoing a massive i18n refactor using  to make the app fully bilingual (English/Spanish) using dictionaries ( / ) without duplicating components. Waves 1, 2, and 3 of the translation process are complete.
 
 **Last working item**: 
-- **Last item agent was working**: Refactoring the AI Messages UI (). The agent moved the generated AI message from a small inline card to a spacious slide-up , added direct share buttons (WhatsApp/SMS/Email) similar to the invoice flow, and updated the backend ( and ) to sign the message with the user's actual name ( or ) instead of a hardcoded -Alex.
-- **Status**: USER VERIFICATION PENDING
-- **Agent Testing Done**: N (User explicitly requested to skip the testing agent for this change to save credits).
-- **Which testing method agent to use?**: Manual frontend testing by user / Screenshot tool if further UI adjustments are needed.
+- **Last item agent was working**: Implementing Wave 4 (Ola 4) of the i18n translation. The agent was actively editing  and , extracting hardcoded Spanish strings to the JSON dictionaries, and updating the backend endpoint  in  and  to accept and process the  parameter so the AI generates native English text without translation phrasing.
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N (Agent was in the middle of search/replace for Wave 4)
+- **Which testing method agent to use?**: Screenshot tool for UI changes; curl or python -c for backend API testing.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Google My Business Legacy API Error 110002 (P3)
-     - Attempted fixes: Investigated Google API 403 error. Confirmed it's an authorization issue on Google's end.
-     - Next debug checklist: Google must manually whitelist the project  for the legacy  API.
+  Issue 1: Google My Business Legacy API Error Failed to load / 403 (P3)
+     - Attempted fixes: Successfully verified and published the OAuth App in Google Cloud. Verified the project ID. Tried to enable  via direct link, but the Google Console threw a Failed to load error.
+     - Next debug checklist: Check with the user if the direct Google API link now shows an Enable button instead of Failed to load. The error is due to a standard 24-48 hour allowlist propagation delay from Google's end. 
      - Why fix this issue and what will be achieved with the fix?: Unblocks AI direct publishing to Google Business.
-     - Status: BLOCKED (Waiting on Google API approval; user informed).
+     - Status: BLOCKED (Waiting on Google allowlist propagation time).
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Both (when unblocked)
-     - Blocked on other issue: Google API access
+     - Should Test frontend/backend/both after fix?: Both
 
   Issue 2: Duplicate DB records (Clients/Users) (P3)
      - Attempted fixes: None
@@ -30,24 +29,29 @@ A live React/FastAPI/MongoDB multi-tenant application. Modularized by paywalls (
      - Status: NOT STARTED
      - Is recurring issue?: N
      - Should Test frontend/backend/both after fix?: Backend
-     - Blocked on other issue: None
 
 **In progress Task List**:
-  Task 1: Add 📲 Enviarme esto por WhatsApp CTA to 
-     - Where to resume: Modify the final closing screens of the  branches to include a WhatsApp button. 
+  Task 1: Complete i18n Wave 4 (Ola 4) (P0)
+     - Where to resume: Resume translating the remaining Ola 4 files: , , , , , , , and .  and  were just edited.
+     - What will be achieved with this?: 100% of the app will be bilingual (English/Spanish), unlocking the Anglo market.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix?: Both (UI via screenshots, AI logic via backend)
+     - Blocked on something: None
+
+  Task 2: Add 📲 Enviarme esto por WhatsApp CTA to  (P2)
+     - Where to resume: Modify the final closing screens of the  branches to include a WhatsApp button.
      - What will be achieved with this?: Captures hot lead phone numbers by texting them the sample they just viewed.
-     - Status: NOT STARTED (Skipped again due to user pivoting to Marketing Assistant & Reel features).
+     - Status: NOT STARTED
      - Should Test frontend/backend/both after fix?: Frontend
      - Blocked on something: None
 
 **Upcoming and Future Tasks**
-- **P0**: Add Video Upload support to Reel Builder (MVP: Allow 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding/text using the existing FFmpeg logic). *Discussed and agreed upon with user.*
+- **P0**: Add Video Upload support to Reel Builder (MVP: Allow 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding/text using the existing FFmpeg logic).
 - **P1**: In-app referral program (Invita un compa → ambos reciben 1 mes gratis) with unique sharing links.
 - **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
 - **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
 - **P2**: Add 1-click Upsell button in Profile -> Subscription for adding missing modules.
 - **P2**: Convert Job scope notes into a checkable checklist UI inside the Job Detail view.
-- **P2**: Add a mini How it works guided tour (3 steps) the first time a user enters the Marketing Studio.
 - **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
 - **P3**: Live preview for the Reel Builder (mini player showing changes before generation).
 - **P3**: Add a drag-and-drop or reordering UI in the Smart Card admin panel for the Recent work photos.
@@ -55,75 +59,70 @@ A live React/FastAPI/MongoDB multi-tenant application. Modularized by paywalls (
 - **Future**: Stripe webhook implementation for bulletproof invoice payment marking.
 
 **Completed work in this session**
-- Marketing Studio Legibility: Replaced standard text stroke with an elegant Gaussian blur drop-shadow (Halo effect) on all image-overlay templates and review stars. (DONE)
-- Marketing Studio Customization Panel: Integrated design options into a collapsible  to save screen space. (DONE)
-- Marketing Idea Assistant (): Built a new welcome screen generating 3 dynamic, industry-specific post ideas inside a slide-up drawer, complete with photo tips and AI image prompts. (DONE)
-- Social Studio UX Fixes: Exposed Post Language selector to main view; fixed bug where AI image prompts were lost when switching back to Post mode. (DONE)
-- Pillow Rendering Fixes: Updated 8 backend templates () to properly render subtitles that were previously missing. (DONE)
-- AI Messages Refactor: Migrated AI message output to a Drawer, added WhatsApp/SMS/Email quick-send buttons, and fixed AI signature to use the account owner's real name. (DONE)
+- Added Google Data / Limited Use clause to  and added legal links to the footer for Google OAuth Verification. (DONE)
+- Set up  architecture, , , and . (DONE)
+- **Ola 1 i18n**: Converted , , , , . (DONE)
+- **Ola 2 i18n**: Converted , , , , , . (DONE)
+- **Ola 3 i18n**: Converted , , , . (DONE)
+- Modified backend endpoints (, , etc.) and  to accept a  context to ensure English AI outputs are native and lack translated from Spanish framing. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 -  monolith (6200+ lines) is hard to maintain and needs refactoring.
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs. 
+- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs. User deploys via custom scripts.
 - Recurrence count: 1
-- Status: RESOLVED (Agent correctly built frontend with relative paths by emptying  and forcing . User deploys via ). Ensure this process is ALWAYS followed.
+- Status: RESOLVED. The agent must ALWAYS compile the build with relative paths ( in ) and force-add to git (). 
+- **CRITICAL DEPLOYMENT NOTE**: The user strictly uses  to deploy. NEVER suggest or use .
 
 **Code Architecture**
-- Frontend: React SPA (), TailwindCSS, Shadcn UI, Vaul (Drawers).
+- Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next.
 - Backend: FastAPI (), MongoDB.
-- Scripts:  (Main deployment).
+- Scripts: >>> FIRST-TIME INSTALL for ezunitap on port 8007 (Main deployment on user's server).
 
 **Key Technical Concepts**
-- **Pillow Image Rendering**: Marketing Studio templates are drawn server-side using the Python Pillow library ().
-- **FFmpeg Reels**: The current Reel Builder uses  to call  to stitch photos with zoom/pan effects. This infrastructure is ready to accept video clips in future tasks.
-- **Adaptive UI**: Frontend relies heavily on Shadcn/Vaul  and  components for a mobile-first app-like feel.
+- **i18next**: App uses standard  translations. The base language is Spanish, but  overlay has been added. 
+- **Language-Aware AI**: Backend endpoints detect the frontend language state. When English is selected, the AI prompts are explicitly told to bypass any translate from Spanish logic and generate direct, native English professional copy.
 
 **key DB schema**
-- :  used for message signing.
-- :  dictates the specific AI topics in the Marketing Idea Assistant.
+- : Includes settings, potentially language preference later.
+- :  dictates the specific AI topics.
 
 **changes in tech stack**
-- None.
+- Added , ,  to the frontend .
 
 **All files of reference**
--  (New Idea Assistant welcome page).
--  (Updated with collapsible panel and state carry-over).
--  (Updated text rendering logic for Gaussian blur drop shadow and subtitles).
--  (Refactored to use Drawer and quick-send buttons).
--  (Updated to ensure sender name is correct and idea topics don't invent niches).
--  (Updated AI endpoints).
+-  &  (Translation dictionaries).
+-  (Component for switching languages).
+-  &  (Updated to handle  payload variables).
+-  &  (Last touched during Wave 4 of i18n).
 
 **Areas that need refactoring**
 -  (Over 6200 lines).
 
 **key api endpoints**
--  (Generates 3 tailored ideas based on ).
--  (Generates client messages).
+-  (Now accepts ).
+-  (Now accepts ).
 
 **Critical Info for New Agent**
-- **Production Python Version**: Production runs Python 3.9. Never use , always use .
-- **Deployments**: Ensure  is tracked in git () and compiled with relative paths (No absolute URLs in  during build). The user handles deployment by running  on their server.
-- **User Preference (Cost saving)**: The user explicitly requested NOT to use the  for minor frontend UI fixes at the end of the session to save their credits. Rely on self-testing (screenshots/curl) unless it's a major multi-endpoint feature.
+- **i18n Principle**: DO NOT duplicate components or pages for the English version. ALWAYS use the   structure and update the dictionaries.
+- **AI Tone**: English users must never see any AI outputs that hint the original instruction was in Spanish (e.g., Translated for you:). Keep the framing neutral and native in .
+- **Deployments**: The user hits Save to Github and then runs >>> FIRST-TIME INSTALL for ezunitap on port 8007 on their end. DO NOT reference any other script.
 
 **documents and test reports created in this job**
--  through 
--  (Updated)
+- Standard automation logs. No explicit markdown documents updated aside from code.
 
 **Last 10 User Messages and any pending HUMAN messages** 
-- User requested gradient drop shadow instead of harsh text stroke.
-- Agent implemented Gaussian blur halo effect.
-- User requested Customization panel be made collapsible to save space.
-- Agent implemented Vaul Drawer/Collapsible.
-- User encountered Google Business API error 110002; Agent explained it's a Google Cloud permission block.
-- User requested an Idea Assistant welcome page (Qué vas a postear hoy?).
-- Agent implemented it. User refined it (requested bottom Drawer, exactly 3 ideas, and industry-specific topics).
-- User noted missing subtitles on some generated images. Agent audited and fixed 8 Pillow templates.
-- User asked about video support in Reels. Agent explained FFmpeg supports it, and they agreed on an MVP (1 clip max 5s) to be built *after* current changes are deployed.
-- User requested fixes to the  UI (larger Drawer, WhatsApp/SMS send buttons, fix -Alex hardcoded signature).
-- Agent implemented all Messages fixes.
-- *Pending Human Action*: The user is likely verifying the latest  deploy on their production server. Stand by to confirm if it works, and if so, propose starting the **P0 Video Upload for Reels** task.
+- User verified they successfully published their Google OAuth App (production status).
+- User attempted to enable the legacy  API but hit Failed to load.
+- Agent and User debugged Google Cloud projects; confirmed project ID is correct.
+- Agent researched 2026 docs and clarified it's a 24-48hr propagation delay on Google's end. User agreed to wait until tomorrow.
+- User requested to expand the app to the Anglo (English) market without touching/breaking the Spanish version. Asked for recommendations.
+- Agent recommended using  with auto-detection + toggle, over duplicating the app.
+- User approved doing it ALL at once right now.
+- Agent completed Ola 1 (Wave 1). User noted they didn't see it; agent clarified they needed to use the toggle in the preview URL.
+- Agent completed Ola 2 and Ola 3 (which included backend language context logic).
+- User instructed dale la ola 4 (go ahead with wave 4). *Pending action: Finish Wave 4 files*.
 
 **Project Health Check:**
 Healthy
@@ -132,14 +131,14 @@ Healthy
 - Stripe (Payments & Connect) — requires User API Key.
 - Meta / Facebook Pixel — requires User ID.
 - ElevenLabs (TTS Voiceovers) — requires User API Key.
-- Google Business Profile (OAuth) — requires User API Key (Currently blocked by Google API permissions).
+- Google Business Profile (OAuth published) — requires User API Key.
 - OpenAI GPT-5.2 (Text/Vision Gen) — uses Emergent LLM Key.
 - Gemini 3.1 Flash Image Preview — uses Emergent LLM Key.
 
 **Testing status**
-- Testing agent used after significant changes: YES (but disabled for the very last UI tweak per user request).
+- Testing agent used after significant changes: NO (User prefers fast manual delivery to preserve credits).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created:  through 
+- Test files created: None new in this immediate block.
 - Known regressions: None
 
 **Credentials to test flow:**
@@ -148,4 +147,4 @@ Card-Only Test:  /
 Marketing-Only Test:  / 
 
 **What agent forgot to execute**
-The agent suggested adding a 📲 Enviarme esto por WhatsApp button to the  flow in previous sessions, but it continues to be skipped due to the user driving focus entirely toward Marketing Studio features. Keep it in the backlog.</analysis>
+None. Agent successfully completed Wave 1, 2, and 3, and is in the middle of executing Wave 4 as explicitly approved by the user.</analysis>
