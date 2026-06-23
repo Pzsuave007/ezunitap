@@ -11,7 +11,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://contratista-demo.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://stripe-connect-demo-1.preview.emergentagent.com").rstrip("/")
 EMAIL = "pzsuave007@gmail.com"
 PASS = "Uni2mkt007!"
 

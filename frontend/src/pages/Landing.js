@@ -33,7 +33,8 @@ const NFC_CARD_IMGS = ["/nfc-sample.png", "/nfc-google-review.png"];
 const NFC_STEP_ICONS = [Package, Smartphone, Sparkles];
 
 export default function Landing() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = (i18n.language || "").toLowerCase().startsWith("en");
   const FLOW = t("landing.flow", { returnObjects: true }).map((s, i) => ({
     ...s, n: String(i + 1).padStart(2, "0"), icon: FLOW_ICONS[i],
   }));
@@ -57,7 +58,7 @@ export default function Landing() {
             <Link to="/demo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">{t("landing.navDemo")}</Link>
             <a href="#tarjeta" className="hover:text-slate-900 tap">{t("landing.navNfc")}</a>
             <a href="#productos" className="hover:text-slate-900 tap">{t("landing.navTools")}</a>
-            <a href="#espanol" className="hover:text-slate-900 tap">{t("landing.navSpanish")}</a>
+            {!isEn && <a href="#espanol" className="hover:text-slate-900 tap">{t("landing.navSpanish")}</a>}
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" data-testid="nav-login" className="hidden sm:inline-flex items-center px-4 h-10 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 tap">
@@ -504,7 +505,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== TODO EN ESPAÑOL ====== */}
+      {/* ====== Bilingüe (solo se muestra en español; no aplica al mercado anglo) ====== */}
+      {!isEn && (
       <section id="espanol" className="py-20 lg:py-28 bg-white">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -556,6 +558,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ====== STATS — banda de credibilidad ====== */}
       <section id="beneficios" className="py-20 lg:py-28 bg-slate-50">
@@ -628,7 +631,8 @@ export default function Landing() {
 // VISUAL COMPONENTS
 // ============================================================================
 function PhoneMockup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = (i18n.language || "").toLowerCase().startsWith("en");
   return (
     <div className="relative mx-auto max-w-xs lg:max-w-sm">
       <div className="aspect-[9/19] rounded-[3rem] bg-slate-900 p-3 shadow-2xl shadow-blue-900/30 relative">
@@ -676,7 +680,7 @@ function PhoneMockup() {
               <div className="px-2.5 py-2.5 bg-slate-50/80 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{t("landing.mockWriteEs")}</span>
-                  <span className="text-[11px]">🇲🇽</span>
+                  {!isEn && <span className="text-[11px]">🇲🇽</span>}
                 </div>
                 <p className="text-[12px] text-slate-700 leading-snug">{t("landing.mockInputEx")}</p>
               </div>
