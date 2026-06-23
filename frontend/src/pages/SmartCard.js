@@ -176,7 +176,7 @@ export default function SmartCard() {
     );
   }
 
-  const { business, card, reviews, photos } = data;
+  const { business, card, reviews, photos, show_demo_promo } = data;
   const brand = card.brand_color || "#1E3A8A";
   const brandDeep = adjustColor(brand, -50);
   const brandLight = adjustColor(brand, 70);
@@ -501,6 +501,19 @@ export default function SmartCard() {
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-white/45 font-medium">
               <Calendar className="w-3 h-3" /> {card.hours}
             </div>
+          </div>
+        )}
+
+        {show_demo_promo && (
+          <div className="px-5 pt-6 reveal" style={{ animationDelay: "820ms" }}>
+            <a
+              data-testid="card-demo-promo"
+              href={`/demo-all?ref=${slug}`}
+              onClick={() => track(slug, "demo_promo_click")}
+              className="flex items-center justify-center gap-1.5 text-[12px] text-white/55 hover:text-white font-semibold transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Are you a contractor? See how I do it →
+            </a>
           </div>
         )}
 

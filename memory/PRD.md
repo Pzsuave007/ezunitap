@@ -81,6 +81,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Componente compartido `SendToMeCTA` (exportado de `DemoFlow.js`) al final de cada cierre: rama Negocio/Presencia/Marketing de `/demo-all` (antes de ModuleUpsell) y en el paso de factura pagada de `/demo`. Bilingüe (claves `demo.send*`).
 - Prellena WhatsApp (`wa.me/<tel>`) y SMS (`sms:`) con el teléfono del lead + link a `/register` y el sample que vio (cotización/tarjeta/post). Trackea `DemoSendToMe` (canal+rama) en Pixel. Captura el lead caliente.
 
+## ✅ Jun 2026 — Chatbots bilingües + Botón promo "Are you a contractor?" en tarjeta NFC [LISTO, probado curl+screenshot; pendiente deploy]
+- **PlatformChat (landing)** ahora bilingüe: manda `language: i18n.language` al backend y todo el widget usa i18n (`platformChat.*`). Saludo se resincroniza con el idioma antes del primer mensaje.
+- **Prompt del asistente de plataforma** (`ai_service.UNITAP_ASSISTANT_SYSTEM`) reescrito con TODO lo nuevo y precios reales: 3 módulos (Presencia $19.99, Negocio $39.99, Marketing $29.99; combos -30%; bundle $59.99; anual=10 meses; trial 14 días), Stripe Connect (cobro directo), Marketing Studio, reseñas, NFC, contratos, app bilingüe. Regla: en inglés NO vende el ángulo español→inglés.
+- **Chatbot de tarjeta NFC** (`/c/{slug}` → `card_assistant_chat`): confirmado que responde con los datos que el dueño llena en su dashboard (servicios, área, horario, `about_me`, y `ai_context` = base de conocimiento privada). No inventa precios.
+- **NUEVO botón promo** en tarjeta pública: "Are you a contractor? See how I do it →" (siempre en inglés) → `/demo-all?ref=<slug>`. Control 100% del super-admin en Admin→Cuentas→Tarjetas (Auto/ON/OFF). Default (`payments_service.demo_promo_visible`): cuenta GRATIS/comp/trial = visible, pagador real de Stripe = oculto. Override por cuenta vía `POST /admin/users/{id}/demo-promo`. El `ref` se guarda en `demo_leads` (semilla para referidos). Campo `demo_promo` (None/True/False) en user.
+- Build prod recompilado + `git add -f frontend/build`. (Cambios de chatbot son backend → ya activos en preview sin re-deploy.)
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

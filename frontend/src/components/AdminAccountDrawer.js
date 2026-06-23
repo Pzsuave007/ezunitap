@@ -334,6 +334,24 @@ function NfcTab({ user, onChanged }) {
   const [limit, setLimit] = useState(String(user.card_limit || 1));
   const [charge, setCharge] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [promoMode, setPromoMode] = useState(
+    user.demo_promo === true ? "on" : user.demo_promo === false ? "off" : "auto"
+  );
+  const [promoSaving, setPromoSaving] = useState(false);
+
+  const savePromo = async (val) => {
+    setPromoSaving(true);
+    try {
+      await api.post(`/admin/users/${user.id}/demo-promo`, { value: val });
+      setPromoMode(val);
+      toast.success("Botón promocional actualizado");
+      await onChanged();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error");
+    } finally {
+      setPromoSaving(false);
+    }
+  };
 
   const current = user.card_limit || 1;
   const hasStripe =
@@ -412,6 +430,42 @@ function NfcTab({ user, onChanged }) {
         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
         Guardar límite
       </Button>
+
+      <div className="pt-4 border-t border-slate-200">
+        <label className="text-xs font-semibold text-slate-600 block mb-1">
+          Botón promocional en la tarjeta pública
+        </label>
+        <p className="text-[11px] text-slate-500 mb-2">
+          "Are you a contractor? See how I do it →" lleva al demo. <strong>Auto</strong>: visible en cuentas gratis, oculto en cuentas de pago.
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {[["auto", "Auto"], ["on", "Siempre ON"], ["off", "Siempre OFF"]].map(([val, label]) => (
+            <button
+              key={val}
+              data-testid={`demo-promo-${val}`}
+              onClick={() => savePromo(val)}
+              disabled={promoSaving}
+              className={`h-10 rounded-xl text-xs font-semibold border transition ${
+                promoMode === val
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1.5">
+          Estado actual:{" "}
+          {promoMode === "auto"
+            ? user.is_paying
+              ? "Auto → oculto (cuenta de pago)"
+              : "Auto → visible (cuenta gratis)"
+            : promoMode === "on"
+            ? "Siempre visible"
+            : "Siempre oculto"}
+        </p>
+      </div>
     </div>
   );
 }

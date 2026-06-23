@@ -200,7 +200,7 @@ export default function DemoAll() {
     }
     setLoading(true);
     try {
-      const r = await axios.post(`${API}/public/demo/start`, lead);
+      const r = await axios.post(`${API}/public/demo/start`, { ...lead, ref: params.get("ref") || "" });
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
       fbTrack("Lead", { content_name: "Demo-All Start", content_category: lead.trade || "" });

@@ -3811,6 +3811,7 @@ async def public_get_card(slug: str):
         "card": card,
         "reviews": reviews,
         "photos": [{"id": p["id"], "label": p.get("label", ""), "created_at": p.get("created_at")} for p in photos],
+        "show_demo_promo": payments_service.demo_promo_visible(user),
     }
 
 
@@ -4403,6 +4404,7 @@ class DemoStartIn(BaseModel):
     email: str
     phone: Optional[str] = ""
     trade: Optional[str] = ""
+    ref: Optional[str] = ""
 
 
 class DemoQuoteIn(BaseModel):
@@ -4447,6 +4449,7 @@ async def demo_start(payload: DemoStartIn, request: Request):
         "email": email,
         "phone": (payload.phone or "").strip(),
         "trade": (payload.trade or "").strip(),
+        "ref": (payload.ref or "").strip(),
         "ip": ip,
         "quote_count": 0,
         "agreement_count": 0,
@@ -5214,6 +5217,8 @@ async def admin_list_users(admin: dict = Depends(_require_super_admin)):
             "comp_note": u.get("comp_note"),
             "comp_expires_at": u.get("comp_expires_at"),
             "manual_plan": u.get("manual_plan"),
+            "demo_promo": u.get("demo_promo"),
+            "is_paying": payments_service.is_paying_subscriber(u),
             "features": sorted(payments_service.user_features(u)),
             "card_limit": int(u.get("card_limit") or 1),
             "shipping_address": u.get("shipping_address"),
@@ -5904,6 +5909,30 @@ async def admin_set_ai_image_limit(
     )
     return {"ok": True, "user_id": user_id, "ai_image_limit": int(payload.limit)}
 
+
+
+class DemoPromoIn(BaseModel):
+    value: str  # "auto" | "on" | "off"
+
+
+@api_router.post("/admin/users/{user_id}/demo-promo")
+async def admin_set_demo_promo(
+    user_id: str,
+    payload: DemoPromoIn,
+    admin: dict = Depends(_require_super_admin),
+):
+    """Control the public Smart Card 'Are you a contractor?' UniTech promo button
+    for this account. auto = default by plan (free shows, paid hides),
+    on = always show, off = always hide."""
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    v = (payload.value or "auto").lower()
+    mapping = {"auto": None, "on": True, "off": False}
+    if v not in mapping:
+        raise HTTPException(status_code=400, detail="value debe ser auto, on u off")
+    await db.users.update_one({"id": user_id}, {"$set": {"demo_promo": mapping[v]}})
+    return {"ok": True, "user_id": user_id, "demo_promo": mapping[v]}
 
 
 @api_router.post("/admin/users/{user_id}/card-seats")

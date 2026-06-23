@@ -777,6 +777,22 @@ def has_paid_subscription(user: dict) -> bool:
     return "card" in user_features(user)
 
 
+def is_paying_subscriber(user: dict) -> bool:
+    """True only for REAL paying Stripe subscribers. Comp grants, admin manual
+    plans and free trials all count as 'free' here (they don't pay us)."""
+    return bool(user.get("stripe_subscription_id")) and user.get("subscription_status") in ("active", "past_due")
+
+
+def demo_promo_visible(user: dict) -> bool:
+    """Whether the public Smart Card should show the 'Are you a contractor?'
+    UniTech promo button. Per-account override (`demo_promo`: True/False) wins;
+    otherwise default = show for FREE accounts, hide for paying subscribers."""
+    override = user.get("demo_promo")
+    if override is not None:
+        return bool(override)
+    return not is_paying_subscriber(user)
+
+
 
 # ============================================================================
 # INVOICE CARD PAYMENTS — one-time Checkout Sessions to collect client payments
