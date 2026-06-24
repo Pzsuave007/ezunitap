@@ -106,6 +106,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Botón en Admin → Cuentas ("Actualizar contactos viejos"), muestra cuántos actualizó vía toast. Se presiona 1 vez tras el deploy en producción (la BD de prod es distinta a la de preview).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Bitácora de Notas por cliente + reorganización ClientDetail [LISTO, testing iter_35 100%; pendiente deploy]
+- **Notas (bitácora):** nueva colección `client_notes`. Endpoints `GET/POST/DELETE /clients/{id}/notes` (owner-scoped). Notas con fecha/hora, apiladas (más nueva arriba), borrables.
+- **Pestaña "Notas"** como SEGUNDA (después de Info) en ClientDetail. Input + "Agregar nota", lista de notas, empty state.
+- **Acción por nota:** tocar una nota abre un Drawer (abajo→arriba) con: Crear cotización (precarga la nota en el generador IA), Crear invoice (abre invoice del cliente), Mandar mensaje. Acciones de quote/invoice solo si plan Negocio.
+- **Tarjeta "📇 Contacto desde tu tarjeta" movida** del tope de la página → dentro de la pestaña **Info** (extraída a `const leadCard`). Arriba queda solo info del cliente + botón Crear.
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
