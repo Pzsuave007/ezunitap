@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Gift, Loader2, Copy, Check, Plus, Trash2, Users, Link as LinkIcon,
-  Sparkles, AlertCircle, Calendar, UserPlus, IdCard, Search, ChevronRight,
+  Sparkles, AlertCircle, Calendar, UserPlus, IdCard, Search, ChevronRight, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminTabs from "@/components/AdminTabs";
@@ -129,6 +129,20 @@ function AccountsView({ onForbidden }) {
   const [filter, setFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [backfilling, setBackfilling] = useState(false);
+
+  const backfillLeads = async () => {
+    setBackfilling(true);
+    try {
+      const { data } = await api.post("/admin/backfill-card-leads");
+      toast.success(`Listo: ${data.updated} contacto(s) viejo(s) actualizado(s)`);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error al actualizar contactos");
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -192,6 +206,17 @@ function AccountsView({ onForbidden }) {
           className="h-10 bg-blue-900 hover:bg-blue-950 text-white"
         >
           <UserPlus className="w-4 h-4 mr-1.5" /> Crear cuenta
+        </Button>
+        <Button
+          data-testid="backfill-card-leads-btn"
+          onClick={backfillLeads}
+          disabled={backfilling}
+          variant="outline"
+          className="h-10 border-slate-200"
+          title="Convierte tus contactos viejos de la tarjeta al nuevo formato (intereses, método de contacto, badge)."
+        >
+          {backfilling ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
+          Actualizar contactos viejos
         </Button>
       </div>
 

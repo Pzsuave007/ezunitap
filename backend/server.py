@@ -5939,6 +5939,41 @@ class DemoPromoIn(BaseModel):
     value: str  # "auto" | "on" | "off"
 
 
+@api_router.post("/admin/backfill-card-leads")
+async def admin_backfill_card_leads(admin: dict = Depends(_require_super_admin)):
+    """One-click migration: parse legacy Smart Card lead clients' notes into the
+    structured fields (lead_type, interests, preferred_contact, lead_source).
+    Idempotent — only touches clients that don't yet have `lead_source`."""
+    import re as _re
+    q = {
+        "lead_source": {"$exists": False},
+        "notes": {"$regex": r"\[(New contact from Smart Card|From Smart Card)"},
+    }
+    updated = 0
+    async for cl in db.clients.find(q):
+        notes = cl.get("notes", "") or ""
+        lead_type = "connect" if "wants to connect" in notes else "estimate"
+        interests = []
+        m = _re.search(r"Interested in:\s*(.+)", notes)
+        if m:
+            interests = [s.strip() for s in m.group(1).split(",") if s.strip()]
+        pref = ""
+        mp = _re.search(r"Preferred contact:\s*(\w+)", notes)
+        if mp:
+            pref = mp.group(1).strip().lower()
+        await db.clients.update_one(
+            {"id": cl["id"]},
+            {"$set": {
+                "lead_type": lead_type,
+                "interests": interests,
+                "preferred_contact": pref,
+                "lead_source": "smart_card",
+            }},
+        )
+        updated += 1
+    return {"ok": True, "updated": updated}
+
+
 @api_router.post("/admin/users/{user_id}/demo-promo")
 async def admin_set_demo_promo(
     user_id: str,

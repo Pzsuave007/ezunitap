@@ -101,6 +101,11 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **Backfill ejecutado:** 8 leads viejos rescatados desde sus notas a los campos estructurados (script one-off, ya corrido).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Botón Admin "Actualizar contactos viejos de tarjeta" [LISTO, probado curl+screenshot; pendiente deploy]
+- Nuevo endpoint `POST /admin/backfill-card-leads` (super-admin, idempotente): parsea las notas de leads viejos de tarjeta y rellena `lead_type/interests/preferred_contact/lead_source`. Devuelve `{updated}`. Probado: migra correctamente (1 de prueba), 0 si ya está, 401 sin auth.
+- Botón en Admin → Cuentas ("Actualizar contactos viejos"), muestra cuántos actualizó vía toast. Se presiona 1 vez tras el deploy en producción (la BD de prod es distinta a la de preview).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
