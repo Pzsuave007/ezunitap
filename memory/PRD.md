@@ -95,6 +95,12 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **QuoteBuilder:** precarga la descripción del cliente (`location.state.prefillDescription`), muestra nota "Cargado del pedido del cliente", y si hay foto, botón "Usar la foto que mandó el cliente" → corre el AI photo-quote. Probado E2E (iter_33).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Tarjeta unificada "📇 Contacto desde tu tarjeta" en CRM [LISTO, testing iter_34 100%; pendiente deploy]
+- **Backend `public_card_lead`** ahora guarda campos estructurados en el cliente: `lead_type` (connect/estimate), `interests[]`, `preferred_contact`, `lead_source="smart_card"` (+ `project_request`/`project_photo_path` ya existentes).
+- **ClientDetail:** una sola tarjeta bonita para AMBOS formularios — badge ("Quiere conectar" / "Pidió cotización"), chips de intereses, fila "Prefiere contacto por X" con botón **Contactar** (WhatsApp `wa.me`, llamada `tel:`, SMS `sms:`, email `mailto:`), el mensaje del cliente, foto (si hay) y botón "Crear cotización con esto".
+- **Backfill ejecutado:** 8 leads viejos rescatados desde sus notas a los campos estructurados (script one-off, ya corrido).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
