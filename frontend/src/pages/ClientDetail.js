@@ -87,7 +87,16 @@ export default function ClientDetail() {
       const [c, h] = await Promise.all([api.get(`/clients/${id}`), api.get(`/clients/${id}/history`)]);
       setClient(c.data);
       setForm(c.data);
-      setHistory(h.data);
+      const d = h.data || {};
+      setHistory({
+        quotes: d.quotes || [],
+        invoices: d.invoices || [],
+        messages: d.messages || [],
+        photos: d.photos || [],
+        jobs: d.jobs || [],
+        agreements: d.agreements || [],
+        scopes: d.scopes || [],
+      });
     } catch {
       toast.error("Cliente no encontrado");
       navigate("/clientes");
@@ -129,7 +138,11 @@ export default function ClientDetail() {
     return map[pc] ? { key: pc, ...map[pc] } : null;
   })();
 
-  const leadCard = (client?.lead_source === "smart_card" || client?.project_request || (client?.interests && client.interests.length > 0)) ? (
+  const leadCard = (() => {
+    const interests = Array.isArray(client?.interests) ? client.interests : [];
+    const isLead = client?.lead_source === "smart_card" || client?.project_request || interests.length > 0;
+    if (!isLead) return null;
+    return (
     <Card data-testid="client-lead-card" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2 font-heading font-bold text-sm text-amber-900">
@@ -145,11 +158,11 @@ export default function ClientDetail() {
         </span>
       </div>
 
-      {client.interests && client.interests.length > 0 && (
+      {interests.length > 0 && (
         <div className="mb-2.5">
           <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Le interesa</div>
           <div className="flex flex-wrap gap-1.5" data-testid="client-lead-interests">
-            {client.interests.map((it, i) => (
+            {interests.map((it, i) => (
               <span key={i} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-zinc-700 ring-1 ring-amber-200">{it}</span>
             ))}
           </div>
@@ -199,7 +212,8 @@ export default function ClientDetail() {
         </Button>
       )}
     </Card>
-  ) : null;
+    );
+  })();
 
   const save = async () => {
     try {
@@ -507,7 +521,7 @@ export default function ClientDetail() {
         <TabsContent value="messages" className="mt-4 space-y-2">
           {history.messages.length === 0 ? <EmptyHist label="mensajes" /> : history.messages.map((m) => (
             <Card key={m.id} className="card-elevated p-4 border-0 shadow-none">
-              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">{m.message_type.replace(/_/g, " ")}</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">{(m.message_type || "").replace(/_/g, " ")}</div>
               <div className="text-sm whitespace-pre-wrap">{m.message_en}</div>
               <div className="text-xs text-zinc-400 mt-2">{new Date(m.created_at).toLocaleString("es")}</div>
             </Card>

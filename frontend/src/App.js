@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
@@ -78,12 +79,20 @@ function HomeOrAuth() {
   return <Layout />;
 }
 
+// Resets the error boundary when the route changes so a crash on one page
+// doesn't permanently block navigation to others.
+function RoutedErrorBoundary({ children }) {
+  const location = useLocation();
+  return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>;
+}
+
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
           <LanguageSuggestBanner />
+          <RoutedErrorBoundary>
           <Routes>
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
@@ -132,6 +141,7 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </RoutedErrorBoundary>
           <Toaster position="top-center" richColors closeButton offset="60px" mobileOffset="80px" />
         </AuthProvider>
       </BrowserRouter>
