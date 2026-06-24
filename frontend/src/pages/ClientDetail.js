@@ -60,11 +60,25 @@ export default function ClientDetail() {
   const startAiQuote = () => {
     navigate(`/quotes/nuevo?client_id=${id}&ai=1`, {
       state: {
-        prefillDescription: client?.project_request || "",
+        prefillDescription: client?.project_request || (client?.interests || []).join(", "),
         projectPhotoClientId: client?.project_photo_path ? id : null,
       },
     });
   };
+
+  const preferredContact = (() => {
+    const pc = client?.preferred_contact;
+    if (!pc) return null;
+    const digits = (client.phone || "").replace(/\D/g, "");
+    const map = {
+      whatsapp: { label: "WhatsApp", href: digits ? `https://wa.me/${digits}` : null },
+      text: { label: "Mensaje (SMS)", href: client.phone ? `sms:${client.phone}` : null },
+      sms: { label: "Mensaje (SMS)", href: client.phone ? `sms:${client.phone}` : null },
+      email: { label: "Email", href: client.email ? `mailto:${client.email}` : null },
+      phone: { label: "Llamada", href: client.phone ? `tel:${client.phone}` : null },
+    };
+    return map[pc] ? { key: pc, ...map[pc] } : null;
+  })();
 
   const save = async () => {
     try {
@@ -132,23 +146,72 @@ export default function ClientDetail() {
 
       <ClientFlowNotices client={client} history={history} />
 
-      {client.project_request && (
-        <Card data-testid="client-project-request" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
-          <div className="flex items-center gap-2 text-amber-800 font-heading font-bold text-sm mb-2">
-            📋 Lo que pidió el cliente
+      {(client.lead_source === "smart_card" || client.project_request || (client.interests && client.interests.length > 0)) && (
+        <Card data-testid="client-lead-card" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-2 font-heading font-bold text-sm text-amber-900">
+              📇 Contacto desde tu tarjeta
+            </div>
+            <span
+              data-testid="client-lead-badge"
+              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                client.lead_type === "connect" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+              }`}
+            >
+              {client.lead_type === "connect" ? "Quiere conectar" : "Pidió cotización"}
+            </span>
           </div>
-          <p data-testid="client-project-text" className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">
-            {client.project_request}
-          </p>
+
+          {client.interests && client.interests.length > 0 && (
+            <div className="mb-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Le interesa</div>
+              <div className="flex flex-wrap gap-1.5" data-testid="client-lead-interests">
+                {client.interests.map((it, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-zinc-700 ring-1 ring-amber-200">{it}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {preferredContact && (
+            <div className="mb-2.5 flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2 ring-1 ring-amber-200">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Prefiere contacto por</div>
+                <div className="text-sm font-semibold text-zinc-800">{preferredContact.label}</div>
+              </div>
+              {preferredContact.href && (
+                <a
+                  data-testid="client-lead-contact-btn"
+                  href={preferredContact.href}
+                  target={preferredContact.key === "whatsapp" ? "_blank" : undefined}
+                  rel="noreferrer"
+                  className="flex-none px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                >
+                  Contactar
+                </a>
+              )}
+            </div>
+          )}
+
+          {client.project_request && (
+            <div className="mb-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Su mensaje</div>
+              <p data-testid="client-project-text" className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">
+                {client.project_request}
+              </p>
+            </div>
+          )}
+
           {projectPhoto && (
-            <a href={projectPhoto} target="_blank" rel="noreferrer" className="block mt-3">
+            <a href={projectPhoto} target="_blank" rel="noreferrer" className="block mb-2.5">
               <img data-testid="client-project-photo" src={projectPhoto} alt="Foto del proyecto"
                 className="w-full max-h-56 object-cover rounded-xl border border-amber-200" />
             </a>
           )}
+
           {hasBusiness && (
             <Button data-testid="project-create-quote-btn" onClick={startAiQuote}
-              className="w-full mt-3 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+              className="w-full mt-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
               <Sparkles className="w-4 h-4 mr-2" /> Crear cotización con esto
             </Button>
           )}

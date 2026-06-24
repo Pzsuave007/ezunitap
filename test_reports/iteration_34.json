@@ -1,0 +1,26 @@
+{
+  "summary": "End-to-end verification of the unified '📇 Contacto desde tu tarjeta' lead card and structured Smart-Card lead fields. Backend: 5/5 pytest cases pass (CONNECT lead writes lead_type+interests+preferred_contact+lead_source+project_request; ESTIMATE lead with photo writes project_photo_path and is retrievable via /api/clients/{id}/project-photo; EMAIL variant persists; legacy 'Connect Demo Maria' has all backfilled fields; manually-created clients carry NO lead_source/lead_type/interests). Frontend (Playwright against the public preview URL): all 6 scenarios PASS — (1) CONNECT lead: client-lead-card with badge 'Quiere conectar', interests chips Roof Repair + Painting, project text present, client-lead-contact-btn href starts with 'https://wa.me/5551230001'. (2) ESTIMATE lead: badge 'Pidió cotización', client-project-text 'Reemplazar techo 1500 sqft.', client-project-photo renders (data:image/jpeg…), contact-btn href starts with 'tel:5551230002'. (3) project-create-quote-btn navigates to /quotes/nuevo?client_id=...&ai=1 with quote-prefill-note visible, quote-ai-description prefilled with the project text, and quote-use-client-photo button present. (4) EMAIL variant: href starts with 'mailto:qa+em@example.com'. (5) SMS/text variant: href starts with 'sms:5551239876'. (6) LEGACY 'Connect Demo Maria': client-lead-card renders with badge 'Quiere conectar', interests Roof Repair + Gutter Cleaning, contact-btn href https://wa.me/5553334444 — proving the migration/backfill landed. Regression: a freshly created manual client (no Smart Card lead) does NOT render client-lead-card and the client detail page still loads cleanly (heading + tabs visible). All acceptance criteria met. No bugs found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_unified_lead_card.py",
+    "/app/test_reports/pytest/iteration_34_unified_lead.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ClientDetail.js render condition `(client.lead_source === 'smart_card' || client.project_request || (client.interests && client.interests.length > 0))` correctly gates the unified card and prevents false positives on manual clients — verified in regression.",
+    "preferredContact map in ClientDetail.js handles all 5 keys (whatsapp/text/sms/email/phone) and returns null when phone/email are missing, which gracefully hides the action button. Confirmed for all 4 variants tested.",
+    "server.public_card_lead persists ALL 6 structured fields (lead_type, interests, preferred_contact, lead_source='smart_card', project_request, project_photo_path) onto the created client doc, in addition to the card_leads document — consistent with the unified-card contract.",
+    "The lead photo upload block (server.py:4049-4062) still swallows storage errors silently and stores photo_path=None. Same observation as iter_33; non-blocking but worth a follow-up so contractors are warned when a photo upload fails.",
+    "Interests are rendered without separators in the test (`'Roof RepairPainting'` from text_content), but visually each chip is a separate pill (verified via screenshot). Functional, no fix needed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_unified_lead_card.py (NEW)"
+  ],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100% (6/6 scenarios)"},
+  "test_credentials": "Owner pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md). Public card slug: uni2-marketing-agency.",
+  "seed_data_creation": "Created 4 Smart-Card leads + 1 manual client under pzsuave007: 'QA UI Connect <suffix>' (connect+whatsapp+interests), 'QA UI Estimate <suffix>' (estimate+phone+photo), 'QA UI Email <suffix>' (connect+email), 'QA UI SMS <suffix>' (connect+text/sms), and 'QA UI Manual <suffix>' (no Smart-Card fields, regression).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "For the unified lead card: assert data-testid='client-lead-card' renders iff lead_source==='smart_card' OR project_request OR interests.length>0. Inside, expect client-lead-badge ('Quiere conectar' for connect, 'Pidió cotización' for estimate), client-lead-interests with chips, client-lead-contact-btn whose href prefix depends on preferred_contact (whatsapp -> https://wa.me/<digits>, phone -> tel:, text|sms -> sms:, email -> mailto:), client-project-text and client-project-photo (estimate-with-photo only), and project-create-quote-btn that navigates to /quotes/nuevo?client_id=...&ai=1 with quote-prefill-note + prefilled quote-ai-description + quote-use-client-photo when a photo was uploaded. Legacy 'Connect Demo Maria' (id 0113dad4-cd97-47d6-b921-34adb5c5fd49) already has backfilled fields. POST /api/public/card/uni2-marketing-agency/lead is the seeding endpoint."
+}

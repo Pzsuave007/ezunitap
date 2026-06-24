@@ -4097,6 +4097,11 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "address": payload.address or "",
         "job_type": service_label,
         "notes": client_notes,
+        # Structured lead data from the Smart Card forms (surfaced in the CRM).
+        "lead_type": (payload.lead_type or "estimate"),
+        "interests": payload.interests or [],
+        "preferred_contact": payload.preferred_contact or "",
+        "lead_source": "smart_card",
         # What the client submitted — surfaced in the CRM and used to pre-fill the AI quote.
         "project_request": (payload.description or "").strip(),
         "project_photo_path": photo_path,
