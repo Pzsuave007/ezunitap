@@ -121,6 +121,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **Página Citas del dueño** (`/citas`, nav feature card): lista próximas/pasadas, badge NUEVO (rojo), popup con Llamar/Mensaje + Ver cliente. Marca visto al abrir.
 - Times = hora local (sin TZ). Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — FIX P0 pantalla en blanco en iPhone al abrir cliente/mandar mensaje [LISTO, testing iter_37 100%; pendiente deploy]
+- **Causa raíz:** `Messages.js` usaba `useTranslation()` e `i18n.language` SIN importarlos → `ReferenceError` → `/mensajes` crasheaba (pantalla en blanco) para todos. Flujo de la usuaria: abrir cliente → "Mandar mensaje" → `/mensajes` → blanco. FIX: agregados `import { useTranslation } from "react-i18next"` e `import i18n from "@/i18n"` en Messages.js.
+- **ErrorBoundary global NUEVO** (`/app/frontend/src/components/ErrorBoundary.js`): captura cualquier crash de render y muestra pantalla amable recuperable ("Algo salió mal" + Reintentar/Recargar/Ir al inicio + detalle del error copiable) en vez de pantalla 100% en blanco. Montado en `App.js` vía `RoutedErrorBoundary` (resetea por `location.pathname`). Sin dependencia de router/i18n para ser a prueba de fallos. Nota: la usuaria abre la app como "Add to Home Screen" (PWA standalone) → mismo motor WebKit, el fix aplica igual.
+- **Blindaje ClientDetail:** `load()` normaliza `history` con arrays por defecto; `leadCard` usa `Array.isArray(client.interests)`; render de mensajes usa `(m.message_type || "")`.
+- Verificado testing_agent iter_37: ambas cuentas (Negocio/Presencia), móvil 390x844 + desktop; barrido de navegación completo sin disparar el ErrorBoundary; /mensajes carga OK post-fix.
+- Build prod recompilado (rutas relativas) + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
