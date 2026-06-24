@@ -11,7 +11,7 @@ import { Drawer, DrawerContent, DrawerTrigger, DrawerClose, DrawerHeader, Drawer
 import StatusBadge from "@/components/StatusBadge";
 import {
   ArrowLeft, Phone, Mail, MapPin, Camera, Sparkles, Trash2, Loader2,
-  FileSignature, Building2, Receipt, MessageSquare, Plus, ChevronRight,
+  FileSignature, Building2, Receipt, MessageSquare, Plus, ChevronRight, StickyNote,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -30,8 +30,57 @@ export default function ClientDetail() {
   const [form, setForm] = useState(null);
   const [scopeOpen, setScopeOpen] = useState(false);
   const [projectPhoto, setProjectPhoto] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [noteText, setNoteText] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [activeNote, setActiveNote] = useState(null);
 
   const token = localStorage.getItem("sf_token");
+
+  const loadNotes = async () => {
+    try {
+      const r = await api.get(`/clients/${id}/notes`);
+      setNotes(r.data || []);
+    } catch { /* noop */ }
+  };
+  useEffect(() => { loadNotes(); }, [id]);
+
+  const addNote = async () => {
+    const text = noteText.trim();
+    if (!text) return;
+    setNoteSaving(true);
+    try {
+      await api.post(`/clients/${id}/notes`, { text });
+      setNoteText("");
+      await loadNotes();
+    } catch {
+      toast.error("Error al guardar la nota");
+    } finally {
+      setNoteSaving(false);
+    }
+  };
+
+  const delNote = async (noteId) => {
+    try {
+      await api.delete(`/clients/${id}/notes/${noteId}`);
+      await loadNotes();
+    } catch {
+      toast.error("Error al borrar");
+    }
+  };
+
+  const noteAction = (action) => {
+    const n = activeNote;
+    setActiveNote(null);
+    if (!n) return;
+    if (action === "quote") {
+      navigate(`/quotes/nuevo?client_id=${id}&ai=1`, { state: { prefillDescription: n.text } });
+    } else if (action === "invoice") {
+      navigate(`/invoices/nuevo?client_id=${id}`);
+    } else if (action === "message") {
+      navigate(`/mensajes?client_id=${id}`);
+    }
+  };
 
   const load = async () => {
     try {
@@ -79,6 +128,78 @@ export default function ClientDetail() {
     };
     return map[pc] ? { key: pc, ...map[pc] } : null;
   })();
+
+  const leadCard = (client?.lead_source === "smart_card" || client?.project_request || (client?.interests && client.interests.length > 0)) ? (
+    <Card data-testid="client-lead-card" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2 font-heading font-bold text-sm text-amber-900">
+          📇 Contacto desde tu tarjeta
+        </div>
+        <span
+          data-testid="client-lead-badge"
+          className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+            client.lead_type === "connect" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+          }`}
+        >
+          {client.lead_type === "connect" ? "Quiere conectar" : "Pidió cotización"}
+        </span>
+      </div>
+
+      {client.interests && client.interests.length > 0 && (
+        <div className="mb-2.5">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Le interesa</div>
+          <div className="flex flex-wrap gap-1.5" data-testid="client-lead-interests">
+            {client.interests.map((it, i) => (
+              <span key={i} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-zinc-700 ring-1 ring-amber-200">{it}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {preferredContact && (
+        <div className="mb-2.5 flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2 ring-1 ring-amber-200">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Prefiere contacto por</div>
+            <div className="text-sm font-semibold text-zinc-800">{preferredContact.label}</div>
+          </div>
+          {preferredContact.href && (
+            <a
+              data-testid="client-lead-contact-btn"
+              href={preferredContact.href}
+              target={preferredContact.key === "whatsapp" ? "_blank" : undefined}
+              rel="noreferrer"
+              className="flex-none px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+            >
+              Contactar
+            </a>
+          )}
+        </div>
+      )}
+
+      {client.project_request && (
+        <div className="mb-2.5">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Su mensaje</div>
+          <p data-testid="client-project-text" className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">
+            {client.project_request}
+          </p>
+        </div>
+      )}
+
+      {projectPhoto && (
+        <a href={projectPhoto} target="_blank" rel="noreferrer" className="block mb-2.5">
+          <img data-testid="client-project-photo" src={projectPhoto} alt="Foto del proyecto"
+            className="w-full max-h-56 object-cover rounded-xl border border-amber-200" />
+        </a>
+      )}
+
+      {hasBusiness && (
+        <Button data-testid="project-create-quote-btn" onClick={startAiQuote}
+          className="w-full mt-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+          <Sparkles className="w-4 h-4 mr-2" /> Crear cotización con esto
+        </Button>
+      )}
+    </Card>
+  ) : null;
 
   const save = async () => {
     try {
@@ -145,78 +266,6 @@ export default function ClientDetail() {
       )}
 
       <ClientFlowNotices client={client} history={history} />
-
-      {(client.lead_source === "smart_card" || client.project_request || (client.interests && client.interests.length > 0)) && (
-        <Card data-testid="client-lead-card" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <div className="flex items-center gap-2 font-heading font-bold text-sm text-amber-900">
-              📇 Contacto desde tu tarjeta
-            </div>
-            <span
-              data-testid="client-lead-badge"
-              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
-                client.lead_type === "connect" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
-              }`}
-            >
-              {client.lead_type === "connect" ? "Quiere conectar" : "Pidió cotización"}
-            </span>
-          </div>
-
-          {client.interests && client.interests.length > 0 && (
-            <div className="mb-2.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Le interesa</div>
-              <div className="flex flex-wrap gap-1.5" data-testid="client-lead-interests">
-                {client.interests.map((it, i) => (
-                  <span key={i} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-zinc-700 ring-1 ring-amber-200">{it}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {preferredContact && (
-            <div className="mb-2.5 flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2 ring-1 ring-amber-200">
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Prefiere contacto por</div>
-                <div className="text-sm font-semibold text-zinc-800">{preferredContact.label}</div>
-              </div>
-              {preferredContact.href && (
-                <a
-                  data-testid="client-lead-contact-btn"
-                  href={preferredContact.href}
-                  target={preferredContact.key === "whatsapp" ? "_blank" : undefined}
-                  rel="noreferrer"
-                  className="flex-none px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
-                >
-                  Contactar
-                </a>
-              )}
-            </div>
-          )}
-
-          {client.project_request && (
-            <div className="mb-2.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Su mensaje</div>
-              <p data-testid="client-project-text" className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">
-                {client.project_request}
-              </p>
-            </div>
-          )}
-
-          {projectPhoto && (
-            <a href={projectPhoto} target="_blank" rel="noreferrer" className="block mb-2.5">
-              <img data-testid="client-project-photo" src={projectPhoto} alt="Foto del proyecto"
-                className="w-full max-h-56 object-cover rounded-xl border border-amber-200" />
-            </a>
-          )}
-
-          {hasBusiness && (
-            <Button data-testid="project-create-quote-btn" onClick={startAiQuote}
-              className="w-full mt-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-              <Sparkles className="w-4 h-4 mr-2" /> Crear cotización con esto
-            </Button>
-          )}
-        </Card>
-      )}
 
       {/* ===== Create entry point — only for the Negocio plan ===== */}
       {hasBusiness ? (
@@ -294,6 +343,7 @@ export default function ClientDetail() {
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full justify-start gap-1 bg-zinc-100 p-1 rounded-xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden h-auto">
           <Seg value="info" label="Info" testid="history-tab-info" />
+          <Seg value="notes" label="Notas" count={notes.length} testid="history-tab-notas" />
           {hasBusiness && <Seg value="quotes" label="Cotizaciones" count={history.quotes.length} testid="history-tab-cotizaciones" />}
           {hasBusiness && <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />}
           {hasBusiness && <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />}
@@ -301,7 +351,8 @@ export default function ClientDetail() {
           {hasBusiness && <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />}
         </TabsList>
 
-        <TabsContent value="info" className="mt-4">
+        <TabsContent value="info" className="mt-4 space-y-4">
+          {leadCard}
           <Card className="card-elevated p-5 border-0 shadow-none">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-heading font-bold">Información</h3>
@@ -342,6 +393,59 @@ export default function ClientDetail() {
               </div>
             )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-4 space-y-3">
+          <Card className="card-elevated p-4 border-0 shadow-none">
+            <Label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Nueva nota</Label>
+            <Textarea
+              data-testid="note-input"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Ej: Lo llamé, quiere que pase el martes a dar precio del techo."
+              rows={3}
+              className="rounded-xl mt-1.5"
+            />
+            <Button
+              data-testid="note-add-btn"
+              onClick={addNote}
+              disabled={noteSaving || !noteText.trim()}
+              className="w-full mt-2 h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold"
+            >
+              {noteSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />} Agregar nota
+            </Button>
+          </Card>
+
+          {notes.length === 0 ? (
+            <Card className="card-elevated p-6 text-center border-0 shadow-none">
+              <StickyNote className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+              <p className="text-sm text-zinc-500">Aún no hay notas.</p>
+              <p className="text-xs text-zinc-400 mt-1">Toca una nota para crear una cotización, factura o mensaje desde ella.</p>
+            </Card>
+          ) : (
+            notes.map((n) => (
+              <Card
+                key={n.id}
+                data-testid={`note-card-${n.id}`}
+                onClick={() => setActiveNote(n)}
+                className="card-elevated p-4 border-0 shadow-none cursor-pointer hover:bg-zinc-50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">{n.text}</p>
+                    <div className="text-[11px] text-zinc-400 mt-1.5">{new Date(n.created_at).toLocaleString("es")}</div>
+                  </div>
+                  <button
+                    data-testid={`note-delete-${n.id}`}
+                    onClick={(e) => { e.stopPropagation(); delNote(n.id); }}
+                    className="flex-none text-zinc-300 hover:text-red-500 transition-colors p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </Card>
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="quotes" className="mt-4 space-y-2">
@@ -447,6 +551,33 @@ export default function ClientDetail() {
         jobTitle={client.job_type}
         className="w-full h-12 rounded-xl"
       />
+
+      <Drawer open={!!activeNote} onOpenChange={(o) => !o && setActiveNote(null)}>
+        <DrawerContent>
+          <DrawerHeader className="pb-1">
+            <DrawerTitle className="font-heading">¿Qué quieres hacer con esta nota?</DrawerTitle>
+          </DrawerHeader>
+          {activeNote && (
+            <div className="px-4 pt-1 max-w-md mx-auto w-full">
+              <div className="rounded-xl bg-zinc-50 ring-1 ring-zinc-200 p-3 text-sm text-zinc-700 whitespace-pre-wrap max-h-28 overflow-y-auto">
+                {activeNote.text}
+              </div>
+            </div>
+          )}
+          <div className="p-4 pt-3 pb-8 max-w-md mx-auto w-full space-y-2">
+            {hasBusiness && (
+              <ActionRow icon={Sparkles} iconCls="bg-emerald-100 text-emerald-700" title="Crear cotización" desc="La IA usa esta nota" testid="note-action-quote"
+                onClick={() => noteAction("quote")} />
+            )}
+            {hasBusiness && (
+              <ActionRow icon={Receipt} iconCls="bg-blue-100 text-blue-800" title="Crear invoice" desc="Cobra por este trabajo" testid="note-action-invoice"
+                onClick={() => noteAction("invoice")} />
+            )}
+            <ActionRow icon={MessageSquare} iconCls="bg-sky-100 text-sky-700" title="Mandar mensaje" desc="Texto al cliente" testid="note-action-message"
+              onClick={() => noteAction("message")} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <ClientScopeDialog
         open={scopeOpen}

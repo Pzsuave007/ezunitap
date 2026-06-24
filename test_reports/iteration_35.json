@@ -1,0 +1,27 @@
+{
+  "summary": "End-to-end verification of the new per-client NOTES (bitácora) feature and the relocation of the unified Smart-Card lead card from above-the-tabs into the Info tab. Backend (pytest, 8/8 PASS) covers GET/POST/DELETE /api/clients/{id}/notes: empty list initially, create returns the persisted shape (id/client_id/text/created_at, NO _id), empty/whitespace text -> 400, list is sorted newest-first (verified across 3 sequential POSTs with timestamps), delete removes the note and returns ok:true, unknown note_id -> 404, unknown client_id -> 404 on both GET and POST, and missing auth -> 401/403. Frontend (Playwright, all 13 steps PASS): logged in as pzsuave007 then opened a freshly seeded Smart-Card lead client; (1) data-testid='client-lead-card' is rendered INSIDE a [role=tabpanel] (the Info tab) and is NOT present above the tabs; (2) tab order is exactly Info(0), Notas(1), Cotizaciones(2), Contratos(3), Facturas(4), Mensajes(5), Fotos(6) — history-tab-notas is the SECOND tab as required; (3) empty state 'Aún no hay notas' shown before any note exists; (4) typed text into note-input and clicked note-add-btn — a note-card-<id> appears with a localized timestamp; (5) added a second note and verified the newest one renders ABOVE the older one (text order: 'Segunda nota mas nueva.' first, 'Primera nota: llame al cliente.' second); (6) deleted the newest via note-delete-<id>, the card disappears and count drops by 1; (7) clicking a note card opens the bottom drawer titled '¿Qué quieres hacer con esta nota?' showing all three rows (note-action-quote / note-action-invoice / note-action-message); (8) note-action-quote navigates to /quotes/nuevo?client_id=<cid>&ai=1 with quote-prefill-note visible and quote-ai-description PRE-FILLED with the note's text ('Primera nota: llame al cliente.'); (9) note-action-invoice navigates to /invoices/nuevo?client_id=<cid>; (10) note-action-message navigates to /mensajes?client_id=<cid>; (11) lead card details inside Info tab still correct (badge 'Quiere conectar', client-lead-contact-btn href starts with 'https://wa.me/5550009999'). Regression: the 'Crear' bottom drawer still works (all 5 rows drawer-action-quote-ai/invoice/contract/message/scope visible) and the Cotizaciones/Contratos/Facturas/Mensajes/Fotos tabs all switch without errors. No bugs found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_client_notes.py",
+    "/app/test_reports/pytest/iteration_35_notes.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "POST /api/clients/{id}/notes correctly validates empty/whitespace text (400) and is owner-scoped via get_current_user_id; list query excludes _id with projection {'_id':0} — clean.",
+    "Sort uses created_at descending (server.py:4164) and _now_iso() resolution is to the second; if two notes are inserted in the same second the order is undefined. Acceptable in practice (the UI gives a 1-sec gap when humans type) but consider switching to a monotonic field or using inserted_id sort as a tiebreaker.",
+    "ClientDetail.js correctly moved leadCard inside TabsContent value='info' (line 355) and removed it from above the tabs — verified that the DOM element [data-testid=client-lead-card] now has a [role=tabpanel] ancestor.",
+    "noteAction() passes prefillDescription via location.state to /quotes/nuevo?ai=1 — verified end-to-end that QuoteBuilder reads it and populates quote-ai-description.",
+    "Notes don't currently support edit, only add/delete. Not requested but worth noting for parity with the editable client-level 'notes' field in the Info card.",
+    "No pagination or limit on the UI — backend caps at 500 (to_list(500)), reasonable for the foreseeable future."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_client_notes.py (NEW)"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100% (13/13 steps + regression OK)"},
+  "test_credentials": "Owner pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md). Public card slug: uni2-marketing-agency.",
+  "seed_data_creation": "Created 1 Smart-Card lead client via POST /api/public/card/uni2-marketing-agency/lead: 'QA Notes Lead 1782334393_396638' (connect, whatsapp, interests=['Roofing']) — client_id fb1c9a46-2b42-4c47-871a-c7a7422e3f6f. The test left one note attached to it ('Primera nota: llame al cliente.'). pytest creates and deletes its own TEST_Notes Client.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Notes feature contract: GET /api/clients/{id}/notes returns [] for client with no notes, otherwise list sorted by created_at desc; POST {text} -> 200 with the new note doc (id/client_id/user_id/text/created_at, no _id); DELETE returns {ok:true}; 400 on empty text; 404 on unknown client_id or note_id; auth required. Frontend: history-tab-notas is the 2nd tab, note-card-<id> cards are clickable to open a Drawer with note-action-quote/invoice/message. quote action sends prefillDescription via location.state — QuoteBuilder.js reads it into quote-ai-description and shows quote-prefill-note. client-lead-card now lives strictly inside the Info tab (tabpanel). The lead client fb1c9a46-2b42-4c47-871a-c7a7422e3f6f and 'Connect Demo Maria' (0113dad4-cd97-47d6-b921-34adb5c5fd49) are good fixtures for the lead-card move check."
+}

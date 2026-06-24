@@ -4150,6 +4150,49 @@ async def get_client_project_photo(client_id: str, user_id: str = Depends(get_cu
     return {"data_url": f"data:{ct or 'image/jpeg'};base64,{b64}"}
 
 
+class ClientNoteIn(BaseModel):
+    text: str
+
+
+@api_router.get("/clients/{client_id}/notes")
+async def list_client_notes(client_id: str, user_id: str = Depends(get_current_user_id)):
+    client = await db.clients.find_one({"id": client_id, "user_id": user_id}, {"_id": 1})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    notes = await db.client_notes.find(
+        {"client_id": client_id, "user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    return notes
+
+
+@api_router.post("/clients/{client_id}/notes")
+async def add_client_note(client_id: str, payload: ClientNoteIn, user_id: str = Depends(get_current_user_id)):
+    client = await db.clients.find_one({"id": client_id, "user_id": user_id}, {"_id": 1})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="La nota no puede estar vacía")
+    note = {
+        "id": _new_id(),
+        "client_id": client_id,
+        "user_id": user_id,
+        "text": text,
+        "created_at": _now_iso(),
+    }
+    await db.client_notes.insert_one(note)
+    note.pop("_id", None)
+    return note
+
+
+@api_router.delete("/clients/{client_id}/notes/{note_id}")
+async def delete_client_note(client_id: str, note_id: str, user_id: str = Depends(get_current_user_id)):
+    res = await db.client_notes.delete_one({"id": note_id, "client_id": client_id, "user_id": user_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Nota no encontrada")
+    return {"ok": True}
+
+
 @api_router.post("/public/card/{slug}/chat")
 async def public_card_chat(slug: str, payload: CardChatIn):
     import re as _re
