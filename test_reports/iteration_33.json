@@ -1,0 +1,45 @@
+{
+  "summary": "End-to-end verification of (1) LanguageSuggestBanner hiding on contractor public client pages, and (2) the public-card lead -> CRM project_request -> AI Quote prefill flow. Backend: 6/6 pytest cases pass against the live preview URL. Frontend: banner correctly visible on '/' and correctly absent on '/c/uni2-marketing-agency', '/r/uni2-marketing-agency', and a real '/p/quote/:id' route; CRM client detail shows the highlighted 'Lo que pidió el cliente' card with submitted description + photo; clicking 'Crear cotización con esto' navigates to the AI Quote Builder with client preselected, prefill note visible, and description textarea pre-filled with the client's project text; 'Usar la foto que mandó el cliente' triggers the photo analysis (toast '¡Análisis de foto listo!' + Análisis de Foto card with type/range/questions) and the GET /api/clients/{id}/project-photo endpoint returns a data URL; 'Generar con AI' populates Job Title ('Roof Leak Inspection & Temporary Repair') + 4 line items in ~10s; regression: drawer-action-quote-ai for a client WITHOUT project_request opens the quote builder with no prefill note, no use-photo button, and empty description. ALL acceptance criteria from the review request are met. No critical bugs found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_card_lead_to_crm.py",
+    "/app/test_reports/pytest/iteration_33_lead.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "LanguageSuggestBanner.HIDDEN_PREFIXES = ['/c/','/r/','/p/'] correctly hides the banner on all three contractor-public route families; the catch-all '*' route in App.js redirects unknown /p/* to '/', so the banner reappears only after the redirect lands on '/' (expected, not a bug).",
+    "POST /api/public/card/{slug}/lead correctly creates BOTH a Client (with project_request + project_photo_path) and a Job (status new_lead), inserts a card_event, and returns ok+lead_id. The photo upload block is wrapped in a broad try/except — silently swallowing storage errors and storing photo_path=None. Consider logging and surfacing storage failures so the UI can warn the contractor that a photo was lost.",
+    "GET /api/clients/{client_id}/project-photo properly enforces ownership (user_id from token) and returns 404 when the client has no photo. Auth check returns 401/403 for unauthenticated callers — verified.",
+    "QuoteBuilder reads location.state.prefillDescription + projectPhotoClientId — works correctly through router state. Note: pressing browser-refresh on the quote-builder URL would lose the state (description goes empty). Not a defect for this review, but worth tracking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_card_lead_to_crm.py (NEW)"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (all acceptance scenarios)"},
+  "test_credentials": "Owner pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md). Public card slug: uni2-marketing-agency.",
+  "seed_data_creation": "Created 2 public-card leads via POST /api/public/card/uni2-marketing-agency/lead under pzsuave007 account: 'QA Project Lead NoPhoto <suffix>' (no photo) and 'QA Project Lead Photo <suffix>' (with valid 10x10 red JPEG). Each lead also creates a corresponding Client (project_request set) and Job (status new_lead).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Banner: with localStorage unitech_lang='en' and unitech_lang_dismiss removed, lang-suggest-banner shows on '/' (text '¿Hablas español? Mira UniTech en tu idioma.' + 'Ver en español' green pill) and is correctly NULL on /c/:slug, /r/:slug, and /p/quote/:id. Lead -> CRM: hitting /api/public/card/uni2-marketing-agency/lead with {name,phone,email,description,preferred_contact:'phone',lead_type:'estimate', photo_b64?} returns {ok:true, lead_id}; the owner pzsuave007 sees the new client at /clientes; client-project-request card shows description in client-project-text and (when photo submitted) client-project-photo img. project-create-quote-btn navigates to /quotes/nuevo?client_id=...&ai=1 with quote-prefill-note + quote-ai-description prefilled; quote-generate-ai produces job title + 4 items in ~10s; quote-use-client-photo (only when a photo lead exists) triggers GET /api/clients/{id}/project-photo and renders an Análisis de Foto card. Regression: drawer-action-quote-ai for a client without project_request opens an empty quote builder (no prefill note, no use-photo button, empty description) — works.",
+  "verified_scenarios": [
+    "Banner visible on '/' with unitech_lang='en' and no dismiss",
+    "Banner ABSENT on /c/uni2-marketing-agency (card still renders)",
+    "Banner ABSENT on /r/uni2-marketing-agency",
+    "Banner ABSENT on /p/quote/<id> (real public-quote route)",
+    "POST /api/public/card/uni2-marketing-agency/lead (no photo) -> 200 ok:true, client created with project_request matching description",
+    "POST /api/public/card/uni2-marketing-agency/lead (with valid base64 JPEG) -> 200 ok:true, project_photo_path stored",
+    "GET /api/clients/{id}/project-photo -> 200 {data_url:'data:image/jpeg;base64,...'} (owner-only)",
+    "GET /api/clients/{id}/project-photo -> 404 when client has no photo",
+    "GET /api/clients/{id}/project-photo -> 401/403 without auth",
+    "ClientDetail: client-project-request card + client-project-text + client-project-photo + project-create-quote-btn all render for a photo lead",
+    "project-create-quote-btn -> /quotes/nuevo?client_id=...&ai=1 with quote-prefill-note + quote-ai-description PRE-FILLED with submitted description and quote-use-client-photo button visible",
+    "quote-generate-ai -> Job Title 'Roof Leak Inspection & Temporary Repair' + 4 line items + '¡Quote generado con AI!' toast in ~10s",
+    "quote-use-client-photo -> Análisis de Foto card with Tipo/Rango estimado/Preguntas + '¡Análisis de foto listo!' toast in ~16s",
+    "Regression: drawer-action-quote-ai for a client WITHOUT project_request opens /quotes/nuevo with no prefill-note, no use-client-photo button, and empty quote-ai-description"
+  ]
+}

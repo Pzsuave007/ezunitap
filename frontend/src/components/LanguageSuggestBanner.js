@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 
 const DISMISS_KEY = "unitech_lang_dismiss";
+
+// Routes that belong to the contractor's CLIENTS (digital card, review,
+// public docs/pay). The system-language banner must NOT appear there — it is
+// only for visitors choosing the language of the UniTech website/app itself.
+const HIDDEN_PREFIXES = ["/c/", "/r/", "/p/"];
 
 // Slim top banner that invites English-browser visitors (common among
 // US Hispanics) to switch the WHOLE site to Spanish in one tap.
@@ -10,7 +16,10 @@ const DISMISS_KEY = "unitech_lang_dismiss";
 // has not yet made/seen a language choice. Dismissed forever once acted on.
 export default function LanguageSuggestBanner() {
   const { i18n } = useTranslation();
+  const { pathname } = useLocation();
   const [show, setShow] = useState(false);
+
+  const onHiddenRoute = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     const dismissed = localStorage.getItem(DISMISS_KEY) === "1";
@@ -29,8 +38,7 @@ export default function LanguageSuggestBanner() {
     setShow(false);
   };
 
-  if (!show) return null;
-
+  if (!show || onHiddenRoute) return null;
   return (
     <div
       data-testid="lang-suggest-banner"

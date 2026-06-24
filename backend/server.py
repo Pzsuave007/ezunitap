@@ -4097,6 +4097,9 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "address": payload.address or "",
         "job_type": service_label,
         "notes": client_notes,
+        # What the client submitted — surfaced in the CRM and used to pre-fill the AI quote.
+        "project_request": (payload.description or "").strip(),
+        "project_photo_path": photo_path,
         "created_at": _now_iso(),
     }
     await db.clients.insert_one(client_doc)
@@ -4124,6 +4127,22 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "created_at": _now_iso(),
     })
     return {"ok": True, "lead_id": lead["id"]}
+
+
+@api_router.get("/clients/{client_id}/project-photo")
+async def get_client_project_photo(client_id: str, user_id: str = Depends(get_current_user_id)):
+    """Return the photo the client uploaded with their estimate request as a
+    base64 data URL (owner-only). Used to pre-fill the AI photo quote."""
+    client = await db.clients.find_one({"id": client_id, "user_id": user_id}, {"_id": 0})
+    if not client or not client.get("project_photo_path"):
+        raise HTTPException(status_code=404, detail="No hay foto del proyecto")
+    try:
+        backend = storage_service.get_storage()
+        data, ct = backend.get(client["project_photo_path"])
+    except Exception:
+        raise HTTPException(status_code=500, detail="Storage error")
+    b64 = base64.b64encode(data).decode()
+    return {"data_url": f"data:{ct or 'image/jpeg'};base64,{b64}"}
 
 
 @api_router.post("/public/card/{slug}/chat")

@@ -29,6 +29,7 @@ export default function ClientDetail() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(null);
   const [scopeOpen, setScopeOpen] = useState(false);
+  const [projectPhoto, setProjectPhoto] = useState(null);
 
   const token = localStorage.getItem("sf_token");
 
@@ -44,6 +45,26 @@ export default function ClientDetail() {
     }
   };
   useEffect(() => { load(); }, [id]);
+
+  // Lazy-load the photo the client attached to their estimate request (if any).
+  useEffect(() => {
+    if (client?.project_photo_path) {
+      api.get(`/clients/${id}/project-photo`)
+        .then((r) => setProjectPhoto(r.data.data_url))
+        .catch(() => setProjectPhoto(null));
+    } else {
+      setProjectPhoto(null);
+    }
+  }, [client?.project_photo_path, id]);
+
+  const startAiQuote = () => {
+    navigate(`/quotes/nuevo?client_id=${id}&ai=1`, {
+      state: {
+        prefillDescription: client?.project_request || "",
+        projectPhotoClientId: client?.project_photo_path ? id : null,
+      },
+    });
+  };
 
   const save = async () => {
     try {
@@ -111,6 +132,29 @@ export default function ClientDetail() {
 
       <ClientFlowNotices client={client} history={history} />
 
+      {client.project_request && (
+        <Card data-testid="client-project-request" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
+          <div className="flex items-center gap-2 text-amber-800 font-heading font-bold text-sm mb-2">
+            📋 Lo que pidió el cliente
+          </div>
+          <p data-testid="client-project-text" className="text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">
+            {client.project_request}
+          </p>
+          {projectPhoto && (
+            <a href={projectPhoto} target="_blank" rel="noreferrer" className="block mt-3">
+              <img data-testid="client-project-photo" src={projectPhoto} alt="Foto del proyecto"
+                className="w-full max-h-56 object-cover rounded-xl border border-amber-200" />
+            </a>
+          )}
+          {hasBusiness && (
+            <Button data-testid="project-create-quote-btn" onClick={startAiQuote}
+              className="w-full mt-3 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+              <Sparkles className="w-4 h-4 mr-2" /> Crear cotización con esto
+            </Button>
+          )}
+        </Card>
+      )}
+
       {/* ===== Create entry point — only for the Negocio plan ===== */}
       {hasBusiness ? (
       <Drawer>
@@ -128,7 +172,7 @@ export default function ClientDetail() {
           </DrawerHeader>
           <div className="p-4 pt-1 pb-8 max-w-md mx-auto w-full space-y-2">
             <ActionRow icon={Sparkles} iconCls="bg-emerald-100 text-emerald-700" title="Cotización con AI" desc="Crea un quote en segundos" testid="drawer-action-quote-ai"
-              onClick={() => navigate(`/quotes/nuevo?client_id=${id}&ai=1`)} />
+              onClick={startAiQuote} />
             <ActionRow icon={Receipt} iconCls="bg-blue-100 text-blue-800" title="Invoice" desc="Cobra por tu trabajo" testid="drawer-action-invoice"
               onClick={() => navigate(`/invoices/nuevo?client_id=${id}`)} />
             <ActionRow icon={FileSignature} iconCls="bg-violet-100 text-violet-700" title="Contrato" desc="Acuerdo para firmar" testid="drawer-action-contract"

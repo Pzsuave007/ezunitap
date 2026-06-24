@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
@@ -26,12 +26,15 @@ export default function QuoteBuilder() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("es") ? "es" : "en";
   const [params] = useSearchParams();
+  const location = useLocation();
   const presetClient = params.get("client_id");
   const aiMode = params.get("ai") === "1";
+  const prefillDescription = location.state?.prefillDescription || "";
+  const projectPhotoClientId = location.state?.projectPhotoClientId || null;
 
   const [clients, setClients] = useState([]);
   const [clientId, setClientId] = useState(presetClient || "");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(prefillDescription);
   const [aiLoading, setAiLoading] = useState(false);
   const [photoAnalysis, setPhotoAnalysis] = useState(null);
   const [photoLoading, setPhotoLoading] = useState(false);
@@ -80,12 +83,9 @@ export default function QuoteBuilder() {
     }
   };
 
-  const analyzePhoto = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const runPhotoQuote = async (b64) => {
     setPhotoLoading(true);
     try {
-      const b64 = await fileToBase64(file);
       const { data } = await api.post("/ai/photo-quote", { image_base64: b64, extra_note_es: description, language: lang });
       setPhotoAnalysis(data);
       setDraft((d) => ({
@@ -99,7 +99,25 @@ export default function QuoteBuilder() {
       toast.error(err?.response?.data?.detail || t("quoteBuilder.photoError"));
     } finally {
       setPhotoLoading(false);
-      e.target.value = "";
+    }
+  };
+
+  const analyzePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const b64 = await fileToBase64(file);
+    await runPhotoQuote(b64);
+    e.target.value = "";
+  };
+
+  const useClientPhoto = async () => {
+    setPhotoLoading(true);
+    try {
+      const { data } = await api.get(`/clients/${projectPhotoClientId}/project-photo`);
+      await runPhotoQuote(data.data_url);
+    } catch (err) {
+      setPhotoLoading(false);
+      toast.error(err?.response?.data?.detail || t("quoteBuilder.photoError"));
     }
   };
 
@@ -165,6 +183,22 @@ export default function QuoteBuilder() {
 
         {aiMode && (
           <>
+            {prefillDescription && (
+              <div data-testid="quote-prefill-note" className="rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2 text-xs font-semibold text-amber-800 flex items-center gap-2">
+                📋 {lang === "es" ? "Cargado del pedido del cliente — revísalo y genera" : "Loaded from the client's request — review and generate"}
+              </div>
+            )}
+            {projectPhotoClientId && (
+              <Button
+                data-testid="quote-use-client-photo"
+                onClick={useClientPhoto}
+                disabled={photoLoading}
+                variant="outline"
+                className="w-full h-12 rounded-xl border-emerald-300 text-emerald-700 font-semibold"
+              >
+                {photoLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Camera className="w-5 h-5 mr-2" /> {lang === "es" ? "Usar la foto que mandó el cliente" : "Use the photo the client sent"}</>}
+              </Button>
+            )}
             <div>
               <Label>{t("quoteBuilder.describeJob")} *</Label>
               <Textarea
