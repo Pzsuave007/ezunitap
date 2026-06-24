@@ -42,7 +42,8 @@
     "viewPlans": "View plans",
     "lastDay": "last day",
     "dayOne": "{{count}} day",
-    "dayOther": "{{count}} days"
+    "dayOther": "{{count}} days",
+    "appointments": "Appointments"
   },
   "auth": {
     "login": {

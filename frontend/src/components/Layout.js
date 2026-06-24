@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, CalendarCheck, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const MORE_ITEMS = [
   { to: "/contratos", labelKey: "nav.agreements", icon: FileSignature, feature: "business" },
   { to: "/invoices", labelKey: "nav.invoicesLong", icon: Receipt, feature: "business" },
   { to: "/trabajos", labelKey: "nav.jobs", icon: Briefcase, feature: "business" },
+  { to: "/citas", labelKey: "nav.appointments", icon: CalendarCheck, feature: "card" },
   { to: "/reviews", labelKey: "nav.googleReviews", icon: Star, feature: "card" },
   { to: "/ajustes", labelKey: "nav.myProfile", icon: UserIcon },
   { to: "/precios", labelKey: "nav.mySubscription", icon: CreditCard },
@@ -52,6 +53,7 @@ const SIDEBAR = [
     ],
   },
   { to: "/reviews", labelKey: "nav.googleReviews", icon: Star, feature: "card" },
+  { to: "/citas", labelKey: "nav.appointments", icon: CalendarCheck, feature: "card" },
   { to: "/tarjeta", labelKey: "nav.digitalCard", icon: IdCard, feature: "card" },
   { to: "/marketing/inicio", labelKey: "nav.marketing", icon: Megaphone, feature: "marketing" },
 ];

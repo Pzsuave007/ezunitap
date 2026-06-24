@@ -55,6 +55,13 @@ const I18N = {
     leaveReviewTitle: "Did we do a great job?",
     leaveReviewSub: "Your review helps a lot — it only takes a few seconds.",
     leaveReviewBtn: "Leave us a review",
+    scheduleButton: "Schedule Appointment", bookTitle: "Book an appointment",
+    bookSub: "Pick a date and time that works for you.", pickDate: "Choose a day",
+    pickTime: "Choose a time", noSlots: "No times available. Try the other forms.",
+    bookConfirm: "Confirm appointment", booking: "Booking…",
+    bookSuccess: "Appointment confirmed!", bookSuccessSub: "See you then. We'll be in touch if anything changes.",
+    addToCalendar: "Add to my calendar", bookYourInfo: "Your info",
+    bookNotes: "Anything we should know? (optional)",
   },
   es: {
     callNow: "Llamar", text: "Mensaje", whatsapp: "WhatsApp", email: "Email",
@@ -87,6 +94,13 @@ const I18N = {
     leaveReviewTitle: "¿Hicimos un buen trabajo?",
     leaveReviewSub: "Tu reseña nos ayuda muchísimo — solo te toma unos segundos.",
     leaveReviewBtn: "Déjanos una reseña",
+    scheduleButton: "Agendar Cita", bookTitle: "Agenda una cita",
+    bookSub: "Elige el día y la hora que te quede mejor.", pickDate: "Elige un día",
+    pickTime: "Elige una hora", noSlots: "No hay horarios disponibles. Usa los otros formularios.",
+    bookConfirm: "Confirmar cita", booking: "Agendando…",
+    bookSuccess: "¡Cita confirmada!", bookSuccessSub: "Ahí nos vemos. Te avisamos si algo cambia.",
+    addToCalendar: "Agregar a mi calendario", bookYourInfo: "Tus datos",
+    bookNotes: "¿Algo que debamos saber? (opcional)",
   },
 };
 
@@ -136,6 +150,7 @@ export default function SmartCard() {
   const [chatOpen, setChatOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const trackedVisit = useRef(false);
 
@@ -347,20 +362,31 @@ export default function SmartCard() {
 
         {/* Primary CTA — Let's Connect (low friction) */}
         <div className="px-5 pt-5 reveal space-y-2.5" style={{ animationDelay: "250ms" }}>
-          <button data-testid="card-connect" onClick={() => setConnectOpen(true)} className="primary-cta w-full">
-            <span className="cta-shimmer" />
-            <span className="relative z-10 flex items-center justify-between w-full">
-              <span className="flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5" />
-                <span className="font-heading font-bold text-base tracking-tight">{t.connectButton}</span>
+          {card.lets_connect_enabled !== false && (
+            <button data-testid="card-connect" onClick={() => setConnectOpen(true)} className="primary-cta w-full">
+              <span className="cta-shimmer" />
+              <span className="relative z-10 flex items-center justify-between w-full">
+                <span className="flex items-center gap-2.5">
+                  <Sparkles className="w-5 h-5" />
+                  <span className="font-heading font-bold text-base tracking-tight">{t.connectButton}</span>
+                </span>
+                <ChevronRight className="w-5 h-5 opacity-80" />
               </span>
-              <ChevronRight className="w-5 h-5 opacity-80" />
-            </span>
-          </button>
-          <button data-testid="card-request-quote" onClick={() => setFormOpen(true)}
-                  className="w-full rounded-2xl py-3 text-sm font-semibold text-white/70 border border-white/12 bg-white/[0.03] hover:bg-white/[0.06] hover:text-white/90 transition tap flex items-center justify-center gap-2">
-            {t.orEstimate}
-          </button>
+            </button>
+          )}
+          {card.appt_enabled && (
+            <button data-testid="card-schedule" onClick={() => setBookOpen(true)}
+                    className="w-full rounded-2xl py-3.5 text-sm font-bold text-white tap flex items-center justify-center gap-2"
+                    style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+              <Calendar className="w-5 h-5" /> {t.scheduleButton}
+            </button>
+          )}
+          {card.request_estimate_enabled !== false && (
+            <button data-testid="card-request-quote" onClick={() => setFormOpen(true)}
+                    className="w-full rounded-2xl py-3 text-sm font-semibold text-white/70 border border-white/12 bg-white/[0.03] hover:bg-white/[0.06] hover:text-white/90 transition tap flex items-center justify-center gap-2">
+              {t.orEstimate}
+            </button>
+          )}
         </div>
 
         {/* About me */}
@@ -556,6 +582,9 @@ export default function SmartCard() {
       )}
       {connectOpen && (
         <ConnectForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setConnectOpen(false)} />
+      )}
+      {bookOpen && (
+        <BookingForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setBookOpen(false)} />
       )}
       {qrOpen && (
         <QrModal url={`${publicUrl}?src=qr`} brand={brand} accent={accent} businessName={business.name} onClose={() => setQrOpen(false)} />
@@ -1104,3 +1133,166 @@ const DarkField = ({ label, children }) => (
     {children}
   </div>
 );
+
+const WD_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const WD_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MON_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const MON_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function fmt12h(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const ap = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ap}`;
+}
+
+function downloadIcs(appt, businessName, lang) {
+  const dt = (d, t) => `${d.replace(/-/g, "")}T${t.replace(":", "")}00`;
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UniTech//Appointment//EN", "BEGIN:VEVENT",
+    `UID:${appt.id}@unitech`, `DTSTART:${dt(appt.date, appt.start_time)}`, `DTEND:${dt(appt.date, appt.end_time)}`,
+    `SUMMARY:${(lang === "es" ? "Cita con " : "Appointment with ") + (businessName || "UniTech")}`,
+    appt.notes ? `DESCRIPTION:${appt.notes.replace(/\n/g, " ")}` : "", "END:VEVENT", "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "appointment.ics";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function BookingForm({ slug, brand, accent, card, lang, t, onClose }) {
+  const WD = lang === "es" ? WD_ES : WD_EN;
+  const MON = lang === "es" ? MON_ES : MON_EN;
+  const [avail, setAvail] = useState(null);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "" });
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    axios.get(`${API}/public/card/${slug}/availability`)
+      .then((r) => setAvail(r.data))
+      .catch(() => setAvail({ enabled: false, dates: [] }));
+  }, [slug]);
+
+  const slotsForDate = (avail?.dates || []).find((d) => d.date === date)?.slots || [];
+  const dateLabel = (iso) => {
+    const d = new Date(iso + "T12:00:00");
+    return `${WD[(d.getDay() + 6) % 7]} ${d.getDate()} ${MON[d.getMonth()]}`;
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.name.trim() || (!form.phone.trim() && !form.email.trim())) {
+      setError(lang === "es" ? "Pon tu nombre y teléfono o email." : "Enter your name and phone or email.");
+      return;
+    }
+    if (!date || !time) { setError(lang === "es" ? "Elige día y hora." : "Pick a day and time."); return; }
+    setLoading(true);
+    try {
+      const r = await axios.post(`${API}/public/card/${slug}/appointment`, { ...form, date, start_time: time });
+      setDone({ ...r.data.appointment, business_name: r.data.business_name });
+    } catch (err) {
+      setError(err?.response?.data?.detail || t.error);
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/70 backdrop-blur-md" onClick={onClose}>
+      <div className="w-full lg:max-w-md rounded-t-3xl lg:rounded-3xl max-h-[92vh] overflow-y-auto text-white"
+           style={{ background: "linear-gradient(180deg, #0c1424 0%, #050810 100%)", border: "1px solid rgba(255,255,255,.08)", boxShadow: `0 30px 80px -10px ${brand}80` }}
+           onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 px-5 py-4 border-b border-white/8 flex items-center gap-3 bg-black/40 backdrop-blur-xl">
+          <div className="flex-1 min-w-0">
+            <div className="font-heading font-bold tracking-tight">{t.bookTitle}</div>
+            <div className="text-[11px] text-white/55 leading-snug mt-0.5">{t.bookSub}</div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center tap" data-testid="booking-close"><X className="w-4 h-4" /></button>
+        </div>
+
+        {done ? (
+          <div className="p-8 text-center" data-testid="booking-success">
+            <div className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+              <BadgeCheck className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="font-heading text-2xl font-bold tracking-tight mb-1">{t.bookSuccess}</h3>
+            <p className="text-sm text-white/70 font-semibold">{dateLabel(done.date)} · {fmt12h(done.start_time)}</p>
+            <p className="text-sm text-white/55 mt-1">{t.bookSuccessSub}</p>
+            <button data-testid="booking-add-calendar" onClick={() => downloadIcs(done, done.business_name, lang)}
+                    className="mt-6 w-full rounded-xl px-6 py-3 text-white font-bold tap flex items-center justify-center gap-2" style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+              <Calendar className="w-4 h-4" /> {t.addToCalendar}
+            </button>
+            <button onClick={onClose} className="mt-2 w-full rounded-xl px-6 py-3 text-white/70 font-semibold border border-white/12 tap">OK</button>
+          </div>
+        ) : !avail ? (
+          <div className="p-12 text-center text-white/50 text-sm">…</div>
+        ) : (!avail.enabled || avail.dates.length === 0) ? (
+          <div className="p-10 text-center text-white/60 text-sm">{t.noSlots}</div>
+        ) : (
+          <form onSubmit={submit} className="p-5 space-y-4">
+            <div>
+              <div className="text-[11px] font-semibold text-white/55 mb-2 uppercase tracking-wider">{t.pickDate}</div>
+              <div className="flex gap-2 overflow-x-auto pb-1" data-testid="booking-dates">
+                {avail.dates.map((d) => (
+                  <button key={d.date} type="button" data-testid={`booking-date-${d.date}`}
+                          onClick={() => { setDate(d.date); setTime(""); }}
+                          className={`flex-none px-3.5 py-2 rounded-xl text-xs font-bold tap ${date === d.date ? "text-white" : "bg-white/5 text-white/65 border border-white/10"}`}
+                          style={date === d.date ? { background: `linear-gradient(135deg, ${brand}, ${accent})` } : {}}>
+                    {dateLabel(d.date)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {date && (
+              <div>
+                <div className="text-[11px] font-semibold text-white/55 mb-2 uppercase tracking-wider">{t.pickTime}</div>
+                <div className="grid grid-cols-3 gap-2" data-testid="booking-times">
+                  {slotsForDate.map((s) => (
+                    <button key={s} type="button" data-testid={`booking-time-${s}`} onClick={() => setTime(s)}
+                            className={`py-2 rounded-xl text-xs font-bold tap ${time === s ? "text-white" : "bg-white/5 text-white/65 border border-white/10"}`}
+                            style={time === s ? { background: `linear-gradient(135deg, ${brand}, ${accent})` } : {}}>
+                      {fmt12h(s)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {time && (
+              <div className="space-y-3 pt-1">
+                <div className="text-[11px] font-semibold text-white/55 uppercase tracking-wider">{t.bookYourInfo}</div>
+                <DarkField label={t.yourName + " *"}><input data-testid="booking-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="dark-input" /></DarkField>
+                <div className="grid grid-cols-2 gap-2">
+                  <DarkField label={t.phone}><input data-testid="booking-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="dark-input" /></DarkField>
+                  <DarkField label={t.emailLabel}><input data-testid="booking-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="dark-input" /></DarkField>
+                </div>
+                <DarkField label={t.bookNotes}><textarea data-testid="booking-notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="dark-input" /></DarkField>
+              </div>
+            )}
+
+            {error && <div className="text-sm text-red-300 bg-red-500/10 rounded-xl px-3 py-2">{error}</div>}
+
+            <button data-testid="booking-submit" type="submit" disabled={loading || !time}
+                    className="w-full rounded-xl px-6 py-3.5 text-white font-bold tap disabled:opacity-40 flex items-center justify-center gap-2"
+                    style={{ background: `linear-gradient(135deg, ${brand}, ${accent})` }}>
+              {loading ? t.booking : t.bookConfirm}
+            </button>
+            <style>{`
+              .dark-input { width: 100%; padding: 11px 14px; border-radius: 12px; background: rgba(255,255,255,.04);
+                border: 1px solid rgba(255,255,255,.1); color: white; font-size: 14px; outline: none; }
+              .dark-input:focus { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
+              textarea.dark-input { height: auto; }
+            `}</style>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+

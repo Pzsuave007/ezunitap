@@ -322,6 +322,15 @@ class CardSettingsIn(BaseModel):
     hero_layout: Optional[str] = "photo"  # "photo" | "logo_circle"
     # Private AI knowledge base (NOT shown to customers, only fed to the chat AI)
     ai_context: Optional[str] = ""
+    # --- Public card action buttons (toggles) ---
+    lets_connect_enabled: Optional[bool] = None     # default ON in UI
+    request_estimate_enabled: Optional[bool] = None  # default ON in UI
+    appt_enabled: Optional[bool] = None              # "Schedule Appointment" — default OFF
+    # --- Appointment availability config ---
+    appt_days: Optional[List[int]] = None            # weekdays: 0=Mon .. 6=Sun
+    appt_start: Optional[str] = None                 # "09:00" (local)
+    appt_end: Optional[str] = None                   # "17:00" (local)
+    appt_duration: Optional[int] = None              # minutes per appointment
 
 
 class CardLeadIn(BaseModel):
@@ -4190,6 +4199,138 @@ async def delete_client_note(client_id: str, note_id: str, user_id: str = Depend
     res = await db.client_notes.delete_one({"id": note_id, "client_id": client_id, "user_id": user_id})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Nota no encontrada")
+    return {"ok": True}
+
+
+# ============================ APPOINTMENTS ============================
+def _gen_slots(start_hhmm: str, end_hhmm: str, duration_min: int):
+    try:
+        sh, sm = map(int, (start_hhmm or "09:00").split(":"))
+        eh, em = map(int, (end_hhmm or "17:00").split(":"))
+    except Exception:
+        return []
+    start, end = sh * 60 + sm, eh * 60 + em
+    dur = max(15, int(duration_min or 60))
+    slots, t = [], start
+    while t + dur <= end:
+        slots.append(f"{t // 60:02d}:{t % 60:02d}")
+        t += dur
+    return slots
+
+
+def _add_minutes(hhmm: str, minutes: int) -> str:
+    h, m = map(int, hhmm.split(":"))
+    total = h * 60 + m + minutes
+    return f"{(total // 60) % 24:02d}:{total % 60:02d}"
+
+
+@api_router.get("/public/card/{slug}/availability")
+async def card_availability(slug: str, days: int = 21):
+    card, user = await _public_card_by_slug(slug)
+    if not card.get("appt_enabled"):
+        return {"enabled": False, "dates": [], "duration": int(card.get("appt_duration") or 60)}
+    appt_days = set(card.get("appt_days") or [])
+    dur = int(card.get("appt_duration") or 60)
+    base_slots = _gen_slots(card.get("appt_start"), card.get("appt_end"), dur)
+    if not appt_days or not base_slots:
+        return {"enabled": False, "dates": [], "duration": dur}
+    from datetime import date as _date, timedelta as _td
+    today = _date.today()
+    start_d = today + _td(days=1)          # bookable from tomorrow (avoids tz/past-slot issues)
+    end_d = today + _td(days=max(1, min(days, 60)))
+    booked = await db.appointments.find(
+        {"user_id": user["id"], "status": {"$ne": "cancelled"},
+         "date": {"$gte": start_d.isoformat(), "$lte": end_d.isoformat()}},
+        {"_id": 0, "date": 1, "start_time": 1},
+    ).to_list(3000)
+    booked_set = {(b["date"], b["start_time"]) for b in booked}
+    out = []
+    d = start_d
+    while d <= end_d:
+        if d.weekday() in appt_days:
+            free = [s for s in base_slots if (d.isoformat(), s) not in booked_set]
+            if free:
+                out.append({"date": d.isoformat(), "weekday": d.weekday(), "slots": free})
+        d += _td(days=1)
+    return {"enabled": True, "duration": dur, "dates": out}
+
+
+class AppointmentIn(BaseModel):
+    name: str
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    date: str          # YYYY-MM-DD
+    start_time: str    # HH:MM
+    notes: Optional[str] = ""
+
+
+@api_router.post("/public/card/{slug}/appointment")
+async def book_appointment(slug: str, payload: AppointmentIn):
+    card, user = await _public_card_by_slug(slug)
+    if not card.get("appt_enabled"):
+        raise HTTPException(status_code=400, detail="Este negocio no acepta citas en línea")
+    if not (payload.name or "").strip():
+        raise HTTPException(status_code=400, detail="Falta tu nombre")
+    from datetime import date as _date
+    try:
+        d = _date.fromisoformat(payload.date)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Fecha inválida")
+    if d <= _date.today():
+        raise HTTPException(status_code=400, detail="Elige una fecha futura")
+    if d.weekday() not in set(card.get("appt_days") or []):
+        raise HTTPException(status_code=400, detail="Ese día no está disponible")
+    dur = int(card.get("appt_duration") or 60)
+    if payload.start_time not in _gen_slots(card.get("appt_start"), card.get("appt_end"), dur):
+        raise HTTPException(status_code=400, detail="Ese horario no está disponible")
+    exists = await db.appointments.find_one(
+        {"user_id": user["id"], "date": payload.date, "start_time": payload.start_time, "status": {"$ne": "cancelled"}}
+    )
+    if exists:
+        raise HTTPException(status_code=409, detail="Ese horario ya fue reservado, elige otro")
+    end_time = _add_minutes(payload.start_time, dur)
+    now = _now_iso()
+    client_doc = {
+        "id": _new_id(), "user_id": user["id"], "name": payload.name.strip(),
+        "phone": payload.phone or "", "email": payload.email or "", "address": "",
+        "job_type": "Cita", "notes": f"[Cita agendada desde la tarjeta]\n{payload.date} {payload.start_time}\n{payload.notes or ''}".strip(),
+        "lead_type": "appointment", "interests": [], "preferred_contact": "phone",
+        "lead_source": "smart_card", "project_request": (payload.notes or "").strip(),
+        "project_photo_path": None, "created_at": now,
+    }
+    await db.clients.insert_one(client_doc)
+    job_doc = {
+        "id": _new_id(), "user_id": user["id"], "client_id": client_doc["id"],
+        "title": f"Cita: {payload.name.strip()}", "scheduled_date": payload.date, "end_date": None,
+        "start_time": payload.start_time, "end_time": end_time, "all_day": False,
+        "status": "scheduled", "recurrence": "none", "notes": payload.notes or "",
+        "source": "appointment", "created_at": now, "updated_at": now,
+    }
+    await db.jobs.insert_one(job_doc)
+    appt = {
+        "id": _new_id(), "user_id": user["id"], "card_id": card["id"], "client_id": client_doc["id"],
+        "job_id": job_doc["id"], "name": payload.name.strip(), "phone": payload.phone or "",
+        "email": payload.email or "", "date": payload.date, "start_time": payload.start_time,
+        "end_time": end_time, "notes": payload.notes or "", "status": "confirmed",
+        "viewed": False, "created_at": now,
+    }
+    await db.appointments.insert_one(appt)
+    appt.pop("_id", None)
+    return {"ok": True, "appointment": appt, "business_name": user.get("business_name", "")}
+
+
+@api_router.get("/appointments")
+async def list_appointments(user_id: str = Depends(get_current_user_id)):
+    items = await db.appointments.find({"user_id": user_id}, {"_id": 0}).sort(
+        [("date", 1), ("start_time", 1)]
+    ).to_list(1000)
+    new_count = sum(1 for a in items if not a.get("viewed"))
+    return {"appointments": items, "new_count": new_count}
+
+
+@api_router.post("/appointments/{appt_id}/viewed")
+async def mark_appointment_viewed(appt_id: str, user_id: str = Depends(get_current_user_id)):
+    await db.appointments.update_one({"id": appt_id, "user_id": user_id}, {"$set": {"viewed": True}})
     return {"ok": True}
 
 

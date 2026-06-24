@@ -586,6 +586,78 @@ export default function CardAdmin() {
               </AccordionContent>
             </AccordionItem>
 
+            {/* ===== Botones de la tarjeta y Citas ===== */}
+            <AccordionItem value="step-appt" data-testid="step-appt" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
+              <AccordionTrigger className="px-4 hover:no-underline">
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-none font-bold">📅</div>
+                  <div>
+                    <div className="font-heading font-bold text-sm">Botones y Citas</div>
+                    <div className="text-xs text-slate-500">Activa/desactiva botones y agenda online</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 pt-1 space-y-3">
+                {[
+                  { k: "lets_connect_enabled", label: "Let's connect", desc: "Botón de contacto rápido", def: true },
+                  { k: "request_estimate_enabled", label: "Request a free estimate", desc: "Formulario de cotización", def: true },
+                  { k: "appt_enabled", label: "Schedule Appointment", desc: "Reserva de citas online", def: false },
+                ].map((row) => (
+                  <div key={row.k} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm">{row.label}</div>
+                      <div className="text-xs text-slate-500">{row.desc}</div>
+                    </div>
+                    <Switch data-testid={`toggle-${row.k}`} checked={card[row.k] ?? row.def} onCheckedChange={(v) => update(row.k, v)} />
+                  </div>
+                ))}
+
+                {(card.appt_enabled ?? false) && (
+                  <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-3 space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Tu disponibilidad</div>
+                    <div>
+                      <div className="text-xs font-semibold text-slate-600 mb-1.5">Días disponibles</div>
+                      <div className="flex flex-wrap gap-1.5" data-testid="appt-days">
+                        {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d, i) => {
+                          const days = card.appt_days || [];
+                          const on = days.includes(i);
+                          return (
+                            <button key={i} type="button" data-testid={`appt-day-${i}`}
+                              onClick={() => update("appt_days", on ? days.filter((x) => x !== i) : [...days, i].sort())}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold ${on ? "bg-emerald-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>
+                              {d}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-600 mb-1">Desde</div>
+                        <Input type="time" data-testid="appt-start" value={card.appt_start || "09:00"} onChange={(e) => update("appt_start", e.target.value)} className="h-11 rounded-xl" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-600 mb-1">Hasta</div>
+                        <Input type="time" data-testid="appt-end" value={card.appt_end || "17:00"} onChange={(e) => update("appt_end", e.target.value)} className="h-11 rounded-xl" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-slate-600 mb-1">Duración de cita</div>
+                      <div className="flex gap-1.5" data-testid="appt-duration">
+                        {[30, 60, 90, 120].map((m) => (
+                          <button key={m} type="button" data-testid={`appt-dur-${m}`} onClick={() => update("appt_duration", m)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold ${(card.appt_duration || 60) === m ? "bg-slate-900 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>
+                            {m} min
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400">Las citas se agendan a partir de mañana. Cada reserva aparece en tu Agenda y crea el cliente.</p>
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
             {/* ===== Paso 5: Asistente IA (avanzado) ===== */}
             <AccordionItem value="step5" data-testid="step-ia" className="border border-slate-200 rounded-2xl bg-white overflow-hidden">
               <AccordionTrigger className="px-4 hover:no-underline">
