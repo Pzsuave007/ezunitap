@@ -113,6 +113,14 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **Tarjeta "📇 Contacto desde tu tarjeta" movida** del tope de la página → dentro de la pestaña **Info** (extraída a `const leadCard`). Arriba queda solo info del cliente + botón Crear.
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Agendamiento de citas online en la tarjeta (Schedule Appointment) [LISTO, testing iter_36 100% backend + frontend críticos; pendiente deploy]
+- **3 toggles en CardAdmin** (acordeón "Botones y Citas"): Let's connect · Request a free estimate · Schedule Appointment (defaults: connect/estimate ON, appt OFF). Campos nuevos en `CardSettingsIn`: `lets_connect_enabled`, `request_estimate_enabled`, `appt_enabled`, `appt_days[]`, `appt_start`, `appt_end`, `appt_duration`.
+- **Disponibilidad** configurable (días, horario, duración 30/60/90/120). Backend genera slots libres.
+- **Endpoints:** `GET /public/card/{slug}/availability` (slots desde mañana, -ya reservados), `POST /public/card/{slug}/appointment` (instant-confirm, anti-doble-reserva 409, crea Cliente + Job en Calendario), `GET /appointments` (+new_count), `POST /appointments/{id}/viewed`. Colección `appointments`.
+- **SmartCard:** botón "Schedule Appointment" + `BookingForm` (fecha→hora→datos→confirmación con "Agregar a mi calendario" .ics). Bilingüe. Botones connect/estimate respetan toggles.
+- **Página Citas del dueño** (`/citas`, nav feature card): lista próximas/pasadas, badge NUEVO (rojo), popup con Llamar/Mensaje + Ver cliente. Marca visto al abrir.
+- Times = hora local (sin TZ). Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
