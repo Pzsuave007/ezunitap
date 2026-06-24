@@ -40,7 +40,7 @@ export default function Messages() {
 
   const loadHistory = async () => {
     const { data } = await api.get("/messages");
-    setHistory(data.slice(0, 10));
+    setHistory(data);
   };
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
@@ -50,6 +50,12 @@ export default function Messages() {
   const selectedClient = clients.find((c) => c.id === clientId) || null;
   const phone = cleanPhone(selectedClient?.phone);
   const email = selectedClient?.email || "";
+
+  // When a client is selected, only show that client's message history.
+  const displayedHistory = (clientId
+    ? history.filter((m) => m.client_id === clientId)
+    : history
+  ).slice(0, 10);
 
   const generate = async () => {
     setOutput("");
@@ -240,11 +246,15 @@ export default function Messages() {
         </DrawerContent>
       </Drawer>
 
-      {history.length > 0 && (
+      {displayedHistory.length > 0 && (
         <div>
-          <h2 className="font-heading text-xl font-bold mb-3">{t("messages.history")}</h2>
+          <h2 className="font-heading text-xl font-bold mb-3">
+            {selectedClient
+              ? `${t("messages.history")} · ${selectedClient.name}`
+              : t("messages.history")}
+          </h2>
           <div className="space-y-2">
-            {history.map((m) => (
+            {displayedHistory.map((m) => (
               <button
                 key={m.id}
                 onClick={() => openHistory(m)}
