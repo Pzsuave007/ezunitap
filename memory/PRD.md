@@ -88,6 +88,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **NUEVO botón promo** en tarjeta pública: "Are you a contractor? See how I do it →" (siempre en inglés) → `/demo-all?ref=<slug>`. Control 100% del super-admin en Admin→Cuentas→Tarjetas (Auto/ON/OFF). Default (`payments_service.demo_promo_visible`): cuenta GRATIS/comp/trial = visible, pagador real de Stripe = oculto. Override por cuenta vía `POST /admin/users/{id}/demo-promo`. El `ref` se guarda en `demo_leads` (semilla para referidos). Campo `demo_promo` (None/True/False) en user.
 - Build prod recompilado + `git add -f frontend/build`. (Cambios de chatbot son backend → ya activos en preview sin re-deploy.)
 
+## ✅ Jun 2026 — Quote desde el pedido del cliente + fix banner en tarjetas [LISTO, testing iter_33 100%; pendiente deploy]
+- **BUG FIX banner idioma:** `LanguageSuggestBanner` ahora usa `useLocation` y NO se muestra en rutas cara-al-cliente (`HIDDEN_PREFIXES=['/c/','/r/','/p/']`). Sigue saliendo solo en la web/app (landing, /demo, /register, app).
+- **NUEVO puente Lead→Quote:** al enviar "Request a free estimate", el backend (`public_card_lead`) ahora guarda en el cliente `project_request` (descripción) y `project_photo_path` (foto). Nuevo endpoint `GET /clients/{id}/project-photo` (auth, owner) devuelve la foto como data URL.
+- **ClientDetail:** tarjeta destacada "📋 Lo que pidió el cliente" arriba (texto + foto si hay) con botón "Crear cotización con esto" → navega al QuoteBuilder con router state.
+- **QuoteBuilder:** precarga la descripción del cliente (`location.state.prefillDescription`), muestra nota "Cargado del pedido del cliente", y si hay foto, botón "Usar la foto que mandó el cliente" → corre el AI photo-quote. Probado E2E (iter_33).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
