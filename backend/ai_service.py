@@ -17,8 +17,51 @@ from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
 logger = logging.getLogger(__name__)
 
 LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
+# When self-hosting outside the Emergent platform, the Emergent Universal Key is
+# blocked. If the owner provides their OWN OpenAI key, we use it directly via the
+# official OpenAI SDK for all text generation (chat, quotes, messages, etc.).
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 MODEL_PROVIDER = "openai"
-MODEL_NAME = "gpt-5.2"
+MODEL_NAME = os.environ.get("OPENAI_MODEL", "gpt-5.2")
+
+
+class _OpenAIChat:
+    """Drop-in replacement for emergentintegrations LlmChat that talks to OpenAI
+    directly using the owner's own API key. Keeps an internal message history so
+    multi-turn flows (replaying prior turns) work the same way."""
+
+    def __init__(self, system_message: str):
+        from openai import AsyncOpenAI
+        self._client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+        self._model = MODEL_NAME
+        self._messages = [{"role": "system", "content": system_message}]
+
+    def with_model(self, provider, model):  # noqa: ARG002 - kept for interface parity
+        return self
+
+    def with_params(self, **_kwargs):
+        return self
+
+    async def send_message(self, message) -> str:
+        content = []
+        if getattr(message, "text", None):
+            content.append({"type": "text", "text": message.text})
+        for f in getattr(message, "file_contents", None) or []:
+            b64 = getattr(f, "file_content_base64", None)
+            if b64:
+                try:
+                    mime = f.get_mime_type()
+                except Exception:
+                    mime = "image/png"
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime};base64,{b64}"},
+                })
+        self._messages.append({"role": "user", "content": content or (message.text or "")})
+        resp = await self._client.chat.completions.create(model=self._model, messages=self._messages)
+        reply = (resp.choices[0].message.content or "").strip()
+        self._messages.append({"role": "assistant", "content": reply})
+        return reply
 
 # Gemini "Nano Banana" image-editing model (image-to-image enhancement).
 IMAGE_MODEL = "gemini-3.1-flash-image-preview"
@@ -77,6 +120,8 @@ async def enhance_image(image_bytes: bytes, kind: str = "profile") -> tuple[byte
 
 
 def _new_chat(system_message: str) -> LlmChat:
+    if OPENAI_API_KEY:
+        return _OpenAIChat(system_message)
     return LlmChat(
         api_key=LLM_KEY,
         session_id=str(uuid.uuid4()),
