@@ -142,6 +142,12 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Verificado: backend pytest 5/5 + testing_agent iter_39 frontend 100% (móvil).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Trabajos completados archivados en la ficha del cliente [LISTO, testing iter_40 100%; pendiente deploy]
+- **Tablero Trabajos solo activos:** `Jobs.js` filtra `status !== "completed"` (`activeJobs`) para grupos, contador y empty. El Select de estado sigue permitiendo marcar "Completado" → al recargar desaparece del tablero.
+- **Pestaña "Trabajos" en ClientDetail:** nuevo tab (`history-tab-trabajos`, gated business) que lista `history.jobs` (completados primero), cards `client-job-<id>` con badge de estado, fecha y notas. Así los trabajos terminados quedan archivados en la cuenta del cliente.
+- Verificado: testing_agent iter_40 9/9 + regresión TasksPanel/Agenda OK.
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
