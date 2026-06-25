@@ -29,6 +29,7 @@ const MORE_ITEMS = [
   { to: "/invoices", labelKey: "nav.invoicesLong", icon: Receipt, feature: "business" },
   { to: "/trabajos", labelKey: "nav.jobs", icon: Briefcase, feature: "business" },
   { to: "/citas", labelKey: "nav.appointments", icon: CalendarCheck, feature: "card" },
+  { to: "/sitio-web", labelKey: "nav.embed", icon: Globe, feature: "card" },
   { to: "/reviews", labelKey: "nav.googleReviews", icon: Star, feature: "card" },
   { to: "/ajustes", labelKey: "nav.myProfile", icon: UserIcon },
   { to: "/precios", labelKey: "nav.mySubscription", icon: CreditCard },
