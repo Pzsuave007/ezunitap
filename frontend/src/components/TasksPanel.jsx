@@ -186,8 +186,17 @@ export default function TasksPanel({ className = "" }) {
         </div>
       )}
 
+      {/* Pending manual tasks — shown up top, next to the agenda */}
+      {pending.length > 0 && (
+        <div className="space-y-1.5 mb-3">
+          {pending.map((task) => (
+            <TaskRow key={task.id} task={task} onToggle={toggle} onRemove={remove} dateMeta={dateMeta} clientName={clientName} />
+          ))}
+        </div>
+      )}
+
       {/* Quick add */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-2 mb-1">
         <div className="flex gap-2">
           <Input
             data-testid="task-title-input"
@@ -232,15 +241,9 @@ export default function TasksPanel({ className = "" }) {
         </div>
       </div>
 
-      {/* Pending list */}
-      {pending.length === 0 ? (
-        <p data-testid="tasks-empty" className="text-sm text-slate-400 text-center py-4">{t("tasks.empty")}</p>
-      ) : (
-        <div className="space-y-1.5">
-          {pending.map((task) => (
-            <TaskRow key={task.id} task={task} onToggle={toggle} onRemove={remove} dateMeta={dateMeta} clientName={clientName} />
-          ))}
-        </div>
+      {/* Empty state — only when there are no manual tasks and no agenda */}
+      {pending.length === 0 && agenda.length === 0 && (
+        <p data-testid="tasks-empty" className="text-sm text-slate-400 text-center py-3">{t("tasks.empty")}</p>
       )}
 
       {/* Completed (collapsible) */}
