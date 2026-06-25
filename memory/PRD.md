@@ -148,6 +148,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Verificado: testing_agent iter_40 9/9 + regresión TasksPanel/Agenda OK.
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Blindaje global anti-desborde de botones en móvil + header Tarjeta + Pagos pendientes arriba + hero Marketing compacto [LISTO, testing iter_42 100%; pendiente deploy]
+- **Botones (global):** `ui/button.jsx` — se quitó `whitespace-nowrap` y se agregó `min-w-0 [overflow-wrap:anywhere] text-center leading-tight`. Ningún botón se desborda lateralmente en móvil (texto se ajusta dentro de la caja, íconos fijos). Audit automático: 0 desbordes H/V en 10 páginas, bodyW=390. testing_agent iter_42 100% (ES/EN, flujos OK).
+- **Header Tarjeta (CardAdmin):** título "Tarjeta Inteligente" en una sola línea, subtítulo a ancho completo, botón "¿Cómo funciona?" movido debajo (pastilla). Sin hueco.
+- **Dashboard:** bloque "Pagos pendientes" subido al tope (lo primero que ves), compacto, con "Ver invoices" a la derecha del monto.
+- **Marketing Studio:** hero de bienvenida compacto (banner horizontal ~111px vs ~220px).
+- Builds prod recompilados + `git add -f frontend/build` en cada cambio.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
