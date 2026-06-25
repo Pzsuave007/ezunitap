@@ -109,9 +109,16 @@ export default function TasksPanel({ className = "" }) {
   // barber/contractor always sees today's bookings, and we exclude
   // source==="appointment" jobs to avoid showing the same booking twice.
   const today = todayISO();
+  const tomorrow = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
+  const dayKind = (d) => (d < today ? "overdue" : d === today ? "today" : "tomorrow");
 
   const apptItems = appointments
-    .filter((a) => a.status !== "cancelled" && a.date === today)
+    .filter((a) => a.status !== "cancelled" && (a.date === today || a.date === tomorrow))
     .map((a) => ({
       id: `appt-${a.id}`,
       kind: "appointment",
@@ -120,11 +127,11 @@ export default function TasksPanel({ className = "" }) {
       start_time: a.start_time,
       end_time: a.end_time,
       all_day: false,
-      overdue: false,
+      day: dayKind(a.date),
     }));
 
   const jobItems = jobs
-    .filter((j) => j.status !== "completed" && j.source !== "appointment" && j.scheduled_date && j.scheduled_date <= today)
+    .filter((j) => j.status !== "completed" && j.source !== "appointment" && j.scheduled_date && j.scheduled_date <= tomorrow)
     .map((j) => ({
       id: `job-${j.id}`,
       kind: "job",
@@ -133,13 +140,19 @@ export default function TasksPanel({ className = "" }) {
       start_time: j.start_time,
       end_time: j.end_time,
       all_day: j.all_day,
-      overdue: j.scheduled_date < today,
+      day: dayKind(j.scheduled_date),
     }));
 
   const agenda = [...apptItems, ...jobItems].sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return (a.start_time || "") < (b.start_time || "") ? -1 : 1;
   });
+
+  const dayBadge = (day) => {
+    if (day === "overdue") return { cls: "bg-red-50 text-red-700 border-red-200", label: t("tasks.overdue") };
+    if (day === "tomorrow") return { cls: "bg-blue-50 text-blue-700 border-blue-200", label: t("tasks.tomorrow") };
+    return { cls: "bg-emerald-50 text-emerald-700 border-emerald-200", label: t("tasks.today") };
+  };
 
   const openAgendaItem = (item) => {
     navigate(item.kind === "appointment" ? "/citas" : "/trabajos");
@@ -181,9 +194,9 @@ export default function TasksPanel({ className = "" }) {
         <div className="mb-3 space-y-1.5" data-testid="tasks-agenda">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">{t("tasks.todayAgenda")}</div>
           {agenda.map((item) => {
-            const overdue = item.overdue;
             const isAppt = item.kind === "appointment";
             const Icon = isAppt ? CalendarDays : Briefcase;
+            const badge = dayBadge(item.day);
             return (
               <button
                 key={item.id}
@@ -197,8 +210,8 @@ export default function TasksPanel({ className = "" }) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-slate-800 truncate">{item.title}</span>
                   <span className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${overdue ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
-                      <Clock className="w-3 h-3" /> {overdue ? t("tasks.overdue") : t("tasks.today")} · {timeLabel(item)}
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                      <Clock className="w-3 h-3" /> {badge.label} · {timeLabel(item)}
                     </span>
                   </span>
                 </span>

@@ -160,6 +160,9 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Verificado: inyectando una cita de hoy en BD → aparece "Cita: ... · Hoy · HH:MM" en la agenda (4 citas mostradas), navega a /citas.
 - Build prod recompilado + git add.
 
+## ✅ Jun 2026 — Agenda muestra hoy + mañana [LISTO; self-test + screenshot]
+- "Tu agenda" (antes "Agenda de hoy") ahora incluye citas y trabajos agendados de **hoy** (badge verde "Hoy") y **mañana** (badge azul "Mañana"), para prepararse con anticipación. Atrasados en rojo. Citas leídas de `/appointments`, trabajos de `/jobs` (excluye source=appointment). Verificado con citas de prueba hoy/mañana.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
