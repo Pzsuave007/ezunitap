@@ -211,16 +211,14 @@ export default function CardAdmin() {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-1">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2 min-w-0">
-            <IdCard className="w-6 h-6 text-emerald-600 flex-none" /> <span className="min-w-0">{t("cardAdmin.title")}</span>
-          </h1>
-          <div className="flex-none">
-            <TourButton tourKey="card" />
-          </div>
-        </div>
+      <div className="space-y-2">
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2 whitespace-nowrap">
+          <IdCard className="w-6 h-6 text-emerald-600 flex-none" /> {t("cardAdmin.title")}
+        </h1>
         <p className="text-slate-500">{t("cardAdmin.subtitle")}</p>
+        <div>
+          <TourButton tourKey="card" />
+        </div>
       </div>
 
       {/* Multi-card selector */}
