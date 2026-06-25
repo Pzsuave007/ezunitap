@@ -1,0 +1,53 @@
+{
+  "summary": "End-to-end validation of both fixes: (A) /jobs hides bare leads from Smart Card and (B) TasksPanel renders 'Today's agenda' with scheduled appointments/jobs. Backend pytest 5/5 PASS. Mobile UI (390x844) flows 100% PASS for super-admin and cardonly accounts.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "GET /jobs hides bare leads (no quote/invoice/scheduled + source!=manual)": "PASS - 0 leaked; total jobs 12 (was 13 with leaked leads previously)",
+    "GET /jobs?status=new_lead bypasses bare-lead filter": "PASS",
+    "POST /jobs marks source=manual": "PASS - created job has source='manual'",
+    "Manual new_lead job remains visible in GET /jobs": "PASS",
+    "GET /jobs (cardonly) does not 500": "PASS - 200 with empty list",
+    "Dashboard tasks-panel + tasks-agenda (super-admin)": "PASS - 3 agenda-item-* nodes for today's appointments with time ranges 09:00-10:00 / 10:00-11:00 / 16:00-17:00 and 'Today' badge",
+    "Click agenda item (source=appointment) navigates to /citas": "PASS - URL becomes /citas",
+    "/trabajos tasks-panel + tasks-agenda also renders": "PASS - same 3 items rendered above the jobs list",
+    "/trabajos no NEW LEAD/Nuevo lead bare cards visible": "PASS - badge_count=0 (only approved/estimate_sent/scheduled/completed sections)",
+    "New job modal -> save (status default new_lead) keeps job visible": "PASS - 'Job created' toast, modal closes, job appears in 'New Lead' section, total jobs 12 -> 13",
+    "Manual task CRUD (add/check/delete) still works alongside agenda": "PASS - task added, checked off, then deleted from completed list",
+    "cardonly Dashboard: tasks-panel renders, tasks-agenda NOT shown (no jobs)": "PASS - panel present, agenda hidden, no console errors"
+  },
+  "observations": [
+    "Agenda items correctly render 'Today' badge and HH:MM–HH:MM time range from the underlying scheduled_date/start_time/end_time of the appointment-sourced job.",
+    "Click on an appointment-sourced agenda item navigates to /citas as designed; for source=manual scheduled jobs it would navigate to /trabajos (path covered by code review).",
+    "Console emits a non-blocking shadcn warning: 'Missing Description or aria-describedby for {DialogContent}' when opening New Job and Add Task dialogs. Accessibility nit only — not a functional bug.",
+    "Meta pixel warnings in console are unrelated to the app and harmless."
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_jobs_bare_leads_and_agenda.py",
+    "/app/test_reports/pytest/iter39_jobs_agenda.xml"
+  ],
+  "action_items": [
+    "(Optional, non-blocking) Add DialogDescription or aria-describedby to New Job and TasksPanel quick-add area to silence shadcn a11y warning.",
+    "(Optional, non-blocking) On mobile, task-delete button is opacity-0 group-hover:opacity-100 — touch users can only delete from the 'Show completed' section after hover; consider always-visible delete on touch."
+  ],
+  "critical_code_review_comments": [
+    "list_jobs bare-lead filter is exactly correct: new_lead + no quote_id + no invoice_id + no scheduled_date + source!=manual. Skipped when ?status= is provided, which is the right escape hatch for admin views.",
+    "create_job hard-codes source='manual' (after payload.model_dump()), so even if a client passes source in the body it cannot bypass the filter — safe.",
+    "TasksPanel agenda derives client-side from /jobs by scheduled_date<=today and status!='completed' — depends on /jobs returning scheduled jobs, which it does. Sort by scheduled_date then start_time is correct.",
+    "openAgendaItem routes by j.source==='appointment' to /citas else /trabajos — note: if a manual job is scheduled, it correctly lands on /trabajos.",
+    "Component reuses load() after add/toggle/remove and refetches /jobs only on mount — agenda will not auto-update when an appointment is booked elsewhere in the same session without a remount. Minor enhancement only."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_jobs_bare_leads_and_agenda.py (new)"
+  ],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100%"},
+  "test_credentials": "super-admin pzsuave007@gmail.com / Uni2mkt007! and cardonly_test@example.com / Test1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created 1 TEST_UI_manual job and 1 TEST_UI_task during testing; both deleted via /api/jobs and /api/tasks before exit. No residual TEST_ data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both fixes (bare-lead hiding in /jobs + Today's agenda in TasksPanel) are fully working in this preview env. Backend test file at /app/backend/tests/test_jobs_bare_leads_and_agenda.py covers the regression. The 3 scheduled appointments in super-admin (Cita: TEST_Booking_1782337147, Cita: Cita QA, Cita: QA Book 1782337405 on 2026-06-25) provide good agenda seed data."
+}

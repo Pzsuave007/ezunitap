@@ -1955,6 +1955,21 @@ async def list_jobs(user_id: str = Depends(get_current_user_id), status: Optiona
     if status:
         q["status"] = status
     docs = await db.jobs.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
+
+    # Hide "bare leads": jobs that are still new_lead with nothing concrete
+    # attached (no quote, invoice or schedule) and were not created manually.
+    # These are legacy auto-jobs from Smart Card contacts — they live in the CRM
+    # (Clientes), not in the real work pipeline. Skip when a status is requested.
+    def _is_bare_lead(j: dict) -> bool:
+        return (
+            j.get("status") == "new_lead"
+            and not j.get("quote_id")
+            and not j.get("invoice_id")
+            and not j.get("scheduled_date")
+            and j.get("source") != "manual"
+        )
+    if not status:
+        docs = [d for d in docs if not _is_bare_lead(d)]
     return docs
 
 
@@ -1964,6 +1979,7 @@ async def create_job(payload: JobIn, user_id: str = Depends(get_current_user_id)
         "id": _new_id(),
         "user_id": user_id,
         **payload.model_dump(),
+        "source": "manual",
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -6214,19 +6230,13 @@ async def admin_backfill_card_leads(admin: dict = Depends(_require_super_admin))
 
 @api_router.post("/admin/cleanup-lead-jobs")
 async def admin_cleanup_lead_jobs(admin: dict = Depends(_require_super_admin)):
-    """One-click cleanup: remove Jobs that were auto-created from Smart Card leads
-    and never became real work (status new_lead, no quote/invoice, not scheduled,
-    and the linked client is a smart_card lead). Idempotent. Global across users."""
-    # Build the set of smart_card lead client ids.
-    lead_client_ids = set()
-    async for cl in db.clients.find({"lead_source": "smart_card"}, {"id": 1}):
-        if cl.get("id"):
-            lead_client_ids.add(cl["id"])
-    if not lead_client_ids:
-        return {"ok": True, "deleted": 0}
+    """One-click cleanup: permanently delete 'bare lead' Jobs (status new_lead,
+    no quote/invoice, not scheduled, not created manually). These were legacy
+    auto-jobs from Smart Card contacts and already live in the CRM. Idempotent,
+    global across users. (The /jobs list already hides these; this purges them.)"""
     res = await db.jobs.delete_many({
-        "client_id": {"$in": list(lead_client_ids)},
         "status": "new_lead",
+        "source": {"$ne": "manual"},
         "$and": [
             {"$or": [{"quote_id": None}, {"quote_id": {"$exists": False}}]},
             {"$or": [{"invoice_id": None}, {"invoice_id": {"$exists": False}}]},
