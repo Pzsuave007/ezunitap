@@ -1,0 +1,39 @@
+{
+  "summary": "Frontend-only e2e validation of new TasksPanel and admin cleanup button on mobile viewport (390x844). All 8 requested flows verified working with super-admin and card-only accounts.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "tasks_panel_on_dashboard": "PASS - data-testid=tasks-panel rendered on / for super-admin",
+    "tasks_panel_on_jobs": "PASS - data-testid=tasks-panel rendered on /trabajos for super-admin",
+    "add_task_basic": "PASS - rows_before=1 -> rows_after=2 after add via task-title-input + task-add-btn",
+    "today_badge": "PASS - new task with today's date shows 'Today' badge (EN session)",
+    "overdue_badge": "PASS - new task with yesterday's date shows 'Overdue' badge",
+    "pending_count": "PASS - data-testid=tasks-pending-count rendered '3 pending'",
+    "cross_page_persistence": "PASS - task created on Dashboard visible on /trabajos (same backend data)",
+    "toggle_complete": "PASS - clicking task-check-<id> removed the row from pending list; 'Show completed (1)' appears (data-testid=tasks-toggle-completed present)",
+    "delete_task": "PASS - clicking task-delete-<id> (force) removed the row from DOM",
+    "admin_cleanup_button": "PASS - data-testid=cleanup-lead-jobs-btn on /admin/cuentas triggered toast 'Listo: 0 trabajo(s) de lead viejo(s) eliminado(s)' (0 because main agent already cleaned 16 earlier)",
+    "cardonly_dashboard_no_crash": "PASS - /, tasks-panel rendered for cardonly_test@example.com without console errors"
+  },
+  "observations": [
+    "Jobs page still shows a 'NEW LEAD' card (Roofing) on super-admin; cleanup returned 0 because main agent already ran it. Per request, old jobs may remain in preview and are not in scope.",
+    "UI language was EN in the session ('Today', 'Overdue', '3 pending', 'Show completed (1)'); request explicitly says either ES or EN is valid."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TasksPanel.jsx is self-contained and reused in two pages - good. Optimistic updates on toggle/remove are correctly followed by load() to reconcile.",
+    "task-delete button uses opacity-0 group-hover:opacity-100 (hidden until hover) - on mobile/touch this can be hard to reach without hover; works with force-click in tests, but consider always-visible delete on mobile."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not in scope)", "frontend": "100%"},
+  "test_credentials": "super-admin pzsuave007@gmail.com / Uni2mkt007! and cardonly_test@example.com / Test1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created two TEST_ prefixed tasks during the run; one was toggled to completed and one was deleted. A 'today' completed test task may remain on the super-admin account in 'Show completed' (cleanup not required by request).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "TasksPanel CRUD + admin cleanup confirmed working end-to-end on mobile viewport. If retesting, note that on hover-only delete button you need force=True click for Playwright."
+}

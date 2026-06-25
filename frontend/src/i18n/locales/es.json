@@ -1639,5 +1639,25 @@
     "openAria": "Abrir chat con asistente de UniTech",
     "closeAria": "Cerrar chat",
     "sendAria": "Enviar"
+  },
+  "tasks": {
+    "title": "Por hacer",
+    "addPlaceholder": "Agregar un pendiente… (ej. pasar a dar precio a Juan)",
+    "add": "Agregar",
+    "dueDate": "Fecha",
+    "client": "Cliente",
+    "clientOptional": "Cliente (opcional)",
+    "noClient": "Sin cliente",
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "overdue": "Atrasado",
+    "noDate": "Sin fecha",
+    "empty": "No tienes pendientes. ¡Agrega uno!",
+    "pendingCount": "{{count}} pendiente",
+    "pendingCount_plural": "{{count}} pendientes",
+    "showCompleted": "Ver completadas ({{count}})",
+    "hideCompleted": "Ocultar completadas",
+    "errorSaving": "Error al guardar el pendiente",
+    "errorDeleting": "Error al borrar"
   }
 }

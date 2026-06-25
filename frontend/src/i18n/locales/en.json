@@ -1639,5 +1639,25 @@
     "openAria": "Open chat with the UniTech assistant",
     "closeAria": "Close chat",
     "sendAria": "Send"
+  },
+  "tasks": {
+    "title": "To-do",
+    "addPlaceholder": "Add a to-do… (e.g. give Juan a price)",
+    "add": "Add",
+    "dueDate": "Date",
+    "client": "Client",
+    "clientOptional": "Client (optional)",
+    "noClient": "No client",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "overdue": "Overdue",
+    "noDate": "No date",
+    "empty": "No to-dos yet. Add one!",
+    "pendingCount": "{{count}} pending",
+    "pendingCount_plural": "{{count}} pending",
+    "showCompleted": "Show completed ({{count}})",
+    "hideCompleted": "Hide completed",
+    "errorSaving": "Could not save the to-do",
+    "errorDeleting": "Could not delete"
   }
 }

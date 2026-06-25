@@ -130,6 +130,7 @@ function AccountsView({ onForbidden }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [backfilling, setBackfilling] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
 
   const backfillLeads = async () => {
     setBackfilling(true);
@@ -141,6 +142,19 @@ function AccountsView({ onForbidden }) {
       toast.error(e?.response?.data?.detail || "Error al actualizar contactos");
     } finally {
       setBackfilling(false);
+    }
+  };
+
+  const cleanupLeadJobs = async () => {
+    setCleaning(true);
+    try {
+      const { data } = await api.post("/admin/cleanup-lead-jobs");
+      toast.success(`Listo: ${data.deleted} trabajo(s) de lead viejo(s) eliminado(s)`);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error al limpiar trabajos");
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -217,6 +231,17 @@ function AccountsView({ onForbidden }) {
         >
           {backfilling ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
           Actualizar contactos viejos
+        </Button>
+        <Button
+          data-testid="cleanup-lead-jobs-btn"
+          onClick={cleanupLeadJobs}
+          disabled={cleaning}
+          variant="outline"
+          className="h-10 border-slate-200"
+          title="Borra los Trabajos que se crearon solos a partir de leads de la tarjeta (estado 'nuevo lead', sin cotización/factura/fecha)."
+        >
+          {cleaning ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
+          Limpiar trabajos de leads
         </Button>
       </div>
 

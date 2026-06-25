@@ -16,6 +16,7 @@ import TourButton from "@/components/TourButton";
 import { useAuth } from "@/context/AuthContext";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import RequestReviewButton from "@/components/RequestReviewButton";
+import TasksPanel from "@/components/TasksPanel";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -173,6 +174,9 @@ export default function Jobs() {
           <Plus className="w-4 h-4 mr-1" /> {t("jobs.newJob")}
         </Button>
       </div>
+
+      {/* Pendientes / Por hacer */}
+      <TasksPanel />
 
       {jobs.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">

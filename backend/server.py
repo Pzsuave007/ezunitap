@@ -275,6 +275,13 @@ class ReminderIn(BaseModel):
     notes: Optional[str] = ""
 
 
+class TaskIn(BaseModel):
+    title: str
+    due_date: Optional[str] = None  # YYYY-MM-DD
+    client_id: Optional[str] = None
+    done: bool = False
+
+
 # ============================================================================
 # Smart Business Card models
 # ============================================================================
@@ -1987,6 +1994,64 @@ async def update_job(job_id: str, payload: JobIn, user_id: str = Depends(get_cur
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, user_id: str = Depends(get_current_user_id)):
     await db.jobs.delete_one({"id": job_id, "user_id": user_id})
+    return {"ok": True}
+
+
+# ============================================================================
+# TASKS / TO-DO — lightweight personal to-do list (available to all users)
+# ============================================================================
+@api_router.get("/tasks")
+async def list_tasks(user_id: str = Depends(get_current_user_id)):
+    docs = await db.tasks.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    # Pending first (by due_date asc, undated last), then completed (newest first).
+    def _sort_key(t):
+        done = bool(t.get("done"))
+        due = t.get("due_date") or "9999-12-31"
+        return (done, due, t.get("created_at") or "")
+    docs.sort(key=_sort_key)
+    return docs
+
+
+@api_router.post("/tasks")
+async def create_task(payload: TaskIn, user_id: str = Depends(get_current_user_id)):
+    title = (payload.title or "").strip()
+    if not title:
+        raise HTTPException(400, "El pendiente no puede estar vacío")
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "title": title,
+        "due_date": payload.due_date or None,
+        "client_id": payload.client_id or None,
+        "done": bool(payload.done),
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.tasks.insert_one(doc)
+    return _strip_id(doc)
+
+
+@api_router.put("/tasks/{task_id}")
+async def update_task(task_id: str, payload: TaskIn, user_id: str = Depends(get_current_user_id)):
+    await db.tasks.update_one(
+        {"id": task_id, "user_id": user_id},
+        {"$set": {
+            "title": (payload.title or "").strip(),
+            "due_date": payload.due_date or None,
+            "client_id": payload.client_id or None,
+            "done": bool(payload.done),
+            "updated_at": _now_iso(),
+        }},
+    )
+    doc = await db.tasks.find_one({"id": task_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Pendiente no encontrado")
+    return doc
+
+
+@api_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: str, user_id: str = Depends(get_current_user_id)):
+    await db.tasks.delete_one({"id": task_id, "user_id": user_id})
     return {"ok": True}
 
 
@@ -4117,20 +4182,9 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "created_at": _now_iso(),
     }
     await db.clients.insert_one(client_doc)
-    job_doc = {
-        "id": _new_id(),
-        "user_id": card["user_id"],
-        "client_id": client_doc["id"],
-        "title": service_label or ("New Contact from Card" if is_connect else "New Lead from Card"),
-        "quote_id": None,
-        "invoice_id": None,
-        "status": "new_lead",
-        "scheduled_date": None,
-        "notes": payload.description or (f"Interested in: {interests_txt}" if interests_txt else ""),
-        "created_at": _now_iso(),
-        "updated_at": _now_iso(),
-    }
-    await db.jobs.insert_one(job_doc)
+    # NOTE: We intentionally do NOT auto-create a Job here anymore. A Smart Card
+    # contact is a CRM lead (lives in Clientes), not a real Job. The contractor
+    # turns it into a Job/quote when they're ready. This keeps "Trabajos" = real work.
     # Track analytics
     await db.card_events.insert_one({
         "id": _new_id(),
@@ -6156,6 +6210,30 @@ async def admin_backfill_card_leads(admin: dict = Depends(_require_super_admin))
         )
         updated += 1
     return {"ok": True, "updated": updated}
+
+
+@api_router.post("/admin/cleanup-lead-jobs")
+async def admin_cleanup_lead_jobs(admin: dict = Depends(_require_super_admin)):
+    """One-click cleanup: remove Jobs that were auto-created from Smart Card leads
+    and never became real work (status new_lead, no quote/invoice, not scheduled,
+    and the linked client is a smart_card lead). Idempotent. Global across users."""
+    # Build the set of smart_card lead client ids.
+    lead_client_ids = set()
+    async for cl in db.clients.find({"lead_source": "smart_card"}, {"id": 1}):
+        if cl.get("id"):
+            lead_client_ids.add(cl["id"])
+    if not lead_client_ids:
+        return {"ok": True, "deleted": 0}
+    res = await db.jobs.delete_many({
+        "client_id": {"$in": list(lead_client_ids)},
+        "status": "new_lead",
+        "$and": [
+            {"$or": [{"quote_id": None}, {"quote_id": {"$exists": False}}]},
+            {"$or": [{"invoice_id": None}, {"invoice_id": {"$exists": False}}]},
+            {"$or": [{"scheduled_date": None}, {"scheduled_date": {"$exists": False}}, {"scheduled_date": ""}]},
+        ],
+    })
+    return {"ok": True, "deleted": res.deleted_count}
 
 
 @api_router.post("/admin/users/{user_id}/demo-promo")

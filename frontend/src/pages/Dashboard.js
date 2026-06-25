@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
+import TasksPanel from "@/components/TasksPanel";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
 import { toast } from "sonner";
@@ -464,6 +465,9 @@ export default function Dashboard() {
           <SettingsIcon className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Por hacer — pendientes del día (disponible para todos) */}
+      <TasksPanel />
 
       {/* Module blocks — order: Negocio → Presencia → Marketing */}
       {hasBusiness && <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />}
