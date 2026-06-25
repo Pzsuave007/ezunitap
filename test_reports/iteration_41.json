@@ -1,0 +1,45 @@
+{
+  "summary": "Verified /tarjeta header layout fix in CardAdmin.js at mobile viewport 390x844 in both ES and EN. Title + TourButton render in the same top row; subtitle spans full width below (no narrow column, no big right-side gap). No horizontal overflow. All required data-testids and tabs render correctly. No regressions detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "header_layout_es": {
+      "title": "Tarjeta Inteligente",
+      "title_box": {"x": 16, "y": 72, "w": 202, "h": 64},
+      "tour_button_box": {"x": 230, "y": 72, "w": 144, "h": 36},
+      "subtitle": "Tu mini-sitio profesional que captura leads automáticamente.",
+      "subtitle_box": {"x": 16, "y": 140, "w": 358, "h": 48},
+      "result": "PASS - title+TourButton same row, subtitle full-width below"
+    },
+    "header_layout_en": {
+      "title": "Smart Card",
+      "title_box": {"x": 16, "y": 128, "w": 159, "h": 32},
+      "tour_button_box": {"x": 248, "y": 128, "w": 126, "h": 36},
+      "subtitle": "Your professional mini-website that captures leads automatically.",
+      "subtitle_box": {"x": 16, "y": 168, "w": 358, "h": 48},
+      "result": "PASS - subtitle spans full width below the title+TourButton row"
+    },
+    "horizontal_overflow": {"scrollW": 390, "clientW": 390, "result": "PASS - no horizontal overflow"},
+    "data_testids_present": ["card-selector", "card-public-url", "card-copy-link", "card-share", "card-preview"],
+    "tabs_rendered_es": ["Diseño", "QR", "Reseñas", "Métricas"],
+    "tabs_rendered_en": ["Design", "QR", "Reviews", "Stats"],
+    "tour_button_clickable": "Click registered without errors. The visible tour modal did not appear on this click; this may be a separate (out-of-scope) behavior — NOT part of this layout fix."
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CardAdmin.js is ~1294 lines — exceeds the 700-line guideline. Consider extracting Design/QR/Reviews/Stats tab contents into sub-components for maintainability (informational, not blocking)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only test)", "frontend": "100%"},
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Header fix on /tarjeta verified in mobile viewport (390x844) for ES and EN. Subtitle spans 358px out of 390px viewport (16px side padding). No horizontal overflow. data-testids confirmed: card-selector, card-public-url, card-copy-link, card-share, card-preview. App defaults to EN until user switches via the 'VER EN ESPAÑOL' top banner or EN/ES toggle in header.",
+  "rca_of_the_issue": "Original header had a single flex row with the subtitle nested inside the title's column, while the TourButton sat as a sibling — this constrained the subtitle to the narrow left column under the title, leaving a big empty area under the TourButton on the right. Fix in CardAdmin.js (~line 213): wrapped the header in space-y-1; row 1 = flex row with h1 (min-w-0, text-2xl on mobile / sm:text-3xl) + TourButton (flex-none); row 2 = <p> subtitle as a sibling spanning the full container width."
+}
