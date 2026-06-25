@@ -427,6 +427,7 @@
     closeBtn.addEventListener("click", close);
   }
 
+  var chatStarted = false;
   function init() {
     var nodes = document.querySelectorAll("[data-unitech-form]");
     for (var i = 0; i < nodes.length; i++) {
@@ -439,13 +440,38 @@
     for (var j = 0; j < chatNodes.length; j++) {
       if (!chatNodes[j].getAttribute("data-unitech-rendered")) {
         chatNodes[j].setAttribute("data-unitech-rendered", "1");
-        renderChat({
+        startChat({
           slug: chatNodes[j].getAttribute("data-slug"),
-          lang: (chatNodes[j].getAttribute("data-lang") || "es").toLowerCase(),
-          accent: chatNodes[j].getAttribute("data-accent") || "#059669",
+          lang: chatNodes[j].getAttribute("data-lang"),
+          accent: chatNodes[j].getAttribute("data-accent"),
         });
       }
     }
+
+    // Auto-init from the <script> tag itself. Many CMS editors (WordPress,
+    // Wix, Squarespace) strip out empty <div> tags with data- attributes,
+    // so the floating chat / inline form can be configured right on the
+    // <script> element with no wrapper div required.
+    if (SCRIPT && SCRIPT.hasAttribute("data-unitech-chat")) {
+      startChat({
+        slug: SCRIPT.getAttribute("data-slug"),
+        lang: SCRIPT.getAttribute("data-lang"),
+        accent: SCRIPT.getAttribute("data-accent"),
+      });
+    }
+  }
+
+  function startChat(cfg) {
+    // The floating chat is global to the page; only mount one instance even
+    // if the snippet is pasted more than once.
+    if (chatStarted) return;
+    if (!cfg.slug) return;
+    chatStarted = true;
+    renderChat({
+      slug: cfg.slug,
+      lang: (cfg.lang || "es").toLowerCase(),
+      accent: cfg.accent || "#059669",
+    });
   }
 
   if (document.readyState === "loading") {

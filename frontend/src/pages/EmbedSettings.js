@@ -30,7 +30,7 @@ export default function EmbedSettings() {
 
   const snippet = slug
     ? type === "chat"
-      ? `<!-- UniTech AI chat -->\n<div data-unitech-chat data-slug="${slug}" data-lang="${lang}"></div>\n<script src="${scriptUrl}" async></script>`
+      ? `<!-- UniTech AI chat -->\n<script src="${scriptUrl}" data-unitech-chat data-slug="${slug}" data-lang="${lang}" async></script>`
       : `<!-- UniTech form -->\n<div data-unitech-form data-slug="${slug}" data-type="${type}" data-lang="${lang}"></div>\n<script src="${scriptUrl}" async></script>`
     : "";
 
