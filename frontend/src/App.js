@@ -21,6 +21,7 @@ import Settings from "@/pages/Settings";
 import PublicQuote from "@/pages/PublicQuote";
 import SmartCard from "@/pages/SmartCard";
 import CardAdmin from "@/pages/CardAdmin";
+import EmbedSettings from "@/pages/EmbedSettings";
 import SocialStudio from "@/pages/SocialStudio";
 import MarketingStart from "@/pages/MarketingStart";
 import Landing from "@/pages/Landing";
@@ -124,6 +125,7 @@ function App() {
               <Route path="/trabajos" element={<FeatureGate feature="business"><Jobs /></FeatureGate>} />
               <Route path="/calendario" element={<FeatureGate feature="business"><Calendar /></FeatureGate>} />
               <Route path="/tarjeta" element={<FeatureGate feature="card"><CardAdmin /></FeatureGate>} />
+              <Route path="/sitio-web" element={<FeatureGate feature="card"><EmbedSettings /></FeatureGate>} />
               <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
               <Route path="/marketing/inicio" element={<FeatureGate feature="marketing"><MarketingStart /></FeatureGate>} />
               <Route path="/reviews" element={<FeatureGate feature="card"><GoogleReviewsPage /></FeatureGate>} />

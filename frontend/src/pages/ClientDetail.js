@@ -140,13 +140,14 @@ export default function ClientDetail() {
 
   const leadCard = (() => {
     const interests = Array.isArray(client?.interests) ? client.interests : [];
-    const isLead = client?.lead_source === "smart_card" || client?.project_request || interests.length > 0;
+    const isLead = client?.lead_source === "smart_card" || client?.lead_source === "website" || client?.project_request || interests.length > 0;
     if (!isLead) return null;
+    const fromWeb = client?.lead_source === "website";
     return (
     <Card data-testid="client-lead-card" className="card-elevated p-4 border-0 shadow-none bg-amber-50 ring-1 ring-amber-200">
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2 font-heading font-bold text-sm text-amber-900">
-          📇 Contacto desde tu tarjeta
+          {fromWeb ? "🌐 Contacto desde tu sitio web" : "📇 Contacto desde tu tarjeta"}
         </div>
         <span
           data-testid="client-lead-badge"
@@ -157,6 +158,12 @@ export default function ClientDetail() {
           {client.lead_type === "connect" ? "Quiere conectar" : "Pidió cotización"}
         </span>
       </div>
+
+      {fromWeb && client?.source_site && (
+        <div className="mb-2.5 text-xs text-amber-800" data-testid="client-source-site">
+          Vino de: <span className="font-semibold">{client.source_site}</span>
+        </div>
+      )}
 
       {interests.length > 0 && (
         <div className="mb-2.5">

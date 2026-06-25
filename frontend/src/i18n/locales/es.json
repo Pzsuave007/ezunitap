@@ -43,7 +43,8 @@
     "lastDay": "último día",
     "dayOne": "{{count}} día",
     "dayOther": "{{count}} días",
-    "appointments": "Citas"
+    "appointments": "Citas",
+    "embed": "Sitio Web"
   },
   "auth": {
     "login": {
@@ -1666,5 +1667,17 @@
     "call": "Llamar",
     "openInJobs": "Ver en Trabajos",
     "openInAppointments": "Ver en Citas"
+  },
+  "embed": {
+    "title": "Sitio Web",
+    "subtitle": "Conecta los formularios de los sitios web con tu CRM. Los leads llegan aquí solos.",
+    "how": "Pega este código en el sitio web de tu cliente. Cuando alguien llene el formulario (contacto, cotización o cita), aparecerá automáticamente en tus Clientes y en tu agenda — sin revisar dos lugares.",
+    "codeTitle": "Tu código para pegar",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "note": "Pega el <div> donde quieras el formulario. El <script> solo se incluye una vez por página, aunque uses varios formularios.",
+    "previewTitle": "Vista previa",
+    "call": "Llamar",
+    "chatPreview": "El chat aparece como una burbuja flotante en la esquina inferior derecha del sitio. Responde preguntas y captura leads automáticamente."
   }
 }

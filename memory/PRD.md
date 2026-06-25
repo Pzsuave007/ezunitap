@@ -166,6 +166,15 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 ## ✅ Jun 2026 — Detalle de agenda en Drawer (no navega) [LISTO; self-test + screenshot]
 - Al tocar una cita/trabajo en "Tu agenda", ahora abre un **Drawer deslizante** con solo los detalles (fecha/hora, cliente, notas) + acciones rápidas Llamar/WhatsApp (si hay teléfono) + botón "Ver en Citas/Trabajos". Ya NO navega a la lista completa. Verificado: tap a cita "Juan Barberia" → Drawer con datos, URL sigue en "/".
 
+## ✅ Jun 2026 — Embed Widget + Chatbot IA para sitios web de clientes [LISTO; self-test end-to-end + screenshots]
+- **Objetivo:** que los formularios y un chat con IA en los sitios web de los clientes envíen los leads/citas DIRECTO al CRM de cada cuenta UniTech, etiquetados con el dominio de origen.
+- **Widget `embed.js`** (`/app/frontend/public/embed.js`, vanilla, auto-contenido, estilos inline, ES/EN): se pega con `<div data-unitech-form data-slug data-type="contact|quote|appointment">` + `<script>`. Deriva el API de su propio origin. Citas usan `/availability` + `/appointment`. También chatbot flotante con `<div data-unitech-chat data-slug>` que usa `/public/card/{slug}/chat` (AI Q&A + captura de leads).
+- **Backend:** `CardLeadIn`, `AppointmentIn`, `CardChatIn` ahora aceptan `source_site`; los leads/citas/chat-leads se guardan con `lead_source="website"` + `source_site` (dominio). NO crean trabajos visibles (el filtro de /jobs los oculta).
+- **Página "Sitio Web"** (`/sitio-web`, gated card, en menú Más): selector de 4 tipos (Contacto/Cotización/Cita/Chat IA), snippet copiable y vista previa en vivo. i18n namespace `embed`.
+- **CRM:** la ficha del cliente muestra "🌐 Contacto desde tu sitio web" + "Vino de: dominio" para leads web.
+- Cada contratista usa su propia cuenta UniTech (slug = embed key). Sin notificaciones instantáneas (los leads aparecen en CRM/dashboard).
+- Verificado: curl (lead/cita/chat con source_site → lead_source=website OK; AI responde) + página externa simulada (form envía "¡Listo!" + chatbot abre y saluda) + screenshots. CORS ya es `*`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

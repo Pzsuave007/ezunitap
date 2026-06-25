@@ -351,12 +351,14 @@ class CardLeadIn(BaseModel):
     lead_type: Optional[str] = "estimate"  # "estimate" | "connect"
     preferred_contact: Optional[str] = "phone"  # phone, text, email, whatsapp
     photo_b64: Optional[str] = None  # optional base image
+    source_site: Optional[str] = ""  # external website domain when submitted via embed widget
 
 
 class CardChatIn(BaseModel):
     session_id: str  # client-generated UUID kept per visitor session
     message: str
     language: Optional[str] = "en"
+    source_site: Optional[str] = ""  # external website domain when used via embed chat widget
 
 
 class ReviewIn(BaseModel):
@@ -4164,7 +4166,10 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
     is_connect = (payload.lead_type or "estimate") == "connect"
     interests_txt = ", ".join([i for i in (payload.interests or []) if i])
     service_label = payload.service or (interests_txt if interests_txt else "")
+    via_site = (payload.source_site or "").strip()
     notes_lines = []
+    if via_site:
+        notes_lines.append(f"[Lead desde tu sitio web: {via_site}]")
     if is_connect:
         notes_lines.append("[New contact from Smart Card — wants to connect]")
         if interests_txt:
@@ -4191,7 +4196,8 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "lead_type": (payload.lead_type or "estimate"),
         "interests": payload.interests or [],
         "preferred_contact": payload.preferred_contact or "",
-        "lead_source": "smart_card",
+        "lead_source": "website" if via_site else "smart_card",
+        "source_site": via_site,
         # What the client submitted — surfaced in the CRM and used to pre-fill the AI quote.
         "project_request": (payload.description or "").strip(),
         "project_photo_path": photo_path,
@@ -4332,6 +4338,7 @@ class AppointmentIn(BaseModel):
     date: str          # YYYY-MM-DD
     start_time: str    # HH:MM
     notes: Optional[str] = ""
+    source_site: Optional[str] = ""  # external website domain when booked via embed widget
 
 
 @api_router.post("/public/card/{slug}/appointment")
@@ -4360,12 +4367,15 @@ async def book_appointment(slug: str, payload: AppointmentIn):
         raise HTTPException(status_code=409, detail="Ese horario ya fue reservado, elige otro")
     end_time = _add_minutes(payload.start_time, dur)
     now = _now_iso()
+    via_site = (payload.source_site or "").strip()
+    appt_note_src = f"[Cita desde tu sitio web: {via_site}]" if via_site else "[Cita agendada desde la tarjeta]"
     client_doc = {
         "id": _new_id(), "user_id": user["id"], "name": payload.name.strip(),
         "phone": payload.phone or "", "email": payload.email or "", "address": "",
-        "job_type": "Cita", "notes": f"[Cita agendada desde la tarjeta]\n{payload.date} {payload.start_time}\n{payload.notes or ''}".strip(),
+        "job_type": "Cita", "notes": f"{appt_note_src}\n{payload.date} {payload.start_time}\n{payload.notes or ''}".strip(),
         "lead_type": "appointment", "interests": [], "preferred_contact": "phone",
-        "lead_source": "smart_card", "project_request": (payload.notes or "").strip(),
+        "lead_source": "website" if via_site else "smart_card", "source_site": via_site,
+        "project_request": (payload.notes or "").strip(),
         "project_photo_path": None, "created_at": now,
     }
     await db.clients.insert_one(client_doc)
@@ -4511,6 +4521,7 @@ async def public_card_chat(slug: str, payload: CardChatIn):
                 "created_at": now,
             }
             # Create client + job too
+            _via = (payload.source_site or "").strip()
             client_doc = {
                 "id": _new_id(),
                 "user_id": card["user_id"],
@@ -4519,7 +4530,13 @@ async def public_card_chat(slug: str, payload: CardChatIn):
                 "email": lead["email"],
                 "address": lead["address"],
                 "job_type": lead["service"],
-                "notes": f"[AI Chat Lead]\n{lead['description']}",
+                "notes": (f"[Lead desde tu sitio web (chat IA): {_via}]\n" if _via else "[AI Chat Lead]\n") + lead["description"],
+                "lead_type": "estimate",
+                "interests": [],
+                "preferred_contact": "phone",
+                "lead_source": "website" if _via else "smart_card",
+                "source_site": _via,
+                "project_request": lead["description"],
                 "created_at": now,
             }
             await db.clients.insert_one(client_doc)

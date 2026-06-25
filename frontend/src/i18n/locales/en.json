@@ -43,7 +43,8 @@
     "lastDay": "last day",
     "dayOne": "{{count}} day",
     "dayOther": "{{count}} days",
-    "appointments": "Appointments"
+    "appointments": "Appointments",
+    "embed": "Website"
   },
   "auth": {
     "login": {
@@ -1666,5 +1667,17 @@
     "call": "Call",
     "openInJobs": "Open in Jobs",
     "openInAppointments": "Open in Appointments"
+  },
+  "embed": {
+    "title": "Website",
+    "subtitle": "Connect your clients’ website forms to your CRM. Leads arrive here automatically.",
+    "how": "Paste this code on your client’s website. When someone fills the form (contact, quote or appointment), it shows up automatically in your Clients and agenda — no need to check two places.",
+    "codeTitle": "Your code to paste",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "note": "Paste the <div> where you want the form. Include the <script> only once per page, even with multiple forms.",
+    "previewTitle": "Live preview",
+    "call": "Call",
+    "chatPreview": "The chat shows as a floating bubble in the bottom-right of the site. It answers questions and captures leads automatically."
   }
 }
