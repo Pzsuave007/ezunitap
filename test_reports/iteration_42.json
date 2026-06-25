@@ -1,0 +1,43 @@
+{
+  "summary": "Verified global Button overflow fix (button.jsx: whitespace-nowrap removed; min-w-0 [overflow-wrap:anywhere] text-center leading-tight added) on mobile viewport 390x844 in both ES and EN. Audited 9 main pages (/, /trabajos, /clientes, /cotizaciones, /facturas, /marketing/inicio, /tarjeta, /perfil, /citas). No actual button text/icon overflow detected on any visible button; no horizontal page scroll on any page (bodyScrollW=390=viewport on all). All sampled functional flows still work: 'View invoices' navigates to /invoices, /tarjeta Copy/Share/View buttons render contained and clickable, To-do task add (task-title-input + task-add-btn) creates and lists a new task.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "viewport": "390x844 (mobile)",
+    "languages_tested": ["es", "en"],
+    "pages_audited": [
+      "/ (Dashboard)", "/trabajos", "/clientes", "/cotizaciones", "/facturas",
+      "/marketing/inicio", "/tarjeta", "/perfil", "/citas"
+    ],
+    "page_horizontal_scroll": "ALL PAGES: bodyScrollW = 390 = viewport (no horizontal page scroll) in both ES and EN",
+    "button_overflow_audit": {
+      "method": "For every visible <button>/[role=button]: compare scrollWidth vs clientWidth (text overflow), scrollHeight vs clientHeight (vertical overflow), and rect.right vs viewport (positional overflow). Threshold: hOverflow>1px, vOverflow>4px, or off-screen.",
+      "result": "0 buttons with text/icon overflow (scrollW==clientW on every button). The only items flagged were horizontally-scrollable carousel cards [data-testid^=\"mkt-recent-\"] whose parent has class 'flex gap-2.5 overflow-x-auto ... snap-x' (parent.overflowX=auto, parent.scrollW=846, parent.clientW=340). Their own scrollW==clientW (94==94) and they sit at y=2804 below the fold inside the carousel. These are FALSE POSITIVES (intentional horizontal slider), not button overflow."
+    },
+    "functional_regression": {
+      "dashboard_view_invoices_btn": "PASS — testid=view-invoices-btn, text='View invoices' contained (scrollW 145 == clientW 145), click navigates to /invoices",
+      "tarjeta_copy_share_view": "PASS — card-copy-link ('Copy'), card-share ('Share'), card-preview ('View') all contained (scrollW==clientW, scrollH==clientH ~42-44px). card-copy-link click executed with no errors.",
+      "todo_task_add": "PASS — task-title-input + task-add-btn created 'TEST_task_overflow_check_001' and it appears in the To-do list (visible in screenshot).",
+      "clientes_detail_crear_menu": "SKIPPED — no client link with /clientes/<id> pattern found in the rendered list (likely empty list or different routing). Out of scope of this CSS regression test."
+    },
+    "tarjeta_grid_buttons_visual": "PASS — 'Copiar/Compartir/Ver' (ES) and 'Copy/Share/View' (EN) all render as ~103px wide x 44px tall in the grid-cols-3 layout, contained within their boxes, no lateral overflow."
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Button base now has 'min-w-0 [overflow-wrap:anywhere] text-center leading-tight' which correctly prevents text overflow on narrow widths while keeping icons fixed via [&_svg]:shrink-0. Behaviour validated in production-like preview.",
+    "Audit logic note: any future overflow audits should EXCLUDE items inside parents with overflow-x:auto/scroll (horizontal carousels) to avoid false positives like the mkt-recent-* carousel."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only test)", "frontend": "100%"},
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created one to-do task 'TEST_task_overflow_check_001' via UI to validate task-add-btn functional regression. (Can be cleaned up via UI delete icon.)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Global Button CSS overflow fix verified on 9 pages in mobile 390x844 in both ES and EN. No regressions in clickability/navigation. The only 'overflowing' items reported by raw audits are intentional horizontal carousel cards (mkt-recent-* inside a parent with overflow-x:auto) — not actual button overflow. When auditing button overflow, always check (a) scrollWidth vs clientWidth on the button itself (true text overflow), and (b) whether the parent has overflow-x:auto/scroll (carousel — to be excluded).",
+  "rca_of_the_issue": "Original issue: shadcn Button base class had 'whitespace-nowrap' which forced single-line text and caused longer Spanish labels (with icons) to overflow horizontally outside the button box on mobile. Fix in /app/frontend/src/components/ui/button.jsx line 8: removed 'whitespace-nowrap' and added 'min-w-0 [overflow-wrap:anywhere] text-center leading-tight'. This lets text wrap inside the button if needed while icons stay fixed (already had [&_svg]:shrink-0). Verified on production preview: every visible button across 9 main pages in both ES and EN now has scrollWidth==clientWidth (no text overflow); no page introduces a horizontal scroll (bodyScrollW=390); functional behaviour (clicks/nav/forms) preserved."
+}
