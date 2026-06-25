@@ -155,8 +155,11 @@ export default function Jobs() {
 
   const clientName = (id) => clients.find((c) => c.id === id)?.name || t("jobs.client");
 
+  // Completed jobs are archived under each client's profile, not shown here —
+  // keeps the Jobs board clean with only active work.
+  const activeJobs = jobs.filter((j) => j.status !== "completed");
   const grouped = JOB_STATUSES.reduce((acc, s) => {
-    acc[s] = jobs.filter((j) => j.status === s);
+    acc[s] = activeJobs.filter((j) => j.status === s);
     return acc;
   }, {});
 
@@ -166,7 +169,7 @@ export default function Jobs() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="font-heading text-3xl font-bold tracking-tight">{t("jobs.title")}</h1>
-            <p className="text-slate-500 mt-1">{t("jobs.total", { count: jobs.length })}</p>
+            <p className="text-slate-500 mt-1">{t("jobs.total", { count: activeJobs.length })}</p>
           </div>
           <TourButton tourKey="jobs" />
         </div>
@@ -178,7 +181,7 @@ export default function Jobs() {
       {/* Pendientes / Por hacer */}
       <TasksPanel />
 
-      {jobs.length === 0 ? (
+      {activeJobs.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
           <p className="text-slate-500 mb-4">{t("jobs.empty")}</p>

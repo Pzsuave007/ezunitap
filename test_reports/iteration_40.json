@@ -1,0 +1,45 @@
+{
+  "summary": "Frontend-only validation (mobile 390x844) of the new 'hide completed jobs from /trabajos board + show them in Client > Trabajos tab' feature. All 5 acceptance criteria PASS end-to-end with super-admin. No new bugs found; full regression of TasksPanel + Today's agenda also PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "/trabajos shows only active jobs (no Completado/Completed cards)": "PASS - GET /api/jobs returns 12 (10 active + 2 completed); board shows exactly 10 job-status-* selects, 0 with text 'Completed/Completado'. Header reads '10 total'.",
+    "Header count uses activeJobs": "PASS - header decremented from '10 total' -> '9 total' after marking one job completed; restored to '10 total' after revert.",
+    "Mark active job as Completado via job-status-<id> archives it": "PASS - clicked job-status-38c91bad-...-4072e4437982 (Scheduled), selected 'Completed', reloaded /trabajos -> select node and card no longer present in DOM; total = 9.",
+    "Client Detail has 'Trabajos' tab gated by hasBusiness": "PASS - data-testid=history-tab-trabajos visible for super-admin on /clientes/<id>; tab label 'Trabajos' with count badge ('Trabajos1') when client has 1 job.",
+    "Tab lists client jobs with badge; completed first ordering": "PASS - card data-testid=client-job-<id> rendered; badge shows 'Scheduled' before marking, 'Completed' after marking. Ordering logic verified in code (completed first, then by scheduled/created date desc).",
+    "Recently-completed job appears in its client's Trabajos tab": "PASS - after marking 38c91bad complete, opened client aca7e7c0 (Cita QA) -> client-job-38c91bad-... rendered with 'Completed' badge and date '25 jun 2026'.",
+    "Empty state when client has no jobs": "PASS - Test NoJob Lead client shows 'Aún no hay trabajos.' inside the Trabajos tabpanel (EmptyHist).",
+    "Regression: TasksPanel + Today's agenda on /trabajos": "PASS - data-testid=tasks-panel and tasks-agenda both render; 3 agenda-item-* nodes present (after restore) -> 2 (after marking Cita QA completed, since completed jobs are also excluded from agenda) -> 3 (after restore). Add-task input, manual task 'Pasar a dar precio del techo a Juan', and 'Show completed (1)' link still functional.",
+    "Regression: scheduled (non-completed) jobs still show in agenda": "PASS - 3 scheduled Cita-sourced jobs (TEST_Booking_1782337147 09:00-10:00, Cita QA 10:00-11:00, QA Book 1782337405 16:00-17:00) rendered with 'Today' badge."
+  },
+  "observations": [
+    "Board correctly went 12 -> 10 active (2 pre-existing completed hidden) and dynamically 10 -> 9 -> 10 as a job is toggled.",
+    "Both pre-existing completed jobs in DB (0b9da08d, 6f06d631) belong to orphan client_ids (58a33398, 80b0bd5a) that no longer exist; navigating to /clientes/<deleted_id> redirects to /clientes with 'Cliente no encontrado' toast (existing behavior, unrelated to this change).",
+    "PUT /api/jobs/{id} requires the full payload (client_id + title mandatory) — passing only {status:'scheduled'} returns 422. Frontend's Select on /trabajos handles this correctly internally; only an explicit cURL/JS partial PATCH-like body would 422. Out of scope for this task but worth noting.",
+    "Completed-first sort is implemented in ClientDetail.js (lines 522-551) and verified visually with the marked job appearing at the top with 'Completed' badge.",
+    "Today's agenda hides completed jobs automatically because TasksPanel filters status!=='completed' — consistent with /trabajos board change."
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_40.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Jobs.js: activeJobs = jobs.filter(j => j.status !== 'completed') is applied for grouping, header count, and empty state — correct and minimal change.",
+    "Jobs.js still keeps the 'Completed' option in the per-card status Select so users can archive a job; after the PUT mutation the local list re-filters and the card disappears on next load — UX is good.",
+    "ClientDetail.js: history-tab-trabajos is gated by hasBusiness so card-only users won't see business jobs (consistent with the rest of the business tabs).",
+    "ClientDetail.js sort: completed first then scheduled/created date desc — uses localeCompare on ISO date strings which is safe for YYYY-MM-DD.",
+    "Backend /clients/{id}/history.jobs still returns ALL jobs for the client (not filtered by status), which is required for this feature."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only request)", "frontend": "100% (9/9 scenarios)"},
+  "test_credentials": "super-admin pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Temporarily marked job 38c91bad as 'completed' during testing and restored to 'scheduled' via PUT /api/jobs/{id} with full payload — environment left in original state (10 active jobs, 2 completed).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All acceptance criteria for the 'hide completed from /trabajos + show in Client Trabajos tab' iteration are met. Useful seed jobs for super-admin on this preview: scheduled job 38c91bad (client aca7e7c0 'Cita QA') is a safe candidate to toggle complete/scheduled; the two pre-existing completed jobs (0b9da08d, 6f06d631) belong to deleted clients so they cannot be inspected through the UI — main agent could clean those orphans up later if desired."
+}

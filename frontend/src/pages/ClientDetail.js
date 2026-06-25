@@ -361,6 +361,7 @@ export default function ClientDetail() {
           {hasBusiness && <Seg value="quotes" label="Cotizaciones" count={history.quotes.length} testid="history-tab-cotizaciones" />}
           {hasBusiness && <Seg value="agreements" label="Contratos" count={history.agreements.length} testid="history-tab-contratos" />}
           {hasBusiness && <Seg value="invoices" label="Facturas" count={history.invoices.length} testid="history-tab-facturas" />}
+          {hasBusiness && <Seg value="jobs" label="Trabajos" count={history.jobs.length} testid="history-tab-trabajos" />}
           <Seg value="messages" label="Mensajes" count={history.messages.length} testid="history-tab-mensajes" />
           {hasBusiness && <Seg value="photos" label="Fotos" count={history.photos.length} testid="history-tab-fotos" />}
         </TabsList>
@@ -516,6 +517,37 @@ export default function ClientDetail() {
               </div>
             </Card>
           ))}
+        </TabsContent>
+
+        <TabsContent value="jobs" className="mt-4 space-y-2">
+          {history.jobs.length === 0 ? <EmptyHist label="trabajos" /> : (() => {
+            const sortedJobs = [...history.jobs].sort((a, b) => {
+              const ac = a.status === "completed" ? 0 : 1;
+              const bc = b.status === "completed" ? 0 : 1;
+              if (ac !== bc) return ac - bc; // completed (finished) first
+              return (b.scheduled_date || b.created_at || "").localeCompare(a.scheduled_date || a.created_at || "");
+            });
+            return sortedJobs.map((j) => (
+              <Card key={j.id} data-testid={`client-job-${j.id}`} className="card-elevated p-4 border-0 shadow-none">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">{j.title}</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">
+                      {j.scheduled_date
+                        ? new Date(j.scheduled_date + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })
+                        : (j.created_at ? new Date(j.created_at).toLocaleDateString("es") : "")}
+                    </div>
+                  </div>
+                  <StatusBadge kind="job" status={j.status} />
+                </div>
+                {j.notes && (
+                  <div className="text-xs text-zinc-600 bg-zinc-50 border border-zinc-100 rounded-lg p-2.5 mt-2 whitespace-pre-line line-clamp-4">
+                    {j.notes}
+                  </div>
+                )}
+              </Card>
+            ));
+          })()}
         </TabsContent>
 
         <TabsContent value="messages" className="mt-4 space-y-2">
