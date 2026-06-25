@@ -163,6 +163,9 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 ## ✅ Jun 2026 — Agenda muestra hoy + mañana [LISTO; self-test + screenshot]
 - "Tu agenda" (antes "Agenda de hoy") ahora incluye citas y trabajos agendados de **hoy** (badge verde "Hoy") y **mañana** (badge azul "Mañana"), para prepararse con anticipación. Atrasados en rojo. Citas leídas de `/appointments`, trabajos de `/jobs` (excluye source=appointment). Verificado con citas de prueba hoy/mañana.
 
+## ✅ Jun 2026 — Detalle de agenda en Drawer (no navega) [LISTO; self-test + screenshot]
+- Al tocar una cita/trabajo en "Tu agenda", ahora abre un **Drawer deslizante** con solo los detalles (fecha/hora, cliente, notas) + acciones rápidas Llamar/WhatsApp (si hay teléfono) + botón "Ver en Citas/Trabajos". Ya NO navega a la lista completa. Verificado: tap a cita "Juan Barberia" → Drawer con datos, URL sigue en "/".
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

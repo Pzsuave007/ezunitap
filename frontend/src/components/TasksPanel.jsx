@@ -15,7 +15,9 @@ import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ListChecks, Plus, Loader2, Trash2, CalendarDays, User, Clock, Briefcase, ChevronRight } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { ListChecks, Plus, Loader2, Trash2, CalendarDays, User, Clock, Briefcase, ChevronRight, Phone, MessageCircle, StickyNote, X } from "lucide-react";
 import { toast } from "sonner";
 
 function todayISO() {
@@ -36,6 +38,7 @@ export default function TasksPanel({ className = "" }) {
   const [clientId, setClientId] = useState("");
   const [adding, setAdding] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
 
   const load = async () => {
     try {
@@ -128,6 +131,9 @@ export default function TasksPanel({ className = "" }) {
       end_time: a.end_time,
       all_day: false,
       day: dayKind(a.date),
+      clientName: a.name,
+      phone: a.phone || "",
+      notes: a.notes || "",
     }));
 
   const jobItems = jobs
@@ -141,6 +147,10 @@ export default function TasksPanel({ className = "" }) {
       end_time: j.end_time,
       all_day: j.all_day,
       day: dayKind(j.scheduled_date),
+      clientName: clientName(j.client_id),
+      phone: clients.find((c) => c.id === j.client_id)?.phone || "",
+      notes: j.notes || "",
+      status: j.status,
     }));
 
   const agenda = [...apptItems, ...jobItems].sort((a, b) => {
@@ -155,7 +165,14 @@ export default function TasksPanel({ className = "" }) {
   };
 
   const openAgendaItem = (item) => {
-    navigate(item.kind === "appointment" ? "/citas" : "/trabajos");
+    setDetailItem(item);
+  };
+
+  const longDate = (d) => {
+    if (!d) return "";
+    try {
+      return new Date(d + "T00:00:00").toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
+    } catch { return d; }
   };
 
   const timeLabel = (item) => {
@@ -301,7 +318,79 @@ export default function TasksPanel({ className = "" }) {
           )}
         </div>
       )}
+
+      {/* Detail Drawer — slide up with only the selected item's details */}
+      <Drawer open={!!detailItem} onOpenChange={(o) => { if (!o) setDetailItem(null); }}>
+        <DrawerContent data-testid="agenda-detail-drawer" className="max-h-[85vh]">
+          {detailItem && (() => {
+            const isAppt = detailItem.kind === "appointment";
+            const badge = dayBadge(detailItem.day);
+            const digits = (detailItem.phone || "").replace(/\D/g, "");
+            return (
+              <div className="px-5 pb-8 pt-2 overflow-y-auto">
+                <DrawerHeader className="px-0">
+                  <div className="flex items-start gap-3">
+                    <span className={`w-11 h-11 rounded-xl flex items-center justify-center flex-none ${isAppt ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>
+                      {isAppt ? <CalendarDays className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
+                    </span>
+                    <div className="min-w-0 flex-1 text-left">
+                      <DrawerTitle className="text-lg leading-tight">{detailItem.title}</DrawerTitle>
+                      <span className={`inline-flex items-center gap-1 mt-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                        <Clock className="w-3 h-3" /> {badge.label} · {timeLabel(detailItem)}
+                      </span>
+                    </div>
+                    <DrawerClose className="flex-none text-slate-400 hover:text-slate-700 p-1" aria-label="cerrar"><X className="w-5 h-5" /></DrawerClose>
+                  </div>
+                </DrawerHeader>
+
+                <div className="space-y-3 mt-1">
+                  <DetailRow icon={<CalendarDays className="w-4 h-4" />} label={t("tasks.dueDate")} value={`${longDate(detailItem.date)} · ${timeLabel(detailItem)}`} />
+                  {detailItem.clientName && (
+                    <DetailRow icon={<User className="w-4 h-4" />} label={t("tasks.client")} value={detailItem.clientName} />
+                  )}
+                  {detailItem.notes && (
+                    <DetailRow icon={<StickyNote className="w-4 h-4" />} label="Notas" value={detailItem.notes} />
+                  )}
+                </div>
+
+                {/* Quick actions */}
+                <div className="grid grid-cols-2 gap-2 mt-5">
+                  {digits && (
+                    <a href={`tel:${digits}`} data-testid="agenda-detail-call">
+                      <Button variant="outline" className="w-full h-11 rounded-xl"><Phone className="w-4 h-4" /> {t("tasks.call")}</Button>
+                    </a>
+                  )}
+                  {digits && (
+                    <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer" data-testid="agenda-detail-whatsapp">
+                      <Button variant="outline" className="w-full h-11 rounded-xl text-emerald-700 border-emerald-200"><MessageCircle className="w-4 h-4" /> WhatsApp</Button>
+                    </a>
+                  )}
+                </div>
+                <Button
+                  data-testid="agenda-detail-open"
+                  onClick={() => { const dest = isAppt ? "/citas" : "/trabajos"; setDetailItem(null); navigate(dest); }}
+                  className="w-full h-11 rounded-xl mt-2 bg-slate-900 hover:bg-slate-800"
+                >
+                  {isAppt ? t("tasks.openInAppointments") : t("tasks.openInJobs")} <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            );
+          })()}
+        </DrawerContent>
+      </Drawer>
     </Card>
+  );
+}
+
+function DetailRow({ icon, label, value }) {
+  return (
+    <div className="flex gap-3">
+      <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-none">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
+        <div className="text-sm text-slate-800 whitespace-pre-line break-words">{value}</div>
+      </div>
+    </div>
   );
 }
 
