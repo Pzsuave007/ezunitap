@@ -1661,6 +1661,7 @@
     "errorDeleting": "Could not delete",
     "todayAgenda": "Today's agenda",
     "allDay": "All day",
-    "viewAgenda": "View agenda"
+    "viewAgenda": "View agenda",
+    "appointment": "Appointment"
   }
 }

@@ -30,6 +30,7 @@ export default function TasksPanel({ className = "" }) {
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [clientId, setClientId] = useState("");
@@ -47,6 +48,7 @@ export default function TasksPanel({ className = "" }) {
     load();
     api.get("/clients").then((r) => setClients(r.data || [])).catch(() => {});
     api.get("/jobs").then((r) => setJobs(r.data || [])).catch(() => {});
+    api.get("/appointments").then((r) => setAppointments(r.data?.appointments || [])).catch(() => {});
   }, []);
 
   const add = async () => {
@@ -102,29 +104,50 @@ export default function TasksPanel({ className = "" }) {
   const pending = tasks.filter((x) => !x.done);
   const done = tasks.filter((x) => x.done);
 
-  // Today's agenda = scheduled jobs/appointments due today or overdue (not done).
+  // Today's agenda = today's appointments (from the appointments collection) +
+  // scheduled jobs due today or overdue. Appointments are read directly so the
+  // barber/contractor always sees today's bookings, and we exclude
+  // source==="appointment" jobs to avoid showing the same booking twice.
   const today = todayISO();
-  const agenda = jobs
-    .filter((j) => {
-      if (j.status === "completed") return false;
-      const start = j.scheduled_date;
-      if (!start) return false;
-      return start <= today; // today, ongoing, or overdue
-    })
-    .sort((a, b) => {
-      const da = a.scheduled_date || "";
-      const db = b.scheduled_date || "";
-      if (da !== db) return da < db ? -1 : 1;
-      return (a.start_time || "") < (b.start_time || "") ? -1 : 1;
-    });
 
-  const openAgendaItem = (j) => {
-    navigate(j.source === "appointment" ? "/citas" : "/trabajos");
+  const apptItems = appointments
+    .filter((a) => a.status !== "cancelled" && a.date === today)
+    .map((a) => ({
+      id: `appt-${a.id}`,
+      kind: "appointment",
+      title: `${t("tasks.appointment")}: ${a.name}`,
+      date: a.date,
+      start_time: a.start_time,
+      end_time: a.end_time,
+      all_day: false,
+      overdue: false,
+    }));
+
+  const jobItems = jobs
+    .filter((j) => j.status !== "completed" && j.source !== "appointment" && j.scheduled_date && j.scheduled_date <= today)
+    .map((j) => ({
+      id: `job-${j.id}`,
+      kind: "job",
+      title: j.title,
+      date: j.scheduled_date,
+      start_time: j.start_time,
+      end_time: j.end_time,
+      all_day: j.all_day,
+      overdue: j.scheduled_date < today,
+    }));
+
+  const agenda = [...apptItems, ...jobItems].sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.start_time || "") < (b.start_time || "") ? -1 : 1;
+  });
+
+  const openAgendaItem = (item) => {
+    navigate(item.kind === "appointment" ? "/citas" : "/trabajos");
   };
 
-  const timeLabel = (j) => {
-    if (j.all_day || !j.start_time) return t("tasks.allDay");
-    return j.end_time ? `${j.start_time}–${j.end_time}` : j.start_time;
+  const timeLabel = (item) => {
+    if (item.all_day || !item.start_time) return t("tasks.allDay");
+    return item.end_time ? `${item.start_time}–${item.end_time}` : item.start_time;
   };
 
   const dateMeta = (d) => {
@@ -157,25 +180,25 @@ export default function TasksPanel({ className = "" }) {
       {agenda.length > 0 && (
         <div className="mb-3 space-y-1.5" data-testid="tasks-agenda">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">{t("tasks.todayAgenda")}</div>
-          {agenda.map((j) => {
-            const overdue = (j.scheduled_date || "") < today;
-            const isAppt = j.source === "appointment";
+          {agenda.map((item) => {
+            const overdue = item.overdue;
+            const isAppt = item.kind === "appointment";
             const Icon = isAppt ? CalendarDays : Briefcase;
             return (
               <button
-                key={j.id}
-                data-testid={`agenda-item-${j.id}`}
-                onClick={() => openAgendaItem(j)}
+                key={item.id}
+                data-testid={`agenda-item-${item.id}`}
+                onClick={() => openAgendaItem(item)}
                 className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-left transition-colors"
               >
                 <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-none ${isAppt ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>
                   <Icon className="w-4 h-4" strokeWidth={2.2} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-slate-800 truncate">{j.title}</span>
+                  <span className="block text-sm font-semibold text-slate-800 truncate">{item.title}</span>
                   <span className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${overdue ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
-                      <Clock className="w-3 h-3" /> {overdue ? t("tasks.overdue") : t("tasks.today")} · {timeLabel(j)}
+                      <Clock className="w-3 h-3" /> {overdue ? t("tasks.overdue") : t("tasks.today")} · {timeLabel(item)}
                     </span>
                   </span>
                 </span>

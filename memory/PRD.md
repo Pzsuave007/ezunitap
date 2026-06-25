@@ -155,6 +155,11 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **Marketing Studio:** hero de bienvenida compacto (banner horizontal ~111px vs ~220px).
 - Builds prod recompilados + `git add -f frontend/build` en cada cambio.
 
+## ✅ Jun 2026 — Citas del día en la agenda del Dashboard [LISTO; self-test con datos reales + screenshot]
+- **Causa:** la agenda del panel "Por hacer" leía solo de Trabajos `source=appointment`. Como las citas se agendan solo a futuro y dependían del job linkado, podían no verse. FIX: `TasksPanel` ahora lee las citas **directo de `GET /appointments`** (las de `date == hoy`, status != cancelled) y las combina con Trabajos agendados (excluyendo `source=appointment` para no duplicar). El barbero ve sus citas de hoy al abrir la app.
+- Verificado: inyectando una cita de hoy en BD → aparece "Cita: ... · Hoy · HH:MM" en la agenda (4 citas mostradas), navega a /citas.
+- Build prod recompilado + git add.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

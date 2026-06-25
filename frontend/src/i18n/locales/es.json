@@ -1661,6 +1661,7 @@
     "errorDeleting": "Error al borrar",
     "todayAgenda": "Agenda de hoy",
     "allDay": "Todo el día",
-    "viewAgenda": "Ver agenda"
+    "viewAgenda": "Ver agenda",
+    "appointment": "Cita"
   }
 }
