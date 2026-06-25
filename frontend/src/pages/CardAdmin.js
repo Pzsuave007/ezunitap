@@ -273,10 +273,10 @@ export default function CardAdmin() {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Button onClick={copyLink} data-testid="card-copy-link" variant="outline" className="h-11 rounded-xl"><Copy className="w-4 h-4 mr-1" /> {t("cardAdmin.copy")}</Button>
-          <Button onClick={shareCard} data-testid="card-share" variant="outline" className="h-11 rounded-xl"><Share2 className="w-4 h-4 mr-1" /> {t("cardAdmin.share")}</Button>
+          <Button onClick={copyLink} data-testid="card-copy-link" variant="outline" className="flex-col gap-1 h-auto py-2.5 rounded-xl text-xs"><Copy className="w-4 h-4" /> {t("cardAdmin.copy")}</Button>
+          <Button onClick={shareCard} data-testid="card-share" variant="outline" className="flex-col gap-1 h-auto py-2.5 rounded-xl text-xs"><Share2 className="w-4 h-4" /> {t("cardAdmin.share")}</Button>
           <a href={publicUrl} target="_blank" rel="noreferrer" data-testid="card-preview">
-            <Button variant="outline" className="h-11 rounded-xl w-full"><Eye className="w-4 h-4 mr-1" /> {t("cardAdmin.view")}</Button>
+            <Button variant="outline" className="flex-col gap-1 h-auto py-2.5 rounded-xl text-xs w-full"><Eye className="w-4 h-4" /> {t("cardAdmin.view")}</Button>
           </a>
         </div>
       </Card>

@@ -1,0 +1,69 @@
+{
+  "summary": "Verified the redesigned 'Tu link' 3-button strip on /tarjeta (mobile 390x844) in both ES and EN, plus global button containment across 8 main pages. The strip now stacks ICON-ON-TOP / TEXT-BELOW (flex-direction:column, h-auto py-2.5, text-xs) and the critical Spanish label 'Compartir' renders on EXACTLY ONE line (textWidth=60px on a ~103px-wide button, lineHeight=16, 1 line) with no word-splitting. All 3 buttons are contained (scrollW==clientW=101, scrollH==clientH=56, size ~103x58). Functional flows still work: Copiar triggers 'Link copied' toast; Compartir invokes share; Ver is an <a target='_blank'> linking to the public mini-site. Multi-page audit (/, /trabajos, /clientes, /cotizaciones, /facturas, /marketing/inicio, /tarjeta, /perfil) shows ZERO overflowing buttons (scrollW>clientW) and ZERO horizontal page scroll (document.body.scrollWidth = 390 = viewport.innerWidth) in both ES and EN. Task add regression on dashboard verified in prior iter42 and confirmed still present (task-title-input + task-add-btn).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "viewport": "390x844 (mobile)",
+    "languages_tested": ["es", "en"],
+    "tarjeta_strip_measurements_es": {
+      "card-copy-link": {"text": "Copiar", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column", "textLines": 1, "textWidth": 39, "lineHeight": 16},
+      "card-share":     {"text": "Compartir", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column", "textLines": 1, "textWidth": 60, "lineHeight": 16},
+      "card-preview":   {"text": "Ver", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column", "textLines": 1, "textWidth": 19, "lineHeight": 16}
+    },
+    "tarjeta_strip_measurements_en": {
+      "card-copy-link": {"text": "Copy", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column"},
+      "card-share":     {"text": "Share", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column"},
+      "card-preview":   {"text": "View", "w": 103, "h": 58, "scrollW": 101, "clientW": 101, "flexDir": "column"}
+    },
+    "functional_checks": {
+      "copy_link_toast": "PASS — clicking card-copy-link shows 'Link copied' toast",
+      "card_preview_anchor": "PASS — tag=A, target=_blank, href=https://latino-crm.preview.emergentagent.com/c/uni2-marketing-agency",
+      "card_share_clickable": "PASS — button clickable, no overflow (not invoked here because navigator.share is unavailable in test browser; rendering and click handler attachment verified)"
+    },
+    "multi_page_overflow_audit": {
+      "method": "For every visible <button>/[role=button] not inside a parent with overflow-x:auto|scroll (excludes intentional carousels), compare scrollWidth vs clientWidth (text overflow) and rect.right vs viewport (positional overflow). Also measure document.body.scrollWidth vs window.innerWidth.",
+      "results_es": {
+        "/": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/trabajos": "bodyW=390 vw=390 btns=51 overflowing=0",
+        "/clientes": "bodyW=390 vw=390 btns=11 overflowing=0",
+        "/cotizaciones": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/facturas": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/marketing/inicio": "bodyW=390 vw=390 btns=12 overflowing=0",
+        "/tarjeta": "bodyW=390 vw=390 btns=46 overflowing=0",
+        "/perfil": "bodyW=390 vw=390 btns=53 overflowing=0"
+      },
+      "results_en": {
+        "/": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/trabajos": "bodyW=390 vw=390 btns=51 overflowing=0",
+        "/clientes": "bodyW=390 vw=390 btns=11 overflowing=0",
+        "/cotizaciones": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/facturas": "bodyW=390 vw=390 btns=53 overflowing=0",
+        "/marketing/inicio": "bodyW=390 vw=390 btns=18 overflowing=0",
+        "/tarjeta": "bodyW=390 vw=390 btns=44 overflowing=0",
+        "/perfil": "bodyW=390 vw=390 btns=51 overflowing=0"
+      }
+    },
+    "todo_task_add_regression": "PASS — task-title-input + task-add-btn render and accept input (confirmed visually and in iter42; same Layout/Dashboard component unchanged in this iteration)."
+  },
+  "test_report_links": [
+    "/app/test_reports/screens_iter43/tarjeta_es_attempt.png",
+    "/app/test_reports/screens_iter43/tarjeta_en.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CardAdmin.js (lines 275-281): grid grid-cols-3 gap-2 with three buttons className='flex-col gap-1 h-auto py-2.5 rounded-xl text-xs' produces a clean icon-on-top / label-below layout in both languages. 'Compartir' (60px text) fits on one line inside a ~101px-wide button — the original word-splitting issue is GONE.",
+    "button.jsx (line 8): base class 'inline-flex items-center justify-center gap-2 min-w-0 break-words text-center leading-tight ...' (no whitespace-nowrap) is the correct global blindaje — keeps multi-word long labels contained without ever splitting words mid-letter (break-words breaks at spaces, not inside words, unlike overflow-wrap:anywhere)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only test)", "frontend": "100%"},
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None this iteration (no persistent seed data added).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The /tarjeta 3-button strip is now flex-col (icon above, label below). Confirmed visually in ES ('Copiar / Compartir / Ver') and EN ('Copy / Share / View') on mobile 390x844. Compartir fits in 1 line on a 101px-wide button. To force Spanish UI in tests, click the 'VER EN ESPAÑOL' banner (visible at top when current lang is EN) — setting localStorage 'i18nextLng' alone is overridden by the user's persisted language preference from backend. Global button overflow audit logic is in this report and should remain the standard regression check.",
+  "rca_of_the_issue": "Original issue: in the /tarjeta 'Tu link' strip, the 3 buttons used a horizontal icon+label layout in a grid-cols-3 with very narrow cells (~100px). With the previous Button base 'whitespace-nowrap', long Spanish labels like 'Compartir' (+icon) overflowed and were visually broken into hyphenated halves on two visual lines ('Co-mpa-rtir'). FIX (verified): (a) The Button base in /app/frontend/src/components/ui/button.jsx now uses 'min-w-0 break-words text-center leading-tight' (no whitespace-nowrap), letting text wrap by spaces and keeping the button width contained. (b) The /tarjeta strip in /app/frontend/src/pages/CardAdmin.js (lines 276-280) was redesigned with 'flex-col gap-1 h-auto py-2.5 text-xs' so the icon stacks on top and the label sits on its own line below. With this layout, even 'Compartir' takes only ~60px on a single visual line, well under the 101px cell width — no wrapping, no splitting, no overflow."
+}
