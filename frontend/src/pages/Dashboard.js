@@ -75,32 +75,38 @@ const MiniStat = ({ icon: Icon, label, value, chip }) => (
   </div>
 );
 
-// ---- Business module block ----
-function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
-  const { t, i18n } = useTranslation();
+// ---- Hero KPI: Pagos pendientes (compact, shown at very top) ----
+function PendingHero({ navigate, stats }) {
+  const { t } = useTranslation();
   return (
-    <>
-      {/* Hero KPI — Pagos pendientes */}
-      <div data-testid="hero-pending-card" className="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl" />
-        <div className="relative">
-          <div className="text-sm font-medium text-slate-400 flex items-center gap-2">
-            <Wallet className="w-4 h-4" /> {t("dashboard.pendingPayments")}
-          </div>
-          <div className="font-heading text-4xl font-black tracking-tighter mt-2" data-testid="hero-pending-amount">
+    <div data-testid="hero-pending-card" className="relative overflow-hidden rounded-3xl bg-slate-900 p-5 text-white shadow-xl">
+      <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl" />
+      <div className="relative">
+        <div className="text-sm font-medium text-slate-400 flex items-center gap-2">
+          <Wallet className="w-4 h-4" /> {t("dashboard.pendingPayments")}
+        </div>
+        <div className="flex items-center justify-between gap-3 mt-2">
+          <div className="font-heading text-4xl font-black tracking-tighter leading-none" data-testid="hero-pending-amount">
             {money(stats.pending_amount)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">{t("dashboard.pendingPaymentsDesc")}</div>
           <button
             data-testid="view-invoices-btn"
             onClick={() => navigate("/invoices")}
-            className="mt-4 inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold backdrop-blur-md transition-colors"
+            className="flex-none inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold backdrop-blur-md transition-colors"
           >
             {t("dashboard.viewInvoices")} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
+    </div>
+  );
+}
 
+// ---- Business module block ----
+function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
+  const { t, i18n } = useTranslation();
+  return (
+    <>
       {/* Guided ordered flow */}
       <div>
         <SectionTitle action={<TourButton tourKey="dashboard" />}>{t("dashboard.startJob")}</SectionTitle>
@@ -465,6 +471,9 @@ export default function Dashboard() {
           <SettingsIcon className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Pagos pendientes — lo primero que ves (solo Negocio) */}
+      {hasBusiness && <PendingHero navigate={navigate} stats={stats} />}
 
       {/* Por hacer — pendientes del día (disponible para todos) */}
       <TasksPanel />
