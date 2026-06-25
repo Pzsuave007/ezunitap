@@ -100,20 +100,22 @@ export default function MarketingStart() {
   const openAi = (idea) => navigate(`/marketing?mode=ai&imgprompt=${encodeURIComponent(idea.image_prompt || idea.idea || idea.title)}&brief=${encodeURIComponent(idea.idea || idea.title)}`);
 
   return (
-    <div className="space-y-6 pb-10" data-testid="marketing-start">
-      {/* Hero / welcome */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-6 sm:p-8">
-        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-white/15 px-3 py-1 rounded-full">
-            <Megaphone className="w-3.5 h-3.5" /> {t("marketingStart.heroBadge")}
+    <div className="space-y-4 pb-10" data-testid="marketing-start">
+      {/* Hero / welcome — compact banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-4">
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-none">
+            <Megaphone className="w-5 h-5" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="font-heading text-lg sm:text-xl font-bold leading-tight">
+              {t("marketingStart.heroTitle", { name: firstName })} {t("marketingStart.heroTitle2")}
+            </h1>
+            <p className="text-emerald-50/90 text-xs mt-0.5 line-clamp-2">
+              {t("marketingStart.heroSubtitle")}
+            </p>
           </div>
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold mt-3 leading-tight">
-            {t("marketingStart.heroTitle", { name: firstName })}<br />{t("marketingStart.heroTitle2")}
-          </h1>
-          <p className="text-emerald-50/90 text-sm mt-2 max-w-md">
-            {t("marketingStart.heroSubtitle")}
-          </p>
         </div>
       </div>
 
