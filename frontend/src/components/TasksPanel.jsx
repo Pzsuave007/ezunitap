@@ -306,7 +306,7 @@ function TaskRow({ task, onToggle, onRemove, dateMeta, clientName }) {
       <button
         data-testid={`task-delete-${task.id}`}
         onClick={() => onRemove(task)}
-        className="flex-none text-slate-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+        className="flex-none text-slate-300 hover:text-red-500 transition-colors p-1"
         aria-label="delete"
       >
         <Trash2 className="w-4 h-4" />

@@ -135,6 +135,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Verificado: curl backend CRUD + cleanup (16 borrados) + lead no crea job; testing_agent iter_38 frontend 100% (8 flujos, móvil).
 - Build prod recompilado + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Trabajos oculta leads sueltos + "Agenda de hoy" en el panel Por hacer [LISTO, testing iter_39 100%; pendiente deploy]
+- **Trabajos limpio (confiable, sin botón):** `GET /jobs` ahora OCULTA los "bare leads" (status `new_lead` sin quote/invoice/fecha y `source != manual`) → solo se ve trabajo real (con cotización/factura/agendado/avanzado). `create_job` marca `source="manual"` para que los trabajos hechos a mano NUNCA se oculten. `/admin/cleanup-lead-jobs` alineado para purgar el mismo conjunto.
+- **Agenda de hoy automática:** `TasksPanel` ahora carga `/jobs` y muestra sección "Agenda de hoy" con trabajos/citas agendados para hoy + atrasados (no completados). Como las citas de la tarjeta crean un job `source=appointment status=scheduled`, sirven igual para barbero (citas) y contratista (trabajos). Cada item muestra hora y badge Hoy/Atrasado, tap → /citas o /trabajos.
+- Fix UX móvil: botón borrar tarea siempre visible (antes hover-only).
+- Verificado: backend pytest 5/5 + testing_agent iter_39 frontend 100% (móvil).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
