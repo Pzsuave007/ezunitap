@@ -6572,6 +6572,37 @@ app.add_middleware(
 )
 
 
+# Public embed endpoints (/api/public/*) are designed to be called from ANY
+# client website where the owner pastes the UniTech widget, so they must allow
+# cross-origin requests regardless of the restrictive CORS_ORIGINS used for the
+# authenticated app. This middleware is registered last, so it runs first and
+# short-circuits the preflight before the restrictive CORSMiddleware can reject
+# it with a 400.
+@app.middleware("http")
+async def _public_cors(request: Request, call_next):
+    path = request.url.path
+    if path.startswith("/api/public/"):
+        origin = request.headers.get("origin", "*")
+        if request.method == "OPTIONS":
+            return Response(
+                status_code=200,
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                    "Access-Control-Allow-Headers": request.headers.get(
+                        "access-control-request-headers", "Content-Type"
+                    ),
+                    "Access-Control-Max-Age": "600",
+                    "Vary": "Origin",
+                },
+            )
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        return response
+    return await call_next(request)
+
+
 async def _seed_admin_from_env(email_key: str, pw_key: str, biz_key: str, default_biz: str) -> None:
     """Idempotent admin seed. Creates the user if it doesn't already exist."""
     email = os.environ.get(email_key, "").strip().lower()

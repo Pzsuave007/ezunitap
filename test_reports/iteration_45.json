@@ -1,0 +1,31 @@
+{
+  "summary": "Verified _public_cors HTTP middleware (server.py L6581-6603) end-to-end + regression of embed widget on /embed-test.html. Backend (localhost:8001 direct): (a) OPTIONS /api/public/card/uni2mkt/chat with Origin=https://some-external-client.com returns HTTP 200 with access-control-allow-origin echoing the origin and methods=GET,POST,PUT,DELETE,OPTIONS; (b) POST same path returns 200 with the echoed origin AND a non-empty Spanish reply ('¡Hola! Gracias por escribir a Uni2 Marketing Agency…'); (c) /api/auth/login still responds normally (POST → 401 for bad creds, OPTIONS → 200; note allow-origin reflects the request because preview .env has CORS_ORIGINS='*' — confirmed not a regression). Frontend: /embed-test.html (recreated since the file was MISSING from /app/frontend/public — see action items) loads the bare <script data-unitech-chat data-slug='uni2mkt' data-lang='es'> tag with NO wrapper div, the FAB renders bottom-right, clicking opens the panel with the Spanish greeting '¡Hola! 👋 ¿En qué puedo ayudarte hoy?', sending 'Hola, necesito un corte de cesped' triggers POST /api/public/card/uni2mkt/chat (HTTP 200) and a relevant Spanish reply about lawn-care + city qualification is rendered. NO 'Ups, no pude responder' string seen.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/backend/tests/test_public_cors.py",
+    "/app/backend/tests/test_embed_chat.py",
+    "/app/test_reports/pytest/public_cors_iter45.xml",
+    "/app/test_reports/pytest/embed_chat_iter45.xml"
+  ],
+  "action_items": [
+    "INFO: /app/frontend/public/embed-test.html was MISSING from the repo (despite iter_44 reporting it as the test fixture). Testing agent recreated it with the documented contents (bare <script src='/embed.js' data-unitech-chat data-slug='uni2mkt' data-lang='es' async> tag, no wrapper div). Main agent should confirm this file is committed and decide if it should be part of the production build (it is harmless and useful for regression)."
+  ],
+  "critical_code_review_comments": [
+    "_public_cors middleware (server.py L6581) is correctly registered AFTER add_middleware(CORSMiddleware,...), so in Starlette's reversed middleware stack it runs FIRST and short-circuits preflights before the restrictive CORSMiddleware can reject them. Good design.",
+    "Vary: Origin is set, which prevents intermediaries from caching wrong-origin responses. Good.",
+    "Echoing the raw Origin in Access-Control-Allow-Origin is acceptable for public endpoints (these are unauthenticated, read/write to public card slugs only) and necessary because the widget runs on arbitrary client domains. No credentialed CSRF surface is exposed via /api/public/*.",
+    "Minor: middleware also sets header on non-OPTIONS responses with origin fallback '*' when no Origin header present — fine, but could log unusual server-to-server callers for observability if leads spike."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_public_cors.py (new — 3 regression tests for the _public_cors middleware)",
+    "/app/frontend/public/embed-test.html (re-created — was missing; bare script-tag test page used by browser regression)"
+  ],
+  "success_rate": { "backend": "100%", "frontend": "100%" },
+  "test_credentials": "Not required — public endpoints. Test slug: uni2mkt.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "CORS regression suite: /app/backend/tests/test_public_cors.py (tests run against http://localhost:8001 directly because the preview Kubernetes ingress overrides CORS headers with allow-origin '*'). Browser regression for the WordPress-style embed at /embed-test.html requires /app/frontend/public/embed-test.html to exist (it was missing this iteration and re-created). FAB on /embed-test.html is a plain <button> with no class/aria — selector 'button' (first one with text '💬') works. POST /api/public/card/uni2mkt/chat returns Spanish lead-funnel replies. CORS_ORIGINS in preview/.env = '*' so /api/auth/login OPTIONS also echoes any origin — when validating that the public-cors middleware does NOT broaden auth CORS, use a deployment with restrictive CORS_ORIGINS.",
+  "rca of the issue": "Original prod issue ('Ups, no pude responder' on external client sites): the widget loaded from ezunitech.com makes a cross-origin POST to /api/public/card/{slug}/chat. With a restrictive CORS_ORIGINS list, FastAPI's CORSMiddleware rejected the preflight with HTTP 400 and no Access-Control-Allow-Origin, so the browser blocked the actual POST and embed.js fell back to its error string. Fix (verified): a custom @app.middleware('http') named _public_cors intercepts /api/public/* requests, returns 200 on OPTIONS with Access-Control-Allow-Origin echoing the caller's Origin (+ Vary: Origin), and appends the same header to actual responses. Verified by curling localhost:8001 directly with Origin: https://some-external-client.com and by browser flow on /embed-test.html."
+}
