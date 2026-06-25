@@ -128,6 +128,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Verificado testing_agent iter_37: ambas cuentas (Negocio/Presencia), móvil 390x844 + desktop; barrido de navegación completo sin disparar el ErrorBoundary; /mensajes carga OK post-fix.
 - Build prod recompilado (rutas relativas) + `git add -f frontend/build`.
 
+## ✅ Jun 2026 — Tareas/Pendientes ("Por hacer") + Trabajos limpio (leads ya no crean Job) [LISTO, testing iter_38 100%; pendiente deploy]
+- **Causa de confusión:** cada lead de la tarjeta (connect/estimate) creaba un Job `new_lead` automático → ensuciaba Trabajos. FIX: `public_card_lead` ya NO crea Job (solo Cliente/CRM). Trabajos = trabajo real.
+- **Limpieza datos viejos:** endpoint `POST /admin/cleanup-lead-jobs` (super-admin, idempotente) borra Jobs `new_lead` sin quote/invoice/fecha cuyo cliente es `lead_source=smart_card`. Botón en Admin→Cuentas (`cleanup-lead-jobs-btn`). Correr 1 vez tras deploy en prod.
+- **NUEVO To-Do / Tareas:** colección `tasks`. CRUD `GET/POST/PUT/DELETE /tasks` (sin feature gate, para todos). Campos: title, due_date (opcional), client_id (opcional), done. Componente compartido `TasksPanel.jsx` (quick-add con fecha + cliente, palomear, borrar, badges Hoy/Atrasado, sección Completadas colapsable). Montado arriba del Dashboard y arriba de Trabajos. i18n namespace `tasks` (ES/EN).
+- Verificado: curl backend CRUD + cleanup (16 borrados) + lead no crea job; testing_agent iter_38 frontend 100% (8 flujos, móvil).
+- Build prod recompilado + `git add -f frontend/build`.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
