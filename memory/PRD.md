@@ -15,6 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jun 25 2026 — Embed widget WordPress fix + OpenAI propia para self-host [CÓDIGO LISTO; deploy pendiente por usuario]
+- **Bug embed.js en WordPress**: WP borra `<div>` vacíos con atributos `data-`. Fix: `embed.js` `init()` ahora también lee `data-unitech-chat`/`data-slug`/`data-lang`/`data-accent` desde `document.currentScript` (var `SCRIPT`) y llama `startChat()` (guard `chatStarted` evita doble montaje). Snippet de chat en `EmbedSettings.js` cambiado a una sola línea `<script ... data-unitech-chat ...>` (sin div). VERIFICADO 100% por testing_agent iter_44 en preview (FAB aparece sin div + responde).
+- **Bug "el chat no responde" en producción (ezunitech.com)**: causa real = Emergent Universal Key da 403 `FREE_USER_EXTERNAL_ACCESS_DENIED` fuera del preview (plan gratis). Solución elegida: usar **OpenAI key propia**. `ai_service.py` ahora: si `OPENAI_API_KEY` está presente, todo el TEXTO usa `_OpenAIChat` (wrapper sobre `AsyncOpenAI`, interfaz compatible con LlmChat: `with_model`/`with_params`/`send_message`, acumula historial interno); si no, usa Emergent (preview). Modelo por `OPENAI_MODEL` (default `gpt-5.2`). Imágenes (Gemini Nano Banana) SIGUEN en Emergent key. Wrapper validado por smoke test (401 con llave inválida = flujo correcto). NO probado e2e con llave real (usuario la puso en su keys.txt de prod).
+- Formato keys.txt prod: `OPENAI_API_KEY=sk-...` (opcional `OPENAI_MODEL=gpt-5.2`).
+- ACCIÓN USUARIO: Save to Github + `bash /home/ezunitap/repo/deploy.sh` (sube embed.js arreglado + ai_service.py). Build de prod regenerado y staged (resuelve "front build is missing").
+
+
 ## ✅ Jun 2026 — Marketing Studio: Asistente de Ideas + legibilidad + Mensajes [LISTO, probado iter 25-30; pendiente deploy]
 - **Sombra automática elegante** (halo difuso, no stroke) en diseños con texto sobre foto (`social_service.py` `_shadow_lines`/`_draw_text`, `_STYLE`, `_OVERLAY_TEMPLATES`, default "medium"). Símbolos (estrellas) también con sombra (`_shape_shadow`).
 - **Subtítulo en los 20 diseños**: se agregó render del subheadline a before_after, bold_bar, review_5star, framed_pro, split_diagonal, seasonal, duo_grid, clean_band.
