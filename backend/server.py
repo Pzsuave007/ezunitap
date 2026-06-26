@@ -4419,6 +4419,22 @@ async def public_card_chat(slug: str, payload: CardChatIn):
     import re as _re
     import json as _json
     card, user = await _public_card_by_slug(slug)
+    # Cost guardrail: cap chatbot messages per card per day to prevent runaway
+    # OpenAI spend / abuse. Override with CHAT_DAILY_CAP env (0 = unlimited).
+    _cap = int(os.environ.get("CHAT_DAILY_CAP", "150"))
+    if _cap > 0:
+        _today = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00+00:00")
+        _used = await db.card_chat_turns.count_documents({
+            "card_id": card["id"], "role": "user", "created_at": {"$gte": _today},
+        })
+        if _used >= _cap:
+            _lang = (payload.language or "en")
+            _ph = user.get("phone", "")
+            if _lang == "es":
+                _msg = f"Estamos recibiendo muchos mensajes ahora mismo. Por favor llámanos{(' al ' + _ph) if _ph else ''} y te atendemos personalmente. ¡Gracias!"
+            else:
+                _msg = f"We're getting a lot of messages right now. Please call us{(' at ' + _ph) if _ph else ''} and we'll help you personally. Thanks!"
+            return {"reply": _msg, "lead_created": False, "rate_limited": True}
     # Load conversation history
     history_docs = await db.card_chat_turns.find(
         {"card_id": card["id"], "session_id": payload.session_id},

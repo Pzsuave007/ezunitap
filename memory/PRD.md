@@ -15,7 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
-## ✅ Jun 25 2026 — Embed widget WordPress fix + OpenAI propia para self-host [CÓDIGO LISTO; deploy pendiente por usuario]
+## ✅ Jun 25 2026 — Chatbot con modelo mini (ahorro) + tope diario [CÓDIGO LISTO; deploy pendiente]
+- **Chatbot usa modelo barato**: `ai_service.py` → `CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")`. `card_assistant_chat` y `unitap_assistant_chat` usan `_new_chat(system, model=CHAT_MODEL)`. Cotizaciones/marketing/visión siguen en `MODEL_NAME` (gpt-5.2). `_new_chat` y `_OpenAIChat` aceptan param `model`. Probado: path Emergent (preview) y path OpenAI (gpt-4o-mini con llave del usuario) responden en español.
+- **Tope diario por cliente**: endpoint `POST /public/card/{slug}/chat` cuenta turnos role=user del card en el día; si supera `CHAT_DAILY_CAP` (env, default 150, 0=ilimitado) responde mensaje cortés con teléfono y `rate_limited:true` SIN llamar a la IA. Evita gasto descontrolado.
+- `deploy/fix.sh` whitelist ampliado: `OPENAI_CHAT_MODEL`, `CHAT_DAILY_CAP` (+ `OPENAI_API_KEY`, `OPENAI_MODEL` ya agregados).
+- Negocio: planes Presencia $19.99 / Marketing $29.99 / Negocio $39.99 / Bundle $59.99 mensual. Chatbot mini cuesta centavos por cliente → margen sano. Imágenes IA (Gemini) son lo caro y siguen en Emergent key.
+
+
 - **Bug embed.js en WordPress**: WP borra `<div>` vacíos con atributos `data-`. Fix: `embed.js` `init()` ahora también lee `data-unitech-chat`/`data-slug`/`data-lang`/`data-accent` desde `document.currentScript` (var `SCRIPT`) y llama `startChat()` (guard `chatStarted` evita doble montaje). Snippet de chat en `EmbedSettings.js` cambiado a una sola línea `<script ... data-unitech-chat ...>` (sin div). VERIFICADO 100% por testing_agent iter_44 en preview (FAB aparece sin div + responde).
 - **Bug "el chat no responde" en producción (ezunitech.com)**: causa real = Emergent Universal Key da 403 `FREE_USER_EXTERNAL_ACCESS_DENIED` fuera del preview (plan gratis). Solución elegida: usar **OpenAI key propia**. `ai_service.py` ahora: si `OPENAI_API_KEY` está presente, todo el TEXTO usa `_OpenAIChat` (wrapper sobre `AsyncOpenAI`, interfaz compatible con LlmChat: `with_model`/`with_params`/`send_message`, acumula historial interno); si no, usa Emergent (preview). Modelo por `OPENAI_MODEL` (default `gpt-5.2`). Imágenes (Gemini Nano Banana) SIGUEN en Emergent key. Wrapper validado por smoke test (401 con llave inválida = flujo correcto). NO probado e2e con llave real (usuario la puso en su keys.txt de prod).
 - Formato keys.txt prod: `OPENAI_API_KEY=sk-...` (opcional `OPENAI_MODEL=gpt-5.2`).

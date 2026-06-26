@@ -23,6 +23,9 @@ LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 MODEL_PROVIDER = "openai"
 MODEL_NAME = os.environ.get("OPENAI_MODEL", "gpt-5.2")
+# Cheaper "mini" model used ONLY for the conversational chatbot (lead qualification
+# on Smart Cards / website widget). Quotes, marketing and vision keep MODEL_NAME.
+CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 
 
 class _OpenAIChat:
@@ -30,10 +33,10 @@ class _OpenAIChat:
     directly using the owner's own API key. Keeps an internal message history so
     multi-turn flows (replaying prior turns) work the same way."""
 
-    def __init__(self, system_message: str):
+    def __init__(self, system_message: str, model: Optional[str] = None):
         from openai import AsyncOpenAI
         self._client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        self._model = MODEL_NAME
+        self._model = model or MODEL_NAME
         self._messages = [{"role": "system", "content": system_message}]
 
     def with_model(self, provider, model):  # noqa: ARG002 - kept for interface parity
@@ -119,14 +122,14 @@ async def enhance_image(image_bytes: bytes, kind: str = "profile") -> tuple[byte
     raise RuntimeError(last_err)
 
 
-def _new_chat(system_message: str) -> LlmChat:
+def _new_chat(system_message: str, model: Optional[str] = None) -> LlmChat:
     if OPENAI_API_KEY:
-        return _OpenAIChat(system_message)
+        return _OpenAIChat(system_message, model)
     return LlmChat(
         api_key=LLM_KEY,
         session_id=str(uuid.uuid4()),
         system_message=system_message,
-    ).with_model(MODEL_PROVIDER, MODEL_NAME)
+    ).with_model(MODEL_PROVIDER, model or MODEL_NAME)
 
 
 def _extract_json(text: str) -> dict:
@@ -434,7 +437,7 @@ async def card_assistant_chat(
         language=language,
         language_code=language_code,
     )
-    chat = _new_chat(system)
+    chat = _new_chat(system, model=CHAT_MODEL)
     # Replay prior conversation as alternating user/assistant
     for turn in history[-12:]:
         role = turn.get("role")
@@ -514,7 +517,7 @@ async def unitap_assistant_chat(
     """Chat assistant for the UniTech landing page (prospective contractor leads)."""
     language = "Spanish" if language_code == "es" else "English"
     system = UNITAP_ASSISTANT_SYSTEM.format(language=language, language_code=language_code)
-    chat = _new_chat(system)
+    chat = _new_chat(system, model=CHAT_MODEL)
     for turn in history[-12:]:
         role = turn.get("role")
         content = turn.get("content", "")
