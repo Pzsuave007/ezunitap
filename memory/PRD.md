@@ -15,7 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
-## ✅ Jun 25 2026 — Chatbot con modelo mini (ahorro) + tope diario [CÓDIGO LISTO; deploy pendiente]
+## ✅ Jun 25 2026 — Imágenes Marketing Studio migradas a OpenAI propia [CÓDIGO LISTO; deploy pendiente]
+- `ai_service.py`: cuando `OPENAI_API_KEY` está presente, `generate_image` usa `_openai_generate_image` (images.generate gpt-image-1) y `enhance_image` usa `_openai_edit_image` (images.edit gpt-image-1); fallback a Gemini/Emergent si no hay llave. Modelo `OPENAI_IMAGE_MODEL` (default gpt-image-1), calidad `OPENAI_IMAGE_QUALITY` (default "medium"). Size por aspect: 1x1→1024x1024, 9x16/4x5→1024x1536, landscape→1536x1024. Probado con llave real: generó imagen ~2MB OK.
+- Tope mensual de imágenes YA existía: `AI_IMAGE_DEFAULT_LIMIT` (ahora env, default 30/mes por usuario; admin puede override por usuario vía users.ai_image_limit; super-admin ilimitado). Enforced en `POST /social/ai-image` (403 al exceder).
+- Costo: gpt-image-1 medium ≈ $0.04/imagen → 30/mes ≈ $1.20 máx por cliente. Controlable vs planes.
+- `deploy/fix.sh` whitelist: + OPENAI_IMAGE_MODEL, OPENAI_IMAGE_QUALITY, AI_IMAGE_DEFAULT_LIMIT.
+
+
 - **Chatbot usa modelo barato**: `ai_service.py` → `CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")`. `card_assistant_chat` y `unitap_assistant_chat` usan `_new_chat(system, model=CHAT_MODEL)`. Cotizaciones/marketing/visión siguen en `MODEL_NAME` (gpt-5.2). `_new_chat` y `_OpenAIChat` aceptan param `model`. Probado: path Emergent (preview) y path OpenAI (gpt-4o-mini con llave del usuario) responden en español.
 - **Tope diario por cliente**: endpoint `POST /public/card/{slug}/chat` cuenta turnos role=user del card en el día; si supera `CHAT_DAILY_CAP` (env, default 150, 0=ilimitado) responde mensaje cortés con teléfono y `rate_limited:true` SIN llamar a la IA. Evita gasto descontrolado.
 - `deploy/fix.sh` whitelist ampliado: `OPENAI_CHAT_MODEL`, `CHAT_DAILY_CAP` (+ `OPENAI_API_KEY`, `OPENAI_MODEL` ya agregados).

@@ -3205,7 +3205,7 @@ async def delete_social_post(post_id: str, user_id: str = Depends(get_current_us
 # AI image generation (text -> realistic/graphic image) + monthly limit
 # ---------------------------------------------------------------------------
 AI_IMAGE_ASPECTS = {"9x16": (1080, 1920), "1x1": (1080, 1080), "4x5": (1080, 1350)}
-AI_IMAGE_DEFAULT_LIMIT = 30
+AI_IMAGE_DEFAULT_LIMIT = int(os.environ.get("AI_IMAGE_DEFAULT_LIMIT", "30"))
 
 
 def _ai_image_limit(user_doc: dict) -> int:

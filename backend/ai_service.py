@@ -69,6 +69,44 @@ class _OpenAIChat:
 # Gemini "Nano Banana" image-editing model (image-to-image enhancement).
 IMAGE_MODEL = "gemini-3.1-flash-image-preview"
 
+# OpenAI image model (used when the owner provides their own OPENAI_API_KEY, so
+# images run on their account instead of Emergent's Gemini key). Quality default
+# "medium" balances cost vs quality (override with OPENAI_IMAGE_QUALITY).
+OPENAI_IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-1")
+OPENAI_IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "medium")
+
+
+def _openai_image_size(aspect: str) -> str:
+    """Map our aspect hints to gpt-image-1 supported sizes."""
+    a = (aspect or "1x1").lower()
+    if a in ("9x16", "4x5", "portrait"):
+        return "1024x1536"
+    if a in ("16x9", "landscape"):
+        return "1536x1024"
+    return "1024x1024"
+
+
+async def _openai_generate_image(prompt: str, size: str = "1024x1024") -> tuple[bytes, str]:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+    resp = await client.images.generate(
+        model=OPENAI_IMAGE_MODEL, prompt=prompt, size=size,
+        quality=OPENAI_IMAGE_QUALITY, n=1,
+    )
+    return base64.b64decode(resp.data[0].b64_json), "image/png"
+
+
+async def _openai_edit_image(image_bytes: bytes, prompt: str, size: str = "1024x1024") -> tuple[bytes, str]:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+    resp = await client.images.edit(
+        model=OPENAI_IMAGE_MODEL, image=("photo.png", image_bytes, "image/png"),
+        prompt=prompt, size=size, quality=OPENAI_IMAGE_QUALITY, n=1,
+    )
+    return base64.b64decode(resp.data[0].b64_json), "image/png"
+
+
+
 _PROFILE_ENHANCE_PROMPT = (
     "Enhance this portrait photo so it looks like a clean, professional business "
     "headshot. Improve the lighting, color balance, white balance and sharpness; "
@@ -102,6 +140,14 @@ async def enhance_image(image_bytes: bytes, kind: str = "profile") -> tuple[byte
     base_prompt = _PROFILE_ENHANCE_PROMPT if kind == "profile" else _COVER_ENHANCE_PROMPT
     prompt = base_prompt + " Output ONLY the edited image, no text."
     last_err = "La IA no devolvió una imagen mejorada"
+    if OPENAI_API_KEY:
+        for attempt in range(2):
+            try:
+                return await _openai_edit_image(image_bytes, prompt)
+            except Exception as e:
+                last_err = str(e)
+                logger.warning("enhance_image (openai) attempt %s/2 failed: %s", attempt + 1, e)
+        raise RuntimeError(last_err)
     for attempt in range(3):
         try:
             chat = LlmChat(
@@ -763,6 +809,14 @@ async def generate_image(idea: str, aspect: str = "1x1", style: str = "realistic
         f"{aspect_txt} {style_txt} Output ONLY the image, no text."
     )
     last_err = "La IA no devolvió una imagen"
+    if OPENAI_API_KEY:
+        for attempt in range(2):
+            try:
+                return await _openai_generate_image(prompt, _openai_image_size(aspect))
+            except Exception as e:
+                last_err = str(e)
+                logger.warning("generate_image (openai) attempt %s/2 failed: %s", attempt + 1, e)
+        raise RuntimeError(last_err)
     for attempt in range(3):
         try:
             chat = LlmChat(
