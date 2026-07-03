@@ -19,6 +19,9 @@ const ACCENT_PRESETS = ["#059669", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "
 
 const TX = {
   design: { es: "Diseño", en: "Design" },
+  widgetLang: { es: "Idioma del formulario / chat", en: "Form / chat language" },
+  spanish: { es: "Español", en: "Spanish" },
+  english: { es: "Inglés", en: "English" },
   accent: { es: "Color principal", en: "Accent color" },
   theme: { es: "Tema", en: "Theme" },
   light: { es: "Claro", en: "Light" },
@@ -51,6 +54,7 @@ export default function EmbedSettings() {
   const [slug, setSlug] = useState("");
   const [type, setType] = useState("contact");
   const [copied, setCopied] = useState(false);
+  const [widgetLang, setWidgetLang] = useState(lang);
 
   // Customization
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
@@ -73,7 +77,7 @@ export default function EmbedSettings() {
   const buildAttrs = () => {
     const a = [`data-slug="${slug}"`];
     if (type !== "chat") a.push(`data-type="${type}"`);
-    a.push(`data-lang="${lang}"`);
+    a.push(`data-lang="${widgetLang}"`);
     if (accent && accent.toLowerCase() !== DEFAULT_ACCENT) a.push(`data-accent="${accent}"`);
     if (theme === "dark") a.push(`data-theme="dark"`);
     if (radius !== "rounded") a.push(`data-radius="${radius}"`);
@@ -111,7 +115,7 @@ export default function EmbedSettings() {
     s.async = true;
     host.appendChild(s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, type, lang, accent, theme, radius, title, font, branding]);
+  }, [slug, type, widgetLang, accent, theme, radius, title, font, branding]);
 
   const labels = {
     contact: { es: "Contacto", en: "Contact" },
@@ -182,6 +186,12 @@ export default function EmbedSettings() {
       <Card className="card-elevated border-0 shadow-none p-4" data-testid="embed-design-panel">
         <div className="font-heading font-bold text-slate-900 mb-4">{tx("design")}</div>
         <div className="grid sm:grid-cols-2 gap-5">
+          {/* Widget language — controls what language the copied code will use */}
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-slate-500 block mb-2">{tx("widgetLang")}</label>
+            <Seg testid="embed-widget-lang" value={widgetLang} onChange={setWidgetLang} options={[{ v: "es", label: tx("spanish") }, { v: "en", label: tx("english") }]} />
+          </div>
+
           {/* Accent */}
           <div>
             <label className="text-xs font-semibold text-slate-500 block mb-2">{tx("accent")}</label>
@@ -283,15 +293,15 @@ export default function EmbedSettings() {
                 style={{ background: pal.card, borderColor: pal.border, borderRadius: rad.card, boxShadow: "0 10px 30px rgba(0,0,0,0.12)", fontFamily: font === "inherit" ? "inherit" : undefined }}
               >
                 <div className="px-4 py-3 text-white font-bold text-sm" style={{ background: accent }}>
-                  {title.trim() || (lang === "es" ? "Asistente" : "Assistant")}
+                  {title.trim() || (widgetLang === "es" ? "Asistente" : "Assistant")}
                 </div>
                 <div className="p-3 space-y-2" style={{ background: pal.msgs }}>
                   <div className="text-sm px-3 py-2 inline-block max-w-[85%]" style={{ background: pal.bot, color: pal.text, border: `1px solid ${pal.border}`, borderRadius: 14 }}>
-                    {lang === "es" ? "¡Hola! 👋 ¿En qué puedo ayudarte?" : "Hi! 👋 How can I help you?"}
+                    {widgetLang === "es" ? "¡Hola! 👋 ¿En qué puedo ayudarte?" : "Hi! 👋 How can I help you?"}
                   </div>
                   <div className="flex justify-end">
                     <div className="text-sm px-3 py-2 text-white max-w-[85%]" style={{ background: accent, borderRadius: 14 }}>
-                      {lang === "es" ? "Necesito una cotización" : "I need a quote"}
+                      {widgetLang === "es" ? "Necesito una cotización" : "I need a quote"}
                     </div>
                   </div>
                 </div>
