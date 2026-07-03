@@ -15,7 +15,12 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
-## ✅ Jun 25 2026 — Imágenes Marketing Studio migradas a OpenAI propia [CÓDIGO LISTO; deploy pendiente]
+## ✅ Jul 3 2026 — Personalización visual del widget embebido (formularios + chat) [CÓDIGO LISTO; deploy pendiente]
+- `embed.js` reescrito: nuevos atributos `data-theme` (light/dark), `data-radius` (rounded/sharp/pill), `data-title`, `data-font` (system/inherit), `data-branding` (on/off), `data-position` (right/left, chat), `data-launcher` (texto del botón del chat). Helpers `readOpts/palette/radii`. Mantiene auto-init desde `<script>` (WordPress) y compatibilidad con `<div>`. Fix bug: se usaba `st()` con objetos planos → corregido.
+- `EmbedSettings.js` reescrito con panel "Design": selector de color (swatches + color picker), Theme, Corners, Font, Custom title, branding on/off, y para chat: Position + Button text. Vista previa EN VIVO (formulario real inyectado; maqueta del chat que refleja tema/color/posición/launcher). Genera snippet con solo los atributos no-default. Fix: `key` en ramas de preview para evitar conflicto React+DOM inyectado.
+- Verificado por screenshots: formulario oscuro/pastilla/azul/título custom/sin marca ✅; chat rosa "¿Necesitas ayuda?" a la izquierda ✅; ambos juntos en una página ✅; página Sitio Web con controles + preview + snippet ✅. (Auto-test por screenshots, sin testing_agent por preferencia del usuario en cambios de UI.)
+
+
 - `ai_service.py`: cuando `OPENAI_API_KEY` está presente, `generate_image` usa `_openai_generate_image` (images.generate gpt-image-1) y `enhance_image` usa `_openai_edit_image` (images.edit gpt-image-1); fallback a Gemini/Emergent si no hay llave. Modelo `OPENAI_IMAGE_MODEL` (default gpt-image-1), calidad `OPENAI_IMAGE_QUALITY` (default "medium"). Size por aspect: 1x1→1024x1024, 9x16/4x5→1024x1536, landscape→1536x1024. Probado con llave real: generó imagen ~2MB OK.
 - Tope mensual de imágenes YA existía: `AI_IMAGE_DEFAULT_LIMIT` (ahora env, default 30/mes por usuario; admin puede override por usuario vía users.ai_image_limit; super-admin ilimitado). Enforced en `POST /social/ai-image` (403 al exceder).
 - Costo: gpt-image-1 medium ≈ $0.04/imagen → 30/mes ≈ $1.20 máx por cliente. Controlable vs planes.
