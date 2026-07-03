@@ -247,13 +247,106 @@
       serviceI = field(t.service, mk("input", inputStyle(pal, rad), { type: "text" }));
       msgI = field(t.project, st(mk("textarea", inputStyle(pal, rad)), { height: "90px", padding: "10px 12px", resize: "vertical" }));
     } else if (type === "appointment") {
-      dateSel = field(t.date + " *", mk("select", inputStyle(pal, rad), {}));
-      dateSel.appendChild(mk("option", {}, { value: "", textContent: t.pickDate }));
-      timeSel = field(t.time + " *", mk("select", inputStyle(pal, rad), {}));
-      timeSel.appendChild(mk("option", {}, { value: "", textContent: t.pickTime }));
+      // Objects with a `.value` so the submit handler below stays unchanged.
+      dateSel = { value: "" };
+      timeSel = { value: "" };
+
+      function pad2(n) { return (n < 10 ? "0" : "") + n; }
+      function ymd(y, m, d) { return y + "-" + pad2(m + 1) + "-" + pad2(d); }
+      var WD = lang === "en" ? ["S", "M", "T", "W", "T", "F", "S"] : ["D", "L", "M", "M", "J", "V", "S"];
+
+      // Calendar container
+      var calLabel = mk("label", labelStyle(pal)); calLabel.textContent = t.date + " *"; form.appendChild(calLabel);
+      var cal = mk("div", { border: "1px solid " + pal.inputBorder, borderRadius: rad.field, padding: "10px", marginBottom: "12px", background: pal.inputBg });
+      form.appendChild(cal);
+
+      var calHead = mk("div", { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+      var prevB = mk("button", { width: "30px", height: "30px", borderRadius: "8px", border: "1px solid " + pal.inputBorder, background: "transparent", color: pal.text, cursor: "pointer", fontSize: "16px", lineHeight: "1" }, { type: "button" });
+      prevB.innerHTML = "&#8249;";
+      var monthLbl = mk("div", { fontWeight: "700", fontSize: "14px", color: pal.text });
+      var nextB = mk("button", { width: "30px", height: "30px", borderRadius: "8px", border: "1px solid " + pal.inputBorder, background: "transparent", color: pal.text, cursor: "pointer", fontSize: "16px", lineHeight: "1" }, { type: "button" });
+      nextB.innerHTML = "&#8250;";
+      calHead.appendChild(prevB); calHead.appendChild(monthLbl); calHead.appendChild(nextB);
+      cal.appendChild(calHead);
+
+      var wdRow = mk("div", { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "2px", marginBottom: "4px" });
+      WD.forEach(function (w) { var c = mk("div", { textAlign: "center", fontSize: "11px", fontWeight: "700", color: pal.sub, padding: "2px 0" }); c.textContent = w; wdRow.appendChild(c); });
+      cal.appendChild(wdRow);
+
+      var grid = mk("div", { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "3px" });
+      cal.appendChild(grid);
+
+      // Time slots
+      var timeLabel = mk("label", labelStyle(pal)); timeLabel.textContent = t.time + " *"; form.appendChild(timeLabel);
+      var timeWrap = mk("div", { display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px", minHeight: "38px", alignItems: "center" });
+      var timeHint = mk("div", { fontSize: "13px", color: pal.sub }); timeHint.textContent = t.pickDate;
+      timeWrap.appendChild(timeHint);
+      form.appendChild(timeWrap);
+
       notesI = field(t.notes, st(mk("textarea", inputStyle(pal, rad)), { height: "70px", padding: "10px 12px", resize: "vertical" }));
 
       var avail = {};
+      var availSet = {};
+      var view = new Date();
+      view.setDate(1);
+      var minMonth = null, maxMonth = null;
+
+      function mkey(dt) { return dt.getFullYear() * 12 + dt.getMonth(); }
+
+      function renderTimes(dateStr) {
+        timeWrap.innerHTML = "";
+        timeSel.value = "";
+        var slots = avail[dateStr] || [];
+        if (!slots.length) { var h = mk("div", { fontSize: "13px", color: pal.sub }); h.textContent = t.pickTime; timeWrap.appendChild(h); return; }
+        slots.forEach(function (s) {
+          var chip = mk("button", { padding: "7px 12px", borderRadius: rad.field, border: "1px solid " + pal.inputBorder, background: pal.cardBg, color: pal.text, cursor: "pointer", fontSize: "13px", fontWeight: "600" }, { type: "button" });
+          chip.textContent = s;
+          chip.addEventListener("click", function () {
+            timeSel.value = s;
+            var all = timeWrap.querySelectorAll("button");
+            for (var i = 0; i < all.length; i++) { all[i].style.background = pal.cardBg; all[i].style.color = pal.text; all[i].style.borderColor = pal.inputBorder; }
+            chip.style.background = accent; chip.style.color = "#fff"; chip.style.borderColor = accent;
+          });
+          timeWrap.appendChild(chip);
+        });
+      }
+
+      function renderMonth() {
+        grid.innerHTML = "";
+        monthLbl.textContent = view.toLocaleDateString(lang === "en" ? "en-US" : "es-ES", { month: "long", year: "numeric" });
+        var y = view.getFullYear(), m = view.getMonth();
+        var firstDow = new Date(y, m, 1).getDay();
+        var days = new Date(y, m + 1, 0).getDate();
+        for (var i = 0; i < firstDow; i++) grid.appendChild(mk("div", {}));
+        for (var d = 1; d <= days; d++) {
+          var ds = ymd(y, m, d);
+          var isAvail = !!availSet[ds];
+          var cell = mk("button", {
+            height: "34px", borderRadius: "8px", border: "none", cursor: isAvail ? "pointer" : "default",
+            fontSize: "13px", fontWeight: "600",
+            background: dateSel.value === ds ? accent : "transparent",
+            color: dateSel.value === ds ? "#fff" : (isAvail ? pal.text : pal.sub),
+            opacity: isAvail ? "1" : "0.35",
+          }, { type: "button", disabled: !isAvail });
+          cell.textContent = String(d);
+          if (isAvail) {
+            (function (ds2) {
+              cell.addEventListener("click", function () {
+                dateSel.value = ds2;
+                renderMonth();
+                renderTimes(ds2);
+              });
+            })(ds);
+          }
+          grid.appendChild(cell);
+        }
+        prevB.style.visibility = (minMonth !== null && mkey(view) <= minMonth) ? "hidden" : "visible";
+        nextB.style.visibility = (maxMonth !== null && mkey(view) >= maxMonth) ? "hidden" : "visible";
+      }
+
+      prevB.addEventListener("click", function () { view.setMonth(view.getMonth() - 1); renderMonth(); });
+      nextB.addEventListener("click", function () { view.setMonth(view.getMonth() + 1); renderMonth(); });
+
       fetch(api("/public/card/" + encodeURIComponent(slug) + "/availability"))
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -265,21 +358,19 @@
             form.appendChild(no);
             return;
           }
-          d.dates.forEach(function (day) {
-            avail[day.date] = day.slots;
-            dateSel.appendChild(mk("option", {}, { value: day.date, textContent: fmtDate(day.date, lang) }));
-          });
+          d.dates.forEach(function (day) { avail[day.date] = day.slots; availSet[day.date] = true; });
+          var keys = d.dates.map(function (x) { return x.date; }).sort();
+          var first = new Date(keys[0] + "T00:00:00");
+          var last = new Date(keys[keys.length - 1] + "T00:00:00");
+          minMonth = mkey(first); maxMonth = mkey(last);
+          view = new Date(first.getFullYear(), first.getMonth(), 1);
+          renderMonth();
         })
         .catch(function () {});
 
-      dateSel.addEventListener("change", function () {
-        timeSel.innerHTML = "";
-        timeSel.appendChild(mk("option", {}, { value: "", textContent: t.pickTime }));
-        (avail[dateSel.value] || []).forEach(function (s) {
-          timeSel.appendChild(mk("option", {}, { value: s, textContent: s }));
-        });
-      });
+      renderMonth();
     } else {
+
       msgI = field(t.message, st(mk("textarea", inputStyle(pal, rad)), { height: "90px", padding: "10px 12px", resize: "vertical" }));
     }
 
