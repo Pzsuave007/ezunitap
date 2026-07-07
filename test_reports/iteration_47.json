@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only verification of /precios pricing page value-selling content in preview. All required data-testids and copy render correctly in both EN and ES.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_items": [
+    "Subtitle mentions $75/mo (no $59.99).",
+    "module-toggle-presencia/negocio/marketing all present.",
+    "module-value-presencia => 'Replaces: $200 NFC cards + Birdeye...' (EN) / 'Reemplaza: Tarjetas NFC de $200 + Birdeye...' (ES).",
+    "module-value-negocio => 'Replaces: Jobber / Housecall Pro ($49–99/mo)...' / ES equivalent.",
+    "module-value-marketing => 'Replaces: Canva Pro + a $500/mo agency...' / ES equivalent.",
+    "Each module card visually shows 7 benefit bullets (screenshot confirmed).",
+    "Selecting 3 modules: bundle-popular-badge='Most popular', bundle-value-stack lists 'GoHighLevel ($97+/mo) · Jobber · Canva · Birdeye · NFC cards' with 'Save over $200/mo vs. buying each tool separately'.",
+    "pricing-value-footer EN: 'Less than what you charge for one job — and it works for you every day.'",
+    "pricing-value-footer ES: 'Menos de lo que cobras por un solo trabajo — y trabaja para ti todos los días.'",
+    "Language toggle EN/ES swaps all pricing copy correctly."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007!",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Preview /precios renders all new value-selling content correctly in EN and ES. User's 'don't see the changes' complaint is CDN/browser caching on production, not a preview issue."
+}
