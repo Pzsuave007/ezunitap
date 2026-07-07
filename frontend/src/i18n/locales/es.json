@@ -824,23 +824,14 @@
         ]
       },
       {
-        "title": "Captura clientes desde cualquier web",
-        "lead": "Pon el chatbot y los formularios de UniTech en el sitio de tus clientes o el tuyo.",
+        "title": "Captura clientes desde la web y deja que agenden solos",
+        "lead": "Pon el chatbot y los formularios de UniTech en cualquier web y muestra tu calendario de citas.",
         "points": [
           "Chatbot con IA que responde 24/7",
           "Formularios de contacto, cotización y cita",
           "Se adapta al diseño de cada web",
-          "Cada lead entra directo a tu CRM"
-        ]
-      },
-      {
-        "title": "Tus clientes agendan su cita solos",
-        "lead": "Muestra un calendario en tu web con tus horarios disponibles.",
-        "points": [
-          "Eligen día y hora en un calendario",
-          "Solo aparecen los espacios libres",
-          "La cita se agenda al instante",
-          "La ves en tu agenda automáticamente"
+          "Eligen día y hora; solo aparecen los espacios libres",
+          "La cita se agenda al instante y entra directo a tu CRM y agenda"
         ]
       },
       {
@@ -854,21 +845,13 @@
         ]
       },
       {
-        "title": "Tu cliente acepta el presupuesto “quote”",
-        "lead": "Recibe una propuesta profesional y la aprueba desde su celular.",
+        "title": "Tu cliente acepta y la factura “invoice” se genera sola",
+        "lead": "Tu cliente aprueba la propuesta desde su celular y UniTech crea la factura “invoice” al instante.",
         "points": [
           "Revisa servicios, términos y alcance del trabajo",
-          "Aprueba con un tap",
-          "Todo queda documentado en el sistema"
-        ]
-      },
-      {
-        "title": "La factura “invoice” se genera sola",
-        "lead": "Al aprobar el presupuesto, UniTech crea la factura “invoice” profesional automáticamente.",
-        "points": [
-          "Factura “invoice” profesional al instante",
-          "Listo para enviar y para cobrar",
-          "Sin volver a escribir la misma información"
+          "Aprueba con un tap — todo queda documentado en el sistema",
+          "La factura “invoice” profesional se crea sola",
+          "Lista para enviar y cobrar, sin volver a escribir nada"
         ]
       },
       {
@@ -899,40 +882,24 @@
         ]
       },
       {
-        "title": "Compártelo en tus redes sociales",
-        "lead": "Al terminar el trabajo, la IA crea un post o Reel profesional para que lo publiques en tus redes.",
+        "title": "Muestra tu trabajo en redes y en Google",
+        "lead": "Al terminar, la IA crea posts y Reels con tu marca, y publicas en tus redes y en tu perfil de Google.",
         "points": [
           "Posts y Reels en video con tus fotos y tu marca",
           "Listos para Instagram, Facebook y TikTok",
+          "Publica también en tu Google Business sin salir del panel",
+          "Más visibilidad en Google Maps y mejor posicionamiento (SEO local)",
           "Muestra tu trabajo y atrae más clientes nuevos"
         ]
       },
       {
-        "title": "Publica en tu Google Business",
-        "lead": "Crea y publica posts en tu perfil de Google directo desde UniTech.",
+        "title": "Consigue y responde reseñas en piloto automático",
+        "lead": "UniTech genera el mensaje para pedir reseñas y la IA redacta las respuestas por ti.",
         "points": [
-          "Más visibilidad en Google Maps",
-          "Mejor posicionamiento (SEO local)",
-          "Publica ofertas y trabajos recientes",
-          "Sin salir de tu panel"
-        ]
-      },
-      {
-        "title": "Pide reseñas automáticamente",
-        "lead": "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
-        "points": [
-          "Mensaje profesional automático",
-          "Incluye tarjeta NFC: pide reseñas en persona con un solo tap",
-          "Más reseñas, más confianza, más clientes nuevos"
-        ]
-      },
-      {
-        "title": "Responde reseñas con IA",
-        "lead": "La IA redacta respuestas profesionales a tus reseñas de Google en segundos.",
-        "points": [
-          "Respuestas personalizadas y con tu tono",
-          "Contesta rápido a reseñas nuevas",
-          "Tú apruebas antes de publicar",
+          "Mensaje automático para pedir la reseña",
+          "Con la tarjeta NFC, pide reseñas en persona con un solo tap",
+          "Más reseñas, más confianza, más clientes nuevos",
+          "La IA responde con tu tono; tú apruebas antes de publicar",
           "Cuida tu reputación en piloto automático"
         ]
       }

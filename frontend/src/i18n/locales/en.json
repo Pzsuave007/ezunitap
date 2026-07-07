@@ -824,23 +824,14 @@
         ]
       },
       {
-        "title": "Capture clients from any website",
-        "lead": "Add UniTech's chatbot and forms to your clients' sites or your own.",
+        "title": "Capture clients from the web and let them book online",
+        "lead": "Add UniTech's chatbot and forms to any website and show your booking calendar.",
         "points": [
           "AI chatbot that answers 24/7",
           "Contact, quote and appointment forms",
           "Matches each website's design",
-          "Every lead goes straight to your CRM"
-        ]
-      },
-      {
-        "title": "Clients book their own appointments",
-        "lead": "Show a calendar on your website with your available times.",
-        "points": [
-          "They pick a day and time on a calendar",
-          "Only free slots are shown",
-          "The appointment is booked instantly",
-          "It shows in your schedule automatically"
+          "They pick a day & time; only free slots show",
+          "Booked instantly and sent straight to your CRM & schedule"
         ]
       },
       {
@@ -854,21 +845,13 @@
         ]
       },
       {
-        "title": "Your client accepts the quote",
-        "lead": "They get a professional proposal and approve it from their phone.",
+        "title": "Your client approves and the invoice generates itself",
+        "lead": "Your client approves the proposal from their phone and UniTech creates the invoice instantly.",
         "points": [
           "Reviews services, terms and scope of work",
-          "Approves with one tap",
-          "Everything documented in the system"
-        ]
-      },
-      {
-        "title": "The invoice generates itself",
-        "lead": "When the quote is approved, UniTech creates the professional invoice automatically.",
-        "points": [
-          "Professional invoice instantly",
-          "Ready to send and to get paid",
-          "No re-typing the same info"
+          "Approves with one tap — all documented in the system",
+          "The professional invoice is created automatically",
+          "Ready to send and get paid, no re-typing"
         ]
       },
       {
@@ -899,40 +882,24 @@
         ]
       },
       {
-        "title": "Share it on your social media",
-        "lead": "When the job is done, AI creates a professional post or Reel for you to publish on your channels.",
+        "title": "Show your work on social media and Google",
+        "lead": "When you finish, AI creates posts and Reels with your brand, and you publish to social and your Google profile.",
         "points": [
           "Video posts and Reels with your photos and brand",
           "Ready for Instagram, Facebook and TikTok",
+          "Also post to your Google Business without leaving the dashboard",
+          "More visibility on Google Maps and better local SEO",
           "Show your work and attract more new clients"
         ]
       },
       {
-        "title": "Post to your Google Business",
-        "lead": "Create and publish posts to your Google profile straight from UniTech.",
+        "title": "Get and reply to reviews on autopilot",
+        "lead": "UniTech generates the message to request reviews and AI drafts the replies for you.",
         "points": [
-          "More visibility on Google Maps",
-          "Better local SEO ranking",
-          "Post offers and recent jobs",
-          "Without leaving your dashboard"
-        ]
-      },
-      {
-        "title": "Ask for reviews automatically",
-        "lead": "When the job is done, UniTech generates the message to request the review.",
-        "points": [
-          "Automatic professional message",
-          "Includes NFC card: ask for reviews in person with one tap",
-          "More reviews, more trust, more new clients"
-        ]
-      },
-      {
-        "title": "Reply to reviews with AI",
-        "lead": "AI drafts professional replies to your Google reviews in seconds.",
-        "points": [
-          "Personalized replies in your tone",
-          "Respond fast to new reviews",
-          "You approve before publishing",
+          "Automatic message to request the review",
+          "With the NFC card, ask for reviews in person with one tap",
+          "More reviews, more trust, more new clients",
+          "AI replies in your tone; you approve before publishing",
           "Protect your reputation on autopilot"
         ]
       }

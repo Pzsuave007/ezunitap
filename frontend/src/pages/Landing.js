@@ -23,7 +23,7 @@ const SERVICES = [
 ];
 
 // ── "Así Funciona" — icons per step (text comes from i18n landing.flow) ──
-const FLOW_ICONS = [IdCard, Globe, CalendarCheck, Sparkles, FileBadge, Receipt, DollarSign, CalendarDays, Camera, Share2, MapPin, Star, Bot];
+const FLOW_ICONS = [IdCard, Globe, Sparkles, Receipt, DollarSign, CalendarDays, Camera, Share2, Star];
 // Product modules — meta (text comes from i18n landing.products)
 const PRODUCT_META = [
   { id: "presencia", icon: IdCard, price: "$34.99" },
