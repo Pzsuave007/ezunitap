@@ -1097,7 +1097,14 @@
     "chipSeconds": "in 2 seconds",
     "chipFromSite": "Made on the job site",
     "bundleReplaces": "Everything you'd use GoHighLevel ($97+/mo) for — in one simple app made for contractors",
-    "valuePrefix": "Why it pays off:"
+    "valuePrefix": "Why it pays off:",
+    "founderEyebrow": "Launch offer",
+    "founderTitle": "First 30 get EVERYTHING for $59/mo — for life",
+    "founderDesc": "Full Presence + Business + Marketing. Lock in $59/mo forever. Once the 30 spots are gone, the price goes up to $75/mo.",
+    "founderSpots": "{{n}} of {{limit}} spots left",
+    "founderLifetime": "$59/mo for life",
+    "founderRegular": "$75/mo",
+    "founderCta": "Lock in my Founder spot"
   },
   "socialStudio": {
     "enhancing": "Enhancing…",

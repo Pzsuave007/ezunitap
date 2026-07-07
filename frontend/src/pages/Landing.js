@@ -7,13 +7,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
+import api from "@/lib/api";
 import PlatformChat from "@/components/PlatformChat";
 import {
   Hammer, Sparkles, CalendarDays, IdCard, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
   PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package, CalendarCheck,
-  LogOut, User, Settings, Play, Film,
+  LogOut, User, Settings, Play, Film, Crown,
 } from "lucide-react";
 
 const SERVICES = [
@@ -36,6 +37,10 @@ export default function Landing() {
   const { t, i18n } = useTranslation();
   const isEn = (i18n.language || "").toLowerCase().startsWith("en");
   const L = (es, en) => (isEn ? en : es);
+  const [founder, setFounder] = useState(null);
+  useEffect(() => {
+    api.get("/payments/founder-status").then((r) => setFounder(r.data)).catch(() => {});
+  }, []);
   const FLOW = t("landing.flow", { returnObjects: true }).map((s, i) => ({
     ...s, n: String(i + 1).padStart(2, "0"), icon: FLOW_ICONS[i],
   }));
@@ -549,6 +554,42 @@ export default function Landing() {
       {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle (movida al final, tras mostrar el valor) ====== */}
       <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
         <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          {/* Founder launch offer — first 30 get the full bundle at $59/mo for life */}
+          {founder && founder.available && (
+            <div className="mb-12 rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-6 lg:p-8 text-white shadow-2xl relative overflow-hidden" data-testid="landing-founder-banner">
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
+              <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider mb-3">
+                    <Crown className="w-3.5 h-3.5" /> {t("landing.founderEyebrow")}
+                  </div>
+                  <h3 className="font-heading text-2xl lg:text-3xl font-bold leading-tight">{t("landing.founderTitle")}</h3>
+                  <p className="mt-2 text-white/90 text-sm lg:text-base leading-relaxed max-w-2xl">{t("landing.founderDesc")}</p>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2" data-testid="landing-founder-spots">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600" />
+                    </span>
+                    <span className="text-sm font-bold text-slate-900">{t("landing.founderSpots", { n: founder.remaining, limit: founder.limit })}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-start lg:items-end gap-3 flex-none">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-heading text-5xl font-bold">$59</span>
+                    <div className="leading-tight">
+                      <div className="text-white/80 text-sm line-through">{t("landing.founderRegular")}</div>
+                      <div className="text-white text-xs font-semibold">{t("landing.founderLifetime")}</div>
+                    </div>
+                  </div>
+                  <Link to="/register?plan=bundle_founder&billing=month" data-testid="landing-founder-cta"
+                    className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 tap shadow-lg">
+                    {t("landing.founderCta")} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="max-w-2xl">
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{t("landing.productsEyebrow")}</div>
             <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">

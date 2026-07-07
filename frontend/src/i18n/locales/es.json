@@ -1097,7 +1097,14 @@
     "chipSeconds": "en 2 segundos",
     "chipFromSite": "Hecho desde la obra",
     "bundleReplaces": "Todo para lo que usarías GoHighLevel ($97+/mes) — en una app simple hecha para contratistas",
-    "valuePrefix": "Por qué vale la pena:"
+    "valuePrefix": "Por qué vale la pena:",
+    "founderEyebrow": "Oferta de lanzamiento",
+    "founderTitle": "Los primeros 30 se llevan TODO por $59/mes — de por vida",
+    "founderDesc": "Presencia + Negocio + Marketing completo. Bloquea $59/mes para siempre. Cuando se acaben los 30 cupos, el precio sube a $75/mes.",
+    "founderSpots": "Quedan {{n}} de {{limit}} cupos",
+    "founderLifetime": "$59/mes de por vida",
+    "founderRegular": "$75/mes",
+    "founderCta": "Asegurar mi lugar de Fundador"
   },
   "socialStudio": {
     "enhancing": "Mejorando…",
