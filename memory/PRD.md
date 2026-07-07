@@ -15,6 +15,15 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 7 2026 — Precio FUNDADOR: Bundle a $59/mes DE POR VIDA, primeros 30 [COMPLETO + PROBADO iter_46 100%; build listo, deploy pendiente]
+- Backend ya tenía `bundle_founder` ($59/mes=5900¢, mensual, cap 30 vitalicio) + `GET /payments/founder-status`.
+- Frontend `Pricing.js`: al entrar con `?plan=bundle_founder` selecciona el Bundle completo, muestra banner "Oferta Fundador" con cupos restantes (X de 30), precio $59 tachando $75, badge "Precio de por vida", oculta toggle mensual/anual, CTA "Asegurar mi precio Fundador"; maneja estado SOLD OUT. `subscribe()` envía `plan_id:'bundle_founder'` al checkout.
+- `Register.js` conserva `plan=bundle_founder` y reanuda checkout (`&start=1`). i18n ES/EN agregado (claves `pricing.founder*` + `auth.register.plans.bundle_founder`).
+- FIX CRÍTICO (por testing agent): `payments_service.create_checkout_session` enviaba `trial_period_days:0` a Stripe (rechazado, HTTP 500) bloqueando TODOS los checkouts. Ahora se omite cuando es 0.
+- Verificado: founder cobra 5900¢, bundle_monthly sigue 7500¢. Regresión OK.
+- Nota de negocio: `founder_status` cuenta cupos por estado activo/trialing/past_due (un fundador que cancela libera su cupo).
+
+
 ## ✅ Jul 3 2026 — Personalización visual del widget embebido (formularios + chat) [CÓDIGO LISTO; deploy pendiente]
 - `embed.js` reescrito: nuevos atributos `data-theme` (light/dark), `data-radius` (rounded/sharp/pill), `data-title`, `data-font` (system/inherit), `data-branding` (on/off), `data-position` (right/left, chat), `data-launcher` (texto del botón del chat). Helpers `readOpts/palette/radii`. Mantiene auto-init desde `<script>` (WordPress) y compatibilidad con `<div>`. Fix bug: se usaba `st()` con objetos planos → corregido.
 - `EmbedSettings.js` reescrito con panel "Design": selector de color (swatches + color picker), Theme, Corners, Font, Custom title, branding on/off, y para chat: Position + Button text. Vista previa EN VIVO (formulario real inyectado; maqueta del chat que refleja tema/color/posición/launcher). Genera snippet con solo los atributos no-default. Fix: `key` en ramas de preview para evitar conflicto React+DOM inyectado.
