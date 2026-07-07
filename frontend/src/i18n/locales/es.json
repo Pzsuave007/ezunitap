@@ -950,30 +950,39 @@
         "name": "Presencia Digital",
         "tagline": "Tu Tarjeta Inteligente NFC",
         "desc": "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
+        "value": "tarjetas NFC de $200 + Birdeye para reseñas",
         "points": [
-          "Tarjeta física NFC + página digital",
-          "Captura clientes y reseñas en Google",
-          "AI chat que responde 24/7"
+          "Tarjeta física NFC + mini-sitio digital (envío gratis)",
+          "Más reseñas de 5★ en Google, en automático",
+          "Captura leads las 24 horas con formulario",
+          "Botón directo a WhatsApp, llamada y ubicación",
+          "Tus clientes agendan citas solos"
         ]
       },
       {
         "name": "Gestión de Negocio",
         "tagline": "Cotiza, factura, cobra y agenda",
         "desc": "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
+        "value": "Jobber / Housecall Pro ($49–99/mes)",
         "points": [
-          "Quotes y contratos en inglés con IA",
-          "Invoices y links de pago",
-          "Clientes, trabajos y agenda"
+          "Presupuestos con IA en 30 seg (español → inglés)",
+          "Facturas profesionales con depósitos",
+          "Contratos y acuerdos listos para firmar",
+          "CRM con cada cliente e historial de trabajos",
+          "Calendario de trabajos + citas online"
         ]
       },
       {
         "name": "Marketing Studio",
         "tagline": "Posts y Reels de tus trabajos",
         "desc": "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
+        "value": "Canva Pro + una agencia de $500/mes",
         "points": [
-          "Reels en video con voz y música",
-          "Posts con tus fotos y colores",
-          "Antes/Después, Promo, Testimonios"
+          "Reels verticales con IA, voz y música",
+          "Posts con tus fotos, colores y logo",
+          "Voz en off y subtítulos automáticos",
+          "+10 diseños listos (Antes/Después, Promo, Testimonios)",
+          "Asistente de ideas — nunca te quedes sin qué publicar"
         ],
         "badge": "Nuevo"
       }
@@ -1083,7 +1092,9 @@
     "mockNavProfile": "Perfil",
     "chipEsEn": "Español → Inglés",
     "chipSeconds": "en 2 segundos",
-    "chipFromSite": "Hecho desde la obra"
+    "chipFromSite": "Hecho desde la obra",
+    "bundleReplaces": "Reemplaza GoHighLevel ($97+/mes), Jobber, Canva, Birdeye y tarjetas NFC",
+    "valuePrefix": "Reemplaza:"
   },
   "socialStudio": {
     "enhancing": "Mejorando…",

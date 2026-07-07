@@ -574,6 +574,11 @@ export default function Landing() {
                 <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
                 <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
                 <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                {p.value && (
+                  <div className="mt-3 inline-flex items-start gap-1.5 rounded-lg bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 text-[12px] leading-snug text-emerald-800" data-testid={`product-value-${p.id}`}>
+                    <span className="font-bold">{t("landing.valuePrefix")}</span> {p.value}
+                  </div>
+                )}
                 <ul className="mt-4 space-y-2 flex-1">
                   {p.points.map((pt) => (
                     <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
@@ -607,6 +612,9 @@ export default function Landing() {
               <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
                 <Trans i18nKey="landing.bundleDesc" components={{ b: <strong className="text-white" /> }} />
               </p>
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-emerald-50" data-testid="bundle-replaces">
+                {t("landing.bundleReplaces")}
+              </div>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-3">
               <div>
