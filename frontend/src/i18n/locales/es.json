@@ -798,6 +798,26 @@
         ]
       },
       {
+        "title": "Captura clientes desde cualquier web",
+        "lead": "Pon el chatbot y los formularios de UniTech en el sitio de tus clientes o el tuyo.",
+        "points": [
+          "Chatbot con IA que responde 24/7",
+          "Formularios de contacto, cotización y cita",
+          "Se adapta al diseño de cada web",
+          "Cada lead entra directo a tu CRM"
+        ]
+      },
+      {
+        "title": "Tus clientes agendan su cita solos",
+        "lead": "Muestra un calendario en tu web con tus horarios disponibles.",
+        "points": [
+          "Eligen día y hora en un calendario",
+          "Solo aparecen los espacios libres",
+          "La cita se agenda al instante",
+          "La ves en tu agenda automáticamente"
+        ]
+      },
+      {
         "title": "Crea presupuestos “quote” en segundos",
         "lead": "Describe el trabajo en español — la inteligencia artificial hace el resto.",
         "points": [
@@ -862,12 +882,32 @@
         ]
       },
       {
+        "title": "Publica en tu Google Business",
+        "lead": "Crea y publica posts en tu perfil de Google directo desde UniTech.",
+        "points": [
+          "Más visibilidad en Google Maps",
+          "Mejor posicionamiento (SEO local)",
+          "Publica ofertas y trabajos recientes",
+          "Sin salir de tu panel"
+        ]
+      },
+      {
         "title": "Pide reseñas automáticamente",
         "lead": "Cuando el trabajo termina, UniTech genera el mensaje para pedir la reseña.",
         "points": [
           "Mensaje profesional automático",
           "Incluye tarjeta NFC: pide reseñas en persona con un solo tap",
           "Más reseñas, más confianza, más clientes nuevos"
+        ]
+      },
+      {
+        "title": "Responde reseñas con IA",
+        "lead": "La IA redacta respuestas profesionales a tus reseñas de Google en segundos.",
+        "points": [
+          "Respuestas personalizadas y con tu tono",
+          "Contesta rápido a reseñas nuevas",
+          "Tú apruebas antes de publicar",
+          "Cuida tu reputación en piloto automático"
         ]
       }
     ],

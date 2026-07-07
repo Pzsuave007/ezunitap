@@ -12,7 +12,7 @@ import {
   Hammer, Sparkles, CalendarDays, IdCard, Receipt, Users,
   MessageSquare, Camera, Globe, Smartphone, Zap, ArrowRight, Check, Star,
   Phone, MapPin, Languages, Bot, Send, Mail, Save, QrCode, Share2, Sprout,
-  PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package,
+  PaintBucket, Wind, LayoutDashboard, DollarSign, TrendingUp, Clock, FileBadge, Package, CalendarCheck,
   LogOut, User, Settings, Play, Film,
 } from "lucide-react";
 
@@ -22,7 +22,7 @@ const SERVICES = [
 ];
 
 // ── "Así Funciona" — icons per step (text comes from i18n landing.flow) ──
-const FLOW_ICONS = [IdCard, Sparkles, FileBadge, Receipt, DollarSign, CalendarDays, Camera, Share2, Star];
+const FLOW_ICONS = [IdCard, Globe, CalendarCheck, Sparkles, FileBadge, Receipt, DollarSign, CalendarDays, Camera, Share2, MapPin, Star, Bot];
 // Product modules — meta (text comes from i18n landing.products)
 const PRODUCT_META = [
   { id: "presencia", icon: IdCard, price: "$19.99" },

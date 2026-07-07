@@ -798,6 +798,26 @@
         ]
       },
       {
+        "title": "Capture clients from any website",
+        "lead": "Add UniTech's chatbot and forms to your clients' sites or your own.",
+        "points": [
+          "AI chatbot that answers 24/7",
+          "Contact, quote and appointment forms",
+          "Matches each website's design",
+          "Every lead goes straight to your CRM"
+        ]
+      },
+      {
+        "title": "Clients book their own appointments",
+        "lead": "Show a calendar on your website with your available times.",
+        "points": [
+          "They pick a day and time on a calendar",
+          "Only free slots are shown",
+          "The appointment is booked instantly",
+          "It shows in your schedule automatically"
+        ]
+      },
+      {
         "title": "Create quotes in seconds",
         "lead": "Describe the job and AI does the rest.",
         "points": [
@@ -862,12 +882,32 @@
         ]
       },
       {
+        "title": "Post to your Google Business",
+        "lead": "Create and publish posts to your Google profile straight from UniTech.",
+        "points": [
+          "More visibility on Google Maps",
+          "Better local SEO ranking",
+          "Post offers and recent jobs",
+          "Without leaving your dashboard"
+        ]
+      },
+      {
         "title": "Ask for reviews automatically",
         "lead": "When the job is done, UniTech generates the message to request the review.",
         "points": [
           "Automatic professional message",
           "Includes NFC card: ask for reviews in person with one tap",
           "More reviews, more trust, more new clients"
+        ]
+      },
+      {
+        "title": "Reply to reviews with AI",
+        "lead": "AI drafts professional replies to your Google reviews in seconds.",
+        "points": [
+          "Personalized replies in your tone",
+          "Respond fast to new reviews",
+          "You approve before publishing",
+          "Protect your reputation on autopilot"
         ]
       }
     ],
