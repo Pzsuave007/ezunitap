@@ -47,6 +47,7 @@ import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
 import { FeatureGate } from "@/components/FeatureGate";
 import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
+import InstallPWA from "@/components/InstallPWA";
 import { Loader2 } from "lucide-react";
 import "@/App.css";
 
@@ -93,6 +94,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <LanguageSuggestBanner />
+          <InstallPWA />
           <RoutedErrorBoundary>
           <Routes>
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />

@@ -1733,5 +1733,12 @@
     "previewTitle": "Live preview",
     "call": "Call",
     "chatPreview": "The chat shows as a floating bubble in the bottom-right of the site. It answers questions and captures leads automatically."
+  },
+  "pwa": {
+    "install": "Install app",
+    "iosTitle": "Add UniTech to your Home Screen",
+    "iosStep1": "Tap the Share button",
+    "iosStep2": "Choose “Add to Home Screen”",
+    "iosStep3": "Confirm — open it from the icon"
   }
 }

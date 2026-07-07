@@ -1733,5 +1733,12 @@
     "previewTitle": "Vista previa",
     "call": "Llamar",
     "chatPreview": "El chat aparece como una burbuja flotante en la esquina inferior derecha del sitio. Responde preguntas y captura leads automáticamente."
+  },
+  "pwa": {
+    "install": "Instalar app",
+    "iosTitle": "Agrega UniTech a tu inicio",
+    "iosStep1": "Toca el botón Compartir",
+    "iosStep2": "Elige “Agregar a inicio”",
+    "iosStep3": "Confirma y listo — ábrela desde el ícono"
   }
 }
