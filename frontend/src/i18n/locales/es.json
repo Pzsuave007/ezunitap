@@ -567,22 +567,22 @@
       "Que tus clientes agenden citas solos"
     ],
     "bNegocio": [
-      "Presupuestos con IA en 30 seg (hablas en español, sale en inglés)",
-      "Facturas profesionales y cobra con depósitos",
-      "Contratos y acuerdos listos para firmar",
-      "CRM: todos tus clientes y su historial en un solo lugar",
-      "Calendario de trabajos y agenda del día",
-      "Citas online que tus clientes agendan solos",
-      "Notas y seguimiento por cada cliente"
+      "Presupuestos y cotizaciones con IA en 30 segundos",
+      "Contratos y acuerdos con firma digital que te protegen",
+      "Cobra depósitos y pagos con tarjeta — cobra más rápido",
+      "Envía facturas y links de pago con un toque",
+      "Un presupuesto firmado se vuelve trabajo agendado, solo",
+      "CRM con cada cliente, nota e historial de trabajos",
+      "Calendario + citas online, nunca dobles reservas"
     ],
     "bMarketing": [
-      "Posts para redes con IA: idea + diseño + texto",
-      "Videos y Reels verticales generados con IA",
-      "Plantillas con los colores y el logo de tu marca",
-      "Voz en off profesional y subtítulos automáticos",
-      "Asistente de ideas: nunca te quedes sin qué publicar",
-      "+10 diseños listos para tu industria",
-      "Descarga y publica en segundos"
+      "Reels verticales con IA: voz en off, música y subtítulos",
+      "Convierte las fotos de tus trabajos en posts pro en segundos",
+      "Cada diseño usa tu logo, colores y marca",
+      "+10 plantillas probadas: Antes/Después, Promo, Testimonios",
+      "Asistente de ideas para nunca quedarte sin qué publicar",
+      "Descarga y publica en segundos — sin editor",
+      "Mantente presente y gana trabajos desde redes — sin agencia"
     ],
     "founderBadge": "Oferta Fundador",
     "founderSpots": "Quedan {{n}} de {{limit}} cupos",
@@ -591,14 +591,14 @@
     "founderSoldOut": "¡Cupos agotados! Ya no hay lugares de Fundador disponibles.",
     "founderCta": "Asegurar mi precio Fundador",
     "founderOriginal": "Precio normal",
-    "valuePrefix": "Reemplaza:",
-    "vPresencia": "Birdeye/Podium ($200+/mes) + una tarjeta NFC de $200. Dueño de tu Google y tu reputación.",
-    "vNegocio": "Jobber / Housecall Pro ($49–99/mes). Cotiza al instante y cobra más rápido.",
-    "vMarketing": "Canva Pro + una agencia de $500/mes. Publica como los grandes.",
+    "valuePrefix": "Por qué vale la pena:",
+    "vPresencia": "Tu tarjeta NFC, mini-sitio y reseñas de Google en uno — sin reimprimir papel ni malabares con apps.",
+    "vNegocio": "Los presupuestos, facturas y agenda que apps como Jobber cobran a $49–99/mes — más simple y hecho para ti.",
+    "vMarketing": "Publica constante sin contratar diseñador ni agencia — contenido con las fotos de tus propios trabajos.",
     "popular": "Más popular",
-    "bundleValueTitle": "Todo en uno reemplaza:",
-    "bundleValueList": "GoHighLevel ($97+/mes) · Jobber · Canva · Birdeye · tarjetas NFC",
-    "bundleSaveVs": "Ahorras más de $200/mes vs. contratarlo por separado",
+    "bundleValueTitle": "Todas tus herramientas en una:",
+    "bundleValueList": "Todo para lo que usarías GoHighLevel ($97+/mes) — hecho para contratistas.",
+    "bundleSaveVs": "Ahorra ~$30/mes vs. los 3 módulos por separado",
     "valueFooter": "Menos de lo que cobras por un solo trabajo — y trabaja para ti todos los días."
   },
   "welcome": {
@@ -950,7 +950,7 @@
         "name": "Presencia Digital",
         "tagline": "Tarjeta NFC + tu Google, hecho por ti",
         "desc": "Toda tu presencia online: tarjeta NFC inteligente, mini-sitio profesional y tu Perfil de Empresa en Google administrado por ti.",
-        "value": "Birdeye / Podium ($200+/mes) + una tarjeta NFC de $200",
+        "value": "Tu tarjeta NFC, mini-sitio y reseñas de Google en uno — sin reimprimir papel ni malabares con apps",
         "points": [
           "Tarjeta NFC inteligente + mini-sitio digital (envío gratis)",
           "Administra tu Perfil de Empresa en Google desde la app",
@@ -962,28 +962,30 @@
       },
       {
         "name": "Gestión de Negocio",
-        "tagline": "Cotiza, factura, cobra y agenda",
-        "desc": "Todo tu negocio organizado: presupuestos con IA, contratos, facturas, pagos y calendario.",
-        "value": "Jobber / Housecall Pro ($49–99/mes)",
+        "tagline": "Cotiza, cobra y organiza tu negocio",
+        "desc": "Maneja toda tu operación: presupuestos con IA, contratos con firma digital, facturas con depósitos, pagos con tarjeta, CRM y calendario.",
+        "value": "Los presupuestos, facturas y agenda que apps como Jobber cobran a $49–99/mes — más simple y hecho para ti",
         "points": [
-          "Presupuestos con IA en 30 seg (español → inglés)",
-          "Facturas profesionales con depósitos",
-          "Contratos y acuerdos listos para firmar",
-          "CRM con cada cliente e historial de trabajos",
-          "Calendario de trabajos + citas online"
+          "Presupuestos y cotizaciones con IA en 30 segundos",
+          "Contratos y acuerdos con firma digital que te protegen",
+          "Cobra depósitos y pagos con tarjeta — cobra más rápido",
+          "Un presupuesto firmado se vuelve trabajo agendado, solo",
+          "CRM con cada cliente, nota e historial de trabajos",
+          "Calendario + citas online, nunca dobles reservas"
         ]
       },
       {
         "name": "Marketing Studio",
-        "tagline": "Posts y Reels de tus trabajos",
-        "desc": "Escribe en español y la IA crea posts y videos (Reels) profesionales con tu marca, listos para Instagram y Facebook.",
-        "value": "Canva Pro + una agencia de $500/mes",
+        "tagline": "Tus redes y Reels, hechos por la IA",
+        "desc": "La IA convierte las fotos de tus trabajos en posts y Reels verticales con tu marca — listos para Instagram, Facebook y TikTok.",
+        "value": "Publica constante sin contratar diseñador ni agencia — contenido con las fotos de tus propios trabajos",
         "points": [
-          "Reels verticales con IA, voz y música",
-          "Posts con tus fotos, colores y logo",
-          "Voz en off y subtítulos automáticos",
-          "+10 diseños listos (Antes/Después, Promo, Testimonios)",
-          "Asistente de ideas — nunca te quedes sin qué publicar"
+          "Reels verticales con IA: voz en off, música y subtítulos",
+          "Convierte las fotos de tus trabajos en posts pro en segundos",
+          "Cada diseño usa tu logo, colores y marca",
+          "+10 plantillas probadas: Antes/Después, Promo, Testimonios",
+          "Asistente de ideas para nunca quedarte sin qué publicar",
+          "Mantente presente y gana trabajos desde redes — sin agencia"
         ],
         "badge": "Nuevo"
       }
@@ -1094,8 +1096,8 @@
     "chipEsEn": "Español → Inglés",
     "chipSeconds": "en 2 segundos",
     "chipFromSite": "Hecho desde la obra",
-    "bundleReplaces": "Reemplaza GoHighLevel ($97+/mes), Jobber, Canva, Birdeye y tarjetas NFC",
-    "valuePrefix": "Reemplaza:"
+    "bundleReplaces": "Todo para lo que usarías GoHighLevel ($97+/mes) — en una app simple hecha para contratistas",
+    "valuePrefix": "Por qué vale la pena:"
   },
   "socialStudio": {
     "enhancing": "Mejorando…",

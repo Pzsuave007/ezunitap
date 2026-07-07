@@ -567,22 +567,22 @@
       "Let clients book appointments themselves"
     ],
     "bNegocio": [
-      "AI quotes & contracts in 30 seconds",
-      "Professional invoices — get paid with deposits",
-      "Contracts & agreements ready to sign",
-      "CRM: every client and their history in one place",
-      "Job calendar and today's agenda",
-      "Online booking your clients schedule themselves",
-      "Notes and follow-ups per client"
+      "Professional AI quotes & estimates in 30 seconds",
+      "E-sign contracts & agreements that protect you",
+      "Collect deposits & card payments — get paid faster",
+      "Send invoices & payment links in one tap",
+      "A signed quote becomes a scheduled job automatically",
+      "CRM with every client, note & job history",
+      "Calendar + online booking, never double-book"
     ],
     "bMarketing": [
-      "AI social posts: idea + design + caption",
-      "AI-generated vertical videos & Reels",
-      "Templates with your brand colors and logo",
-      "Professional voiceovers and auto subtitles",
-      "Idea assistant: never run out of what to post",
-      "+10 ready-made designs for your industry",
-      "Download and publish in seconds"
+      "AI vertical Reels with voiceover, music & subtitles",
+      "Turn your job photos into pro posts in seconds",
+      "Every design uses your logo, colors & brand",
+      "+10 proven templates: Before/After, Promo, Testimonials",
+      "Idea assistant so you never run out of content",
+      "Download & publish in seconds — no editor needed",
+      "Stay top-of-mind & win jobs from social — no agency"
     ],
     "founderBadge": "Founder Offer",
     "founderSpots": "{{n}} of {{limit}} spots left",
@@ -591,14 +591,14 @@
     "founderSoldOut": "Sold out! No more Founder spots available.",
     "founderCta": "Lock in my Founder price",
     "founderOriginal": "Regular price",
-    "valuePrefix": "Replaces:",
-    "vPresencia": "Birdeye/Podium ($200+/mo) + a $200 NFC card. Own your Google and your reputation.",
-    "vNegocio": "Jobber / Housecall Pro ($49–99/mo). Quote instantly, get paid faster.",
-    "vMarketing": "Canva Pro + a $500/mo agency. Post like the big brands.",
+    "valuePrefix": "Why it pays off:",
+    "vPresencia": "Your NFC card, mini-website & Google reviews in one — no paper reprints, no juggling apps.",
+    "vNegocio": "The quotes, invoices & scheduling apps like Jobber charge $49–99/mo for — simpler and made for you.",
+    "vMarketing": "Post consistently without hiring a designer or agency — content from your own job photos.",
     "popular": "Most popular",
-    "bundleValueTitle": "All-in-one replaces:",
-    "bundleValueList": "GoHighLevel ($97+/mo) · Jobber · Canva · Birdeye · NFC cards",
-    "bundleSaveVs": "Save over $200/mo vs. buying each tool separately",
+    "bundleValueTitle": "All your tools in one:",
+    "bundleValueList": "Everything you'd use GoHighLevel ($97+/mo) for — made for contractors.",
+    "bundleSaveVs": "Save ~$30/mo vs. the 3 modules separately",
     "valueFooter": "Less than what you charge for one job — and it works for you every day."
   },
   "welcome": {
@@ -950,7 +950,7 @@
         "name": "Digital Presence",
         "tagline": "NFC card + your Google, handled for you",
         "desc": "Your full online presence: NFC smart card, pro mini-website, and your Google Business Profile managed for you.",
-        "value": "Birdeye / Podium ($200+/mo) + a $200 NFC card",
+        "value": "Your NFC card, mini-website & Google reviews in one — no paper reprints, no juggling apps",
         "points": [
           "Physical NFC smart card + digital mini-site (shipped free)",
           "Manage your Google Business Profile from the app",
@@ -962,28 +962,30 @@
       },
       {
         "name": "Business Management",
-        "tagline": "Quote, invoice, get paid and schedule",
-        "desc": "Your whole business organized: AI quotes, contracts, invoices, payments and calendar.",
-        "value": "Jobber / Housecall Pro ($49–99/mo)",
+        "tagline": "Quote, get paid & stay organized",
+        "desc": "Run your whole operation: pro AI quotes, e-sign contracts, invoices with deposits, card payments, CRM and calendar.",
+        "value": "The quotes, invoices & scheduling apps like Jobber charge $49–99/mo for — simpler and made for you",
         "points": [
-          "AI quotes & contracts in 30 seconds",
-          "Professional invoices with deposits",
-          "Contracts & agreements ready to sign",
-          "CRM with every client & job history",
-          "Job calendar + online booking"
+          "Professional AI quotes & estimates in 30 seconds",
+          "E-sign contracts & agreements that protect you",
+          "Collect deposits & card payments — get paid faster",
+          "A signed quote becomes a scheduled job automatically",
+          "CRM with every client, note & job history",
+          "Calendar + online booking, so you never double-book"
         ]
       },
       {
         "name": "Marketing Studio",
-        "tagline": "Posts and Reels of your jobs",
-        "desc": "AI creates professional posts and videos (Reels) with your brand, ready for Instagram and Facebook.",
-        "value": "Canva Pro + a $500/mo agency",
+        "tagline": "Your social media & Reels, done by AI",
+        "desc": "AI turns your job photos into pro posts and vertical Reels with your brand — ready for Instagram, Facebook & TikTok.",
+        "value": "Post consistently without hiring a designer or agency — content from your own job photos",
         "points": [
-          "AI vertical Reels with voice & music",
-          "Posts with your photos, colors & logo",
-          "Auto voiceovers and subtitles",
-          "+10 ready designs (Before/After, Promo, Testimonials)",
-          "Idea assistant — never run out of content"
+          "AI vertical Reels with voiceover, music & subtitles",
+          "Turn your job photos into pro posts in seconds",
+          "Every design uses your logo, colors & brand",
+          "+10 proven templates: Before/After, Promo, Testimonials",
+          "Idea assistant so you never run out of content",
+          "Stay top-of-mind & win jobs from social — no agency"
         ],
         "badge": "New"
       }
@@ -1094,8 +1096,8 @@
     "chipEsEn": "Quote ready",
     "chipSeconds": "in 2 seconds",
     "chipFromSite": "Made on the job site",
-    "bundleReplaces": "Replaces GoHighLevel ($97+/mo), Jobber, Canva, Birdeye & NFC cards",
-    "valuePrefix": "Replaces:"
+    "bundleReplaces": "Everything you'd use GoHighLevel ($97+/mo) for — in one simple app made for contractors",
+    "valuePrefix": "Why it pays off:"
   },
   "socialStudio": {
     "enhancing": "Enhancing…",
