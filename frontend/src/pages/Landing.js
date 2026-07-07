@@ -254,83 +254,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle ====== */}
-      <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
-        <div className="max-w-6xl mx-auto px-5 lg:px-8">
-          <div className="max-w-2xl">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{t("landing.productsEyebrow")}</div>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
-              {t("landing.productsTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.productsTitleHighlight")}</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              {t("landing.productsSubtitle")}
-            </p>
-          </div>
-
-          <div className="mt-10 grid md:grid-cols-3 gap-5">
-            {PRODUCT_META.map((meta, i) => {
-              const p = { ...t("landing.products", { returnObjects: true })[i], ...meta };
-              return (
-              <div key={p.id} data-testid={`product-card-${p.id}`}
-                className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
-                {p.badge && (
-                  <span className="absolute top-5 right-5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{p.badge}</span>
-                )}
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
-                  <p.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
-                <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
-                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
-                <ul className="mt-4 space-y-2 flex-1">
-                  {p.points.map((pt) => (
-                    <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
-                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
-                  <div>
-                    <span className="font-heading text-2xl font-bold">{p.price}</span>
-                    <span className="text-sm text-slate-400">{t("landing.perMonth")}</span>
-                  </div>
-                  <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
-                    {t("landing.subscribe")} <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-              );
-            })}
-          </div>
-
-          {/* Bundle highlight */}
-          <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
-                <Zap className="w-3.5 h-3.5" /> {t("landing.bundleBadge")}
-              </div>
-              <h3 className="font-heading text-2xl lg:text-3xl font-bold">{t("landing.bundleTitle")}</h3>
-              <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
-                <Trans i18nKey="landing.bundleDesc" components={{ b: <strong className="text-white" /> }} />
-              </p>
-            </div>
-            <div className="flex flex-col items-start lg:items-end gap-3">
-              <div>
-                <span className="font-heading text-4xl font-bold">$59.99</span>
-                <span className="text-white/70">{t("landing.perMonth")}</span>
-              </div>
-              <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
-                className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
-                {t("landing.bundleCta")} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs text-slate-400">{t("landing.bundleNote")}</p>
-        </div>
-      </section>
-
       {/* ====== MARKETING STUDIO — qué crea (demo visual) ====== */}
       <section id="marketing" className="py-20 lg:py-28 bg-white" data-testid="landing-marketing-showcase">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
@@ -622,6 +545,83 @@ export default function Landing() {
         </div>
       </section>
       )}
+
+      {/* ====== 3 PRODUCTOS / MÓDULOS — individual o bundle (movida al final, tras mostrar el valor) ====== */}
+      <section id="productos" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-products">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="max-w-2xl">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{t("landing.productsEyebrow")}</div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              {t("landing.productsTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.productsTitleHighlight")}</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              {t("landing.productsSubtitle")}
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {PRODUCT_META.map((meta, i) => {
+              const p = { ...t("landing.products", { returnObjects: true })[i], ...meta };
+              return (
+              <div key={p.id} data-testid={`product-card-${p.id}`}
+                className={`relative rounded-3xl bg-white border p-6 flex flex-col tap transition-all hover:shadow-lg hover:-translate-y-0.5 ${p.badge ? "border-emerald-300 ring-1 ring-emerald-200" : "border-slate-200"}`}>
+                {p.badge && (
+                  <span className="absolute top-5 right-5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{p.badge}</span>
+                )}
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
+                  <p.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="mt-4 font-heading text-xl font-bold">{p.name}</h3>
+                <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
+                <ul className="mt-4 space-y-2 flex-1">
+                  {p.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-2 text-sm text-slate-700">
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-end justify-between">
+                  <div>
+                    <span className="font-heading text-2xl font-bold">{p.price}</span>
+                    <span className="text-sm text-slate-400">{t("landing.perMonth")}</span>
+                  </div>
+                  <Link to={`/register?plan=${p.id}&billing=month`} data-testid={`product-cta-${p.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 tap">
+                    {t("landing.subscribe")} <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+              );
+            })}
+          </div>
+
+          {/* Bundle highlight */}
+          <div className="mt-6 rounded-3xl bg-gradient-to-br from-blue-900 to-emerald-700 p-6 lg:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center gap-6" data-testid="product-bundle">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-3">
+                <Zap className="w-3.5 h-3.5" /> {t("landing.bundleBadge")}
+              </div>
+              <h3 className="font-heading text-2xl lg:text-3xl font-bold">{t("landing.bundleTitle")}</h3>
+              <p className="mt-2 text-white/80 text-sm lg:text-base leading-relaxed">
+                <Trans i18nKey="landing.bundleDesc" components={{ b: <strong className="text-white" /> }} />
+              </p>
+            </div>
+            <div className="flex flex-col items-start lg:items-end gap-3">
+              <div>
+                <span className="font-heading text-4xl font-bold">$59.99</span>
+                <span className="text-white/70">{t("landing.perMonth")}</span>
+              </div>
+              <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
+                className="inline-flex items-center gap-1.5 px-6 h-12 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 tap">
+                {t("landing.bundleCta")} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-400">{t("landing.bundleNote")}</p>
+        </div>
+      </section>
 
       {/* ====== STATS — banda de credibilidad ====== */}
       <section id="beneficios" className="py-20 lg:py-28 bg-slate-50">
