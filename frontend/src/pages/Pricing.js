@@ -26,9 +26,9 @@ const COMBO_MAP = {
 };
 
 const MODULE_UI = {
-  presencia: { icon: <IdCard className="w-6 h-6" />, color: "sky", bulletsKey: "bPresencia" },
-  negocio: { icon: <FileText className="w-6 h-6" />, color: "emerald", bulletsKey: "bNegocio" },
-  marketing: { icon: <Megaphone className="w-6 h-6" />, color: "violet", bulletsKey: "bMarketing" },
+  presencia: { icon: <IdCard className="w-6 h-6" />, color: "sky", bulletsKey: "bPresencia", valueKey: "vPresencia" },
+  negocio: { icon: <FileText className="w-6 h-6" />, color: "emerald", bulletsKey: "bNegocio", valueKey: "vNegocio" },
+  marketing: { icon: <Megaphone className="w-6 h-6" />, color: "violet", bulletsKey: "bMarketing", valueKey: "vMarketing" },
 };
 
 const COLOR = {
@@ -246,6 +246,9 @@ export default function Pricing() {
                   <span className="font-heading text-2xl font-bold tabular-nums">{o?.display_price}</span>
                   <span className="text-slate-400 text-xs">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span>
                 </div>
+                <div className={`mt-2 rounded-xl px-2.5 py-1.5 text-[11px] leading-snug ${c.chip}`} data-testid={`module-value-${m}`}>
+                  <span className="font-bold">{t("pricing.valuePrefix")}</span> {t(`pricing.${ui.valueKey}`)}
+                </div>
                 <ul className="mt-3 space-y-1.5">
                   {(t(`pricing.${ui.bulletsKey}`, { returnObjects: true }) || []).map((b, i) => (
                     <li key={i} className="flex items-start gap-2 text-[13px] text-slate-600">
@@ -266,6 +269,9 @@ export default function Pricing() {
             <h2 className="font-heading text-lg font-bold">
               {count === 0 ? t("pricing.yourPlan") : (derivedPlan?.label || t("pricing.yourPlan"))}
             </h2>
+            {isBundle && !founderActive && (
+              <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white" data-testid="bundle-popular-badge">{t("pricing.popular")}</span>
+            )}
           </div>
 
           {count === 0 ? (
@@ -306,6 +312,14 @@ export default function Pricing() {
                   <Truck className="w-3.5 h-3.5" /> <span>{t("pricing.cardIncluded")}</span>
                 </div>
               )}
+
+              {isBundle && !founderActive && (
+                <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-3" data-testid="bundle-value-stack">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-amber-700">{t("pricing.bundleValueTitle")}</div>
+                  <div className="mt-1 text-xs text-slate-600">{t("pricing.bundleValueList")}</div>
+                  <div className="mt-2 text-xs font-semibold text-emerald-700">{t("pricing.bundleSaveVs")}</div>
+                </div>
+              )}
             </>
           )}
 
@@ -318,6 +332,10 @@ export default function Pricing() {
             {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : founderSoldOut ? t("pricing.founderSoldOut") : founderActive ? t("pricing.founderCta") : isBundle ? t("pricing.takeAll") : count === 0 ? t("pricing.chooseModule") : t("pricing.subscribe")}
           </Button>
         </Card>
+      </div>
+
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-5 text-center" data-testid="pricing-value-footer">
+        <p className="text-sm sm:text-base font-semibold">{t("pricing.valueFooter")}</p>
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm text-slate-600">

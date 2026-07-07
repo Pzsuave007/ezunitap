@@ -532,7 +532,7 @@
   "pricing": {
     "back": "Atrás",
     "title": "Arma tu plan",
-    "subtitle": "Elige solo las herramientas que necesitas. Combina 2 y ahorra 30%, o llévate las 3 por $59.99/mes. Empieza con 14 días gratis.",
+    "subtitle": "Elige solo las herramientas que necesitas. Combina 2 y ahorra 30%, o llévate las 3 (el paquete completo) por $75/mes. Empieza con 14 días gratis.",
     "monthly": "Mensual",
     "yearly": "Anual",
     "twoMonthsFree": "2 meses gratis",
@@ -558,22 +558,31 @@
     "errLoadPlans": "Error al cargar los planes",
     "errCheckout": "Error al iniciar el pago",
     "bPresencia": [
-      "Tarjeta digital con QR + NFC",
-      "Mini-sitio web profesional",
-      "Reseñas de Google ⭐",
-      "Captura de leads automática"
+      "Tarjeta digital NFC + QR: compártela con un toque",
+      "Tarjeta física NFC enviada a tu casa (incluida)",
+      "Mini-sitio web profesional con tus fotos y servicios",
+      "Más reseñas de 5★ en Google, en automático",
+      "Captura leads las 24 horas con formulario integrado",
+      "Botón directo a WhatsApp, llamada y ubicación",
+      "Que tus clientes agenden citas solos"
     ],
     "bNegocio": [
-      "Presupuestos con IA (español → inglés)",
-      "Facturas y contratos profesionales",
-      "CRM de clientes",
-      "Calendario de trabajos"
+      "Presupuestos con IA en 30 seg (hablas en español, sale en inglés)",
+      "Facturas profesionales y cobra con depósitos",
+      "Contratos y acuerdos listos para firmar",
+      "CRM: todos tus clientes y su historial en un solo lugar",
+      "Calendario de trabajos y agenda del día",
+      "Citas online que tus clientes agendan solos",
+      "Notas y seguimiento por cada cliente"
     ],
     "bMarketing": [
-      "Posts para redes con IA",
-      "Videos / Reels con IA",
-      "Plantillas y colores de tu marca",
-      "Voz en off y subtítulos"
+      "Posts para redes con IA: idea + diseño + texto",
+      "Videos y Reels verticales generados con IA",
+      "Plantillas con los colores y el logo de tu marca",
+      "Voz en off profesional y subtítulos automáticos",
+      "Asistente de ideas: nunca te quedes sin qué publicar",
+      "+10 diseños listos para tu industria",
+      "Descarga y publica en segundos"
     ],
     "founderBadge": "Oferta Fundador",
     "founderSpots": "Quedan {{n}} de {{limit}} cupos",
@@ -581,7 +590,16 @@
     "founderLifetime": "Precio de por vida",
     "founderSoldOut": "¡Cupos agotados! Ya no hay lugares de Fundador disponibles.",
     "founderCta": "Asegurar mi precio Fundador",
-    "founderOriginal": "Precio normal"
+    "founderOriginal": "Precio normal",
+    "valuePrefix": "Reemplaza:",
+    "vPresencia": "Tarjetas NFC de $200 + Birdeye para reseñas. Haz que te encuentren y te contacten.",
+    "vNegocio": "Jobber / Housecall Pro ($49–99/mes). Cotiza al instante y cobra más rápido.",
+    "vMarketing": "Canva Pro + una agencia de $500/mes. Publica como los grandes.",
+    "popular": "Más popular",
+    "bundleValueTitle": "Todo en uno reemplaza:",
+    "bundleValueList": "GoHighLevel ($97+/mes) · Jobber · Canva · Birdeye · tarjetas NFC",
+    "bundleSaveVs": "Ahorras más de $200/mes vs. contratarlo por separado",
+    "valueFooter": "Menos de lo que cobras por un solo trabajo — y trabaja para ti todos los días."
   },
   "welcome": {
     "badge": "Bienvenido a UniTech",

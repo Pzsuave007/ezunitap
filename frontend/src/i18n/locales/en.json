@@ -532,7 +532,7 @@
   "pricing": {
     "back": "Back",
     "title": "Build your plan",
-    "subtitle": "Choose only the tools you need. Combine 2 and save 30%, or get all 3 for $59.99/mo. Start with 14 days free.",
+    "subtitle": "Choose only the tools you need. Combine 2 and save 30%, or get all 3 (the full bundle) for $75/mo. Start with 14 days free.",
     "monthly": "Monthly",
     "yearly": "Yearly",
     "twoMonthsFree": "2 months free",
@@ -558,22 +558,31 @@
     "errLoadPlans": "Error loading plans",
     "errCheckout": "Error starting payment",
     "bPresencia": [
-      "Digital card with QR + NFC",
-      "Professional mini-website",
-      "Google Reviews ⭐",
-      "Automatic lead capture"
+      "Digital NFC + QR card: share it with one tap",
+      "Physical NFC card shipped to your door (included)",
+      "Professional mini-website with your photos & services",
+      "More 5★ Google reviews, on autopilot",
+      "Capture leads 24/7 with a built-in form",
+      "One-tap WhatsApp, call and directions",
+      "Let clients book appointments themselves"
     ],
     "bNegocio": [
-      "AI estimates in seconds",
-      "Professional invoices and agreements",
-      "Client CRM",
-      "Job calendar"
+      "AI quotes in 30 sec (speak Spanish, it outputs English)",
+      "Professional invoices — get paid with deposits",
+      "Contracts & agreements ready to sign",
+      "CRM: every client and their history in one place",
+      "Job calendar and today's agenda",
+      "Online booking your clients schedule themselves",
+      "Notes and follow-ups per client"
     ],
     "bMarketing": [
-      "AI social media posts",
-      "AI videos / Reels",
-      "Your brand templates and colors",
-      "Voiceovers and subtitles"
+      "AI social posts: idea + design + caption",
+      "AI-generated vertical videos & Reels",
+      "Templates with your brand colors and logo",
+      "Professional voiceovers and auto subtitles",
+      "Idea assistant: never run out of what to post",
+      "+10 ready-made designs for your industry",
+      "Download and publish in seconds"
     ],
     "founderBadge": "Founder Offer",
     "founderSpots": "{{n}} of {{limit}} spots left",
@@ -581,7 +590,16 @@
     "founderLifetime": "Locked for life",
     "founderSoldOut": "Sold out! No more Founder spots available.",
     "founderCta": "Lock in my Founder price",
-    "founderOriginal": "Regular price"
+    "founderOriginal": "Regular price",
+    "valuePrefix": "Replaces:",
+    "vPresencia": "$200 NFC cards + Birdeye for reviews. Get found and get contacted.",
+    "vNegocio": "Jobber / Housecall Pro ($49–99/mo). Quote instantly, get paid faster.",
+    "vMarketing": "Canva Pro + a $500/mo agency. Post like the big brands.",
+    "popular": "Most popular",
+    "bundleValueTitle": "All-in-one replaces:",
+    "bundleValueList": "GoHighLevel ($97+/mo) · Jobber · Canva · Birdeye · NFC cards",
+    "bundleSaveVs": "Save over $200/mo vs. buying each tool separately",
+    "valueFooter": "Less than what you charge for one job — and it works for you every day."
   },
   "welcome": {
     "badge": "Welcome to UniTech",
