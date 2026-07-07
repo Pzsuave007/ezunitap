@@ -55,6 +55,7 @@ export default function Pricing() {
   const [founder, setFounder] = useState(null);
   useEffect(() => {
     if (!founderMode) return;
+    setBilling("month"); // Founder price is monthly-only.
     api.get("/payments/founder-status").then((r) => setFounder(r.data)).catch(() => {});
   }, [founderMode]);
 
@@ -81,7 +82,7 @@ export default function Pricing() {
     const hp = params.get("plan") || "";
     if (!hp) return;
     const next = { presencia: false, negocio: false, marketing: false };
-    if (hp === "bundle") { next.presencia = next.negocio = next.marketing = true; }
+    if (hp === "bundle" || hp === "bundle_founder") { next.presencia = next.negocio = next.marketing = true; }
     else { hp.split("_").forEach((m) => { if (m in next) next[m] = true; }); }
     setSel(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,6 +99,11 @@ export default function Pricing() {
   const derivedPlan = derivedBase ? byBase[derivedBase] : null;
   const opt = derivedPlan ? (billing === "year" ? derivedPlan.yearly : derivedPlan.monthly) : null;
 
+  // Founder deal is the full Bundle, monthly-only, capped lifetime.
+  const founderActive = founderMode && derivedBase === "bundle" && billing === "month" && !!founder?.available;
+  const founderSoldOut = founderMode && founder && !founder.available;
+  const founderDisplayPrice = founder?.display_price || "$59";
+
   // Regular price = sum of selected singles (for the savings badge on 2+).
   const regularCents = selectedSingles.reduce((sum, m) => {
     const p = byBase[m];
@@ -112,14 +118,17 @@ export default function Pricing() {
 
   const subscribe = async () => {
     if (!derivedPlan || !opt) return;
+    if (founderSoldOut) { toast.error(t("pricing.founderSoldOut")); return; }
+    const effectivePlanId = founderActive ? "bundle_founder" : opt.plan_id;
     if (!user) {
-      navigate(`/register?plan=${derivedBase}&billing=${billing}`);
+      const planParam = founderActive ? "bundle_founder" : derivedBase;
+      navigate(`/register?plan=${planParam}&billing=${billing}`);
       return;
     }
     setCheckoutLoading(true);
     try {
       const { data } = await api.post("/payments/checkout", {
-        plan_id: opt.plan_id, origin_url: window.location.origin, num_cards: 1,
+        plan_id: effectivePlanId, origin_url: window.location.origin, num_cards: 1,
       });
       window.location.assign(data.url);
     } catch (e) {
@@ -161,7 +170,40 @@ export default function Pricing() {
         </p>
       </div>
 
+      {/* Founder offer banner */}
+      {founderMode && (
+        <div
+          data-testid="founder-banner"
+          className={`rounded-3xl border-2 p-5 sm:p-6 ${founderSoldOut ? "border-slate-300 bg-slate-50" : "border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50"}`}
+        >
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-amber-500" />
+            <span className="text-xs font-bold uppercase tracking-wide text-amber-700">{t("pricing.founderBadge")}</span>
+          </div>
+          {founderSoldOut ? (
+            <p className="mt-2 text-sm font-semibold text-slate-700" data-testid="founder-soldout">{t("pricing.founderSoldOut")}</p>
+          ) : (
+            <>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-heading text-3xl font-bold tabular-nums text-slate-900">{founderDisplayPrice}<span className="text-base font-normal text-slate-500">{t("pricing.perMonth")}</span></span>
+                <span className="text-sm text-slate-400 line-through">{byBase.bundle ? byBase.bundle.monthly.display_price : ""}</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">{t("pricing.founderLifetime")}</span>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">{t("pricing.founderDesc", { limit: founder?.limit || 30 })}</p>
+              {founder && (
+                <div className="mt-3 inline-flex items-center gap-2" data-testid="founder-spots">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-white border border-amber-300 text-amber-800">
+                    {t("pricing.founderSpots", { n: founder.remaining, limit: founder.limit })}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Monthly / Yearly toggle */}
+      {!founderMode && (
       <div className="flex items-center justify-center">
         <div className="inline-flex bg-slate-100 rounded-full p-1" data-testid="interval-toggle">
           <button onClick={() => setBilling("month")} data-testid="interval-monthly"
@@ -175,6 +217,7 @@ export default function Pricing() {
           </button>
         </div>
       </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Module selector cards (span 2 cols on desktop) */}
@@ -230,13 +273,19 @@ export default function Pricing() {
           ) : (
             <>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="font-heading text-4xl font-bold tabular-nums" data-testid="summary-price">{opt?.display_price}</span>
+                <span className="font-heading text-4xl font-bold tabular-nums" data-testid="summary-price">{founderActive ? founderDisplayPrice : opt?.display_price}</span>
                 <span className="text-slate-500 text-sm">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span>
               </div>
+              {founderActive && (
+                <div className="mt-1 flex items-center gap-2" data-testid="summary-founder">
+                  <span className="text-sm text-slate-400 line-through">{opt?.display_price}</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">{t("pricing.founderLifetime")}</span>
+                </div>
+              )}
               {billing === "year" && opt?.per_month && (
                 <div className="text-xs text-emerald-700 font-semibold mt-1">{t("pricing.approxMonth", { price: opt.per_month })}</div>
               )}
-              {savePct > 0 && (
+              {!founderActive && savePct > 0 && (
                 <div className="mt-2 flex items-center gap-2" data-testid="summary-savings">
                   <span className="text-sm text-slate-400 line-through">{money(regularCents)}</span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">{t("pricing.save", { pct: savePct })}</span>
@@ -263,10 +312,10 @@ export default function Pricing() {
           <Button
             data-testid="pricing-subscribe-btn"
             onClick={subscribe}
-            disabled={count === 0 || checkoutLoading}
+            disabled={count === 0 || checkoutLoading || founderSoldOut}
             className={`hidden lg:flex w-full mt-6 h-12 rounded-xl font-semibold text-white ${isBundle ? "bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
           >
-            {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isBundle ? t("pricing.takeAll") : count === 0 ? t("pricing.chooseModule") : t("pricing.subscribe")}
+            {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : founderSoldOut ? t("pricing.founderSoldOut") : founderActive ? t("pricing.founderCta") : isBundle ? t("pricing.takeAll") : count === 0 ? t("pricing.chooseModule") : t("pricing.subscribe")}
           </Button>
         </Card>
       </div>
@@ -289,18 +338,18 @@ export default function Pricing() {
             <span className="text-sm text-slate-500">{t("pricing.chooseModules")}</span>
           ) : (
             <>
-              <div className="font-heading text-xl font-bold leading-none">{opt?.display_price}<span className="text-xs text-slate-400 font-normal">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span></div>
-              {savePct > 0 && <div className="text-[11px] text-emerald-700 font-semibold">{t("pricing.saveShort", { pct: savePct })}</div>}
+              <div className="font-heading text-xl font-bold leading-none">{founderActive ? founderDisplayPrice : opt?.display_price}<span className="text-xs text-slate-400 font-normal">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span></div>
+              {founderActive ? <div className="text-[11px] text-amber-700 font-semibold">{t("pricing.founderLifetime")}</div> : savePct > 0 && <div className="text-[11px] text-emerald-700 font-semibold">{t("pricing.saveShort", { pct: savePct })}</div>}
             </>
           )}
         </div>
         <Button
           onClick={subscribe}
-          disabled={count === 0 || checkoutLoading}
+          disabled={count === 0 || checkoutLoading || founderSoldOut}
           data-testid="pricing-subscribe-btn-mobile"
           className={`h-11 px-6 rounded-xl font-semibold text-white ${isBundle ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
         >
-          {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("pricing.subscribe")}
+          {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : founderActive ? t("pricing.founderCta") : t("pricing.subscribe")}
         </Button>
       </div>
     </div>

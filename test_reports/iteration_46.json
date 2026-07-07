@@ -1,0 +1,33 @@
+{
+  "summary": "Verified Founder Bundle ($59/mo, first 30, lifetime) end-to-end. Backend: GET /api/payments/founder-status returns {available:true, remaining:30, limit:30, plan_id:'bundle_founder', amount_cents:5900, display_price:'$59'}. POST /api/payments/checkout with plan_id='bundle_founder' creates a Stripe session and payment_transactions row records amount_cents=5900 (NOT 7500). Regression: bundle_monthly still records amount_cents=7500. Frontend: /precios?plan=bundle_founder (authenticated) renders founder-banner with 'FOUNDER OFFER', founder-spots '30 of 30 spots left', summary-price '$59', CTA 'Lock in my Founder price'. Month/Year toggle is hidden in founder mode. Clicking the CTA fires POST /api/payments/checkout with body {plan_id:'bundle_founder', origin_url:'https://ai-billing-mktg.preview.emergentagent.com', num_cards:1} and the browser navigates to https://checkout.stripe.com/c/pay/cs_test_... — Stripe payment NOT submitted (per instructions).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/payments/checkout", "issue": "BUG (fixed by testing agent): payments_service.create_checkout_session passed subscription_data.trial_period_days=0 to Stripe, which rejects with 'The minimum number of trial period days is 1.' This blocked ALL subscription checkouts (founder AND all normal plans) with HTTP 500. Fix: only include trial_period_days when > 0 (payments_service.py L392-405). After the fix, both bundle_founder and bundle_monthly checkouts succeed and record correct amount_cents.", "priority": "CRITICAL"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_founder_plan.py",
+    "/app/test_reports/pytest/founder_iter46.xml"
+  ],
+  "action_items": [
+    "Confirm the payments_service.py fix (trial_period_days only when >0) — testing agent applied it because 100% of subscription checkouts were 500'ing. Consider adding a unit test guard and revisit whether any plan should have trial_period_days > 0 (currently ALL plans in _build_plans have 0, and the founder plan also uses 0)."
+  ],
+  "critical_code_review_comments": [
+    "payments_service.create_checkout_session was building subscription_data with 'trial_period_days': plan['trial_period_days'] regardless of value; Stripe requires >=1 or the field omitted entirely — this is now guarded.",
+    "founder_status counts users by subscription_status IN ('active','trialing','past_due'). If a founder user is later downgraded/canceled and status becomes 'canceled', their spot frees up. Confirm this is intended (founder is supposed to be lifetime), otherwise count by plan_type only.",
+    "Nice: server.py validates plan_id via get_plan() before hitting Stripe; founder cap is enforced inside create_checkout_session with a clear FOUNDER_SOLD_OUT error."
+  ],
+  "updated_files": [
+    "/app/backend/payments_service.py (fix: omit trial_period_days when 0)",
+    "/app/backend/tests/test_founder_plan.py (new — 3 regression tests)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "mktonly_test@example.com / Test1234 (used); pzsuave007@gmail.com / Uni2mkt007! (fallback)",
+  "seed_data_creation": "None. Founder counter still shows 30/30 remaining (no actual Stripe payment completed in testing).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Founder-plan e2e verified. Regression suite: /app/backend/tests/test_founder_plan.py runs against REACT_APP_BACKEND_URL. Frontend logged-in user reaches Stripe checkout via /precios?plan=bundle_founder → CTA click. Note: testing agent fixed a pre-existing critical bug in payments_service.py (trial_period_days=0 rejected by Stripe) that would have blocked ALL checkout flows in prod — the fix is minimal and safe.",
+  "rca of the issue": "Root cause of the previously-hidden bug: PLANS['*'] have trial_period_days=0 (product decision to remove the trial). create_checkout_session forwarded that 0 to Stripe as subscription_data.trial_period_days=0, and Stripe returns 400 'The minimum number of trial period days is 1.' The endpoint then wrapped it in an HTTP 500. Fix: only include the field when >0."
+}

@@ -94,7 +94,8 @@
         "presencia_negocio": "Presencia + Negocio",
         "presencia_marketing": "Presencia + Marketing",
         "negocio_marketing": "Negocio + Marketing",
-        "bundle": "Todo UniTech (Bundle)"
+        "bundle": "Todo UniTech (Bundle)",
+        "bundle_founder": "Bundle Fundador — $59/mes de por vida"
       }
     }
   },
@@ -573,7 +574,14 @@
       "Videos / Reels con IA",
       "Plantillas y colores de tu marca",
       "Voz en off y subtítulos"
-    ]
+    ],
+    "founderBadge": "Oferta Fundador",
+    "founderSpots": "Quedan {{n}} de {{limit}} cupos",
+    "founderDesc": "Bundle completo bloqueado de por vida — solo para los primeros {{limit}} fundadores.",
+    "founderLifetime": "Precio de por vida",
+    "founderSoldOut": "¡Cupos agotados! Ya no hay lugares de Fundador disponibles.",
+    "founderCta": "Asegurar mi precio Fundador",
+    "founderOriginal": "Precio normal"
   },
   "welcome": {
     "badge": "Bienvenido a UniTech",

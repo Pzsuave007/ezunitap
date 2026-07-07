@@ -94,7 +94,8 @@
         "presencia_negocio": "Presence + Business",
         "presencia_marketing": "Presence + Marketing",
         "negocio_marketing": "Business + Marketing",
-        "bundle": "All of UniTech (Bundle)"
+        "bundle": "All of UniTech (Bundle)",
+        "bundle_founder": "Founder Bundle — $59/mo for life"
       }
     }
   },
@@ -573,7 +574,14 @@
       "AI videos / Reels",
       "Your brand templates and colors",
       "Voiceovers and subtitles"
-    ]
+    ],
+    "founderBadge": "Founder Offer",
+    "founderSpots": "{{n}} of {{limit}} spots left",
+    "founderDesc": "Full Bundle locked for life — only for the first {{limit}} founders.",
+    "founderLifetime": "Locked for life",
+    "founderSoldOut": "Sold out! No more Founder spots available.",
+    "founderCta": "Lock in my Founder price",
+    "founderOriginal": "Regular price"
   },
   "welcome": {
     "badge": "Welcome to UniTech",

@@ -385,19 +385,23 @@ async def create_checkout_session(
         extra_price_id = await ensure_extra_card_price(db, plan["interval"])
         line_items.append({"price": extra_price_id, "quantity": extra_cards})
 
+    subscription_data: dict = {
+        "metadata": {
+            "user_id": user["id"],
+            "plan_id": plan_id,
+            "num_cards": str(num_cards),
+            "app": "unitap",
+        },
+    }
+    # Stripe requires trial_period_days >= 1; omit when 0 (no trial).
+    if plan.get("trial_period_days") and int(plan["trial_period_days"]) > 0:
+        subscription_data["trial_period_days"] = int(plan["trial_period_days"])
+
     session = stripe.checkout.Session.create(
         mode="subscription",
         customer_email=user["email"],
         line_items=line_items,
-        subscription_data={
-            "trial_period_days": plan["trial_period_days"],
-            "metadata": {
-                "user_id": user["id"],
-                "plan_id": plan_id,
-                "num_cards": str(num_cards),
-                "app": "unitap",
-            },
-        },
+        subscription_data=subscription_data,
         # Card REQUIRED even with trial — user-requested behaviour:
         # "si el cliente pone su forma de pago y a los 14 dias despues del
         # trial no cancela, entonces se activa todo"
