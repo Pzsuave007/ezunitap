@@ -35,6 +35,7 @@ const NFC_STEP_ICONS = [Package, Smartphone, Sparkles];
 export default function Landing() {
   const { t, i18n } = useTranslation();
   const isEn = (i18n.language || "").toLowerCase().startsWith("en");
+  const L = (es, en) => (isEn ? en : es);
   const FLOW = t("landing.flow", { returnObjects: true }).map((s, i) => ({
     ...s, n: String(i + 1).padStart(2, "0"), icon: FLOW_ICONS[i],
   }));
@@ -385,6 +386,68 @@ export default function Landing() {
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> {t("landing.mktExample")}
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== GOOGLE + REVIEWS (AI) — reemplaza herramientas caras ====== */}
+      <section id="google-ia" className="py-20 lg:py-28 bg-slate-50" data-testid="landing-google-reviews">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
+              <Star className="w-3.5 h-3.5" /> {L("Google + Reseñas con IA", "Google + AI Reviews")}
+            </div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              {L("Tu Google, en ", "Your Google, on ")}
+              <span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{L("piloto automático", "autopilot")}</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              {L(
+                "Publica en tu Google Business, responde reseñas con IA y captura clientes desde cualquier sitio web — todo directo a tu CRM.",
+                "Post to your Google Business, reply to reviews with AI, and capture leads from any website — straight into your CRM."
+              )}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              { icon: Star, title: L("Publica en Google", "Post to Google"), desc: L("Crea y publica posts en tu perfil de Google Business directo desde UniTech. Más visibilidad y mejor SEO local.", "Create and publish posts to your Google Business profile straight from UniTech. More visibility and better local SEO.") },
+              { icon: Bot, title: L("Responde reseñas con IA", "AI review replies"), desc: L("La IA redacta respuestas profesionales a tus reseñas en segundos. Tú solo apruebas y publicas.", "AI drafts professional replies to your reviews in seconds. You just approve and post.") },
+              { icon: Globe, title: L("Captura leads en cualquier web", "Capture leads on any site"), desc: L("Pon un chatbot y formularios en el sitio de tus clientes. Cada lead entra a tu CRM automáticamente.", "Add a chatbot and forms to your clients' websites. Every lead lands in your CRM automatically.") },
+            ].map((f) => (
+              <div key={f.title} className="rounded-3xl bg-white border border-slate-200 p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center shadow-md">
+                  <f.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="mt-4 font-heading text-xl font-bold">{f.title}</h3>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Replace expensive tools band */}
+          <div className="mt-6 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-emerald-950 p-8 lg:p-10 text-white relative overflow-hidden" data-testid="google-replace-band">
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)", backgroundSize: "28px 28px" }} />
+            <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-400/15 border border-emerald-300/20 text-emerald-300 text-[11px] font-bold uppercase tracking-wider mb-3">
+                  <TrendingUp className="w-3.5 h-3.5" /> {L("Ahorra cada mes", "Save every month")}
+                </div>
+                <h3 className="font-heading text-2xl lg:text-3xl font-bold leading-tight">
+                  {L("Reemplaza herramientas que cuestan ", "Replace tools that cost ")}
+                  <span className="text-emerald-300">$200+{L("/mes", "/mo")}</span>
+                </h3>
+                <p className="mt-3 text-white/75 max-w-2xl leading-relaxed">
+                  {L(
+                    "CRM, reseñas, chatbot, formularios y marketing — todo en una sola plataforma. Deja de pagar por varias apps.",
+                    "CRM, reviews, chatbot, forms and marketing — all in one platform. Stop paying for multiple apps."
+                  )}
+                </p>
+              </div>
+              <Link to="/register" data-testid="google-replace-cta" className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap flex-none">
+                {L("Empieza gratis", "Start free")} <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </div>
