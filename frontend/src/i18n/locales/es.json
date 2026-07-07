@@ -558,12 +558,12 @@
     "errLoadPlans": "Error al cargar los planes",
     "errCheckout": "Error al iniciar el pago",
     "bPresencia": [
-      "Tarjeta digital NFC + QR: compártela con un toque",
-      "Tarjeta física NFC enviada a tu casa (incluida)",
-      "Mini-sitio web profesional con tus fotos y servicios",
-      "Más reseñas de 5★ en Google, en automático",
+      "Tarjeta NFC inteligente + mini-sitio digital (envío gratis)",
+      "Administra tu Perfil de Empresa en Google desde la app",
+      "Publica en Google en automático para salir primero",
+      "La IA responde tus reseñas de Google por ti",
+      "Consigue más reseñas de 5★ en automático",
       "Captura leads las 24 horas con formulario integrado",
-      "Botón directo a WhatsApp, llamada y ubicación",
       "Que tus clientes agenden citas solos"
     ],
     "bNegocio": [
@@ -592,7 +592,7 @@
     "founderCta": "Asegurar mi precio Fundador",
     "founderOriginal": "Precio normal",
     "valuePrefix": "Reemplaza:",
-    "vPresencia": "Tarjetas NFC de $200 + Birdeye para reseñas. Haz que te encuentren y te contacten.",
+    "vPresencia": "Birdeye/Podium ($200+/mes) + una tarjeta NFC de $200. Dueño de tu Google y tu reputación.",
     "vNegocio": "Jobber / Housecall Pro ($49–99/mes). Cotiza al instante y cobra más rápido.",
     "vMarketing": "Canva Pro + una agencia de $500/mes. Publica como los grandes.",
     "popular": "Más popular",
@@ -948,15 +948,16 @@
     "products": [
       {
         "name": "Presencia Digital",
-        "tagline": "Tu Tarjeta Inteligente NFC",
-        "desc": "Tu mini-sitio profesional con QR y tarjeta física NFC para conseguir clientes y reseñas 5★.",
-        "value": "tarjetas NFC de $200 + Birdeye para reseñas",
+        "tagline": "Tarjeta NFC + tu Google, hecho por ti",
+        "desc": "Toda tu presencia online: tarjeta NFC inteligente, mini-sitio profesional y tu Perfil de Empresa en Google administrado por ti.",
+        "value": "Birdeye / Podium ($200+/mes) + una tarjeta NFC de $200",
         "points": [
-          "Tarjeta física NFC + mini-sitio digital (envío gratis)",
-          "Más reseñas de 5★ en Google, en automático",
-          "Captura leads las 24 horas con formulario",
-          "Botón directo a WhatsApp, llamada y ubicación",
-          "Tus clientes agendan citas solos"
+          "Tarjeta NFC inteligente + mini-sitio digital (envío gratis)",
+          "Administra tu Perfil de Empresa en Google desde la app",
+          "Publica en Google en automático para salir primero",
+          "La IA responde tus reseñas de Google por ti",
+          "Consigue más reseñas de 5★ en automático",
+          "Captura leads 24/7 + tus clientes agendan citas"
         ]
       },
       {

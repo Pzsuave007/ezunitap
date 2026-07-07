@@ -558,16 +558,16 @@
     "errLoadPlans": "Error loading plans",
     "errCheckout": "Error starting payment",
     "bPresencia": [
-      "Digital NFC + QR card: share it with one tap",
-      "Physical NFC card shipped to your door (included)",
-      "Professional mini-website with your photos & services",
-      "More 5★ Google reviews, on autopilot",
+      "Physical NFC smart card + digital mini-site (shipped free)",
+      "Manage your Google Business Profile from the app",
+      "Auto-post to Google so you rank higher & get found",
+      "AI replies to your Google reviews for you",
+      "Get more 5★ reviews on autopilot",
       "Capture leads 24/7 with a built-in form",
-      "One-tap WhatsApp, call and directions",
       "Let clients book appointments themselves"
     ],
     "bNegocio": [
-      "AI quotes in 30 sec (speak Spanish, it outputs English)",
+      "AI quotes & contracts in 30 seconds",
       "Professional invoices — get paid with deposits",
       "Contracts & agreements ready to sign",
       "CRM: every client and their history in one place",
@@ -592,7 +592,7 @@
     "founderCta": "Lock in my Founder price",
     "founderOriginal": "Regular price",
     "valuePrefix": "Replaces:",
-    "vPresencia": "$200 NFC cards + Birdeye for reviews. Get found and get contacted.",
+    "vPresencia": "Birdeye/Podium ($200+/mo) + a $200 NFC card. Own your Google and your reputation.",
     "vNegocio": "Jobber / Housecall Pro ($49–99/mo). Quote instantly, get paid faster.",
     "vMarketing": "Canva Pro + a $500/mo agency. Post like the big brands.",
     "popular": "Most popular",
@@ -948,15 +948,16 @@
     "products": [
       {
         "name": "Digital Presence",
-        "tagline": "Your NFC Smart Card",
-        "desc": "Your professional mini-website with QR and physical NFC card to win clients and 5★ reviews.",
-        "value": "$200 NFC cards + Birdeye for reviews",
+        "tagline": "NFC card + your Google, handled for you",
+        "desc": "Your full online presence: NFC smart card, pro mini-website, and your Google Business Profile managed for you.",
+        "value": "Birdeye / Podium ($200+/mo) + a $200 NFC card",
         "points": [
-          "Physical NFC card + digital mini-site (shipped free)",
-          "More 5★ Google reviews on autopilot",
-          "Capture leads 24/7 with a built-in form",
-          "One-tap WhatsApp, call & directions",
-          "Clients book appointments themselves"
+          "Physical NFC smart card + digital mini-site (shipped free)",
+          "Manage your Google Business Profile from the app",
+          "Auto-post to Google so you rank higher & get found",
+          "AI replies to your Google reviews for you",
+          "Get more 5★ reviews on autopilot",
+          "Capture leads 24/7 + clients book appointments"
         ]
       },
       {
@@ -965,7 +966,7 @@
         "desc": "Your whole business organized: AI quotes, contracts, invoices, payments and calendar.",
         "value": "Jobber / Housecall Pro ($49–99/mo)",
         "points": [
-          "AI quotes in 30 sec (speak Spanish → English)",
+          "AI quotes & contracts in 30 seconds",
           "Professional invoices with deposits",
           "Contracts & agreements ready to sign",
           "CRM with every client & job history",
