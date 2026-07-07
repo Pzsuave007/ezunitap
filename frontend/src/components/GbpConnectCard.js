@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 import {
   Loader2, CheckCircle2, Send, Star, Clock, Link2, Unlink, MapPin, MessageSquare, RefreshCw, Check,
-  Eye, Phone, Navigation, Globe, TrendingUp, CalendarCheck,
+  Eye, Phone, Navigation, Globe, TrendingUp, CalendarCheck, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
