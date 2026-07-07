@@ -575,8 +575,9 @@ export default function Landing() {
                 <div className="text-sm font-semibold text-emerald-700">{p.tagline}</div>
                 <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.desc}</p>
                 {p.value && (
-                  <div className="mt-3 inline-flex items-start gap-1.5 rounded-lg bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 text-[12px] leading-snug text-emerald-800" data-testid={`product-value-${p.id}`}>
-                    <span className="font-bold">{t("landing.valuePrefix")}</span> {p.value}
+                  <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-emerald-800" data-testid={`product-value-${p.id}`}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">{t("landing.valuePrefix")}</div>
+                    <div className="mt-0.5 text-[12px] leading-snug">{p.value}</div>
                   </div>
                 )}
                 <ul className="mt-4 space-y-2 flex-1">

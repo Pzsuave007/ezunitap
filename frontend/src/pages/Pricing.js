@@ -246,8 +246,9 @@ export default function Pricing() {
                   <span className="font-heading text-2xl font-bold tabular-nums">{o?.display_price}</span>
                   <span className="text-slate-400 text-xs">{billing === "year" ? t("pricing.perYear") : t("pricing.perMonth")}</span>
                 </div>
-                <div className={`mt-2 rounded-xl px-2.5 py-1.5 text-[11px] leading-snug ${c.chip}`} data-testid={`module-value-${m}`}>
-                  <span className="font-bold">{t("pricing.valuePrefix")}</span> {t(`pricing.${ui.valueKey}`)}
+                <div className={`mt-2 rounded-xl px-2.5 py-2 ${c.chip}`} data-testid={`module-value-${m}`}>
+                  <div className="text-[9px] font-bold uppercase tracking-wider">{t("pricing.valuePrefix")}</div>
+                  <div className="mt-0.5 text-[11px] leading-snug">{t(`pricing.${ui.valueKey}`)}</div>
                 </div>
                 <ul className="mt-3 space-y-1.5">
                   {(t(`pricing.${ui.bulletsKey}`, { returnObjects: true }) || []).map((b, i) => (
