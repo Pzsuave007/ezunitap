@@ -90,13 +90,13 @@ MODULES = {
 # Monthly price (cents) per base module. Yearly = x10 (2 months free).
 # Combos of 2 modules = 30% off the sum of their individual monthly prices.
 _MODULE_MONTHLY_CENTS = {
-    "presencia": 1999,
+    "presencia": 3499,
     "negocio": 3999,
     "marketing": 2999,
-    "presencia_negocio": 4199,    # (1999+3999) -30%
-    "presencia_marketing": 3499,  # (1999+2999) -30%
+    "presencia_negocio": 5299,    # (3499+3999) -30%
+    "presencia_marketing": 4599,  # (3499+2999) -30%
     "negocio_marketing": 4899,    # (3999+2999) -30%
-    "bundle": 5999,
+    "bundle": 7500,
 }
 
 
@@ -227,7 +227,14 @@ async def ensure_stripe_prices(db) -> dict:
 
     changed = False
     for plan_id, plan in PLANS.items():
-        if plan_id in cache and cache[plan_id].get("price_id"):
+        cached = cache.get(plan_id)
+        # Stripe prices are immutable: if the amount/interval changed in code,
+        # create a NEW price so new checkouts use it (existing subs keep theirs).
+        if (
+            cached and cached.get("price_id")
+            and cached.get("amount_cents") == plan["amount_cents"]
+            and cached.get("interval") == plan["interval"]
+        ):
             continue
         # Create product
         product = stripe.Product.create(
@@ -246,9 +253,14 @@ async def ensure_stripe_prices(db) -> dict:
             },
             metadata={"plan_id": plan_id, "app": "unitap"},
         )
-        cache[plan_id] = {"product_id": product.id, "price_id": price.id}
+        cache[plan_id] = {
+            "product_id": product.id,
+            "price_id": price.id,
+            "amount_cents": plan["amount_cents"],
+            "interval": plan["interval"],
+        }
         changed = True
-        logger.info(f"Created Stripe price for {plan_id}: {price.id}")
+        logger.info(f"Created Stripe price for {plan_id}: {price.id} (${plan['amount_cents']/100:.2f})")
 
     if changed:
         await db.app_config.update_one(

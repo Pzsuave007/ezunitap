@@ -25,7 +25,7 @@ const SERVICES = [
 const FLOW_ICONS = [IdCard, Globe, CalendarCheck, Sparkles, FileBadge, Receipt, DollarSign, CalendarDays, Camera, Share2, MapPin, Star, Bot];
 // Product modules — meta (text comes from i18n landing.products)
 const PRODUCT_META = [
-  { id: "presencia", icon: IdCard, price: "$19.99" },
+  { id: "presencia", icon: IdCard, price: "$34.99" },
   { id: "negocio", icon: LayoutDashboard, price: "$39.99" },
   { id: "marketing", icon: Sparkles, price: "$29.99" },
 ];
@@ -610,7 +610,7 @@ export default function Landing() {
             </div>
             <div className="flex flex-col items-start lg:items-end gap-3">
               <div>
-                <span className="font-heading text-4xl font-bold">$59.99</span>
+                <span className="font-heading text-4xl font-bold">$75</span>
                 <span className="text-white/70">{t("landing.perMonth")}</span>
               </div>
               <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"
