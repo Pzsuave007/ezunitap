@@ -12,7 +12,7 @@ import base64
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-preview-3.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-billing-mktg.preview.emergentagent.com").rstrip("/")
 SLUG = "uni2-marketing-agency"
 OWNER_EMAIL = "pzsuave007@gmail.com"
 OWNER_PASS = "Uni2mkt007!"

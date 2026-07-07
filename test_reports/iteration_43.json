@@ -21,7 +21,7 @@
     },
     "functional_checks": {
       "copy_link_toast": "PASS — clicking card-copy-link shows 'Link copied' toast",
-      "card_preview_anchor": "PASS — tag=A, target=_blank, href=https://unitech-preview-3.preview.emergentagent.com/c/uni2-marketing-agency",
+      "card_preview_anchor": "PASS — tag=A, target=_blank, href=https://ai-billing-mktg.preview.emergentagent.com/c/uni2-marketing-agency",
       "card_share_clickable": "PASS — button clickable, no overflow (not invoked here because navigator.share is unavailable in test browser; rendering and click handler attachment verified)"
     },
     "multi_page_overflow_audit": {

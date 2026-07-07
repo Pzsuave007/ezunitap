@@ -51,6 +51,13 @@ export default function Pricing() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const startedRef = useRef(false);
 
+  const founderMode = (params.get("plan") || "") === "bundle_founder";
+  const [founder, setFounder] = useState(null);
+  useEffect(() => {
+    if (!founderMode) return;
+    api.get("/payments/founder-status").then((r) => setFounder(r.data)).catch(() => {});
+  }, [founderMode]);
+
   useEffect(() => {
     if (params.get("cancelled")) toast.info(t("pricing.cancelled"));
     (async () => {

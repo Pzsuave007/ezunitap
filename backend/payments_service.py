@@ -129,6 +129,46 @@ def _build_plans() -> dict:
 PLANS = _build_plans()
 PLAN_FEATURES = {base: set(mod["features"]) for base, mod in MODULES.items()}
 
+# --- Founder offer: full Bundle at $59/mo, locked for life, first 30 only ---
+FOUNDER_PLAN_ID = "bundle_founder"
+FOUNDER_LIMIT = 30
+FOUNDER_MONTHLY_CENTS = 5900
+PLANS[FOUNDER_PLAN_ID] = {
+    "id": FOUNDER_PLAN_ID,
+    "base": "bundle",
+    "name": "Bundle Fundador",
+    "description": MODULES["bundle"]["tagline"],
+    "features": MODULES["bundle"]["features"],
+    "amount_cents": FOUNDER_MONTHLY_CENTS,
+    "currency": "usd",
+    "interval": "month",
+    "interval_count": 1,
+    "display_price": f"${FOUNDER_MONTHLY_CENTS / 100:.2f}",
+    "display_period": "/mes",
+    "is_bundle": True,
+    "is_combo": False,
+    "ships_card": MODULES["bundle"]["ships_card"],
+    "trial_period_days": 0,
+    "founder": True,
+}
+
+
+async def founder_status(db) -> dict:
+    """How many founder spots are left. Counts users who took the founder plan."""
+    taken = await db.users.count_documents({
+        "plan_type": FOUNDER_PLAN_ID,
+        "subscription_status": {"$in": ["active", "trialing", "past_due"]},
+    })
+    remaining = max(0, FOUNDER_LIMIT - taken)
+    return {
+        "available": remaining > 0,
+        "remaining": remaining,
+        "limit": FOUNDER_LIMIT,
+        "plan_id": FOUNDER_PLAN_ID,
+        "amount_cents": FOUNDER_MONTHLY_CENTS,
+        "display_price": f"${FOUNDER_MONTHLY_CENTS / 100:.0f}",
+    }
+
 
 def plan_base(plan_type: Optional[str]) -> str:
     """`presencia_monthly` -> `presencia`. Legacy `pro_monthly` -> `pro`."""
@@ -313,6 +353,12 @@ async def create_checkout_session(
     plan = get_plan(plan_id)
     if not plan:
         raise ValueError(f"Unknown plan_id: {plan_id}")
+
+    # Founder plan is capped at FOUNDER_LIMIT lifetime spots.
+    if plan_id == FOUNDER_PLAN_ID:
+        fs = await founder_status(db)
+        if not fs["available"]:
+            raise ValueError("FOUNDER_SOLD_OUT")
 
     num_cards = max(1, int(num_cards or 1))
     extra_cards = num_cards - 1

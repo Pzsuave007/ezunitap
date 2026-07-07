@@ -6450,6 +6450,12 @@ async def payments_plans():
     return {"plans": payments_service.list_plans()}
 
 
+@api_router.get("/payments/founder-status")
+async def payments_founder_status():
+    """Public — founder offer availability (Bundle $59/mo, first 30, lifetime)."""
+    return await payments_service.founder_status(db)
+
+
 @api_router.post("/payments/checkout")
 async def payments_checkout(
     payload: CheckoutCreateIn,
