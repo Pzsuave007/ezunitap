@@ -6585,6 +6585,14 @@ try:
 except Exception as _gbp_err:  # pragma: no cover
     logger.error("Google Business Profile routes disabled (import failed): %s", _gbp_err)
 
+# Dynamic QR code generator (own domain, editable destination, scan analytics).
+try:
+    from qr_routes import router as qr_router  # noqa: E402
+
+    app.include_router(qr_router)
+except Exception as _qr_err:  # pragma: no cover
+    logger.error("QR routes disabled (import failed): %s", _qr_err)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

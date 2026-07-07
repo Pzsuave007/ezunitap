@@ -42,6 +42,7 @@ import PaymentRequest from "@/pages/PaymentRequest";
 import { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 import PublicReviewPage from "@/pages/PublicReviewPage";
 import GoogleReviewsPage from "@/pages/GoogleReviewsPage";
+import QrCodes from "@/pages/QrCodes";
 import Appointments from "@/pages/Appointments";
 import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
@@ -131,6 +132,7 @@ function App() {
               <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
               <Route path="/marketing/inicio" element={<FeatureGate feature="marketing"><MarketingStart /></FeatureGate>} />
               <Route path="/reviews" element={<FeatureGate feature="card"><GoogleReviewsPage /></FeatureGate>} />
+              <Route path="/qr" element={<FeatureGate feature="card"><QrCodes /></FeatureGate>} />
               <Route path="/citas" element={<FeatureGate feature="card"><Appointments /></FeatureGate>} />
               <Route path="/mensajes" element={<Messages />} />
               <Route path="/scope" element={<Scope />} />

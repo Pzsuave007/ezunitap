@@ -15,6 +15,14 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 7 2026 — Generador de Códigos QR (dinámicos + estáticos) [COMPLETO; backend curl OK, frontend screenshot OK; build main.50144518.js; deploy pendiente]
+- Motivación: cliente usa QR de HighLevel (`link.sendlink.co` = dominio de HighLevel → se apagan al cancelar). Solución: crear QR propios sobre el dominio del usuario.
+- Backend NUEVO `qr_routes.py` (incluido en server.py junto a gbp): colección `qr_codes`. Endpoints: `POST/GET/PUT/DELETE /api/qr` (auth + require "card" feature vía payments_service.user_features), y PÚBLICO `GET /api/public/q/{slug}` → 302 al destino + `$inc scan_count`.
+- QR dinámico: codifica `${origin}/api/public/q/{slug}` (editable sin reimprimir, cuenta escaneos). Estático: codifica el destino directo.
+- Frontend `pages/QrCodes.jsx` (ruta `/qr`, FeatureGate "card"; nav "QR Codes"/"Códigos QR" en MORE_ITEMS y SIDEBAR). Destinos: URL, Mi tarjeta (`/c/{card_slug}`), Mis reseñas (`/r/{card_slug}`), WhatsApp (`wa.me`). Colores fg/bg, logo al centro (usa `logo_photo_id` vía `/public/card/photo/{id}` con crossOrigin), descargar PNG (canvas 512), copiar link, editar destino, borrar, contador de escaneos. i18n ES/EN (`qr.*`, `nav.qrCodes`). Usa qrcode.react ya instalado.
+- Gating: módulo Presencia (feature "card") o Bundle.
+
+
 ## ✅ Jul 7 2026 — Precio FUNDADOR: Bundle a $59/mes DE POR VIDA, primeros 30 [COMPLETO + PROBADO iter_46 100%; build listo, deploy pendiente]
 - Backend ya tenía `bundle_founder` ($59/mes=5900¢, mensual, cap 30 vitalicio) + `GET /payments/founder-status`.
 - Frontend `Pricing.js`: al entrar con `?plan=bundle_founder` selecciona el Bundle completo, muestra banner "Oferta Fundador" con cupos restantes (X de 30), precio $59 tachando $75, badge "Precio de por vida", oculta toggle mensual/anual, CTA "Asegurar mi precio Fundador"; maneja estado SOLD OUT. `subscribe()` envía `plan_id:'bundle_founder'` al checkout.
