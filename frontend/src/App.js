@@ -46,6 +46,7 @@ import QrCodes from "@/pages/QrCodes";
 import Appointments from "@/pages/Appointments";
 import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
+import DemoFlujo from "@/pages/DemoFlujo";
 import { FeatureGate } from "@/components/FeatureGate";
 import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
 import InstallPWA from "@/components/InstallPWA";
@@ -103,6 +104,7 @@ function App() {
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/demo" element={<DemoFlow />} />
             <Route path="/demo-all" element={<DemoAll />} />
+            <Route path="/demo-flujo" element={<DemoFlujo />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />
             <Route path="/p/invoice/:id" element={<PublicInvoice />} />
             <Route path="/p/pay/:id" element={<PaymentRequest />} />

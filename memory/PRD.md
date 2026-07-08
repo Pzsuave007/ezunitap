@@ -15,6 +15,14 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 8 2026 — Demo de historia guiada `/demo-flujo` (9 pasos) [COMPLETO; verificado screenshot end-to-end incl. IA real]
+- Nuevo `pages/DemoFlujo.jsx` (ruta `/demo-flujo`). Simulación narrativa de una clienta ("María"/"Maria") siguiendo los 9 pasos de "Así funciona", personalizada al oficio del que ve el demo.
+- Paso 3 = IA REAL (reutiliza `/public/demo/start` + `/public/demo/quote` con el oficio + descripción en español). Pasos 1,2,4-9 simulados ($0) con escenas animadas.
+- Cierre dinámico: lee `/payments/founder-status` → si hay cupos muestra CTA Fundador $59 (→ /register?plan=bundle_founder); si agotado → Bundle $75.
+- Landing (`nav-demo` y `hero-demo`) ahora apuntan a `/demo-flujo`. `/demo` (Meta ads) y `/demo-all` quedan intactos.
+- i18n `demoFlujo.*` ES/EN. Build main.4620ec34.js.
+
+
 ## ✅ Jul 7 2026 — Generador de Códigos QR (dinámicos + estáticos) [COMPLETO; backend curl OK, frontend screenshot OK; build main.50144518.js; deploy pendiente]
 - Motivación: cliente usa QR de HighLevel (`link.sendlink.co` = dominio de HighLevel → se apagan al cancelar). Solución: crear QR propios sobre el dominio del usuario.
 - Backend NUEVO `qr_routes.py` (incluido en server.py junto a gbp): colección `qr_codes`. Endpoints: `POST/GET/PUT/DELETE /api/qr` (auth + require "card" feature vía payments_service.user_features), y PÚBLICO `GET /api/public/q/{slug}` → 302 al destino + `$inc scan_count`.
