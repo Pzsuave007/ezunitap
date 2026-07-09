@@ -1,8 +1,9 @@
 /**
- * DemoFlujo — Public, no-login STORY demo that mirrors the Landing "Así funciona"
- * 9-step flow. A fictional client (Maria) goes through the whole journey with the
- * viewer's own trade. Step 3 uses the REAL AI quote endpoint; the rest are
- * simulated ($0). Ends with a dynamic Founder ($59) / Bundle ($75) CTA.
+ * DemoFlujo — Public, no-login STORY demo mirroring the Landing "Así funciona"
+ * 9-step flow, but VISUAL and detailed: real booking form, real AI quote,
+ * service agreement, invoice, job detail, before/after, social + GMB post,
+ * and review + AI reply. Steps 3-5 reuse the real demo document components.
+ * Ends with a dynamic Founder ($59) / Bundle ($75) CTA.
  */
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,14 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, IdCard, CalendarCheck,
-  FileText, Receipt, CreditCard, CalendarDays, Camera, Share2, MessageSquare,
-  CheckCircle2, PartyPopper, Crown, Bot, ThumbsUp,
+  FileText, Receipt, CreditCard, Briefcase, Camera, Share2, MessageSquare,
+  CheckCircle2, PartyPopper, Crown, Bot, ThumbsUp, Instagram, Facebook, MapPin, Clock,
 } from "lucide-react";
-import { tradeLabel } from "./DemoFlow";
+import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) => `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const BEFORE_IMG = "https://images.unsplash.com/photo-1768321914670-80db17b4669b?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
+const AFTER_IMG = "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
@@ -30,11 +33,14 @@ const TRADES = [
 export default function DemoFlujo() {
   const { t, i18n } = useTranslation();
   const [step, setStep] = useState(0);
-  const [lead, setLead] = useState({ name: "", email: "", trade: "" });
+  const [lead, setLead] = useState({ name: "", email: "", trade: "", phone: "" });
   const [demoId, setDemoId] = useState(null);
   const [business, setBusiness] = useState(null);
   const [desc, setDesc] = useState("");
   const [quote, setQuote] = useState(null);
+  const [agreement, setAgreement] = useState(null);
+  const [signed, setSigned] = useState(false);
+  const [paid, setPaid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [founder, setFounder] = useState(null);
@@ -53,7 +59,7 @@ export default function DemoFlujo() {
     if (!lead.trade) { setErr(t("demoFlujo.errTrade")); return; }
     setLoading(true);
     try {
-      const r = await axios.post(`${API}/public/demo/start`, { ...lead, phone: "" });
+      const r = await axios.post(`${API}/public/demo/start`, { ...lead });
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
       fbTrack("Lead", { content_name: "Story Demo Start", content_category: lead.trade });
@@ -73,103 +79,120 @@ export default function DemoFlujo() {
       setQuote(r.data.quote);
       setBusiness(r.data.business);
       fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
-      fbTrackCustom("DemoFlujoQuote");
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demoFlow.errQuote"));
+    } finally { setLoading(false); }
+  };
+
+  const genAgreement = async () => {
+    setErr("");
+    setLoading(true);
+    try {
+      const r = await axios.post(`${API}/public/demo/agreement`, {
+        demo_id: demoId, description_es: desc,
+        job_title: quote?.job_title || "", total: quote?.total || 0, deposit: quote?.deposit_amount || 0,
+      });
+      setAgreement(r.data.agreement);
+      go(4);
+    } catch (e) {
+      setErr(e?.response?.data?.detail || t("demoFlow.errAgreement"));
     } finally { setLoading(false); }
   };
 
   const total = fmtMoney(quote?.total);
   const deposit = fmtMoney(quote?.deposit_amount || (Number(quote?.total || 0) * 0.5));
 
+  const HEAD = {
+    1: { who: "client", icon: IdCard, title: t("demoFlujo.s1Title"), cap: t("demoFlujo.s1Caption") },
+    2: { who: "client", icon: CalendarCheck, title: t("demoFlujo.bookTitle"), cap: t("demoFlujo.bookCaption") },
+    3: { who: "you", icon: Sparkles, title: t("demoFlujo.quoteTitle"), cap: t("demoFlujo.quoteCaption") },
+    4: { who: "client", icon: FileText, title: t("demoFlujo.agreeTitle"), cap: t("demoFlujo.agreeCaption") },
+    5: { who: "client", icon: Receipt, title: t("demoFlujo.invoiceTitle"), cap: t("demoFlujo.invoiceCaption") },
+    6: { who: "you", icon: Briefcase, title: t("demoFlujo.jobTitle"), cap: t("demoFlujo.jobCaption") },
+    7: { who: "you", icon: Camera, title: t("demoFlujo.photoTitle"), cap: t("demoFlujo.photoCaption") },
+    8: { who: "you", icon: Share2, title: t("demoFlujo.socialTitle"), cap: t("demoFlujo.socialCaption") },
+    9: { who: "client", icon: Star, title: t("demoFlujo.reviewTitle"), cap: t("demoFlujo.reviewCaption") },
+  };
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="demo-flujo">
       <TopBar />
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-24">
-        {step >= 1 && step <= 9 && (
-          <div className="mb-5" data-testid="flujo-progress">
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < step ? "bg-emerald-500" : "bg-slate-200"}`} />
-              ))}
-            </div>
-            <div className="text-[11px] font-bold text-emerald-700 mt-1.5">{t("demoFlujo.progress", { n: step })}</div>
-          </div>
-        )}
-
+        {step >= 1 && step <= 9 && <ProgressHeader step={step} head={HEAD[step]} t={t} />}
         {err && <div data-testid="flujo-error" className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{err}</div>}
 
         {step === 0 && <Intro lead={lead} setLead={setLead} onStart={start} loading={loading} i18n={i18n} t={t} />}
 
         {step === 1 && (
-          <Scene who="client" icon={IdCard} title={t("demoFlujo.s1Title")} caption={t("demoFlujo.s1Caption")} onNext={() => go(2)} onBack={() => go(0)} t={t}>
+          <SceneShell onNext={() => go(2)} onBack={() => go(0)} t={t}>
             <MiniCard business={business} label={t("demoFlujo.s1Card", { trade: tradeName })} />
-          </Scene>
+          </SceneShell>
         )}
+
         {step === 2 && (
-          <Scene who="client" icon={CalendarCheck} title={t("demoFlujo.s2Title")} caption={t("demoFlujo.s2Caption")} onNext={() => go(3)} onBack={() => go(1)} t={t}>
-            <Pill icon={CalendarCheck} text={t("demoFlujo.s2Booked")} />
-          </Scene>
+          <SceneShell onNext={() => go(3)} onBack={() => go(1)} t={t}>
+            <BookingForm client={client} service={tradeName} t={t} />
+          </SceneShell>
         )}
+
         {step === 3 && (
-          <Scene who="you" icon={Sparkles} title={t("demoFlujo.s3Title")} caption={t("demoFlujo.s3Caption")} t={t}
-            onBack={() => go(2)}
-            onNext={quote ? () => go(4) : null}
-            nextLabel={quote ? t("demoFlujo.s3Accept") : null}>
-            {!quote ? (
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.s3DescLabel")}</label>
-                <Textarea data-testid="flujo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} placeholder={t("demoFlujo.s3DescPh")} className="rounded-xl text-base" />
-                <Button data-testid="flujo-gen-quote" onClick={genQuote} disabled={loading} className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+          !quote ? (
+            <Card className="p-6 rounded-2xl border-slate-200">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.s3DescLabel")}</label>
+              <Textarea data-testid="flujo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} placeholder={t("demoFlujo.s3DescPh")} className="mt-2 rounded-xl text-base" />
+              <div className="mt-4 flex items-center gap-2">
+                <button onClick={() => go(2)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
+                <Button data-testid="flujo-gen-quote" onClick={genQuote} disabled={loading} className="ml-auto py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
                   {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlujo.s3GenLoading")}</> : <><Sparkles className="w-5 h-5 mr-2" /> {t("demoFlujo.s3Gen")}</>}
                 </Button>
               </div>
-            ) : (
-              <div data-testid="flujo-quote-result" className="rounded-xl border-2 border-emerald-200 bg-emerald-50/50 p-4">
-                <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">{t("demoFlujo.s3QuoteReady", { name: client })}</div>
-                <div className="font-heading font-bold text-lg">{quote.job_title}</div>
-                <div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-500">Total</span><span className="font-bold">{total}</span></div>
-                {quote.deposit_amount > 0 && <div className="flex items-center justify-between text-sm text-emerald-700"><span>Deposit</span><span>{deposit}</span></div>}
-              </div>
-            )}
-          </Scene>
+            </Card>
+          ) : (
+            <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setQuote(null)} />
+          )
         )}
+
         {step === 4 && (
-          <Scene who="client" icon={FileText} title={t("demoFlujo.s4Title")} caption={t("demoFlujo.s4Caption")} onNext={() => go(5)} onBack={() => go(3)} t={t}>
-            <Pill icon={Receipt} text={t("demoFlujo.s4Invoice", { total })} />
-          </Scene>
+          <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed}
+            onSign={() => { setSigned(true); go(5); }} />
         )}
+
         {step === 5 && (
-          <Scene who="client" icon={CreditCard} title={t("demoFlujo.s5Title")} caption={t("demoFlujo.s5Caption")} onNext={() => go(6)} onBack={() => go(4)} t={t}>
-            <Pill icon={CheckCircle2} text={t("demoFlujo.s5Paid", { deposit })} tone="emerald" />
-          </Scene>
+          <>
+            <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
+            <div className="mt-4 flex items-center gap-2">
+              <button onClick={() => go(4)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
+              {paid && (
+                <Button data-testid="flujo-next" onClick={() => go(6)} className="ml-auto py-3 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold">
+                  {t("demoFlujo.next")} <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </>
         )}
+
         {step === 6 && (
-          <Scene who="you" icon={CalendarDays} title={t("demoFlujo.s6Title")} caption={t("demoFlujo.s6Caption")} onNext={() => go(7)} onBack={() => go(5)} t={t}>
-            <Pill icon={CalendarDays} text={t("demoFlujo.s6Sched")} />
-          </Scene>
+          <SceneShell onNext={() => go(7)} onBack={() => go(5)} t={t}>
+            <JobDetail client={client} title={quote?.job_title} total={total} deposit={deposit} t={t} />
+          </SceneShell>
         )}
+
         {step === 7 && (
-          <Scene who="you" icon={Camera} title={t("demoFlujo.s7Title")} caption={t("demoFlujo.s7Caption")} onNext={() => go(8)} onBack={() => go(6)} t={t}>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="aspect-video rounded-xl bg-slate-200 flex items-center justify-center text-slate-400 text-xs font-bold">BEFORE</div>
-              <div className="aspect-video rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">AFTER</div>
-            </div>
-          </Scene>
+          <SceneShell onNext={() => go(8)} onBack={() => go(6)} t={t}>
+            <BeforeAfter t={t} />
+          </SceneShell>
         )}
+
         {step === 8 && (
-          <Scene who="you" icon={Share2} title={t("demoFlujo.s8Title")} caption={t("demoFlujo.s8Caption")} onNext={() => go(9)} onBack={() => go(7)} t={t}>
-            <Pill icon={Share2} text={t("demoFlujo.s8Posted")} tone="violet" />
-          </Scene>
+          <SceneShell onNext={() => go(9)} onBack={() => go(7)} t={t}>
+            <SocialDesign business={business} t={t} />
+          </SceneShell>
         )}
+
         {step === 9 && (
-          <Scene who="client" icon={Star} title={t("demoFlujo.s9Title")} caption={t("demoFlujo.s9Caption")} onNext={() => go(10)} onBack={() => go(8)} t={t} nextLabel={t("demoFlujo.next")}>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-center gap-1 text-amber-500">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}</div>
-              <p className="text-sm text-slate-700 mt-1.5 italic">{t("demoFlujo.s9Review")}</p>
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700"><Bot className="w-3.5 h-3.5" /> {t("demoFlujo.s9Reply")}</div>
-            </div>
-          </Scene>
+          <SceneShell onNext={() => go(10)} onBack={() => go(8)} nextLabel={t("demoFlujo.finishBtn")} t={t}>
+            <ReviewScene client={client} t={t} />
+          </SceneShell>
         )}
 
         {step === 10 && <FinalCTA founder={founder} t={t} />}
@@ -190,6 +213,47 @@ function TopBar() {
         <Link to="/register" className="text-sm font-semibold text-blue-900 hover:underline">Sign up</Link>
       </div>
     </header>
+  );
+}
+
+function ProgressHeader({ step, head, t }) {
+  const isClient = head.who === "client";
+  const Icon = head.icon;
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-1">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < step ? "bg-emerald-500" : "bg-slate-200"}`} />
+        ))}
+      </div>
+      <div className="text-[11px] font-bold text-emerald-700 mt-1.5" data-testid="flujo-progress">{t("demoFlujo.progress", { n: step })}</div>
+      <div className="mt-4 flex items-start gap-3">
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none text-white ${isClient ? "bg-amber-500" : "bg-gradient-to-br from-blue-900 to-emerald-600"}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        <div>
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${isClient ? "text-amber-600" : "text-blue-600"}`}>{isClient ? t("demoFlujo.clientLabel") : t("demoFlujo.youLabel")}</span>
+          <h2 className="font-heading text-xl font-bold leading-tight">{head.title}</h2>
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">{head.cap}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SceneShell({ children, onNext, onBack, nextLabel, t }) {
+  return (
+    <Card className="p-5 sm:p-6 rounded-2xl border-slate-200 animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="flujo-scene">
+      {children}
+      <div className="mt-6 flex items-center gap-2">
+        {onBack && <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>}
+        {onNext && (
+          <Button data-testid="flujo-next" onClick={onNext} className="ml-auto py-3 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold">
+            {nextLabel || t("demoFlujo.next")} <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }
 
@@ -227,58 +291,151 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
   );
 }
 
-function Scene({ who, icon: Icon, title, caption, children, onNext, onBack, nextLabel, t }) {
-  const isClient = who === "client";
-  return (
-    <Card key={title} className="p-6 sm:p-8 rounded-2xl border-slate-200 animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="flujo-scene">
-      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 ${isClient ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
-        {isClient ? t("demoFlujo.clientLabel") : t("demoFlujo.youLabel")}
-      </div>
-      <div className="flex items-start gap-3">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none text-white ${isClient ? "bg-amber-500" : "bg-gradient-to-br from-blue-900 to-emerald-600"}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <div>
-          <h2 className="font-heading text-xl font-bold leading-tight">{title}</h2>
-          <p className="text-sm text-slate-600 mt-1 leading-relaxed">{caption}</p>
-        </div>
-      </div>
-      <div className="mt-5">{children}</div>
-      <div className="mt-6 flex items-center gap-2">
-        {onBack && <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>}
-        {onNext && (
-          <Button data-testid="flujo-next" onClick={onNext} className="ml-auto py-3 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold">
-            {nextLabel || t("demoFlujo.next")} <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
-      </div>
-    </Card>
-  );
-}
-
 function MiniCard({ business, label }) {
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 text-white p-5">
+    <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 text-white p-5" data-testid="flujo-card">
       <div className="flex items-center gap-2"><Hammer className="w-5 h-5" /><span className="font-heading font-bold">{business?.business_name || "Demo Contractors"}</span></div>
       <div className="text-xs text-white/80 mt-0.5">{label}</div>
       <div className="mt-3 flex items-center gap-1 text-amber-300">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}<span className="text-white/70 text-xs ml-1">5.0</span></div>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <span className="px-3 py-1.5 rounded-lg bg-white/15 text-xs font-semibold flex items-center gap-1"><MessageSquare className="w-3 h-3" /> WhatsApp</span>
+        <span className="px-3 py-1.5 rounded-lg bg-white/15 text-xs font-semibold flex items-center gap-1"><CalendarCheck className="w-3 h-3" /> Book now</span>
         <span className="px-3 py-1.5 rounded-lg bg-white/15 text-xs font-semibold flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> Reviews</span>
       </div>
     </div>
   );
 }
 
-function Pill({ icon: Icon, text, tone = "slate" }) {
-  const tones = {
-    slate: "bg-slate-100 text-slate-700",
-    emerald: "bg-emerald-100 text-emerald-800",
-    violet: "bg-violet-100 text-violet-800",
-  };
+function BookingForm({ client, service, t }) {
+  const times = ["9:00", "10:00", "11:30", "2:00"];
   return (
-    <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm ${tones[tone]}`}>
-      <Icon className="w-4 h-4" /> {text}
+    <div data-testid="flujo-booking" className="rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-slate-900 text-white px-4 py-3 text-sm font-bold flex items-center gap-2"><CalendarCheck className="w-4 h-4" /> Book an appointment</div>
+      <div className="p-4 space-y-3">
+        <Field label={t("demoFlujo.bookName")} value={client} />
+        <Field label={t("demoFlujo.bookService")} value={service} />
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t("demoFlujo.bookTime")}</div>
+          <div className="grid grid-cols-4 gap-2">
+            {times.map((tm, i) => (
+              <div key={tm} className={`text-center py-2 rounded-lg text-sm font-semibold border ${i === 1 ? "bg-emerald-600 text-white border-emerald-600" : "border-slate-200 text-slate-500"}`}>{tm}</div>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-800 text-sm font-semibold px-3 py-2.5 mt-1">
+          <CheckCircle2 className="w-4 h-4" /> {t("demoFlujo.bookConfirmed")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <div>
+      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+      <div className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 flex items-center text-sm font-medium text-slate-800">{value}</div>
+    </div>
+  );
+}
+
+function JobDetail({ client, title, total, deposit, t }) {
+  const stages = [t("demoFlujo.stgNew"), t("demoFlujo.stgScheduled"), t("demoFlujo.stgProgress"), t("demoFlujo.stgDone")];
+  return (
+    <div data-testid="flujo-job" className="rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-900 to-emerald-700 text-white px-4 py-3">
+        <div className="text-[11px] uppercase tracking-wider text-white/70">Job</div>
+        <div className="font-heading font-bold">{title || "Living room remodel"}</div>
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-1 mb-4">
+          {stages.map((s, i) => (
+            <div key={s} className="flex-1 text-center">
+              <div className={`h-1.5 rounded-full ${i <= 1 ? "bg-emerald-500" : "bg-slate-200"}`} />
+              <div className={`text-[10px] mt-1 font-semibold ${i === 1 ? "text-emerald-700" : "text-slate-400"}`}>{s}</div>
+            </div>
+          ))}
+        </div>
+        <Row icon={ThumbsUp} label={t("demoFlujo.jobClient")} value={client} />
+        <Row icon={MapPin} label={t("demoFlujo.jobAddress")} value={t("demoFlujo.jobAddressVal")} />
+        <Row icon={Clock} label={t("demoFlujo.jobSchedule")} value={t("demoFlujo.s6Sched")} />
+        <Row icon={Receipt} label={t("demoFlujo.jobTotal")} value={total} />
+        <Row icon={CreditCard} label={t("demoFlujo.jobDeposit")} value={`${deposit} ✓`} tone="emerald" />
+      </div>
+    </div>
+  );
+}
+
+function Row({ icon: Icon, label, value, tone }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+      <span className="flex items-center gap-2 text-sm text-slate-500"><Icon className="w-4 h-4" /> {label}</span>
+      <span className={`text-sm font-bold ${tone === "emerald" ? "text-emerald-700" : "text-slate-800"}`}>{value}</span>
+    </div>
+  );
+}
+
+function BeforeAfter({ t }) {
+  return (
+    <div data-testid="flujo-photos">
+      <div className="grid grid-cols-2 gap-3">
+        <figure className="relative rounded-xl overflow-hidden">
+          <img src={BEFORE_IMG} alt="before" className="w-full h-40 object-cover" />
+          <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-slate-900/80 text-white px-2 py-0.5 rounded">{t("demoFlujo.before")}</figcaption>
+        </figure>
+        <figure className="relative rounded-xl overflow-hidden">
+          <img src={AFTER_IMG} alt="after" className="w-full h-40 object-cover" />
+          <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">{t("demoFlujo.after")}</figcaption>
+        </figure>
+      </div>
+      <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700"><CheckCircle2 className="w-4 h-4" /> {t("demoFlujo.photoSaved")}</div>
+    </div>
+  );
+}
+
+function SocialDesign({ business, t }) {
+  return (
+    <div data-testid="flujo-social">
+      <div className="mx-auto max-w-xs rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-white">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center"><Hammer className="w-3.5 h-3.5 text-white" /></div>
+          <span className="text-xs font-bold">{business?.business_name || "Demo Contractors"}</span>
+        </div>
+        <div className="grid grid-cols-2">
+          <img src={BEFORE_IMG} alt="before" className="w-full h-28 object-cover" />
+          <img src={AFTER_IMG} alt="after" className="w-full h-28 object-cover" />
+        </div>
+        <div className="px-3 py-2 bg-white">
+          <div className="flex gap-3 text-slate-700"><Instagram className="w-4 h-4" /><Facebook className="w-4 h-4" /></div>
+          <p className="text-xs text-slate-600 mt-1.5 leading-snug">{t("demoFlujo.socialCaptionText")}</p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-semibold text-violet-800 bg-violet-50 rounded-xl px-3 py-2"><Share2 className="w-4 h-4" /> {t("demoFlujo.postedSocial")}</div>
+        <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 bg-blue-50 rounded-xl px-3 py-2"><MapPin className="w-4 h-4" /> {t("demoFlujo.uploadedGmb")}</div>
+      </div>
+    </div>
+  );
+}
+
+function ReviewScene({ client, t }) {
+  return (
+    <div data-testid="flujo-review" className="space-y-3">
+      <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">{t("demoFlujo.reviewAsk")}</div>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm">{client[0]}</div>
+          <div>
+            <div className="text-sm font-bold">{client}</div>
+            <div className="flex items-center gap-0.5 text-amber-500">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}</div>
+          </div>
+        </div>
+        <p className="text-sm text-slate-700 mt-2 italic">{t("demoFlujo.reviewText")}</p>
+      </div>
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider"><Bot className="w-3.5 h-3.5" /> {t("demoFlujo.reviewReplyLabel")}</div>
+        <p className="text-sm text-slate-700 mt-1.5">{t("demoFlujo.reviewReply")}</p>
+      </div>
     </div>
   );
 }
@@ -297,7 +454,7 @@ function FinalCTA({ founder, t }) {
         </div>
       )}
       <div className="mt-5">
-        <Link data-testid="flujo-final-cta" to={to} className="inline-flex items-center gap-2 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
+        <Link data-testid="flujo-final-cta" to={to} className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
           {available ? <><Crown className="w-4 h-4" /> {t("demoFlujo.founderCta")}</> : <>{t("demoFlujo.regularCta")}</>} <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
