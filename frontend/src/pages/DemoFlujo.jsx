@@ -50,7 +50,7 @@ const TRADES = [
 export default function DemoFlujo() {
   const { t, i18n } = useTranslation();
   const [step, setStep] = useState(0);
-  const [lead, setLead] = useState({ name: "", email: "", trade: "", phone: "" });
+  const [lead, setLead] = useState({ name: "", businessName: "", email: "", trade: "", phone: "" });
   const [demoId, setDemoId] = useState(null);
   const [business, setBusiness] = useState(null);
   const [desc, setDesc] = useState("");
@@ -73,7 +73,7 @@ export default function DemoFlujo() {
   const imgs = tradeImages(lead.trade);
   // In this story the VIEWER is the business owner and Maria is the client.
   const ownerBusiness = business
-    ? { ...business, business_name: (lead.name || "").trim() || business.business_name, business_email: lead.email || business.business_email }
+    ? { ...business, business_name: (lead.businessName || "").trim() || (lead.name || "").trim() || business.business_name, business_email: lead.email || business.business_email }
     : business;
   const clientLead = { name: t("demoFlujo.clientFull"), email: t("demoFlujo.clientEmail"), phone: t("demoFlujo.clientPhone") };
   const go = (n) => { setStep(n); setErr(""); window.scrollTo(0, 0); };
@@ -364,6 +364,10 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
         <div>
           <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.name")}</label>
           <Input data-testid="flujo-name" value={lead.name} onChange={set("name")} placeholder="Carlos García" className="mt-1 h-12 rounded-xl text-base" />
+        </div>
+        <div>
+          <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.businessName")}</label>
+          <Input data-testid="flujo-business-name" value={lead.businessName} onChange={set("businessName")} placeholder={t("demoFlujo.businessNamePh")} className="mt-1 h-12 rounded-xl text-base" />
         </div>
         <div>
           <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.email")}</label>

@@ -248,8 +248,8 @@ export default function Landing() {
                 {t("landing.flywheelSubtitle")}
               </p>
               <Link
-                to="/register"
-                data-testid="flow-register"
+                to="/demo-flujo"
+                data-testid="flow-demo"
                 className="mt-7 inline-flex items-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
               >
                 {t("landing.flywheelCta")} <ArrowRight className="w-4 h-4" />
