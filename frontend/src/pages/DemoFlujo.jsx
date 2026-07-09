@@ -17,6 +17,7 @@ import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, IdCard, CalendarCheck,
   FileText, Receipt, CreditCard, Briefcase, Camera, Share2, MessageSquare,
   CheckCircle2, PartyPopper, Crown, Bot, ThumbsUp, Instagram, Facebook, MapPin, Clock,
+  Nfc, QrCode, Globe,
 } from "lucide-react";
 import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
