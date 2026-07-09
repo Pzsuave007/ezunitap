@@ -494,32 +494,49 @@ function BeforeAfter({ imgs, t }) {
 }
 
 function SocialDesign({ business, imgs, t }) {
+  const templates = [
+    "showcase", "promo", "review_5star", "elegant_dark",
+    "magazine", "seasonal", "quote_offer", "trust_badge",
+  ];
   return (
     <div data-testid="flujo-social">
-      {/* Branded template mock (resembles the in-app "Before/After" design) */}
-      <div className="mx-auto max-w-[280px] rounded-2xl overflow-hidden shadow-xl bg-slate-900">
-        <div className="text-center py-2 bg-gradient-to-r from-blue-900 to-emerald-600">
-          <span className="text-white font-heading font-extrabold tracking-wide text-sm">{t("demoFlujo.socialTag")}</span>
-        </div>
-        <div className="relative grid grid-cols-2">
-          <img src={imgs.before} alt="before" className="w-full h-36 object-cover" />
-          <img src={imgs.after} alt="after" className="w-full h-36 object-cover" />
-          <span className="absolute top-2 left-2 text-[9px] font-bold bg-black/70 text-white px-1.5 py-0.5 rounded">{t("demoFlujo.before")}</span>
-          <span className="absolute top-2 right-2 text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">{t("demoFlujo.after")}</span>
-          <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-1 bg-white" />
-        </div>
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-white">
+      {/* The generated post — real system template */}
+      <div className="mx-auto max-w-[300px] rounded-2xl overflow-hidden shadow-xl bg-white border border-slate-200">
+        <img src="/social-previews/before_after.jpg" alt="Post generado" className="w-full aspect-square object-cover" />
+        <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-none"><Hammer className="w-4 h-4 text-white" /></div>
           <div className="min-w-0">
             <div className="text-xs font-extrabold truncate">{business?.business_name || "Demo Contractors"}</div>
             <div className="text-[10px] text-slate-500 flex items-center gap-1"><MessageSquare className="w-3 h-3" /> WhatsApp · {t("demoFlujo.clientPhone")}</div>
           </div>
+          <div className="ml-auto flex items-center gap-1.5 text-slate-400 flex-none">
+            <Instagram className="w-4 h-4" /><Facebook className="w-4 h-4" />
+          </div>
         </div>
       </div>
-      <p className="text-xs text-slate-600 mt-3 leading-snug bg-slate-100 rounded-xl px-3 py-2">{t("demoFlujo.socialCaptionText")}</p>
+
+      {/* AI caption */}
+      <p className="text-xs text-slate-700 mt-3 leading-relaxed bg-slate-100 rounded-xl px-3 py-2.5">{t("demoFlujo.socialCaptionText")}</p>
+
+      {/* Posted confirmations */}
       <div className="mt-3 space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-violet-800 bg-violet-50 rounded-xl px-3 py-2"><Share2 className="w-4 h-4" /> {t("demoFlujo.postedSocial")}</div>
         <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 bg-blue-50 rounded-xl px-3 py-2"><MapPin className="w-4 h-4" /> {t("demoFlujo.uploadedGmb")}</div>
+      </div>
+
+      {/* Gallery of other real templates */}
+      <div className="mt-5" data-testid="flujo-templates">
+        <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
+          <Sparkles className="w-4 h-4 text-emerald-600" /> {t("demoFlujo.socialMoreTitle")}
+        </div>
+        <p className="text-xs text-slate-500 mt-0.5">{t("demoFlujo.socialMoreSub")}</p>
+        <div className="mt-3 -mx-1 flex gap-3 overflow-x-auto pb-2 px-1 snap-x">
+          {templates.map((tpl) => (
+            <div key={tpl} className="flex-none w-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm snap-start">
+              <img src={`/social-previews/${tpl}.jpg`} alt={tpl} loading="lazy" className="w-full aspect-square object-cover" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
