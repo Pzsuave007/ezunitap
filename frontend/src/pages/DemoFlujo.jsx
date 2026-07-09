@@ -507,22 +507,76 @@ function ReviewScene({ client, t }) {
 
 function FinalCTA({ founder, t }) {
   const available = founder?.available;
+  const price = founder?.display_price || "$59";
   const to = available ? "/register?plan=bundle_founder&billing=month" : "/register?plan=bundle";
+  const recap = [
+    t("demoFlujo.recap1"), t("demoFlujo.recap2"), t("demoFlujo.recap3"),
+    t("demoFlujo.recap4"), t("demoFlujo.recap5"),
+  ];
+  const helps = [
+    { icon: Clock, title: t("demoFlujo.help1Title"), sub: t("demoFlujo.help1Sub"), tone: "text-blue-700 bg-blue-50" },
+    { icon: CreditCard, title: t("demoFlujo.help2Title"), sub: t("demoFlujo.help2Sub"), tone: "text-emerald-700 bg-emerald-50" },
+    { icon: Star, title: t("demoFlujo.help3Title"), sub: t("demoFlujo.help3Sub"), tone: "text-amber-700 bg-amber-50" },
+  ];
   return (
-    <Card className="p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0" data-testid="flujo-final">
-      <PartyPopper className="w-10 h-10 mx-auto mb-3" />
-      <h2 className="font-heading text-2xl font-bold">{t("demoFlujo.finalTitle")}</h2>
-      <p className="text-white/85 mt-2 max-w-md mx-auto">{t("demoFlujo.finalDesc")}</p>
-      {available && founder && (
-        <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-xs font-bold">
-          <Crown className="w-3.5 h-3.5" /> {t("demoFlujo.founderSpots", { n: founder.remaining, limit: founder.limit })}
+    <div data-testid="flujo-final" className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+      {/* Celebration header */}
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 flex items-center justify-center shadow-lg">
+          <PartyPopper className="w-8 h-8 text-white" />
         </div>
-      )}
-      <div className="mt-5">
-        <Link data-testid="flujo-final-cta" to={to} className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
+        <h2 className="font-heading text-2xl sm:text-3xl font-bold mt-4 leading-tight">{t("demoFlujo.finalTitle")}</h2>
+        <p className="text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">{t("demoFlujo.finalDesc")}</p>
+      </div>
+
+      {/* Recap of what they experienced */}
+      <Card className="mt-6 p-5 rounded-2xl border-slate-200">
+        <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3">{t("demoFlujo.finalRecapTitle")}</div>
+        <ul className="space-y-2.5">
+          {recap.map((r, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-none mt-0.5" />
+              <span className="leading-snug">{r}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      {/* How it helps the business */}
+      <div className="mt-4">
+        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 text-center">{t("demoFlujo.finalHelpTitle")}</div>
+        <div className="grid grid-cols-3 gap-2.5">
+          {helps.map((h, i) => (
+            <div key={i} className="rounded-2xl border border-slate-200 p-3 text-center">
+              <div className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center ${h.tone}`}><h.icon className="w-5 h-5" /></div>
+              <div className="text-sm font-bold text-slate-900 mt-2 leading-tight">{h.title}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5 leading-tight">{h.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* The offer */}
+      <Card className="mt-6 p-6 rounded-2xl border-0 bg-gradient-to-br from-blue-900 to-emerald-700 text-white text-center shadow-xl">
+        {available && founder && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-amber-950 text-xs font-extrabold uppercase tracking-wider">
+            <Crown className="w-3.5 h-3.5" /> {t("demoFlujo.founderSpots", { n: founder.remaining, limit: founder.limit })}
+          </div>
+        )}
+        <div className="text-sm font-bold uppercase tracking-wider text-white/80 mt-3">{t("demoFlujo.offerTitle")}</div>
+        <div className="mt-1 flex items-end justify-center gap-1">
+          <span className="font-heading text-5xl font-extrabold">{available ? price : "$75"}</span>
+          <span className="text-white/80 font-semibold mb-1.5">/{t("demoFlujo.perMonth", "mo")}</span>
+        </div>
+        <div className="text-xs text-amber-200 font-semibold mt-1">
+          {available ? t("demoFlujo.offerPriceNote") : ""}
+        </div>
+        <p className="text-sm text-white/85 mt-3 max-w-sm mx-auto leading-relaxed">{t("demoFlujo.offerIncludes")}</p>
+        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-blue-900 font-extrabold hover:bg-slate-100 transition-colors">
           {available ? <><Crown className="w-4 h-4" /> {t("demoFlujo.founderCta")}</> : <>{t("demoFlujo.regularCta")}</>} <ArrowRight className="w-4 h-4" />
         </Link>
-      </div>
-    </Card>
+        <div className="text-[11px] text-white/70 mt-3">{t("demoFlujo.offerRegularNote")}</div>
+      </Card>
+    </div>
   );
 }
