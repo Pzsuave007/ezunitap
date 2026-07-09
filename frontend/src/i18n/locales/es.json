@@ -1897,6 +1897,10 @@
     "foundQr": "Código QR",
     "foundWeb": "Formulario web",
     "foundChat": "Chatbot IA",
+    "foundNfcSub": "Acerca tu tarjeta a su teléfono y ve tu perfil al instante.",
+    "foundQrSub": "Escanea tu código QR desde un volante, camioneta o tarjeta.",
+    "foundWebSub": "Llena el formulario de tu sitio web en segundos.",
+    "foundChatSub": "El chatbot IA responde y agenda por ti 24/7.",
     "socialTag": "ANTES → DESPUÉS"
   }
 }

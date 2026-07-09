@@ -37,6 +37,11 @@ const TRADE_IMAGES = {
   "Plomería / Plumbing": { before: "https://images.unsplash.com/photo-1714399417136-d328f3ea14c7?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1542855368-ca6ea825bca2?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
 };
 const tradeImages = (trade) => TRADE_IMAGES[trade] || { before: BEFORE_IMG, after: AFTER_IMG };
+// Visual entry-channel images for Step 1 (how the client finds you)
+const CH_NFC_IMG = "/nfc-sample.png";
+const CH_QR_IMG = "https://images.unsplash.com/photo-1600147131759-880e94a6185f?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
+const CH_WEB_IMG = "https://images.unsplash.com/photo-1625297673326-14790108da55?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
+const CH_CHAT_IMG = "https://static.prod-images.emergentagent.com/jobs/94598009-2be2-4f20-a9a0-c3da1b95e227/images/3cf37857fafea2c7b02ce25f1c5f60d318380ee2834eec8b42254e6742538f9b.png";
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
@@ -313,19 +318,30 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
 
 function FoundVia({ t }) {
   const ch = [
-    { icon: Nfc, label: t("demoFlujo.foundNfc"), tone: "bg-blue-50 text-blue-700" },
-    { icon: QrCode, label: t("demoFlujo.foundQr"), tone: "bg-slate-100 text-slate-700" },
-    { icon: Globe, label: t("demoFlujo.foundWeb"), tone: "bg-emerald-50 text-emerald-700" },
-    { icon: Bot, label: t("demoFlujo.foundChat"), tone: "bg-violet-50 text-violet-700" },
+    { icon: Nfc, img: CH_NFC_IMG, label: t("demoFlujo.foundNfc"), sub: t("demoFlujo.foundNfcSub"), tone: "from-blue-600 to-blue-500", fit: "object-contain bg-slate-100" },
+    { icon: QrCode, img: CH_QR_IMG, label: t("demoFlujo.foundQr"), sub: t("demoFlujo.foundQrSub"), tone: "from-slate-700 to-slate-600", fit: "object-cover" },
+    { icon: Globe, img: CH_WEB_IMG, label: t("demoFlujo.foundWeb"), sub: t("demoFlujo.foundWebSub"), tone: "from-emerald-600 to-emerald-500", fit: "object-cover" },
+    { icon: Bot, img: CH_CHAT_IMG, label: t("demoFlujo.foundChat"), sub: t("demoFlujo.foundChatSub"), tone: "from-violet-600 to-violet-500", fit: "object-contain bg-slate-100" },
   ];
   return (
     <div data-testid="flujo-found">
-      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t("demoFlujo.foundVia")}</div>
-      <div className="grid grid-cols-4 gap-2">
-        {ch.map((c) => (
-          <div key={c.label} className={`flex flex-col items-center gap-1.5 rounded-xl py-3 ${c.tone}`}>
-            <c.icon className="w-5 h-5" />
-            <span className="text-[10px] font-semibold text-center leading-tight">{c.label}</span>
+      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{t("demoFlujo.foundVia")}</div>
+      <div className="space-y-3">
+        {ch.map((c, i) => (
+          <div
+            key={c.label}
+            data-testid={`flujo-channel-${i}`}
+            className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2"
+            style={{ animationDelay: `${i * 90}ms`, animationFillMode: "both", animationDuration: "400ms" }}
+          >
+            <img src={c.img} alt={c.label} className={`w-full h-44 sm:h-52 ${c.fit}`} loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent pointer-events-none" />
+            <div className={`absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${c.tone} text-white text-[11px] font-bold uppercase tracking-wider shadow`}>
+              <c.icon className="w-3.5 h-3.5" /> {c.label}
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-3.5">
+              <p className="text-white text-sm font-semibold leading-snug drop-shadow">{c.sub}</p>
+            </div>
           </div>
         ))}
       </div>
