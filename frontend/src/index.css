@@ -87,3 +87,9 @@ h1, h2, h3, h4, .font-heading {
 @layer base {
     [data-debug-wrapper="true"] { display: contents !important; }
 }
+
+@keyframes busybar {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(120%); }
+    100% { transform: translateX(320%); }
+}

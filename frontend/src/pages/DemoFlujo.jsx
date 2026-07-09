@@ -59,6 +59,7 @@ export default function DemoFlujo() {
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(null);
   const [err, setErr] = useState("");
   const [founder, setFounder] = useState(null);
 
@@ -96,7 +97,7 @@ export default function DemoFlujo() {
   const genQuote = async () => {
     setErr("");
     if (desc.trim().length < 6) { setErr(t("demoFlow.errDesc")); return; }
-    setLoading(true);
+    setLoading(true); setBusy("busyQuoteTitle");
     try {
       const r = await axios.post(`${API}/public/demo/quote`, { demo_id: demoId, description_es: desc });
       setQuote(r.data.quote);
@@ -104,12 +105,12 @@ export default function DemoFlujo() {
       fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demoFlow.errQuote"));
-    } finally { setLoading(false); }
+    } finally { setLoading(false); setBusy(null); }
   };
 
   const genAgreement = async () => {
     setErr("");
-    setLoading(true);
+    setLoading(true); setBusy("busyAgreementTitle");
     try {
       const r = await axios.post(`${API}/public/demo/agreement`, {
         demo_id: demoId, description_es: desc,
@@ -120,7 +121,7 @@ export default function DemoFlujo() {
       go(4);
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demoFlow.errAgreement"));
-    } finally { setLoading(false); }
+    } finally { setLoading(false); setBusy(null); }
   };
 
   const total = fmtMoney(quote?.total);
@@ -164,7 +165,19 @@ export default function DemoFlujo() {
           !quote ? (
             <Card className="p-6 rounded-2xl border-slate-200">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.s3DescLabel")}</label>
-              <Textarea data-testid="flujo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} placeholder={t("demoFlujo.s3DescPh")} className="mt-2 rounded-xl text-base" />
+              <Textarea data-testid="flujo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={6} placeholder={t("demoFlujo.s3DescPh")} className="mt-2 rounded-xl text-base" />
+              <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-100 p-3.5" data-testid="flujo-desc-tips">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                  <Sparkles className="w-3.5 h-3.5" /> {t("demoFlujo.s3TipsTitle")}
+                </div>
+                <ul className="mt-2 space-y-1.5">
+                  {["s3Tip1", "s3Tip2", "s3Tip3", "s3Tip4", "s3Tip5"].map((k) => (
+                    <li key={k} className="flex items-start gap-2 text-[13px] text-slate-700 leading-snug">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none mt-0.5" /> {t(`demoFlujo.${k}`)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div className="mt-4 flex items-center gap-2">
                 <button onClick={() => go(2)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
                 <Button data-testid="flujo-gen-quote" onClick={genQuote} disabled={loading} className="ml-auto py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
@@ -221,6 +234,35 @@ export default function DemoFlujo() {
         )}
 
         {step === 10 && <FinalCTA founder={founder} t={t} />}
+      </div>
+      <BusySheet busy={busy} t={t} />
+    </div>
+  );
+}
+
+function BusySheet({ busy, t }) {
+  if (!busy) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" data-testid="flujo-busy">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300">
+        <div className="mx-auto w-12 h-1.5 rounded-full bg-slate-200 sm:hidden mb-5" />
+        <div className="flex flex-col items-center text-center">
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 opacity-20 animate-ping" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 flex items-center justify-center">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h3 className="font-heading text-lg font-bold mt-4 flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" /> {t(`demoFlujo.${busy}`)}
+          </h3>
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed max-w-xs">{t("demoFlujo.busyWait")}</p>
+          <div className="mt-5 w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-blue-900 to-emerald-500 animate-[busybar_1.4s_ease-in-out_infinite]" />
+          </div>
+          <div className="text-xs font-semibold text-emerald-700 mt-3">{t("demoFlujo.busyStay")}</div>
+        </div>
       </div>
     </div>
   );
