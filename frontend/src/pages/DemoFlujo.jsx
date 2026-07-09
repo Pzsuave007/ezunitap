@@ -234,7 +234,7 @@ export default function DemoFlujo() {
           </SceneShell>
         )}
 
-        {step === 10 && <FinalCTA founder={founder} t={t} />}
+        {step === 10 && <FinalCTA founder={founder} brand={(lead.businessName || lead.name || "").trim()} t={t} />}
       </div>
       <BusySheet busy={busy} t={t} />
       <NoticeSheet
@@ -598,7 +598,7 @@ function ReviewScene({ client, t }) {
   );
 }
 
-function FinalCTA({ founder, t }) {
+function FinalCTA({ founder, brand, t }) {
   const available = founder?.available;
   const price = founder?.display_price || "$59";
   const to = available ? "/register?plan=bundle_founder&billing=month" : "/register?plan=bundle";
@@ -658,7 +658,7 @@ function FinalCTA({ founder, t }) {
             <Crown className="w-4 h-4" /> {t("demoFlujo.founderSpots", { n: founder.remaining, limit: founder.limit })}
           </div>
         )}
-        <div className="text-base font-bold uppercase tracking-wider text-white/80 mt-3">{t("demoFlujo.offerTitle")}</div>
+        <div className="text-base font-bold uppercase tracking-wider text-white/80 mt-3">{brand ? t("demoFlujo.offerBrandTitle", { brand }) : t("demoFlujo.offerTitle")}</div>
         <div className="mt-1 flex items-end justify-center gap-1">
           <span className="font-heading text-5xl sm:text-6xl font-extrabold">{available ? price : "$75"}</span>
           <span className="text-white/80 font-semibold mb-2 text-lg">/{t("demoFlujo.perMonth", "mo")}</span>
@@ -667,8 +667,10 @@ function FinalCTA({ founder, t }) {
           {available ? t("demoFlujo.offerPriceNote") : ""}
         </div>
         <p className="text-base text-white/90 mt-3 max-w-sm mx-auto leading-relaxed">{t("demoFlujo.offerIncludes")}</p>
-        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white text-blue-900 font-extrabold text-base sm:text-lg hover:bg-slate-100 transition-colors">
-          {available ? <><Crown className="w-5 h-5" /> {t("demoFlujo.founderCta")}</> : <>{t("demoFlujo.regularCta")}</>} <ArrowRight className="w-5 h-5" />
+        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white text-blue-900 font-extrabold text-base sm:text-lg hover:bg-slate-100 transition-colors leading-tight">
+          {available
+            ? <><Crown className="w-5 h-5 flex-none" /> {brand ? t("demoFlujo.founderCtaBrand", { brand }) : t("demoFlujo.founderCta")}</>
+            : <>{brand ? t("demoFlujo.regularCtaBrand", { brand }) : t("demoFlujo.regularCta")}</>} <ArrowRight className="w-5 h-5 flex-none" />
         </Link>
         <div className="text-sm text-white/70 mt-3">{t("demoFlujo.offerRegularNote")}</div>
       </Card>

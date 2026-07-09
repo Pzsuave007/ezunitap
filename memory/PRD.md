@@ -15,6 +15,18 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 9 2026 — Rediseño legibilidad + mejoras UX del demo `/demo-flujo` [COMPLETO; verificado screenshots; testing_agent PROHIBIDO por usuario]
+- **Legibilidad 40+**: iconos de cada paso ARRIBA (centrados) con título/explicación abajo; todos los textos <12px subidos a mínimo 14-16px; documentos (DemoFlow.js) labels a 14px. Precio/CTA responsivos.
+- **Paso 1 visual**: canales NFC/QR/Web/Chat como tarjetas de imagen (NFC = `/nfc-sample.png`, QR foto genérica, formulario laptop, chatbot generado). 
+- **Paso 3**: checklist "qué detalles necesita la IA" (medidas, materiales, precios, depósito, tiempos); botón "Generar cotización" full-width; placeholder detallado.
+- **Popup IA (BusySheet)**: sube desde abajo mientras genera cotización/contrato ("no cierres esta pantalla").
+- **Popup pago (NoticeSheet)**: al pagar sale "¡Esto es un demo!" con botón "Continuar con el demo" (`flujo-demo-notice-continue`).
+- **Paso 8 social**: usa template real `/social-previews/before_after.jpg` + caption con hashtags + galería deslizable de templates reales.
+- **Nombre del negocio**: nuevo campo `flujo-business-name` en intro → cotización/contrato/factura/tarjeta usan el nombre del negocio (fallback a nombre personal). CTA final personalizado: "Activa {negocio} — $59/mes de por vida".
+- **Landing**: botón flywheel (post 9 pasos) ahora → `/demo-flujo` con copy "Experiméntalo tú mismo — demo gratis de 2 min".
+- Job detail (paso 6) filas apiladas (label arriba/valor abajo). Etiqueta "Tu tipo de negocio" (antes "trabajo").
+
+
 ## ✅ Jul 8 2026 — Demo de historia guiada `/demo-flujo` (9 pasos) [COMPLETO; verificado screenshot end-to-end incl. IA real]
 - Nuevo `pages/DemoFlujo.jsx` (ruta `/demo-flujo`). Simulación narrativa de una clienta ("María"/"Maria") siguiendo los 9 pasos de "Así funciona", personalizada al oficio del que ve el demo.
 - Paso 3 = IA REAL (reutiliza `/public/demo/start` + `/public/demo/quote` con el oficio + descripción en español). Pasos 1,2,4-9 simulados ($0) con escenas animadas.
