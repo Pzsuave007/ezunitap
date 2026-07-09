@@ -275,7 +275,7 @@ function TopBar() {
         <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center"><Hammer className="w-4 h-4 text-white" strokeWidth={2.5} /></div>
           <span className="font-heading font-bold">UniTech</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
+          <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
         <Link to="/register" className="text-sm font-semibold text-blue-900 hover:underline">Sign up</Link>
       </div>
@@ -293,13 +293,13 @@ function ProgressHeader({ step, head, t }) {
           <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < step ? "bg-emerald-500" : "bg-slate-200"}`} />
         ))}
       </div>
-      <div className="text-[11px] font-bold text-emerald-700 mt-1.5" data-testid="flujo-progress">{t("demoFlujo.progress", { n: step })}</div>
+      <div className="text-xs font-bold text-emerald-700 mt-1.5" data-testid="flujo-progress">{t("demoFlujo.progress", { n: step })}</div>
       <div className="mt-4 flex items-start gap-3">
         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none text-white ${isClient ? "bg-amber-500" : "bg-gradient-to-br from-blue-900 to-emerald-600"}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isClient ? "text-amber-600" : "text-blue-600"}`}>{isClient ? t("demoFlujo.clientLabel") : t("demoFlujo.youLabel")}</span>
+          <span className={`text-xs font-bold uppercase tracking-wider ${isClient ? "text-amber-600" : "text-blue-600"}`}>{isClient ? t("demoFlujo.clientLabel") : t("demoFlujo.youLabel")}</span>
           <h2 className="font-heading text-xl font-bold leading-tight">{head.title}</h2>
           <p className="text-sm text-slate-600 mt-1 leading-relaxed">{head.cap}</p>
         </div>
@@ -331,8 +331,8 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
         <Sparkles className="w-3.5 h-3.5" /> {t("demoFlujo.badge")}
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight">{t("demoFlujo.introTitle")}</h1>
-      <p className="text-slate-600 mt-2 leading-relaxed">{t("demoFlujo.introDesc")}</p>
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight">{t("demoFlujo.introTitle")}</h1>
+      <p className="text-sm sm:text-base text-slate-600 mt-2 leading-relaxed">{t("demoFlujo.introDesc")}</p>
       <div className="mt-6 space-y-3">
         <div>
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.name")}</label>
@@ -353,7 +353,7 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
       <Button data-testid="flujo-start" onClick={onStart} disabled={loading} className="mt-6 w-full py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlujo.start")} <ArrowRight className="w-4 h-4 ml-2" /></>}
       </Button>
-      <p className="text-[11px] text-slate-400 mt-3 text-center">{t("demoFlujo.freeNote")}</p>
+      <p className="text-xs text-slate-400 mt-3 text-center">{t("demoFlujo.freeNote")}</p>
     </Card>
   );
 }
@@ -378,7 +378,7 @@ function FoundVia({ t }) {
           >
             <img src={c.img} alt={c.label} className={`w-full h-44 sm:h-52 ${c.fit}`} loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent pointer-events-none" />
-            <div className={`absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${c.tone} text-white text-[11px] font-bold uppercase tracking-wider shadow`}>
+            <div className={`absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${c.tone} text-white text-xs font-bold uppercase tracking-wider shadow`}>
               <c.icon className="w-3.5 h-3.5" /> {c.label}
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-3.5">
@@ -415,7 +415,7 @@ function BookingForm({ client, service, t }) {
         <Field label={t("demoFlujo.bookName")} value={client} />
         <Field label={t("demoFlujo.bookService")} value={service} />
         <div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t("demoFlujo.bookTime")}</div>
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("demoFlujo.bookTime")}</div>
           <div className="grid grid-cols-4 gap-2">
             {times.map((tm, i) => (
               <div key={tm} className={`text-center py-2 rounded-lg text-sm font-semibold border ${i === 1 ? "bg-emerald-600 text-white border-emerald-600" : "border-slate-200 text-slate-500"}`}>{tm}</div>
@@ -433,7 +433,7 @@ function BookingForm({ client, service, t }) {
 function Field({ label, value }) {
   return (
     <div>
-      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</div>
       <div className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 flex items-center text-sm font-medium text-slate-800">{value}</div>
     </div>
   );
@@ -444,7 +444,7 @@ function JobDetail({ client, title, total, deposit, t }) {
   return (
     <div data-testid="flujo-job" className="rounded-2xl border border-slate-200 overflow-hidden">
       <div className="bg-gradient-to-br from-blue-900 to-emerald-700 text-white px-4 py-3">
-        <div className="text-[11px] uppercase tracking-wider text-white/70">Job</div>
+        <div className="text-xs uppercase tracking-wider text-white/70">Job</div>
         <div className="font-heading font-bold">{title || "Living room remodel"}</div>
       </div>
       <div className="p-4">
@@ -452,7 +452,7 @@ function JobDetail({ client, title, total, deposit, t }) {
           {stages.map((s, i) => (
             <div key={s} className="flex-1 text-center">
               <div className={`h-1.5 rounded-full ${i <= 1 ? "bg-emerald-500" : "bg-slate-200"}`} />
-              <div className={`text-[10px] mt-1 font-semibold ${i === 1 ? "text-emerald-700" : "text-slate-400"}`}>{s}</div>
+              <div className={`text-xs mt-1 font-semibold ${i === 1 ? "text-emerald-700" : "text-slate-400"}`}>{s}</div>
             </div>
           ))}
         </div>
@@ -481,11 +481,11 @@ function BeforeAfter({ imgs, t }) {
       <div className="grid grid-cols-2 gap-3">
         <figure className="relative rounded-xl overflow-hidden">
           <img src={imgs.before} alt="before" className="w-full h-40 object-cover" />
-          <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-slate-900/80 text-white px-2 py-0.5 rounded">{t("demoFlujo.before")}</figcaption>
+          <figcaption className="absolute top-2 left-2 text-xs font-bold bg-slate-900/80 text-white px-2 py-0.5 rounded">{t("demoFlujo.before")}</figcaption>
         </figure>
         <figure className="relative rounded-xl overflow-hidden">
           <img src={imgs.after} alt="after" className="w-full h-40 object-cover" />
-          <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">{t("demoFlujo.after")}</figcaption>
+          <figcaption className="absolute top-2 left-2 text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">{t("demoFlujo.after")}</figcaption>
         </figure>
       </div>
       <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700"><CheckCircle2 className="w-4 h-4" /> {t("demoFlujo.photoSaved")}</div>
@@ -507,7 +507,7 @@ function SocialDesign({ business, imgs, t }) {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-none"><Hammer className="w-4 h-4 text-white" /></div>
           <div className="min-w-0">
             <div className="text-xs font-extrabold truncate">{business?.business_name || "Demo Contractors"}</div>
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><MessageSquare className="w-3 h-3" /> WhatsApp · {t("demoFlujo.clientPhone")}</div>
+            <div className="text-xs text-slate-500 flex items-center gap-1"><MessageSquare className="w-3 h-3" /> WhatsApp · {t("demoFlujo.clientPhone")}</div>
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-slate-400 flex-none">
             <Instagram className="w-4 h-4" /><Facebook className="w-4 h-4" />
@@ -609,7 +609,7 @@ function FinalCTA({ founder, t }) {
             <div key={i} className="rounded-2xl border border-slate-200 p-3 text-center">
               <div className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center ${h.tone}`}><h.icon className="w-5 h-5" /></div>
               <div className="text-sm font-bold text-slate-900 mt-2 leading-tight">{h.title}</div>
-              <div className="text-[11px] text-slate-500 mt-0.5 leading-tight">{h.sub}</div>
+              <div className="text-xs text-slate-500 mt-0.5 leading-tight">{h.sub}</div>
             </div>
           ))}
         </div>
@@ -624,17 +624,17 @@ function FinalCTA({ founder, t }) {
         )}
         <div className="text-sm font-bold uppercase tracking-wider text-white/80 mt-3">{t("demoFlujo.offerTitle")}</div>
         <div className="mt-1 flex items-end justify-center gap-1">
-          <span className="font-heading text-5xl font-extrabold">{available ? price : "$75"}</span>
+          <span className="font-heading text-4xl sm:text-5xl font-extrabold">{available ? price : "$75"}</span>
           <span className="text-white/80 font-semibold mb-1.5">/{t("demoFlujo.perMonth", "mo")}</span>
         </div>
         <div className="text-xs text-amber-200 font-semibold mt-1">
           {available ? t("demoFlujo.offerPriceNote") : ""}
         </div>
         <p className="text-sm text-white/85 mt-3 max-w-sm mx-auto leading-relaxed">{t("demoFlujo.offerIncludes")}</p>
-        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-blue-900 font-extrabold hover:bg-slate-100 transition-colors">
+        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-blue-900 font-extrabold text-sm sm:text-base hover:bg-slate-100 transition-colors">
           {available ? <><Crown className="w-4 h-4" /> {t("demoFlujo.founderCta")}</> : <>{t("demoFlujo.regularCta")}</>} <ArrowRight className="w-4 h-4" />
         </Link>
-        <div className="text-[11px] text-white/70 mt-3">{t("demoFlujo.offerRegularNote")}</div>
+        <div className="text-xs text-white/70 mt-3">{t("demoFlujo.offerRegularNote")}</div>
       </Card>
     </div>
   );

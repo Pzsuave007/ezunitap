@@ -179,7 +179,7 @@ function TopBar() {
             <Hammer className="w-4 h-4 text-white" strokeWidth={2.5} />
           </div>
           <span className="font-heading font-bold">UniTech</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
+          <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
         <Link to="/register" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
           {t("demo.signupTop")}
@@ -197,7 +197,7 @@ function StepBar({ step }) {
       {steps.map((label, i) => (
         <div key={label} className="flex-1">
           <div className={`h-1.5 rounded-full transition-colors ${i <= step ? "bg-emerald-500" : "bg-slate-200"}`} />
-          <div className={`text-[10px] mt-1 font-semibold ${i <= step ? "text-emerald-700" : "text-slate-400"}`}>{label}</div>
+          <div className={`text-xs mt-1 font-semibold ${i <= step ? "text-emerald-700" : "text-slate-400"}`}>{label}</div>
         </div>
       ))}
     </div>
@@ -242,7 +242,7 @@ function LeadStep({ lead, setLead, onStart, loading }) {
       <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demo.startBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
       </Button>
-      <p className="text-[11px] text-slate-400 mt-3 text-center">{t("demo.freeNote")}</p>
+      <p className="text-xs text-slate-400 mt-3 text-center">{t("demo.freeNote")}</p>
     </Card>
   );
 }
@@ -582,7 +582,7 @@ function PdfActions({ onDownload, downloading }) {
           <Printer className="w-4 h-4 mr-1" /> {t("demoFlow.print")}
         </Button>
       </div>
-      <p className="text-[11px] text-slate-500 text-center mt-2">
+      <p className="text-xs text-slate-500 text-center mt-2">
         <Trans i18nKey="demoFlow.pdfNote" components={{ 1: <strong /> }} />
       </p>
     </div>
