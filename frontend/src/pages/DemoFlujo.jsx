@@ -58,6 +58,7 @@ export default function DemoFlujo() {
   const [agreement, setAgreement] = useState(null);
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [paidNotice, setPaidNotice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState("");
@@ -178,11 +179,11 @@ export default function DemoFlujo() {
                   ))}
                 </ul>
               </div>
-              <div className="mt-4 flex items-center gap-2">
-                <button onClick={() => go(2)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
-                <Button data-testid="flujo-gen-quote" onClick={genQuote} disabled={loading} className="ml-auto py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                  {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlujo.s3GenLoading")}</> : <><Sparkles className="w-5 h-5 mr-2" /> {t("demoFlujo.s3Gen")}</>}
+              <div className="mt-4 flex flex-col gap-2">
+                <Button data-testid="flujo-gen-quote" onClick={genQuote} disabled={loading} className="w-full h-auto py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base leading-tight">
+                  {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlujo.s3GenLoading")}</> : <><Sparkles className="w-5 h-5 mr-2 flex-none" /> {t("demoFlujo.s3Gen")}</>}
                 </Button>
+                <button onClick={() => go(2)} className="text-base text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2 self-center"><ArrowLeft className="w-5 h-5" /> {t("demoFlujo.back")}</button>
               </div>
             </Card>
           ) : (
@@ -197,12 +198,12 @@ export default function DemoFlujo() {
 
         {step === 5 && (
           <>
-            <InvoiceStep quote={quote} business={ownerBusiness} lead={clientLead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
+            <InvoiceStep quote={quote} business={ownerBusiness} lead={clientLead} paid={paid} onPay={() => { setPaid(true); setPaidNotice(true); }} hideFinalCta />
             <div className="mt-4 flex items-center gap-2">
-              <button onClick={() => go(4)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
+              <button onClick={() => go(4)} className="text-base text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-5 h-5" /> {t("demoFlujo.back")}</button>
               {paid && (
-                <Button data-testid="flujo-next" onClick={() => go(6)} className="ml-auto py-3 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold">
-                  {t("demoFlujo.next")} <ArrowRight className="w-4 h-4 ml-2" />
+                <Button data-testid="flujo-next" onClick={() => go(6)} className="ml-auto py-3 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-base">
+                  {t("demoFlujo.next")} <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               )}
             </div>
@@ -236,6 +237,11 @@ export default function DemoFlujo() {
         {step === 10 && <FinalCTA founder={founder} t={t} />}
       </div>
       <BusySheet busy={busy} t={t} />
+      <NoticeSheet
+        open={paidNotice}
+        t={t}
+        onContinue={() => { setPaidNotice(false); go(6); }}
+      />
     </div>
   );
 }
@@ -267,6 +273,29 @@ function BusySheet({ busy, t }) {
     </div>
   );
 }
+
+function NoticeSheet({ open, t, onContinue }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" data-testid="flujo-demo-notice">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300">
+        <div className="mx-auto w-12 h-1.5 rounded-full bg-slate-200 sm:hidden mb-5" />
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center">
+            <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+          </div>
+          <h3 className="font-heading text-xl sm:text-2xl font-bold mt-4">{t("demoFlujo.demoNoticeTitle")}</h3>
+          <p className="text-base text-slate-600 mt-2 leading-relaxed max-w-sm">{t("demoFlujo.demoNoticeText")}</p>
+          <Button data-testid="flujo-demo-notice-continue" onClick={onContinue} className="mt-6 w-full py-4 h-auto rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-base sm:text-lg leading-tight">
+            {t("demoFlujo.demoNoticeContinue")} <ArrowRight className="w-5 h-5 ml-2 flex-none" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function TopBar() {
   return (
@@ -466,9 +495,12 @@ function JobDetail({ client, title, total, deposit, t }) {
 
 function Row({ icon: Icon, label, value, tone }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-      <span className="flex items-center gap-2 text-base text-slate-500"><Icon className="w-5 h-5" /> {label}</span>
-      <span className={`text-base font-bold ${tone === "emerald" ? "text-emerald-700" : "text-slate-800"}`}>{value}</span>
+    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+      <Icon className="w-5 h-5 text-slate-400 flex-none mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm text-slate-500">{label}</div>
+        <div className={`text-base font-bold leading-snug ${tone === "emerald" ? "text-emerald-700" : "text-slate-800"}`}>{value}</div>
+      </div>
     </div>
   );
 }

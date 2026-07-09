@@ -410,8 +410,8 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
             <div className="bg-white border border-slate-200 rounded-lg h-16 flex items-center px-4">
               <span className="font-[cursive] text-2xl text-slate-800">{lead.name}</span>
             </div>
-            <Button data-testid="demo-sign-btn" onClick={onSign} disabled={signed} className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold mt-3">
-              <ShieldCheck className="w-5 h-5 mr-2" /> Sign Agreement & Continue
+            <Button data-testid="demo-sign-btn" onClick={onSign} disabled={signed} className="w-full h-auto py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold mt-3 leading-tight">
+              <ShieldCheck className="w-5 h-5 mr-2 flex-none" /> Sign &amp; Continue
             </Button>
           </div>
         </div>
@@ -497,8 +497,8 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
           ) : (
             <div className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
               <div className="text-sm font-bold uppercase tracking-wider text-slate-500">Pay securely</div>
-              <Button data-testid="demo-pay-btn" onClick={onPay} className="w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold">
-                <CreditCard className="w-5 h-5 mr-2" /> Pay {fmtMoney(due)} by card
+              <Button data-testid="demo-pay-btn" onClick={onPay} className="w-full h-auto py-3.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold leading-tight">
+                <CreditCard className="w-5 h-5 mr-2 flex-none" /> Pay {fmtMoney(due)}
               </Button>
               <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500">
                 <Lock className="w-3.5 h-3.5" /> {t("demoFlow.orPayWith")}
