@@ -1,141 +1,131 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, and Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration so contractors collect their own invoice payments directly, integrate Meta Pixel for ad tracking, add AI Image Generation to the Marketing Studio, implement comprehensive i18n (English/Spanish) for Anglo market expansion without duplicating the app, heavily optimize the Marketing Studio UI/UX to be mobile-first, modularize pricing plans, and provide native Spanish AI voiceovers.
+<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, Google Reviews gating, and an embeddable website widget. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration, implement Meta Pixel, comprehensive i18n (English/Spanish), mobile-first UX, modular pricing plans, and AI voiceovers. *Goal:* Scale to 100 paid clients, replace GoHighLevel functionality for users.
 
 **User's preferred language**: Spanish
 (INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)
 
-**what currently exists?** 
-A live React/FastAPI/MongoDB multi-tenant application. It features a robust AI Marketing Studio, AI Message generation, quoting/invoicing with Stripe, and OAuth Google Business connection. The application is now **100% bilingual (English/Spanish)** using  and dictionaries ( / ) without duplicating components. The Landing page intelligently hides Latino-specific features (Built for you / You work in Spanish) when English is selected, tailoring the marketing copy for the Anglo market.
+**what currently exists?**
+A live React/FastAPI/MongoDB multi-tenant application. It is 100% bilingual (English/Spanish). It features an AI Marketing Studio, AI Quoting/Invoicing, Smart Cards, unified CRM, Google Business Profile integration, and PWA (Progressive Web App) capabilities. It also has a newly added dynamic QR Code Generator, a dedicated Founder Plan checkout flow, and custom interactive demos. 
 
-**Last working item**: 
-    - **Last item agent was working**: Adjusting the English Landing page copy. The user noted that the English site shouldn't sell translation from Spanish to English (since Anglo users don't need that), but rather focus on core features and the Stripe integration. The agent successfully modified  to hide the  section for English users, updated  to focus on features/Stripe, and verified via screenshot. 
-    - **Status**: USER VERIFICATION PENDING
-    - **Agent Testing Done**: Y
-    - **Which testing method agent to use?**: Screenshot tool for UI changes.
-    - **User Testing Done**: N (Requires new production build)
+**Last working item**:
+    - **Last item agent was working**: Refining the newly created Interactive Demo Flow () to make it highly visual. The agent was actively adding dynamic before/after pictures based on the selected contractor trade, swapping the owner/client names so the visitor acts as the business owner (and Maria as the client) on actual Quote/Agreement/Invoice components, and adding visual entry channels (NFC, QR, Website). The agent hit a Pydantic validation error () on a  call because the  argument was omitted when trying to add new  imports.
+    - **Status**: IN PROGRESS
+    - **Agent Testing Done**: N
+    - **Which testing method agent to use?**: screenshot tool / manual testing (⚠️ USER EXPLICITLY BANNED THE . DO NOT USE ).
+    - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Generate New Production Build for Landing Page fixes (P0)
-     - Attempted fixes: Agent updated the Landing page code but hasn't generated the new build yet.
-     - Next debug checklist: Run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. (or ) in , force add to git (), and instruct the user to Save to Github and deploy via .
-     - Why fix this issue and what will be achieved with the fix?: Ensures the latest copy fixes for the Anglo market are live on production.
+  Issue 1: Lucide React import update failed in  (P0)
+     - Attempted fixes: Agent tried to run  to update  imports (adding Globe, QrCode, Smartphone) but forgot the  argument.
+     - Next debug checklist: Re-run the  on  with the correct  argument to finalize the icons import.
+     - Why fix this issue and what will be achieved with the fix?: Fixes the broken tool call and unblocks the rendering of the updated visual demo flow.
      - Status: IN PROGRESS
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Frontend
-
-  Issue 2: Google My Business Legacy API Error Failed to load / 403 (P3)
-     - Attempted fixes: Verified OAuth App in Google Cloud. Error is due to 24-48 hour allowlist propagation delay.
-     - Next debug checklist: Check with user if the direct Google API link now shows an Enable button.
-     - Why fix this issue and what will be achieved with the fix?: Unblocks AI direct publishing to Google Business.
-     - Status: BLOCKED (Waiting on Google allowlist propagation time).
-     - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Both
-
-  Issue 3: Duplicate DB records (Clients/Users) (P3)
-     - Attempted fixes: None
-     - Next debug checklist: Search MongoDB  and  collections. Write and run a deduplication python script.
-     - Why fix this issue and what will be achieved with the fix?: Clean up database.
-     - Status: NOT STARTED
-     - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Backend
+     - Should Test frontend/backend/both after fix?: Frontend (Screenshot tool ONLY)
+     - Blocked on other issue: None
 
 **In progress Task List**:
-  Task 1: Add 📲 Enviarme esto por WhatsApp CTA to  (P2)
-     - Where to resume: Modify the final closing screens of the  branches to include a WhatsApp button.
-     - What will be achieved with this?: Captures hot lead phone numbers by texting them the sample they just viewed.
-     - Status: NOT STARTED
-     - Should Test frontend/backend/both after fix?: Frontend
-     - Blocked on something: None
+  Task 1: Complete Visual Interactive Demo Flow (P0)
+     - Where to resume: .
+     - What will be achieved with this?: The prospect will experience a rich, 9-step personalized walkthrough of the app featuring their own name as the business owner, Maria as the client, and trade-specific before/after pictures. 
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix?: Frontend (Screenshot tool ONLY)
+     - Blocked on something: Issue 1
 
 **Upcoming and Future Tasks**
-- **P0**: Implement auto-detection of browser language on first visit so Anglo visitors see the English landing page immediately. *(Note: Agent proposed this, user needs to confirm)*.
-- **P0**: Add Video Upload support to Reel Builder (MVP: Allow 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding/text using the existing FFmpeg logic).
-- **P1**: In-app referral program (Invita un compa → ambos reciben 1 mes gratis) with unique sharing links.
-- **P1**: Automated client reminders (SMS via Twilio or Email) 1 day before a scheduled job.
-- **P1**: Export Calendar to  format for Google/Apple Calendar synchronization.
-- **P2**: Add 1-click Upsell button in Profile -> Subscription for adding missing modules.
-- **P2**: Convert Job scope notes into a checkable checklist UI inside the Job Detail view.
-- **P2**: Feature to auto-send Payment Requests by email/SMS instead of copying the link manually.
-- **P3**: Live preview for the Reel Builder (mini player showing changes before generation).
-- **P3**: Add a drag-and-drop or reordering UI in the Smart Card admin panel for the Recent work photos.
-- **P3**: Break down  (>6200 lines) into modular routers.
-- **Future**: Stripe webhook implementation for bulletproof invoice payment marking.
+- **P1**: Automated client reminders (SMS via Twilio or Email via Resend) 1 day before scheduled appointments, and instant lead notifications to contractors.
+- **P1**: Add Video Upload support to Reel Builder (MVP: 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding).
+- **P1**: QR Code Analytics (Agent suggested enhancement): Add detailed analytics for dynamic QR Codes (scans per day/week graph, location/device data).
+- **P2**: In-app referral program (Invita un compa).
+- **P2**: Export Calendar to  format.
+- **P3**: Refactor  (>6700 lines) into modular routers.
 
 **Completed work in this session**
-- Completed **Wave 4 (Ola 4)** of i18n translation (, , , , , , , ). (DONE)
-- Translated 4 additional components to hit 100% parity (, , , ). (DONE)
-- Refactored English copy on  to remove translated from Spanish angles for the Anglo market, hiding the Latino-specific section when . (DONE)
+- Completed Founder Price integration (9/mo for life, 30 spots) and added a live tracking banner to the Landing page (DONE)
+- Rewrote pricing copy across Landing and Pricing pages to feature honest, realistic Why it pays off comparisons instead of inflated competitor prices (DONE)
+- Fixed aggressive caching bug in production by updating  to prevent  from caching (DONE)
+- Removed Spanish references from the English-translated landing page features (DONE)
+- Condensed Landing page How it works section from 13 steps down to 9 connected steps (DONE)
+- Implemented full PWA support with , , icons, and an Install App prompt (DONE)
+- Created a Dynamic QR Code Generator () module with backend tracking to replace GoHighLevel's QR functionality (DONE)
+- Re-routed Landing page demo buttons to a new immersive storytelling flow  (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--  monolith (6200+ lines) is hard to maintain and needs refactoring.
+-  monolith needs refactoring (Postponed).
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: Deploying the frontend build to cPanel fails or breaks APIs. User deploys via custom scripts.
-- Recurrence count: 1
-- Status: RESOLVED. The agent must ALWAYS compile the build with relative paths ( in ) and force-add to git ().
-- **CRITICAL DEPLOYMENT NOTE**: The user strictly uses  to deploy. NEVER suggest or use .
+- None.
 
 **Code Architecture**
-- Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next.
+- Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next. PWA elements in .
 - Backend: FastAPI (), MongoDB.
-- Scripts: >>> FIRST-TIME INSTALL for ezunitap on port 8007 (Main deployment on user's server).
+- Widget:  (Vanilla JS compiled into build).
+- Deploy Script: >>> FIRST-TIME INSTALL for ezunitap on port 8007 and >>> [user=ezunitap] fix.sh starting...
+HEAD is now at f22e764 Auto-generated changes
+X venv missing — delete it and re-run deploy.sh:
+  rm -rf /opt/ezunitap/backend/venv && bash /home/ezunitap/repo/deploy.sh (Loads specific env vars into production).
 
 **Key Technical Concepts**
-- **i18next**: App uses standard  translations. The base language is Spanish, but  overlay has been added. 
-- **Language-Aware Content**:  conditional rendering is used to hide specific sections on the landing page that don't apply to the Anglo market.
+- **PWA**: Uses standard  and a no-cache  to allow app installation on iOS/Android.
+- **QR Generator**: Uses  in frontend and  in backend. Dynamic QRs route through  to track scans and 302 redirect.
+- **Demo Flow**: Uses the real  capabilities by passing a mocked  and capturing leads in  DB collection.
 
 **key DB schema**
-- : Includes settings, potentially language preference later.
-- :  dictates the specific AI topics.
+- : Stores Stripe cached prices and founder pricing states.
+- : , , , , .
+- : Stores captured leads from the  flow.
 
 **changes in tech stack**
-- None in this session.
+- None.
 
 **All files of reference**
--  &  (Translation dictionaries).
--  (Updated to conditionally hide sections based on language).
--  (Required for building with relative paths).
+-  (CRITICAL: Currently editing, imports need fixing).
+-  &  (Updated copy and founder banner).
+-  (Updated to prevent caching ).
+-  &  (PWA configs).
+-  &  (QR Generator).
+-  (Updated to inverse owner/client names for the demo agreement generation).
 
 **Areas that need refactoring**
--  (Over 6200 lines).
+-  (Over 6700 lines).
 
 **key api endpoints**
--  
--  
+- 
+- 
+-  (QR Generation) &  (Dynamic Redirect)
 
 **Critical Info for New Agent**
-- **i18n Principle**: DO NOT duplicate components or pages for the English version. ALWAYS use the   structure and conditionals ().
-- **Deployments**: The user hits Save to Github and then runs >>> FIRST-TIME INSTALL for ezunitap on port 8007 on their end. Generate the production build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) and  first. DO NOT reference any other script.
+- ⚠️ **USER BANNED :** The user explicitly got frustrated when the previous agent used the . **DO NOT USE the  tool under any circumstances.** Rely strictly on the ,  (with  or ), and manual verifications.
+- **Demo Flow Logic:** The user wants the interactive demo () to feel extremely personalized. The visitor's inputted name should show up as the *Business Owner*, and a fictional Maria should show up as the *Client* inside the Quote, Agreement, and Invoice components.
+- **Deployments:** The user manually runs >>> FIRST-TIME INSTALL for ezunitap on port 8007 on their server. Whenever frontend changes are finished, generate the frontend build (yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside ) and explicitly instruct the user to click the Save to Github button in the chat interface.
 
 **documents and test reports created in this job**
-- 
-- 
+-  (Updated with completed tasks)
 
-**Last 10 User Messages and any pending HUMAN messages** 
-- User asked to build the app for production deployment.
-- Agent built with relative paths and pushed.
-- User tested the production site.
-- User reported that the English landing page still focuses on the Spanish to English translation angle, which should only be a selling point for Latinos. They requested removing/reframing these elements for English users and adding Stripe to Step 5.
-- Agent updated  and  to reflect these copy changes and tested via screenshot.
-- *Pending Human Action*: The agent made the code changes for the Landing page copy but **did not compile the new production build** for these specific changes. 
+**Last 10 User Messages and any pending HUMAN messages**
+- User asked to condense the Landing page from 13 to 9 steps. (Agent did).
+- User requested iOS/Android app installation capabilities without using app stores. (Agent implemented PWA).
+- User asked if existing GoHighLevel QR codes could be saved. (Agent explained domains and determined they were tied to GHL).
+- User asked for a QR Code Generator inside UniTech to replace GHL. (Agent built full QR Generator).
+- User asked why the demo link on the landing page only showed invoices. (Agent fixed the link to point to the full demo).
+- User requested an interactive, storytelling demo flow following the 9 steps. (Agent built ).
+- User said the demo flow was too simple and requested actual visual components (Quote, Agreement, Invoice, Before/Afters) using the user's name as the Owner and Maria as the client, plus dynamic photos based on the trade selected.
+- *Pending Action*: Agent was updating  with the requested visual features but hit a tool validation error on the Lucide icons import. Fix the import and verify the flow.
 
 **Project Health Check:**
-Healthy
+- Broken:  file update was interrupted by a missing argument error in the tool call.
 
 **3rd Party Integrations**
-- Stripe (Payments & Connect) — requires User API Key.
-- Meta / Facebook Pixel — requires User ID.
-- ElevenLabs (TTS Voiceovers) — requires User API Key.
-- Google Business Profile (OAuth published) — requires User API Key.
-- OpenAI GPT-5.2 (Text/Vision Gen) — uses Emergent LLM Key.
-- Gemini 3.1 Flash Image Preview — uses Emergent LLM Key.
+- Stripe (Payments) — requires User API Key
+- OpenAI GPT-4o / GPT-image-1 — requires User API Key
+- Google Business Profile (OAuth published) — requires User API Key
+- Meta / Facebook Pixel — requires User ID
 
 **Testing status**
-- Testing agent used after significant changes: YES
+- Testing agent used after significant changes: NO (User strictly forbade it).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: 
-- Known regressions: None
+- Test files created: None recently.
+- Known regressions:  is mid-edit.
 
 **Credentials to test flow:**
 Admin (Super-Admin):  / 
@@ -143,5 +133,4 @@ Card-Only Test:  /
 Marketing-Only Test:  / 
 
 **What agent forgot to execute**
-The agent modified  and  to fix the English copy issue, but **forgot to run the production build process again**. As the very first action, the new agent must run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside the frontend directory, force add the build directory to git, and then tell the user to pull and deploy.</analysis>
+The agent forgot to include the  argument in the  tool when trying to update the  imports in . Fix this immediately to complete the Demo Flujo feature.</analysis>

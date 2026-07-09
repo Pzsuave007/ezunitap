@@ -25,6 +25,17 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) => `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const BEFORE_IMG = "https://images.unsplash.com/photo-1768321914670-80db17b4669b?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
 const AFTER_IMG = "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
+// before/after images per trade (index of the raw select value)
+const TRADE_IMAGES = {
+  "Techos / Roofing": { before: "https://images.unsplash.com/photo-1635424709845-3a85ad5e1f5e?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1635424824849-1b09bdcc55b1?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Pintura / Painting": { before: "https://images.unsplash.com/photo-1625585598750-3535fe40efb3?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1615884241431-d07c87e30ab2?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Drywall": { before: "https://images.unsplash.com/photo-1718816281207-3b253cff549a?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1733431772808-82d878e59000?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Concreto / Concrete": { before: "https://images.unsplash.com/photo-1628744448968-bf7a32f8dd33?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1781637202423-33ec5b47e52e?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Jardinería / Landscaping": { before: "https://images.unsplash.com/photo-1594498653385-d5172c532c00?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1624018171446-c4f0b942cf87?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Limpieza / Cleaning": { before: "https://images.unsplash.com/photo-1649083048337-4aeb6dda80bb?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "Plomería / Plumbing": { before: "https://images.unsplash.com/photo-1714399417136-d328f3ea14c7?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1542855368-ca6ea825bca2?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+};
+const tradeImages = (trade) => TRADE_IMAGES[trade] || { before: BEFORE_IMG, after: AFTER_IMG };
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
@@ -50,7 +61,13 @@ export default function DemoFlujo() {
   }, []);
 
   const tradeName = tradeLabel(lead.trade, i18n.language) || t("demoFlujo.you");
-  const client = t("demoFlujo.client");
+  const client = t("demoFlujo.clientFull");
+  const imgs = tradeImages(lead.trade);
+  // In this story the VIEWER is the business owner and Maria is the client.
+  const ownerBusiness = business
+    ? { ...business, business_name: (lead.name || "").trim() || business.business_name, business_email: lead.email || business.business_email }
+    : business;
+  const clientLead = { name: t("demoFlujo.clientFull"), email: t("demoFlujo.clientEmail"), phone: t("demoFlujo.clientPhone") };
   const go = (n) => { setStep(n); setErr(""); window.scrollTo(0, 0); };
 
   const start = async () => {
@@ -91,6 +108,7 @@ export default function DemoFlujo() {
       const r = await axios.post(`${API}/public/demo/agreement`, {
         demo_id: demoId, description_es: desc,
         job_title: quote?.job_title || "", total: quote?.total || 0, deposit: quote?.deposit_amount || 0,
+        client_name: clientLead.name, owner_name: ownerBusiness?.business_name || "",
       });
       setAgreement(r.data.agreement);
       go(4);
@@ -125,7 +143,8 @@ export default function DemoFlujo() {
 
         {step === 1 && (
           <SceneShell onNext={() => go(2)} onBack={() => go(0)} t={t}>
-            <MiniCard business={business} label={t("demoFlujo.s1Card", { trade: tradeName })} />
+            <FoundVia t={t} />
+            <div className="mt-4"><MiniCard business={ownerBusiness} label={t("demoFlujo.s1Card", { trade: tradeName })} /></div>
           </SceneShell>
         )}
 
@@ -148,18 +167,18 @@ export default function DemoFlujo() {
               </div>
             </Card>
           ) : (
-            <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setQuote(null)} />
+            <QuoteStep quote={quote} business={ownerBusiness} lead={clientLead} onAccept={genAgreement} loading={loading} onBack={() => setQuote(null)} />
           )
         )}
 
         {step === 4 && (
-          <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed}
+          <AgreementStep agreement={agreement} business={ownerBusiness} lead={clientLead} signed={signed}
             onSign={() => { setSigned(true); go(5); }} />
         )}
 
         {step === 5 && (
           <>
-            <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
+            <InvoiceStep quote={quote} business={ownerBusiness} lead={clientLead} paid={paid} onPay={() => setPaid(true)} hideFinalCta />
             <div className="mt-4 flex items-center gap-2">
               <button onClick={() => go(4)} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-4 h-4" /> {t("demoFlujo.back")}</button>
               {paid && (
@@ -179,13 +198,13 @@ export default function DemoFlujo() {
 
         {step === 7 && (
           <SceneShell onNext={() => go(8)} onBack={() => go(6)} t={t}>
-            <BeforeAfter t={t} />
+            <BeforeAfter imgs={imgs} t={t} />
           </SceneShell>
         )}
 
         {step === 8 && (
           <SceneShell onNext={() => go(9)} onBack={() => go(7)} t={t}>
-            <SocialDesign business={business} t={t} />
+            <SocialDesign business={ownerBusiness} imgs={imgs} t={t} />
           </SceneShell>
         )}
 
@@ -291,6 +310,28 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
   );
 }
 
+function FoundVia({ t }) {
+  const ch = [
+    { icon: Nfc, label: t("demoFlujo.foundNfc"), tone: "bg-blue-50 text-blue-700" },
+    { icon: QrCode, label: t("demoFlujo.foundQr"), tone: "bg-slate-100 text-slate-700" },
+    { icon: Globe, label: t("demoFlujo.foundWeb"), tone: "bg-emerald-50 text-emerald-700" },
+    { icon: Bot, label: t("demoFlujo.foundChat"), tone: "bg-violet-50 text-violet-700" },
+  ];
+  return (
+    <div data-testid="flujo-found">
+      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t("demoFlujo.foundVia")}</div>
+      <div className="grid grid-cols-4 gap-2">
+        {ch.map((c) => (
+          <div key={c.label} className={`flex flex-col items-center gap-1.5 rounded-xl py-3 ${c.tone}`}>
+            <c.icon className="w-5 h-5" />
+            <span className="text-[10px] font-semibold text-center leading-tight">{c.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MiniCard({ business, label }) {
   return (
     <div className="rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-700 text-white p-5" data-testid="flujo-card">
@@ -375,16 +416,16 @@ function Row({ icon: Icon, label, value, tone }) {
   );
 }
 
-function BeforeAfter({ t }) {
+function BeforeAfter({ imgs, t }) {
   return (
     <div data-testid="flujo-photos">
       <div className="grid grid-cols-2 gap-3">
         <figure className="relative rounded-xl overflow-hidden">
-          <img src={BEFORE_IMG} alt="before" className="w-full h-40 object-cover" />
+          <img src={imgs.before} alt="before" className="w-full h-40 object-cover" />
           <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-slate-900/80 text-white px-2 py-0.5 rounded">{t("demoFlujo.before")}</figcaption>
         </figure>
         <figure className="relative rounded-xl overflow-hidden">
-          <img src={AFTER_IMG} alt="after" className="w-full h-40 object-cover" />
+          <img src={imgs.after} alt="after" className="w-full h-40 object-cover" />
           <figcaption className="absolute top-2 left-2 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">{t("demoFlujo.after")}</figcaption>
         </figure>
       </div>
@@ -393,24 +434,31 @@ function BeforeAfter({ t }) {
   );
 }
 
-function SocialDesign({ business, t }) {
+function SocialDesign({ business, imgs, t }) {
   return (
     <div data-testid="flujo-social">
-      <div className="mx-auto max-w-xs rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
-        <div className="flex items-center gap-2 px-3 py-2 bg-white">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center"><Hammer className="w-3.5 h-3.5 text-white" /></div>
-          <span className="text-xs font-bold">{business?.business_name || "Demo Contractors"}</span>
+      {/* Branded template mock (resembles the in-app "Before/After" design) */}
+      <div className="mx-auto max-w-[280px] rounded-2xl overflow-hidden shadow-xl bg-slate-900">
+        <div className="text-center py-2 bg-gradient-to-r from-blue-900 to-emerald-600">
+          <span className="text-white font-heading font-extrabold tracking-wide text-sm">{t("demoFlujo.socialTag")}</span>
         </div>
-        <div className="grid grid-cols-2">
-          <img src={BEFORE_IMG} alt="before" className="w-full h-28 object-cover" />
-          <img src={AFTER_IMG} alt="after" className="w-full h-28 object-cover" />
+        <div className="relative grid grid-cols-2">
+          <img src={imgs.before} alt="before" className="w-full h-36 object-cover" />
+          <img src={imgs.after} alt="after" className="w-full h-36 object-cover" />
+          <span className="absolute top-2 left-2 text-[9px] font-bold bg-black/70 text-white px-1.5 py-0.5 rounded">{t("demoFlujo.before")}</span>
+          <span className="absolute top-2 right-2 text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">{t("demoFlujo.after")}</span>
+          <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-1 bg-white" />
         </div>
-        <div className="px-3 py-2 bg-white">
-          <div className="flex gap-3 text-slate-700"><Instagram className="w-4 h-4" /><Facebook className="w-4 h-4" /></div>
-          <p className="text-xs text-slate-600 mt-1.5 leading-snug">{t("demoFlujo.socialCaptionText")}</p>
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-white">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-none"><Hammer className="w-4 h-4 text-white" /></div>
+          <div className="min-w-0">
+            <div className="text-xs font-extrabold truncate">{business?.business_name || "Demo Contractors"}</div>
+            <div className="text-[10px] text-slate-500 flex items-center gap-1"><MessageSquare className="w-3 h-3" /> WhatsApp · {t("demoFlujo.clientPhone")}</div>
+          </div>
         </div>
       </div>
-      <div className="mt-4 space-y-2">
+      <p className="text-xs text-slate-600 mt-3 leading-snug bg-slate-100 rounded-xl px-3 py-2">{t("demoFlujo.socialCaptionText")}</p>
+      <div className="mt-3 space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-violet-800 bg-violet-50 rounded-xl px-3 py-2"><Share2 className="w-4 h-4" /> {t("demoFlujo.postedSocial")}</div>
         <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 bg-blue-50 rounded-xl px-3 py-2"><MapPin className="w-4 h-4" /> {t("demoFlujo.uploadedGmb")}</div>
       </div>

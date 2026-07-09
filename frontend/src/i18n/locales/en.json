@@ -1888,6 +1888,15 @@
     "reviewText": "“Excellent work, highly recommended! It looks beautiful and was done on time.”",
     "reviewReplyLabel": "AI-drafted reply:",
     "reviewReply": "“Thank you so much, Maria! It was a pleasure transforming your living room. We're here whenever you need us. 🙌”",
-    "finishBtn": "See the result"
+    "finishBtn": "See the result",
+    "clientFull": "Maria Gonzalez",
+    "clientEmail": "maria.gonzalez@gmail.com",
+    "clientPhone": "(555) 214-8890",
+    "foundVia": "Maria can find you in many ways:",
+    "foundNfc": "NFC tap",
+    "foundQr": "QR code",
+    "foundWeb": "Website form",
+    "foundChat": "AI chatbot",
+    "socialTag": "BEFORE → AFTER"
   }
 }

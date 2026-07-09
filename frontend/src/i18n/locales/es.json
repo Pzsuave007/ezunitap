@@ -1888,6 +1888,15 @@
     "reviewText": "“¡Excelente trabajo, súper recomendados! Quedó hermoso y a tiempo.”",
     "reviewReplyLabel": "Respuesta redactada con IA:",
     "reviewReply": "“¡Mil gracias, María! Fue un placer transformar tu sala. Aquí estamos para lo que necesites. 🙌”",
-    "finishBtn": "Ver el resultado"
+    "finishBtn": "Ver el resultado",
+    "clientFull": "María González",
+    "clientEmail": "maria.gonzalez@gmail.com",
+    "clientPhone": "(555) 214-8890",
+    "foundVia": "María puede encontrarte de muchas formas:",
+    "foundNfc": "Toque NFC",
+    "foundQr": "Código QR",
+    "foundWeb": "Formulario web",
+    "foundChat": "Chatbot IA",
+    "socialTag": "ANTES → DESPUÉS"
   }
 }

@@ -4729,6 +4729,8 @@ class DemoAgreementIn(BaseModel):
     job_title: Optional[str] = ""
     total: Optional[float] = 0
     deposit: Optional[float] = 0
+    client_name: Optional[str] = ""
+    owner_name: Optional[str] = ""
 
 
 async def _get_demo_lead(demo_id: str) -> dict:
@@ -4804,8 +4806,8 @@ async def demo_agreement(payload: DemoAgreementIn):
     try:
         sections = await ai_service.generate_service_agreement(
             description_es=(payload.description_es or "")[:1500],
-            business_name=DEMO_BUSINESS["business_name"],
-            client_name=lead.get("name") or "Client",
+            business_name=(payload.owner_name or "").strip() or DEMO_BUSINESS["business_name"],
+            client_name=(payload.client_name or "").strip() or lead.get("name") or "Client",
             total=payload.total or 0,
             deposit=payload.deposit or 0,
         )
