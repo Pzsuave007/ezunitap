@@ -314,7 +314,7 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
         <DocHeader business={business} badge="QUOTE" />
         <div className="p-6 space-y-5">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
+            <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
             <div className="font-semibold">{lead.name}</div>
             {lead.email && <div className="text-sm text-slate-600">{lead.email}</div>}
           </div>
@@ -324,7 +324,7 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
           </div>
           {quote.scope_of_work?.length > 0 && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Scope of Work</div>
+              <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Scope of Work</div>
               <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
@@ -354,11 +354,11 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
             {quote.deposit_amount > 0 && <div className="flex justify-between text-emerald-700"><span>Deposit</span><span>{fmtMoney(quote.deposit_amount)}</span></div>}
           </div>
           {quote.payment_terms && (
-            <div><div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Terms</div><div className="text-sm">{quote.payment_terms}</div></div>
+            <div><div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Terms</div><div className="text-sm">{quote.payment_terms}</div></div>
           )}
           <div className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3 text-center">
             <h3 className="font-heading text-lg font-bold text-slate-900">Ready to move forward?</h3>
-            <p className="text-xs text-slate-600">Accept this quote to review and sign your service agreement, then pay your deposit.</p>
+            <p className="text-sm text-slate-600">Accept this quote to review and sign your service agreement, then pay your deposit.</p>
             <Button data-testid="demo-accept-quote-btn" onClick={onAccept} disabled={loading} className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold">
               {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Preparing your agreement…</> : <><CheckCircle2 className="w-5 h-5 mr-2" /> Accept this Quote</>}
             </Button>
@@ -375,7 +375,7 @@ function Clause({ title, children }) {
   if (!children || (Array.isArray(children) && children.length === 0)) return null;
   return (
     <div>
-      <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{title}</div>
+      <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">{title}</div>
       {Array.isArray(children)
         ? <ul className="list-disc ml-5 space-y-1 text-sm text-slate-700">{children.map((c, i) => <li key={i}>{c}</li>)}</ul>
         : <p className="text-sm text-slate-700 whitespace-pre-wrap">{children}</p>}
@@ -448,7 +448,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
         <DocHeader business={business} badge="INVOICE" />
         <div className="p-6 space-y-5">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
+            <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
             <div className="font-semibold">{lead.name}</div>
           </div>
           <div>
@@ -457,7 +457,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
           </div>
           {quote?.scope_of_work?.length > 0 && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Scope of Work</div>
+              <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Scope of Work</div>
               <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
@@ -496,7 +496,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
             </div>
           ) : (
             <div className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Pay securely</div>
+              <div className="text-sm font-bold uppercase tracking-wider text-slate-500">Pay securely</div>
               <Button data-testid="demo-pay-btn" onClick={onPay} className="w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold">
                 <CreditCard className="w-5 h-5 mr-2" /> Pay {fmtMoney(due)} by card
               </Button>
@@ -551,8 +551,8 @@ export function SendToMeCTA({ phone, sample, branch }) {
 
 function ClientBanner({ text }) {
   return (
-    <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold px-4 py-2.5 flex items-center gap-2">
-      <Send className="w-4 h-4 flex-none" /> {text}
+    <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-base font-semibold px-4 py-3 flex items-center gap-2">
+      <Send className="w-5 h-5 flex-none" /> {text}
     </div>
   );
 }
