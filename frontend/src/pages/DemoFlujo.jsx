@@ -38,10 +38,10 @@ const TRADE_IMAGES = {
 };
 const tradeImages = (trade) => TRADE_IMAGES[trade] || { before: BEFORE_IMG, after: AFTER_IMG };
 // Visual entry-channel images for Step 1 (how the client finds you)
-const CH_NFC_IMG = "/nfc-sample.png";
+const CH_NFC_IMG = "/nfc-sample.webp";
 const CH_QR_IMG = "https://images.unsplash.com/photo-1595079835357-a94a13cab10c?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
 const CH_WEB_IMG = "https://images.unsplash.com/photo-1625297673326-14790108da55?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
-const CH_CHAT_IMG = "https://static.prod-images.emergentagent.com/jobs/94598009-2be2-4f20-a9a0-c3da1b95e227/images/3cf37857fafea2c7b02ce25f1c5f60d318380ee2834eec8b42254e6742538f9b.png";
+const CH_CHAT_IMG = "/chatbot-demo.webp";
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",

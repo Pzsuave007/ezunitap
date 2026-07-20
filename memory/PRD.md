@@ -15,6 +15,20 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 20 2026 — Optimización de imágenes (carga rápida) [COMPLETO; verificado curl + screenshot]
+- **Bug carga lenta del demo resuelto**: imágenes pesadas convertidas a WebP y alojadas localmente:
+  - `nfc-sample.png` 665KB → `nfc-sample.webp` 30KB
+  - chatbot IA (remota ~987KB) → `/chatbot-demo.webp` 44KB (ahora local)
+  - `nfc-google-review.png` 185KB → `nfc-google-review.webp` 33KB
+  - Referencias actualizadas en `DemoFlujo.jsx` y `Landing.js`.
+- **Compresión automática de TODAS las imágenes subidas/generadas** (petición usuario): nuevo helper `_compress_image()` en `server.py` (WebP, max 1920px, calidad 85, preserva transparencia/alpha). Aplicado en:
+  - `upload_photo` (fotos de trabajo/CRM)
+  - `_upload_card_asset` (logo, foto perfil, portada de tarjeta)
+  - `_store_card_photo` (imágenes IA `ai_gen`, posts sociales `social_out`/`social_src`, fotos mejoradas)
+  - Fallback: si falla compresión o el WebP resulta mayor, guarda el original.
+  - Verificado: PNG 148KB→19KB webp; logo con alpha preservado (RGBA WebP).
+
+
 ## ✅ Jul 9 2026 — Rediseño legibilidad + mejoras UX del demo `/demo-flujo` [COMPLETO; verificado screenshots; testing_agent PROHIBIDO por usuario]
 - **Legibilidad 40+**: iconos de cada paso ARRIBA (centrados) con título/explicación abajo; todos los textos <12px subidos a mínimo 14-16px; documentos (DemoFlow.js) labels a 14px. Precio/CTA responsivos.
 - **Paso 1 visual**: canales NFC/QR/Web/Chat como tarjetas de imagen (NFC = `/nfc-sample.png`, QR foto genérica, formulario laptop, chatbot generado). 

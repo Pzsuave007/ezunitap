@@ -2340,6 +2340,7 @@ async def upload_photo(
     if len(data) > MAX_IMAGE_BYTES:
         raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
     ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "jpg"
+    data, content_type, ext = _compress_image(data, content_type, ext)
     photo_id = _new_id()
     path = f"{app_name}/photos/{user_id}/{photo_id}.{ext}"
     try:
@@ -2739,6 +2740,7 @@ async def _upload_card_asset(file: UploadFile, user_id: str, kind: str, card_id:
     if len(data) > MAX_IMAGE_BYTES:
         raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
     ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
+    data, content_type, ext = _compress_image(data, content_type, ext)
     asset_id = _new_id()
     path = f"{app_name}/cards/{kind}/{user_id}/{asset_id}.{ext}"
     try:
@@ -2783,6 +2785,7 @@ async def _delete_card_asset(user_id: str, kind: str, card_id: Optional[str] = N
 async def _store_card_photo(user_id: str, data: bytes, content_type: str, kind: str, ext: str = "png") -> str:
     """Store image bytes to object storage + create a photo doc (without binding
     it to a card). Returns the new photo asset_id."""
+    data, content_type, ext = _compress_image(data, content_type, ext)
     asset_id = _new_id()
     path = f"{app_name}/cards/{kind}/{user_id}/{asset_id}.{ext}"
     backend = storage_service.get_storage()
@@ -2945,6 +2948,37 @@ async def ai_social_posts(payload: SocialPostIn, user_id: str = Depends(get_curr
 # ============================================================================
 import io as _io  # noqa: E402
 from PIL import Image as _PILImage  # noqa: E402
+from PIL import ImageOps as _PILImageOps  # noqa: E402
+
+
+def _compress_image(data: bytes, orig_ct: str = "image/jpeg", orig_ext: str = "jpg",
+                    max_dim: int = 1920, quality: int = 85) -> tuple:
+    """Compress/resize an uploaded or generated image to WebP (keeps alpha),
+    preserving high visual clarity. Returns (bytes, content_type, ext).
+    Falls back to the original bytes if compression fails or grows the file."""
+    try:
+        img = _PILImage.open(_io.BytesIO(data))
+        try:
+            img = _PILImageOps.exif_transpose(img)
+        except Exception:
+            pass
+        has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+        img = img.convert("RGBA" if has_alpha else "RGB")
+        w, h = img.size
+        longest = max(w, h)
+        if longest > max_dim:
+            scale = max_dim / longest
+            img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), _PILImage.LANCZOS)
+        buf = _io.BytesIO()
+        img.save(buf, format="WEBP", quality=quality, method=6)
+        out = buf.getvalue()
+        if out and len(out) < len(data):
+            return out, "image/webp", "webp"
+    except Exception:
+        logger.exception("Image compression failed; storing original")
+    return data, orig_ct, orig_ext
+
+
 
 SOCIAL_TEMPLATES = set(social_service.DESIGN_PHOTOS.keys())
 SOCIAL_FORMATS = {"9x16", "1x1"}

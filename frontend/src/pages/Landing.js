@@ -30,7 +30,7 @@ const PRODUCT_META = [
   { id: "negocio", icon: LayoutDashboard, price: "$39.99" },
   { id: "marketing", icon: Sparkles, price: "$29.99" },
 ];
-const NFC_CARD_IMGS = ["/nfc-sample.png", "/nfc-google-review.png"];
+const NFC_CARD_IMGS = ["/nfc-sample.webp", "/nfc-google-review.webp"];
 const NFC_STEP_ICONS = [Package, Smartphone, Sparkles];
 
 export default function Landing() {
