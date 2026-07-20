@@ -15,7 +15,7 @@ import requests
 import pytest
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or \
-    "https://service-showcase-161.preview.emergentagent.com"
+    "https://latino-tech.preview.emergentagent.com"
 
 API = f"{BASE_URL}/api"
 
