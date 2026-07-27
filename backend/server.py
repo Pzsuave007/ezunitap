@@ -556,7 +556,7 @@ async def register(payload: RegisterIn):
                 user_id=user["id"],
                 title="👋 ¡Bienvenido a UniTech!",
                 body=(
-                    "Tienes <strong>14 días gratis</strong> para probar todo — sin tarjeta. "
+                    "Tienes <strong>14 días gratis</strong> para probar todo. "
                     "Empieza creando tu primer quote profesional en inglés y comparte tu "
                     "tarjeta digital. ¡Estamos para ayudarte a crecer tu negocio!"
                 ),

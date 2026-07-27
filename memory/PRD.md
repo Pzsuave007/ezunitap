@@ -15,6 +15,18 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 27 2026 — Trial 14 días CON tarjeta (modelo opt-out estilo Netflix) [COMPLETO; verificado vía Stripe API]
+- **Decisión de negocio:** el usuario eligió el modelo "trial con tarjeta": se pide la tarjeta en el checkout, NO se cobra hoy, y se cobra el día 15 si no cancela. Mayor conversión trial→pago (~40-60% vs ~15-25% del trial sin tarjeta).
+- **Backend (`payments_service.py`):**
+  - `trial_period_days = 14` en TODOS los planes (módulos, combos, bundle y `bundle_founder`).
+  - `create_checkout_session`: agregado `custom_text.submit` en español ("Prueba GRATIS 14 días — hoy no se te cobra… cargo empieza el día 15, cancela cuando quieras"). Ya usaba `payment_method_collection="always"`.
+  - `user_features`: ahora "trialing" CON `stripe_subscription_id` otorga acceso completo al plan → **un cliente que paga NUNCA queda bloqueado** si un webhook se pierde o al convertir el trial→activo el día 15.
+  - Webhook `customer.subscription.trial_will_end` (dispara ~3 días antes): crea notificación in-app de recordatorio pre-cobro (fecha exacta + precio + link a cancelar). Idempotente vía `trial_notifs: "precharge"`.
+- **Textos claros (i18n es/en):** badge de registro "14 días gratis · Cancela cuando quieras" (quitado "sin tarjeta"); pasos de `/precios` reescritos (tarjeta hoy, $0 hoy, aviso antes de terminar, cobro día 15, cancela cuando quieras); notif de bienvenida sin "sin tarjeta".
+- **Frontend ya soportaba** el estado `isPayingTrial` (trial con `stripe_customer_id`) mostrando banner amistoso de bienvenida + envío de tarjeta NFC.
+- **Verificación Stripe API:** sesión checkout → `mode=subscription`, `amount_total=0` (hoy $0), `payment_method_collection=always`, `custom_text` presente. ✅
+
+
 ## ✅ Jul 20 2026 — Optimización de imágenes (carga rápida) [COMPLETO; verificado curl + screenshot]
 - **Bug carga lenta del demo resuelto**: imágenes pesadas convertidas a WebP y alojadas localmente:
   - `nfc-sample.png` 665KB → `nfc-sample.webp` 30KB

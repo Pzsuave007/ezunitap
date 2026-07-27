@@ -121,7 +121,7 @@ def _build_plans() -> dict:
                 "is_bundle": base == "bundle",
                 "is_combo": ("_" in base) and base != "bundle",
                 "ships_card": mod["ships_card"],
-                "trial_period_days": 0,
+                "trial_period_days": 14,
             }
     return plans
 
@@ -148,7 +148,7 @@ PLANS[FOUNDER_PLAN_ID] = {
     "is_bundle": True,
     "is_combo": False,
     "ships_card": MODULES["bundle"]["ships_card"],
-    "trial_period_days": 0,
+    "trial_period_days": 14,
     "founder": True,
 }
 
@@ -412,6 +412,14 @@ async def create_checkout_session(
         },
         phone_number_collection={"enabled": True},
         allow_promotion_codes=True,
+        custom_text={
+            "submit": {
+                "message": (
+                    "Prueba GRATIS por 14 días — hoy no se te cobra nada. "
+                    "El cargo comienza hasta el día 15 y puedes cancelar cuando quieras."
+                ),
+            },
+        },
         success_url=success_url,
         cancel_url=cancel_url,
         metadata={
@@ -696,6 +704,44 @@ async def handle_webhook_event(db, payload: bytes, sig_header: str) -> dict:
                 update["cancel_at_period_end"] = bool(getattr(sub, "cancel_at_period_end", False))
             await db.users.update_one({"id": user["id"]}, {"$set": update})
 
+    elif event_type == "customer.subscription.trial_will_end":
+        # Fires ~3 days before the 14-day trial ends. Warn the user IN-APP
+        # (transparency safeguard) so the day-15 charge is never a surprise.
+        sub = data_obj
+        customer_id = sub["customer"] if isinstance(sub, dict) else sub.customer
+        user = await db.users.find_one({"stripe_customer_id": customer_id})
+        if user and "precharge" not in set(user.get("trial_notifs") or []):
+            import uuid as _uuid
+            import datetime as _dt
+            trial_end = sub.get("trial_end") if isinstance(sub, dict) else getattr(sub, "trial_end", None)
+            plan = get_plan(user.get("plan_type") or "")
+            price = plan["display_price"] if plan else ""
+            period = plan["display_period"] if plan else ""
+            when = (
+                _dt.datetime.fromtimestamp(int(trial_end), _dt.timezone.utc).strftime("%d/%m/%Y")
+                if trial_end else ""
+            )
+            await db.notifications.insert_one({
+                "id": str(_uuid.uuid4()),
+                "user_id": user["id"],
+                "segment": "user",
+                "title": "🔔 Tu prueba gratis termina pronto",
+                "body": (
+                    f"Tu prueba de 14 días termina el <strong>{when}</strong>. "
+                    f"Ese día se activará tu plan ({price}{period}). "
+                    "Si no es para ti, cancela en 1 clic — sin ningún cargo."
+                ),
+                "kind": "info",
+                "action_url": "/ajustes#suscripcion",
+                "action_label": "Administrar suscripción",
+                "created_at": int(time.time()),
+                "created_by": None,
+                "dismissed_by": [],
+            })
+            await db.users.update_one(
+                {"id": user["id"]}, {"$addToSet": {"trial_notifs": "precharge"}}
+            )
+
     elif event_type == "invoice.payment_succeeded":
         invoice = data_obj
         customer_id = invoice["customer"] if isinstance(invoice, dict) else invoice.customer
@@ -811,8 +857,11 @@ def user_features(user: dict) -> set:
         return set(PLAN_FEATURES.get(mp, set()))
     status = user.get("subscription_status")
     sub_id = user.get("stripe_subscription_id")
-    # Real paying subscriber
-    if status in ("active", "past_due") and sub_id:
+    # Real Stripe subscriber — includes the card-on-file 14-day trial
+    # ("trialing"), active, and past_due. A converted trial or a missed webhook
+    # must NEVER lock out a paying customer, so "trialing" WITH a Stripe
+    # subscription id grants full plan access.
+    if status in ("active", "past_due", "trialing") and sub_id:
         base = plan_base(user.get("plan_type"))
         return set(PLAN_FEATURES.get(base, FEATURES_ALL))  # legacy/unknown -> all
     # Self-managed free trial (no card) — full access until it expires
