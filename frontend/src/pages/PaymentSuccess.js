@@ -72,6 +72,15 @@ export default function PaymentSuccess() {
     };
   }, [sessionId, refreshUser]);
 
+  // Gentle auto-redirect to the dashboard a few seconds after success, so the
+  // user is never stranded on the confirmation screen (the button still works).
+  useEffect(() => {
+    if (state !== "success") return;
+    const t = setTimeout(() => navigate("/"), 5000);
+    return () => clearTimeout(t);
+  }, [state, navigate]);
+
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 to-blue-50">
       <Card className="w-full max-w-lg p-8 rounded-3xl" data-testid="payment-success-card">

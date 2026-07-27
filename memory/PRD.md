@@ -25,6 +25,10 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - **Textos claros (i18n es/en):** badge de registro "14 días gratis · Cancela cuando quieras" (quitado "sin tarjeta"); pasos de `/precios` reescritos (tarjeta hoy, $0 hoy, aviso antes de terminar, cobro día 15, cancela cuando quieras); notif de bienvenida sin "sin tarjeta".
 - **Frontend ya soportaba** el estado `isPayingTrial` (trial con `stripe_customer_id`) mostrando banner amistoso de bienvenida + envío de tarjeta NFC.
 - **Verificación Stripe API:** sesión checkout → `mode=subscription`, `amount_total=0` (hoy $0), `payment_method_collection=always`, `custom_text` presente. ✅
+- **FIX crítico handoff registro→Stripe:** antes el usuario se registraba pero caía al Dashboard SIN pasar por Stripe (race condition en Pricing.js con `start=1`). Ahora `Register.js` llama DIRECTO a `/payments/checkout` tras registrar y hace `window.location.assign(url)`. Fallback a `/precios` si founder está agotado.
+- **Auto-redirect suave:** `PaymentSuccess.js` navega al panel 5s tras el éxito (botón "Ir al panel" sigue disponible).
+- **i18n limpiado:** eliminadas TODAS las afirmaciones falsas "sin tarjeta / no credit card" (noCard, bundleNote, finalNote, finalDesc, upsellFootnote, offerRegularNote) en es/en.
+- **E2E verificado (agente de pruebas, aprobado por usuario):** registro → Stripe ($0 hoy, 14 días gratis) → pago con 4242 → `/pago/exito` → Dashboard con acceso completo (Marketing/Quotes sin bloqueo) + banner `isPayingTrial`. `GET /api/payments/subscription` = trialing + stripe_customer_id + features [business,card,marketing]. Backend 9/9 pytest. Frontend 100%. `yarn build` OK.
 
 
 ## ✅ Jul 20 2026 — Optimización de imágenes (carga rápida) [COMPLETO; verificado curl + screenshot]
