@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Hammer, Loader2, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
+import api from "@/lib/api";
 import LanguageToggle from "@/components/LanguageToggle";
 
 export default function Register() {
@@ -43,9 +44,27 @@ export default function Register() {
       fbTrackCustom("StartTrial", { plan: selectedPlan || "" });
       toast.success(inviteToken ? t("auth.register.createdInvite") : t("auth.register.createdTrial"));
       const planParam = params.get("plan");
-      if (planParam) {
+      if (planParam && !inviteToken) {
+        // Go STRAIGHT to Stripe checkout from here (robust) instead of relying
+        // on the Pricing page's auto-start effect, which raced and sometimes
+        // dropped the user on the Dashboard without collecting a card.
         const billingParam = params.get("billing") === "year" ? "year" : "month";
-        navigate(`/precios?plan=${planParam}&billing=${billingParam}&start=1`);
+        const planId =
+          planParam === "bundle_founder"
+            ? "bundle_founder"
+            : `${planParam}_${billingParam === "year" ? "yearly" : "monthly"}`;
+        try {
+          const { data } = await api.post("/payments/checkout", {
+            plan_id: planId,
+            origin_url: window.location.origin,
+            num_cards: 1,
+          });
+          window.location.assign(data.url);
+          return;
+        } catch (err) {
+          // Founder sold out / transient error → let them finish on /precios.
+          navigate(`/precios?plan=${planParam}&billing=${billingParam}`);
+        }
       } else {
         navigate("/");
       }

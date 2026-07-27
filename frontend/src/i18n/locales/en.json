@@ -791,7 +791,7 @@
       "Organize your jobs",
       "Earn more 5★ reviews"
     ],
-    "noCard": "No credit card",
+    "noCard": "Cancel anytime",
     "worksPhone": "Works from your phone",
     "cancelAnytime": "Cancel anytime",
     "whoTitle": "Who is UniTech for?",
@@ -964,7 +964,7 @@
     "bundleTitle": "All of UniTech — the 3 tools together",
     "bundleDesc": "Presence + Business + Marketing in one bundle. Save about <b>$30 a month</b> vs. buying them separately.",
     "bundleCta": "Subscribe to the Bundle",
-    "bundleNote": "Annual available with 2 months free · No credit card to start the trial",
+    "bundleNote": "Annual available with 2 months free · 14 days free, cancel anytime",
     "mktEyebrow": "Marketing Studio",
     "mktTitle": "Turn your jobs into ",
     "mktTitleHighlight": "content that sells.",
@@ -1040,7 +1040,7 @@
     "statsSetupVal": "2 minutes",
     "finalTitle": "Your whole business. Connected.",
     "finalSubtitle": "From the first contact to the final review, UniTech helps you run your business like a pro. It pays for itself with one job.",
-    "finalNote": "No credit card · Cancel anytime",
+    "finalNote": "14 days free · Cancel anytime",
     "footerTagline": "— Technology for your business · QR + NFC",
     "footerPrivacy": "Privacy",
     "footerTerms": "Terms",
@@ -1553,7 +1553,7 @@
     "print": "Print",
     "pdfNote": "📄 Your clients can <1>download as PDF or print</1> anything you send them to keep their records.",
     "finalTitle": "That's it. That easy.",
-    "finalDesc": "Quote, contract and payment — all in minutes. Create your free account (14 days, no card) and start getting paid like a pro.",
+    "finalDesc": "Quote, contract and payment — all in minutes. Create your account and try it free for 14 days — cancel anytime — and start getting paid like a pro.",
     "finalCta": "Create your free account"
   },
   "demoAll": {
@@ -1681,7 +1681,7 @@
       }
     },
     "upsellCta": "Create your free account",
-    "upsellFootnote": "14 days free · no card · cancel anytime"
+    "upsellFootnote": "14 days free · cancel anytime"
   },
   "platformChat": {
     "greeting": "Hi! 👋 I am the UniTech assistant. How can I help? I can tell you about the features, pricing, or schedule a call with the founder.",
@@ -1876,7 +1876,7 @@
     "regularCtaBrand": "Activate {{brand}} — Bundle $75/mo",
     "offerIncludes": "Everything included: NFC cards, AI quotes & contracts, calendar, payments, marketing and reviews.",
     "offerPriceNote": "for life — the price never goes up",
-    "offerRegularNote": "14-day free trial · No card · Cancel anytime",
+    "offerRegularNote": "14-day free trial · Cancel anytime",
     "founderCta": "Lock in your Founder spot — $59/mo for life",
     "regularCta": "Start now — Bundle $75/mo",
     "founderSpots": "Only {{n}} of {{limit}} spots left",

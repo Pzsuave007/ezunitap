@@ -1,0 +1,36 @@
+{
+  "summary": "Full E2E validation of the 14-day trial-with-card (opt-out Netflix-style) flow. Register with plan=bundle_founder&billing=month → auto-redirect to Stripe Checkout (14 days free, Total due today US$0.00, Then US$59.00 starting ...) → filled shipping/card (4242...) → Start trial → back to /pago/exito with '¡Bienvenido a Pro! 14 días de prueba gratis' and 'Tarjeta NFC en camino' → Ir al panel → Dashboard shows isPayingTrial banner. Full module access verified (/marketing, /quotes load without gate). GET /api/payments/subscription returns trialing + stripe_customer_id + features=[business,card,marketing] + trial_ends_at≈14d. /precios shows all 5 'How it works' steps and no 'Sin tarjeta/No credit card' copy anywhere. Backend pytest 9/9 green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_items": [
+    "Register (plan=bundle_founder&billing=month) posts /auth/register then /api/payments/checkout and does window.location.assign to checkout.stripe.com (fix from iter_47 confirmed).",
+    "Stripe Checkout shows '14 days free', 'Then US$59.00 per month starting <date>', 'Total after trial US$59.00', 'Total due today US$0.00'.",
+    "Card payment method available; Shipping address form fillable (Full name, Address, City, ZIP, State=TX, Phone).",
+    "After Start trial (test card 4242 4242 4242 4242 12/34 123), Stripe redirects to /pago/exito?session_id=... within ~10s.",
+    "PaymentSuccess polls /api/payments/status/{sid} and reaches state=complete; renders '¡Bienvenido a Pro!' + '14 días de prueba gratis' + 'Tarjeta NFC en camino' + button 'Ir al panel'.",
+    "Auth token persisted in localStorage as 'sf_token' (188 chars) after refreshUser.",
+    "Dashboard shows TrialBanner in isPayingTrial state: '¡Bienvenido a UniTech Pro! Tu tarjeta NFC física ya está en proceso de programación y envío.' No 'Suscríbete' / 'Ver planes' upsell text present.",
+    "/marketing loads Marketing Studio (no FeatureGate lock).",
+    "/quotes loads Quotes list (no FeatureGate lock).",
+    "GET /api/payments/subscription (authenticated new user): subscription_status='trialing', stripe_customer_id='cus_...' (non-null), trial_ends_at in 14.00 days, features=['business','card','marketing'], subscription_active=true, smart_card_unlocked=true, card_shipping_status='pending', shipping_address correctly saved.",
+    "/precios (EN) renders all 5 'How it works' steps: 'Add your card on Stripe... not charged today', 'Try EVERYTHING free for 14 days', 'We remind you before your trial ends', 'plan activates on day 15 (cancel anytime)', 'we ship it to your address'.",
+    "No 'Sin tarjeta de crédito' / 'No credit card' copy found on /precios (EN+ES) or /register (grep of i18n locales confirms 0 occurrences).",
+    "Backend pytest suite /app/backend/tests/test_trial_checkout.py: 9/9 passed (plans, 14d trial flag, founder-status, checkout for bundle_founder/presencia_monthly/negocio_yearly/bundle_monthly, bad-plan 4xx, no-auth 401)."
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_trial_checkout.py",
+    "/app/test_reports/pytest/pytest_results_trial.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PaymentSuccess.js does not auto-navigate to '/' after state=success; user must click 'Ir al panel'. Not a bug (matches Netflix-style behavior) but the review copy said 'y luego al Dashboard'. Consider adding a 3-4s auto-redirect after success for smoother UX.",
+    "/api/payments/subscription current_period_end is null while trialing (Stripe returns trial_end but no billing period yet). Frontend consumers must fall back to trial_ends_at — verify no place computes days-left off current_period_end during trial."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "New random user created per run (e2etest_<rand>@example.com / Test1234). Existing card-only user: cardonly_test@example.com / Test1234.",
+  "seed_data_creation": "One new trialing user + payment_transactions row + Stripe customer + Stripe subscription (sandbox) created during E2E. Prefix in DB: emails starting with 'e2etest_'.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "E2E trial-with-card flow is fully green end-to-end. Register → Stripe (card, $0 today) → success → dashboard with full feature access and TrialBanner (isPayingTrial). /api/payments/subscription returns the expected fields including trialing + stripe_customer_id + all features. The Stripe Checkout uses Payment Element field ids: #shippingName, #shippingAddressLine1, #shippingLocality, #shippingAdministrativeArea (select, values like 'TX'), #shippingPostalCode, #phoneNumber, #cardNumber, #cardExpiry, #cardCvc. Use a NANP phone like 4155550132; '5551234567' is rejected as invalid. /precios is behind auth (inside protected route group)."
+}

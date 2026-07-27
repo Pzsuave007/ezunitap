@@ -791,7 +791,7 @@
       "Organiza tus trabajos",
       "Obtén más reseñas 5★"
     ],
-    "noCard": "Sin tarjeta de crédito",
+    "noCard": "Cancela cuando quieras",
     "worksPhone": "Funciona desde el celular",
     "cancelAnytime": "Cancela cuando quieras",
     "whoTitle": "¿Para quién es UniTech?",
@@ -964,7 +964,7 @@
     "bundleTitle": "Todo UniTech — las 3 herramientas juntas",
     "bundleDesc": "Presencia + Negocio + Marketing en un solo paquete. Ahorra cerca de <b>$30 al mes</b> vs. comprarlos por separado.",
     "bundleCta": "Suscribirme al Bundle",
-    "bundleNote": "Anual disponible con 2 meses gratis · Sin tarjeta de crédito para empezar la prueba",
+    "bundleNote": "Anual disponible con 2 meses gratis · 14 días gratis, cancela cuando quieras",
     "mktEyebrow": "Estudio de Marketing",
     "mktTitle": "Convierte tus trabajos en ",
     "mktTitleHighlight": "contenido que vende.",
@@ -1040,7 +1040,7 @@
     "statsSetupVal": "2 minutos",
     "finalTitle": "Todo tu negocio. Conectado.",
     "finalSubtitle": "Desde el primer contacto hasta la reseña final, UniTech te ayuda a administrar tu negocio como un profesional. Se paga solo con un trabajo.",
-    "finalNote": "Sin tarjeta de crédito · Cancela cuando quieras",
+    "finalNote": "14 días gratis · Cancela cuando quieras",
     "footerTagline": "— Tecnología para tu negocio · QR + NFC",
     "footerPrivacy": "Privacidad",
     "footerTerms": "Términos",
@@ -1553,7 +1553,7 @@
     "print": "Imprimir",
     "pdfNote": "📄 Tus clientes pueden <1>descargar en PDF o imprimir</1> todo lo que les mandes para guardar sus records.",
     "finalTitle": "Eso fue todo. Así de fácil.",
-    "finalDesc": "Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta gratis (14 días, sin tarjeta) y empieza a cobrar como un profesional.",
+    "finalDesc": "Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta y prueba gratis 14 días — cancela cuando quieras — y empieza a cobrar como un profesional.",
     "finalCta": "Crear mi cuenta gratis"
   },
   "demoAll": {
@@ -1681,7 +1681,7 @@
       }
     },
     "upsellCta": "Crear mi cuenta gratis",
-    "upsellFootnote": "14 días gratis · sin tarjeta · cancela cuando quieras"
+    "upsellFootnote": "14 días gratis · cancela cuando quieras"
   },
   "platformChat": {
     "greeting": "¡Hola! 👋 Soy el asistente de UniTech. ¿En qué puedo ayudarte? Puedo contarte sobre las funciones, precios, o agendar una llamada con el fundador.",
@@ -1876,7 +1876,7 @@
     "regularCtaBrand": "Activa {{brand}} — Bundle $75/mes",
     "offerIncludes": "Todo incluido: tarjetas NFC, cotizaciones y contratos con IA, calendario, cobros, marketing y reseñas.",
     "offerPriceNote": "de por vida — el precio nunca sube",
-    "offerRegularNote": "Prueba gratis 14 días · Sin tarjeta · Cancela cuando quieras",
+    "offerRegularNote": "Prueba gratis 14 días · Cancela cuando quieras",
     "founderCta": "Asegura tu lugar Fundador — $59/mes de por vida",
     "regularCta": "Empieza ahora — Bundle $75/mes",
     "founderSpots": "Solo quedan {{n}} de {{limit}} cupos",
