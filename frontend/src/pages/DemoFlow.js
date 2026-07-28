@@ -410,6 +410,10 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
             <div className="bg-white border border-slate-200 rounded-lg h-16 flex items-center px-4">
               <span className="font-[cursive] text-2xl text-slate-800">{lead.name}</span>
             </div>
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-white/70 border border-emerald-200 px-3 py-2 text-xs sm:text-sm text-emerald-800" data-testid="demo-sign-hint">
+              <ShieldCheck className="w-4 h-4 flex-none mt-0.5" />
+              <span>{t("demoFlow.demoSignHint")}</span>
+            </div>
             <Button data-testid="demo-sign-btn" onClick={onSign} disabled={signed} className="w-full h-auto py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold mt-3 leading-tight">
               <ShieldCheck className="w-5 h-5 mr-2 flex-none" /> Sign &amp; Continue
             </Button>
@@ -497,6 +501,10 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
           ) : (
             <div className="rounded-xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-3">
               <div className="text-sm font-bold uppercase tracking-wider text-slate-500">Pay securely</div>
+              <div className="flex items-start gap-2 rounded-lg bg-white border border-blue-200 px-3 py-2 text-xs sm:text-sm text-blue-900" data-testid="demo-pay-hint">
+                <ShieldCheck className="w-4 h-4 flex-none mt-0.5" />
+                <span>{t("demoFlow.demoPayHint")}</span>
+              </div>
               <Button data-testid="demo-pay-btn" onClick={onPay} className="w-full h-auto py-3.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold leading-tight">
                 <CreditCard className="w-5 h-5 mr-2 flex-none" /> Pay {fmtMoney(due)}
               </Button>

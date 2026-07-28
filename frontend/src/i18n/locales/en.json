@@ -1554,7 +1554,9 @@
     "pdfNote": "📄 Your clients can <1>download as PDF or print</1> anything you send them to keep their records.",
     "finalTitle": "That's it. That easy.",
     "finalDesc": "Quote, contract and payment — all in minutes. Create your account and try it free for 14 days — cancel anytime — and start getting paid like a pro.",
-    "finalCta": "Create your free account"
+    "finalCta": "Create your free account",
+    "demoSignHint": "This is a demo: signing just moves you to the next step. It's not a real contract.",
+    "demoPayHint": "Don't worry — this is a demo, you won't be charged. Tap “Pay” just to see how your client pays you and continue the demo."
   },
   "demoAll": {
     "leadTitle": "See what UniTech can do for your business",
@@ -1945,6 +1947,7 @@
     "cta": "Message me on WhatsApp",
     "prefill": "Hi! I just saw the UniTech demo and I have a few questions before opening my account 👋",
     "demoPrompt": "Have questions or want to think it over? Message me and I'll help you personally.",
-    "pricingPrompt": "Not sure which plan to pick? Message me on WhatsApp and I'll help you decide."
+    "pricingPrompt": "Not sure which plan to pick? Message me on WhatsApp and I'll help you decide.",
+    "fab": "Need help?"
   }
 }

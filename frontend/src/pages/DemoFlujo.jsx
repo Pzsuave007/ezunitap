@@ -20,7 +20,7 @@ import {
   Nfc, QrCode, Globe,
 } from "lucide-react";
 import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { WhatsAppButton, WhatsAppFab } from "@/components/WhatsAppButton";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -238,6 +238,7 @@ export default function DemoFlujo() {
         {step === 10 && <FinalCTA founder={founder} brand={(lead.businessName || lead.name || "").trim()} t={t} />}
       </div>
       <BusySheet busy={busy} t={t} />
+      {step !== 10 && <WhatsAppFab />}
       <NoticeSheet
         open={paidNotice}
         t={t}

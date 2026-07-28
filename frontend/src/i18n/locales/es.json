@@ -1554,7 +1554,9 @@
     "pdfNote": "📄 Tus clientes pueden <1>descargar en PDF o imprimir</1> todo lo que les mandes para guardar sus records.",
     "finalTitle": "Eso fue todo. Así de fácil.",
     "finalDesc": "Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta y prueba gratis 14 días — cancela cuando quieras — y empieza a cobrar como un profesional.",
-    "finalCta": "Crear mi cuenta gratis"
+    "finalCta": "Crear mi cuenta gratis",
+    "demoSignHint": "Es una demostración: al firmar solo avanzas al siguiente paso. No es un contrato real.",
+    "demoPayHint": "Tranquilo, es una demostración — NO se te cobra nada. Toca “Pay” solo para ver cómo tu cliente te paga y seguir con el demo."
   },
   "demoAll": {
     "leadTitle": "Mira lo que UniTech puede hacer por tu negocio",
@@ -1945,6 +1947,7 @@
     "cta": "Escríbeme por WhatsApp",
     "prefill": "¡Hola! Vi el demo de UniTech y tengo unas preguntas antes de abrir mi cuenta 👋",
     "demoPrompt": "¿Tienes dudas o quieres verlo con calma? Escríbeme y te ayudo personalmente.",
-    "pricingPrompt": "¿No estás seguro cuál plan elegir? Escríbeme por WhatsApp y te ayudo a decidir."
+    "pricingPrompt": "¿No estás seguro cuál plan elegir? Escríbeme por WhatsApp y te ayudo a decidir.",
+    "fab": "¿Dudas?"
   }
 }
