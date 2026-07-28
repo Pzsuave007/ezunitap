@@ -15,6 +15,7 @@ import {
   Check, Crown, Loader2, ArrowLeft, IdCard, FileText, Megaphone, Truck, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const SINGLES = ["presencia", "negocio", "marketing"];
 
@@ -348,6 +349,14 @@ export default function Pricing() {
           <li>{t("pricing.how4")}</li>
           <li>{t("pricing.how5")}</li>
         </ol>
+      </div>
+
+      {/* Not ready? Talk to a human on WhatsApp */}
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 text-center" data-testid="pricing-whatsapp-block">
+        <p className="text-sm font-semibold text-slate-800">{t("whatsapp.pricingPrompt")}</p>
+        <div className="mt-3 max-w-xs mx-auto">
+          <WhatsAppButton testid="pricing-whatsapp" />
+        </div>
       </div>
 
       {/* Mobile sticky CTA */}

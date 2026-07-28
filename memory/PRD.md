@@ -15,6 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Jul 28 2026 — Botón "Escríbeme por WhatsApp" (rescate de prospectos) [COMPLETO; verificado screenshot]
+- Nuevo componente `components/WhatsAppButton.js` → abre `wa.me/19712270595` con mensaje pre-escrito ("¡Hola! Vi el demo de UniTech y tengo unas preguntas…"). Número del dueño: +1 971-227-0595.
+- Colocado en: pantalla FINAL del demo (`DemoFlujo.jsx` FinalCTA, testid `flujo-final-whatsapp`) y en la página de precios (`Pricing.js`, testid `pricing-whatsapp`), para rescatar a quien no se convence de suscribirse solo.
+- i18n `whatsapp.*` (es/en): cta, prefill (mensaje pre-escrito, se adapta al idioma), demoPrompt, pricingPrompt.
+- Build regenerado + `git add -f frontend/build/` (main.1c40aad8.js).
+
+
 ## ✅ Jul 27 2026 — Trial 14 días CON tarjeta (modelo opt-out estilo Netflix) [COMPLETO; verificado vía Stripe API]
 - **Decisión de negocio:** el usuario eligió el modelo "trial con tarjeta": se pide la tarjeta en el checkout, NO se cobra hoy, y se cobra el día 15 si no cancela. Mayor conversión trial→pago (~40-60% vs ~15-25% del trial sin tarjeta).
 - **Backend (`payments_service.py`):**

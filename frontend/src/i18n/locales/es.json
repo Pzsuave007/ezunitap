@@ -1940,5 +1940,11 @@
     "foundWebSub": "Llena el formulario de tu sitio web en segundos.",
     "foundChatSub": "El chatbot IA responde y agenda por ti 24/7.",
     "socialTag": "ANTES → DESPUÉS"
+  },
+  "whatsapp": {
+    "cta": "Escríbeme por WhatsApp",
+    "prefill": "¡Hola! Vi el demo de UniTech y tengo unas preguntas antes de abrir mi cuenta 👋",
+    "demoPrompt": "¿Tienes dudas o quieres verlo con calma? Escríbeme y te ayudo personalmente.",
+    "pricingPrompt": "¿No estás seguro cuál plan elegir? Escríbeme por WhatsApp y te ayudo a decidir."
   }
 }

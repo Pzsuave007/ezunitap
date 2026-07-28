@@ -20,6 +20,7 @@ import {
   Nfc, QrCode, Globe,
 } from "lucide-react";
 import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -674,6 +675,12 @@ function FinalCTA({ founder, brand, t }) {
         </Link>
         <div className="text-sm text-white/70 mt-3">{t("demoFlujo.offerRegularNote")}</div>
       </Card>
+
+      {/* Not ready? Talk to a human on WhatsApp — rescues undecided prospects */}
+      <div className="mt-5 text-center">
+        <p className="text-sm text-slate-500 mb-2">{t("whatsapp.demoPrompt")}</p>
+        <WhatsAppButton testid="flujo-final-whatsapp" />
+      </div>
     </div>
   );
 }
