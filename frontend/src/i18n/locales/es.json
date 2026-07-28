@@ -711,7 +711,11 @@
     "change": "Cambiar",
     "upload": "Subir",
     "remove": "Quitar",
-    "error": "Error"
+    "error": "Error",
+    "agreementsTitle": "Acuerdos de servicio",
+    "agreementsDesc": "Cuando está activado, cada cotización aceptada genera un acuerdo profesional para que tu cliente firme. Si lo apagas, tus clientes pasan directo del cotizado a la factura.",
+    "agreementsOn": "✅ Activado — se generan acuerdos de servicio",
+    "agreementsOff": "Desactivado — del cotizado directo a la factura"
   },
   "tours": {
     "dashboard": [
@@ -1941,7 +1945,9 @@
     "foundQrSub": "Escanea tu código QR desde un volante, camioneta o tarjeta.",
     "foundWebSub": "Llena el formulario de tu sitio web en segundos.",
     "foundChatSub": "El chatbot IA responde y agenda por ti 24/7.",
-    "socialTag": "ANTES → DESPUÉS"
+    "socialTag": "ANTES → DESPUÉS",
+    "agreementOptional": "El acuerdo de servicio es opcional. En tu cuenta puedes activarlo o desactivarlo cuando quieras — muchos negocios van directo del cotizado a la factura.",
+    "skipToInvoice": "Saltar a la factura"
   },
   "whatsapp": {
     "cta": "Escríbeme por WhatsApp",

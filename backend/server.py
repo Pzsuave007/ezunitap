@@ -102,6 +102,7 @@ class BusinessUpdate(BaseModel):
     business_address: Optional[str] = None
     business_email: Optional[str] = None
     shipping_address: Optional[dict] = None
+    agreements_enabled: Optional[bool] = None
 
 
 class CheckoutCreateIn(BaseModel):
@@ -417,6 +418,7 @@ async def _user_doc(user_id: str) -> dict:
     u.setdefault("stripe_customer_id", None)
     u.setdefault("shipping_address", None)
     u.setdefault("card_shipping_status", None)
+    u.setdefault("agreements_enabled", True)
     # Compute derived flags for UI consumption
     u["smart_card_unlocked"] = payments_service.has_paid_subscription(u)
     u["subscription_active"] = payments_service.subscription_is_active(u)
@@ -1055,6 +1057,9 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
 async def _auto_create_agreement_from_quote(quote: dict):
     """Background task: builds the AI agreement for a quote (idempotent + race-safe)."""
     try:
+        owner = await db.users.find_one({"id": quote["user_id"]}, {"_id": 0, "agreements_enabled": 1})
+        if owner and owner.get("agreements_enabled") is False:
+            return  # owner turned service agreements off (quote -> invoice directly)
         existing = await db.agreements.find_one(
             {"user_id": quote["user_id"], "quote_id": quote["id"]}, {"_id": 0, "id": 1}
         )

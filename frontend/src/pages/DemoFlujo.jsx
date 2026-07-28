@@ -17,7 +17,7 @@ import {
   Loader2, Hammer, Sparkles, ArrowRight, ArrowLeft, Star, IdCard, CalendarCheck,
   FileText, Receipt, CreditCard, Briefcase, Camera, Share2, MessageSquare,
   CheckCircle2, PartyPopper, Crown, Bot, ThumbsUp, Instagram, Facebook, MapPin, Clock,
-  Nfc, QrCode, Globe,
+  Nfc, QrCode, Globe, Info,
 } from "lucide-react";
 import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
 import { WhatsAppButton, WhatsAppFab } from "@/components/WhatsAppButton";
@@ -110,20 +110,35 @@ export default function DemoFlujo() {
     } finally { setLoading(false); setBusy(null); }
   };
 
-  const genAgreement = async () => {
+  // Demo agreement is built INSTANTLY from the quote (no AI wait). The real
+  // account uses the full AI generator; here we only need it to look pro.
+  const buildDemoAgreement = () => {
+    const biz = ownerBusiness?.business_name || t("demoFlujo.you");
+    const clientName = clientLead.name;
+    const totalNum = Number(quote?.total || 0);
+    const depNum = Number(quote?.deposit_amount || totalNum * 0.5);
+    const balance = Math.max(totalNum - depNum, 0);
+    const scope = (quote?.scope_of_work || []).join("; ") || quote?.description || desc;
+    return {
+      title: `Service Agreement — ${quote?.job_title || ""}`,
+      preamble: `This Service Agreement ("Agreement") is entered into between ${biz} ("Contractor") and ${clientName} ("Client") and becomes effective on the date signed by both parties.`,
+      services_included: scope,
+      services_excluded: "Any work, materials, or permits not expressly listed above are excluded and, if requested, will be quoted separately as a Change Order.",
+      schedule: "Work will begin on a mutually agreed date and proceed continuously, weather and site conditions permitting, until completion.",
+      pricing: `Total price: ${fmtMoney(totalNum)}, covering all labor and materials described in the Services Included section.`,
+      payment_terms: `A deposit of ${fmtMoney(depNum)} is due upon signing to reserve the schedule and cover initial materials. The remaining balance of ${fmtMoney(balance)} is due upon completion of the work.`,
+      cancellation_policy: "Either party may cancel with written notice. If the Client cancels after work or material purchase has begun, the Contractor may retain amounts covering costs incurred to date.",
+      client_responsibilities: "The Client will provide safe access to the work area, keep it reasonably clear, and ensure utilities are available as needed for the Contractor to perform the work.",
+      warranty: "The Contractor warrants workmanship for 12 months from completion. Manufacturer warranties on materials are passed through to the Client.",
+      change_orders: "Any change to the scope, materials, or schedule must be agreed in writing (a Change Order) and may adjust the price and timeline accordingly.",
+      dispute_resolution: "The parties will first attempt to resolve any dispute in good faith. If unresolved, disputes will be handled under the laws of the Contractor's state of operation.",
+    };
+  };
+
+  const genAgreement = () => {
     setErr("");
-    setLoading(true); setBusy("busyAgreementTitle");
-    try {
-      const r = await axios.post(`${API}/public/demo/agreement`, {
-        demo_id: demoId, description_es: desc,
-        job_title: quote?.job_title || "", total: quote?.total || 0, deposit: quote?.deposit_amount || 0,
-        client_name: clientLead.name, owner_name: ownerBusiness?.business_name || "",
-      });
-      setAgreement(r.data.agreement);
-      go(4);
-    } catch (e) {
-      setErr(e?.response?.data?.detail || t("demoFlow.errAgreement"));
-    } finally { setLoading(false); setBusy(null); }
+    setAgreement(buildDemoAgreement());
+    go(4);
   };
 
   const total = fmtMoney(quote?.total);
@@ -193,8 +208,20 @@ export default function DemoFlujo() {
         )}
 
         {step === 4 && (
-          <AgreementStep agreement={agreement} business={ownerBusiness} lead={clientLead} signed={signed}
-            onSign={() => { setSigned(true); go(5); }} />
+          <>
+            <div className="mb-3 flex items-start gap-2 rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 text-sm text-violet-900" data-testid="flujo-agreement-optional">
+              <Info className="w-4 h-4 flex-none mt-0.5" />
+              <span>{t("demoFlujo.agreementOptional")}</span>
+            </div>
+            <AgreementStep agreement={agreement} business={ownerBusiness} lead={clientLead} signed={signed}
+              onSign={() => { setSigned(true); go(5); }} />
+            <div className="mt-4 flex items-center gap-2">
+              <button onClick={() => go(3)} className="text-base text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 px-3 py-2"><ArrowLeft className="w-5 h-5" /> {t("demoFlujo.back")}</button>
+              <button onClick={() => go(5)} data-testid="flujo-skip-agreement" className="ml-auto text-base font-semibold text-slate-700 hover:text-black inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-300 hover:border-slate-400">
+                {t("demoFlujo.skipToInvoice")} <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </>
         )}
 
         {step === 5 && (

@@ -711,7 +711,11 @@
     "change": "Change",
     "upload": "Upload",
     "remove": "Remove",
-    "error": "Error"
+    "error": "Error",
+    "agreementsTitle": "Service agreements",
+    "agreementsDesc": "When on, every accepted quote generates a professional agreement for your client to sign. Turn it off and clients go straight from quote to invoice.",
+    "agreementsOn": "✅ On — service agreements are generated",
+    "agreementsOff": "Off — quote goes straight to invoice"
   },
   "tours": {
     "dashboard": [
@@ -1941,7 +1945,9 @@
     "foundQrSub": "She scans your QR from a flyer, truck or card.",
     "foundWebSub": "She fills out your website form in seconds.",
     "foundChatSub": "The AI chatbot replies and books for you 24/7.",
-    "socialTag": "BEFORE → AFTER"
+    "socialTag": "BEFORE → AFTER",
+    "agreementOptional": "The service agreement is optional. In your account you can turn it on or off anytime — many businesses go straight from quote to invoice.",
+    "skipToInvoice": "Skip to invoice"
   },
   "whatsapp": {
     "cta": "Message me on WhatsApp",

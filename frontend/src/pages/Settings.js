@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   User as UserIcon, Building2, Image as ImageIcon, Camera,
-  Loader2, Upload, X as XIcon, LogOut, IdCard, Sparkles,
+  Loader2, Upload, X as XIcon, LogOut, IdCard, Sparkles, FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
@@ -66,6 +66,8 @@ export default function Profile() {
         // photo ids (read-only here; updated via dedicated upload buttons)
         logo_photo_id: user.logo_photo_id || null,
         profile_photo_id: user.profile_photo_id || null,
+        // business preferences
+        agreements_enabled: user.agreements_enabled !== false,
       });
     }
   }, [user]);
@@ -82,6 +84,7 @@ export default function Profile() {
           phone: form.phone,
           business_email: form.business_email,
           business_address: form.business_address,
+          agreements_enabled: form.agreements_enabled,
         }),
         api.put("/card/settings", {
           role: form.role,
@@ -250,6 +253,29 @@ export default function Profile() {
             placeholder="With over 10 years of experience, we deliver quality work on every project. Licensed, insured, and committed to your satisfaction."
           />
           <p className="text-[11px] text-slate-400 mt-1">{t("profile.bioHint")}</p>
+        </div>
+      </Card>
+
+      {/* Service agreements preference */}
+      <Card className="card-elevated p-5 border-0 shadow-none space-y-3" data-testid="agreements-setting">
+        <div className="flex items-center gap-2 mb-1">
+          <FileSignature className="w-5 h-5 text-blue-900" />
+          <h3 className="font-heading font-bold text-base">{t("profile.agreementsTitle")}</h3>
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <p className="text-sm text-slate-600 flex-1">{t("profile.agreementsDesc")}</p>
+          <button
+            type="button"
+            data-testid="agreements-toggle"
+            onClick={() => update("agreements_enabled", !form.agreements_enabled)}
+            className={`relative flex-none w-12 h-7 rounded-full transition-colors ${form.agreements_enabled ? "bg-emerald-500" : "bg-slate-300"}`}
+            aria-pressed={form.agreements_enabled}
+          >
+            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${form.agreements_enabled ? "left-6" : "left-1"}`} />
+          </button>
+        </div>
+        <div className={`text-xs font-semibold ${form.agreements_enabled ? "text-emerald-700" : "text-slate-500"}`}>
+          {form.agreements_enabled ? t("profile.agreementsOn") : t("profile.agreementsOff")}
         </div>
       </Card>
 
