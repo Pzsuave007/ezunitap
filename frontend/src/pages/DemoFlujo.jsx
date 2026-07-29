@@ -43,10 +43,26 @@ const CH_NFC_IMG = "/nfc-sample.webp";
 const CH_QR_IMG = "https://images.unsplash.com/photo-1595079835357-a94a13cab10c?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
 const CH_WEB_IMG = "https://images.unsplash.com/photo-1625297673326-14790108da55?crop=entropy&cs=srgb&fm=jpg&q=80&w=900";
 const CH_CHAT_IMG = "/chatbot-demo.webp";
+const CH_GOOGLE_IMG = "https://static.prod-images.emergentagent.com/jobs/ba6ddcbb-e263-4cc5-8df9-494d3870944d/images/c4889fdcb0d017f1c4db6f463c748f95c722f2b92c6b570cfc3892987b95088b.jpeg";
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
   "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
 ];
+
+// The client's own request message (also pre-fills the quote description in
+// step 3), tailored to the trade the demo user picked at the start.
+function clientRequestText(trade, t) {
+  const s = (trade || "").toLowerCase();
+  let key = "reqGeneric";
+  if (s.includes("roof") || s.includes("techo")) key = "reqRoofing";
+  else if (s.includes("drywall")) key = "reqDrywall";
+  else if (s.includes("paint") || s.includes("pintura")) key = "reqPainting";
+  else if (s.includes("concret")) key = "reqConcrete";
+  else if (s.includes("landscap") || s.includes("jardin")) key = "reqLandscaping";
+  else if (s.includes("clean") || s.includes("limpieza")) key = "reqCleaning";
+  else if (s.includes("plumb") || s.includes("plom")) key = "reqPlumbing";
+  return t(`demoFlujo.${key}`);
+}
 
 export default function DemoFlujo() {
   const { t, i18n } = useTranslation();
@@ -88,6 +104,9 @@ export default function DemoFlujo() {
       const r = await axios.post(`${API}/public/demo/start`, { ...lead });
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
+      // Pre-fill the quote description with what the client already requested,
+      // so the demo user sees how easy it is to reuse the client's own words.
+      setDesc(clientRequestText(lead.trade, t));
       fbTrack("Lead", { content_name: "Story Demo Start", content_category: lead.trade });
       fbTrackCustom("DemoFlujoStarted", { trade: lead.trade });
       go(1);
@@ -174,13 +193,17 @@ export default function DemoFlujo() {
 
         {step === 2 && (
           <SceneShell onNext={() => go(3)} onBack={() => go(1)} t={t}>
-            <BookingForm client={client} service={tradeName} t={t} />
+            <BookingForm client={client} service={tradeName} request={clientRequestText(lead.trade, t)} t={t} />
           </SceneShell>
         )}
 
         {step === 3 && (
           !quote ? (
             <Card className="p-6 rounded-2xl border-slate-200">
+              <div className="mb-3 flex items-start gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm sm:text-base text-blue-900" data-testid="flujo-s3-fromclient">
+                <Sparkles className="w-4 h-4 flex-none mt-0.5" />
+                <span>{t("demoFlujo.s3FromClient")}</span>
+              </div>
               <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.s3DescLabel")}</label>
               <Textarea data-testid="flujo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={6} placeholder={t("demoFlujo.s3DescPh")} className="mt-2 rounded-xl text-base" />
               <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-100 p-4" data-testid="flujo-desc-tips">
@@ -420,6 +443,7 @@ function Intro({ lead, setLead, onStart, loading, i18n, t }) {
 
 function FoundVia({ t }) {
   const ch = [
+    { icon: MapPin, img: CH_GOOGLE_IMG, label: t("demoFlujo.foundGoogle"), sub: t("demoFlujo.foundGoogleSub"), tone: "from-red-500 to-amber-500", fit: "object-cover" },
     { icon: Nfc, img: CH_NFC_IMG, label: t("demoFlujo.foundNfc"), sub: t("demoFlujo.foundNfcSub"), tone: "from-blue-600 to-blue-500", fit: "object-contain bg-slate-100" },
     { icon: QrCode, img: CH_QR_IMG, label: t("demoFlujo.foundQr"), sub: t("demoFlujo.foundQrSub"), tone: "from-slate-700 to-slate-600", fit: "object-cover" },
     { icon: Globe, img: CH_WEB_IMG, label: t("demoFlujo.foundWeb"), sub: t("demoFlujo.foundWebSub"), tone: "from-emerald-600 to-emerald-500", fit: "object-cover" },
@@ -466,7 +490,7 @@ function MiniCard({ business, label }) {
   );
 }
 
-function BookingForm({ client, service, t }) {
+function BookingForm({ client, service, request, t }) {
   const times = ["9:00", "10:00", "11:30", "2:00"];
   return (
     <div data-testid="flujo-booking" className="rounded-2xl border border-slate-200 overflow-hidden">
@@ -474,6 +498,13 @@ function BookingForm({ client, service, t }) {
       <div className="p-4 space-y-4">
         <Field label={t("demoFlujo.bookName")} value={client} />
         <Field label={t("demoFlujo.bookService")} value={service} />
+        <div data-testid="flujo-booking-request">
+          <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t("demoFlujo.bookRequestLabel")}</div>
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-base text-slate-700 leading-snug italic">“{request}”</div>
+          <div className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5">
+            <Sparkles className="w-4 h-4" /> {t("demoFlujo.bookRequestedQuote")}
+          </div>
+        </div>
         <div>
           <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t("demoFlujo.bookTime")}</div>
           <div className="grid grid-cols-4 gap-2">
