@@ -1921,7 +1921,7 @@
     "photoSaved": "Photos saved to the client",
     "socialTitle": "AI creates your design and posts it",
     "socialCaption": "With one tap, AI turns your photos into a post/Reel with your brand and publishes it to social and your Google Profile.",
-    "socialCaptionText": "✨ Another job done right! 🏡 We fully transformed this project for our client. Clean work, on time and guaranteed. 📞 Get your FREE estimate today — limited spots this week. #Contractor #BeforeAndAfter #QualityWork #FreeEstimate",
+    "socialCaptionText": "Another {{trade}} job done right! 💪 Check out the before & after. Need something similar? Message us on WhatsApp for your FREE quote. 📲",
     "postedSocial": "Posted to Instagram & Facebook",
     "socialMoreTitle": "Other designs the AI can create for you",
     "socialMoreSub": "Dozens of pro templates, ready with your brand in one tap.",
@@ -1975,7 +1975,8 @@
     "reqPest": "Hi, I have an ant and roach problem in the kitchen, and I think there are mice in the garage. I’d like a full treatment. Price?",
     "reqWindows": "Hi, I want to replace 5 old windows with new double-pane ones and change the front door. Can I get an estimate with installation?",
     "reqGutters": "Hi, I need new gutters installed around the whole house and the existing ones cleaned. How much for materials and installation?",
-    "reqAuto": "Hi, I want a full detail on my truck: wash, wax, interior vacuum and seat cleaning. Can you come to my house? Price?"
+    "reqAuto": "Hi, I want a full detail on my truck: wash, wax, interior vacuum and seat cleaning. Can you come to my house? Price?",
+    "socialPostTitle": "✨ Before & After of our {{trade}} work"
   },
   "whatsapp": {
     "cta": "Message me on WhatsApp",

@@ -312,7 +312,7 @@ export default function DemoFlujo() {
 
         {step === 8 && (
           <SceneShell onNext={() => go(9)} onBack={() => go(7)} t={t}>
-            <SocialDesign business={ownerBusiness} imgs={imgs} t={t} />
+            <SocialDesign business={ownerBusiness} imgs={imgs} trade={tradeName} t={t} />
           </SceneShell>
         )}
 
@@ -624,7 +624,7 @@ function BeforeAfter({ imgs, t }) {
   );
 }
 
-function SocialDesign({ business, imgs, t }) {
+function SocialDesign({ business, imgs, trade, t }) {
   const templates = [
     "showcase", "promo", "review_5star", "elegant_dark",
     "magazine", "seasonal", "quote_offer", "trust_badge",
@@ -633,7 +633,12 @@ function SocialDesign({ business, imgs, t }) {
     <div data-testid="flujo-social">
       {/* The generated post — real system template */}
       <div className="mx-auto max-w-[300px] rounded-2xl overflow-hidden shadow-xl bg-white border border-slate-200">
-        <img src={imgs.after} alt="Post generado" className="w-full aspect-square object-cover" />
+        <div className="relative">
+          <img src={imgs.after} alt="Post generado" className="w-full aspect-square object-cover" />
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-3 pt-8 pb-2.5">
+            <div className="text-white text-sm sm:text-base font-extrabold leading-tight drop-shadow">{t("demoFlujo.socialPostTitle", { trade })}</div>
+          </div>
+        </div>
         <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-none"><Hammer className="w-5 h-5 text-white" /></div>
           <div className="min-w-0">
@@ -647,7 +652,7 @@ function SocialDesign({ business, imgs, t }) {
       </div>
 
       {/* AI caption */}
-      <p className="text-sm sm:text-base text-slate-700 mt-3 leading-relaxed bg-slate-100 rounded-xl px-3.5 py-3">{t("demoFlujo.socialCaptionText")}</p>
+      <p className="text-sm sm:text-base text-slate-700 mt-3 leading-relaxed bg-slate-100 rounded-xl px-3.5 py-3">{t("demoFlujo.socialCaptionText", { trade })}</p>
 
       {/* Posted confirmations */}
       <div className="mt-3 space-y-2">

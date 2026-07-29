@@ -1921,7 +1921,7 @@
     "photoSaved": "Fotos guardadas en el cliente",
     "socialTitle": "La IA crea tu diseño y lo publica",
     "socialCaption": "Con un toque, la IA convierte tus fotos en un post/Reel con tu marca y lo publica en tus redes y en tu Perfil de Google.",
-    "socialCaptionText": "✨ ¡Otro trabajo terminado con orgullo! 🏡 Transformamos por completo este proyecto para nuestra clienta. Trabajo limpio, a tiempo y garantizado. 📞 Pide tu estimado GRATIS hoy — cupos limitados esta semana. #Contratista #AntesYDespués #TrabajoDeCalidad #EstimadoGratis",
+    "socialCaptionText": "¡Otro trabajo de {{trade}} terminado con orgullo! 💪 Mira el antes y después. ¿Necesitas algo similar? Escríbenos por WhatsApp y te damos tu cotización GRATIS. 📲",
     "postedSocial": "Publicado en Instagram y Facebook",
     "socialMoreTitle": "Otros diseños que la IA puede crear para ti",
     "socialMoreSub": "Decenas de plantillas profesionales, listas con tu marca en un toque.",
@@ -1975,7 +1975,8 @@
     "reqPest": "Hola, tengo problema con hormigas y cucarachas en la cocina, y creo que hay ratones en el garaje. Quisiera un tratamiento completo. ¿Precio?",
     "reqWindows": "Hola, quiero reemplazar 5 ventanas viejas por unas nuevas de doble panel y cambiar la puerta principal. ¿Me dan un estimado con instalación?",
     "reqGutters": "Hola, necesito instalar canaletas nuevas alrededor de toda la casa y limpiar las que tengo. ¿Cuánto me costaría material e instalación?",
-    "reqAuto": "Hola, quiero un detallado completo de mi camioneta: lavado, encerado, aspirado por dentro y limpieza de asientos. ¿Pueden venir a mi casa? ¿Precio?"
+    "reqAuto": "Hola, quiero un detallado completo de mi camioneta: lavado, encerado, aspirado por dentro y limpieza de asientos. ¿Pueden venir a mi casa? ¿Precio?",
+    "socialPostTitle": "✨ Antes y Después de nuestro trabajo de {{trade}}"
   },
   "whatsapp": {
     "cta": "Escríbeme por WhatsApp",
