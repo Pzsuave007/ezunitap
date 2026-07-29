@@ -18,13 +18,14 @@ const WaIcon = ({ className }) => (
 
 const waHref = (text) => `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
 
-export const WhatsAppButton = ({ className = "", testid = "whatsapp-cta" }) => {
+export const WhatsAppButton = ({ className = "", testid = "whatsapp-cta", onClick }) => {
   const { t } = useTranslation();
   return (
     <a
       href={waHref(t("whatsapp.prefill"))}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onClick}
       data-testid={testid}
       className={`inline-flex w-full items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#1eb955] text-white font-bold text-base transition-colors ${className}`}
     >
@@ -34,13 +35,14 @@ export const WhatsAppButton = ({ className = "", testid = "whatsapp-cta" }) => {
   );
 };
 
-export const WhatsAppFab = ({ testid = "whatsapp-fab" }) => {
+export const WhatsAppFab = ({ testid = "whatsapp-fab", onClick }) => {
   const { t } = useTranslation();
   return (
     <a
       href={waHref(t("whatsapp.prefill"))}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onClick}
       data-testid={testid}
       aria-label={t("whatsapp.cta")}
       className="fixed z-50 bottom-5 right-4 inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1eb955] text-white font-bold shadow-lg shadow-emerald-600/30 pl-3 pr-4 py-3 transition-colors"

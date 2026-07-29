@@ -35,6 +35,7 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import AdminAccounts from "@/pages/AdminAccounts";
 import AdminMessages from "@/pages/AdminMessages";
 import AdminMetrics from "@/pages/AdminMetrics";
+import AdminDemoAnalytics from "@/pages/AdminDemoAnalytics";
 import AdminShipments from "@/pages/AdminShipments";
 import NotificationsInbox from "@/pages/NotificationsInbox";
 import PublicInvoice from "@/pages/PublicInvoice";
@@ -141,6 +142,7 @@ function App() {
               <Route path="/ajustes" element={<Settings />} />
               <Route path="/precios" element={<Pricing />} />
               <Route path="/admin/metricas" element={<AdminMetrics />} />
+              <Route path="/admin/demo" element={<AdminDemoAnalytics />} />
               <Route path="/admin/mensajes" element={<AdminMessages />} />
               <Route path="/admin/cuentas" element={<AdminAccounts />} />
               <Route path="/admin/envios" element={<AdminShipments />} />

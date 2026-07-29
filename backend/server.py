@@ -4867,6 +4867,175 @@ async def admin_demo_leads(_admin: dict = Depends(_require_super_admin)):
     return {"leads": leads}
 
 
+# ============================================================================
+# FIRST-PARTY DEMO ANALYTICS — our own funnel tracking for /demo-flujo so we
+# can see step-by-step behavior, drop-off and WhatsApp/checkout intent WITHOUT
+# depending on Meta. Events are anonymous (session id in the browser only).
+# ============================================================================
+DEMO_STEP_LABELS = {
+    0: "Vio el demo (intro)",
+    1: "Empezó · Descubrimiento Google",
+    2: "Solicitud del cliente",
+    3: "Cotización con IA",
+    4: "Contrato / Acuerdo",
+    5: "Factura / Pago",
+    6: "Detalle del trabajo",
+    7: "Antes y Después",
+    8: "Post para redes",
+    9: "Reseña de Google",
+    10: "Final · ¡Terminó el demo!",
+}
+DEMO_MAX_STEP = 10
+
+
+class DemoTrackIn(BaseModel):
+    session_id: str
+    event: str
+    step: Optional[int] = None
+    trade: Optional[str] = ""
+    device: Optional[str] = ""
+    ref: Optional[str] = ""
+    meta: Optional[dict] = None
+
+
+@api_router.post("/public/demo/track")
+async def demo_track(payload: DemoTrackIn, request: Request):
+    """Record an anonymous demo funnel event and keep a per-session summary."""
+    sid = (payload.session_id or "").strip()
+    event = (payload.event or "").strip()
+    if not sid or not event:
+        return {"ok": True}
+    step = payload.step if isinstance(payload.step, int) else None
+    if step is not None:
+        step = max(0, min(DEMO_MAX_STEP, step))
+    trade = (payload.trade or "").strip()
+    device = (payload.device or "").strip().lower()
+    ref = (payload.ref or "").strip()
+    ip = request.client.host if request.client else ""
+    now = _now_iso()
+
+    # Raw event log (useful for a per-session timeline).
+    await db.demo_events.insert_one({
+        "id": _new_id(),
+        "session_id": sid,
+        "event": event,
+        "step": step,
+        "trade": trade,
+        "device": device,
+        "ref": ref,
+        "meta": payload.meta or {},
+        "ip": ip,
+        "created_at": now,
+    })
+
+    # Rolling per-session summary (the funnel is computed from this).
+    set_on_insert = {"session_id": sid, "first_seen": now}
+    if device:
+        set_on_insert["device"] = device
+    if ref:
+        set_on_insert["ref"] = ref
+    set_fields = {"last_seen": now}
+    if trade:
+        set_fields["trade"] = trade
+    inc_fields = {"events": 1}
+    if event == "demo_start":
+        set_fields["started"] = True
+    if event == "demo_completed" or (step is not None and step >= DEMO_MAX_STEP):
+        set_fields["completed"] = True
+    if event == "whatsapp_click":
+        inc_fields["whatsapp_clicks"] = 1
+    if event == "checkout_click":
+        inc_fields["checkout_clicks"] = 1
+
+    update = {"$setOnInsert": set_on_insert, "$set": set_fields, "$inc": inc_fields}
+    if step is not None:
+        update["$max"] = {"max_step": step}
+    await db.demo_sessions.update_one({"session_id": sid}, update, upsert=True)
+    return {"ok": True}
+
+
+@api_router.get("/admin/demo-analytics")
+async def admin_demo_analytics(_admin: dict = Depends(_require_super_admin)):
+    """Aggregate the demo funnel from per-session summaries (super-admin only)."""
+    sessions = await db.demo_sessions.find({}, {"_id": 0}).to_list(20000)
+
+    total = len(sessions)
+    started = sum(1 for s in sessions if s.get("started") or (s.get("max_step") or 0) >= 1)
+    completed = sum(1 for s in sessions if s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP)
+    wa_clicks = sum(int(s.get("whatsapp_clicks") or 0) for s in sessions)
+    co_clicks = sum(int(s.get("checkout_clicks") or 0) for s in sessions)
+
+    # Funnel: how many sessions reached >= each step level.
+    funnel = []
+    prev = None
+    for lvl in range(0, DEMO_MAX_STEP + 1):
+        cnt = sum(1 for s in sessions if (s.get("max_step") or 0) >= lvl)
+        drop = None
+        if prev is not None and prev > 0:
+            drop = round((1 - (cnt / prev)) * 100, 1)
+        funnel.append({
+            "step": lvl,
+            "label": DEMO_STEP_LABELS.get(lvl, f"Paso {lvl}"),
+            "count": cnt,
+            "drop_from_prev": drop,
+        })
+        prev = cnt
+
+    # Breakdown by trade.
+    by_trade = {}
+    for s in sessions:
+        tr = (s.get("trade") or "—").strip() or "—"
+        d = by_trade.setdefault(tr, {"trade": tr, "sessions": 0, "completed": 0})
+        d["sessions"] += 1
+        if s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP:
+            d["completed"] += 1
+    by_trade_list = sorted(by_trade.values(), key=lambda x: x["sessions"], reverse=True)
+
+    # Device split.
+    devices = {"mobile": 0, "desktop": 0, "other": 0}
+    for s in sessions:
+        dv = (s.get("device") or "other")
+        devices[dv if dv in devices else "other"] += 1
+
+    def _dur(s):
+        try:
+            a = datetime.fromisoformat(s["first_seen"]); b = datetime.fromisoformat(s["last_seen"])
+            return max(0, int((b - a).total_seconds()))
+        except Exception:
+            return 0
+
+    recent = sorted(sessions, key=lambda s: s.get("last_seen") or "", reverse=True)[:100]
+    recent_out = [{
+        "session_id": s.get("session_id"),
+        "trade": s.get("trade") or "—",
+        "device": s.get("device") or "—",
+        "max_step": s.get("max_step") or 0,
+        "max_step_label": DEMO_STEP_LABELS.get(s.get("max_step") or 0, ""),
+        "started": bool(s.get("started")),
+        "completed": bool(s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP),
+        "whatsapp_clicks": int(s.get("whatsapp_clicks") or 0),
+        "checkout_clicks": int(s.get("checkout_clicks") or 0),
+        "first_seen": s.get("first_seen"),
+        "last_seen": s.get("last_seen"),
+        "duration_sec": _dur(s),
+    } for s in recent]
+
+    return {
+        "totals": {
+            "sessions": total,
+            "started": started,
+            "completed": completed,
+            "completion_rate": round((completed / started) * 100, 1) if started else 0.0,
+            "whatsapp_clicks": wa_clicks,
+            "checkout_clicks": co_clicks,
+        },
+        "funnel": funnel,
+        "by_trade": by_trade_list,
+        "devices": devices,
+        "recent_sessions": recent_out,
+    }
+
+
 
 @api_router.post("/public/unitap/chat")
 async def unitap_platform_chat(payload: PlatformChatIn):

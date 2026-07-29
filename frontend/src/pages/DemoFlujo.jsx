@@ -5,7 +5,7 @@
  * and review + AI reply. Steps 3-5 reuse the real demo document components.
  * Ends with a dynamic Founder ($59) / Bundle ($75) CTA.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -22,6 +22,7 @@ import {
 import { QuoteStep, AgreementStep, InvoiceStep, tradeLabel } from "./DemoFlow";
 import { WhatsAppButton, WhatsAppFab } from "@/components/WhatsAppButton";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
+import { trackDemo } from "@/lib/demoAnalytics";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) => `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -132,6 +133,25 @@ export default function DemoFlujo() {
   const clientLead = { name: t("demoFlujo.clientFull"), email: t("demoFlujo.clientEmail"), phone: t("demoFlujo.clientPhone") };
   const go = (n) => { setStep(n); setErr(""); window.scrollTo(0, 0); };
 
+  // First-party funnel tracking (our own analytics, independent of Meta).
+  const stepRef = useRef(step);
+  const tradeRef = useRef(lead.trade);
+  useEffect(() => { tradeRef.current = lead.trade; }, [lead.trade]);
+  useEffect(() => {
+    stepRef.current = step;
+    trackDemo("step_view", { step, trade: lead.trade });
+    if (step === 10) trackDemo("demo_completed", { step: 10, trade: lead.trade });
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") {
+        trackDemo("leave", { step: stepRef.current, trade: tradeRef.current });
+      }
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, []);
+
   const start = async () => {
     setErr("");
     if (!lead.name.trim() || !lead.email.includes("@")) { setErr(t("demo.errEmail")); return; }
@@ -146,6 +166,7 @@ export default function DemoFlujo() {
       setDesc(clientRequestText(lead.trade, t));
       fbTrack("Lead", { content_name: "Story Demo Start", content_category: lead.trade });
       fbTrackCustom("DemoFlujoStarted", { trade: lead.trade });
+      trackDemo("demo_start", { step: 1, trade: lead.trade });
       go(1);
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demo.errStart"));
@@ -161,6 +182,7 @@ export default function DemoFlujo() {
       setQuote(r.data.quote);
       setBusiness(r.data.business);
       fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
+      trackDemo("quote_generated", { step: 3, trade: lead.trade, meta: { total: Number(r.data.quote?.total || 0) } });
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demoFlow.errQuote"));
     } finally { setLoading(false); setBusy(null); }
@@ -325,7 +347,7 @@ export default function DemoFlujo() {
         {step === 10 && <FinalCTA founder={founder} brand={(lead.businessName || lead.name || "").trim()} t={t} />}
       </div>
       <BusySheet busy={busy} t={t} />
-      {step !== 10 && <WhatsAppFab />}
+      {step !== 10 && <WhatsAppFab onClick={() => trackDemo("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />}
       <NoticeSheet
         open={paidNotice}
         t={t}
@@ -769,7 +791,7 @@ function FinalCTA({ founder, brand, t }) {
           {available ? t("demoFlujo.offerPriceNote") : ""}
         </div>
         <p className="text-base text-white/90 mt-3 max-w-sm mx-auto leading-relaxed">{t("demoFlujo.offerIncludes")}</p>
-        <Link data-testid="flujo-final-cta" to={to} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white text-blue-900 font-extrabold text-base sm:text-lg hover:bg-slate-100 transition-colors leading-tight">
+        <Link data-testid="flujo-final-cta" to={to} onClick={() => trackDemo("checkout_click", { step: 10 })} className="mt-5 inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white text-blue-900 font-extrabold text-base sm:text-lg hover:bg-slate-100 transition-colors leading-tight">
           {available
             ? <><Crown className="w-5 h-5 flex-none" /> {brand ? t("demoFlujo.founderCtaBrand", { brand }) : t("demoFlujo.founderCta")}</>
             : <>{brand ? t("demoFlujo.regularCtaBrand", { brand }) : t("demoFlujo.regularCta")}</>} <ArrowRight className="w-5 h-5 flex-none" />
@@ -780,7 +802,7 @@ function FinalCTA({ founder, brand, t }) {
       {/* Not ready? Talk to a human on WhatsApp — rescues undecided prospects */}
       <div className="mt-5 text-center">
         <p className="text-sm text-slate-500 mb-2">{t("whatsapp.demoPrompt")}</p>
-        <WhatsAppButton testid="flujo-final-whatsapp" />
+        <WhatsAppButton testid="flujo-final-whatsapp" onClick={() => trackDemo("whatsapp_click", { step: 10, meta: { place: "final" } })} />
       </div>
     </div>
   );

@@ -273,6 +273,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Cada contratista usa su propia cuenta UniTech (slug = embed key). Sin notificaciones instantáneas (los leads aparecen en CRM/dashboard).
 - Verificado: curl (lead/cita/chat con source_site → lead_source=website OK; AI responde) + página externa simulada (form envía "¡Listo!" + chatbot abre y saluda) + screenshots. CORS ya es `*`.
 
+## ✅ Jul 2026 — Analíticas propias del Demo (funnel de /demo-flujo, sin depender de Meta) [LISTO; curl e2e + screenshot]
+- **Objetivo:** panel interno para ver el comportamiento real de la gente en el demo: en qué paso se atoran, si lo terminan pero se van, clics a WhatsApp/checkout. Datos de primera mano en nuestro MongoDB, no de Meta.
+- **Backend** (`server.py`): `POST /api/public/demo/track` (público, anónimo por `session_id` de sessionStorage) → guarda evento crudo en `demo_events` y mantiene resumen por sesión en `demo_sessions` (`$max` en `max_step`, flags started/completed, `$inc` whatsapp_clicks/checkout_clicks). `GET /api/admin/demo-analytics` (super-admin) agrega: totals (sesiones, terminaron, tasa, clics WA/checkout), funnel por paso 0→10 con % de caída, desglose por oficio, dispositivo, y sesiones recientes con el último paso alcanzado.
+- **Frontend:** helper `lib/demoAnalytics.js` (fetch keepalive, no bloquea, no truena). `DemoFlujo.jsx` dispara: `step_view` en cada paso, `demo_start`, `quote_generated`, `demo_completed` (paso 10), `whatsapp_click` (fab + final), `checkout_click` (CTA final) y `leave` en visibilitychange (abandono). Nuevo tab **"Demo Analytics"** en `AdminTabs` + página `AdminDemoAnalytics.js` en `/admin/demo` (KPIs, embudo visual con caída en rojo, por oficio, dispositivo, sesiones recientes).
+- También quedó conectado el tracking de WhatsApp y checkout que faltaba para Meta (`WhatsAppButton`/`WhatsAppFab` aceptan `onClick`).
+- Verificado: curl end-to-end (5 eventos → funnel/totals correctos, WA click contado) + screenshot del panel admin renderizando bien. Datos de prueba limpiados.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
