@@ -1,89 +1,78 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, Google Reviews gating, and an embeddable website widget. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration, implement Meta Pixel, comprehensive i18n (English/Spanish), mobile-first UX, modular pricing plans, and AI voiceovers. *Goal:* Scale to 100 paid clients, replace GoHighLevel functionality for users.
+<analysis>Here is the handover summary for the next agent:
 
-**User's preferred language**: Spanish
-(INSTRUCT FOR NEXT AGENT: The user's primary language is Spanish. You MUST automatically detect this and respond EXCLUSIVAMENTE en español. Do not use English in your direct communication with the user.)
+**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration, implement Meta Pixel, comprehensive i18n (English/Spanish), mobile-first UX. *Goal:* Scale to 100 paid clients.
 
-**what currently exists?**
-A live React/FastAPI/MongoDB multi-tenant application. It is 100% bilingual (English/Spanish). It features an AI Marketing Studio, AI Quoting/Invoicing, Smart Cards, unified CRM, Google Business Profile integration, and PWA (Progressive Web App) capabilities. It also has a newly added dynamic QR Code Generator, a dedicated Founder Plan checkout flow, and custom interactive demos. 
+**User's preferred language**: Spanish (You MUST automatically detect this and EXCLUSIVELY respond in Spanish. Do not use English in your direct communication with the user).
 
-**Last working item**:
-    - **Last item agent was working**: Refining the newly created Interactive Demo Flow () to make it highly visual. The agent was actively adding dynamic before/after pictures based on the selected contractor trade, swapping the owner/client names so the visitor acts as the business owner (and Maria as the client) on actual Quote/Agreement/Invoice components, and adding visual entry channels (NFC, QR, Website). The agent hit a Pydantic validation error () on a  call because the  argument was omitted when trying to add new  imports.
+**what currently exists?** 
+A live React/FastAPI/MongoDB multi-tenant SaaS. It features an interactive 9-step Demo Flow () populated with 23 specific trades, custom client requests, and AI-generated mock documents to capture leads. The backend includes automatic WebP image compression. The monetization model is a SaaS subscription with a Netflix-style 14-day free trial (requires credit card upfront, charges /bin/bash today, auto-bills on day 15). 
+
+**Last working item**: 
+    - **Last item agent was working**: Auditing the Meta Pixel () integration in the Demo Flow. The user is about to launch Meta Ads and asked to confirm if the demo properly tracks user actions. The agent just executed a  to find existing  and  events in the codebase.
     - **Status**: IN PROGRESS
     - **Agent Testing Done**: N
-    - **Which testing method agent to use?**: screenshot tool / manual testing (⚠️ USER EXPLICITLY BANNED THE . DO NOT USE ).
+    - **Which testing method agent to use?**: manual testing by curl/python / code inspection.
     - **User Testing Done**: N
 
-**All Pending/In progress Issue list**:
-  Issue 1: Lucide React import update failed in  (P0)
-     - Attempted fixes: Agent tried to run  to update  imports (adding Globe, QrCode, Smartphone) but forgot the  argument.
-     - Next debug checklist: Re-run the  on  with the correct  argument to finalize the icons import.
-     - Why fix this issue and what will be achieved with the fix?: Fixes the broken tool call and unblocks the rendering of the updated visual demo flow.
+**All Pending/In progress Issue list**: 
+  Issue 1: Verify and expand Meta Pixel Tracking in Demo Flow (P0)
+     - Attempted fixes: Agent ran a  for  and . Found it is partially implemented.
+     - Next debug checklist: Review the  results. Detail to the user exactly what is currently being tracked (e.g., , ). Suggest/add tracking for high-intent actions like clicking the new WhatsApp button () or reaching specific demo steps, so the user's Meta Ad campaigns have accurate data.
+     - Why fix this issue and what will be achieved with the fix?: User is turning on paid Meta Ads immediately. Accurate pixel tracking is critical to optimize ad spend.
      - Status: IN PROGRESS
      - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Frontend (Screenshot tool ONLY)
-     - Blocked on other issue: None
+     - Should Test frontend/backend/both after fix?: Frontend
 
-**In progress Task List**:
-  Task 1: Complete Visual Interactive Demo Flow (P0)
-     - Where to resume: .
-     - What will be achieved with this?: The prospect will experience a rich, 9-step personalized walkthrough of the app featuring their own name as the business owner, Maria as the client, and trade-specific before/after pictures. 
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix?: Frontend (Screenshot tool ONLY)
-     - Blocked on something: Issue 1
+**In progress Task List**: 
+  None explicitly outside of the tracking audit. The user is in launch mode.
 
 **Upcoming and Future Tasks**
-- **P1**: Automated client reminders (SMS via Twilio or Email via Resend) 1 day before scheduled appointments, and instant lead notifications to contractors.
-- **P1**: Add Video Upload support to Reel Builder (MVP: 1 video clip, max 5-8 seconds, cropped to vertical 1080x1920, overlaid with branding).
-- **P1**: QR Code Analytics (Agent suggested enhancement): Add detailed analytics for dynamic QR Codes (scans per day/week graph, location/device data).
+- **P1**: Automated client reminders (SMS via Twilio or Email via Resend) 1 day before scheduled appointments, and instant lead notifications.
+- **P1**: Add Video Upload support to Reel Builder (MVP: 1 video clip, max 5-8 seconds, cropped to vertical, overlaid with branding).
+- **P1**: QR Code Analytics: Add detailed analytics for dynamic QR Codes.
 - **P2**: In-app referral program (Invita un compa).
 - **P2**: Export Calendar to  format.
 - **P3**: Refactor  (>6700 lines) into modular routers.
 
 **Completed work in this session**
-- Completed Founder Price integration (9/mo for life, 30 spots) and added a live tracking banner to the Landing page (DONE)
-- Rewrote pricing copy across Landing and Pricing pages to feature honest, realistic Why it pays off comparisons instead of inflated competitor prices (DONE)
-- Fixed aggressive caching bug in production by updating  to prevent  from caching (DONE)
-- Removed Spanish references from the English-translated landing page features (DONE)
-- Condensed Landing page How it works section from 13 steps down to 9 connected steps (DONE)
-- Implemented full PWA support with , , icons, and an Install App prompt (DONE)
-- Created a Dynamic QR Code Generator () module with backend tracking to replace GoHighLevel's QR functionality (DONE)
-- Re-routed Landing page demo buttons to a new immersive storytelling flow  (DONE)
+- Applied automatic WebP image compression in the backend using Pillow to fix slow load times (DONE)
+- Implemented Netflix-style Opt-out Subscriptions (Stripe ) requiring a card upfront but /bin/bash charge today (DONE)
+- Added a floating WhatsApp action button throughout the demo and pricing pages to rescue hesitant prospects (DONE)
+- Made AI Service Agreements instantaneous in the Demo, added a Skip button, and added an ON/OFF toggle in actual user settings (DONE)
+- Improved Demo Flow logic: Step 1 shows Google discovery, Step 2 includes custom client request messages, Step 3 pre-fills the Quote builder (DONE)
+- Expanded Demo to 23 trades. Generated 30 specific Before/After images for the new trades, personalized the AI social media posts by trade (DONE)
+- Generated Meta Ad creatives/copy and advised the user on marketing strategy (DONE)
+- **CRITICAL FIX**: Resolved a recurring frontend missing deployment bug by forcing the  directory to be tracked in Git ().
 
 **Earlier issues found/mentioned but not fixed**
 -  monolith needs refactoring (Postponed).
 
 **Known issue recurrence from previous fork**
-- None.
+- **Frontend build missing on deploy**: The user's  script relies on . Previously, the  folder was ignored by git, causing it to disappear on the live server. 
+  - Recurrence count: 2
+  - Status: RESOLVED (Fixed by tracking the built assets via ). *Note: You must repeat this step every time you rebuild the frontend.*
 
 **Code Architecture**
-- Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next. PWA elements in .
+- Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next. 
 - Backend: FastAPI (), MongoDB.
-- Widget:  (Vanilla JS compiled into build).
-- Deploy Script: >>> FIRST-TIME INSTALL for ezunitap on port 8007 and >>> [user=ezunitap] fix.sh starting...
-HEAD is now at f22e764 Auto-generated changes
-X venv missing — delete it and re-run deploy.sh:
-  rm -rf /opt/ezunitap/backend/venv && bash /home/ezunitap/repo/deploy.sh (Loads specific env vars into production).
 
 **Key Technical Concepts**
-- **PWA**: Uses standard  and a no-cache  to allow app installation on iOS/Android.
-- **QR Generator**: Uses  in frontend and  in backend. Dynamic QRs route through  to track scans and 302 redirect.
-- **Demo Flow**: Uses the real  capabilities by passing a mocked  and capturing leads in  DB collection.
+- **Stripe Trial Flow:** To respect the 14-day free trial while collecting cards, Stripe Checkout uses , , and .
+- **Git Build Tracking:** The production server pulls directly from the GitHub repository. Because of this, the compiled React app must be forcefully committed to the repository.
 
 **key DB schema**
-- : Stores Stripe cached prices and founder pricing states.
-- : , , , , .
-- : Stores captured leads from the  flow.
+- : Includes fields like , , 
+- , , : Handles the core CRM logic
 
 **changes in tech stack**
-- None.
+- Backend now uses  for handling and converting image uploads to optimized WebP formats.
 
 **All files of reference**
--  (CRITICAL: Currently editing, imports need fixing).
--  &  (Updated copy and founder banner).
--  (Updated to prevent caching ).
--  &  (PWA configs).
--  &  (QR Generator).
--  (Updated to inverse owner/client names for the demo agreement generation).
+-  &  (Core demo logic)
+-  (Newly created)
+- , 
+-  & 
+- >>> FIRST-TIME INSTALL for ezunitap on port 8007 (User's deployment script context)
 
 **Areas that need refactoring**
 -  (Over 6700 lines).
@@ -91,29 +80,26 @@ X venv missing — delete it and re-run deploy.sh:
 **key api endpoints**
 - 
 - 
--  (QR Generation) &  (Dynamic Redirect)
+- , 
 
 **Critical Info for New Agent**
-- ⚠️ **USER BANNED :** The user explicitly got frustrated when the previous agent used the . **DO NOT USE the  tool under any circumstances.** Rely strictly on the ,  (with  or ), and manual verifications.
-- **Demo Flow Logic:** The user wants the interactive demo () to feel extremely personalized. The visitor's inputted name should show up as the *Business Owner*, and a fictional Maria should show up as the *Client* inside the Quote, Agreement, and Invoice components.
-- **Deployments:** The user manually runs >>> FIRST-TIME INSTALL for ezunitap on port 8007 on their server. Whenever frontend changes are finished, generate the frontend build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside ) and explicitly instruct the user to click the Save to Github button in the chat interface.
+- ⚠️ **FRONTEND DEPLOYMENTS**: Whenever you modify frontend code, you MUST run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  AND THEN forcefully stage the build files ( or similar) before telling the user to click Save to Github. Failure to do this will break their live site.
+- **Product Strategy**: The user is launching *immediately*. Do not propose building heavy new features (like a native calendar booking system) right now. Keep them focused on launching their Meta Ads and validating the current product.
+- **Tone & Language**: The user is conversational, uses Mexican/Latino slang occasionally (compa, troca), and appreciates direct, honest business advice. Always respond in Spanish.
 
 **documents and test reports created in this job**
--  (Updated with completed tasks)
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-- User asked to condense the Landing page from 13 to 9 steps. (Agent did).
-- User requested iOS/Android app installation capabilities without using app stores. (Agent implemented PWA).
-- User asked if existing GoHighLevel QR codes could be saved. (Agent explained domains and determined they were tied to GHL).
-- User asked for a QR Code Generator inside UniTech to replace GHL. (Agent built full QR Generator).
-- User asked why the demo link on the landing page only showed invoices. (Agent fixed the link to point to the full demo).
-- User requested an interactive, storytelling demo flow following the 9 steps. (Agent built ).
-- User said the demo flow was too simple and requested actual visual components (Quote, Agreement, Invoice, Before/Afters) using the user's name as the Owner and Maria as the client, plus dynamic photos based on the trade selected.
-- *Pending Action*: Agent was updating  with the requested visual features but hit a tool validation error on the Lucide icons import. Fix the import and verify the flow.
+- User asked to use the specific after image in the demo's social post. (Done)
+- User asked to customize the social post title text by trade. (Done)
+- User asked if they should add a Book a Demo option next to WhatsApp. Agent advised against overcomplicating it; user agreed to launch as-is. (Done)
+- *Pending Human Message*: User asked:  (Agent needs to analyze current  usage and report back/implement missing tracking).
 
 **Project Health Check:**
-- Broken:  file update was interrupted by a missing argument error in the tool call.
+- Stable.
 
 **3rd Party Integrations**
 - Stripe (Payments) — requires User API Key
@@ -122,15 +108,14 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 - Meta / Facebook Pixel — requires User ID
 
 **Testing status**
-- Testing agent used after significant changes: NO (User strictly forbade it).
+- Testing agent used after significant changes: YES (Verified Netflix-style checkout flow).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None recently.
-- Known regressions:  is mid-edit.
+- Test files created: None
+- Known regressions: None
 
 **Credentials to test flow:**
 Admin (Super-Admin):  / 
 Card-Only Test:  / 
-Marketing-Only Test:  / 
 
 **What agent forgot to execute**
-The agent forgot to include the  argument in the  tool when trying to update the  imports in . Fix this immediately to complete the Demo Flujo feature.</analysis>
+The agent executed  to check for Meta Pixel () usage in response to the user's final question, but the session ended before the agent could interpret the results, explain them to the user, or add specific tracking events (like tracking WhatsApp clicks). This should be your first action.</analysis>
