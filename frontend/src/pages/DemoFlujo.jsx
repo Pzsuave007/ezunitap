@@ -27,6 +27,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) => `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const BEFORE_IMG = "https://images.unsplash.com/photo-1768321914670-80db17b4669b?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
 const AFTER_IMG = "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?crop=entropy&cs=srgb&fm=jpg&q=80&w=800";
+const G = "https://static.prod-images.emergentagent.com/jobs/ba6ddcbb-e263-4cc5-8df9-494d3870944d/images/";
 // before/after images per trade (index of the raw select value)
 const TRADE_IMAGES = {
   "Techos / Roofing": { before: "https://images.unsplash.com/photo-1635424709845-3a85ad5e1f5e?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1635424824849-1b09bdcc55b1?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
@@ -36,6 +37,21 @@ const TRADE_IMAGES = {
   "Jardinería / Landscaping": { before: "https://images.unsplash.com/photo-1594498653385-d5172c532c00?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1624018171446-c4f0b942cf87?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
   "Limpieza / Cleaning": { before: "https://images.unsplash.com/photo-1649083048337-4aeb6dda80bb?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
   "Plomería / Plumbing": { before: "https://images.unsplash.com/photo-1714399417136-d328f3ea14c7?crop=entropy&cs=srgb&fm=jpg&q=80&w=800", after: "https://images.unsplash.com/photo-1542855368-ca6ea825bca2?crop=entropy&cs=srgb&fm=jpg&q=80&w=800" },
+  "HVAC / Aire acondicionado": { before: G + "646d6692f7aa2f0aca4aedb830af277011e7a3b01e517fe7dc150bd6cea867d4.jpeg", after: G + "2d9685832369ec679cae62f10b97962916de5a2ea9b1e21fc1dec9182e7e4661.jpeg" },
+  "Electricidad / Electrical": { before: G + "2fbf37d71ba17eb4996911e1bfe11322fd5ef85edeadf724f303df658ce837d3.jpeg", after: G + "f1dd38738e9ef7b13dc6233b3e30ea44941ce5ed91dcdf23ba106e2477e0697f.jpeg" },
+  "Pisos y Azulejo / Flooring & Tile": { before: G + "72be1488d914de32975f9edba4176950c0573ff4246a1d0293e3f812e8d9ecc7.jpeg", after: G + "8b3d2d6a751dff03b20f1560b31397df2e1df3048b997dbe27fda1050b990540.jpeg" },
+  "Cercas / Fencing": { before: G + "53b48a00a5590c061d6659ccbfac15c7b3849e0d4ca5354732da6a6f57f58918.jpeg", after: G + "d812f7b14c33a2f608f3d6ed145e01044f1a55a4449bf6c741188c9bd9ddd2fd.jpeg" },
+  "Handyman / Reparaciones": { before: G + "157208b3711e26642e1ac1c17c660cd537717004b1f1a287f9cc2c47e0785fa0.jpeg", after: G + "1ab736b5ba4d429c2fa2ed4c98da5bb06004b08953d2d544b95d368f5bb59ab4.jpeg" },
+  "Lavado a presión / Pressure Washing": { before: G + "32d34621c5aa2577bfb1ff3549972993e664c810975bb126b1e2a87832ed0f2a.jpeg", after: G + "bda20209adfb2ca230ce0519433cd1c5d24bc59120bf7b49666a1c2c1c11c9aa.jpeg" },
+  "Remodelación / Remodeling": { before: G + "fe6e354101b3142a9de6340bfd2237b0b59f733e40a3edfd1a86a57799ca24af.jpeg", after: G + "2f1392083c97ae1a1bab66cbf240a1362e53d5962231c8499b949210038885c8.jpeg" },
+  "Mudanzas / Moving": { before: G + "43a7c2884e31916d9bc72421ac2b1859fd6cd8e0ac8511938b39cefdceaa79a8.jpeg", after: G + "997d98c6ea68045c730352835782817d744556e9a9cb0f5c1c6404ca8881f317.jpeg" },
+  "Acarreo de basura / Junk Removal": { before: G + "389d7f22cdf9699b3e6c7e25f280e94ec4372cfb505a8d468a4dbad645e0a5ce.jpeg", after: G + "44a9818d23963e73b8e5e816cf2a1f01a289b68fb76e0e17c4970b7c2369ed98.jpeg" },
+  "Árboles y poda / Tree Service": { before: G + "e6bb3d92135f77f3306111f1b2d57e1298540aadbff0d1d770efd73204f285b8.jpeg", after: G + "72d08e63b40d6e6482f2be93ce2447010d996451f7130be92d3e9fe204f7ea44.jpeg" },
+  "Albañilería y Stucco / Masonry": { before: G + "07b3a6c04999d66105368f852ebccd99a9a49122220e740c4ff37d2adb1e4a93.jpeg", after: G + "8f30a235ab62a262ce0ca2bd9ee55f78c77162cdb020a6a65142b866a4e987de.jpeg" },
+  "Control de plagas / Pest Control": { before: G + "113542a70319a0d1ffb5208782d46fcfc4ac7e97018b1da2d3839f53f5086048.jpeg", after: G + "a388bbf1aeb399a682a059f6e23087f7b161069d693a174b11fc12aaf52ede86.jpeg" },
+  "Ventanas y Puertas / Windows & Doors": { before: G + "7c169be1cfd571b40ba802cc08e6f5f4af165ef025c64fa5cac7c9f7a0910cc5.jpeg", after: G + "8df0e6828e0d0f0046e6834abf49aa0d8ad84cc0368fd687e1e2231d3850c3f4.jpeg" },
+  "Canaletas / Gutters": { before: G + "5e17f72ed6490056ff13783c6be1c655192eb04d1a92a023259be5b92b12c16f.jpeg", after: G + "5ee569d8f2c3446fe70622ce8f0292e6c7687456e3cb868c9b588879c68e30fc.jpeg" },
+  "Detallado de autos / Auto Detailing": { before: G + "d6acb5acd83a56290b74afadd561e991acd7232b5bb3a8295ed2c525033ed7a9.jpeg", after: G + "c4165160ec3cb0e2f19611b60bf7721fbf30c5ac99e492ad17ed53369a54730a.jpeg" },
 };
 const tradeImages = (trade) => TRADE_IMAGES[trade] || { before: BEFORE_IMG, after: AFTER_IMG };
 // Visual entry-channel images for Step 1 (how the client finds you)
