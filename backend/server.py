@@ -4867,6 +4867,91 @@ async def admin_demo_leads(_admin: dict = Depends(_require_super_admin)):
     return {"leads": leads}
 
 
+class DemoLeadUpdate(BaseModel):
+    status: Optional[str] = None  # new | potential | contacted | customer | dismissed
+    notes: Optional[str] = None
+
+
+class DemoLeadBulkDelete(BaseModel):
+    ids: List[str]
+
+
+@api_router.put("/admin/demo-leads/{lead_id}")
+async def admin_update_demo_lead(lead_id: str, payload: DemoLeadUpdate,
+                                 _admin: dict = Depends(_require_super_admin)):
+    """Update a demo lead's follow-up status / internal notes."""
+    patch = {}
+    if payload.status is not None:
+        if payload.status not in ("new", "potential", "contacted", "customer", "dismissed"):
+            raise HTTPException(400, "Invalid status")
+        patch["status"] = payload.status
+    if payload.notes is not None:
+        patch["notes"] = payload.notes[:2000]
+    if not patch:
+        raise HTTPException(400, "Nothing to update")
+    r = await db.demo_leads.update_one({"id": lead_id}, {"$set": patch})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Lead not found")
+    lead = await db.demo_leads.find_one({"id": lead_id}, {"_id": 0})
+    return {"lead": lead}
+
+
+@api_router.delete("/admin/demo-leads/{lead_id}")
+async def admin_delete_demo_lead(lead_id: str, _admin: dict = Depends(_require_super_admin)):
+    """Delete a single demo lead (e.g. the owner's own test runs)."""
+    await db.demo_leads.delete_one({"id": lead_id})
+    return {"ok": True}
+
+
+@api_router.post("/admin/demo-leads/bulk-delete")
+async def admin_bulk_delete_demo_leads(payload: DemoLeadBulkDelete,
+                                       _admin: dict = Depends(_require_super_admin)):
+    """Delete several demo leads at once (manual multi-select cleanup)."""
+    ids = [i for i in (payload.ids or []) if i]
+    if not ids:
+        return {"deleted": 0}
+    r = await db.demo_leads.delete_many({"id": {"$in": ids}})
+    return {"deleted": r.deleted_count}
+
+
+@api_router.post("/admin/demo-leads/{lead_id}/to-client")
+async def admin_demo_lead_to_client(lead_id: str, _admin: dict = Depends(_require_super_admin)):
+    """Turn a demo visitor into a real client in the admin's own CRM so they can
+    be quoted/invoiced. Idempotent-ish: reuses an existing client with the same
+    email under this account instead of duplicating."""
+    lead = await db.demo_leads.find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    email = (lead.get("email") or "").strip().lower()
+    existing = None
+    if email:
+        existing = await db.clients.find_one(
+            {"user_id": _admin["id"], "email": email}, {"_id": 0}
+        )
+    if existing:
+        client_id = existing["id"]
+    else:
+        doc = {
+            "id": _new_id(),
+            "user_id": _admin["id"],
+            "name": lead.get("name") or "(sin nombre)",
+            "company": "",
+            "phone": lead.get("phone") or "",
+            "email": lead.get("email") or "",
+            "address": "",
+            "job_type": lead.get("trade") or "",
+            "notes": "Vino del demo en vivo de UniTech.",
+            "created_at": _now_iso(),
+        }
+        await db.clients.insert_one(doc)
+        client_id = doc["id"]
+    await db.demo_leads.update_one(
+        {"id": lead_id}, {"$set": {"status": "customer", "client_id": client_id}}
+    )
+    lead = await db.demo_leads.find_one({"id": lead_id}, {"_id": 0})
+    return {"ok": True, "client_id": client_id, "reused": bool(existing), "lead": lead}
+
+
 # ============================================================================
 # FIRST-PARTY DEMO ANALYTICS — our own funnel tracking for /demo-flujo so we
 # can see step-by-step behavior, drop-off and WhatsApp/checkout intent WITHOUT

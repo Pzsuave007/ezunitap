@@ -280,6 +280,11 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - También quedó conectado el tracking de WhatsApp y checkout que faltaba para Meta (`WhatsAppButton`/`WhatsAppFab` aceptan `onClick`).
 - Verificado: curl end-to-end (5 eventos → funnel/totals correctos, WA click contado) + screenshot del panel admin renderizando bien. Datos de prueba limpiados.
 
+## ✅ Jul 2026 — Leads del Demo: centro de acción (limpieza + convertir a cliente) [LISTO; curl e2e + screenshot]
+- **Backend** (`server.py`): `PUT /api/admin/demo-leads/{id}` (status new|potential|contacted|customer|dismissed + notas), `DELETE /api/admin/demo-leads/{id}`, `POST /api/admin/demo-leads/bulk-delete` (ids[]), `POST /api/admin/demo-leads/{id}/to-client` (crea/reusa cliente en el CRM del super-admin con nota "Vino del demo").
+- **Frontend** (`AdminLeads.js`, pestaña "Demo en vivo"): buscador (nombre/email/tel/oficio) para hallar pruebas propias, filtros (Todos/🔥Completaron/⭐Potenciales/En mi CRM/Descartados), resumen de "más calientes", selección múltiple + "Borrar seleccionados", y por tarjeta: WhatsApp/Email directos, Agregar a mi CRM, Potencial, Contactado, Descartar, Notas, borrar individual.
+- Verificado: curl (crear lead → potential → to-client → reuse → bulk-delete OK; cliente creado y limpiado) + screenshot del panel renderizando bien.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
