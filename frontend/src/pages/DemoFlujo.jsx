@@ -633,7 +633,7 @@ function SocialDesign({ business, imgs, t }) {
     <div data-testid="flujo-social">
       {/* The generated post — real system template */}
       <div className="mx-auto max-w-[300px] rounded-2xl overflow-hidden shadow-xl bg-white border border-slate-200">
-        <img src="/social-previews/before_after.jpg" alt="Post generado" className="w-full aspect-square object-cover" />
+        <img src={imgs.after} alt="Post generado" className="w-full aspect-square object-cover" />
         <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center flex-none"><Hammer className="w-5 h-5 text-white" /></div>
           <div className="min-w-0">
