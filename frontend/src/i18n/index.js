@@ -21,7 +21,8 @@ i18n
     nonExplicitSupportedLngs: true,
     interpolation: { escapeValue: false },
     detection: {
-      order: ["localStorage", "navigator"],
+      order: ["querystring", "localStorage", "navigator"],
+      lookupQuerystring: "lang",
       lookupLocalStorage: "unitech_lang",
       caches: ["localStorage"],
     },
