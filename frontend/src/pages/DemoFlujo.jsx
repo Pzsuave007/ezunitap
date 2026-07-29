@@ -46,7 +46,13 @@ const CH_CHAT_IMG = "/chatbot-demo.webp";
 const CH_GOOGLE_IMG = "https://static.prod-images.emergentagent.com/jobs/ba6ddcbb-e263-4cc5-8df9-494d3870944d/images/c4889fdcb0d017f1c4db6f463c748f95c722f2b92c6b570cfc3892987b95088b.jpeg";
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
-  "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
+  "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing",
+  "HVAC / Aire acondicionado", "Electricidad / Electrical", "Pisos y Azulejo / Flooring & Tile",
+  "Cercas / Fencing", "Handyman / Reparaciones", "Lavado a presión / Pressure Washing",
+  "Remodelación / Remodeling", "Mudanzas / Moving", "Acarreo de basura / Junk Removal",
+  "Árboles y poda / Tree Service", "Albañilería y Stucco / Masonry", "Control de plagas / Pest Control",
+  "Ventanas y Puertas / Windows & Doors", "Canaletas / Gutters", "Detallado de autos / Auto Detailing",
+  "Otro",
 ];
 
 // The client's own request message (also pre-fills the quote description in
@@ -61,6 +67,21 @@ function clientRequestText(trade, t) {
   else if (s.includes("landscap") || s.includes("jardin")) key = "reqLandscaping";
   else if (s.includes("clean") || s.includes("limpieza")) key = "reqCleaning";
   else if (s.includes("plumb") || s.includes("plom")) key = "reqPlumbing";
+  else if (s.includes("hvac") || s.includes("aire")) key = "reqHvac";
+  else if (s.includes("electr")) key = "reqElectrical";
+  else if (s.includes("floor") || s.includes("tile") || s.includes("piso") || s.includes("azulejo")) key = "reqFlooring";
+  else if (s.includes("fenc") || s.includes("cerca")) key = "reqFencing";
+  else if (s.includes("handyman") || s.includes("reparacion")) key = "reqHandyman";
+  else if (s.includes("pressure") || s.includes("lavado")) key = "reqPressure";
+  else if (s.includes("remodel")) key = "reqRemodeling";
+  else if (s.includes("moving") || s.includes("mudanza")) key = "reqMoving";
+  else if (s.includes("junk") || s.includes("acarreo") || s.includes("basura")) key = "reqJunk";
+  else if (s.includes("tree") || s.includes("arbol") || s.includes("árbol") || s.includes("poda")) key = "reqTree";
+  else if (s.includes("mason") || s.includes("stucco") || s.includes("albañil") || s.includes("albanil")) key = "reqMasonry";
+  else if (s.includes("pest") || s.includes("plaga")) key = "reqPest";
+  else if (s.includes("window") || s.includes("ventana") || s.includes("door") || s.includes("puerta")) key = "reqWindows";
+  else if (s.includes("gutter") || s.includes("canaleta")) key = "reqGutters";
+  else if (s.includes("detail") || s.includes("detallado")) key = "reqAuto";
   return t(`demoFlujo.${key}`);
 }
 

@@ -1960,7 +1960,22 @@
     "reqLandscaping": "Hi, I need my front yard redone: remove the old grass (about 500 sq ft), install new sod, add a sprinkler zone and fresh mulch in the beds. Can you give me a price?",
     "reqCleaning": "Hi, I need a deep clean of a 3-bedroom, 2-bathroom house, including the kitchen and interior windows. How much would it be?",
     "reqPlumbing": "Hi, I have a leak under my kitchen sink and my water heater is not heating well. I would like an estimate to inspect and repair.",
-    "reqGeneric": "Hi, I need help with a project at my house. I can share the details and would like to get a price as soon as possible."
+    "reqGeneric": "Hi, I need help with a project at my house. I can share the details and would like to get a price as soon as possible.",
+    "reqHvac": "Hi, my A/C isn't cooling well and makes a strange noise. It's a 3-bedroom house. I'd like a price to inspect and repair it, or a quote for a new unit.",
+    "reqElectrical": "Hi, I need 6 recessed lights installed in the living room, an old electrical panel replaced, and 2 outlets added in the kitchen. Can you give me a price?",
+    "reqFlooring": "Hi, I want to replace the living room and hallway floor (about 600 sq ft) with laminate, and install new tile in the bathroom. How much with installation?",
+    "reqFencing": "Hi, I need a wood fence about 120 ft around my backyard, with one gate. Can you quote materials and installation?",
+    "reqHandyman": "Hi, I have several small repairs: mount a TV, fix a door that won’t close, replace a faucet, and patch some holes in the wall. Price for everything?",
+    "reqPressure": "Hi, I need pressure washing for my driveway, sidewalk and the exterior walls of the house. It’s pretty dirty. How much would it be?",
+    "reqRemodeling": "Hi, I want to remodel my kitchen: new cabinets, countertop, backsplash and installation. Also update the master bathroom. Can I get an estimate?",
+    "reqMoving": "Hi, I need to move from a 2-bedroom house about 15 miles away, including large furniture and around 30 boxes. How much do you charge?",
+    "reqJunk": "Hi, I need old junk and furniture hauled away from my garage and yard (a couch, a fridge and several bags). Can you give me a price?",
+    "reqTree": "Hi, I have a large tree in the backyard that needs trimming, and an old stump removed. Also some branches cleaned up. How much would it be?",
+    "reqMasonry": "Hi, I need to repair a cracked brick wall and apply new stucco on part of the exterior of the house. Can you give me a quote?",
+    "reqPest": "Hi, I have an ant and roach problem in the kitchen, and I think there are mice in the garage. I’d like a full treatment. Price?",
+    "reqWindows": "Hi, I want to replace 5 old windows with new double-pane ones and change the front door. Can I get an estimate with installation?",
+    "reqGutters": "Hi, I need new gutters installed around the whole house and the existing ones cleaned. How much for materials and installation?",
+    "reqAuto": "Hi, I want a full detail on my truck: wash, wax, interior vacuum and seat cleaning. Can you come to my house? Price?"
   },
   "whatsapp": {
     "cta": "Message me on WhatsApp",

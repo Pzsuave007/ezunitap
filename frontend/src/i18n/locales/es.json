@@ -1960,7 +1960,22 @@
     "reqLandscaping": "Hola, necesito arreglar el jardín del frente: quitar el pasto viejo (como 500 pies²), poner césped nuevo, agregar una zona de riego y mulch fresco en las jardineras. ¿Me dan un precio?",
     "reqCleaning": "Hola, necesito limpieza profunda de una casa de 3 recámaras y 2 baños, incluyendo cocina y ventanas por dentro. ¿Cuánto sería?",
     "reqPlumbing": "Hola, tengo una fuga debajo del fregadero de la cocina y el calentador de agua no calienta bien. Quisiera un estimado para revisar y reparar.",
-    "reqGeneric": "Hola, necesito ayuda con un proyecto en mi casa. Le doy los detalles y me gustaría recibir un precio lo antes posible."
+    "reqGeneric": "Hola, necesito ayuda con un proyecto en mi casa. Le doy los detalles y me gustaría recibir un precio lo antes posible.",
+    "reqHvac": "Hola, mi aire acondicionado no está enfriando bien y hace ruido raro. Es una casa de 3 recámaras. Quisiera un precio para revisarlo y repararlo, o cotizar una unidad nueva.",
+    "reqElectrical": "Hola, necesito instalar 6 focos empotrados en la sala, cambiar el panel eléctrico viejo y agregar 2 tomacorrientes en la cocina. ¿Me pueden dar un precio?",
+    "reqFlooring": "Hola, quiero cambiar el piso de la sala y el pasillo (como 600 pies²) por piso laminado, y poner azulejo nuevo en el baño. ¿Cuánto me costaría con instalación?",
+    "reqFencing": "Hola, necesito instalar una cerca de madera de unos 120 pies alrededor del patio trasero, con una puerta. ¿Me pueden cotizar material e instalación?",
+    "reqHandyman": "Hola, tengo varias reparaciones pequeñas: montar una TV, arreglar una puerta que no cierra, cambiar un grifo y resanar unos hoyos en la pared. ¿Precio por todo?",
+    "reqPressure": "Hola, necesito lavado a presión de la entrada de la cochera, la banqueta y las paredes exteriores de la casa. Está bastante sucio. ¿Cuánto sería?",
+    "reqRemodeling": "Hola, quiero remodelar mi cocina: gabinetes nuevos, cubierta (countertop), backsplash e instalación. También actualizar el baño principal. ¿Me dan un estimado?",
+    "reqMoving": "Hola, necesito mudanza de una casa de 2 recámaras a 15 millas de distancia, incluye muebles grandes y unas 30 cajas. ¿Cuánto cobran?",
+    "reqJunk": "Hola, necesito que me retiren basura y muebles viejos del garaje y el patio (un sofá, un refri y varias bolsas). ¿Me pueden dar un precio?",
+    "reqTree": "Hola, tengo un árbol grande en el patio trasero que necesito podar, y quitar un tronco viejo. También limpiar unas ramas. ¿Cuánto sería?",
+    "reqMasonry": "Hola, necesito reparar una pared de ladrillo agrietada y aplicar stucco nuevo en una parte del exterior de la casa. ¿Me pueden cotizar?",
+    "reqPest": "Hola, tengo problema con hormigas y cucarachas en la cocina, y creo que hay ratones en el garaje. Quisiera un tratamiento completo. ¿Precio?",
+    "reqWindows": "Hola, quiero reemplazar 5 ventanas viejas por unas nuevas de doble panel y cambiar la puerta principal. ¿Me dan un estimado con instalación?",
+    "reqGutters": "Hola, necesito instalar canaletas nuevas alrededor de toda la casa y limpiar las que tengo. ¿Cuánto me costaría material e instalación?",
+    "reqAuto": "Hola, quiero un detallado completo de mi camioneta: lavado, encerado, aspirado por dentro y limpieza de asientos. ¿Pueden venir a mi casa? ¿Precio?"
   },
   "whatsapp": {
     "cta": "Escríbeme por WhatsApp",
