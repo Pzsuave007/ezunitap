@@ -96,7 +96,8 @@
         "presencia_marketing": "Presence + Marketing",
         "negocio_marketing": "Business + Marketing",
         "bundle": "All of UniTech (Bundle)",
-        "bundle_founder": "Founder Bundle — $59/mo for life"
+        "bundle_founder": "Founder Bundle — $59/mo for life",
+        "negocio_founder": "Business Founder — $29/mo for life"
       }
     }
   },
@@ -1560,7 +1561,13 @@
     "finalDesc": "Quote, contract and payment — all in minutes. Create your account and try it free for 14 days — cancel anytime — and start getting paid like a pro.",
     "finalCta": "Create your free account",
     "demoSignHint": "This is a demo: signing just moves you to the next step. It's not a real contract.",
-    "demoPayHint": "Don't worry — this is a demo, you won't be charged. Tap “Pay” just to see how your client pays you and continue the demo."
+    "demoPayHint": "Don't worry — this is a demo, you won't be charged. Tap “Pay” just to see how your client pays you and continue the demo.",
+    "payMethodsBanner": "Get paid your way: card, Venmo, Zelle, Cash App & PayPal 💸",
+    "acceptsLabel": "Accepts payments with:",
+    "card": "Card",
+    "founderTitle": "Founder price: $29/mo for life 🔒",
+    "founderRemaining": "Only {{n}} of 100 spots left — grab it today and keep it for life",
+    "founderCta": "Lock in my founder price ($29/mo)"
   },
   "demoAll": {
     "leadTitle": "See what UniTech can do for your business",

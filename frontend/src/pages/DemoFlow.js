@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
-  MessageCircle, Smartphone,
+  MessageCircle, Smartphone, Wallet,
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
@@ -580,6 +580,12 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
             <div className="flex justify-between font-bold pt-2 border-t mt-2"><span>Balance</span><span>{fmtMoney(total - deposit)}</span></div>
           </div>
 
+          {/* Prominent payment-methods banner — the real product supports all of these */}
+          <div data-testid="demo-pay-methods-banner" className="flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-blue-700 text-white px-4 py-3">
+            <Wallet className="w-5 h-5 flex-none" />
+            <span className="text-sm font-semibold leading-tight">{t("demoFlow.payMethodsBanner")}</span>
+          </div>
+
           {paid ? (
             <div data-testid="demo-paid-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-6 text-center space-y-2">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
@@ -596,11 +602,15 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
               <Button data-testid="demo-pay-btn" onClick={onPay} className="w-full h-auto py-3.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold leading-tight">
                 <CreditCard className="w-5 h-5 mr-2 flex-none" /> Pay {fmtMoney(due)}
               </Button>
-              <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500">
-                <Lock className="w-3.5 h-3.5" /> {t("demoFlow.orPayWith")}
-                {["Venmo", "Zelle", "CashApp", "PayPal"].map((m) => (
-                  <span key={m} className="px-2 py-0.5 rounded-full bg-white border border-slate-200">{m}</span>
-                ))}
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2">
+                  <Lock className="w-3.5 h-3.5" /> {t("demoFlow.acceptsLabel")}
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[t("demoFlow.card"), "Venmo", "Zelle", "Cash App", "PayPal"].map((m) => (
+                    <span key={m} className="px-2.5 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">{m}</span>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -684,10 +694,13 @@ function PdfActions({ onDownload, downloading }) {
 
 function FinalCTA() {
   const { t } = useTranslation();
-  // The short demo ONLY shows the invoicing/CRM system, so we honestly offer
-  // just the "Negocio" plan ($39.99/mo) — not the full bundle. Card upfront,
-  // $0 today, 14-day trial (checkout kicks in from /register?plan=negocio).
-  const to = "/register?plan=negocio";
+  const [founder, setFounder] = useState(null);
+  useEffect(() => {
+    // Negocio Founder offer: $29/mo for life, first 100. Falls back to $39.99.
+    axios.get(`${API}/payments/negocio-founder-status`).then((r) => setFounder(r.data)).catch(() => {});
+  }, []);
+  const founderOn = founder?.available;
+  const to = founderOn ? "/register?plan=negocio_founder" : "/register?plan=negocio";
   return (
     <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
       <PartyPopper className="w-10 h-10 mx-auto mb-3" />
@@ -695,13 +708,23 @@ function FinalCTA() {
       <p className="text-white/85 mt-2 max-w-md mx-auto">
         {t("demoFlow.finalDesc")}
       </p>
+
+      {founderOn && (
+        <div data-testid="demo-founder-offer" className="mt-5 mx-auto max-w-md rounded-2xl bg-amber-400 text-blue-950 px-5 py-4 shadow-lg">
+          <div className="font-heading font-extrabold text-lg leading-tight">{t("demoFlow.founderTitle")}</div>
+          <div className="text-sm font-semibold mt-1">
+            {t("demoFlow.founderRemaining", { n: founder.remaining })}
+          </div>
+        </div>
+      )}
+
       <Link
         data-testid="demo-final-cta"
         to={to}
-        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto" })}
+        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
         className="inline-flex items-center gap-2 mt-5 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100"
       >
-        {t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
+        {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
       </Link>
       <div className="mt-5">
         <p className="text-sm text-white/80 mb-2">{t("whatsapp.demoPrompt")}</p>

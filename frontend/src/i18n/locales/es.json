@@ -96,7 +96,8 @@
         "presencia_marketing": "Presencia + Marketing",
         "negocio_marketing": "Negocio + Marketing",
         "bundle": "Todo UniTech (Bundle)",
-        "bundle_founder": "Bundle Fundador — $59/mes de por vida"
+        "bundle_founder": "Bundle Fundador — $59/mes de por vida",
+        "negocio_founder": "Negocio Fundador — $29/mes de por vida"
       }
     }
   },
@@ -1560,7 +1561,13 @@
     "finalDesc": "Cotización, contrato y cobro — todo en español, en minutos. Crea tu cuenta y prueba gratis 14 días — cancela cuando quieras — y empieza a cobrar como un profesional.",
     "finalCta": "Crear mi cuenta gratis",
     "demoSignHint": "Es una demostración: al firmar solo avanzas al siguiente paso. No es un contrato real.",
-    "demoPayHint": "Tranquilo, es una demostración — NO se te cobra nada. Toca “Pay” solo para ver cómo tu cliente te paga y seguir con el demo."
+    "demoPayHint": "Tranquilo, es una demostración — NO se te cobra nada. Toca “Pay” solo para ver cómo tu cliente te paga y seguir con el demo.",
+    "payMethodsBanner": "Cobra como tú quieras: tarjeta, Venmo, Zelle, Cash App y PayPal 💸",
+    "acceptsLabel": "Acepta pagos con:",
+    "card": "Tarjeta",
+    "founderTitle": "Precio Fundador: $29/mes de por vida 🔒",
+    "founderRemaining": "Solo quedan {{n}} de 100 lugares — apártalo hoy y consérvalo de por vida",
+    "founderCta": "Apartar mi precio fundador ($29/mes)"
   },
   "demoAll": {
     "leadTitle": "Mira lo que UniTech puede hacer por tu negocio",

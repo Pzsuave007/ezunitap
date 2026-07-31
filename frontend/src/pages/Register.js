@@ -50,8 +50,8 @@ export default function Register() {
         // dropped the user on the Dashboard without collecting a card.
         const billingParam = params.get("billing") === "year" ? "year" : "month";
         const planId =
-          planParam === "bundle_founder"
-            ? "bundle_founder"
+          planParam.endsWith("_founder")
+            ? planParam
             : `${planParam}_${billingParam === "year" ? "yearly" : "monthly"}`;
         try {
           const { data } = await api.post("/payments/checkout", {

@@ -170,6 +170,48 @@ async def founder_status(db) -> dict:
     }
 
 
+# --- Negocio Founder: invoicing/CRM plan at $29/mo, locked for life, first 100 ---
+# For the invoice-focused campaign: honest offer for just what the short demo shows.
+NEGOCIO_FOUNDER_PLAN_ID = "negocio_founder"
+NEGOCIO_FOUNDER_LIMIT = 100
+NEGOCIO_FOUNDER_MONTHLY_CENTS = 2900
+PLANS[NEGOCIO_FOUNDER_PLAN_ID] = {
+    "id": NEGOCIO_FOUNDER_PLAN_ID,
+    "base": "negocio",
+    "name": "Negocio Fundador",
+    "description": MODULES["negocio"]["tagline"],
+    "features": MODULES["negocio"]["features"],
+    "amount_cents": NEGOCIO_FOUNDER_MONTHLY_CENTS,
+    "currency": "usd",
+    "interval": "month",
+    "interval_count": 1,
+    "display_price": f"${NEGOCIO_FOUNDER_MONTHLY_CENTS / 100:.2f}",
+    "display_period": "/mes",
+    "is_bundle": False,
+    "is_combo": False,
+    "ships_card": MODULES["negocio"]["ships_card"],
+    "trial_period_days": 14,
+    "founder": True,
+}
+
+
+async def negocio_founder_status(db) -> dict:
+    """How many Negocio Founder spots are left (invoicing plan, first 100, lifetime)."""
+    taken = await db.users.count_documents({
+        "plan_type": NEGOCIO_FOUNDER_PLAN_ID,
+        "subscription_status": {"$in": ["active", "trialing", "past_due"]},
+    })
+    remaining = max(0, NEGOCIO_FOUNDER_LIMIT - taken)
+    return {
+        "available": remaining > 0,
+        "remaining": remaining,
+        "limit": NEGOCIO_FOUNDER_LIMIT,
+        "plan_id": NEGOCIO_FOUNDER_PLAN_ID,
+        "amount_cents": NEGOCIO_FOUNDER_MONTHLY_CENTS,
+        "display_price": f"${NEGOCIO_FOUNDER_MONTHLY_CENTS / 100:.0f}",
+    }
+
+
 def plan_base(plan_type: Optional[str]) -> str:
     """`presencia_monthly` -> `presencia`. Legacy `pro_monthly` -> `pro`."""
     if not plan_type:

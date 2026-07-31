@@ -6785,6 +6785,12 @@ async def payments_founder_status():
     return await payments_service.founder_status(db)
 
 
+@api_router.get("/payments/negocio-founder-status")
+async def payments_negocio_founder_status():
+    """Public — Negocio founder offer (invoicing/CRM $29/mo, first 100, lifetime)."""
+    return await payments_service.negocio_founder_status(db)
+
+
 @api_router.post("/payments/checkout")
 async def payments_checkout(
     payload: CheckoutCreateIn,
