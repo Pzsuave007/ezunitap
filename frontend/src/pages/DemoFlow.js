@@ -229,7 +229,7 @@ function TopBar() {
           <span className="font-heading font-bold">UniTech</span>
           <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
-        <Link to="/register?plan=bundle" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
+        <Link to="/register?plan=negocio" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
           {t("demo.signupTop")}
         </Link>
       </div>
@@ -570,10 +570,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
       <PdfActions onDownload={downloadPdf} downloading={dl} />
 
       {paid && !hideFinalCta && (
-        <>
-          <SendToMeCTA phone={lead.phone} sample={t("demo.sampleQuote")} branch="demo-flow" />
-          <FinalCTA />
-        </>
+        <FinalCTA />
       )}
     </div>
   );
@@ -647,15 +644,10 @@ function PdfActions({ onDownload, downloading }) {
 
 function FinalCTA() {
   const { t } = useTranslation();
-  const [founder, setFounder] = useState(null);
-  useEffect(() => {
-    axios.get(`${API}/payments/founder-status`).then((r) => setFounder(r.data)).catch(() => {});
-  }, []);
-  // Include a plan so /register goes STRAIGHT to Stripe checkout (card upfront,
-  // $0 today, 14-day trial) instead of dropping the user on the dashboard.
-  const to = founder?.available
-    ? "/register?plan=bundle_founder&billing=month"
-    : "/register?plan=bundle";
+  // The short demo ONLY shows the invoicing/CRM system, so we honestly offer
+  // just the "Negocio" plan ($39.99/mo) — not the full bundle. Card upfront,
+  // $0 today, 14-day trial (checkout kicks in from /register?plan=negocio).
+  const to = "/register?plan=negocio";
   return (
     <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
       <PartyPopper className="w-10 h-10 mx-auto mb-3" />
