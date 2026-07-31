@@ -28,7 +28,13 @@ const fmtMoney = (n) =>
 
 const TRADES = [
   "Techos / Roofing", "Drywall", "Pintura / Painting", "Concreto / Concrete",
-  "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing", "Otro",
+  "Jardinería / Landscaping", "Limpieza / Cleaning", "Plomería / Plumbing",
+  "HVAC / Aire acondicionado", "Electricidad / Electrical", "Pisos y Azulejo / Flooring & Tile",
+  "Cercas / Fencing", "Handyman / Reparaciones", "Lavado a presión / Pressure Washing",
+  "Remodelación / Remodeling", "Mudanzas / Moving", "Acarreo de basura / Junk Removal",
+  "Árboles y poda / Tree Service", "Albañilería y Stucco / Masonry", "Control de plagas / Pest Control",
+  "Ventanas y Puertas / Windows & Doors", "Canaletas / Gutters", "Detallado de autos / Auto Detailing",
+  "Otro",
 ];
 
 // Localized display label for a trade (the stored value stays bilingual for lookups).
@@ -60,6 +66,37 @@ export const TRADE_LABELS = {
 export const tradeLabel = (val, lng) =>
   (TRADE_LABELS[val]?.[lng?.startsWith("es") ? "es" : "en"]) || val;
 
+// Auto-fills the job description based on the trade the user picked. Reuses the
+// same per-trade sample requests as /demo-flujo. The field stays fully editable
+// so the user can add or remove detail.
+export function jobRequestText(trade, t) {
+  const s = (trade || "").toLowerCase();
+  let key = "reqGeneric";
+  if (s.includes("roof") || s.includes("techo")) key = "reqRoofing";
+  else if (s.includes("drywall")) key = "reqDrywall";
+  else if (s.includes("paint") || s.includes("pintura")) key = "reqPainting";
+  else if (s.includes("concret")) key = "reqConcrete";
+  else if (s.includes("landscap") || s.includes("jardin")) key = "reqLandscaping";
+  else if (s.includes("clean") || s.includes("limpieza")) key = "reqCleaning";
+  else if (s.includes("plumb") || s.includes("plom")) key = "reqPlumbing";
+  else if (s.includes("hvac") || s.includes("aire")) key = "reqHvac";
+  else if (s.includes("electr")) key = "reqElectrical";
+  else if (s.includes("floor") || s.includes("tile") || s.includes("piso") || s.includes("azulejo")) key = "reqFlooring";
+  else if (s.includes("fenc") || s.includes("cerca")) key = "reqFencing";
+  else if (s.includes("handyman") || s.includes("reparacion")) key = "reqHandyman";
+  else if (s.includes("pressure") || s.includes("lavado")) key = "reqPressure";
+  else if (s.includes("remodel")) key = "reqRemodeling";
+  else if (s.includes("moving") || s.includes("mudanza")) key = "reqMoving";
+  else if (s.includes("junk") || s.includes("acarreo") || s.includes("basura")) key = "reqJunk";
+  else if (s.includes("tree") || s.includes("arbol") || s.includes("árbol") || s.includes("poda")) key = "reqTree";
+  else if (s.includes("mason") || s.includes("stucco") || s.includes("albañil") || s.includes("albanil")) key = "reqMasonry";
+  else if (s.includes("pest") || s.includes("plaga")) key = "reqPest";
+  else if (s.includes("window") || s.includes("ventana") || s.includes("door") || s.includes("puerta")) key = "reqWindows";
+  else if (s.includes("gutter") || s.includes("canaleta")) key = "reqGutters";
+  else if (s.includes("detail") || s.includes("detallado")) key = "reqAuto";
+  return t(`demoFlujo.${key}`);
+}
+
 const EXAMPLE_IDS = ["roof", "drywall", "paint"];
 
 export default function DemoFlow() {
@@ -86,6 +123,9 @@ export default function DemoFlow() {
   useEffect(() => {
     stepRef.current = step;
     track("step_view", { step, trade: lead.trade });
+    // Auto-fill the job description from the chosen trade when reaching the
+    // Describe step (editable — the user can add or remove detail).
+    if (step === 1 && !desc.trim()) setDesc(jobRequestText(lead.trade, t));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onHide = () => {
