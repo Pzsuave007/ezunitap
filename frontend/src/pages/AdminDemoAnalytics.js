@@ -37,11 +37,12 @@ export default function AdminDemoAnalytics() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  const [variant, setVariant] = useState("flujo");
 
-  const load = async () => {
+  const load = async (v = variant) => {
     setRefreshing(true);
     try {
-      const r = await api.get("/admin/demo-analytics");
+      const r = await api.get(`/admin/demo-analytics?demo=${v}`);
       setData(r.data);
     } catch (e) {
       if (e?.response?.status === 403) setForbidden(true);
@@ -52,7 +53,7 @@ export default function AdminDemoAnalytics() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(variant); }, [variant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (forbidden) {
     return (
@@ -81,6 +82,7 @@ export default function AdminDemoAnalytics() {
   const byTrade = data?.by_trade || [];
   const devices = data?.devices || {};
   const recent = data?.recent_sessions || [];
+  const vcounts = data?.variant_counts || {};
   const maxCount = Math.max(1, ...funnel.map((f) => f.count));
 
   return (
@@ -98,13 +100,32 @@ export default function AdminDemoAnalytics() {
           </p>
         </div>
         <button
-          onClick={load}
+          onClick={() => load(variant)}
           disabled={refreshing}
           data-testid="demo-analytics-refresh"
           className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /> Actualizar
         </button>
+      </div>
+
+      {/* Variant toggle: full demo vs short (invoice) demo — for A/B */}
+      <div className="inline-flex rounded-xl bg-slate-100 p-1" data-testid="demo-variant-toggle">
+        {[
+          { k: "flujo", label: "Demo completo" },
+          { k: "corto", label: "Demo corto (facturas)" },
+        ].map((v) => (
+          <button
+            key={v.k}
+            data-testid={`demo-variant-${v.k}`}
+            onClick={() => setVariant(v.k)}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+              variant === v.k ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {v.label} <span className={variant === v.k ? "text-slate-400" : "text-slate-400"}>({vcounts[v.k] ?? 0})</span>
+          </button>
+        ))}
       </div>
 
       {/* KPIs */}

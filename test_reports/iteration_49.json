@@ -1,0 +1,36 @@
+{
+  "summary": "Frontend E2E validation of the SHORT demo (/demo?lang=es) after applying the same enhancements the long demo already had. All 7 review items verified green: (1) Spanish step bar shows exactly 'Tus datos / El trabajo / Cotización / Contrato / Factura'; (2) full flow lead->describe->AI quote (~5-8s)->accept->AGREEMENT is INSTANT (measured 0.04s, no 'Preparing your agreement…' wait); (3) sign->INVOICE->pay->demo-paid-block appear; (4) FinalCTA points to /register?plan=bundle and demo-flow-final-whatsapp button exists; (5) whatsapp-fab visible throughout; (6) Register with plan=bundle redirects to real Stripe test checkout (cs_test_b1KNmDhd7r8bS9HRZW...); (7) /admin/demo shows demo-variant-toggle with both demo-variant-flujo & demo-variant-corto; switching to 'corto' shows the 5-step funnel with EXACT expected labels 'Vio el demo (datos) / Describió el trabajo / Cotización con IA / Contrato / Acuerdo / Factura + Pago'. After our E2E, corto KPIs correctly show +1 completed session (2 sesiones, 1 terminaron 100%, Techos/Roofing 100%).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_items": [
+    "/demo?lang=es fully in Spanish; step bar labels: Tus datos, El trabajo, Cotización, Contrato, Factura.",
+    "Lead form fields demo-name/email/phone/trade all fillable; demo-start-btn advances to describe step.",
+    "demo-example-roof populates textarea; demo-gen-quote-btn calls /api/public/demo/quote and returns AI quote (~5-10s) with line_items, subtotal $14,125.",
+    "demo-accept-quote-btn -> AGREEMENT rendered in 0.04s (instant, no AI wait). Document shows all clauses (Services Included/Excluded, Schedule, Pricing, Payment Terms, Cancellation, Warranty, Change Orders, Dispute Resolution).",
+    "demo-sign-btn -> INVOICE page; demo-pay-btn -> demo-paid-block ('¡Esto es un demo!'); FinalCTA card shows.",
+    "demo-final-cta href = '/register?plan=bundle' (founder-status not available for this session; otherwise plan=bundle_founder).",
+    "demo-flow-final-whatsapp button present next to final CTA.",
+    "whatsapp-fab '¿Dudas?' visible in bottom-right throughout the demo.",
+    "Register (plan=bundle): filled and submitted -> Frontend called /api/payments/checkout and window.location.assign redirected to https://checkout.stripe.com/c/pay/cs_test_...  (payment path is READY, upfront card, $0 today, 14-day trial).",
+    "Super-admin login (pzsuave007@gmail.com) works; /admin/demo loads.",
+    "demo-variant-toggle present with demo-variant-flujo (3 sessions) and demo-variant-corto (2 sessions) buttons.",
+    "Switching to 'Demo corto' shows funnel with the 5 EXACT expected labels and KPI cards; the session created in this test run appears as 'Techos / Roofing · 4 · Factura + Pago · TERMINÓ · desktop · 9s'."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "React key warning in console: 'Encountered two children with the same key d_ms6qoai1_1nqy3uv0' when rendering admin demo analytics — likely two demo_sessions rows with the same session_id across variants or duplicate rows on the recent sessions list. Non-blocking but should dedupe keys (e.g., key={`${variant}-${session_id}-${idx}`}).",
+    "DemoFlow's LeadStep validates only name+email; phone and trade are technically optional per code but the review request lists them as required inputs — consider marking phone/trade required with client-side validation to keep leads high-quality."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped by request)", "frontend": "100%"},
+  "test_credentials": "Super-admin pzsuave007@gmail.com / Uni2mkt007! confirmed working. Demo lead & register accounts created with qa_demo_<ts>@example.com / Test1234.",
+  "seed_data_creation": "Created 1 completed short-demo session (Techos/Roofing, email qa_demo_1785464875@example.com) + 1 new user registration qa_demo_reg_1785464962@example.com (redirected to Stripe test checkout, did NOT complete payment).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Short demo (/demo) + admin analytics 'corto' variant are fully green. Register->Stripe path uses cs_test_ sessions. Only minor cosmetic issue: duplicate-key React warning on /admin/demo funnel/recent-sessions render. Backend was intentionally not retested (main agent verified via curl)."
+}

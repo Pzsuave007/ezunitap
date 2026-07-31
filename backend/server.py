@@ -4970,6 +4970,17 @@ DEMO_STEP_LABELS = {
     9: "Reseña de Google",
     10: "Final · ¡Terminó el demo!",
 }
+DEMO_STEP_LABELS_CORTO = {
+    0: "Vio el demo (datos)",
+    1: "Describió el trabajo",
+    2: "Cotización con IA",
+    3: "Contrato / Acuerdo",
+    4: "Factura + Pago",
+}
+DEMO_VARIANTS = {
+    "flujo": {"labels": DEMO_STEP_LABELS, "max": 10},
+    "corto": {"labels": DEMO_STEP_LABELS_CORTO, "max": 4},
+}
 DEMO_MAX_STEP = 10
 
 
@@ -4980,6 +4991,7 @@ class DemoTrackIn(BaseModel):
     trade: Optional[str] = ""
     device: Optional[str] = ""
     ref: Optional[str] = ""
+    demo: Optional[str] = ""
     meta: Optional[dict] = None
 
 
@@ -4990,9 +5002,13 @@ async def demo_track(payload: DemoTrackIn, request: Request):
     event = (payload.event or "").strip()
     if not sid or not event:
         return {"ok": True}
+    demo = (payload.demo or "flujo").strip().lower()
+    if demo not in DEMO_VARIANTS:
+        demo = "flujo"
+    max_step = DEMO_VARIANTS[demo]["max"]
     step = payload.step if isinstance(payload.step, int) else None
     if step is not None:
-        step = max(0, min(DEMO_MAX_STEP, step))
+        step = max(0, min(max_step, step))
     trade = (payload.trade or "").strip()
     device = (payload.device or "").strip().lower()
     ref = (payload.ref or "").strip()
@@ -5008,13 +5024,14 @@ async def demo_track(payload: DemoTrackIn, request: Request):
         "trade": trade,
         "device": device,
         "ref": ref,
+        "demo": demo,
         "meta": payload.meta or {},
         "ip": ip,
         "created_at": now,
     })
 
     # Rolling per-session summary (the funnel is computed from this).
-    set_on_insert = {"session_id": sid, "first_seen": now}
+    set_on_insert = {"session_id": sid, "first_seen": now, "demo": demo}
     if device:
         set_on_insert["device"] = device
     if ref:
@@ -5025,7 +5042,7 @@ async def demo_track(payload: DemoTrackIn, request: Request):
     inc_fields = {"events": 1}
     if event == "demo_start":
         set_fields["started"] = True
-    if event == "demo_completed" or (step is not None and step >= DEMO_MAX_STEP):
+    if event == "demo_completed" or (step is not None and step >= max_step):
         set_fields["completed"] = True
     if event == "whatsapp_click":
         inc_fields["whatsapp_clicks"] = 1
@@ -5040,27 +5057,36 @@ async def demo_track(payload: DemoTrackIn, request: Request):
 
 
 @api_router.get("/admin/demo-analytics")
-async def admin_demo_analytics(_admin: dict = Depends(_require_super_admin)):
-    """Aggregate the demo funnel from per-session summaries (super-admin only)."""
-    sessions = await db.demo_sessions.find({}, {"_id": 0}).to_list(20000)
+async def admin_demo_analytics(demo: str = "flujo", _admin: dict = Depends(_require_super_admin)):
+    """Aggregate the demo funnel from per-session summaries (super-admin only).
+    `demo` selects the variant: 'flujo' (completo) or 'corto'."""
+    demo = (demo or "flujo").strip().lower()
+    if demo not in DEMO_VARIANTS:
+        demo = "flujo"
+    labels = DEMO_VARIANTS[demo]["labels"]
+    max_step = DEMO_VARIANTS[demo]["max"]
+
+    all_sessions = await db.demo_sessions.find({}, {"_id": 0}).to_list(20000)
+    # Sessions without an explicit demo tag are the original "flujo" demo.
+    sessions = [s for s in all_sessions if (s.get("demo") or "flujo") == demo]
 
     total = len(sessions)
     started = sum(1 for s in sessions if s.get("started") or (s.get("max_step") or 0) >= 1)
-    completed = sum(1 for s in sessions if s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP)
+    completed = sum(1 for s in sessions if s.get("completed") or (s.get("max_step") or 0) >= max_step)
     wa_clicks = sum(int(s.get("whatsapp_clicks") or 0) for s in sessions)
     co_clicks = sum(int(s.get("checkout_clicks") or 0) for s in sessions)
 
     # Funnel: how many sessions reached >= each step level.
     funnel = []
     prev = None
-    for lvl in range(0, DEMO_MAX_STEP + 1):
+    for lvl in range(0, max_step + 1):
         cnt = sum(1 for s in sessions if (s.get("max_step") or 0) >= lvl)
         drop = None
         if prev is not None and prev > 0:
             drop = round((1 - (cnt / prev)) * 100, 1)
         funnel.append({
             "step": lvl,
-            "label": DEMO_STEP_LABELS.get(lvl, f"Paso {lvl}"),
+            "label": labels.get(lvl, f"Paso {lvl}"),
             "count": cnt,
             "drop_from_prev": drop,
         })
@@ -5072,7 +5098,7 @@ async def admin_demo_analytics(_admin: dict = Depends(_require_super_admin)):
         tr = (s.get("trade") or "—").strip() or "—"
         d = by_trade.setdefault(tr, {"trade": tr, "sessions": 0, "completed": 0})
         d["sessions"] += 1
-        if s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP:
+        if s.get("completed") or (s.get("max_step") or 0) >= max_step:
             d["completed"] += 1
     by_trade_list = sorted(by_trade.values(), key=lambda x: x["sessions"], reverse=True)
 
@@ -5095,9 +5121,9 @@ async def admin_demo_analytics(_admin: dict = Depends(_require_super_admin)):
         "trade": s.get("trade") or "—",
         "device": s.get("device") or "—",
         "max_step": s.get("max_step") or 0,
-        "max_step_label": DEMO_STEP_LABELS.get(s.get("max_step") or 0, ""),
+        "max_step_label": labels.get(s.get("max_step") or 0, ""),
         "started": bool(s.get("started")),
-        "completed": bool(s.get("completed") or (s.get("max_step") or 0) >= DEMO_MAX_STEP),
+        "completed": bool(s.get("completed") or (s.get("max_step") or 0) >= max_step),
         "whatsapp_clicks": int(s.get("whatsapp_clicks") or 0),
         "checkout_clicks": int(s.get("checkout_clicks") or 0),
         "first_seen": s.get("first_seen"),
@@ -5105,7 +5131,15 @@ async def admin_demo_analytics(_admin: dict = Depends(_require_super_admin)):
         "duration_sec": _dur(s),
     } for s in recent]
 
+    # Quick counts per variant so the UI can show both tabs with numbers.
+    variant_counts = {
+        v: sum(1 for s in all_sessions if (s.get("demo") or "flujo") == v)
+        for v in DEMO_VARIANTS
+    }
+
     return {
+        "demo": demo,
+        "variant_counts": variant_counts,
         "totals": {
             "sessions": total,
             "started": started,

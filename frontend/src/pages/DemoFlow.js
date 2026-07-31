@@ -4,7 +4,7 @@
  *   sign AI Service Agreement (EN) -> invoice with payment links (simulated).
  * Designed to be shared so prospects "feel" the product before signing up.
  */
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
+import { trackDemo } from "@/lib/demoAnalytics";
+import { WhatsAppFab, WhatsAppButton } from "@/components/WhatsAppButton";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) =>
@@ -76,6 +78,48 @@ export default function DemoFlow() {
 
   const apiErr = (e, fallback) => setErr(e?.response?.data?.detail || fallback);
 
+  // First-party funnel tracking (tagged "corto" so it's separate from the full demo).
+  const track = (event, data = {}) => trackDemo(event, { ...data, demo: "corto" });
+  const stepRef = useRef(step);
+  const tradeRef = useRef(lead.trade);
+  useEffect(() => { tradeRef.current = lead.trade; }, [lead.trade]);
+  useEffect(() => {
+    stepRef.current = step;
+    track("step_view", { step, trade: lead.trade });
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") track("leave", { step: stepRef.current, trade: tradeRef.current });
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Instant Service Agreement (no AI wait) — mirrors /demo-flujo. The real
+  // account uses the full AI generator; here it only needs to look pro.
+  const buildDemoAgreement = () => {
+    const biz = business?.business_name || "Demo Contractors";
+    const clientName = lead.name || "Client";
+    const totalNum = Number(quote?.total || 0);
+    const depNum = Number(quote?.deposit_amount || totalNum * 0.5);
+    const balance = Math.max(totalNum - depNum, 0);
+    const scope = (quote?.scope_of_work || []).join("; ") || quote?.description || desc;
+    return {
+      title: `Service Agreement — ${quote?.job_title || ""}`,
+      preamble: `This Service Agreement ("Agreement") is entered into between ${biz} ("Contractor") and ${clientName} ("Client") and becomes effective on the date signed by both parties.`,
+      services_included: scope,
+      services_excluded: "Any work, materials, or permits not expressly listed above are excluded and, if requested, will be quoted separately as a Change Order.",
+      schedule: "Work will begin on a mutually agreed date and proceed continuously, weather and site conditions permitting, until completion.",
+      pricing: `Total price: ${fmtMoney(totalNum)}, covering all labor and materials described in the Services Included section.`,
+      payment_terms: `A deposit of ${fmtMoney(depNum)} is due upon signing to reserve the schedule and cover initial materials. The remaining balance of ${fmtMoney(balance)} is due upon completion of the work.`,
+      cancellation_policy: "Either party may cancel with written notice. If the Client cancels after work or material purchase has begun, the Contractor may retain amounts covering costs incurred to date.",
+      client_responsibilities: "The Client will provide safe access to the work area, keep it reasonably clear, and ensure utilities are available as needed for the Contractor to perform the work.",
+      warranty: "The Contractor warrants workmanship for 12 months from completion. Manufacturer warranties on materials are passed through to the Client.",
+      change_orders: "Any change to the scope, materials, or schedule must be agreed in writing (a Change Order) and may adjust the price and timeline accordingly.",
+      dispute_resolution: "The parties will first attempt to resolve any dispute in good faith. If unresolved, disputes will be handled under the laws of the Contractor's state of operation.",
+    };
+  };
+
   const startDemo = async () => {
     setErr("");
     if (!lead.name.trim() || !lead.email.includes("@")) {
@@ -90,6 +134,7 @@ export default function DemoFlow() {
       // Meta Pixel: mid-funnel lead — prospect started the live demo.
       fbTrack("Lead", { content_name: "Live Demo Start", content_category: lead.trade || "" });
       fbTrackCustom("DemoStarted", { trade: lead.trade || "" });
+      track("demo_start", { step: 1, trade: lead.trade });
       setStep(1);
     } catch (e) {
       apiErr(e, t("demo.errStart"));
@@ -112,6 +157,7 @@ export default function DemoFlow() {
       // Meta Pixel: the "magic moment" — AI produced the English quote.
       fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(r.data.quote?.total || 0), currency: "USD" });
       fbTrackCustom("DemoQuoteGenerated");
+      track("quote_generated", { step: 2, trade: lead.trade, meta: { total: Number(r.data.quote?.total || 0) } });
       setStep(2);
       window.scrollTo(0, 0);
     } catch (e) {
@@ -121,25 +167,11 @@ export default function DemoFlow() {
     }
   };
 
-  const genAgreement = async () => {
+  const genAgreement = () => {
     setErr("");
-    setLoading(true);
-    try {
-      const r = await axios.post(`${API}/public/demo/agreement`, {
-        demo_id: demoId,
-        description_es: desc,
-        job_title: quote?.job_title || "",
-        total: quote?.total || 0,
-        deposit: quote?.deposit_amount || 0,
-      });
-      setAgreement(r.data.agreement);
-      setStep(3);
-      window.scrollTo(0, 0);
-    } catch (e) {
-      apiErr(e, t("demoFlow.errAgreement"));
-    } finally {
-      setLoading(false);
-    }
+    setAgreement(buildDemoAgreement());
+    setStep(3);
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -157,8 +189,9 @@ export default function DemoFlow() {
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={() => { setSigned(true); setStep(4); window.scrollTo(0, 0); }} />}
-        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => setPaid(true)} />}
+        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
       </div>
+      <WhatsAppFab onClick={() => track("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />
     </div>
   );
 }
@@ -196,7 +229,7 @@ function TopBar() {
           <span className="font-heading font-bold">UniTech</span>
           <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Demo</span>
         </Link>
-        <Link to="/register" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
+        <Link to="/register?plan=bundle" data-testid="demo-signup-top" className="text-sm font-semibold text-blue-900 hover:underline">
           {t("demo.signupTop")}
         </Link>
       </div>
@@ -614,6 +647,15 @@ function PdfActions({ onDownload, downloading }) {
 
 function FinalCTA() {
   const { t } = useTranslation();
+  const [founder, setFounder] = useState(null);
+  useEffect(() => {
+    axios.get(`${API}/payments/founder-status`).then((r) => setFounder(r.data)).catch(() => {});
+  }, []);
+  // Include a plan so /register goes STRAIGHT to Stripe checkout (card upfront,
+  // $0 today, 14-day trial) instead of dropping the user on the dashboard.
+  const to = founder?.available
+    ? "/register?plan=bundle_founder&billing=month"
+    : "/register?plan=bundle";
   return (
     <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
       <PartyPopper className="w-10 h-10 mx-auto mb-3" />
@@ -621,9 +663,21 @@ function FinalCTA() {
       <p className="text-white/85 mt-2 max-w-md mx-auto">
         {t("demoFlow.finalDesc")}
       </p>
-      <Link data-testid="demo-final-cta" to="/register" className="inline-flex items-center gap-2 mt-5 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100">
+      <Link
+        data-testid="demo-final-cta"
+        to={to}
+        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto" })}
+        className="inline-flex items-center gap-2 mt-5 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100"
+      >
         {t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
       </Link>
+      <div className="mt-5">
+        <p className="text-sm text-white/80 mb-2">{t("whatsapp.demoPrompt")}</p>
+        <WhatsAppButton
+          testid="demo-flow-final-whatsapp"
+          onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
+        />
+      </div>
     </Card>
   );
 }

@@ -36,6 +36,7 @@ export const trackDemo = (event, data = {}) => {
       trade: data.trade || "",
       device: device(),
       ref: data.ref || "",
+      demo: data.demo || "",
       meta: data.meta || {},
     });
     // keepalive lets the request survive a page unload (abandon tracking).
