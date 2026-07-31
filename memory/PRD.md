@@ -285,6 +285,12 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **Frontend** (`AdminLeads.js`, pestaña "Demo en vivo"): buscador (nombre/email/tel/oficio) para hallar pruebas propias, filtros (Todos/🔥Completaron/⭐Potenciales/En mi CRM/Descartados), resumen de "más calientes", selección múltiple + "Borrar seleccionados", y por tarjeta: WhatsApp/Email directos, Agregar a mi CRM, Potencial, Contactado, Descartar, Notas, borrar individual.
 - Verificado: curl (crear lead → potential → to-client → reuse → bulk-delete OK; cliente creado y limpiado) + screenshot del panel renderizando bien.
 
+## ✅ Jul 2026 — Demo corto (/demo) equiparado + A/B con demo completo [LISTO; testing_agent 100% + curl]
+- Aplicados al demo corto (`DemoFlow.js`, ruta `/demo`) los mismos cambios del `/demo-flujo`: (1) **tracking propio de embudo** etiquetado como demo `corto` (5 pasos), (2) **Service Agreement instantáneo** (sin espera de IA, `buildDemoAgreement`), (3) **WhatsApp** (FAB flotante + botón final para dudas, con tracking), (4) **pago listo**: el CTA final va a `/register?plan=bundle[_founder]` que dispara Stripe checkout (tarjeta upfront, $0 hoy, trial 14 días) — verificado devuelve `cs_test_`.
+- **Panel de Analíticas** (`AdminDemoAnalytics.js`) ahora tiene **toggle A/B** "Demo completo" vs "Demo corto (facturas)"; backend `GET /admin/demo-analytics?demo=flujo|corto` filtra por variante con labels/embudo propios. Sesiones sin etiqueta = "flujo".
+- **i18n**: `?lang=es` / `?lang=en` fuerzan idioma desde el link (útil para ads) — `i18n/index.js` con `querystring` en detección.
+- Verificado por testing_agent (frontend 100%, 7/7 items) + curl (analytics corto separado, path de pago Stripe). Datos de prueba limpiados.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

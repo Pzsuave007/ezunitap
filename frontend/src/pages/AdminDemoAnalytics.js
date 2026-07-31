@@ -240,8 +240,8 @@ export default function AdminDemoAnalytics() {
                 </tr>
               </thead>
               <tbody>
-                {recent.map((s) => (
-                  <tr key={s.session_id} className="border-b border-slate-50 hover:bg-slate-50">
+                {recent.map((s, i) => (
+                  <tr key={`${variant}-${s.session_id}-${i}`} className="border-b border-slate-50 hover:bg-slate-50">
                     <td className="py-2 px-2 font-semibold text-slate-700 truncate max-w-[140px]">{s.trade}</td>
                     <td className="py-2 px-2 text-slate-600">
                       <span className="font-bold text-slate-800">{s.max_step}</span>
