@@ -719,26 +719,8 @@ function FinalCTA({ demoId }) {
         {t("demoFlow.finalDesc")}
       </p>
 
-      {founderOn && (
-        <div data-testid="demo-founder-offer" className="mt-5 mx-auto max-w-md rounded-2xl bg-amber-400 text-blue-950 px-5 py-4 shadow-lg">
-          <div className="font-heading font-extrabold text-lg leading-tight">{t("demoFlow.founderTitle")}</div>
-          <div className="text-sm font-semibold mt-1">
-            {t("demoFlow.founderRemaining", { n: founder.remaining })}
-          </div>
-        </div>
-      )}
-
-      <Link
-        data-testid="demo-final-cta"
-        to={to}
-        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
-        className="inline-flex items-center gap-2 mt-5 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100"
-      >
-        {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
-      </Link>
-
-      {/* Warm, no-pressure invitation — offer personal help after they've seen it */}
-      <div className="mt-6 pt-5 border-t border-white/20 max-w-md mx-auto">
+      {/* Warm, no-pressure invitation FIRST — offer personal help */}
+      <div className="mt-6 max-w-md mx-auto">
         <p className="text-sm font-bold text-white mb-1">{t("demoFlow.helpTitle")}</p>
         <p className="text-xs text-white/75 mb-3">{t("demoFlow.helpDesc")}</p>
         {capSaved ? (
@@ -763,6 +745,26 @@ function FinalCTA({ demoId }) {
           testid="demo-flow-final-whatsapp"
           onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
         />
+      </div>
+
+      {/* Founder offer + checkout CTA BELOW */}
+      <div className="mt-7 pt-6 border-t border-white/20">
+        {founderOn && (
+          <div data-testid="demo-founder-offer" className="mx-auto max-w-md rounded-2xl bg-amber-400 text-blue-950 px-5 py-4 shadow-lg">
+            <div className="font-heading font-extrabold text-lg leading-tight">{t("demoFlow.founderTitle")}</div>
+            <div className="text-sm font-semibold mt-1">
+              {t("demoFlow.founderRemaining", { n: founder.remaining })}
+            </div>
+          </div>
+        )}
+        <Link
+          data-testid="demo-final-cta"
+          to={to}
+          onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
+          className="inline-flex items-center gap-2 mt-4 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100"
+        >
+          {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     </Card>
   );
