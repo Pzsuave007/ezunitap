@@ -698,10 +698,13 @@ function FinalCTA({ demoId }) {
   const to = founderOn ? "/register?plan=negocio_founder" : "/register?plan=negocio";
 
   const saveContact = async () => {
-    if (!cap.name.trim() && !cap.email.trim()) return;
+    const v = (cap.email || "").trim();
+    if (!cap.name.trim() && !v) return;
+    const isPhone = v && /^[\d\s()+.-]{7,}$/.test(v);
+    const payload = { name: cap.name.trim(), email: isPhone ? "" : v, phone: isPhone ? v : "" };
     setCapBusy(true);
     try {
-      if (demoId) await axios.post(`${API}/public/demo/${demoId}/contact`, cap);
+      if (demoId) await axios.post(`${API}/public/demo/${demoId}/contact`, payload);
       trackDemo("contact_captured", { step: 4, demo: "corto" });
       setCapSaved(true);
     } catch { /* non-blocking */ }
@@ -734,28 +737,28 @@ function FinalCTA({ demoId }) {
         {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
       </Link>
 
-      {/* Optional warm-lead capture — only after they've seen the whole demo */}
+      {/* Warm, no-pressure invitation — offer personal help after they've seen it */}
       <div className="mt-6 pt-5 border-t border-white/20 max-w-md mx-auto">
+        <p className="text-sm font-bold text-white mb-1">{t("demoFlow.helpTitle")}</p>
+        <p className="text-xs text-white/75 mb-3">{t("demoFlow.helpDesc")}</p>
         {capSaved ? (
-          <div data-testid="demo-contact-saved" className="text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2">
+          <div data-testid="demo-contact-saved" className="text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2 py-2">
             <CheckCircle2 className="w-4 h-4" /> {t("demoFlow.saveDone")}
           </div>
         ) : (
-          <>
-            <p className="text-sm text-white/80 mb-2">{t("demoFlow.saveQuoteTitle")}</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Input data-testid="demo-capture-name" value={cap.name} onChange={(e) => setCap({ ...cap, name: e.target.value })} placeholder={t("demoFlow.saveName")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
-              <Input data-testid="demo-capture-email" type="email" value={cap.email} onChange={(e) => setCap({ ...cap, email: e.target.value })} placeholder={t("demoFlow.saveEmail")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
-              <Button data-testid="demo-capture-btn" onClick={saveContact} disabled={capBusy} className="h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 flex-none px-5">
-                {capBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("demoFlow.saveBtn")}
-              </Button>
-            </div>
-          </>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input data-testid="demo-capture-name" value={cap.name} onChange={(e) => setCap({ ...cap, name: e.target.value })} placeholder={t("demoFlow.saveName")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
+            <Input data-testid="demo-capture-email" type="email" value={cap.email} onChange={(e) => setCap({ ...cap, email: e.target.value })} placeholder={t("demoFlow.saveEmail")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
+            <Button data-testid="demo-capture-btn" onClick={saveContact} disabled={capBusy} className="h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 flex-none px-5">
+              {capBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("demoFlow.saveBtn")}
+            </Button>
+          </div>
         )}
-      </div>
-
-      <div className="mt-5">
-        <p className="text-sm text-white/80 mb-2">{t("whatsapp.demoPrompt")}</p>
+        <div className="flex items-center gap-3 my-3">
+          <div className="h-px flex-1 bg-white/20" />
+          <span className="text-xs text-white/60">{t("demoFlow.orText")}</span>
+          <div className="h-px flex-1 bg-white/20" />
+        </div>
         <WhatsAppButton
           testid="demo-flow-final-whatsapp"
           onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}

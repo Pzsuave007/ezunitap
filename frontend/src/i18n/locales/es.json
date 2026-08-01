@@ -1576,11 +1576,14 @@
     "startHeroNote": "Gratis · No pedimos tarjeta · 60 segundos",
     "saveQuoteTitle": "¿Te mandamos esta cotización de ejemplo? (opcional)",
     "saveName": "Tu nombre",
-    "saveEmail": "Tu email",
-    "saveBtn": "Enviármela",
-    "saveDone": "¡Listo! Te contactaremos pronto. 🙌",
+    "saveEmail": "Tu email o teléfono",
+    "saveBtn": "Enviar mis datos",
+    "saveDone": "¡Gracias! Te contactamos muy pronto para ayudarte. 🙌",
     "startClientLabel": "Nombre de tu cliente",
-    "startClientHint": "Solo se usa como el cliente en la cotización, el contrato y la factura. Deja el ejemplo o pon el tuyo."
+    "startClientHint": "Solo se usa como el cliente en la cotización, el contrato y la factura. Deja el ejemplo o pon el tuyo.",
+    "helpTitle": "¿Te gustó? Te ayudamos a montarlo en tu negocio 🙌",
+    "helpDesc": "Si quieres ver cómo te funcionaría en TU negocio, déjanos tus datos o escríbenos por WhatsApp — te ayudamos a crear y personalizar tu cuenta gratis, sin compromiso.",
+    "orText": "o"
   },
   "demoAll": {
     "leadTitle": "Mira lo que UniTech puede hacer por tu negocio",
