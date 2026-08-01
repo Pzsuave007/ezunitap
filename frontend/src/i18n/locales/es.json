@@ -1514,7 +1514,7 @@
   },
   "demoFlow": {
     "steps": [
-      "Tus datos",
+      "Inicio",
       "El trabajo",
       "Cotización",
       "Contrato",
@@ -1567,7 +1567,20 @@
     "card": "Tarjeta",
     "founderTitle": "Precio Fundador: $29/mes de por vida 🔒",
     "founderRemaining": "Solo quedan {{n}} de 100 lugares — apártalo hoy y consérvalo de por vida",
-    "founderCta": "Apartar mi precio fundador ($29/mes)"
+    "founderCta": "Apartar mi precio fundador ($29/mes)",
+    "startHeroTitle": "Mira cómo creas una factura profesional en inglés — en 60 segundos",
+    "startHeroDesc": "Describe tu trabajo en español y la IA te arma la cotización, el contrato y la factura lista para cobrar. Sin registro y sin tarjeta.",
+    "startTradeLabel": "¿Cuál es tu oficio? (opcional)",
+    "startTradeChoose": "Elige tu oficio…",
+    "startHeroBtn": "Ver la demostración",
+    "startHeroNote": "Gratis · No pedimos tarjeta · 60 segundos",
+    "saveQuoteTitle": "¿Te mandamos esta cotización de ejemplo? (opcional)",
+    "saveName": "Tu nombre",
+    "saveEmail": "Tu email",
+    "saveBtn": "Enviármela",
+    "saveDone": "¡Listo! Te contactaremos pronto. 🙌",
+    "startClientLabel": "Nombre de tu cliente",
+    "startClientHint": "Solo se usa como el cliente en la cotización, el contrato y la factura. Deja el ejemplo o pon el tuyo."
   },
   "demoAll": {
     "leadTitle": "Mira lo que UniTech puede hacer por tu negocio",

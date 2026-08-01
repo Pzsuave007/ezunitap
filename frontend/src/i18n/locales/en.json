@@ -1514,7 +1514,7 @@
   },
   "demoFlow": {
     "steps": [
-      "Your info",
+      "Start",
       "The job",
       "Quote",
       "Contract",
@@ -1567,7 +1567,20 @@
     "card": "Card",
     "founderTitle": "Founder price: $29/mo for life 🔒",
     "founderRemaining": "Only {{n}} of 100 spots left — grab it today and keep it for life",
-    "founderCta": "Lock in my founder price ($29/mo)"
+    "founderCta": "Lock in my founder price ($29/mo)",
+    "startHeroTitle": "See how you create a professional invoice in English — in 60 seconds",
+    "startHeroDesc": "Describe your job in Spanish and AI builds the quote, contract and invoice ready to get paid. No signup, no card.",
+    "startTradeLabel": "What's your trade? (optional)",
+    "startTradeChoose": "Choose your trade…",
+    "startHeroBtn": "Watch the demo",
+    "startHeroNote": "Free · No card required · 60 seconds",
+    "saveQuoteTitle": "Want us to send you this sample quote? (optional)",
+    "saveName": "Your name",
+    "saveEmail": "Your email",
+    "saveBtn": "Send it to me",
+    "saveDone": "Done! We'll reach out soon. 🙌",
+    "startClientLabel": "Your client's name",
+    "startClientHint": "Only used as the client on the quote, contract and invoice. Keep the example or use your own."
   },
   "demoAll": {
     "leadTitle": "See what UniTech can do for your business",

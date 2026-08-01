@@ -4750,8 +4750,8 @@ DEMO_MAX_AGREEMENTS = 4   # AI agreement generations allowed per captured lead
 
 
 class DemoStartIn(BaseModel):
-    name: str
-    email: str
+    name: Optional[str] = ""
+    email: Optional[str] = ""
     phone: Optional[str] = ""
     trade: Optional[str] = ""
     ref: Optional[str] = ""
@@ -4781,11 +4781,10 @@ async def _get_demo_lead(demo_id: str) -> dict:
 
 @api_router.post("/public/demo/start")
 async def demo_start(payload: DemoStartIn, request: Request):
-    """Capture a demo visitor as a lead and open a demo session."""
+    """Open a demo session. Name/email are OPTIONAL — we let people experience
+    the demo first (value first) and capture contact later, after they see it."""
     email = (payload.email or "").strip().lower()
     name = (payload.name or "").strip()
-    if not name or "@" not in email:
-        raise HTTPException(status_code=400, detail="Name and a valid email are required.")
     ip = request.client.host if request.client else ""
     # Light per-IP abuse guard: cap how many demo sessions a single IP can open
     # per day, so the public demo can't be scripted to burn the LLM key.
@@ -4793,7 +4792,7 @@ async def demo_start(payload: DemoStartIn, request: Request):
         import time as _t
         since = datetime.fromtimestamp(int(_t.time()) - 86400, tz=timezone.utc).isoformat()
         recent = await db.demo_leads.count_documents({"ip": ip, "created_at": {"$gte": since}})
-        if recent >= 20:
+        if recent >= 60:
             raise HTTPException(status_code=429, detail="Demo limit reached for today. Create a free account to keep exploring.")
     doc = {
         "id": _new_id(),
@@ -4811,6 +4810,35 @@ async def demo_start(payload: DemoStartIn, request: Request):
     }
     await db.demo_leads.insert_one(doc)
     return {"demo_id": doc["id"], "business": DEMO_BUSINESS}
+
+
+class DemoContactIn(BaseModel):
+    name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+
+
+@api_router.post("/public/demo/{demo_id}/contact")
+async def demo_capture_contact(demo_id: str, payload: DemoContactIn):
+    """Attach contact info to a demo session AFTER the visitor has seen the demo
+    (optional warm-lead capture). Feeds the 'Demo en vivo' leads list."""
+    lead = await db.demo_leads.find_one({"id": demo_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Demo session not found.")
+    patch = {}
+    name = (payload.name or "").strip()
+    email = (payload.email or "").strip().lower()
+    phone = (payload.phone or "").strip()
+    if name:
+        patch["name"] = name
+    if email:
+        patch["email"] = email
+    if phone:
+        patch["phone"] = phone
+    if patch:
+        patch["last_activity"] = _now_iso()
+        await db.demo_leads.update_one({"id": demo_id}, {"$set": patch})
+    return {"ok": True}
 
 
 @api_router.post("/public/demo/quote")

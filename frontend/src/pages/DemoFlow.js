@@ -104,6 +104,11 @@ export default function DemoFlow() {
   const [step, setStep] = useState(0);
   const [demoId, setDemoId] = useState(null);
   const [lead, setLead] = useState({ name: "", email: "", phone: "", trade: "" });
+  // Pre-fill a sample client name so the quote/agreement/invoice look real with
+  // zero friction (editable). Same fictitious client as the full demo.
+  useEffect(() => {
+    setLead((l) => (l.name ? l : { ...l, name: t("demoFlujo.clientFull") }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [desc, setDesc] = useState("");
   const [quote, setQuote] = useState(null);
   const [business, setBusiness] = useState(null);
@@ -162,10 +167,6 @@ export default function DemoFlow() {
 
   const startDemo = async () => {
     setErr("");
-    if (!lead.name.trim() || !lead.email.includes("@")) {
-      setErr(t("demo.errEmail"));
-      return;
-    }
     setLoading(true);
     try {
       const r = await axios.post(`${API}/public/demo/start`, lead);
@@ -229,7 +230,7 @@ export default function DemoFlow() {
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={() => { setSigned(true); setStep(4); window.scrollTo(0, 0); }} />}
-        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
+        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
       </div>
       <WhatsAppFab onClick={() => track("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />
     </div>
@@ -300,37 +301,28 @@ function LeadStep({ lead, setLead, onStart, loading }) {
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
         <Sparkles className="w-3.5 h-3.5" /> {t("demo.liveBadge")}
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight">{t("demoFlow.leadTitle")}</h1>
-      <p className="text-slate-600 mt-2 leading-relaxed">
-        <Trans i18nKey="demoFlow.leadDesc" components={{ 1: <strong />, 3: <strong /> }} />
-      </p>
-      <div className="mt-6 space-y-3">
+      <h1 className="font-heading text-3xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
+      <p className="text-slate-600 mt-2 leading-relaxed">{t("demoFlow.startHeroDesc")}</p>
+
+      <div className="mt-6 space-y-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadName")}</label>
-          <Input data-testid="demo-name" value={lead.name} onChange={set("name")} placeholder="Carlos García" className="mt-1 h-12 rounded-xl" />
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startClientLabel")}</label>
+          <Input data-testid="demo-name" value={lead.name} onChange={set("name")} placeholder="María González" className="mt-1 h-13 rounded-xl text-base" />
+          <p className="text-xs text-slate-400 mt-1.5">{t("demoFlow.startClientHint")}</p>
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadEmail")}</label>
-          <Input data-testid="demo-email" type="email" value={lead.email} onChange={set("email")} placeholder={t("demo.emailPlaceholder")} className="mt-1 h-12 rounded-xl" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadPhone")}</label>
-            <Input data-testid="demo-phone" value={lead.phone} onChange={set("phone")} placeholder="(555) 123-4567" className="mt-1 h-12 rounded-xl" />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demo.leadTrade")}</label>
-            <select data-testid="demo-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-sm bg-white">
-              <option value="">{t("demo.choose")}</option>
-              {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
-            </select>
-          </div>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startTradeLabel")}</label>
+          <select data-testid="demo-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-13 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
+            <option value="">{t("demoFlow.startTradeChoose")}</option>
+            {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
+          </select>
         </div>
       </div>
-      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demo.startBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
+
+      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-5 w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
       </Button>
-      <p className="text-xs text-slate-400 mt-3 text-center">{t("demo.freeNote")}</p>
+      <p className="text-xs text-slate-400 mt-3 text-center">{t("demoFlow.startHeroNote")}</p>
     </Card>
   );
 }
@@ -512,7 +504,7 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
   );
 }
 
-export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta = false }) {
+export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFinalCta = false }) {
   const { t } = useTranslation();
   const [dl, setDl] = useState(false);
   const total = Number(quote?.total || 0);
@@ -620,7 +612,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, hideFinalCta =
       <PdfActions onDownload={downloadPdf} downloading={dl} />
 
       {paid && !hideFinalCta && (
-        <FinalCTA />
+        <FinalCTA demoId={demoId} />
       )}
     </div>
   );
@@ -692,15 +684,30 @@ function PdfActions({ onDownload, downloading }) {
   );
 }
 
-function FinalCTA() {
+function FinalCTA({ demoId }) {
   const { t } = useTranslation();
   const [founder, setFounder] = useState(null);
+  const [cap, setCap] = useState({ name: "", email: "" });
+  const [capSaved, setCapSaved] = useState(false);
+  const [capBusy, setCapBusy] = useState(false);
   useEffect(() => {
     // Negocio Founder offer: $29/mo for life, first 100. Falls back to $39.99.
     axios.get(`${API}/payments/negocio-founder-status`).then((r) => setFounder(r.data)).catch(() => {});
   }, []);
   const founderOn = founder?.available;
   const to = founderOn ? "/register?plan=negocio_founder" : "/register?plan=negocio";
+
+  const saveContact = async () => {
+    if (!cap.name.trim() && !cap.email.trim()) return;
+    setCapBusy(true);
+    try {
+      if (demoId) await axios.post(`${API}/public/demo/${demoId}/contact`, cap);
+      trackDemo("contact_captured", { step: 4, demo: "corto" });
+      setCapSaved(true);
+    } catch { /* non-blocking */ }
+    finally { setCapBusy(false); }
+  };
+
   return (
     <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
       <PartyPopper className="w-10 h-10 mx-auto mb-3" />
@@ -726,6 +733,27 @@ function FinalCTA() {
       >
         {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
       </Link>
+
+      {/* Optional warm-lead capture — only after they've seen the whole demo */}
+      <div className="mt-6 pt-5 border-t border-white/20 max-w-md mx-auto">
+        {capSaved ? (
+          <div data-testid="demo-contact-saved" className="text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4" /> {t("demoFlow.saveDone")}
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-white/80 mb-2">{t("demoFlow.saveQuoteTitle")}</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input data-testid="demo-capture-name" value={cap.name} onChange={(e) => setCap({ ...cap, name: e.target.value })} placeholder={t("demoFlow.saveName")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
+              <Input data-testid="demo-capture-email" type="email" value={cap.email} onChange={(e) => setCap({ ...cap, email: e.target.value })} placeholder={t("demoFlow.saveEmail")} className="h-11 rounded-xl bg-white text-slate-900 border-0" />
+              <Button data-testid="demo-capture-btn" onClick={saveContact} disabled={capBusy} className="h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 flex-none px-5">
+                {capBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("demoFlow.saveBtn")}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+
       <div className="mt-5">
         <p className="text-sm text-white/80 mb-2">{t("whatsapp.demoPrompt")}</p>
         <WhatsAppButton
