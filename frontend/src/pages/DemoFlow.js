@@ -352,28 +352,74 @@ function DescribeStep({ desc, setDesc, onGen, loading, onBack }) {
   );
 }
 
-function DocHeader({ business, badge }) {
+function DocHeader({ business, badge, number, date, dueDate }) {
   return (
-    <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-6">
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
+    <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Hammer className="w-5 h-5" />
-            <h1 className="font-heading text-2xl font-bold">{business?.business_name || "Demo Contractors"}</h1>
+            <Hammer className="w-5 h-5 flex-none" />
+            <h1 className="font-heading text-xl sm:text-2xl font-bold truncate">{business?.business_name || "Demo Contractors"}</h1>
           </div>
-          <div className="text-sm text-white/80 space-y-0.5">
+          <div className="text-xs sm:text-sm text-white/80 space-y-0.5">
             <div>{business?.business_email}</div>
             <div>{business?.phone}</div>
             <div>{business?.business_address}</div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-heading font-bold">{badge}</div>
+        <div className="text-right flex-none">
+          <div className="text-2xl sm:text-3xl font-heading font-bold leading-none">{badge}</div>
+          {number && <div className="text-xs text-white/85 mt-2 font-semibold">#{number}</div>}
+          {date && <div className="text-[11px] text-white/70 mt-0.5">Date: {date}</div>}
+          {dueDate && <div className="text-[11px] text-white/70 mt-0.5">Due: {dueDate}</div>}
         </div>
       </div>
     </div>
   );
 }
+
+// Responsive line items — clean table on desktop, readable stacked rows on mobile
+// (a 4-column table is unreadable on a real phone, which made it look "not real").
+function LineItems({ items }) {
+  if (!items?.length) return null;
+  return (
+    <div>
+      <table className="w-full text-sm hidden sm:table">
+        <thead className="bg-slate-100 text-left">
+          <tr>
+            <th className="p-2 font-semibold">Description</th>
+            <th className="p-2 font-semibold text-right">Qty</th>
+            <th className="p-2 font-semibold text-right">Price</th>
+            <th className="p-2 font-semibold text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((li, i) => (
+            <tr key={i} className="border-t border-slate-100">
+              <td className="p-2">{li.description}</td>
+              <td className="p-2 text-right whitespace-nowrap">{li.quantity} {li.unit}</td>
+              <td className="p-2 text-right whitespace-nowrap">{fmtMoney(li.unit_price)}</td>
+              <td className="p-2 text-right whitespace-nowrap font-semibold">{fmtMoney(li.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="sm:hidden border-y border-slate-100 divide-y divide-slate-100">
+        {items.map((li, i) => (
+          <div key={i} className="py-3">
+            <div className="text-sm font-medium text-slate-800 leading-snug">{li.description}</div>
+            <div className="flex items-center justify-between mt-1.5 text-sm">
+              <span className="text-slate-500">{li.quantity} {li.unit} × {fmtMoney(li.unit_price)}</span>
+              <span className="font-bold text-slate-900">{fmtMoney(li.amount)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const docDate = () => new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 
 export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
   const { t } = useTranslation();
@@ -391,8 +437,8 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
     <div>
       <ClientBanner text={t("demoFlow.quoteBanner")} />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <DocHeader business={business} badge="QUOTE" />
-        <div className="p-6 space-y-5">
+        <DocHeader business={business} badge="QUOTE" number={quote.number || "Q-1001"} date={docDate()} />
+        <div className="p-5 sm:p-6 space-y-5">
           <div>
             <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
             <div className="font-semibold">{lead.name}</div>
@@ -408,26 +454,8 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
               <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
-          {quote.line_items?.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-100 text-left">
-                  <tr><th className="p-2 font-semibold">Description</th><th className="p-2 font-semibold text-right">Qty</th><th className="p-2 font-semibold text-right">Price</th><th className="p-2 font-semibold text-right">Amount</th></tr>
-                </thead>
-                <tbody>
-                  {quote.line_items.map((li, i) => (
-                    <tr key={i} className="border-t border-slate-100">
-                      <td className="p-2">{li.description}</td>
-                      <td className="p-2 text-right">{li.quantity} {li.unit}</td>
-                      <td className="p-2 text-right">{fmtMoney(li.unit_price)}</td>
-                      <td className="p-2 text-right">{fmtMoney(li.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm ml-auto max-w-xs">
+          <LineItems items={quote.line_items} />
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm sm:ml-auto sm:max-w-xs">
             <div className="flex justify-between"><span>Subtotal</span><span>{fmtMoney(quote.subtotal)}</span></div>
             <div className="flex justify-between"><span>Tax</span><span>{fmtMoney(quote.tax_amount)}</span></div>
             <div className="flex justify-between text-lg font-bold pt-2 border-t mt-2"><span>TOTAL</span><span>{fmtMoney(quote.total)}</span></div>
@@ -529,8 +557,8 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
     <div>
       <ClientBanner text={t("demoFlow.invoiceBanner")} />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <DocHeader business={business} badge="INVOICE" />
-        <div className="p-6 space-y-5">
+        <DocHeader business={business} badge="INVOICE" number={(quote?.number || "Q-1001").replace("Q-", "INV-")} date={docDate()} dueDate="On receipt" />
+        <div className="p-5 sm:p-6 space-y-5">
           <div>
             <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
             <div className="font-semibold">{lead.name}</div>
@@ -545,26 +573,8 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
               <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
-          {quote?.line_items?.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-100 text-left">
-                  <tr><th className="p-2 font-semibold">Description</th><th className="p-2 font-semibold text-right">Qty</th><th className="p-2 font-semibold text-right">Price</th><th className="p-2 font-semibold text-right">Amount</th></tr>
-                </thead>
-                <tbody>
-                  {quote.line_items.map((li, i) => (
-                    <tr key={i} className="border-t border-slate-100">
-                      <td className="p-2">{li.description}</td>
-                      <td className="p-2 text-right">{li.quantity} {li.unit}</td>
-                      <td className="p-2 text-right">{fmtMoney(li.unit_price)}</td>
-                      <td className="p-2 text-right">{fmtMoney(li.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm ml-auto max-w-xs">
+          <LineItems items={quote?.line_items} />
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm sm:ml-auto sm:max-w-xs">
             <div className="flex justify-between"><span>Subtotal</span><span>{fmtMoney(quote?.subtotal)}</span></div>
             <div className="flex justify-between"><span>Tax</span><span>{fmtMoney(quote?.tax_amount)}</span></div>
             <div className="flex justify-between"><span>Total</span><span>{fmtMoney(total)}</span></div>
