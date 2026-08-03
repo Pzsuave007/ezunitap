@@ -436,6 +436,7 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
   return (
     <div>
       <ClientBanner text={t("demoFlow.quoteBanner")} />
+      <FormatNote />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <DocHeader business={business} badge="QUOTE" number={quote.number || "Q-1001"} date={docDate()} />
         <div className="p-5 sm:p-6 space-y-5">
@@ -556,6 +557,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
   return (
     <div>
       <ClientBanner text={t("demoFlow.invoiceBanner")} />
+      <FormatNote />
       <Card className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <DocHeader business={business} badge="INVOICE" number={(quote?.number || "Q-1001").replace("Q-", "INV-")} date={docDate()} dueDate="On receipt" />
         <div className="p-5 sm:p-6 space-y-5">
@@ -658,6 +660,18 @@ function ClientBanner({ text }) {
   return (
     <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-base font-semibold px-4 py-3 flex items-center gap-2">
       <Send className="w-5 h-5 flex-none" /> {text}
+    </div>
+  );
+}
+
+// Reassures phone users that the on-screen format is just for easy editing —
+// the client actually receives a normal, professional PDF quote/invoice.
+function FormatNote() {
+  const { t } = useTranslation();
+  return (
+    <div data-testid="demo-format-note" className="sm:hidden mb-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs px-3 py-2.5 flex items-start gap-2">
+      <Smartphone className="w-4 h-4 flex-none mt-0.5" />
+      <span>{t("demoFlow.formatNote")}</span>
     </div>
   );
 }
