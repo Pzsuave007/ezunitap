@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
-  MessageCircle, Smartphone, Wallet,
+  MessageCircle, Smartphone, Wallet, FileText, CalendarDays,
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
@@ -223,11 +223,13 @@ export default function DemoFlow() {
     window.scrollTo(0, 0);
   };
 
-  // Complete the (simulated) payment and finish the demo.
+  // Complete the (simulated) payment and move to the dedicated closing page.
   const payNow = () => {
     if (paid) return;
     setPaid(true);
     track("demo_completed", { step: 4, trade: lead.trade });
+    setStep(5);
+    window.scrollTo(0, 0);
   };
 
   // Guide bar "Continue" — advances the demo without hunting for the in-document button.
@@ -243,7 +245,7 @@ export default function DemoFlow() {
       <TopBar />
       {loading && step === 1 && <BusySheet />}
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-32">
-        <StepBar step={step} />
+        {step <= 4 && <StepBar step={step} />}
         {err && (
           <div data-testid="demo-error" className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
             {err}
@@ -253,7 +255,8 @@ export default function DemoFlow() {
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={signNow} />}
-        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} />}
+        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} hideFinalCta />}
+        {step === 5 && <DemoClose demoId={demoId} lead={lead} quote={quote} business={business} />}
       </div>
       <GuideBar step={step} onNext={guideNext} loading={loading} paid={paid} />
     </div>
@@ -866,6 +869,57 @@ function PdfActions({ onDownload, downloading }) {
       </div>
       <p className="text-xs text-slate-500 text-center mt-2">
         <Trans i18nKey="demoFlow.pdfNote" components={{ 1: <strong /> }} />
+      </p>
+    </div>
+  );
+}
+
+// Dedicated closing page shown AFTER the demo payment — a real sales landing
+// (success + benefits + founder offer + checkout) on its own screen, instead of
+// piling everything under the long invoice (bad on mobile).
+function DemoClose({ demoId, lead, quote, business }) {
+  const { t } = useTranslation();
+  const benefits = t("demoFlow.close.benefits", { returnObjects: true });
+  const ICONS = [Sparkles, Wallet, ShieldCheck, CalendarDays];
+  const list = Array.isArray(benefits) ? benefits : [];
+  return (
+    <div data-testid="demo-close" className="space-y-6">
+      {/* Success hero */}
+      <div className="text-center pt-2">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-3">
+          <PartyPopper className="w-3.5 h-3.5" /> {t("demoFlow.close.badge")}
+        </div>
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.close.title")}</h1>
+        <p className="text-base text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.close.subtitle")}</p>
+      </div>
+
+      {/* Benefits — why sign up */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        {list.map((b, i) => {
+          const Icon = ICONS[i % ICONS.length];
+          return (
+            <div key={i} data-testid={`demo-close-benefit-${i}`} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 flex items-center justify-center flex-none">
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-heading font-bold text-base text-slate-900 leading-snug">{b.title}</div>
+                <div className="text-sm text-slate-600 mt-0.5 leading-snug">{b.desc}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Founder offer + help + checkout (reused) */}
+      <FinalCTA demoId={demoId} />
+
+      {/* Trust line */}
+      <p className="text-center text-sm text-slate-500 flex items-center justify-center gap-1.5">
+        <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t("demoFlow.close.trust")}
       </p>
     </div>
   );

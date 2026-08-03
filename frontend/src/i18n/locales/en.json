@@ -1559,6 +1559,18 @@
       "s4": "This is how you collect your deposit. Tap to finish the demo.",
       "s4cta": "Pay (demo)"
     },
+    "close": {
+      "badge": "Demo complete",
+      "title": "Now do it with YOUR business",
+      "subtitle": "You just saw how UniTech builds the quote, contract and invoice in English — in seconds. Start free for 14 days.",
+      "trust": "14 days free · Cancel anytime",
+      "benefits": [
+        { "title": "Quotes & invoices in English", "desc": "AI builds them in seconds, ready to get paid." },
+        { "title": "Get paid your way", "desc": "Card, Venmo, Zelle, Cash App and PayPal." },
+        { "title": "Contracts that protect you", "desc": "Service Agreement signed digitally by the client." },
+        { "title": "Your whole business in one app", "desc": "Clients, jobs, calendar and reminders." }
+      ]
+    },
     "overlayTitle": "Generating your Service Agreement…",
     "overlaySubtitle": "The AI is drafting your legal contract. It takes a few seconds — <1>don't close this page.</1>",
     "quoteBanner": "This is how your client receives and approves the quote 👇",

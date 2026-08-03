@@ -1559,6 +1559,18 @@
       "s4": "Así cobras tu depósito. Toca para completar el demo.",
       "s4cta": "Pagar (demo)"
     },
+    "close": {
+      "badge": "Demo completado",
+      "title": "Ahora hazlo con TU negocio",
+      "subtitle": "Acabas de ver cómo UniTech crea la cotización, el contrato y la factura en inglés — en segundos. Empieza gratis 14 días.",
+      "trust": "14 días gratis · Cancela cuando quieras",
+      "benefits": [
+        { "title": "Cotizaciones y facturas en inglés", "desc": "La IA las arma en segundos, listas para cobrar." },
+        { "title": "Cobra como quieras", "desc": "Card, Venmo, Zelle, Cash App y PayPal." },
+        { "title": "Contratos que te protegen", "desc": "Service Agreement con firma digital del cliente." },
+        { "title": "Todo tu negocio en una app", "desc": "Clientes, trabajos, agenda y recordatorios." }
+      ]
+    },
     "overlayTitle": "Generando tu Service Agreement…",
     "overlaySubtitle": "La IA está redactando tu contrato legal en inglés. Toma unos segundos — <1>no cierres esta página.</1>",
     "quoteBanner": "Así es como tu cliente recibe y aprueba la cotización 👇",

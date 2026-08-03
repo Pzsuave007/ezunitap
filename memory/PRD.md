@@ -15,6 +15,16 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Ago 3 2026 (b) — Demo corto: página de cierre dedicada + quitar FAB WhatsApp + texto guía más grande [COMPLETO; verificado screenshots]
+- **Página de cierre como landing de venta (paso 5)**: al tocar "Pagar (demo)", `payNow` ahora hace `setStep(5)` (antes el `FinalCTA` se apilaba DEBAJO del invoice → página larguísima y confusa en móvil). Nuevo componente `DemoClose` (data-testid `demo-close`): hero de éxito ("Demo completado / Now do it with YOUR business"), grid de 4 beneficios (`demo-close-benefit-{i}`: cotizaciones IA en inglés, cobra Card/Venmo/Zelle/CashApp/PayPal, contratos con firma, todo en una app), reutiliza `FinalCTA` (captura de contacto + WhatsApp + oferta Fundador + checkout) y línea de garantía. StepBar se oculta en paso 5 (`step <= 4`). `InvoiceStep` ahora recibe `hideFinalCta` en /demo (el cierre vive en su propia pantalla). i18n `demoFlow.close.*` (badge/title/subtitle/trust/benefits[]) ES/EN.
+- **Bug móvil: FAB de WhatsApp tapaba los botones de avanzar** → removido `WhatsAppFab` del import y del render de `DemoFlow.js` (sigue existiendo solo en `/demo-flujo`). El WhatsApp del cierre (dentro de FinalCTA) se mantiene.
+- **Texto de la barra guía agrandado**: stepLabel `text-sm`, instrucción `text-base` (16px), botón `h-14` (56px) `text-base`. Confirmado legible.
+- Verificación: screenshots via `?pv=` temporal (ya removido) de Quote/Agreement/Invoice/Close. `yarn build` OK + `git add -f build/*`. ⚠️ Usuario: "Save to Github" + deploy.
+- Nota: usuario pidió NO usar testing_agent (créditos). Se usó una vez por error (iter_50, confirmó fixes 100%) y se acordó no volver a usarlo.
+
+---
+
+
 ## ✅ Ago 3 2026 — Demo corto (/demo): factura de ejemplo realista + guía paso a paso [COMPLETO; verificado screenshots ?pv=2/4]
 Objetivo: reducir la caída del tráfico Meta (móvil) en quote/factura. 3 mejoras en `DemoFlow.js`:
 1. **Ejemplo de factura hiper-realista en el paso 0** (nuevo `SampleInvoicePreview`): encabezado del negocio (nombre/tel/ciudad), Bill To (María González), fechas, tabla con columnas reales (Description·Qty·Price·Amount) + filas cebra, totales (Subtotal $1,450 · Tax 8% $116 · TOTAL $1,566) + línea verde "Deposit due today $783" + métodos de pago. Reemplaza la mini-preview anterior. Así ven de inmediato el tipo de documento antes de arrancar.
