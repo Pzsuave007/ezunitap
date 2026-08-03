@@ -1,0 +1,21 @@
+{
+  "summary": "Mobile (390x844) verification of /demo (DemoFlow). Confirmed both reported bugs are fixed: (1) WhatsAppFab is NOT rendered on any step (0-4) of the demo; (2) GuideBar text is now readable — step label 12px bold uppercase, instruction 16px semibold, and CTA button is 56px tall (h-14). Full multi-step flow works end-to-end using ONLY the sticky guide-next button: step0 start -> step1 select Roofing (desc autofilled 146 chars) -> guide-next triggers busy-sheet -> step2 Quote (AI generated) -> guide-next -> step3 Agreement -> guide-next signs -> step4 Invoice -> guide-next marks paid, demo-paid-block visible, guide bar correctly hidden after payment.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "DemoFlow.js is 959 lines — consider splitting sub-components (LeadStep/DescribeStep/QuoteStep/AgreementStep/InvoiceStep/FinalCTA) into separate files for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "DemoFlow.js /demo route is public, no login. Guide bar (demo-guide-bar) is the primary progression control; whatsapp-fab is intentionally NOT rendered on this route (only exists in DemoFlujo.jsx /demo-flujo route).",
+  "rca of the issue": "Prior mobile occlusion of demo advance buttons by WhatsAppFab was resolved by removing the FAB import/render from DemoFlow.js (still used only in DemoFlujo.jsx). Guide bar font sizes upgraded to text-base + h-14 button, confirmed via computed style (16px instr, 56px button)."
+}

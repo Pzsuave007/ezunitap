@@ -20,7 +20,7 @@ import {
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 import { trackDemo } from "@/lib/demoAnalytics";
-import { WhatsAppFab, WhatsAppButton } from "@/components/WhatsAppButton";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const fmtMoney = (n) =>
@@ -256,7 +256,6 @@ export default function DemoFlow() {
         {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} />}
       </div>
       <GuideBar step={step} onNext={guideNext} loading={loading} paid={paid} />
-      <WhatsAppFab onClick={() => track("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />
     </div>
   );
 }
@@ -280,20 +279,20 @@ function GuideBar({ step, onNext, loading, paid }) {
       className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-6px_24px_rgba(15,23,42,0.10)] animate-in slide-in-from-bottom duration-300"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div className="max-w-3xl mx-auto px-4 py-3.5 flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+          <div className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-600">
             {t("demoFlow.guide.stepLabel", { n: step + 1, total: 5 })}
           </div>
-          <div className="text-sm text-slate-700 leading-snug">{cfg.instr}</div>
+          <div className="text-base font-semibold text-slate-800 leading-snug">{cfg.instr}</div>
         </div>
         <Button
           data-testid="demo-guide-next"
           onClick={onNext}
           disabled={loading}
-          className="flex-none h-12 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm"
+          className="flex-none h-14 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base"
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{cfg.cta} <Icon className="w-4 h-4 ml-1.5 flex-none" /></>}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{cfg.cta} <Icon className="w-5 h-5 ml-1.5 flex-none" /></>}
         </Button>
       </div>
     </div>
