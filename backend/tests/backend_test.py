@@ -13,7 +13,7 @@ import pytest
 import requests
 from PIL import Image
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://latino-saas.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://negocio-preview-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 EMAIL = "demo@servicioflow.com"

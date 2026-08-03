@@ -226,8 +226,8 @@ export default function DemoFlow() {
             {err}
           </div>
         )}
-        {step === 0 && <LeadStep lead={lead} setLead={setLead} onStart={startDemo} loading={loading} />}
-        {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} />}
+        {step === 0 && <LeadStep onStart={startDemo} loading={loading} />}
+        {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={() => { setSigned(true); setStep(4); window.scrollTo(0, 0); }} />}
         {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
@@ -293,54 +293,63 @@ function StepBar({ step }) {
   );
 }
 
-function LeadStep({ lead, setLead, onStart, loading }) {
-  const { t, i18n } = useTranslation();
-  const set = (k) => (e) => setLead({ ...lead, [k]: e.target.value });
+function LeadStep({ onStart, loading }) {
+  const { t } = useTranslation();
   return (
-    <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
+    <Card className="p-6 sm:p-8 rounded-2xl border-slate-200 text-center">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
         <Sparkles className="w-3.5 h-3.5" /> {t("demo.liveBadge")}
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
-      <p className="text-slate-600 mt-2 leading-relaxed">{t("demoFlow.startHeroDesc")}</p>
+      <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
+      <p className="text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.startHeroDesc")}</p>
 
-      <div className="mt-6 space-y-4">
-        <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startClientLabel")}</label>
-          <Input data-testid="demo-name" value={lead.name} onChange={set("name")} placeholder="María González" className="mt-1 h-13 rounded-xl text-base" />
-          <p className="text-xs text-slate-400 mt-1.5">{t("demoFlow.startClientHint")}</p>
+      {/* Mini invoice preview so they SEE the value instantly — no form to fill */}
+      <div className="mt-6 mx-auto max-w-sm rounded-2xl border border-slate-200 shadow-lg overflow-hidden text-left">
+        <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white px-4 py-3 flex items-center justify-between">
+          <span className="font-heading font-bold text-sm">Demo Contractors</span>
+          <span className="font-heading font-bold">INVOICE</span>
         </div>
-        <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startTradeLabel")}</label>
-          <select data-testid="demo-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-13 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
-            <option value="">{t("demoFlow.startTradeChoose")}</option>
-            {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
-          </select>
+        <div className="p-4 text-xs space-y-2 bg-white">
+          <div className="flex justify-between text-slate-500"><span>#INV-1001</span><span>Aug 3, 2026</span></div>
+          <div className="border-t border-slate-100 pt-2 space-y-1.5">
+            <div className="flex justify-between"><span className="text-slate-700">Roof repair — labor</span><span className="font-semibold">$1,450.00</span></div>
+            <div className="flex justify-between"><span className="text-slate-700">Materials</span><span className="font-semibold">$650.00</span></div>
+          </div>
+          <div className="flex justify-between border-t border-slate-100 pt-2 font-bold text-blue-900"><span>TOTAL</span><span>$2,350.00</span></div>
+          <div className="flex gap-1.5 pt-1 flex-wrap">
+            {["Card", "Venmo", "Zelle", "Cash App"].map((m) => (
+              <span key={m} className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-100">{m}</span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-5 w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-4 h-4 ml-2" /></>}
+      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-14 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg">
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-5 h-5 ml-2" /></>}
       </Button>
-      <p className="text-xs text-slate-400 mt-3 text-center">{t("demoFlow.startHeroNote")}</p>
+      <p className="text-xs text-slate-400 mt-3">{t("demoFlow.startHeroNote")}</p>
     </Card>
   );
 }
 
-function DescribeStep({ desc, setDesc, onGen, loading, onBack }) {
-  const { t } = useTranslation();
+function DescribeStep({ desc, setDesc, onGen, loading, onBack, lead, setLead }) {
+  const { t, i18n } = useTranslation();
+  const onTrade = (e) => {
+    const v = e.target.value;
+    setLead({ ...lead, trade: v });
+    setDesc(jobRequestText(v, t));
+  };
   return (
     <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
       <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mb-4"><ArrowLeft className="w-4 h-4" /> {t("demoFlow.back")}</button>
       <h2 className="font-heading text-2xl font-bold">{t("demoFlow.describeTitle")}</h2>
       <p className="text-slate-600 mt-1">{t("demoFlow.describeDesc")}</p>
-      <div className="flex flex-wrap gap-2 mt-4">
-        {EXAMPLE_IDS.map((id) => (
-          <button key={id} data-testid={`demo-example-${id}`} onClick={() => setDesc(t(`demoFlow.examples.${id}.text`))}
-            className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
-            {t(`demoFlow.examples.${id}.label`)}
-          </button>
-        ))}
+      <div className="mt-4">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startTradeLabel")}</label>
+        <select data-testid="demo-trade" value={lead?.trade || ""} onChange={onTrade} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
+          <option value="">{t("demoFlow.startTradeChoose")}</option>
+          {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
+        </select>
       </div>
       <Textarea data-testid="demo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={5}
         placeholder={t("demoFlow.descPlaceholder")}
