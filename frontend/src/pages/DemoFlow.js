@@ -293,6 +293,86 @@ function StepBar({ step }) {
   );
 }
 
+// A compact but hyper-realistic sample invoice shown on the very first screen so
+// cold mobile traffic instantly SEES the kind of professional document they'll get.
+function SampleInvoicePreview() {
+  const items = [
+    { d: "Roof leak repair — labor", q: "8 hrs", p: 95, a: 760 },
+    { d: "Shingles & underlayment", q: "1 lot", p: 540, a: 540 },
+    { d: "Flashing & sealant", q: "1 lot", p: 150, a: 150 },
+  ];
+  return (
+    <div className="mt-6 mx-auto max-w-sm rounded-2xl border border-slate-200 shadow-xl overflow-hidden text-left bg-white">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white px-4 py-3.5 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <Hammer className="w-4 h-4 flex-none" />
+            <span className="font-heading font-bold text-sm truncate">Demo Contractors LLC</span>
+          </div>
+          <div className="text-[10px] text-white/70 mt-0.5">(971) 227-0595 · Portland, OR</div>
+        </div>
+        <div className="text-right flex-none">
+          <div className="font-heading font-bold text-lg leading-none">INVOICE</div>
+          <div className="text-[10px] text-white/80 mt-1">#INV-1001</div>
+        </div>
+      </div>
+      <div className="px-4 pt-3 pb-4 text-[11px]">
+        {/* Bill to + dates */}
+        <div className="flex justify-between gap-2 pb-2.5 border-b border-slate-100">
+          <div>
+            <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bill To</div>
+            <div className="font-semibold text-slate-800 text-xs">María González</div>
+          </div>
+          <div className="text-right text-slate-500">
+            <div>Date: Aug 3, 2026</div>
+            <div>Due: On receipt</div>
+          </div>
+        </div>
+        {/* Line items table with zebra rows */}
+        <table className="w-full mt-2.5">
+          <thead>
+            <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-400 text-left">
+              <th className="pb-1 font-bold">Description</th>
+              <th className="pb-1 font-bold text-right">Qty</th>
+              <th className="pb-1 font-bold text-right">Price</th>
+              <th className="pb-1 font-bold text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((li, i) => (
+              <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                <td className="py-1.5 pr-1 text-slate-700 align-top leading-tight">{li.d}</td>
+                <td className="py-1.5 px-1 text-right text-slate-500 whitespace-nowrap">{li.q}</td>
+                <td className="py-1.5 px-1 text-right text-slate-500 whitespace-nowrap">${li.p}</td>
+                <td className="py-1.5 pl-1 text-right font-semibold text-slate-800 whitespace-nowrap">${li.a.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* Totals */}
+        <div className="mt-2 pt-2 border-t border-slate-200 space-y-1">
+          <div className="flex justify-between text-slate-500"><span>Subtotal</span><span>$1,450.00</span></div>
+          <div className="flex justify-between text-slate-500"><span>Tax (8%)</span><span>$116.00</span></div>
+          <div className="flex justify-between font-bold text-blue-900 text-sm pt-1 border-t border-slate-100"><span>TOTAL</span><span>$1,566.00</span></div>
+          <div className="flex justify-between font-bold text-emerald-700 bg-emerald-50 -mx-1 px-2 py-1.5 rounded-lg mt-1">
+            <span>Deposit due today</span><span>$783.00</span>
+          </div>
+        </div>
+        {/* Payment methods */}
+        <div className="mt-3 pt-2.5 border-t border-slate-100">
+          <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pay with</div>
+          <div className="flex gap-1 flex-wrap">
+            {["Card", "Venmo", "Zelle", "Cash App", "PayPal"].map((m) => (
+              <span key={m} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-semibold">{m}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LeadStep({ onStart, loading }) {
   const { t } = useTranslation();
   return (
@@ -303,26 +383,8 @@ function LeadStep({ onStart, loading }) {
       <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
       <p className="text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.startHeroDesc")}</p>
 
-      {/* Mini invoice preview so they SEE the value instantly — no form to fill */}
-      <div className="mt-6 mx-auto max-w-sm rounded-2xl border border-slate-200 shadow-lg overflow-hidden text-left">
-        <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white px-4 py-3 flex items-center justify-between">
-          <span className="font-heading font-bold text-sm">Demo Contractors</span>
-          <span className="font-heading font-bold">INVOICE</span>
-        </div>
-        <div className="p-4 text-xs space-y-2 bg-white">
-          <div className="flex justify-between text-slate-500"><span>#INV-1001</span><span>Aug 3, 2026</span></div>
-          <div className="border-t border-slate-100 pt-2 space-y-1.5">
-            <div className="flex justify-between"><span className="text-slate-700">Roof repair — labor</span><span className="font-semibold">$1,450.00</span></div>
-            <div className="flex justify-between"><span className="text-slate-700">Materials</span><span className="font-semibold">$650.00</span></div>
-          </div>
-          <div className="flex justify-between border-t border-slate-100 pt-2 font-bold text-blue-900"><span>TOTAL</span><span>$2,350.00</span></div>
-          <div className="flex gap-1.5 pt-1 flex-wrap">
-            {["Card", "Venmo", "Zelle", "Cash App"].map((m) => (
-              <span key={m} className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-100">{m}</span>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Realistic invoice sample so they SEE exactly what they'll create — no form to fill */}
+      <SampleInvoicePreview />
 
       <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-14 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-5 h-5 ml-2" /></>}
