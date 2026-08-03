@@ -1548,6 +1548,17 @@
     "busyTitle": "La IA está creando tu cotización…",
     "busyWait": "Esto puede tardar unos segundos. La IA está armando tu cotización profesional en inglés.",
     "busyStay": "No cierres esta pantalla — ya casi está…",
+    "guide": {
+      "stepLabel": "Paso {{n}} de {{total}}",
+      "s1": "Ya llenamos la descripción del trabajo. Toca para que la IA arme tu cotización.",
+      "s1cta": "Generar",
+      "s2": "Esta es la cotización que recibe tu cliente. Cuando la revises, continúa.",
+      "s2cta": "Continuar",
+      "s3": "Tu cliente firma el contrato con el dedo. Continúa para ver la factura.",
+      "s3cta": "Firmar y seguir",
+      "s4": "Así cobras tu depósito. Toca para completar el demo.",
+      "s4cta": "Pagar (demo)"
+    },
     "overlayTitle": "Generando tu Service Agreement…",
     "overlaySubtitle": "La IA está redactando tu contrato legal en inglés. Toma unos segundos — <1>no cierres esta página.</1>",
     "quoteBanner": "Así es como tu cliente recibe y aprueba la cotización 👇",

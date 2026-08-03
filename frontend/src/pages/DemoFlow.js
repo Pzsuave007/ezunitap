@@ -120,6 +120,7 @@ export default function DemoFlow() {
 
   const apiErr = (e, fallback) => setErr(e?.response?.data?.detail || fallback);
 
+
   // First-party funnel tracking (tagged "corto" so it's separate from the full demo).
   const track = (event, data = {}) => trackDemo(event, { ...data, demo: "corto" });
   const stepRef = useRef(step);
@@ -215,11 +216,33 @@ export default function DemoFlow() {
     window.scrollTo(0, 0);
   };
 
+  // Sign the agreement and move to the invoice.
+  const signNow = () => {
+    setSigned(true);
+    setStep(4);
+    window.scrollTo(0, 0);
+  };
+
+  // Complete the (simulated) payment and finish the demo.
+  const payNow = () => {
+    if (paid) return;
+    setPaid(true);
+    track("demo_completed", { step: 4, trade: lead.trade });
+  };
+
+  // Guide bar "Continue" — advances the demo without hunting for the in-document button.
+  const guideNext = () => {
+    if (step === 1) return genQuote();
+    if (step === 2) return genAgreement();
+    if (step === 3) return signNow();
+    if (step === 4) return payNow();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="demo-flow">
       <TopBar />
       {loading && step === 1 && <BusySheet />}
-      <div className="max-w-3xl mx-auto px-4 pt-6 pb-20">
+      <div className="max-w-3xl mx-auto px-4 pt-6 pb-32">
         <StepBar step={step} />
         {err && (
           <div data-testid="demo-error" className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
@@ -229,10 +252,50 @@ export default function DemoFlow() {
         {step === 0 && <LeadStep onStart={startDemo} loading={loading} />}
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
-        {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={() => { setSigned(true); setStep(4); window.scrollTo(0, 0); }} />}
-        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
+        {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={signNow} />}
+        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} />}
       </div>
+      <GuideBar step={step} onNext={guideNext} loading={loading} paid={paid} />
       <WhatsAppFab onClick={() => track("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />
+    </div>
+  );
+}
+
+// Sticky bottom guide bar: explains each step and gives one obvious "Continue"
+// button so demo users never get stuck hunting for the in-document button.
+function GuideBar({ step, onNext, loading, paid }) {
+  const { t } = useTranslation();
+  if (step < 1 || (step === 4 && paid)) return null;
+  const cfg = {
+    1: { instr: t("demoFlow.guide.s1"), cta: t("demoFlow.guide.s1cta"), Icon: Sparkles },
+    2: { instr: t("demoFlow.guide.s2"), cta: t("demoFlow.guide.s2cta"), Icon: ArrowRight },
+    3: { instr: t("demoFlow.guide.s3"), cta: t("demoFlow.guide.s3cta"), Icon: PenLine },
+    4: { instr: t("demoFlow.guide.s4"), cta: t("demoFlow.guide.s4cta"), Icon: CreditCard },
+  }[step];
+  if (!cfg) return null;
+  const { Icon } = cfg;
+  return (
+    <div
+      data-testid="demo-guide-bar"
+      className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-6px_24px_rgba(15,23,42,0.10)] animate-in slide-in-from-bottom duration-300"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+            {t("demoFlow.guide.stepLabel", { n: step + 1, total: 5 })}
+          </div>
+          <div className="text-sm text-slate-700 leading-snug">{cfg.instr}</div>
+        </div>
+        <Button
+          data-testid="demo-guide-next"
+          onClick={onNext}
+          disabled={loading}
+          className="flex-none h-12 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm"
+        >
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{cfg.cta} <Icon className="w-4 h-4 ml-1.5 flex-none" /></>}
+        </Button>
+      </div>
     </div>
   );
 }

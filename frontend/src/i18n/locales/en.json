@@ -1548,6 +1548,17 @@
     "busyTitle": "The AI is building your quote…",
     "busyWait": "This can take a few seconds. The AI is putting together your professional quote in English.",
     "busyStay": "Don't close this screen — almost there…",
+    "guide": {
+      "stepLabel": "Step {{n}} of {{total}}",
+      "s1": "We filled in the job description. Tap to let the AI build your quote.",
+      "s1cta": "Generate",
+      "s2": "This is the quote your client receives. When you're ready, continue.",
+      "s2cta": "Continue",
+      "s3": "Your client signs the contract with a finger. Continue to see the invoice.",
+      "s3cta": "Sign & continue",
+      "s4": "This is how you collect your deposit. Tap to finish the demo.",
+      "s4cta": "Pay (demo)"
+    },
     "overlayTitle": "Generating your Service Agreement…",
     "overlaySubtitle": "The AI is drafting your legal contract. It takes a few seconds — <1>don't close this page.</1>",
     "quoteBanner": "This is how your client receives and approves the quote 👇",

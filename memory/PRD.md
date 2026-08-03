@@ -15,6 +15,17 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Ago 3 2026 — Demo corto (/demo): factura de ejemplo realista + guía paso a paso [COMPLETO; verificado screenshots ?pv=2/4]
+Objetivo: reducir la caída del tráfico Meta (móvil) en quote/factura. 3 mejoras en `DemoFlow.js`:
+1. **Ejemplo de factura hiper-realista en el paso 0** (nuevo `SampleInvoicePreview`): encabezado del negocio (nombre/tel/ciudad), Bill To (María González), fechas, tabla con columnas reales (Description·Qty·Price·Amount) + filas cebra, totales (Subtotal $1,450 · Tax 8% $116 · TOTAL $1,566) + línea verde "Deposit due today $783" + métodos de pago. Reemplaza la mini-preview anterior. Así ven de inmediato el tipo de documento antes de arrancar.
+2. **Bottom-sheet "La IA está creando tu cotización…"** (nuevo `BusySheet`, estilo `/demo-flujo`): sube desde abajo al tocar "Generar cotización" (condición `loading && step===1`). ANTES el `GeneratingOverlay` tenía `loading && step===2` → NUNCA se mostraba durante la generación (bug). Barra de progreso animada (keyframe `busybar` global) + "no cierres esta pantalla". i18n `demoFlow.busyTitle/busyWait/busyStay`.
+3. **Barra guía fija abajo (`GuideBar`)** en pasos 1-4: explica qué ven y da UN botón obvio para avanzar sin cazar el botón dentro del documento. Textos i18n `demoFlow.guide.*` (stepLabel "Paso X de 5", s1..s4 + ctas). Handlers extraídos en el padre (`signNow`, `payNow`, `guideNext`). Los botones dentro de los documentos (Accept/Sign/Pay) SE QUEDAN (decisión del usuario: realismo). Se ocultan al pagar (step 4 + paid). Padding del contenedor a `pb-32` para no tapar contenido.
+- Verificación: tool de screenshot RE-NAVEGA tras el script (no refleja interacciones); se usó inyección temporal `?pv=2|4` (ya removida) para capturar Quote ("STEP 3 OF 5 → Continue") y Factura ("STEP 5 OF 5 → Pay (demo)") con la GuideBar. Backend `/public/demo/start` + `/quote` verificados por curl (quote total $1,315, 4 líneas). `yarn build` OK + `git add -f build/*`.
+- ⚠️ Pendiente usuario: "Save to Github" + deploy para publicar en el sitio en vivo.
+
+---
+
+
 ## ✅ Jul 28 2026 — Botón "Escríbeme por WhatsApp" (rescate de prospectos) [COMPLETO; verificado screenshot]
 - Nuevo componente `components/WhatsAppButton.js` → abre `wa.me/19712270595` con mensaje pre-escrito ("¡Hola! Vi el demo de UniTech y tengo unas preguntas…"). Número del dueño: +1 971-227-0595.
 - Colocado en: pantalla FINAL del demo (`DemoFlujo.jsx` FinalCTA, testid `flujo-final-whatsapp`) y en la página de precios (`Pricing.js`, testid `pricing-whatsapp`), para rescatar a quien no se convence de suscribirse solo.
