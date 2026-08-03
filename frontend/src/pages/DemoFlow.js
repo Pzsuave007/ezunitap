@@ -218,7 +218,7 @@ export default function DemoFlow() {
   return (
     <div className="min-h-screen bg-slate-50" data-testid="demo-flow">
       <TopBar />
-      {loading && step === 2 && <GeneratingOverlay />}
+      {loading && step === 1 && <BusySheet />}
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-20">
         <StepBar step={step} />
         {err && (
@@ -233,6 +233,36 @@ export default function DemoFlow() {
         {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={() => { setPaid(true); track("demo_completed", { step: 4, trade: lead.trade }); }} />}
       </div>
       <WhatsAppFab onClick={() => track("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />
+    </div>
+  );
+}
+
+// Bottom-sheet that slides up while the AI builds the quote so mobile users
+// don't bounce during the wait. Same pattern as /demo-flujo BusySheet.
+function BusySheet() {
+  const { t } = useTranslation();
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" data-testid="demo-busy-sheet">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300">
+        <div className="mx-auto w-12 h-1.5 rounded-full bg-slate-200 sm:hidden mb-5" />
+        <div className="flex flex-col items-center text-center">
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 opacity-20 animate-ping" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h3 className="font-heading text-lg font-bold mt-4 flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" /> {t("demoFlow.busyTitle")}
+          </h3>
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed max-w-xs">{t("demoFlow.busyWait")}</p>
+          <div className="mt-5 w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-blue-900 to-emerald-500 animate-[busybar_1.4s_ease-in-out_infinite]" />
+          </div>
+          <div className="text-xs font-semibold text-emerald-700 mt-3">{t("demoFlow.busyStay")}</div>
+        </div>
+      </div>
     </div>
   );
 }
