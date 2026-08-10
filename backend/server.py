@@ -3958,15 +3958,22 @@ class WebsiteIn(BaseModel):
     subheadline: Optional[str] = None
     about: Optional[str] = None
     hero_photo_id: Optional[str] = None
-    sections: Optional[dict] = None      # {services,gallery,reviews,contact,booking,about}
+    sections: Optional[dict] = None      # {services,gallery,reviews,contact,booking,about,how,why,faq,areas}
     cta_phone: Optional[str] = None
     service_area: Optional[str] = None
     hours: Optional[str] = None
+    how_it_works: Optional[list] = None  # [{title, desc}]
+    why_us: Optional[list] = None        # [{title, desc}]
+    faqs: Optional[list] = None          # [{q, a}]
+    areas: Optional[list] = None         # ["Spokane", ...]
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
     "services": True, "gallery": True, "reviews": True,
     "contact": True, "booking": False, "about": True,
+    "how": True, "why": True, "faq": True, "areas": True,
 }
 
 

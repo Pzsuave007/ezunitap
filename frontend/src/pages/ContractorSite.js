@@ -63,6 +63,15 @@ export default function ContractorSite() {
       .catch(() => setErr(true));
   }, [slug]);
 
+  useEffect(() => {
+    if (!data) return;
+    const ww = data.website, bb = data.business;
+    document.title = ww.seo_title || `${bb.name}${data.service_area ? " — " + data.service_area : ""}`;
+    let m = document.querySelector('meta[name="description"]');
+    if (!m) { m = document.createElement("meta"); m.name = "description"; document.head.appendChild(m); }
+    m.setAttribute("content", ww.seo_description || ww.subheadline || `${bb.name} — professional, licensed & insured service you can trust.`);
+  }, [data]);
+
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500 p-8 text-center">This website is not available.</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
@@ -141,8 +150,44 @@ export default function ContractorSite() {
                   <h3 className={`wsite-h ${t.heading} text-xl`} style={{ color: t.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2 text-sm leading-relaxed" style={{ color: t.muted }}>{s.description}</p>}
                   {s.starting_price && <p className="mt-3 text-sm font-bold" style={{ color: accent }}>{s.starting_price}</p>}
+                  {b.phone && <a href={`tel:${b.phone}`} className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold" style={{ color: accent }}><Phone className="w-4 h-4" /> Call now</a>}
                 </div>
               ))}
+            </div>
+          </Section>
+        )}
+
+        {/* How It Works */}
+        {sec.how !== false && (
+          <Section id="how" title="How It Works" t={t} alt>
+            <div className="grid sm:grid-cols-3 gap-5">
+              {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+                <div key={i} className={`p-6 ${t.card} relative`} style={{ background: t.bg }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black text-xl mb-4" style={{ background: accent }}>{i + 1}</div>
+                  <h3 className={`wsite-h ${t.heading} text-lg`} style={{ color: t.ink }}>{s.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: t.muted }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Why Choose Us */}
+        {sec.why !== false && (
+          <Section id="why" title="Why Choose Us" t={t}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
+                const WhyIcon = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
+                return (
+                  <div key={i} className={`p-5 ${t.card} text-center`} style={{ background: t.surface }}>
+                    <div className="w-11 h-11 rounded-xl mx-auto flex items-center justify-center mb-3" style={{ background: `${accent}1a` }}>
+                      <WhyIcon className="w-5 h-5" style={{ color: accent }} />
+                    </div>
+                    <h3 className={`wsite-h ${t.heading} text-base`} style={{ color: t.ink }}>{s.title}</h3>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: t.muted }}>{s.desc}</p>
+                  </div>
+                );
+              })}
             </div>
           </Section>
         )}
@@ -248,6 +293,22 @@ const DEFAULT_SERVICES = [
   { name: "Free Estimates", description: "Fast, no-obligation quotes for your project." },
   { name: "Quality Work", description: "Licensed, insured, and done right the first time." },
   { name: "On-Time Service", description: "We show up when we say we will." },
+];
+const DEFAULT_HOW = [
+  { title: "Reach Out", desc: "Call us or request a free quote online — we respond fast." },
+  { title: "We Assess", desc: "We evaluate the job and give you a clear, upfront price." },
+  { title: "We Get It Done", desc: "Professional, reliable work done right the first time." },
+];
+const DEFAULT_WHY = [
+  { title: "Fast Response", desc: "We show up on time, every time." },
+  { title: "Upfront Pricing", desc: "No hidden fees — you know the cost before we start." },
+  { title: "Licensed & Insured", desc: "Fully covered for your peace of mind." },
+  { title: "5-Star Service", desc: "Trusted by our local community." },
+];
+const DEFAULT_FAQ = [
+  { q: "How much does it cost?", a: "Every job is different — contact us for a fast, free, no-obligation quote." },
+  { q: "How soon can you come out?", a: "We offer fast scheduling with same-week availability in most cases." },
+  { q: "Are you licensed and insured?", a: "Yes — we are fully licensed and insured for your protection." },
 ];
 
 function Section({ id, title, t, alt, children }) {
