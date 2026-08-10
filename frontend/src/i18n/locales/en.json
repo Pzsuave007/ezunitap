@@ -118,9 +118,11 @@
     "seoMetaDesc": "Meta description",
     "seoMetaDescPh": "One sentence describing your business for Google.",
     "tpl": {
-      "cleanName": "Clean & Modern", "cleanDesc": "Plumbing, electrical, general",
-      "boldName": "Bold & Industrial", "boldDesc": "Roofing, HVAC, concrete",
-      "warmName": "Warm & Trustworthy", "warmDesc": "Landscaping, cleaning, painting"
+      "cinematicName": "Cinematic Dark", "cinematicDesc": "Bold, premium, full-screen photo",
+      "responderName": "Urgent Responder", "responderDesc": "24/7, high-energy, call-first",
+      "bentoName": "Modern Bento", "bentoDesc": "Clean, app-like, side menu",
+      "craftsmanName": "Organic Craftsman", "craftsmanDesc": "Elegant, editorial, warm",
+      "trustName": "Local Trust", "trustDesc": "Familiar, form-first, converts"
     },
     "sec": {
       "services": "Services", "gallery": "Gallery (job photos)", "reviews": "Reviews",

@@ -119,9 +119,11 @@
     "seoMetaDesc": "Descripción meta",
     "seoMetaDescPh": "Una frase que describa tu negocio para Google.",
     "tpl": {
-      "cleanName": "Limpio y Moderno", "cleanDesc": "Plomería, eléctrico, general",
-      "boldName": "Fuerte e Industrial", "boldDesc": "Techos, HVAC, concreto",
-      "warmName": "Cálido y Confiable", "warmDesc": "Jardinería, limpieza, pintura"
+      "cinematicName": "Cine Oscuro", "cinematicDesc": "Premium, foto a pantalla completa",
+      "responderName": "Respuesta Urgente", "responderDesc": "24/7, con energía, llama ya",
+      "bentoName": "Bento Moderno", "bentoDesc": "Limpio, tipo app, menú lateral",
+      "craftsmanName": "Artesano Cálido", "craftsmanDesc": "Elegante, editorial, cálido",
+      "trustName": "Confianza Local", "trustDesc": "Familiar, con formulario, convierte"
     },
     "sec": {
       "services": "Servicios", "gallery": "Galería (fotos de trabajos)", "reviews": "Reseñas",

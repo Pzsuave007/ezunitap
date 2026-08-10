@@ -10,8 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 
-const TEMPLATES = ["clean", "bold", "warm"];
-const TPL_SWATCH = { clean: "#007AFF", bold: "#FF3B30", warm: "#2F5233" };
+const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust"];
+const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E" };
 const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about", "contact", "booking"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const photoSrc = (id) => `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${id}`;
