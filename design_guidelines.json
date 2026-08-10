@@ -26,6 +26,31 @@
       "heading": "Montserrat",
       "body": "Open Sans",
       "css_import": "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap');"
+    },
+    "T6_Slider_BeforeAfter": {
+      "heading": "Oswald",
+      "body": "Lato",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Oswald:wght@500;700&display=swap');"
+    },
+    "T7_Minimal_OnePage": {
+      "heading": "Work Sans",
+      "body": "Inter",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Work+Sans:wght@300;400;600&display=swap');"
+    },
+    "T8_Neon_AppTech": {
+      "heading": "Rajdhani",
+      "body": "JetBrains Mono",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');"
+    },
+    "T9_Playful_Friendly": {
+      "heading": "Fredoka",
+      "body": "Nunito",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap');"
+    },
+    "T10_Luxury_Elegant": {
+      "heading": "Cormorant Garamond",
+      "body": "Montserrat",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap');"
     }
   },
   "colors": {
@@ -54,7 +79,8 @@
         "border": "border-white/10",
         "shadow": "shadow-[0_0_40px_rgba(0,0,0,0.5)]",
         "spacing_rhythm": "py-32 (massive breathing room)"
-      }
+      },
+      "chat_launcher_position": "Bottom-right. Ensure bottom-24 on mobile to not overlap sticky nav."
     },
     {
       "name": "T2_Urgent_Responder",
@@ -78,7 +104,8 @@
         "border": "border-black",
         "shadow": "shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] (Neo-brutalist)",
         "spacing_rhythm": "py-16 (tighter, fast-paced)"
-      }
+      },
+      "chat_launcher_position": "Bottom-left to balance the design and clear the bottom sticky Call rail on mobile."
     },
     {
       "name": "T3_Modern_SaaS_Bento",
@@ -102,7 +129,8 @@
         "border": "border-slate-200",
         "shadow": "shadow-xl shadow-slate-200/50",
         "spacing_rhythm": "py-24"
-      }
+      },
+      "chat_launcher_position": "Bottom-right. Desktop is fine; on mobile, lift it bottom-24 to avoid overriding floating action buttons."
     },
     {
       "name": "T4_Organic_Craftsman",
@@ -126,7 +154,8 @@
         "border": "border-[#E5E3DB]",
         "shadow": "shadow-md",
         "spacing_rhythm": "py-24 gap-16"
-      }
+      },
+      "chat_launcher_position": "Bottom-right. Styled warmly if configurable; lift bottom-24 on mobile."
     },
     {
       "name": "T5_Local_Trust",
@@ -150,7 +179,143 @@
         "border": "border-gray-200",
         "shadow": "shadow-lg",
         "spacing_rhythm": "py-20"
-      }
+      },
+      "chat_launcher_position": "Bottom-left. Mobile CTA banner lives at the bottom, so elevate chat to bottom-24 left side."
+    },
+    {
+      "name": "T6_Slider_BeforeAfter",
+      "best_for_trades": "Painting, Roofing, Cleaning, Landscaping, Restoration",
+      "vibe": "Transformation-focused, Interactive, Visual Proof",
+      "wow_element": "Signature interactive Before/After image slider in the hero and a dedicated results section. Heavy emphasis on visual transformation.",
+      "section_by_section": {
+        "header": "Solid top bar, high contrast `bg-white` with bold uppercase nav. Prominent `accent_color` Quote button.",
+        "hero": "Interactive before/after image slider split-screen. Left side overlaid with solid block containing high contrast headline/subheadline and CTA. Mobile uses a stacked layout with the slider taking 50vh.",
+        "how_it_works": "Horizontal process cards with large directional arrows linking them, indicating a 'process'.",
+        "services": "Grid of cards where each service features a mini before/after slider or static side-by-side thumbnail.",
+        "why_us": "Bulleted list highlighting speed and quality with custom checkmark icons colored by `accent_color`.",
+        "gallery": "Dedicated before/after interactive sliders in a 2-column grid to show massive transformations.",
+        "reviews": "Image-heavy reviews showing the finished job photo adjacent to the customer's text in a single elegant card.",
+        "areas": "Bold typographic list with a map icon.",
+        "form": "Side-by-side with a final 'Before/After' transformation image to drive conversion at the bottom.",
+        "footer": "Standard dark block footer with quick links."
+      },
+      "tailwind_tokens": {
+        "theme": "Clean & Bold (`bg-white text-gray-900`)",
+        "radius": "rounded-none",
+        "border": "border-2 border-gray-100",
+        "shadow": "shadow-[4px_4px_0_rgba(0,0,0,0.1)]",
+        "spacing_rhythm": "py-20"
+      },
+      "micro_interactions": "Smooth dragging for sliders. Hovering buttons slides an arrow icon right.",
+      "chat_launcher_position": "Bottom-right. Elevated `bottom-24` on mobile to avoid overlapping the bottom sticky mobile CTA."
+    },
+    {
+      "name": "T7_Minimal_OnePage",
+      "best_for_trades": "Architectural Builders, Minimalist Landscapers, High-End Painters",
+      "vibe": "Ultra-clean, whitespace, refined and calm",
+      "wow_element": "Single flowing page, anchor-scroll nav, massive typography, delicate 1px dividers, tiny accent dots for a calming aesthetic.",
+      "section_by_section": {
+        "header": "Sticky top, ultra-minimal. Just logo on left and anchor links right. Border bottom `1px border-gray-200`.",
+        "hero": "Generous whitespace. Massive text taking up 60% of the screen. A single delicate cropped image offset to the right.",
+        "how_it_works": "Clean vertical numbered list with large light grey numbers (e.g., '01', '02'), separated by thin full-width horizontal borders.",
+        "services": "Accordion list. Right-aligned prices, thin borders (`border-b`), expanding to show a minimalist text description.",
+        "why_us": "Minimal text paragraphs, high line-height `leading-loose`, large text size (`text-xl` to `text-2xl`).",
+        "gallery": "Asymmetric scattered single column of images, floating in whitespace with no visible grid lines.",
+        "reviews": "Single large quote centered, fading in and out slowly, no background cards.",
+        "areas": "Inline typography list with small `accent_color` bullet dots as separators.",
+        "form": "Extremely minimal. Hidden container borders, only bottom borders (`border-b border-gray-300`) for inputs.",
+        "footer": "Simple 2-line footer. Copyright and social links."
+      },
+      "tailwind_tokens": {
+        "theme": "Minimalist Light (`bg-[#FAFAFA] text-[#111]`)",
+        "radius": "rounded-sm",
+        "border": "border-gray-200",
+        "shadow": "shadow-none",
+        "spacing_rhythm": "py-32"
+      },
+      "micro_interactions": "Smooth anchor scrolling. Text fades in softly on scroll. Lines expand from 0 to 100% width on load.",
+      "chat_launcher_position": "Bottom-left to balance the minimal right side of the layout. Elevated `bottom-24` on mobile."
+    },
+    {
+      "name": "T8_Neon_AppTech",
+      "best_for_trades": "Smart-Home Installers, Security Systems, EV Chargers, Solar",
+      "vibe": "Futuristic dark UI, neon glow, SaaS/App feel",
+      "wow_element": "Dark UI with neon accent glow (`box-shadow: 0 0 15px accent_color`), glassmorphism cards, and subtle technical grid background pattern.",
+      "section_by_section": {
+        "header": "Glassmorphism dark bar (`backdrop-blur-md bg-[#0a0a0c]/80`), `border-b border-white/10`. Glowing CTA button.",
+        "hero": "Darkened image or 3D isometric graphic. Headline features neon glow drop-shadow. Background has a subtle grid/dot pattern.",
+        "how_it_works": "Stepper component with glowing active nodes and dashed connecting lines. Mono-spaced step labels.",
+        "services": "Glassmorphism cards `bg-white/5` with inner glowing borders on hover (`border-transparent hover:border-[accent_color]`).",
+        "why_us": "Hexagon or tech-shaped icons, mono-spaced small caps typography for labels.",
+        "gallery": "Images start greyscale and transition to full glowing color on hover.",
+        "reviews": "Terminal-style aesthetic cards. Simulates a typing effect when scrolled into view.",
+        "areas": "Glowing pill tags mapping the service areas.",
+        "form": "Dark inputs `bg-[#141417] border-white/10`. Inputs feature a heavy glow on focus (`focus:ring-2 focus:ring-[accent_color] shadow-[0_0_10px_accent_color]`).",
+        "footer": "Tech-style footer with monospaced links."
+      },
+      "tailwind_tokens": {
+        "theme": "Cyber Dark (`bg-[#0a0a0c] text-gray-300`)",
+        "radius": "rounded-xl",
+        "border": "border-white/10",
+        "shadow": "shadow-[0_0_15px_var(--accent_color)]",
+        "spacing_rhythm": "py-24"
+      },
+      "micro_interactions": "Neon glows intensify on hover. Fast, snappy transitions (150ms).",
+      "chat_launcher_position": "Bottom-right. Positioned `bottom-28` to clear the sticky mobile neon 'Get Quote' bar."
+    },
+    {
+      "name": "T9_Playful_Friendly",
+      "best_for_trades": "Cleaning, Junk Removal, Moving, Pet Services",
+      "vibe": "Warm, rounded, energetic, approachable",
+      "wow_element": "Big color blocks, playful blobs/shapes, bold rounded buttons, and sticker-like badges for an energetic and approachable feel.",
+      "section_by_section": {
+        "header": "Floating pill-shaped nav, off the top edge `mt-4 max-w-5xl mx-auto rounded-full bg-white shadow-md`.",
+        "hero": "Image masked into an organic blob shape. Large soft typography. Background features pastel offset blocks matching the `accent_color` tint.",
+        "how_it_works": "Winding path timeline (curved SVG line), steps are colorful floating circles.",
+        "services": "Cards with massive round corners (`rounded-[2rem]`), bright pastel background colors, bouncing hover effect.",
+        "why_us": "Sticker-like badges scattered asymmetrically around a central smiling team photo.",
+        "gallery": "Interlocking rounded squares and circles forming a playful mosaic.",
+        "reviews": "Chat-bubble shaped testimonial cards with a little triangle tail pointing to the reviewer's name.",
+        "areas": "Colorful pill tags in varying pastel shades.",
+        "form": "Soft floating inputs with fully rounded corners (`rounded-full`), playful placeholder text, chunky submit button.",
+        "footer": "Wavy top edge SVG leading into a solid warm-colored footer."
+      },
+      "tailwind_tokens": {
+        "theme": "Warm & Bright (`bg-[#fff8f0] text-[#333]`)",
+        "radius": "rounded-[2rem]",
+        "border": "border-transparent",
+        "shadow": "shadow-xl shadow-[accent_color]/20",
+        "spacing_rhythm": "py-20"
+      },
+      "micro_interactions": "Bouncy 'spring' animations on hover and scroll-into-view. Buttons slightly compress when clicked.",
+      "chat_launcher_position": "Bottom-left (pet/friendly vibe often uses left to leave right open for scroll). Offset `bottom-24` on mobile."
+    },
+    {
+      "name": "T10_Luxury_Elegant",
+      "best_for_trades": "Luxury Remodels, Custom Builds, High-End Landscaping/Pools",
+      "vibe": "High-end, sophisticated, editorial",
+      "wow_element": "Serif display fonts, generative generous spacing, gold/emerald on dark or ivory palette, thin elegant lines, large editorial imagery.",
+      "section_by_section": {
+        "header": "Transparent, elegant thin logo centered. Nav links flank left/right. High-end fashion site aesthetic.",
+        "hero": "Full-bleed sophisticated imagery. A fine 1px inset border frames the inner screen content. Typography is elegant, utilizing italics selectively.",
+        "how_it_works": "Uses Roman numerals (I, II, III). Delicate vertical connecting lines between elegant serif headers.",
+        "services": "Minimalist text-heavy descriptions. Hover reveals the service background image slowly fading in behind the text.",
+        "why_us": "Editorial 2-column layout. Left side pure typography, right side features staggered elegant tall portrait images.",
+        "gallery": "High-end lookbook style. Wide cinematic crops, no gaps between images (`gap-0`), creating a mural effect.",
+        "reviews": "Sophisticated typography, wide letter spacing (`tracking-[0.2em]`) for reviewer names.",
+        "areas": "Elegant list with a thin `accent_color` (often gold/champagne) vertical rule on the left.",
+        "form": "Inputs look like high-end stationery (just thin bottom borders). Submit button is a sharp rectangle with thin borders and subtle hover fill.",
+        "footer": "Vast dark footer with minimal text, very small uppercase links with wide tracking."
+      },
+      "tailwind_tokens": {
+        "theme": "Luxury Dark/Ivory (`bg-[#1a1a1a] text-[#f5f5f0]` or vice versa)",
+        "radius": "rounded-none",
+        "border": "border-[accent_color]/30",
+        "shadow": "shadow-2xl",
+        "spacing_rhythm": "py-32"
+      },
+      "micro_interactions": "Extremely slow, elegant fades (500ms+). Images scale up very slowly on hover (10s duration zoom).",
+      "chat_launcher_position": "Bottom-right. Must be a subtle monochrome icon until hovered. Clears bottom CTA by sitting at `bottom-24` on mobile."
     }
   ],
   "visual_enhancers": {
@@ -158,14 +323,19 @@
     "T2_Urgent_Responder": "Use `clip-path` for diagonal cuts. Use CSS animations for a pulsing 'Call Now' button. Implement `react-fast-marquee` for trust badges.",
     "T3_Modern_SaaS_Bento": "Use strict CSS grid (`grid-cols-4`, `grid-cols-8`). Ensure equal spacing (`gap-6`). Hover states should lift cards up `-translate-y-1`.",
     "T4_Organic_Craftsman": "Use negative margins (`-mt-12`, `-ml-8`) to create overlapping editorial layouts. Rely on Serif typography for numbers and quotes.",
-    "T5_Local_Trust": "Use SVG wavy dividers between sections (`fill-white` or `fill-gray-50`). Floating elements must have standard `shadow-2xl`."
+    "T5_Local_Trust": "Use SVG wavy dividers between sections (`fill-white` or `fill-gray-50`). Floating elements must have standard `shadow-2xl`.",
+    "T6_Slider_BeforeAfter": "Implement a custom draggable before/after slider component. Use bold solid color blocking to break up sections.",
+    "T7_Minimal_OnePage": "Rely heavily on whitespace. Use 1px thin borders to separate content blocks instead of background color changes.",
+    "T8_Neon_AppTech": "Use `box-shadow` for intense neon glows. Add a subtle repeating linear-gradient or SVG pattern for a tech-grid background.",
+    "T9_Playful_Friendly": "Use SVG paths for blob shapes. Implement heavy `border-radius` classes and soft drop shadows to create a friendly, tactile UI.",
+    "T10_Luxury_Elegant": "Incorporate fine 1px framing borders around images and containers. Utilize mixed font styling (regular alongside italic serif) for an editorial feel."
   },
   "grids": {
     "bento_grid_protocol": "For T3, ensure spans mix correctly: One big hero card `col-span-2 row-span-2`, flanked by smaller `col-span-1 row-span-1` widgets.",
     "masonry_grid_protocol": "For T1 gallery, use CSS columns (`columns-1 md:columns-3 gap-4`) and `break-inside-avoid` on children to simulate masonry."
   },
   "motion": {
-    "framer_motion_usage": "Wrap sections in simple scroll-reveal triggers. T1: Fade up. T2: Slide in from left/right (fast). T3: Scale up slightly. T4: Slow fade and slight rotation. T5: Standard slide up.",
+    "framer_motion_usage": "Wrap sections in simple scroll-reveal triggers. T1: Fade up. T2: Slide in from left/right (fast). T3: Scale up slightly. T4: Slow fade and slight rotation. T5: Standard slide up. T6: Snappy slide. T7: Smooth slow fade. T8: Quick tech glitch or opacity reveal. T9: Bouncy spring scale-up. T10: Ultra-slow cinematic fade up.",
     "micro_interactions": "All buttons MUST have hover states. E.g., `hover:scale-105 transition-transform duration-300`."
   },
   "accessibility": {
@@ -196,14 +366,15 @@
     "usage_instructions": "Always attempt to render `data.photos` or `data.hero_photo` first. If null or empty, match the `data.business_type` to a fallback array above to ensure image-forward design."
   },
   "instructions_to_main_agent": {
-    "critical_directive_1": "DO NOT create one generic layout and just change the colors/fonts. You MUST implement 5 completely separate component trees or highly conditional rendering blocks inside `ContractorSite.js`. The DOM structure, grid choices, and element ordering MUST be entirely distinct per template according to the layouts array.",
+    "critical_directive_1": "DO NOT create one generic layout and just change the colors/fonts. You MUST implement entirely distinct component trees or highly conditional rendering blocks inside `ContractorSite.js`. The DOM structure, grid choices, and element ordering MUST be entirely distinct per template according to the layouts array.",
     "critical_directive_2": "Use `lucide-react` for icons. Ensure icons inherit the `accent_color` where appropriate.",
     "critical_directive_3": "Do not hardcode a single color. Use inline styles mapped to the data payload: `style={{ backgroundColor: data.accent_color }}` for buttons, and `style={{ color: data.accent_color }}` for text highlights.",
     "critical_directive_4": "The provided layout designs are mobile-first. Ensure complex Desktop structures (like T3's Sidebar) collapse gracefully into Mobile (Top bar hamburger).",
-    "critical_directive_5": "Never leave transparent headers fully transparent without a blur if content scrolls under them. Use `backdrop-blur-md`."
+    "critical_directive_5": "Never leave transparent headers fully transparent without a blur if content scrolls under them. Use `backdrop-blur-md`.",
+    "critical_directive_6": "For the optional floating AI chat launcher script injection, ensure there is a placeholder or positioning rule that maps to `chat_launcher_position` specified per template (e.g. elevating it `bottom-24` on mobile so it doesn't collide with sticky mobile CTAs)."
   },
   "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "You tend to converge toward generic outputs. Avoid this. Make these 5 templates truly structurally different.",
+    "You tend to converge toward generic outputs. Avoid this. Make these 10 templates truly structurally different.",
     "Create depth through layered design elements with z-index hierarchy.",
     "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
     "Every interaction needs micro-animations - hover states, transitions. Static = dead.",
