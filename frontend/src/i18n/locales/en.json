@@ -44,8 +44,8 @@
     "dayOne": "{{count}} day",
     "dayOther": "{{count}} days",
     "appointments": "Appointments",
-    "embed": "Embed Codes",
-    "website": "Website",
+    "embed": "Website",
+    "website": "Web Page",
     "qrCodes": "QR Codes"
   },
   "auth": {
