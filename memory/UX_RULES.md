@@ -29,6 +29,12 @@ centrada con overlay gris → convertir a página.
   `pages/ClientForm.js` (rutas `/clientes/nuevo`). `Clients.js` ahora solo navega.
 - Ago 2026: "Agregar trabajo" pasó de `<Dialog>` en `Jobs.js` a página
   `pages/JobForm.js` (ruta `/trabajos/nuevo`). `Jobs.js` ahora solo navega.
+- Ago 2026: "Agregar/editar trabajo en Calendario" (JobEditor con modos
+  único/proyecto/recurrente) pasó de `<Dialog>` en `Calendar.js` a página
+  `pages/CalendarJobForm.js` (rutas `/calendario/nuevo?date=` y `/calendario/:id/editar`).
+  `Calendar.js`: eliminado componente JobEditor + estados editorOpen/editingJobId +
+  imports de form ya sin uso. `startNew`/`startEdit` ahora navegan. El detalle de
+  evento (EventDetail) sigue como Sheet slide-up (no es popup centrado).
   Editar cliente ya era inline (OK). En `Jobs.js` QUEDAN (por decisión del dueño,
   solo pidió convertir "agregar trabajo") popups menores: agendar (scheduleJob),
   subir foto (photoJob) y SendDocumentDialog — revisar/convertir si el dueño lo pide.

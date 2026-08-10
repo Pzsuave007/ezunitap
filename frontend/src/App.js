@@ -17,6 +17,7 @@ import InvoiceDetail from "@/pages/InvoiceDetail";
 import Jobs from "@/pages/Jobs";
 import JobForm from "@/pages/JobForm";
 import Calendar from "@/pages/Calendar";
+import CalendarJobForm from "@/pages/CalendarJobForm";
 import Messages from "@/pages/Messages";
 import Scope from "@/pages/Scope";
 import Settings from "@/pages/Settings";
@@ -134,6 +135,8 @@ function App() {
               <Route path="/trabajos" element={<FeatureGate feature="business"><Jobs /></FeatureGate>} />
               <Route path="/trabajos/nuevo" element={<FeatureGate feature="business"><JobForm /></FeatureGate>} />
               <Route path="/calendario" element={<FeatureGate feature="business"><Calendar /></FeatureGate>} />
+              <Route path="/calendario/nuevo" element={<FeatureGate feature="business"><CalendarJobForm /></FeatureGate>} />
+              <Route path="/calendario/:id/editar" element={<FeatureGate feature="business"><CalendarJobForm /></FeatureGate>} />
               <Route path="/tarjeta" element={<FeatureGate feature="card"><CardAdmin /></FeatureGate>} />
               <Route path="/sitio-web" element={<FeatureGate feature="card"><EmbedSettings /></FeatureGate>} />
               <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
