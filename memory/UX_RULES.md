@@ -38,3 +38,7 @@ centrada con overlay gris → convertir a página.
   Editar cliente ya era inline (OK). En `Jobs.js` QUEDAN (por decisión del dueño,
   solo pidió convertir "agregar trabajo") popups menores: agendar (scheduleJob),
   subir foto (photoJob) y SendDocumentDialog — revisar/convertir si el dueño lo pide.
+- Ago 2026: `SendDocumentDialog` ("Send Invoice/Quote/Agreement") pasó de `<Dialog>`
+  centrado a `<Sheet side="bottom">` (slide-up desde abajo) — patrón permitido, igual
+  que EventDetail/BusySheet. Mantiene botón "Enviar con PDF adjunto" (Web Share API).
+  Nota: en Jobs quedan aún scheduleJob/photoJob como Dialog centrado.

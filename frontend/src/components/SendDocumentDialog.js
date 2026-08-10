@@ -15,8 +15,8 @@
  */
 import { useMemo, useState } from "react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Smartphone, Mail, Copy, ExternalLink, Paperclip, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -183,14 +183,15 @@ export default function SendDocumentDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md" data-testid="send-document-dialog">
-        <DialogHeader>
-          <DialogTitle className="font-heading">{meta.title}</DialogTitle>
-          <DialogDescription>{meta.description}</DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto" data-testid="send-document-dialog">
+        <div className="max-w-md mx-auto w-full">
+          <SheetHeader className="text-left">
+            <SheetTitle className="font-heading">{meta.title}</SheetTitle>
+            <SheetDescription>{meta.description}</SheetDescription>
+          </SheetHeader>
 
-        <div className="space-y-2">
+          <div className="space-y-2 mt-4">
           {getPdfBlob && (
             <button
               data-testid="send-pdf-attach"
@@ -284,8 +285,9 @@ export default function SendDocumentDialog({
             </div>
             <div className="text-slate-500 whitespace-pre-line">{message}</div>
           </div>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
