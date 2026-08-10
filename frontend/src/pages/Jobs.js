@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import StatusBadge, { JOB_STATUSES } from "@/components/StatusBadge";
 import { Plus, Briefcase, Loader2, Camera, CalendarClock, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -251,47 +251,49 @@ export default function Jobs() {
         </div>
       )}
 
-      <Dialog open={!!scheduleJob} onOpenChange={(o) => !o && setScheduleJob(null)}>
-        <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader><DialogTitle className="font-heading">{t("jobs.scheduleJob")}</DialogTitle></DialogHeader>
-          {scheduleJob && (
-            <div className="space-y-3">
-              <div className="text-sm text-slate-600">{scheduleJob.title} · {clientName(scheduleJob.client_id)}</div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>{t("jobs.startDate")} *</Label>
-                  <Input type="date" value={sched.scheduled_date} onChange={(e) => setSched({ ...sched, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-date" />
-                </div>
-                <div>
-                  <Label>{t("jobs.endDate")}</Label>
-                  <Input type="date" value={sched.end_date} min={sched.scheduled_date || undefined} onChange={(e) => setSched({ ...sched, end_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-date" />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input type="checkbox" checked={sched.all_day} onChange={(e) => setSched({ ...sched, all_day: e.target.checked })} className="w-4 h-4 rounded accent-emerald-600" data-testid="sched-allday" />
-                <span className="text-sm">{t("jobs.allDay")}</span>
-              </label>
-              {!sched.all_day && (
+      <Sheet open={!!scheduleJob} onOpenChange={(o) => !o && setScheduleJob(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto">
+          <div className="max-w-md mx-auto w-full">
+            <SheetHeader className="text-left"><SheetTitle className="font-heading">{t("jobs.scheduleJob")}</SheetTitle></SheetHeader>
+            {scheduleJob && (
+              <div className="space-y-3 mt-4">
+                <div className="text-sm text-slate-600">{scheduleJob.title} · {clientName(scheduleJob.client_id)}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>{t("jobs.startTime")}</Label>
-                    <Input type="time" value={sched.start_time} onChange={(e) => setSched({ ...sched, start_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-time" />
+                    <Label>{t("jobs.startDate")} *</Label>
+                    <Input type="date" value={sched.scheduled_date} onChange={(e) => setSched({ ...sched, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-date" />
                   </div>
                   <div>
-                    <Label>{t("jobs.endTime")}</Label>
-                    <Input type="time" value={sched.end_time} onChange={(e) => setSched({ ...sched, end_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-time" />
+                    <Label>{t("jobs.endDate")}</Label>
+                    <Input type="date" value={sched.end_date} min={sched.scheduled_date || undefined} onChange={(e) => setSched({ ...sched, end_date: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-date" />
                   </div>
                 </div>
-              )}
-              <p className="text-xs text-slate-400">{t("jobs.scheduleHint")}</p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl">{t("common.cancel")}</Button>
-            <Button onClick={saveSchedule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">{t("jobs.saveSchedule")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={sched.all_day} onChange={(e) => setSched({ ...sched, all_day: e.target.checked })} className="w-4 h-4 rounded accent-emerald-600" data-testid="sched-allday" />
+                  <span className="text-sm">{t("jobs.allDay")}</span>
+                </label>
+                {!sched.all_day && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>{t("jobs.startTime")}</Label>
+                      <Input type="time" value={sched.start_time} onChange={(e) => setSched({ ...sched, start_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-start-time" />
+                    </div>
+                    <div>
+                      <Label>{t("jobs.endTime")}</Label>
+                      <Input type="time" value={sched.end_time} onChange={(e) => setSched({ ...sched, end_time: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="sched-end-time" />
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-slate-400">{t("jobs.scheduleHint")}</p>
+              </div>
+            )}
+            <SheetFooter className="mt-4 flex-col-reverse sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl h-12">{t("common.cancel")}</Button>
+              <Button onClick={saveSchedule} className="rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">{t("jobs.saveSchedule")}</Button>
+            </SheetFooter>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <SendDocumentDialog
         open={reviewOpen}
@@ -303,40 +305,42 @@ export default function Jobs() {
         jobTitle={reviewJobTitle}
       />
 
-      <Dialog open={!!photoJob} onOpenChange={(o) => !o && setPhotoJob(null)}>
-        <DialogContent className="rounded-2xl max-w-sm">
-          <DialogHeader><DialogTitle className="font-heading">{t("jobs.uploadJobPhotoTitle")}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-slate-500 -mt-1">{photoJob?.title}</p>
-            <div>
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("jobs.labelField")}</Label>
-              <div className="flex gap-2 mt-2">
-                {["before", "during", "after"].map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setPhotoLabel(l)}
-                    data-testid={`job-photo-label-${l}`}
-                    className={`flex-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                  >
-                    {t(`jobs.${l}`)}
-                  </button>
-                ))}
+      <Sheet open={!!photoJob} onOpenChange={(o) => !o && setPhotoJob(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto">
+          <div className="max-w-sm mx-auto w-full">
+            <SheetHeader className="text-left"><SheetTitle className="font-heading">{t("jobs.uploadJobPhotoTitle")}</SheetTitle></SheetHeader>
+            <div className="space-y-4 mt-4">
+              <p className="text-sm text-slate-500 -mt-1">{photoJob?.title}</p>
+              <div>
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("jobs.labelField")}</Label>
+                <div className="flex gap-2 mt-2">
+                  {["before", "during", "after"].map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setPhotoLabel(l)}
+                      data-testid={`job-photo-label-${l}`}
+                      className={`flex-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${photoLabel === l ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                    >
+                      {t(`jobs.${l}`)}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <Button
+                onClick={() => photoInput.current?.click()}
+                disabled={uploadingPhoto}
+                data-testid="job-photo-choose"
+                className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700"
+              >
+                {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Camera className="w-4 h-4 mr-2" />}
+                {t("jobs.choosePhoto")}
+              </Button>
+              <input ref={photoInput} type="file" accept="image/*" hidden onChange={uploadJobPhoto} />
             </div>
-            <Button
-              onClick={() => photoInput.current?.click()}
-              disabled={uploadingPhoto}
-              data-testid="job-photo-choose"
-              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700"
-            >
-              {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Camera className="w-4 h-4 mr-2" />}
-              {t("jobs.choosePhoto")}
-            </Button>
-            <input ref={photoInput} type="file" accept="image/*" hidden onChange={uploadJobPhoto} />
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

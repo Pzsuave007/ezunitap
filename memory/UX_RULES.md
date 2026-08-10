@@ -42,3 +42,6 @@ centrada con overlay gris → convertir a página.
   centrado a `<Sheet side="bottom">` (slide-up desde abajo) — patrón permitido, igual
   que EventDetail/BusySheet. Mantiene botón "Enviar con PDF adjunto" (Web Share API).
   Nota: en Jobs quedan aún scheduleJob/photoJob como Dialog centrado.
+- Ago 2026: en `Jobs.js`, "Agendar cita" (scheduleJob) y "Subir foto" (photoJob)
+  pasaron de `<Dialog>` centrado a `<Sheet side="bottom">` (slide-up). Ya NO quedan
+  popups centrados en Jobs. Import de Dialog reemplazado por Sheet.
