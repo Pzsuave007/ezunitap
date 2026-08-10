@@ -15,6 +15,17 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Ago 2026 (c) — Compartir documentos: PDF adjunto + Email + slide-up [COMPLETO, verificado por el dueño en su teléfono]
+- **PDF adjunto real**: `lib/pdf.js` (generateQuotePDF/InvoicePDF/AgreementPDF) ahora acepta `opts.returnBlob` y devuelve `{blob, filename}` en vez de `doc.save()`. `SendDocumentDialog` tiene botón "Enviar con PDF adjunto" que usa Web Share API (`navigator.share({files})`) en móvil, con fallback a descarga + mailto en desktop. `getPdfBlob` cableado en InvoiceDetail/QuoteDetail/AgreementDetail.
+- **`SendDocumentDialog` → slide-up**: pasó de `<Dialog>` centrado a `<Sheet side="bottom">` (regla no-popups del dueño).
+- **Botón Email arreglado 2 veces**: (1) ya no queda deshabilitado si el cliente no tiene email (abre mailto siempre); (2) BUG `[object Object]` en el cuerpo — causa: `onClick={openEmail}` pasaba el evento como `bodyText`; fix: `onClick={() => openEmail()}`.
+- **Mensaje adaptado**: `attachMessage` menciona el documento adjunto según tipo (invoice/quote/service agreement).
+- **Copia email del cliente** al portapapeles al compartir (Web Share no permite pre-llenar "Para") + toast. El dueño confirmó: copia auto + pegar = perfecto.
+- Verificación: compila OK; el dueño probó en su teléfono y confirmó que funciona. (No se usó testing_agent por instrucción del dueño.)
+
+---
+
+
 ## ✅ Ago 2026 — Regla "NO popups": convertir modales de acción a páginas [add cliente + add trabajo hechos]
 - **Regla del dueño (INNEGOCIABLE, ver `/app/memory/UX_RULES.md`)**: nada de modales/diálogos centrados con overlay gris para funciones del app (causan botones cortados y varían entre navegadores). Toda función = página propia con su ruta. Únicas excepciones: bottom-sheets de "IA trabajando" y los resultados slide-up del Marketing Studio.
 - **Fix urgente**: "Agregar cliente" (bug: modal no cabía en laptop, escondía Guardar) → nueva página `pages/ClientForm.js`, ruta `/clientes/nuevo`. `Clients.js` ahora solo navega (Dialog eliminado). Dashboard step1 y atajo actualizados. Editar cliente ya era inline (OK).
