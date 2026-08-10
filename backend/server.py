@@ -3946,6 +3946,169 @@ async def public_get_card(slug: str):
     }
 
 
+# ============================================================================
+# WEBSITE — done-for-you public business website (hosted at /sitio/{slug})
+# ============================================================================
+class WebsiteIn(BaseModel):
+    slug: Optional[str] = None
+    template: Optional[str] = None       # clean | bold | warm
+    accent_color: Optional[str] = None
+    published: Optional[bool] = None
+    headline: Optional[str] = None
+    subheadline: Optional[str] = None
+    about: Optional[str] = None
+    hero_photo_id: Optional[str] = None
+    sections: Optional[dict] = None      # {services,gallery,reviews,contact,booking,about}
+    cta_phone: Optional[str] = None
+    service_area: Optional[str] = None
+    hours: Optional[str] = None
+
+
+_WEBSITE_DEFAULT_SECTIONS = {
+    "services": True, "gallery": True, "reviews": True,
+    "contact": True, "booking": False, "about": True,
+}
+
+
+async def _get_or_init_website(user_id: str) -> dict:
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    if w:
+        w.setdefault("sections", dict(_WEBSITE_DEFAULT_SECTIONS))
+        return w
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    base = _slugify(user.get("business_name", "") or (user.get("email", "").split("@")[0] if user.get("email") else "")) or "site"
+    slug, n = base, 0
+    while await db.websites.find_one({"slug": slug}):
+        n += 1
+        slug = f"{base}-{n}"
+    w = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "slug": slug,
+        "template": "clean",
+        "accent_color": card.get("brand_color") or "#007AFF",
+        "published": False,
+        "headline": card.get("tagline") or user.get("business_name", ""),
+        "subheadline": card.get("about_me") or "",
+        "about": card.get("about_me") or "",
+        "hero_photo_id": None,
+        "sections": dict(_WEBSITE_DEFAULT_SECTIONS),
+        "cta_phone": card.get("contact_phone") or user.get("phone", ""),
+        "service_area": card.get("service_area") or "",
+        "hours": card.get("hours") or "",
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.websites.insert_one(dict(w))
+    return w
+
+
+@api_router.get("/website")
+async def get_website(user_id: str = Depends(get_current_user_id)):
+    w = await _get_or_init_website(user_id)
+    w["public_path"] = f"/sitio/{w['slug']}"
+    return w
+
+
+@api_router.put("/website")
+async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    await _get_or_init_website(user_id)
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if "slug" in update:
+        s = _slugify(update["slug"])
+        if not s:
+            raise HTTPException(400, "El enlace no es válido.")
+        clash = await db.websites.find_one({"slug": s, "user_id": {"$ne": user_id}}, {"_id": 0, "id": 1})
+        if clash:
+            raise HTTPException(400, "Ese enlace ya está en uso, elige otro.")
+        update["slug"] = s
+    update["updated_at"] = _now_iso()
+    await db.websites.update_one({"user_id": user_id}, {"$set": update})
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    w["public_path"] = f"/sitio/{w['slug']}"
+    return w
+
+
+@api_router.get("/public/website/{slug}")
+async def public_website(slug: str):
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
+    if not w or not w.get("published"):
+        raise HTTPException(404, "Not found")
+    user = await db.users.find_one({"id": w["user_id"]}, {"_id": 0, "password_hash": 0}) or {}
+    card = await db.cards.find_one({"user_id": w["user_id"]}, {"_id": 0}) or {}
+    reviews = await db.reviews.find({"user_id": w["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    photos = await db.photos.find(
+        {
+            "user_id": w["user_id"], "is_deleted": False,
+            "content_type": {"$ne": "video/mp4"},
+            "$or": [{"label": {"$in": ["before", "during", "after"]}}, {"on_card": True}],
+        },
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(30)
+    business = {
+        "name": user.get("business_name", ""),
+        "owner_name": card.get("person_name") or user.get("owner_name", ""),
+        "phone": w.get("cta_phone") or card.get("contact_phone") or user.get("phone", ""),
+        "email": card.get("contact_email") or user.get("business_email") or user.get("email", ""),
+        "address": user.get("business_address", ""),
+        "google_review_url": user.get("google_review_url") or "",
+        "logo_photo_id": card.get("logo_photo_id"),
+        "business_type": card.get("business_type") or "",
+        "years_in_business": card.get("years_in_business") or 0,
+        "is_licensed": bool(card.get("is_licensed")),
+        "is_insured": bool(card.get("is_insured")),
+        "whatsapp": card.get("whatsapp") or "",
+        "facebook": card.get("facebook") or "",
+        "instagram": card.get("instagram") or "",
+    }
+    return {
+        "website": w,
+        "business": business,
+        "services": card.get("services") or [],
+        "reviews": reviews,
+        "photos": [{"id": p["id"], "label": p.get("label", "")} for p in photos],
+        "hours": w.get("hours") or card.get("hours") or "",
+        "service_area": w.get("service_area") or card.get("service_area") or "",
+        "appt_enabled": bool(card.get("appt_enabled")),
+        "card_slug": card.get("slug") or "",
+    }
+
+
+@api_router.post("/public/website/{slug}/lead")
+async def public_website_lead(slug: str, payload: CardLeadIn):
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    lead = {
+        "id": _new_id(),
+        "user_id": w["user_id"],
+        "name": payload.name,
+        "phone": payload.phone or "",
+        "email": payload.email or "",
+        "address": payload.address or "",
+        "service": payload.service or "",
+        "description": payload.description or "",
+        "lead_type": "estimate",
+        "source": "website",
+        "created_at": _now_iso(),
+    }
+    await db.card_leads.insert_one(dict(lead))
+    try:
+        await _create_notification(
+            user_id=w["user_id"],
+            title="🌐 Nuevo lead desde tu sitio web",
+            body=f"{payload.name} pidió información desde tu página web.",
+            kind="success",
+            action_url="/leads",
+            action_label="Ver leads",
+        )
+    except Exception as e:
+        logger.error(f"website lead notif failed: {e!r}")
+    return {"ok": True}
+
+
+
 @api_router.get("/public/card/photo/{photo_id}")
 async def public_photo(photo_id: str):
     """Public endpoint to serve photos referenced on a Smart Card."""

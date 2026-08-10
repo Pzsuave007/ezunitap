@@ -44,7 +44,8 @@
     "dayOne": "{{count}} día",
     "dayOther": "{{count}} días",
     "appointments": "Citas",
-    "embed": "Sitio Web",
+    "embed": "Códigos web",
+    "website": "Sitio Web",
     "qrCodes": "Códigos QR"
   },
   "auth": {

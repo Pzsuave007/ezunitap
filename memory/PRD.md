@@ -15,6 +15,18 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## 🌐 Ago 2026 — NUEVO MÓDULO: Sitio Web hecho-para-ti (Fase 1) [CONSTRUIDO, verificado backend+render]
+Visión del dueño: vender "una sola plataforma para TODO el negocio". Falta el sitio web → agregado. Posicionamiento: NOSOTROS lo diseñamos, el cliente solo edita.
+- **Backend** (`server.py`, colección `db.websites`): `_get_or_init_website` auto-crea y auto-llena desde `cards`+`users` (headline=tagline, about, color de marca, servicios, teléfono, zona, horario). Endpoints: `GET /api/website` (auth, auto-init), `PUT /api/website` (auth+feature card/business, valida slug único), `GET /api/public/website/{slug}` (público, solo si published; agrega business+services+reviews+photos+card_slug), `POST /api/public/website/{slug}/lead` (guarda en `card_leads` source="website" + notifica). Slug NUEVO e independiente de la tarjeta NFC.
+- **Público** `pages/ContractorSite.js` en ruta `/sitio/:slug` (fuera de auth): 3 plantillas (clean/bold/warm de `design_guidelines.json`) con Google Fonts, color de marca aplicado, secciones: header sticky, hero (badges licensed/insured/años, CTAs Call+Quote), servicios, galería (fotos de trabajos), reseñas (+link Google), about/horarios/zonas, contacto+formulario de lead, footer, barra CTA fija móvil. EN inglés. Verificado render desktop (bold) premium.
+- **Editor** `pages/WebsiteEditor.js` en ruta `/pagina-web` (auth, gate card/business): publicar on/off, ver/copiar link, editar slug, elegir plantilla (3), color de marca (9), editar headline/subheadline/about/zona/horario/teléfono, toggles de secciones. Nav "Sitio Web" agregado (Layout SIDEBAR+MORE, icon MonitorSmartphone). Label i18n `nav.website`; `nav.embed` renombrado a "Códigos web"/"Embed Codes".
+- Banner "¿Hablas español?" ocultado en `/sitio/` (HIDDEN_PREFIXES).
+- Verificación: curl end-to-end OK (auto-init, publish, cambio de plantilla/color, fetch público con business/photos). 1 render desktop completo OK. No se usó testing_agent (instrucción del dueño).
+- **PENDIENTE Fase 2 / mejoras**: selector de foto de hero en el editor (campo `hero_photo_id` ya existe en backend); editar lista de servicios desde el editor; **dominio propio del cliente** (DNS/SSL); más plantillas.
+
+---
+
+
 ## ✅ Ago 2026 (c) — Compartir documentos: PDF adjunto + Email + slide-up [COMPLETO, verificado por el dueño en su teléfono]
 - **PDF adjunto real**: `lib/pdf.js` (generateQuotePDF/InvoicePDF/AgreementPDF) ahora acepta `opts.returnBlob` y devuelve `{blob, filename}` en vez de `doc.save()`. `SendDocumentDialog` tiene botón "Enviar con PDF adjunto" que usa Web Share API (`navigator.share({files})`) en móvil, con fallback a descarga + mailto en desktop. `getPdfBlob` cableado en InvoiceDetail/QuoteDetail/AgreementDetail.
 - **`SendDocumentDialog` → slide-up**: pasó de `<Dialog>` centrado a `<Sheet side="bottom">` (regla no-popups del dueño).

@@ -51,6 +51,8 @@ import Appointments from "@/pages/Appointments";
 import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
 import DemoFlujo from "@/pages/DemoFlujo";
+import ContractorSite from "@/pages/ContractorSite";
+import WebsiteEditor from "@/pages/WebsiteEditor";
 import { FeatureGate } from "@/components/FeatureGate";
 import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
 import InstallPWA from "@/components/InstallPWA";
@@ -114,6 +116,7 @@ function App() {
             <Route path="/p/pay/:id" element={<PaymentRequest />} />
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/r/:slug" element={<PublicReviewPage />} />
+            <Route path="/sitio/:slug" element={<ContractorSite />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
             <Route path="/terminos" element={<TermsPage />} />
             <Route path="/privacidad" element={<PrivacyPage />} />
@@ -139,6 +142,7 @@ function App() {
               <Route path="/calendario/:id/editar" element={<FeatureGate feature="business"><CalendarJobForm /></FeatureGate>} />
               <Route path="/tarjeta" element={<FeatureGate feature="card"><CardAdmin /></FeatureGate>} />
               <Route path="/sitio-web" element={<FeatureGate feature="card"><EmbedSettings /></FeatureGate>} />
+              <Route path="/pagina-web" element={<FeatureGate feature={["card", "business"]}><WebsiteEditor /></FeatureGate>} />
               <Route path="/marketing" element={<FeatureGate feature="marketing"><SocialStudio /></FeatureGate>} />
               <Route path="/marketing/inicio" element={<FeatureGate feature="marketing"><MarketingStart /></FeatureGate>} />
               <Route path="/reviews" element={<FeatureGate feature="card"><GoogleReviewsPage /></FeatureGate>} />

@@ -8,7 +8,7 @@ const DISMISS_KEY = "unitech_lang_dismiss";
 // Routes that belong to the contractor's CLIENTS (digital card, review,
 // public docs/pay). The system-language banner must NOT appear there — it is
 // only for visitors choosing the language of the UniTech website/app itself.
-const HIDDEN_PREFIXES = ["/c/", "/r/", "/p/"];
+const HIDDEN_PREFIXES = ["/c/", "/r/", "/p/", "/sitio/"];
 
 // Slim top banner that invites English-browser visitors (common among
 // US Hispanics) to switch the WHOLE site to Spanish in one tap.
