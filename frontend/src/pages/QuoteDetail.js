@@ -223,6 +223,7 @@ export default function QuoteDetail() {
         client={client}
         businessName={user?.business_name}
         jobTitle={quote.job_title}
+        getPdfBlob={() => generateQuotePDF(quote, { ...user, logo_photo_id: card?.logo_photo_id }, client, { returnBlob: true })}
       />
     </div>
   );

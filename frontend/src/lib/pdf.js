@@ -102,7 +102,7 @@ function clientBlock(doc, client, y) {
   return y + 11 + rest.length * 5;
 }
 
-export async function generateQuotePDF(quote, business, client) {
+export async function generateQuotePDF(quote, business, client, opts = {}) {
   const doc = new jsPDF();
   const dateStr = new Date(quote.created_at || Date.now()).toLocaleDateString("en-US");
   await header(doc, business, "Quote", "Quote #", quote.number, dateStr);
@@ -197,10 +197,12 @@ export async function generateQuotePDF(quote, business, client) {
     doc.text(n, 14, y);
   }
 
-  doc.save(`Quote-${quote.number || "draft"}.pdf`);
+  const filename = `Quote-${quote.number || "draft"}.pdf`;
+  if (opts.returnBlob) return { blob: doc.output("blob"), filename };
+  doc.save(filename);
 }
 
-export async function generateInvoicePDF(invoice, business, client) {
+export async function generateInvoicePDF(invoice, business, client, opts = {}) {
   const doc = new jsPDF();
   const dateStr = new Date(invoice.created_at || Date.now()).toLocaleDateString("en-US");
   await header(doc, business, "Invoice", "Invoice #", invoice.number, dateStr);
@@ -313,7 +315,9 @@ export async function generateInvoicePDF(invoice, business, client) {
     y += 6;
   }
 
-  doc.save(`Invoice-${invoice.number || "draft"}.pdf`);
+  const filename = `Invoice-${invoice.number || "draft"}.pdf`;
+  if (opts.returnBlob) return { blob: doc.output("blob"), filename };
+  doc.save(filename);
 }
 
 // --- Agreement section helpers (shared by Agreement PDF + Invoice's snapshot)
@@ -354,7 +358,7 @@ export function listAgreementClauses(sections) {
   return out;
 }
 
-export async function generateAgreementPDF(agreement, business, client) {
+export async function generateAgreementPDF(agreement, business, client, opts = {}) {
   const doc = new jsPDF();
   const dateStr = new Date(agreement.created_at || Date.now()).toLocaleDateString("en-US");
   await header(doc, business, "Service Agreement", "Agreement #", agreement.id?.slice(0, 8) || "—", dateStr);
@@ -441,5 +445,7 @@ export async function generateAgreementPDF(agreement, business, client) {
     doc.setTextColor(...COLOR_TEXT);
   }
 
-  doc.save(`Agreement-${(agreement.id || "draft").slice(0, 8)}.pdf`);
+  const filename = `Agreement-${(agreement.id || "draft").slice(0, 8)}.pdf`;
+  if (opts.returnBlob) return { blob: doc.output("blob"), filename };
+  doc.save(filename);
 }

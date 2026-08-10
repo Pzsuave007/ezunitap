@@ -13,12 +13,12 @@
  *   - businessName: string
  *   - jobTitle: string
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Smartphone, Mail, Copy, ExternalLink } from "lucide-react";
+import { MessageCircle, Smartphone, Mail, Copy, ExternalLink, Paperclip, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const KIND_LABELS = {
@@ -70,11 +70,13 @@ export default function SendDocumentDialog({
   client,
   businessName,
   jobTitle,
+  getPdfBlob,
 }) {
   const meta = KIND_LABELS[kind] || KIND_LABELS.quote;
   const clientName = client?.name || "";
   const phone = cleanPhone(client?.phone);
   const email = client?.email || "";
+  const [sharing, setSharing] = useState(false);
 
   // Client-facing message — ALWAYS in English (the app UI is in Spanish
   // but all customer communication must be in English).
@@ -149,6 +151,37 @@ export default function SendDocumentDialog({
 
   const openPublic = () => window.open(publicUrl, "_blank", "noopener");
 
+  // Generate the PDF and share it as a real attachment via the native share
+  // sheet (mobile). Falls back to downloading the PDF + opening email on
+  // devices/browsers that can't share files (most desktops).
+  const shareWithPdf = async () => {
+    if (!getPdfBlob || sharing) return;
+    setSharing(true);
+    try {
+      const { blob, filename } = await getPdfBlob();
+      const file = new File([blob], filename, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: emailSubject, text: message });
+      } else {
+        // Fallback: download the PDF so they can attach it, then open email.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        toast.success("PDF descargado — adjúntalo en el correo que se abrió");
+        openEmail();
+      }
+    } catch (err) {
+      if (err?.name !== "AbortError") toast.error("No se pudo generar el PDF");
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md" data-testid="send-document-dialog">
@@ -158,6 +191,25 @@ export default function SendDocumentDialog({
         </DialogHeader>
 
         <div className="space-y-2">
+          {getPdfBlob && (
+            <button
+              data-testid="send-pdf-attach"
+              onClick={shareWithPdf}
+              disabled={sharing}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-blue-900 bg-blue-900 hover:bg-blue-800 transition text-left text-white disabled:opacity-60"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+                {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm">Enviar con PDF adjunto</div>
+                <div className="text-xs text-white/70 truncate">
+                  Genera el PDF y lo adjunta (Email, WhatsApp, etc.)
+                </div>
+              </div>
+            </button>
+          )}
+
           <button
             data-testid="send-whatsapp"
             onClick={openWhatsApp}

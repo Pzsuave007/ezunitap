@@ -240,6 +240,16 @@ export default function InvoiceDetail() {
     generateInvoicePDF(invoice, { ...user, logo_photo_id: cardSettings?.logo_photo_id }, c);
   };
 
+  const getInvoicePdfBlob = async () => {
+    let c = client;
+    if (!c && invoice.client_id) {
+      try { c = (await api.get(`/clients/${invoice.client_id}`)).data; } catch { c = null; }
+    }
+    let cardSettings = null;
+    try { cardSettings = (await api.get("/card/settings")).data; } catch {}
+    return generateInvoicePDF(invoice, { ...user, logo_photo_id: cardSettings?.logo_photo_id }, c, { returnBlob: true });
+  };
+
   return (
     <div className="space-y-5">
       <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-sm text-slate-600 tap" data-testid="back-invoices">
@@ -494,6 +504,7 @@ export default function InvoiceDetail() {
           client={client}
           businessName={user?.business_name}
           jobTitle={invoice.job_title}
+          getPdfBlob={getInvoicePdfBlob}
         />
       )}
     </div>

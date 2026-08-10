@@ -201,6 +201,7 @@ export default function AgreementDetail() {
         client={client}
         businessName={user?.business_name}
         jobTitle={a.title}
+        getPdfBlob={() => generateAgreementPDF(a, user || {}, client || {}, { returnBlob: true })}
       />
     </div>
   );
