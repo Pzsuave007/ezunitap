@@ -1,85 +1,167 @@
 {
-  "theme": "High-Contrast Utility (Archetype 4 with Brand Constraints)",
-  "mode": "Light (with Dark Mode Hook for contrast)",
-  "typography": {
-    "headings": "Cabinet Grotesk",
-    "body": "Satoshi",
-    "hierarchy": {
-      "h1": "text-4xl sm:text-5xl font-black tracking-tighter leading-tight",
-      "h2": "text-2xl sm:text-3xl font-bold tracking-tight",
-      "h3": "text-xl sm:text-2xl font-bold",
-      "body": "text-base leading-relaxed text-slate-700",
-      "overline": "uppercase text-xs font-bold tracking-[0.2em] text-blue-900"
+  "project_name": "UniTech Contractor Website Modules",
+  "positioning": "Premium, agency-built public sites for service contractors (Roofing, HVAC, Plumbing, Landscaping, Cleaning).",
+  "app_type": "marketing_site",
+  "target_audience": "Homeowners seeking reliable local service professionals.",
+  "theme_strategy": "Provide a base architecture that switches seamlessly between 3 distinct emotional archetypes using a `template` prop. The data (name, logo, services) remains constant, but the visual wrapper changes drastically.",
+  "templates": {
+    "template_1_bold_industrial": {
+      "name": "Bold & Industrial",
+      "best_for": "Roofing, HVAC, Concrete, Heavy Construction",
+      "vibe": "Strong, durable, no-nonsense, high-performance.",
+      "typography": {
+        "heading_font": "Anton or Bebas Neue",
+        "body_font": "Manrope",
+        "heading_classes": "font-black tracking-tighter uppercase",
+        "body_classes": "font-sans tracking-wide"
+      },
+      "colors": {
+        "primary": "bg-[#FF3B30] text-white",
+        "secondary": "bg-[#0A0A0A] text-white",
+        "background": "bg-[#F5F5F5]",
+        "surface": "bg-white",
+        "accent": "text-[#FF3B30]",
+        "border": "border-[#E5E5E5]"
+      },
+      "button_style": "rounded-none uppercase tracking-[0.1em] font-bold border-2 border-transparent hover:border-[#0A0A0A] shadow-[4px_4px_0px_0px_rgba(10,10,10,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all",
+      "card_style": "rounded-none border-2 border-[#0A0A0A] shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] bg-white",
+      "image_treatment": "High contrast, sharp edges. Black and white filters on background images with heavy brand-color overlays (e.g., bg-black/70 mix-blend-multiply)."
+    },
+    "template_2_clean_modern": {
+      "name": "Clean & Modern",
+      "best_for": "Plumbing, Electrical, General Contractors",
+      "vibe": "Professional, efficient, precise, tech-forward.",
+      "typography": {
+        "heading_font": "Outfit or Cabinet Grotesk",
+        "body_font": "IBM Plex Sans",
+        "heading_classes": "font-bold tracking-tight",
+        "body_classes": "font-sans leading-relaxed"
+      },
+      "colors": {
+        "primary": "bg-[#007AFF] text-white",
+        "secondary": "bg-[#F3F4F6] text-[#111827]",
+        "background": "bg-white",
+        "surface": "bg-[#F9FAFB]",
+        "accent": "text-[#007AFF]",
+        "border": "border-gray-200"
+      },
+      "button_style": "rounded-lg font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all",
+      "card_style": "rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300",
+      "image_treatment": "Bright, clear, natural lighting. Subtle rounded corners (rounded-xl) on all imagery."
+    },
+    "template_3_warm_trustworthy": {
+      "name": "Warm & Trustworthy",
+      "best_for": "Landscaping, House Cleaning, Painting, Remodeling",
+      "vibe": "Friendly, safe, organic, detail-oriented.",
+      "typography": {
+        "heading_font": "Playfair Display or Lora",
+        "body_font": "Nunito",
+        "heading_classes": "font-serif font-semibold tracking-normal",
+        "body_classes": "font-sans text-gray-700 leading-loose"
+      },
+      "colors": {
+        "primary": "bg-[#2F5233] text-white",
+        "secondary": "bg-[#F1E9D2] text-[#2F5233]",
+        "background": "bg-[#FAFAFA]",
+        "surface": "bg-[#FFFFFF]",
+        "accent": "text-[#D4A373]",
+        "border": "border-[#E5E0D8]"
+      },
+      "button_style": "rounded-full font-bold shadow-sm hover:opacity-90 hover:scale-105 transition-transform duration-200",
+      "card_style": "rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1E9D2]/50",
+      "image_treatment": "Warm filters. Soft, large rounded corners (rounded-2xl or completely circular for portraits)."
     }
   },
-  "colors": {
-    "primary": "#10B981",
-    "primary_hover": "#059669",
-    "secondary": "#1E3A8A",
-    "secondary_hover": "#172554",
-    "background_dark": "#0F172A",
-    "background_light": "#FFFFFF",
-    "surface": "#F8FAFC",
-    "border": "#E2E8F0",
-    "text_dark": "#0F172A",
-    "text_light": "#FFFFFF",
-    "accent_glow": "rgba(16, 185, 129, 0.4)"
-  },
-  "spacing_and_layout": {
-    "mobile_first": true,
-    "container": "max-w-md mx-auto h-full min-h-screen relative overflow-hidden",
-    "padding": "p-6 sm:p-8",
-    "gap": "gap-6",
-    "surface_styles": {
-      "cards": "bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow",
-      "glass": "backdrop-blur-xl bg-white/70 border border-white/40 shadow-sm",
-      "dark_glass": "backdrop-blur-xl bg-blue-900/60 border border-white/10 shadow-lg"
+  "sections": {
+    "header": {
+      "layout": "Sticky top (z-50). Mobile: Logo left, Hamburger right. Desktop: Logo left, Nav center, CTA button right.",
+      "design_rules": "Must have a background. For Bold: Solid white with heavy bottom border. For Clean: Glassmorphism (backdrop-blur-xl bg-white/80). For Warm: Solid #FAFAFA with soft shadow."
+    },
+    "hero": {
+      "layout": "Grid split (text left, image right) OR Center-aligned with massive background image + overlay. Always include trust badges (e.g., 'Licensed & Insured', '20+ Years Experience') above or below the H1.",
+      "content": "H1 (Business Name/Tagline max text-5xl md:text-6xl+), Subtitle (text-lg md:text-xl), Primary CTA (Call Now), Secondary CTA (Get Free Quote).",
+      "design_rules": "Overlay opacity max bg-black/50. If text needs contrast, use text-shadow."
+    },
+    "services": {
+      "layout": "Bento Grid or CSS Grid (grid-cols-1 md:grid-cols-3 gap-6 md:gap-8).",
+      "content": "Cards with icon (lucide-react), Title, Short description.",
+      "design_rules": "Use the respective template's `card_style`. Icons must use the template's `accent` color."
+    },
+    "gallery": {
+      "layout": "Masonry or tight grid (grid-cols-2 md:grid-cols-4).",
+      "content": "Before/After or job site photos.",
+      "design_rules": "Images must have object-cover. On hover, slight scale-up (scale-105) inside an overflow-hidden container."
+    },
+    "reviews": {
+      "layout": "Horizontal scroll / Swiper carousel or 3-column grid.",
+      "content": "Google Review Stars (5 Yellow stars), Customer Name, Review text, 'Verified via Google' badge.",
+      "design_rules": "Ensure high contrast for review text. Use quotes typography."
+    },
+    "contact_and_booking": {
+      "layout": "Two columns: Left side text + business info (Hours, Areas, Address, Phone), Right side Lead Capture Form.",
+      "content": "Form: Name, Phone, Email, Message, Submit Button. Booking link below or integrated.",
+      "design_rules": "Use Shadcn Form components heavily styled to match the template. Inputs must have clear focus states (e.g., ring-2 ring-primary)."
+    },
+    "sticky_mobile_cta": {
+      "layout": "Fixed bottom-0 left-0 right-0 w-full p-4 bg-white border-t z-50 md:hidden flex justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]",
+      "content": "Button 1: Call Now (Icon + Text), Button 2: Get Quote (Icon + Text)",
+      "design_rules": "One button should use `primary` style, the other an outline/secondary style. Ensure safe-area-inset-bottom is respected."
+    },
+    "footer": {
+      "layout": "Dark background (e.g., bg-gray-900 text-white) with large padding (py-16).",
+      "content": "Logo, Quick links, Contact Info, Copyright.",
+      "design_rules": "Massive text for the final CTA ('Let's Build It' or 'Get Your Free Estimate')."
     }
+  },
+  "image_urls": {
+    "hero_backgrounds": {
+      "bold_industrial": "https://images.pexels.com/photos/37677476/pexels-photo-37677476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "clean_modern": "https://images.unsplash.com/photo-1721815693498-cc28507c0ba2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3VzZSUyMGV4dGVyaW9yJTIwYXJjaGl0ZWN0dXJlfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85",
+      "warm_trustworthy": "https://images.unsplash.com/photo-1686663048931-6df69f577a2f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwzfHxsYW5kc2NhcGluZyUyMGJlYXV0aWZ1bCUyMHlhcmR8ZW58MHx8fHwxNzg2MzM0MzcwfDA&ixlib=rb-4.1.0&q=85"
+    },
+    "team_photos": [
+      "https://images.unsplash.com/photo-1679000265956-3bd0f356b2b3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwxfHxzZXJ2aWNlJTIwY29udHJhY3RvciUyMHRlYW0lMjBwb3NpbmclMjBzbWlsaW5nfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1659353589112-005e063abdaf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwyfHxzZXJ2aWNlJTIwY29udHJhY3RvciUyMHRlYW0lMjBwb3NpbmclMjBzbWlsaW5nfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85"
+    ],
+    "service_photos": [
+      "https://images.pexels.com/photos/38524253/pexels-photo-38524253.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwyfHxodmFjJTIwdGVjaG5pY2lhbiUyMHdvcmtpbmd8ZW58MHx8fHwxNzg2MzM0MzcwfDA&ixlib=rb-4.1.0&q=85"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build ONE main React page component (e.g. ContractorSite.jsx) that accepts a `templateKey` prop (bold, clean, warm).",
+    "Use a configuration object or CSS variables to swap styles dynamically based on the templateKey without rewriting the HTML structure.",
+    "Ensure the hero overlay opacity never exceeds bg-black/50 so images are visible.",
+    "Use Lucide-react for all icons (Phone, MapPin, Clock, Star, ShieldCheck).",
+    "Implement the sticky mobile bottom CTA using `fixed bottom-0` classes with high z-index and padding-bottom on the main layout to prevent overlap.",
+    "DO NOT use generic AI placeholder characters or emojis. Use the provided high-quality image URLs.",
+    "Ensure contrast ratios are accessible (use white text on primary color backgrounds).",
+    "Apply `data-testid` to all CTAs, forms, and major sections.",
+    "Do not center-align body text or lists; always left-align for readability.",
+    "Use Shadcn components for the Contact Form and any Modals/Dialogs."
+  ],
+  "accessibility": {
+    "focus_states": "All interactive elements must have a visible focus ring (e.g., focus:ring-2 focus:ring-offset-2).",
+    "contrast": "Text below 18px must have at least 4.5:1 contrast against its background.",
+    "aria": "Add aria-label to icon-only buttons. Add aria-hidden='true' to decorative icons."
   },
   "motion": {
-    "transitions": "framer-motion for step progression (slide left/right to feel like a native mobile app swipe)",
-    "micro_interactions": "scale-95 on button tap, glowing borders on active selections"
+    "hover": "Buttons and cards must have hover states (transform, shadow, or color shift).",
+    "scroll": "Consider mild staggered fade-in animations on scroll for Service cards and Gallery images using Framer Motion (only if it doesn't hurt performance)."
   },
-  "image_urls": [
-    {
-      "url": "https://images.pexels.com/photos/34670920/pexels-photo-34670920.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "category": "hero_background",
-      "description": "Latino construction worker giving a thumbs up. Use as a background image with a deep blue-900 overlay (bg-blue-900/80) on the Lead Capture hook screen to build trust and relatability."
-    },
-    {
-      "url": "https://images.unsplash.com/photo-1669295384050-a1d4357bd1d7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGVtZXJhbGQlMjBncmVlbiUyMGJsdWUlMjB0ZWNobm9sb2d5JTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODE5MDIyNzl8MA&ixlib=rb-4.1.0&q=85",
-      "category": "magic_moment_background",
-      "description": "Abstract emerald/teal tech background. Use during the 'AI is generating' loading screens to convey technological power and magic."
-    },
-    {
-      "url": "https://images.unsplash.com/photo-1724862936518-ae7fcfc052c1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxzb2NpYWwlMjBtZWRpYSUyMHBob25lJTIwcmVlbCUyMGNvbnN0cnVjdGlvbnxlbnwwfHx8fDE3ODE5MDIyNzl8MA&ixlib=rb-4.1.0&q=85",
-      "category": "marketing_demo_visual",
-      "description": "Phone displaying social media. Use in the MARKETING branch when demonstrating the AI Social Studio generating an Instagram Reel."
-    }
-  ],
-  "components": [
-    {
-      "name": "BranchingSelector",
-      "description": "A customized radio-group style selector using Framer Motion. Large tap targets with Lucide icons (Star for Presencia, FileText for Negocio, Smartphone for Marketing). Active state gets a 2px emerald border and a subtle emerald glow drop-shadow.",
-      "testid": "demo-branch-selector"
-    },
-    {
-      "name": "MagicLoadingState",
-      "description": "Full-screen or card-level loader showing 'La IA está trabajando...' with an animated emerald gradient tracing border (Aceternity style).",
-      "testid": "demo-magic-loader"
-    },
-    {
-      "name": "InteractiveMockup",
-      "description": "A CSS-only mobile phone mockup that scales down to fit inside the real mobile screen, used to display the 'NFC Card' or 'Generated Reel'.",
-      "testid": "demo-interactive-mockup"
-    }
-  ],
-  "instructions_to_main_agent": {
-    "architecture_decision": "Implement a 'Unified Demo with Branching' (Option 2). The user flow: (1) Lead Capture -> (2) 'What is your biggest need?' (Branch Selection) -> (3) Short 3-step targeted magic moment -> (4) Unified Upsell cross-selling all 3 modules.",
-    "presencia_flow": "Step 1: Show an NFC card animation tapping a phone. Step 2: Simulate 5-star Google Reviews pouring in and the WhatsApp booking assistant. Step 3: End with CTA.",
-    "negocio_flow": "Step 1: Input text in Spanish (or use 1-click examples). Step 2: AI Loading Screen. Step 3: Generate English Quote/Invoice UI. Step 4: End with CTA.",
-    "marketing_flow": "Step 1: Input simple Spanish text 'Terminé este techo'. Step 2: AI Loading. Step 3: Show a mockup playing an AI-generated reel/post with their brand colors. Step 4: End with CTA.",
-    "testing_requirements": "All interactive elements (buttons, inputs, branching cards) MUST have a 'data-testid' attribute using kebab-case role-based naming (e.g., 'submit-lead-form', 'select-presencia-branch').",
-    "brand_adherence": "Strictly use Cabinet Grotesk for headings and Satoshi for body text. Enforce the Emerald and Blue-900 color scheme. Do not introduce purple, teal, or other colors. Follow mobile-first generous padding (p-6/p-8) and ensure contrast ratios are accessible."
-  }
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not converge toward generic, 'on distribution' outputs. Avoid the 'AI slop' aesthetic.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) where specified.",
+    "You MUST NOT apply universal transition (e.g., transition: all). Add transitions for specific properties.",
+    "You MUST NOT center align the app container; do not add `.App { text-align: center; }`.",
+    "Always use modern button styles relevant to the app style.",
+    "NEVER use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Add subtle grain textures or noise overlays where it fits the aesthetic.",
+    "Missing categories = main agent will use placeholder text which is FORBIDDEN. Rely on the provided image URLs."
+  ]
 }
