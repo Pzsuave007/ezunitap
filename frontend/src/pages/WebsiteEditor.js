@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 
 const TEMPLATES = ["clean", "bold", "warm"];
@@ -224,6 +224,23 @@ export default function WebsiteEditor() {
         <div><Label>{t("website.callPhone")}</Label><Input value={w.cta_phone || ""} onChange={(e) => patch({ cta_phone: e.target.value })} className="h-12 rounded-xl mt-1.5" /></div>
       </Card>
 
+      {/* Services */}
+      <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
+        <div className="font-semibold flex items-center gap-2"><Briefcase className="w-4 h-4" /> {t("website.servicesTitle")}</div>
+        <p className="text-sm text-slate-500 -mt-1">{t("website.servicesDesc")}</p>
+        {(w.services || []).map((s, i) => (
+          <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-service-${i}`}>
+            <div className="flex items-center gap-2">
+              <Input value={s.name || ""} onChange={(e) => listSet("services", i, "name", e.target.value)} className="h-11 rounded-lg bg-white font-semibold" placeholder={t("website.serviceName")} />
+              <Button variant="ghost" size="icon" onClick={() => listDel("services", i)} className="text-slate-400 flex-none" data-testid={`website-service-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+            <Textarea value={s.description || ""} onChange={(e) => listSet("services", i, "description", e.target.value)} className="rounded-lg bg-white min-h-[56px]" placeholder={t("website.serviceDesc")} />
+            <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
+          </div>
+        ))}
+        <Button variant="outline" onClick={() => listAdd("services", { name: "", description: "", starting_price: "" })} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>
+      </Card>
+
       {/* How It Works */}
       <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
         <div className="font-semibold flex items-center gap-2"><ListChecks className="w-4 h-4" /> {t("website.howTitle")}</div>
@@ -324,6 +341,6 @@ export default function WebsiteEditor() {
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, seo_title, seo_description } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, seo_title, seo_description };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description };
 }

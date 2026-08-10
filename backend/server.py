@@ -3966,6 +3966,7 @@ class WebsiteIn(BaseModel):
     why_us: Optional[list] = None        # [{title, desc}]
     faqs: Optional[list] = None          # [{q, a}]
     areas: Optional[list] = None         # ["Spokane", ...]
+    services: Optional[list] = None      # [{name, description, starting_price, icon}]
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
@@ -3981,6 +3982,10 @@ async def _get_or_init_website(user_id: str) -> dict:
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     if w:
         w.setdefault("sections", dict(_WEBSITE_DEFAULT_SECTIONS))
+        if w.get("services") is None:
+            card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+            w["services"] = card.get("services") or []
+            await db.websites.update_one({"user_id": user_id}, {"$set": {"services": w["services"]}})
         return w
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
@@ -4004,6 +4009,7 @@ async def _get_or_init_website(user_id: str) -> dict:
         "cta_phone": card.get("contact_phone") or user.get("phone", ""),
         "service_area": card.get("service_area") or "",
         "hours": card.get("hours") or "",
+        "services": card.get("services") or [],
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -4047,7 +4053,7 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
     business_name = user.get("business_name") or card.get("business_name") or ""
     business_type = card.get("business_type") or ""
-    services = card.get("services") or []
+    services = w.get("services") if w.get("services") else (card.get("services") or [])
     service_area = w.get("service_area") or card.get("service_area") or ""
     reviews = await db.reviews.find({"user_id": user_id}, {"_id": 0, "text": 1, "comment": 1, "rating": 1}).sort("created_at", -1).to_list(5)
     try:
@@ -4106,7 +4112,7 @@ async def public_website(slug: str):
     return {
         "website": w,
         "business": business,
-        "services": card.get("services") or [],
+        "services": w.get("services") if w.get("services") is not None else (card.get("services") or []),
         "reviews": reviews,
         "photos": [{"id": p["id"], "label": p.get("label", "")} for p in photos],
         "hours": w.get("hours") or card.get("hours") or "",
