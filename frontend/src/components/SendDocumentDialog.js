@@ -172,10 +172,17 @@ export default function SendDocumentDialog({
   const shareWithPdf = async () => {
     if (!getPdfBlob || sharing) return;
     setSharing(true);
+    // Copy the client's email so the user can paste it into the "To" field —
+    // the phone's share sheet cannot pre-fill a recipient when sharing a file.
+    let copiedEmail = false;
+    if (email) {
+      try { await navigator.clipboard.writeText(email); copiedEmail = true; } catch {}
+    }
     try {
       const { blob, filename } = await getPdfBlob();
       const file = new File([blob], filename, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (copiedEmail) toast.success(`Copiamos ${email} — pégalo en "Para" si eliges Email`, { duration: 6000 });
         await navigator.share({ files: [file], title: emailSubject, text: attachMessage });
       } else {
         // Fallback: download the PDF so they can attach it, then open email.
