@@ -3969,6 +3969,10 @@ class WebsiteIn(BaseModel):
     services: Optional[list] = None      # [{name, description, starting_price, icon}]
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
+    gallery_photo_ids: Optional[list] = None  # curated + ordered "Recent Work" photos
+    chat_enabled: Optional[bool] = None       # show UniTech AI chat widget on the site
+    chat_launcher: Optional[str] = None        # optional chat button text
+    chat_position: Optional[str] = None        # "right" | "left"
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -4077,22 +4081,48 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     return content
 
 
+@api_router.post("/website/ai-suggest-design")
+async def website_ai_suggest_design(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Suggest the best template + brand color for this contractor's trade.
+    Returns {template, accent_color, reason}. Does NOT save — owner confirms."""
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    business_name = user.get("business_name") or card.get("business_name") or ""
+    business_type = card.get("business_type") or ""
+    services = card.get("services") or []
+    try:
+        out = await ai_service.suggest_website_design(business_name=business_name, business_type=business_type, services=services)
+    except Exception as e:
+        logger.error(f"website ai-suggest-design failed: {e!r}")
+        raise HTTPException(502, "AI could not suggest a design. Try again.")
+    return out
+
+
 @api_router.get("/public/website/{slug}")
-async def public_website(slug: str):
+async def public_website(slug: str, preview: int = 0):
     w = await db.websites.find_one({"slug": slug}, {"_id": 0})
-    if not w or not w.get("published"):
+    if not w or (not w.get("published") and not preview):
         raise HTTPException(404, "Not found")
     user = await db.users.find_one({"id": w["user_id"]}, {"_id": 0, "password_hash": 0}) or {}
     card = await db.cards.find_one({"user_id": w["user_id"]}, {"_id": 0}) or {}
     reviews = await db.reviews.find({"user_id": w["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
-    photos = await db.photos.find(
-        {
-            "user_id": w["user_id"], "is_deleted": False,
-            "content_type": {"$ne": "video/mp4"},
-            "$or": [{"label": {"$in": ["before", "during", "after"]}}, {"on_card": True}],
-        },
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(30)
+    gids = w.get("gallery_photo_ids")
+    if gids:
+        gdocs = await db.photos.find(
+            {"user_id": w["user_id"], "id": {"$in": gids}, "is_deleted": False, "content_type": {"$ne": "video/mp4"}},
+            {"_id": 0},
+        ).to_list(60)
+        gmap = {d["id"]: d for d in gdocs}
+        photos = [gmap[i] for i in gids if i in gmap]
+    else:
+        photos = await db.photos.find(
+            {
+                "user_id": w["user_id"], "is_deleted": False,
+                "content_type": {"$ne": "video/mp4"},
+                "$or": [{"label": {"$in": ["before", "during", "after"]}}, {"on_card": True}],
+            },
+            {"_id": 0},
+        ).sort("created_at", -1).to_list(30)
     business = {
         "name": user.get("business_name", ""),
         "owner_name": card.get("person_name") or user.get("owner_name", ""),

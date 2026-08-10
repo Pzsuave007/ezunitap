@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, Bot } from "lucide-react";
 import { toast } from "sonner";
 
-const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust"];
-const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E" };
+const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
+const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about", "contact", "booking"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const photoSrc = (id) => `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${id}`;
@@ -22,9 +22,13 @@ export default function WebsiteEditor() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [galUploading, setGalUploading] = useState(false);
   const fileRef = useRef(null);
+  const galFileRef = useRef(null);
   const publicUrl = w ? `${window.location.origin}/sitio/${w.slug}` : "";
 
   useEffect(() => {
@@ -87,6 +91,50 @@ export default function WebsiteEditor() {
     } catch (err) {
       toast.error(t("website.saveError"));
     } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+  };
+
+  const suggestDesign = async () => {
+    setSuggesting(true);
+    try {
+      const { data } = await api.post("/website/ai-suggest-design");
+      setSuggestion(data);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setSuggesting(false); }
+  };
+  const applySuggestion = async () => {
+    if (!suggestion) return;
+    await save({ template: suggestion.template, accent_color: suggestion.accent_color });
+    toast.success(t("website.designApplied"));
+    setSuggestion(null);
+  };
+
+  const galIds = () => w.gallery_photo_ids || [];
+  const inGallery = (id) => galIds().includes(id);
+  const toggleGallery = (id) => {
+    const ids = galIds();
+    patch({ gallery_photo_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] });
+  };
+  const moveGallery = (idx, dir) => {
+    const ids = [...galIds()];
+    const j = idx + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[idx], ids[j]] = [ids[j], ids[idx]];
+    patch({ gallery_photo_ids: ids });
+  };
+  const uploadGalleryPhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setGalUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/photos?label=website", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setPhotos((prev) => [data, ...prev]);
+      patch({ gallery_photo_ids: [...galIds(), data.id] });
+      toast.success(t("website.photoAdded"));
+    } catch { toast.error(t("website.saveError")); }
+    finally { setGalUploading(false); if (galFileRef.current) galFileRef.current.value = ""; }
   };
 
   if (!w) return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-slate-400" /></div>;
@@ -157,14 +205,44 @@ export default function WebsiteEditor() {
 
       {/* Templates */}
       <Card className="card-elevated border-0 shadow-none p-5">
-        <div className="font-semibold mb-3">{t("website.template")}</div>
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div className="font-semibold">{t("website.template")}</div>
+          <div className="flex items-center gap-2">
+            <a href={publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-view-site"><Eye className="w-4 h-4 mr-1.5" /> {t("website.viewSite")}</Button></a>
+            <a href={`${publicUrl}?preview=1`} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-preview">{t("website.preview")}</Button></a>
+          </div>
+        </div>
+        {/* AI design suggestion */}
+        <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-3">
+          {!suggestion ? (
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm text-violet-900">{t("website.suggestDesc")}</div>
+              <Button onClick={suggestDesign} disabled={suggesting} size="sm" data-testid="website-suggest-design" className="rounded-xl h-9 bg-violet-600 hover:bg-violet-700">
+                {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wand2 className="w-4 h-4 mr-1.5" /> {t("website.suggestBtn")}</>}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 flex-wrap" data-testid="website-suggestion">
+              <div className="flex items-center gap-2 text-sm text-violet-900">
+                <span className="w-5 h-5 rounded-full flex-none" style={{ background: suggestion.accent_color }} />
+                <span><b>{t(`website.tpl.${suggestion.template}Name`)}</b>{suggestion.reason ? ` — ${suggestion.reason}` : ""}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => setSuggestion(null)} variant="ghost" size="sm" className="rounded-xl h-9">{t("website.dismiss")}</Button>
+                <Button onClick={applySuggestion} size="sm" data-testid="website-apply-suggestion" className="rounded-xl h-9 bg-violet-600 hover:bg-violet-700">{t("website.applyDesign")}</Button>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {TEMPLATES.map((key) => (
             <button key={key} onClick={() => save({ template: key })} data-testid={`website-tpl-${key}`}
-              className={`text-left p-4 rounded-2xl border-2 transition-all ${w.template === key ? "border-blue-600 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"}`}>
-              <div className="w-full h-16 rounded-lg mb-2" style={{ background: TPL_SWATCH[key] }} />
-              <div className="font-bold text-sm">{t(`website.tpl.${key}Name`)}</div>
-              <div className="text-xs text-slate-500">{t(`website.tpl.${key}Desc`)}</div>
+              className={`text-left rounded-2xl border-2 overflow-hidden transition-all ${w.template === key ? "border-blue-600 ring-2 ring-blue-100" : "border-slate-200 hover:border-slate-300"}`}>
+              <TemplateThumb kind={key} accent={w.accent_color || "#2563EB"} />
+              <div className="p-3">
+                <div className="font-bold text-sm flex items-center gap-1.5">{t(`website.tpl.${key}Name`)}{w.template === key && <Check className="w-3.5 h-3.5 text-blue-600" />}</div>
+                <div className="text-xs text-slate-500">{t(`website.tpl.${key}Desc`)}</div>
+              </div>
             </button>
           ))}
         </div>
@@ -200,6 +278,79 @@ export default function WebsiteEditor() {
           ))}
         </div>
         {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
+      </Card>
+
+      {/* Gallery editor (Recent Work) */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Images className="w-4 h-4" /> {t("website.galleryTitle")}</div>
+        <p className="text-sm text-slate-500 mb-3">{t("website.galleryDesc")}</p>
+        <input ref={galFileRef} type="file" accept="image/*" className="hidden" onChange={uploadGalleryPhoto} data-testid="website-gallery-upload-input" />
+        {/* Selected & ordered */}
+        {galIds().length > 0 && (
+          <div className="space-y-2 mb-4">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("website.galleryShown")}</div>
+            {galIds().map((id, idx) => (
+              <div key={id} className="flex items-center gap-3 p-2 rounded-xl bg-slate-50" data-testid={`website-gallery-item-${idx}`}>
+                <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center flex-none">{idx + 1}</span>
+                <img src={photoSrc(id)} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />
+                <div className="flex-1" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, -1)} disabled={idx === 0} data-testid={`website-gallery-up-${idx}`}><ArrowUp className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, 1)} disabled={idx === galIds().length - 1} data-testid={`website-gallery-down-${idx}`}><ArrowDown className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => toggleGallery(id)} data-testid={`website-gallery-remove-${idx}`}><Trash2 className="w-4 h-4" /></Button>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Picker: all photos */}
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t("website.galleryAdd")}</div>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={() => galFileRef.current?.click()} disabled={galUploading} data-testid="website-gallery-upload"
+            className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+            {galUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+          </button>
+          {photos.map((p) => (
+            <button key={p.id} onClick={() => toggleGallery(p.id)} data-testid={`website-gallery-pick-${p.id}`}
+              className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${inGallery(p.id) ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+              <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+              {inGallery(p.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-400 mt-3">{t("website.galleryHint")}</p>
+      </Card>
+
+      {/* Chat & Forms */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start gap-2">
+            <Bot className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
+            <div>
+              <div className="font-semibold">{t("website.chatTitle")}</div>
+              <p className="text-sm text-slate-500 mt-0.5">{t("website.chatDesc")}</p>
+            </div>
+          </div>
+          <Switch checked={!!w.chat_enabled} onCheckedChange={(v) => save({ chat_enabled: v })} data-testid="website-chat-toggle" />
+        </div>
+        {w.chat_enabled && (
+          <div className="mt-4 grid sm:grid-cols-2 gap-3">
+            <div>
+              <Label>{t("website.chatLauncher")}</Label>
+              <Input value={w.chat_launcher || ""} onChange={(e) => patch({ chat_launcher: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder={t("website.chatLauncherPh")} data-testid="website-chat-launcher" />
+            </div>
+            <div>
+              <Label>{t("website.chatPosition")}</Label>
+              <div className="flex gap-2 mt-1.5">
+                {["right", "left"].map((p) => (
+                  <button key={p} onClick={() => save({ chat_position: p })} data-testid={`website-chat-pos-${p}`}
+                    className={`flex-1 h-11 rounded-xl border-2 text-sm font-semibold ${(w.chat_position || "right") === p ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500"}`}>
+                    {t(`website.pos_${p}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        <a href="/sitio-web" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600" data-testid="website-embed-link"><MessageSquare className="w-4 h-4" /> {t("website.embedLink")}</a>
       </Card>
 
       {/* Content */}
@@ -341,6 +492,37 @@ export default function WebsiteEditor() {
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position };
+}
+
+// Mini layout preview thumbnails — a stylized mock of each template's skeleton.
+function TemplateThumb({ kind, accent }) {
+  const A = accent || "#2563EB";
+  const bar = (bg, w = "60%") => <div style={{ background: bg, width: w }} className="h-1.5 rounded-full" />;
+  const wrap = (bg, children) => <div className="h-24 w-full p-2 overflow-hidden" style={{ background: bg }}>{children}</div>;
+  switch (kind) {
+    case "cinematic":
+      return wrap("#0A0A0F", <div className="h-full flex flex-col justify-end gap-1.5">{bar(A, "45%")}{bar("#3f3f46", "70%")}<div className="grid grid-cols-3 gap-1 mt-1">{[0, 1, 2].map((i) => <div key={i} className="h-6 rounded" style={{ background: "#1f1f23" }} />)}</div></div>);
+    case "responder":
+      return wrap("#fff", <><div className="h-2 -mx-2 -mt-2 mb-2" style={{ background: A }} /><div className="grid grid-cols-2 gap-1.5 h-full"><div className="flex flex-col gap-1 justify-center">{bar("#111", "80%")}{bar(A, "50%")}</div><div className="rounded" style={{ background: "#e5e5e5" }} /></div></>);
+    case "bento":
+      return wrap("#fff", <div className="flex gap-1.5 h-full"><div className="w-1/4 rounded" style={{ background: "#f1f5f9" }} /><div className="flex-1 grid grid-cols-3 grid-rows-2 gap-1"><div className="row-span-2 col-span-1 rounded" style={{ background: "#e2e8f0" }} /><div className="rounded" style={{ background: A }} /><div className="rounded" style={{ background: "#e2e8f0" }} /><div className="rounded" style={{ background: "#e2e8f0" }} /><div className="rounded" style={{ background: "#e2e8f0" }} /></div></div>);
+    case "craftsman":
+      return wrap("#F7F5F1", <div className="h-full flex flex-col items-center justify-center gap-1.5"><div className="h-10 w-[85%] rounded-[10px]" style={{ background: "#e7e2d8" }} />{bar("#2c2a28", "40%")}</div>);
+    case "trust":
+      return wrap("#F1F5F9", <div className="relative h-full"><div className="h-12 rounded" style={{ background: "#cbd5e1" }} /><div className="absolute left-2 right-2 top-8 h-10 rounded-md bg-white shadow flex flex-col justify-center gap-1 px-2">{bar("#cbd5e1", "70%")}{bar(A, "40%")}</div></div>);
+    case "slider":
+      return wrap("#fff", <div className="grid grid-cols-2 h-full gap-0"><div className="flex flex-col justify-center gap-1 pr-1" style={{ background: "#111827" }}>{bar(A, "70%")}{bar("#4b5563", "50%")}</div><div className="relative" style={{ background: "#d4d4d4" }}><div className="absolute inset-y-0 left-1/2 w-0.5 bg-white" /></div></div>);
+    case "onepage":
+      return wrap("#FAFAFA", <div className="h-full flex flex-col justify-center gap-2"><div className="h-2 rounded" style={{ background: "#111", width: "75%" }} /><div className="h-px w-full bg-slate-200" /><div className="flex justify-between"><div className="h-1 w-1/3 rounded bg-slate-300" /><div className="h-1.5 w-1.5 rounded-full" style={{ background: A }} /></div></div>);
+    case "neon":
+      return wrap("#0A0A0C", <div className="h-full flex flex-col justify-center gap-1.5"><div className="h-2 rounded" style={{ background: A, width: "55%", boxShadow: `0 0 8px ${A}` }} /><div className="grid grid-cols-3 gap-1 mt-1">{[0, 1, 2].map((i) => <div key={i} className="h-7 rounded border" style={{ borderColor: `${A}66`, background: "rgba(255,255,255,.04)" }} />)}</div></div>);
+    case "playful":
+      return wrap("#FFF8F0", <div className="h-full flex items-center gap-2"><div className="flex-1 flex flex-col gap-1">{bar(A, "70%")}{bar("#f5c99b", "45%")}</div><div className="w-12 h-12 rounded-full" style={{ background: `${A}55` }} /></div>);
+    case "luxe":
+      return wrap("#141414", <div className="h-full border flex flex-col items-center justify-center gap-1.5" style={{ borderColor: `${A}55` }}><div className="h-1 w-6 rounded-full" style={{ background: A }} />{bar("#f5f5f0", "55%")}{bar("#a8a29a", "35%")}</div>);
+    default:
+      return wrap(TPL_SWATCH[kind] || "#e5e7eb", null);
+  }
 }

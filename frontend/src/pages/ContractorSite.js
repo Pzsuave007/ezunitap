@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, Quote, Plus } from "lucide-react";
@@ -56,6 +56,16 @@ const THEME = {
     bg: "#F7F5F1", surface: "#FFFFFF", ink: "#2C2A28", muted: "#7C756B", border: "#E7E2D8", radius: "rounded-3xl", btn: "rounded-full font-bold" },
   trust: { dark: false, h: "'Montserrat',sans-serif", b: "'Open Sans',sans-serif", hc: "font-extrabold tracking-tight",
     bg: "#F1F5F9", surface: "#FFFFFF", ink: "#1F2937", muted: "#6B7280", border: "#E5E7EB", radius: "rounded-lg", btn: "rounded-lg font-bold" },
+  slider: { dark: false, h: "'Archivo',sans-serif", b: "'Inter',sans-serif", hc: "font-extrabold uppercase tracking-tight",
+    bg: "#FFFFFF", surface: "#F5F5F5", ink: "#111827", muted: "#4B5563", border: "#111827", radius: "rounded-none", btn: "rounded-none uppercase font-bold tracking-wide" },
+  onepage: { dark: false, h: "'Fraunces',serif", b: "'Inter',sans-serif", hc: "font-semibold tracking-tight",
+    bg: "#FAFAFA", surface: "#FFFFFF", ink: "#111111", muted: "#6B7280", border: "#E5E7EB", radius: "rounded-sm", btn: "rounded-full font-medium" },
+  neon: { dark: true, h: "'Space Grotesk',sans-serif", b: "'Inter',sans-serif", hc: "font-bold tracking-tight",
+    bg: "#0A0A0C", surface: "#141417", ink: "#E5E7EB", muted: "#8B8B93", border: "rgba(255,255,255,.1)", radius: "rounded-xl", btn: "rounded-xl font-semibold" },
+  playful: { dark: false, h: "'Baloo 2',cursive", b: "'Nunito',sans-serif", hc: "font-extrabold tracking-tight",
+    bg: "#FFF8F0", surface: "#FFFFFF", ink: "#33302E", muted: "#7A736A", border: "transparent", radius: "rounded-[2rem]", btn: "rounded-full font-extrabold" },
+  luxe: { dark: true, h: "'Cormorant Garamond',serif", b: "'Jost',sans-serif", hc: "font-semibold tracking-tight",
+    bg: "#141414", surface: "#1C1C1C", ink: "#F5F5F0", muted: "#A8A29A", border: "rgba(212,175,55,.28)", radius: "rounded-none", btn: "rounded-none uppercase tracking-[0.15em] font-medium" },
 };
 const LEGACY = { clean: "bento", bold: "cinematic", warm: "craftsman" };
 const resolveTpl = (v) => (THEME[v] ? v : (LEGACY[v] || "trust"));
@@ -76,14 +86,35 @@ export default function ContractorSite() {
   useEffect(() => {
     const l = document.createElement("link");
     l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Roboto:wght@400;500;700;900&family=Syne:wght@500;700;800&display=swap";
+    l.href = "https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600;700;800;900&family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Jost:wght@300;400;500;600&family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Roboto:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap";
     document.head.appendChild(l);
     return () => { document.head.removeChild(l); };
   }, []);
 
   useEffect(() => {
-    axios.get(`${API}/public/website/${slug}`).then((r) => setData(r.data)).catch(() => setErr(true));
+    const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
+    axios.get(`${API}/public/website/${slug}${preview}`).then((r) => setData(r.data)).catch(() => setErr(true));
   }, [slug]);
+
+  // Optional UniTech AI chat widget on the public site
+  useEffect(() => {
+    if (!data) return;
+    const ww = data.website;
+    if (!ww.chat_enabled || !data.card_slug) return;
+    const s = document.createElement("script");
+    s.src = `${window.location.origin}/embed.js`;
+    s.async = true;
+    s.setAttribute("data-unitech-chat", "");
+    s.setAttribute("data-slug", data.card_slug);
+    s.setAttribute("data-accent", ww.accent_color || "#2563EB");
+    if (ww.chat_position === "left") s.setAttribute("data-position", "left");
+    if (ww.chat_launcher) s.setAttribute("data-launcher", ww.chat_launcher);
+    document.body.appendChild(s);
+    return () => {
+      document.body.removeChild(s);
+      document.querySelectorAll("[data-unitech-widget],#unitech-chat-root,.unitech-chat-launcher").forEach((n) => n.remove());
+    };
+  }, [data]);
 
   useEffect(() => {
     if (!data) return;
@@ -113,7 +144,7 @@ export default function ContractorSite() {
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
   const ctx = { w, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key };
-  const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust }[key];
+  const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
 
   return (
     <div style={{ background: th.bg, color: th.ink, fontFamily: th.b }} className="min-h-screen antialiased" data-testid={`site-tpl-${key}`}>
@@ -671,6 +702,515 @@ function Trust({ ctx }) {
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      <FooterBlock ctx={ctx} />
+    </div>
+  );
+}
+
+// ===========================================================================
+// Before/After draggable slider (used by T6)
+// ===========================================================================
+function BeforeAfter({ before, after, accent, tall }) {
+  const [pos, setPos] = useState(50);
+  const ref = useRef(null);
+  const move = (clientX) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100)));
+  };
+  return (
+    <div ref={ref} className={`relative w-full ${tall ? "h-full" : "aspect-[4/3]"} overflow-hidden select-none cursor-ew-resize`}
+      onMouseMove={(e) => e.buttons === 1 && move(e.clientX)} onClick={(e) => move(e.clientX)}
+      onTouchMove={(e) => move(e.touches[0].clientX)} data-testid="site-before-after">
+      <img src={after} alt="after" className="absolute inset-0 w-full h-full object-cover" draggable="false" />
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+        <img src={before} alt="before" className="absolute inset-0 h-full object-cover max-w-none" style={{ width: ref.current ? ref.current.offsetWidth : "100%" }} draggable="false" />
+        <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-black/60 text-white px-2 py-1">Before</span>
+      </div>
+      <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-widest px-2 py-1" style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>After</span>
+      <div className="absolute inset-y-0" style={{ left: `${pos}%`, width: 3, background: "#fff", transform: "translateX(-50%)" }}>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center" style={{ color: accent }}><ArrowRight className="w-4 h-4 -mr-1" /><ArrowRight className="w-4 h-4 rotate-180 -ml-1" /></div>
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE 6 — BEFORE / AFTER
+// ===========================================================================
+function Slider({ ctx }) {
+  const { w, b, data, sec, accent, accentText, th, poolAt, services, goContact, heroImg } = ctx;
+  return (
+    <div className="pb-24 md:pb-0">
+      <header className="sticky top-0 z-40 border-b-2 bg-white" style={{ borderColor: th.ink }}>
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+          <Brand ctx={ctx} />
+          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-11 ${th.btn} inline-flex items-center gap-2 text-sm`} style={{ background: accent, color: accentText }}>Free Quote</button>
+        </div>
+      </header>
+      <section className="grid md:grid-cols-2">
+        <div className="px-5 py-14 md:py-0 md:flex md:flex-col md:justify-center md:px-12 order-2 md:order-1" style={{ background: th.ink }}>
+          <div className="text-white wfade max-w-lg">
+            <HeroBadges ctx={ctx} />
+            <h1 className="wh uppercase text-5xl sm:text-6xl mt-5 leading-[0.95]">{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-5 text-lg text-white/80">{w.subheadline}</p>}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 group`} style={{ background: accent, color: accentText }}>See Your Transformation <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></button>
+              {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 border-2 border-white/40 text-white`}><Phone className="w-4 h-4" /> Call</a>}
+            </div>
+          </div>
+        </div>
+        <div className="relative min-h-[280px] md:min-h-[560px] order-1 md:order-2">
+          <BeforeAfter before={poolAt(1)} after={poolAt(0) || heroImg} accent={accent} tall />
+        </div>
+      </section>
+
+      {sec.how !== false && (
+        <SectionLight id="how" kicker="Our process" title="How It Works" ctx={ctx}>
+          <div className="grid sm:grid-cols-3 gap-4 items-stretch">
+            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i, arr) => (
+              <div key={i} className="relative p-6 border-2" style={{ borderColor: th.ink, background: th.surface }}>
+                <div className="wh text-5xl" style={{ color: accent }}>{i + 1}</div>
+                <h3 className="wh uppercase text-lg mt-2" style={{ color: th.ink }}>{s.title}</h3>
+                <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.desc}</p>
+                {i < arr.length - 1 && <ArrowRight className="hidden sm:block absolute -right-5 top-1/2 -translate-y-1/2 w-7 h-7 z-10" style={{ color: accent }} />}
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.services !== false && (
+        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx} alt>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((s, i) => (
+              <div key={i} className="border-2 overflow-hidden group" style={{ borderColor: th.ink, background: "#fff" }} data-testid={`site-service-${i}`}>
+                <div className="aspect-[16/10] overflow-hidden"><img src={poolAt(i)} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                <div className="p-5">
+                  <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
+                  {s.description && <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.description}</p>}
+                  {s.starting_price && <p className="mt-2 font-bold" style={{ color: accent }}>{s.starting_price}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.why !== false && (
+        <SectionLight id="why" kicker="Why choose us" title="Results that speak" ctx={ctx}>
+          <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4 max-w-3xl">
+            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
+              <div key={i} className="flex gap-3 items-start"><CheckCircle2 className="w-6 h-6 flex-none" style={{ color: accent }} /><div><h3 className="wh uppercase text-base" style={{ color: th.ink }}>{s.title}</h3><p className="text-sm" style={{ color: th.muted }}>{s.desc}</p></div></div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.gallery !== false && data.photos.length > 1 && (
+        <SectionLight id="gallery" kicker="Transformations" title="See The Difference" ctx={ctx} alt>
+          <div className="grid md:grid-cols-2 gap-5">
+            {[0, 2].map((base) => data.photos[base] && data.photos[base + 1] && (
+              <div key={base} className="border-2" style={{ borderColor: th.ink }}>
+                <BeforeAfter before={photoUrl(data.photos[base].id)} after={photoUrl(data.photos[base + 1].id)} accent={accent} />
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
+      <FooterBlock ctx={ctx} />
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE 7 — MINIMAL ONE-PAGE
+// ===========================================================================
+function OnePage({ ctx }) {
+  const { w, b, data, sec, accent, th, poolAt, services, goContact, heroImg } = ctx;
+  const nav = [["Services", "services"], ["Work", "gallery"], ["Reviews", "reviews"], ["Contact", "contact"]];
+  return (
+    <div className="pb-20 md:pb-0">
+      <header className="sticky top-0 z-40 bg-[#FAFAFA]/90 backdrop-blur border-b" style={{ borderColor: th.border }}>
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Brand ctx={ctx} />
+          <nav className="hidden md:flex gap-8 text-sm" style={{ color: th.muted }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`} className="hover:text-black">{l}</a>)}</nav>
+          {b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> {b.phone}</a>}
+        </div>
+      </header>
+
+      <section className="max-w-5xl mx-auto px-6 pt-16 md:pt-28 pb-16 grid md:grid-cols-5 gap-10 items-center">
+        <div className="md:col-span-3 wfade">
+          <div className="flex items-center gap-2 text-sm mb-6" style={{ color: th.muted }}><span className="w-2 h-2 rounded-full" style={{ background: accent }} /> {b.is_licensed || b.is_insured ? "Licensed & Insured" : "Trusted local service"}</div>
+          <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
+          {w.subheadline && <p className="mt-6 text-xl leading-relaxed max-w-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
+          <div className="mt-9 flex flex-wrap gap-3">
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>Request a quote</button>
+            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.ink, color: th.ink }}>Call now</a>}
+          </div>
+        </div>
+        <div className="md:col-span-2"><div className="overflow-hidden rounded-sm"><img src={heroImg} alt="" className="w-full aspect-[3/4] object-cover" /></div></div>
+      </section>
+
+      {sec.services !== false && (
+        <section id="services" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
+          <div className="flex items-baseline justify-between mb-10"><h2 className="wh text-4xl" style={{ color: th.ink }}>Services</h2><span className="text-sm" style={{ color: th.muted }}>What we offer</span></div>
+          <div>{services.map((s, i) => <OneAccordion key={i} s={s} ctx={ctx} />)}</div>
+        </section>
+      )}
+
+      {sec.how !== false && (
+        <section id="how" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
+          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
+          {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+            <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: th.border }}>
+              <div className="md:col-span-1 wh text-3xl" style={{ color: th.border === "#E5E7EB" ? "#D1D5DB" : th.muted }}>{String(i + 1).padStart(2, "0")}</div>
+              <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
+              <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {sec.why !== false && (
+        <section id="why" className="max-w-3xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
+          <h2 className="wh text-4xl mb-8" style={{ color: th.ink }}>Why us</h2>
+          <div className="space-y-6">
+            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
+              <p key={i} className="text-xl leading-loose" style={{ color: th.muted }}><span className="wh" style={{ color: th.ink }}>{s.title}.</span> {s.desc}</p>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {sec.gallery !== false && data.photos.length > 0 && (
+        <section id="gallery" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
+          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>Recent work</h2>
+          <div className="columns-1 sm:columns-2 gap-8">
+            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id)} alt={p.label} className="w-full object-cover" /></div>)}
+          </div>
+        </section>
+      )}
+
+      {sec.reviews !== false && data.reviews.length > 0 && (
+        <section id="reviews" className="max-w-3xl mx-auto px-6 py-28 border-t text-center" style={{ borderColor: th.border }}>
+          <Stars n={data.reviews[0].rating} />
+          <p className="wh text-3xl md:text-4xl leading-snug mt-4" style={{ color: th.ink }}>"{data.reviews[0].text}"</p>
+          <div className="mt-5 text-sm tracking-widest uppercase" style={{ color: th.muted }}>{data.reviews[0].customer_name}</div>
+        </section>
+      )}
+
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
+      <footer className="max-w-5xl mx-auto px-6 py-10 border-t flex flex-wrap justify-between gap-3 text-sm" style={{ borderColor: th.border, color: th.muted }}>
+        <span>© {new Date().getFullYear()} {b.name}</span><span>Powered by UniTech</span>
+      </footer>
+    </div>
+  );
+}
+function OneAccordion({ s, ctx }) {
+  const { th, accent } = ctx;
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t" style={{ borderColor: th.border }} data-testid="site-service-acc">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-4 py-6 text-left">
+        <span className="wh text-2xl" style={{ color: th.ink }}>{s.name}</span>
+        <span className="flex items-center gap-4">{s.starting_price && <span className="text-sm" style={{ color: accent }}>{s.starting_price}</span>}<span style={{ color: accent, transform: open ? "rotate(45deg)" : "none", transition: "transform .2s" }}>+</span></span>
+      </button>
+      {open && s.description && <p className="pb-6 text-lg leading-relaxed max-w-2xl" style={{ color: th.muted }}>{s.description}</p>}
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE 8 — NEON APP/TECH
+// ===========================================================================
+function Neon({ ctx }) {
+  const { w, b, data, sec, accent, accentText, th, poolAt, services, goContact, heroImg } = ctx;
+  const grid = "radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px)";
+  const glow = { boxShadow: `0 0 24px ${accent}55` };
+  return (
+    <div className="pb-24 md:pb-0" style={{ backgroundImage: grid, backgroundSize: "26px 26px" }}>
+      <header className="sticky top-0 z-40 backdrop-blur-md border-b" style={{ background: "rgba(10,10,12,.8)", borderColor: th.border }}>
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+          <Brand ctx={ctx} light />
+          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText, ...glow }}>Get Quote</button>
+        </div>
+      </header>
+
+      <section className="relative">
+        <div className="max-w-6xl mx-auto px-5 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
+          <div className="wfade">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent }}><span className="w-1.5 h-1.5 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} /> ONLINE 24/7</div>
+            <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02]" style={{ color: "#fff", textShadow: `0 0 30px ${accent}88` }}>{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, ...glow }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
+              {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
+            </div>
+          </div>
+          <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}44`, ...glow }}><img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" /></div>
+        </div>
+      </section>
+
+      {sec.services !== false && (
+        <SectionLight id="services" kicker="Capabilities" title="Our Services" ctx={ctx}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {services.map((s, i) => (
+              <div key={i} className="p-6 rounded-xl border transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: th.border }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 22px ${accent}44`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.border; e.currentTarget.style.boxShadow = "none"; }} data-testid={`site-service-${i}`}>
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style={{ background: `${accent}1a`, border: `1px solid ${accent}55` }}><CheckCircle2 className="w-5 h-5" style={{ color: accent }} /></div>
+                <h3 className="wh text-lg" style={{ color: "#fff" }}>{s.name}</h3>
+                {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
+                {s.starting_price && <p className="mt-3 font-mono text-sm" style={{ color: accent }}>{s.starting_price}</p>}
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.how !== false && (
+        <SectionLight id="how" kicker="Process" title="How It Works" ctx={ctx} alt>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+              <div key={i} className="relative">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center font-mono font-bold border" style={{ borderColor: accent, color: accent, boxShadow: `0 0 16px ${accent}66` }}>{i + 1}</div>
+                <h3 className="wh text-lg mt-4" style={{ color: "#fff" }}>{s.title}</h3>
+                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.why !== false && (
+        <SectionLight id="why" kicker="//advantages" title="Why Choose Us" ctx={ctx}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
+              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
+              return <div key={i} className="p-6 rounded-xl border text-center" style={{ background: "rgba(255,255,255,.04)", borderColor: th.border }}>
+                <I className="w-7 h-7 mx-auto" style={{ color: accent }} /><h3 className="wh text-sm uppercase mt-2 font-mono" style={{ color: "#fff" }}>{s.title}</h3><p className="text-xs mt-1" style={{ color: th.muted }}>{s.desc}</p>
+              </div>;
+            })}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.gallery !== false && data.photos.length > 0 && (
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500" /></div>)}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
+      <FooterBlock ctx={ctx} />
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE 9 — PLAYFUL & FRIENDLY
+// ===========================================================================
+function Playful({ ctx }) {
+  const { w, b, data, sec, accent, accentText, th, poolAt, services, goContact, heroImg } = ctx;
+  const pastels = [`${accent}1f`, "#FDE68A66", "#A7F3D066", "#BFDBFE66", "#FBCFE866", "#DDD6FE66"];
+  return (
+    <div className="pb-24 md:pb-0">
+      <header className="sticky top-0 z-40 pt-4 px-4">
+        <div className="max-w-5xl mx-auto rounded-full bg-white shadow-md px-5 h-14 flex items-center justify-between">
+          <Brand ctx={ctx} />
+          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText }}>Get a Quote</button>
+        </div>
+      </header>
+
+      <section className="relative overflow-hidden">
+        <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full" style={{ background: `${accent}22` }} />
+        <div className="absolute top-40 right-0 w-56 h-56 rounded-full" style={{ background: "#FDE68A55" }} />
+        <div className="relative max-w-6xl mx-auto px-5 py-14 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+          <div className="wfade">
+            <div className="flex flex-wrap gap-2 mb-4">{[b.is_licensed && "✓ Licensed", b.is_insured && "✓ Insured", "★ 5-Star"].filter(Boolean).map((x, i) => <span key={i} className="px-3 py-1 rounded-full text-xs font-extrabold" style={{ background: pastels[i + 1], color: th.ink }}>{x}</span>)}</div>
+            <h1 className="wh text-5xl sm:text-6xl leading-[1] tracking-tight" style={{ color: th.ink }}>{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition`} style={{ background: accent, color: accentText }}>Get a Free Quote</button>
+              {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white shadow`} style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> Call</a>}
+            </div>
+          </div>
+          <div className="relative flex justify-center">
+            <div className="absolute right-4 top-6 w-3/4 h-3/4 rounded-[42%_58%_60%_40%]" style={{ background: `${accent}22` }} />
+            <div className="relative w-full max-w-md aspect-square bg-cover bg-center shadow-2xl" style={{ backgroundImage: `url(${heroImg})`, borderRadius: "62% 38% 46% 54% / 60% 57% 43% 40%" }} />
+          </div>
+        </div>
+      </section>
+
+      {sec.services !== false && (
+        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((s, i) => (
+              <div key={i} className={`p-7 ${th.radius} hover:-translate-y-2 transition`} style={{ background: pastels[i % pastels.length] }} data-testid={`site-service-${i}`}>
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-4 shadow"><CheckCircle2 className="w-6 h-6" style={{ color: accent }} /></div>
+                <h3 className="wh text-xl" style={{ color: th.ink }}>{s.name}</h3>
+                {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
+                {s.starting_price && <p className="mt-3 font-extrabold" style={{ color: accent }}>{s.starting_price}</p>}
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.how !== false && (
+        <SectionLight id="how" kicker="Easy peasy" title="How It Works" ctx={ctx} alt>
+          <div className="grid sm:grid-cols-3 gap-8">
+            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+              <div key={i} className="text-center">
+                <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center wh text-3xl text-white shadow-lg" style={{ background: accent }}>{i + 1}</div>
+                <h3 className="wh text-xl mt-4" style={{ color: th.ink }}>{s.title}</h3>
+                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.why !== false && (
+        <SectionLight id="why" kicker="Why choose us" title="Neighbors love us" ctx={ctx}>
+          <div className="flex flex-wrap gap-4 justify-center">
+            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
+              <div key={i} className={`px-6 py-5 rounded-[1.5rem] shadow-md max-w-[240px] ${i % 2 ? "rotate-2" : "-rotate-2"}`} style={{ background: pastels[i % pastels.length] }}>
+                <h3 className="wh text-lg" style={{ color: th.ink }}>{s.title}</h3><p className="text-sm mt-1" style={{ color: th.muted }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.gallery !== false && data.photos.length > 0 && (
+        <SectionLight id="gallery" kicker="Our work" title="Recent Projects" ctx={ctx} alt>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`overflow-hidden ${i % 3 === 0 ? "rounded-[2rem]" : "rounded-full aspect-square"}`}><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover" /></div>)}
+          </div>
+        </SectionLight>
+      )}
+
+      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
+      <FooterBlock ctx={ctx} />
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE 10 — LUXURY ELEGANT
+// ===========================================================================
+function Luxe({ ctx }) {
+  const { w, b, data, sec, accent, th, poolAt, services, goContact, heroImg } = ctx;
+  const gold = accent || "#C9A227";
+  const roman = ["I", "II", "III", "IV", "V"];
+  return (
+    <div className="pb-20 md:pb-0">
+      <header className="absolute top-0 inset-x-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 h-20 grid grid-cols-3 items-center text-white">
+          <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]"><a href="#services">Services</a><a href="#gallery">Portfolio</a></nav>
+          <div className="col-start-2 flex justify-center"><Brand ctx={ctx} light center /></div>
+          <div className="flex justify-end">{b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className="text-xs uppercase tracking-[0.2em] border-b pb-0.5" style={{ borderColor: gold, color: "#fff" }}>Call {b.phone}</a>}</div>
+        </div>
+      </header>
+
+      <section className="relative min-h-[100svh] flex items-center">
+        <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ transition: "transform 10s ease" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(20,20,20,.5), rgba(20,20,20,.8))" }} />
+        <div className="absolute inset-6 md:inset-10 border pointer-events-none" style={{ borderColor: `${gold}55` }} />
+        <div className="relative max-w-4xl mx-auto px-8 text-center text-white wfade">
+          <div className="text-xs uppercase tracking-[0.35em] mb-5" style={{ color: gold }}>{b.years_in_business > 0 ? `Est. — ${b.years_in_business}+ Years of Excellence` : "Crafted to Perfection"}</div>
+          <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.05]">{w.headline || b.name}</h1>
+          {w.subheadline && <p className="mt-6 text-lg md:text-xl font-light max-w-2xl mx-auto" style={{ color: "rgba(245,245,240,.85)" }}>{w.subheadline}</p>}
+          <div className="mt-10 flex flex-wrap gap-4 justify-center">
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-9 h-14 ${th.btn} border`} style={{ borderColor: gold, color: "#fff" }}>Request a Consultation</button>
+          </div>
+        </div>
+      </section>
+
+      {sec.services !== false && (
+        <section id="services" className="py-28" style={{ background: th.bg }}>
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="text-center mb-14"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>What we offer</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>Services</h2></div>
+            <div className="divide-y" style={{ borderColor: th.border }}>
+              {services.map((s, i) => (
+                <div key={i} className="group relative py-8 overflow-hidden" data-testid={`site-service-${i}`} style={{ borderColor: th.border }}>
+                  <img src={poolAt(i)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-20 transition-opacity duration-700" />
+                  <div className="relative flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="wh text-3xl" style={{ color: th.ink }}>{s.name}</h3>
+                    {s.starting_price && <span className="text-sm tracking-widest" style={{ color: gold }}>{s.starting_price}</span>}
+                  </div>
+                  {s.description && <p className="relative mt-2 max-w-2xl font-light" style={{ color: th.muted }}>{s.description}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {sec.how !== false && (
+        <section id="how" className="py-28" style={{ background: th.surface }}>
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="text-center mb-14"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>The experience</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>How It Works</h2></div>
+            <div className="space-y-10">
+              {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+                <div key={i} className="flex gap-8 items-start border-l pl-8" style={{ borderColor: `${gold}55` }}>
+                  <div className="wh text-4xl flex-none w-12" style={{ color: gold }}>{roman[i]}</div>
+                  <div><h3 className="wh text-2xl" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1 font-light" style={{ color: th.muted }}>{s.desc}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {sec.why !== false && (
+        <section id="why" className="py-28" style={{ background: th.bg }}>
+          <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Distinction</div>
+              <h2 className="wh text-4xl md:text-5xl mb-6" style={{ color: th.ink }}>Why Choose Us</h2>
+              <div className="space-y-5">
+                {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
+                  <div key={i} className="border-b pb-4" style={{ borderColor: th.border }}><h3 className="wh text-xl" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1 font-light" style={{ color: th.muted }}>{s.desc}</p></div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <img src={poolAt(1)} alt="" className="w-full aspect-[3/4] object-cover mt-8" />
+              <img src={poolAt(2)} alt="" className="w-full aspect-[3/4] object-cover" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {sec.gallery !== false && data.photos.length > 0 && (
+        <section id="gallery" className="py-28" style={{ background: th.surface }}>
+          <div className="max-w-6xl mx-auto px-6 text-center mb-12"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Portfolio</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>Selected Work</h2></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-0">
+            {data.photos.slice(0, 9).map((p) => <div key={p.id} className="aspect-square overflow-hidden"><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover hover:scale-105 transition duration-[1200ms]" /></div>)}
+          </div>
+        </section>
+      )}
+
+      {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
   );

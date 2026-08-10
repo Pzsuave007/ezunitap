@@ -395,6 +395,41 @@ async def generate_website_content(
     return data
 
 
+WEBSITE_DESIGN_SYSTEM = """You are a brand & web-design consultant for U.S. home-service contractors.
+Given a contractor's trade, pick the single best website TEMPLATE and a brand ACCENT color.
+
+Available templates (choose ONE key exactly):
+- "cinematic": bold, premium, dark, full-screen photo. Roofing, construction, high-impact trades.
+- "responder": high-energy, 24/7, call-first, red urgency. Towing, emergency plumbing/electrical, restoration.
+- "bento": clean modern app-like with side menu. General contractors, handyman, multi-service.
+- "craftsman": elegant editorial, warm, serif. Landscaping, remodeling, painting, fine work.
+- "trust": familiar, form-first, converts. Local plumbing/HVAC/electrical, cleaning.
+- "slider": before/after transformations slider. Painting, cleaning, roofing, restoration, landscaping.
+- "onepage": ultra-minimal single page, calm, refined. Consultants, inspectors, boutique services.
+- "neon": futuristic dark tech UI with glow. Smart-home, security, EV chargers, solar, low-voltage.
+- "playful": colorful, friendly, rounded. Junk removal, moving, cleaning, pet services.
+- "luxe": luxury elegant, sophisticated. High-end remodels, custom builds, pools, luxury landscaping.
+
+Output ONLY valid JSON: {"template":"<key>","accent_color":"#RRGGBB","reason":"one short sentence why"}
+Pick a professional accent color that fits the trade (e.g. deep blue for plumbing, forest green for
+landscaping, red for emergency/towing, gold/emerald for luxury). Return ONLY the JSON."""
+
+
+async def suggest_website_design(business_name: str = "", business_type: str = "", services: Optional[list] = None) -> dict:
+    svc = ", ".join([s.get("name", "") if isinstance(s, dict) else str(s) for s in (services or [])]).strip(", ")
+    brief = f"Business: {business_name or 'a local contractor'}\nTrade: {business_type or 'general home services'}\nServices: {svc or 'general services'}"
+    chat = _new_chat(WEBSITE_DESIGN_SYSTEM)
+    response = await chat.send_message(UserMessage(text=brief))
+    data = _extract_json(response)
+    valid = {"cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"}
+    if not data or data.get("template") not in valid:
+        raise ValueError("AI could not suggest a design.")
+    color = str(data.get("accent_color") or "").strip()
+    if not (color.startswith("#") and len(color) in (4, 7)):
+        color = "#2563EB"
+    return {"template": data["template"], "accent_color": color, "reason": data.get("reason", "")}
+
+
 
 MESSAGE_TEMPLATES = {
     "follow_up_quote": "Polite follow-up on a previously sent quote, ask if they have questions, gentle nudge.",
