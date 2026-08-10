@@ -268,7 +268,7 @@ export default function SendDocumentDialog({
 
           <button
             data-testid="send-email"
-            onClick={openEmail}
+            onClick={() => openEmail()}
             className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition text-left"
           >
             <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center">
