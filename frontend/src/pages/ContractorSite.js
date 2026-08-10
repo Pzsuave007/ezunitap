@@ -78,9 +78,9 @@ function isLight(hex) {
 }
 
 // ===========================================================================
-export default function ContractorSite() {
+export default function ContractorSite({ injected }) {
   const { slug } = useParams();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -92,9 +92,10 @@ export default function ContractorSite() {
   }, []);
 
   useEffect(() => {
+    if (injected) { setData(injected); return; }
     const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
     axios.get(`${API}/public/website/${slug}${preview}`).then((r) => setData(r.data)).catch(() => setErr(true));
-  }, [slug]);
+  }, [slug, injected]);
 
   // Optional UniTech AI chat widget on the public site
   useEffect(() => {
@@ -119,10 +120,53 @@ export default function ContractorSite() {
   useEffect(() => {
     if (!data) return;
     const ww = data.website, bb = data.business;
-    document.title = ww.seo_title || `${bb.name}${data.service_area ? " — " + data.service_area : ""}`;
-    let m = document.querySelector('meta[name="description"]');
-    if (!m) { m = document.createElement("meta"); m.name = "description"; document.head.appendChild(m); }
-    m.setAttribute("content", ww.seo_description || ww.subheadline || `${bb.name} — professional, licensed & insured service you can trust.`);
+    const title = ww.seo_title || `${bb.name}${data.service_area ? " — " + data.service_area : ""}`;
+    const desc = ww.seo_description || ww.subheadline || `${bb.name} — professional, licensed & insured service you can trust.`;
+    const abs = (u) => (u && u.startsWith("/") ? window.location.origin + u : u);
+    const ogImage = abs(photoUrl(ww.hero_photo_id)) || abs(photoUrl(bb.logo_photo_id)) || "";
+    const canonical = window.location.origin + window.location.pathname;
+    document.title = title;
+    const meta = (key, val, prop) => {
+      if (!val) return;
+      const attr = prop ? "property" : "name";
+      let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
+      el.setAttribute("content", val);
+    };
+    const link = (rel, href) => {
+      if (!href) return;
+      let el = document.head.querySelector(`link[rel="${rel}"]`);
+      if (!el) { el = document.createElement("link"); el.setAttribute("rel", rel); document.head.appendChild(el); }
+      el.setAttribute("href", href);
+    };
+    meta("description", desc);
+    meta("og:title", title, true); meta("og:description", desc, true); meta("og:type", "website", true);
+    meta("og:url", canonical, true); meta("og:site_name", bb.name, true);
+    if (ogImage) meta("og:image", ogImage, true);
+    meta("twitter:card", ogImage ? "summary_large_image" : "summary");
+    meta("twitter:title", title); meta("twitter:description", desc);
+    if (ogImage) meta("twitter:image", ogImage);
+    link("canonical", canonical);
+    if (photoUrl(bb.logo_photo_id)) link("icon", abs(photoUrl(bb.logo_photo_id)));
+    // JSON-LD LocalBusiness structured data (local SEO / rich results)
+    const areas = (ww.areas && ww.areas.length ? ww.areas : (data.service_area ? [data.service_area] : []));
+    const ratings = (data.reviews || []).filter((r) => r.rating);
+    const jsonld = {
+      "@context": "https://schema.org", "@type": "HomeAndConstructionBusiness",
+      name: bb.name, telephone: bb.phone || undefined, email: bb.email || undefined,
+      url: canonical, image: ogImage || undefined, description: desc, priceRange: "$$",
+      address: bb.address ? { "@type": "PostalAddress", streetAddress: bb.address } : undefined,
+      areaServed: areas.length ? areas : undefined,
+      aggregateRating: ratings.length ? {
+        "@type": "AggregateRating",
+        ratingValue: (ratings.reduce((a, r) => a + r.rating, 0) / ratings.length).toFixed(1),
+        reviewCount: ratings.length,
+      } : undefined,
+      makesOffer: (data.services || []).length ? data.services.map((s) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: s.name } })) : undefined,
+    };
+    let ld = document.getElementById("unitech-jsonld");
+    if (!ld) { ld = document.createElement("script"); ld.type = "application/ld+json"; ld.id = "unitech-jsonld"; document.head.appendChild(ld); }
+    ld.textContent = JSON.stringify(jsonld);
   }, [data]);
 
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500 p-8 text-center">This website is not available.</div>;

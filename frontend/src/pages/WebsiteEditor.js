@@ -27,6 +27,10 @@ export default function WebsiteEditor() {
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [galUploading, setGalUploading] = useState(false);
+  const [domain, setDomain] = useState(null);
+  const [domainInput, setDomainInput] = useState("");
+  const [domainBusy, setDomainBusy] = useState(false);
+  const [domainMsg, setDomainMsg] = useState("");
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const publicUrl = w ? `${window.location.origin}/sitio/${w.slug}` : "";
@@ -34,6 +38,7 @@ export default function WebsiteEditor() {
   useEffect(() => {
     api.get("/website").then(({ data }) => setW(data)).catch(() => toast.error(t("website.loadError")));
     api.get("/photos").then(({ data }) => setPhotos(Array.isArray(data) ? data.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
+    api.get("/website/domain").then(({ data }) => { setDomain(data); setDomainInput(data.domain || ""); }).catch(() => {});
   }, [t]);
 
   const patch = (fields) => setW((prev) => ({ ...prev, ...fields }));
@@ -137,6 +142,30 @@ export default function WebsiteEditor() {
     finally { setGalUploading(false); if (galFileRef.current) galFileRef.current.value = ""; }
   };
 
+  const saveDomain = async () => {
+    setDomainBusy(true); setDomainMsg("");
+    try {
+      const { data } = await api.post("/website/domain", { domain: domainInput });
+      setDomain(data); setDomainInput(data.domain); toast.success(t("website.domainSaved"));
+    } catch (e) { toast.error(e?.response?.data?.detail || t("website.saveError")); }
+    finally { setDomainBusy(false); }
+  };
+  const verifyDomain = async () => {
+    setDomainBusy(true);
+    try {
+      const { data } = await api.post("/website/domain/verify");
+      setDomain(data); setDomainMsg(data.message || "");
+      if (data.verified) toast.success(t("website.domainVerified"));
+    } catch (e) { toast.error(e?.response?.data?.detail || t("website.saveError")); }
+    finally { setDomainBusy(false); }
+  };
+  const removeDomain = async () => {
+    await api.delete("/website/domain");
+    setDomain({ domain: "", verified: false }); setDomainInput(""); setDomainMsg("");
+    toast.success(t("website.domainRemoved"));
+  };
+  const copyText = (v) => { navigator.clipboard.writeText(v); toast.success(t("website.linkCopied")); };
+
   if (!w) return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-slate-400" /></div>;
 
   // Array helpers
@@ -150,7 +179,20 @@ export default function WebsiteEditor() {
   const areasSet = (idx, val) => { const arr = [...(w.areas || [])]; arr[idx] = val; patch({ areas: arr }); };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5" data-testid="website-editor">
+    <div className="max-w-3xl mx-auto space-y-5 pb-24" data-testid="website-editor">
+      {/* Sticky save bar (always visible) */}
+      <div className="sticky top-0 z-30 -mx-1 px-1 py-2.5 bg-white/85 backdrop-blur-md border-b border-slate-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${w.published ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+            {w.published ? t("website.published") : t("website.draft")}
+          </span>
+          <a href={publicUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-600 truncate hidden sm:inline">{t("website.viewSite")}</a>
+        </div>
+        <Button onClick={saveAndToast} disabled={saving} data-testid="website-save-top" className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 font-bold px-5">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}
+        </Button>
+      </div>
+
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center flex-none"><Globe className="w-5 h-5 text-blue-700" /></div>
         <div>
@@ -210,6 +252,7 @@ export default function WebsiteEditor() {
           <div className="flex items-center gap-2">
             <a href={publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-view-site"><Eye className="w-4 h-4 mr-1.5" /> {t("website.viewSite")}</Button></a>
             <a href={`${publicUrl}?preview=1`} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-preview">{t("website.preview")}</Button></a>
+            <Button onClick={saveAndToast} disabled={saving} size="sm" className="rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 font-bold" data-testid="website-save-templates">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}</Button>
           </div>
         </div>
         {/* AI design suggestion */}
@@ -353,6 +396,44 @@ export default function WebsiteEditor() {
         <a href="/sitio-web" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600" data-testid="website-embed-link"><MessageSquare className="w-4 h-4" /> {t("website.embedLink")}</a>
       </Card>
 
+      {/* Custom Domain */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Globe className="w-4 h-4" /> {t("website.domainTitle")}
+          {domain?.verified && <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">{t("website.domainVerifiedBadge")}</span>}
+        </div>
+        <p className="text-sm text-slate-500 mb-3">{t("website.domainDesc")}</p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-400">https://</span>
+          <Input value={domainInput} onChange={(e) => setDomainInput(e.target.value)} placeholder="mybusiness.com" className="h-11 rounded-xl" data-testid="website-domain-input" />
+          <Button onClick={saveDomain} disabled={domainBusy || !domainInput} className="rounded-xl h-11 flex-none" data-testid="website-domain-save">{domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}</Button>
+        </div>
+
+        {domain?.domain && (
+          <div className="mt-4 space-y-3">
+            {!domain.verified && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
+                <div className="font-bold text-amber-900 mb-2">{t("website.domainStep1")}</div>
+                <DnsRow label="Type" value="TXT" onCopy={copyText} />
+                <DnsRow label="Host / Name" value={domain.txt_host} onCopy={copyText} />
+                <DnsRow label="Value" value={domain.txt_value} onCopy={copyText} />
+                <Button onClick={verifyDomain} disabled={domainBusy} size="sm" className="rounded-xl h-9 mt-2 bg-amber-600 hover:bg-amber-700" data-testid="website-domain-verify">
+                  {domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.domainVerifyBtn")}
+                </Button>
+                {domainMsg && <p className="text-xs text-amber-800 mt-2" data-testid="website-domain-msg">{domainMsg}</p>}
+              </div>
+            )}
+            <div className={`rounded-xl border p-3 text-sm ${domain.verified ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
+              <div className="font-bold mb-2" style={{ color: domain.verified ? "#065f46" : "#334155" }}>{t("website.domainStep2")}</div>
+              <DnsRow label="Type" value="A" onCopy={copyText} />
+              <DnsRow label="Host / Name" value="@" onCopy={copyText} />
+              <DnsRow label="Points to" value={domain.a_target || t("website.domainAskHost")} onCopy={domain.a_target ? copyText : undefined} />
+              <p className="text-xs text-slate-500 mt-2">{t("website.domainSslNote")}</p>
+            </div>
+            <button onClick={removeDomain} className="text-xs text-slate-400 hover:text-red-500 font-semibold" data-testid="website-domain-remove">{t("website.domainRemove")}</button>
+          </div>
+        )}
+      </Card>
+
       {/* Content */}
       <Card className="card-elevated border-0 shadow-none p-5 space-y-4">
         <div className="font-semibold">{t("website.heroContent")}</div>
@@ -494,6 +575,16 @@ export default function WebsiteEditor() {
 function pick(w) {
   const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position } = w;
   return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position };
+}
+
+function DnsRow({ label, value, onCopy }) {
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <span className="text-xs font-semibold text-slate-500 w-24 flex-none">{label}</span>
+      <code className="flex-1 text-xs bg-white border border-slate-200 rounded px-2 py-1 truncate">{value}</code>
+      {onCopy && <button onClick={() => onCopy(value)} className="text-slate-400 hover:text-slate-700 flex-none"><Copy className="w-3.5 h-3.5" /></button>}
+    </div>
+  );
 }
 
 // Mini layout preview thumbnails — a stylized mock of each template's skeleton.

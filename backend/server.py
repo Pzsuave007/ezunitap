@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
@@ -4098,11 +4098,80 @@ async def website_ai_suggest_design(user_id: str = Depends(get_current_user_id),
     return out
 
 
-@api_router.get("/public/website/{slug}")
-async def public_website(slug: str, preview: int = 0):
-    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
-    if not w or (not w.get("published") and not preview):
-        raise HTTPException(404, "Not found")
+def _dns_txt_records(name: str):
+    import dns.resolver
+    ans = dns.resolver.resolve(name, "TXT", lifetime=6)
+    out = []
+    for r in ans:
+        try:
+            out.append(b"".join(r.strings).decode("utf-8", "ignore"))
+        except Exception:
+            out.append(str(r).strip('"'))
+    return out
+
+
+def _domain_status(w):
+    domain = w.get("custom_domain") or ""
+    return {
+        "domain": domain,
+        "verified": bool(w.get("custom_domain_verified")),
+        "txt_host": f"_unitech-verify.{domain}" if domain else "",
+        "txt_value": w.get("custom_domain_token") or "",
+        "a_target": os.environ.get("WEBSITE_DOMAIN_TARGET", ""),
+    }
+
+
+@api_router.get("/website/domain")
+async def get_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    return _domain_status(await _get_or_init_website(user_id))
+
+
+@api_router.post("/website/domain")
+async def set_website_domain(payload: dict = Body(...), user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    raw = (payload.get("domain") or "").strip().lower()
+    for pre in ("https://", "http://"):
+        if raw.startswith(pre):
+            raw = raw[len(pre):]
+    raw = raw.split("/")[0].strip()
+    if raw.startswith("www."):
+        raw = raw[4:]
+    if not raw or "." not in raw or " " in raw:
+        raise HTTPException(400, "Enter a valid domain, e.g. mybusiness.com")
+    dup = await db.websites.find_one({"custom_domain": raw, "user_id": {"$ne": user_id}})
+    if dup:
+        raise HTTPException(409, "That domain is already connected to another account.")
+    w = await _get_or_init_website(user_id)
+    token = w.get("custom_domain_token") or _new_id().replace("-", "")[:20]
+    await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain": raw, "custom_domain_token": token, "custom_domain_verified": False}})
+    return _domain_status(await db.websites.find_one({"user_id": user_id}, {"_id": 0}))
+
+
+@api_router.delete("/website/domain")
+async def delete_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    await db.websites.update_one({"user_id": user_id}, {"$unset": {"custom_domain": "", "custom_domain_token": "", "custom_domain_verified": ""}})
+    return {"ok": True}
+
+
+@api_router.post("/website/domain/verify")
+async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    w = await _get_or_init_website(user_id)
+    domain, token = w.get("custom_domain"), w.get("custom_domain_token")
+    if not domain or not token:
+        raise HTTPException(400, "Add a domain first.")
+    host = f"_unitech-verify.{domain}"
+    try:
+        records = _dns_txt_records(host)
+    except Exception as e:
+        logger.info(f"domain verify lookup failed {host}: {e!r}")
+        return {**_domain_status(w), "checked": True, "message": "We couldn't find the TXT record yet — DNS can take up to 30 min to update. Try again shortly."}
+    if any(token in r for r in records):
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_verified": True}})
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+        return {**_domain_status(w), "checked": True, "message": "Domain verified! 🎉 Point your A record and enable SSL on your server to go live."}
+    return {**_domain_status(w), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
+
+
+async def _website_payload(w):
     user = await db.users.find_one({"id": w["user_id"]}, {"_id": 0, "password_hash": 0}) or {}
     card = await db.cards.find_one({"user_id": w["user_id"]}, {"_id": 0}) or {}
     reviews = await db.reviews.find({"user_id": w["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
@@ -4150,6 +4219,42 @@ async def public_website(slug: str, preview: int = 0):
         "appt_enabled": bool(card.get("appt_enabled")),
         "card_slug": card.get("slug") or "",
     }
+
+
+@api_router.get("/public/website/{slug}")
+async def public_website(slug: str, preview: int = 0):
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
+    if not w or (not w.get("published") and not preview):
+        raise HTTPException(404, "Not found")
+    return await _website_payload(w)
+
+
+@api_router.get("/public/website-by-domain/{domain}")
+async def public_website_by_domain(domain: str):
+    d = (domain or "").strip().lower()
+    if d.startswith("www."):
+        d = d[4:]
+    w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True, "published": True}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    return await _website_payload(w)
+
+
+@api_router.get("/sitemap.xml")
+async def website_sitemap(request: Request):
+    base = str(request.base_url).rstrip("/")
+    sites = await db.websites.find({"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000)
+    urls = []
+    for s in sites:
+        if s.get("custom_domain") and s.get("custom_domain_verified"):
+            loc = f"https://{s['custom_domain']}/"
+        elif s.get("slug"):
+            loc = f"{base}/sitio/{s['slug']}"
+        else:
+            continue
+        urls.append(f"<url><loc>{loc}</loc><changefreq>weekly</changefreq></url>")
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
+    return Response(content=xml, media_type="application/xml")
 
 
 @api_router.post("/public/website/{slug}/lead")

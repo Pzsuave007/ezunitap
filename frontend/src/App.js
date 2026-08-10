@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -81,7 +83,22 @@ function PublicOnly({ children }) {
 function HomeOrAuth() {
   const { user, loading } = useAuth();
   const isRoot = window.location.pathname === "/";
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+  const host = window.location.hostname;
+  const isPrimary = host === "localhost" || host.endsWith("emergentagent.com") || /ezunitap|ezunitech/i.test(host);
+  const tryDomain = isRoot && !isPrimary;
+  const [site, setSite] = useState(tryDomain ? undefined : null);
+  useEffect(() => {
+    if (!tryDomain) return;
+    let alive = true;
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/public/website-by-domain/${host}`)
+      .then((r) => { if (alive) setSite(r.data); })
+      .catch(() => { if (alive) setSite(false); });
+    return () => { alive = false; };
+  }, [tryDomain, host]);
+  const spinner = <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+  if (tryDomain && site === undefined) return spinner;
+  if (tryDomain && site) return <ContractorSite injected={site} />;
+  if (loading) return spinner;
   if (!user) {
     if (isRoot) return <Landing />;
     return <Navigate to="/login" replace />;
