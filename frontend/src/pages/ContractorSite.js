@@ -230,6 +230,31 @@ export default function ContractorSite() {
           </Section>
         )}
 
+        {/* FAQ */}
+        {sec.faq !== false && (
+          <Section id="faq" title="Frequently Asked Questions" t={t} alt>
+            <div className="max-w-3xl space-y-3">
+              {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => (
+                <FaqItem key={i} q={f.q} a={f.a} t={t} accent={accent} />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Areas We Serve */}
+        {sec.areas !== false && (w.areas?.length || data.service_area) && (
+          <Section id="areas" title="Areas We Serve" t={t}>
+            {data.service_area && <p className="mb-6 text-base" style={{ color: t.muted }}>Proudly serving {data.service_area} and surrounding communities.</p>}
+            <div className="flex flex-wrap gap-2.5">
+              {(w.areas?.length ? w.areas : (data.service_area ? [data.service_area] : [])).map((a, i) => (
+                <span key={i} className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold ${t.radius}`} style={{ background: `${accent}12`, color: t.ink }}>
+                  <MapPin className="w-4 h-4" style={{ color: accent }} /> {a}
+                </span>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* About / hours / area */}
         {sec.about && (w.about || data.hours || data.service_area) && (
           <Section id="about" title="About Us" t={t} alt>
@@ -319,6 +344,19 @@ function Section({ id, title, t, alt, children }) {
         {children}
       </div>
     </section>
+  );
+}
+
+function FaqItem({ q, a, t, accent }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`overflow-hidden ${t.card}`} style={{ background: t.bg }} data-testid="site-faq-item">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 p-5 text-left">
+        <span className="font-bold text-base" style={{ color: t.ink }}>{q}</span>
+        <span className="flex-none w-7 h-7 rounded-full flex items-center justify-center text-white font-bold transition-transform" style={{ background: accent, transform: open ? "rotate(45deg)" : "none" }}>+</span>
+      </button>
+      {open && <div className="px-5 pb-5 -mt-1 text-sm leading-relaxed" style={{ color: t.muted }}>{a}</div>}
+    </div>
   );
 }
 

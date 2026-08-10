@@ -293,6 +293,109 @@ async def generate_scope_of_work(description_es: str) -> dict:
     return data
 
 
+WEBSITE_CONTENT_SYSTEM = """You are an expert conversion copywriter and local-SEO specialist for
+U.S. home-service contractors (roofing, plumbing, HVAC, landscaping, cleaning, painting, concrete, etc.).
+You write the marketing copy for a contractor's public website. The website is read by U.S. customers,
+so ALL copy MUST be in natural, professional ENGLISH (never Spanish, never "translated" phrasing).
+
+Given the business name, trade, list of services and service area, produce high-converting,
+SEO-rich website content.
+
+Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
+{
+  "headline": "punchy hero headline, 4-8 words, includes trade + city if known",
+  "subheadline": "1 sentence value proposition, benefit-driven",
+  "about": "2-3 short sentences that build trust (experience, local, licensed/insured, quality)",
+  "how_it_works": [
+    {"title": "step title (2-4 words)", "desc": "1 sentence"},
+    {"title": "...", "desc": "..."},
+    {"title": "...", "desc": "..."}
+  ],
+  "why_us": [
+    {"title": "benefit (2-3 words)", "desc": "short phrase"},
+    {"title": "...", "desc": "..."},
+    {"title": "...", "desc": "..."},
+    {"title": "...", "desc": "..."}
+  ],
+  "faqs": [
+    {"q": "common customer question", "a": "clear, reassuring answer 1-2 sentences"},
+    {"q": "...", "a": "..."},
+    {"q": "...", "a": "..."},
+    {"q": "...", "a": "..."},
+    {"q": "...", "a": "..."}
+  ],
+  "areas": ["City or neighborhood 1", "City 2", "City 3", "City 4", "City 5", "City 6"],
+  "seo_title": "SEO page title, ~55-60 chars, trade + city + brand",
+  "seo_description": "SEO meta description, ~150 chars, includes trade + city + call to action"
+}
+
+Rules:
+- Exactly 3 how_it_works, 4 why_us, 5 faqs.
+- "areas": derive 4-8 realistic nearby cities/neighborhoods from the service area. If the service
+  area is unknown, use generic phrasing like "Your local area" once.
+- Reference the specific trade and services naturally for SEO — do NOT keyword-stuff.
+- Keep it warm, trustworthy and locally focused. Return ONLY the JSON.
+"""
+
+
+async def generate_website_content(
+    business_name: str = "",
+    business_type: str = "",
+    services: Optional[list] = None,
+    service_area: str = "",
+    tagline: str = "",
+    about_me: str = "",
+    years_in_business: int = 0,
+    is_licensed: bool = False,
+    is_insured: bool = False,
+    hours: str = "",
+    ai_context: str = "",
+    reviews: Optional[list] = None,
+) -> dict:
+    def _svc_line(s):
+        if not isinstance(s, dict):
+            return f"- {s}"
+        name = s.get("name", "")
+        desc = s.get("description", "")
+        price = s.get("starting_price", "")
+        extra = " — ".join([x for x in [desc, price] if x])
+        return f"- {name}" + (f" ({extra})" if extra else "")
+
+    svc_block = "\n".join([_svc_line(s) for s in (services or [])]).strip() or "(none listed)"
+    creds = []
+    if is_licensed:
+        creds.append("licensed")
+    if is_insured:
+        creds.append("insured")
+    if years_in_business:
+        creds.append(f"{years_in_business}+ years in business")
+    review_snips = ""
+    for r in (reviews or [])[:5]:
+        txt = (r.get("text") or r.get("comment") or "").strip() if isinstance(r, dict) else str(r)
+        if txt:
+            review_snips += f"- \"{txt[:200]}\"\n"
+
+    brief = (
+        f"Business name: {business_name or 'a local contractor'}\n"
+        f"Trade / business type: {business_type or 'general home services'}\n"
+        f"Tagline: {tagline or '(none)'}\n"
+        f"Owner's about/bio: {about_me or '(none)'}\n"
+        f"Credentials: {', '.join(creds) or '(none stated)'}\n"
+        f"Hours: {hours or '(not specified)'}\n"
+        f"Service area: {service_area or 'local area (unknown)'}\n"
+        f"Services offered:\n{svc_block}\n"
+        + (f"Real customer reviews (use their tone/themes, do NOT fabricate):\n{review_snips}" if review_snips else "")
+        + (f"\nOwner's private notes / knowledge base (use to sound accurate, never expose verbatim secrets or pricing not meant to be public):\n{ai_context}\n" if ai_context else "")
+    )
+    chat = _new_chat(WEBSITE_CONTENT_SYSTEM)
+    response = await chat.send_message(UserMessage(text=brief))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not produce website content. Try again.")
+    return data
+
+
+
 MESSAGE_TEMPLATES = {
     "follow_up_quote": "Polite follow-up on a previously sent quote, ask if they have questions, gentle nudge.",
     "payment_reminder": "Professional payment reminder for an unpaid invoice, friendly but firm.",

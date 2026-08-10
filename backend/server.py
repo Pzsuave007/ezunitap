@@ -4037,6 +4037,40 @@ async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_
     return w
 
 
+@api_router.post("/website/ai-generate")
+async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Generate SEO-rich website content (headline, about, how-it-works, why-us,
+    FAQ, service areas, SEO tags) from the owner's trade/services. Does NOT save —
+    the editor populates the fields so the owner can review before publishing."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    business_name = user.get("business_name") or card.get("business_name") or ""
+    business_type = card.get("business_type") or ""
+    services = card.get("services") or []
+    service_area = w.get("service_area") or card.get("service_area") or ""
+    reviews = await db.reviews.find({"user_id": user_id}, {"_id": 0, "text": 1, "comment": 1, "rating": 1}).sort("created_at", -1).to_list(5)
+    try:
+        content = await ai_service.generate_website_content(
+            business_name=business_name,
+            business_type=business_type,
+            services=services,
+            service_area=service_area,
+            tagline=card.get("tagline") or "",
+            about_me=w.get("about") or card.get("about_me") or "",
+            years_in_business=card.get("years_in_business") or 0,
+            is_licensed=bool(card.get("is_licensed")),
+            is_insured=bool(card.get("is_insured")),
+            hours=w.get("hours") or card.get("hours") or "",
+            ai_context=card.get("ai_context") or "",
+            reviews=reviews,
+        )
+    except Exception as e:
+        logger.error(f"website ai-generate failed: {e!r}")
+        raise HTTPException(502, "AI could not generate content. Try again in a moment.")
+    return content
+
+
 @api_router.get("/public/website/{slug}")
 async def public_website(slug: str):
     w = await db.websites.find_one({"slug": slug}, {"_id": 0})
