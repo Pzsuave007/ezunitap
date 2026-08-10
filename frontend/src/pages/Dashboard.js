@@ -112,7 +112,7 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
         <SectionTitle action={<TourButton tourKey="dashboard" />}>{t("dashboard.startJob")}</SectionTitle>
         <div className="space-y-2">
           <FlowAction step={1} testid="quick-new-client" icon={UserPlus} chip="bg-blue-50 text-blue-600 border border-blue-100"
-            title={t("dashboard.step1Title")} desc={t("dashboard.step1Desc")} onClick={() => navigate("/clientes?new=1")} />
+            title={t("dashboard.step1Title")} desc={t("dashboard.step1Desc")} onClick={() => navigate("/clientes/nuevo")} />
           <FlowAction step={2} testid="quick-ai-quote" icon={Sparkles} chip="bg-purple-50 text-purple-600 border border-purple-100"
             title={t("dashboard.step2Title")} desc={t("dashboard.step2Desc")} onClick={() => navigate("/quotes/nuevo?ai=1")} />
           <FlowAction step={3} testid="quick-new-invoice" icon={Receipt} chip="bg-emerald-50 text-emerald-600 border border-emerald-100"

@@ -1,59 +1,24 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Search, Phone, MapPin, ChevronRight, Loader2, Building2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Search, Phone, MapPin, ChevronRight, Building2 } from "lucide-react";
 import TourButton from "@/components/TourButton";
-
-const EMPTY = { name: "", company: "", phone: "", email: "", address: "", job_type: "", notes: "" };
 
 export default function Clients() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState([]);
   const [filter, setFilter] = useState("");
-  const [open, setOpen] = useState(searchParams.get("new") === "1");
-  const [form, setForm] = useState(EMPTY);
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const { data } = await api.get("/clients");
     setClients(data);
   };
   useEffect(() => { load(); }, []);
-
-  const close = () => {
-    setOpen(false);
-    setForm(EMPTY);
-    if (searchParams.get("new")) {
-      searchParams.delete("new");
-      setSearchParams(searchParams);
-    }
-  };
-
-  const save = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return toast.error(t("clients.nameRequired"));
-    setSaving(true);
-    try {
-      await api.post("/clients", form);
-      toast.success(t("clients.added"));
-      close();
-      load();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || t("clients.error"));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const filtered = clients.filter((c) =>
     [c.name, c.company, c.phone, c.email, c.address, c.job_type].some((f) =>
@@ -73,7 +38,7 @@ export default function Clients() {
         </div>
         <Button
           data-testid="new-client-btn"
-          onClick={() => setOpen(true)}
+          onClick={() => navigate("/clientes/nuevo")}
           className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap"
         >
           <Plus className="w-4 h-4 mr-1" /> {t("clients.newClient")}
@@ -120,58 +85,6 @@ export default function Clients() {
           ))}
         </div>
       )}
-
-      <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-        <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-heading">{t("clients.newClient")}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={save} className="space-y-3">
-            <div>
-              <Label>{t("clients.name")} *</Label>
-              <Input data-testid="cli-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl mt-1.5" required />
-            </div>
-            <div>
-              <Label>{t("clients.company")}</Label>
-              <Input data-testid="cli-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("clients.companyPlaceholder")} />
-              <p className="text-[11px] text-slate-500 mt-1">{t("clients.companyHint")}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>{t("clients.phone")}</Label>
-                <Input data-testid="cli-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-              </div>
-              <div>
-                <Label>{t("clients.email")}</Label>
-                <Input data-testid="cli-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-              </div>
-            </div>
-            <div>
-              <Label>{t("clients.address")}</Label>
-              <Input data-testid="cli-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-            </div>
-            <div>
-              <Label>{t("clients.jobType")}</Label>
-              <Input data-testid="cli-jobtype" value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("clients.jobTypePlaceholder")} />
-            </div>
-            <div>
-              <Label>{t("clients.notes")}</Label>
-              <Textarea data-testid="cli-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl mt-1.5 min-h-[80px]" />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={close} className="rounded-xl">{t("common.cancel")}</Button>
-              <Button
-                type="submit"
-                data-testid="cli-save"
-                disabled={saving}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
