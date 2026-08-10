@@ -16,4 +16,11 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   });
+  // When a new SW takes over (new build), reload once to drop any stale bundle.
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data && e.data.type === "SW_UPDATED" && !sessionStorage.getItem("sw_reloaded")) {
+      sessionStorage.setItem("sw_reloaded", "1");
+      window.location.reload();
+    }
+  });
 }

@@ -107,6 +107,7 @@ export default function ContractorSite({ injected }) {
     s.async = true;
     s.setAttribute("data-unitech-chat", "");
     s.setAttribute("data-slug", data.card_slug);
+    s.setAttribute("data-lang", "en");
     s.setAttribute("data-accent", ww.accent_color || "#2563EB");
     if (ww.chat_position === "left") s.setAttribute("data-position", "left");
     if (ww.chat_launcher) s.setAttribute("data-launcher", ww.chat_launcher);

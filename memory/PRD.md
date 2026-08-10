@@ -15,6 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## 🐛 Jun 2026 — FIX: chat IA del sitio salía en español (debe ser inglés) [COMPLETO; testing_agent iter_52 100%]
+- **Reporte dueño**: "why is the AI bot chat in Spanish on the website?" (el sitio público es 100% inglés → el chat debe ser inglés).
+- **Causa raíz**: (1) `embed.js` usa `data-lang` con default **"es"**, y `ContractorSite.js` inyectaba el widget SIN `data-lang` → saludo + respuestas de la IA en español (embed enviaba `language:"es"`). (2) El website tenía `chat_launcher="Necesitas ayuda?"` guardado (texto en español en el botón).
+- **Fix**: `ContractorSite.js` ahora inyecta el script con `s.setAttribute("data-lang","en")` → saludo en inglés ("Hi! 👋 How can I help you today?") y `language:"en"` al backend (`public_card_chat` → `ai_service.card_assistant_chat` responde en inglés). Se blanqueó el `chat_launcher` del sitio (queda ícono neutro 💬; el dueño puede poner texto en inglés en el editor si quiere).
+- Verificado testing_agent iter_52 (frontend 100%): launcher sin español, saludo en inglés, respuesta IA en inglés (curl), template sigue renderizando. Build recompilado (relativo) + `git add -f frontend/build/*`.
+
+
 ## 🐛 Jun 2026 — FIX: "no se ve ningún template" (borrador → botones abren en preview) [COMPLETO; testing_agent iter_51 100%]
 - **Reporte dueño**: "no se ven las website, ningún template se ve".
 - **Causa raíz**: el sitio del dueño está en **Borrador** (`published=false`). La ruta pública `/sitio/:slug` devuelve 404 "This website is not available." si no está publicado, salvo con `?preview=1`. Los botones del editor "Ver mi sitio" (`website-view-site`) y el de abrir-en-pestaña (ExternalLink) abrían `publicUrl` SIN `?preview=1` → el dueño siempre veía el 404 (ningún template). El sitio público en sí renderiza perfecto (verificado Playwright: craftsman + h1 + 8 imágenes cargan).

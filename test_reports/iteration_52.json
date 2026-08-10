@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only verification of chat widget language fix on public site /sitio/uni2-marketing-agency?preview=1. Confirmed: (1) launcher no longer shows 'Necesitas ayuda?' — it renders a neutral 💬 icon; (2) chat greeting on open is in English: 'Hi! 👋 How can I help you today? I can answer questions or help you book.' with no Spanish greeting present; (3) backend /api/public/card/uni2-marketing-agency/chat with language:'en' returns an English AI reply (verified via curl). Regression check: the public template still renders — data-testid='site-tpl-onepage' is present, H1 shows 'Digital Marketing That Works Nationwide', hero image and other sections render (5 images).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_52.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "embed.js default lang is 'es' (a('data-lang','es')); consider defaulting to 'en' at widget level so any customer site that forgets to pass data-lang won't accidentally render Spanish. Currently OK because ContractorSite.js injects data-lang='en', but the default itself is a foot-gun for any future integrator.",
+    "chat_launcher was stored as a translatable string in DB; recommend storing a language-neutral key (or per-locale map) rather than raw Spanish/English text to prevent similar regressions."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Chat widget on /sitio/uni2-marketing-agency?preview=1 now renders in English. Launcher is a fixed-position button in bottom-right showing 💬. To open programmatically in Playwright, find fixed-position element in bottom-right corner and click(force=True). Wait ~9s after navigation for widget script (embed.js) to inject. Public chat API requires session_id in payload alongside message and language.",
+  "rca of the issue": "Prior bug: embed.js defaulted to Spanish (data-lang='es' default) and DB had chat_launcher='Necesitas ayuda?'. Fix (already applied by main agent): ContractorSite.js sets s.setAttribute('data-lang','en'), embed.js sends {language:'en'} to backend, backend public_card_chat passes language_code through to ai_service. chat_launcher DB value cleared to ''. All three layers now English."
+}
