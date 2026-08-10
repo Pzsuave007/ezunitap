@@ -123,13 +123,19 @@ export default function SendDocumentDialog({
   };
 
   const openEmail = () => {
-    if (!email) {
-      toast.error("Este cliente no tiene email guardado");
-      return;
-    }
     const subject = encodeURIComponent(emailSubject);
     const body = encodeURIComponent(message);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    // Always open the user's mail app. If the client has no saved email, leave
+    // the "to" blank so they can type it — never a silent no-op.
+    const href = `mailto:${email || ""}?subject=${subject}&body=${body}`;
+    const a = document.createElement("a");
+    a.href = href;
+    a.target = "_self";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    if (!email) toast.info("Abriendo tu correo — escribe el email del cliente arriba");
   };
 
   const copyLink = async () => {
@@ -188,8 +194,7 @@ export default function SendDocumentDialog({
           <button
             data-testid="send-email"
             onClick={openEmail}
-            disabled={!email}
-            className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:border-slate-200"
+            className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition text-left"
           >
             <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
@@ -197,7 +202,7 @@ export default function SendDocumentDialog({
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Email</div>
               <div className="text-xs text-slate-500 truncate">
-                {email || "Sin email guardado"}
+                {email || "Abre tu app de correo (escribe el email)"}
               </div>
             </div>
           </button>
