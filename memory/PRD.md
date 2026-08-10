@@ -15,6 +15,13 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## 🐛 Jun 2026 — FIX: "no se ve ningún template" (borrador → botones abren en preview) [COMPLETO; testing_agent iter_51 100%]
+- **Reporte dueño**: "no se ven las website, ningún template se ve".
+- **Causa raíz**: el sitio del dueño está en **Borrador** (`published=false`). La ruta pública `/sitio/:slug` devuelve 404 "This website is not available." si no está publicado, salvo con `?preview=1`. Los botones del editor "Ver mi sitio" (`website-view-site`) y el de abrir-en-pestaña (ExternalLink) abrían `publicUrl` SIN `?preview=1` → el dueño siempre veía el 404 (ningún template). El sitio público en sí renderiza perfecto (verificado Playwright: craftsman + h1 + 8 imágenes cargan).
+- **Fix** (`WebsiteEditor.js`): nuevo `viewUrl = !published ? publicUrl+"?preview=1" : publicUrl`, cableado a los 3 accesos (ExternalLink, "Ver mi sitio", "Vista previa"). Ahora el dueño SIEMPRE ve su sitio/template aunque esté en borrador.
+- Verificado testing_agent iter_51 (frontend 100%): los 3 hrefs terminan en `?preview=1` en Draft, las 10 miniaturas de templates se muestran, y la URL preview renderiza el template completo. Build recompilado (relativo) + `git add -f frontend/build/*`.
+
+
 ## 🧲 Jun 2026 — Leads del Sitio Web → CRM (entrada directa a Clientes) [COMPLETO; verificado curl e2e]
 - **Petición dueño**: cuando un visitante llena el formulario del sitio web público, el lead debe entrar directo al CRM (sin notificación externa por ahora).
 - **Backend** (`server.py` `POST /public/website/{slug}/lead`): antes solo insertaba en `card_leads`. Ahora **crea/reutiliza un Cliente** en `db.clients` con `lead_source="website"`, `source_site` (= dominio propio verificado si existe, si no el slug), `project_request` (descripción), `job_type` (servicio) y notas. **Dedupe** por teléfono/email: si el visitante ya existe, no duplica — actualiza campos y agrega una nota en la bitácora (`client_notes`). Sigue guardando en `card_leads` e in-app notification (action_url `/clientes`, "Ver en CRM"). El CRM (`ClientDetail.js`) ya renderiza la tarjeta "🌐 Contacto desde tu sitio web" + "Vino de: {source_site}" (ya existía).

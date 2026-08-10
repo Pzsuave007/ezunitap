@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only verification of the WebsiteEditor draft-preview fix and public site rendering. Logged in as super-admin (pzsuave007@gmail.com), opened /pagina-web, confirmed site is in Draft, and validated href values for the 3 view/preview affordances. Also validated the public preview URL renders a full template with hero, headline and loaded images.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_behaviors": [
+    "Site status is Draft (data-testid=website-publish -> data-state=unchecked).",
+    "data-testid=website-view-site anchor href = https://all-in-one-web-15.preview.emergentagent.com/sitio/uni2-marketing-agency?preview=1 (ends with ?preview=1 in Draft).",
+    "data-testid=website-preview anchor href = .../sitio/uni2-marketing-agency?preview=1.",
+    "ExternalLink icon anchor next to website-url row href = .../sitio/uni2-marketing-agency?preview=1.",
+    "All 10 template thumbnails render in editor: website-tpl-{cinematic,responder,bento,craftsman,trust,slider,onepage,neon,playful,luxe}.",
+    "Public URL /sitio/uni2-marketing-agency?preview=1 renders full template: data-testid=site-tpl-craftsman, h1='Digital Marketing That Works Nationwide', 8/8 <img> loaded with naturalWidth>0, and 'not available' text is NOT present."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WebsiteEditor.js is 700 lines — consider splitting into smaller subcomponents (Templates, Gallery, BeforeAfter, Domain, Content) for maintainability.",
+    "viewUrl only appends ?preview=1 while !published; consider also appending when the owner is authenticated regardless of publish state, so previewing after publishing (e.g. staging content) still works consistently."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (super-admin, site slug uni2-marketing-agency, Draft).",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug fix verified: In WebsiteEditor.js, viewUrl (const at line ~54) correctly appends ?preview=1 when w.published is false, and is wired to the ExternalLink anchor (line ~274), website-view-site anchor (line ~290), and website-preview anchor uses publicUrl+?preview=1 explicitly (line ~291). All three anchors now open the public site in preview mode so the owner sees the template instead of the 404 'This website is not available' page. Public rendering of /sitio/uni2-marketing-agency?preview=1 is healthy (craftsman template, real hero/h1/images).",
+  "rca of the issue": "Root cause: the owner's website (slug uni2-marketing-agency) is in Draft (published=false). The public route /sitio/:slug returns 404 'This website is not available.' for unpublished sites unless ?preview=1 is provided. Previously, the editor's 'View my site', 'Preview draft', and ExternalLink anchors opened publicUrl without ?preview=1, so the owner always saw the 404 and reported 'no se ve ningún template'. Fix: added viewUrl = publicUrl + '?preview=1' when !w.published and wired it to the three affordances. Mitigation verified end-to-end via Playwright: hrefs contain ?preview=1 while Draft, and the public preview URL renders the full craftsman template with hero image, headline, and all 8 images loaded."
+}

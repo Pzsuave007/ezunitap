@@ -49,6 +49,9 @@ export default function WebsiteEditor() {
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
   const publicUrl = w ? `${window.location.origin}/sitio/${w.slug}` : "";
+  // While the site is a draft it 404s publicly, so the owner's own "view" links
+  // must open in preview mode — otherwise they see "not available" (no template).
+  const viewUrl = w && !w.published ? `${publicUrl}?preview=1` : publicUrl;
 
   useEffect(() => {
     api.get("/website").then(({ data }) => setW(data)).catch(() => toast.error(t("website.loadError")));
@@ -268,7 +271,7 @@ export default function WebsiteEditor() {
             <Globe className="w-4 h-4 flex-none text-slate-400" /><span className="truncate" data-testid="website-url">{publicUrl}</span>
           </div>
           <Button variant="outline" onClick={copy} className="rounded-xl h-11 flex-none" data-testid="website-copy">{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</Button>
-          <a href={publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" className="rounded-xl h-11 flex-none"><ExternalLink className="w-4 h-4" /></Button></a>
+          <a href={viewUrl} target="_blank" rel="noreferrer"><Button variant="outline" className="rounded-xl h-11 flex-none"><ExternalLink className="w-4 h-4" /></Button></a>
         </div>
         <div className="mt-3">
           <Label>{t("website.customLink")}</Label>
@@ -284,7 +287,7 @@ export default function WebsiteEditor() {
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <div className="font-semibold">{t("website.template")}</div>
           <div className="flex items-center gap-2">
-            <a href={publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-view-site"><Eye className="w-4 h-4 mr-1.5" /> {t("website.viewSite")}</Button></a>
+            <a href={viewUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-view-site"><Eye className="w-4 h-4 mr-1.5" /> {t("website.viewSite")}</Button></a>
             <a href={`${publicUrl}?preview=1`} target="_blank" rel="noreferrer"><Button variant="outline" size="sm" className="rounded-xl h-9" data-testid="website-preview">{t("website.preview")}</Button></a>
             <Button onClick={saveAndToast} disabled={saving} size="sm" className="rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 font-bold" data-testid="website-save-templates">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}</Button>
           </div>
