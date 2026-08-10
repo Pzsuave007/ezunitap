@@ -15,6 +15,12 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## 🧭 Jun 2026 — Editor del Sitio Web reorganizado con PESTAÑAS [COMPLETO; self-test Playwright]
+- **Petición dueño**: el editor era una sola página larguísima; quería navegar las secciones fácil y práctico.
+- **Fix** (`WebsiteEditor.js`): se agregó una **barra de pestañas** sticky (dentro del header, debajo de la barra Guardar): **Publicar · Diseño · Contenido · Servicios · Fotos · Formularios · Secciones** (`TABS`, estado `tab`, default "publish"). Cada tarjeta existente se envolvió en `{tab === "X" && (...)}` (grupos multi-tarjeta con fragment `<>`): Publicar=estado/link+Dominio; Diseño=plantillas+colores; Contenido=Generar IA+headline/about+How/Why/FAQ/Areas+SEO+Guardar; Servicios; Fotos=hero+galería+antes/después; Formularios=contacto/citas/chat; Secciones=toggles. La barra Guardar sigue siempre visible arriba. i18n `website.tab.*` (ES/EN).
+- Verificado self-test Playwright: las 7 pestañas renderizan y cambian bien (cada una muestra solo su contenido), sin errores de página; compila limpio. Build recompilado + `git add -f frontend/build/*`.
+
+
 ## 🐛 Jun 2026 — FIX: chat IA del sitio salía en español (debe ser inglés) [COMPLETO; testing_agent iter_52 100%]
 - **Reporte dueño**: "why is the AI bot chat in Spanish on the website?" (el sitio público es 100% inglés → el chat debe ser inglés).
 - **Causa raíz**: (1) `embed.js` usa `data-lang` con default **"es"**, y `ContractorSite.js` inyectaba el widget SIN `data-lang` → saludo + respuestas de la IA en español (embed enviaba `language:"es"`). (2) El website tenía `chat_launcher="Necesitas ayuda?"` guardado (texto en español en el botón).

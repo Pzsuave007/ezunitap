@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about", "contact", "booking"];
+const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
+const TABS = ["publish", "design", "content", "services", "media", "forms", "sections"];
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
   cinematic: ["#F5B301", "#22D3EE", "#EF4444", "#A855F7"],
@@ -45,6 +46,7 @@ export default function WebsiteEditor() {
   const [domainBusy, setDomainBusy] = useState(false);
   const [domainMsg, setDomainMsg] = useState("");
   const [baTarget, setBaTarget] = useState(null);
+  const [tab, setTab] = useState("publish");
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
@@ -217,17 +219,29 @@ export default function WebsiteEditor() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-24" data-testid="website-editor">
-      {/* Sticky save bar (always visible) */}
-      <div className="sticky top-0 z-30 -mx-1 px-1 py-2.5 bg-white/85 backdrop-blur-md border-b border-slate-100 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${w.published ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-            {w.published ? t("website.published") : t("website.draft")}
-          </span>
-          <a href={publicUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-600 truncate hidden sm:inline">{t("website.viewSite")}</a>
+      {/* Sticky header: save + section tabs */}
+      <div className="sticky top-0 z-30 -mx-1 px-1 bg-white/90 backdrop-blur-md border-b border-slate-100">
+        <div className="py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${w.published ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+              {w.published ? t("website.published") : t("website.draft")}
+            </span>
+            <a href={viewUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-600 truncate hidden sm:inline">{t("website.viewSite")}</a>
+          </div>
+          <Button onClick={saveAndToast} disabled={saving} data-testid="website-save-top" className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 font-bold px-5">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}
+          </Button>
         </div>
-        <Button onClick={saveAndToast} disabled={saving} data-testid="website-save-top" className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 font-bold px-5">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}
-        </Button>
+        <div className="pb-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-1.5 min-w-max">
+            {TABS.map((tb) => (
+              <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
+                className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                {t(`website.tab.${tb}`)}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -239,6 +253,7 @@ export default function WebsiteEditor() {
       </div>
 
       {/* AI Generate */}
+      {tab === "content" && (
       <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-none"><Sparkles className="w-5 h-5" /></div>
@@ -252,8 +267,10 @@ export default function WebsiteEditor() {
           </div>
         </div>
       </Card>
+      )}
 
       {/* Publish + link */}
+      {tab === "publish" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -281,8 +298,10 @@ export default function WebsiteEditor() {
           </div>
         </div>
       </Card>
+      )}
 
       {/* Templates */}
+      {tab === "design" && (<>
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <div className="font-semibold">{t("website.template")}</div>
@@ -354,8 +373,10 @@ export default function WebsiteEditor() {
           ))}
         </div>
       </Card>
+      </>)}
 
       {/* Hero photo */}
+      {tab === "media" && (<>
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><ImagePlus className="w-4 h-4" /> {t("website.heroPhoto")}</div>
         <p className="text-sm text-slate-500 mb-3">{t("website.heroPhotoDesc")}</p>
@@ -432,42 +453,86 @@ export default function WebsiteEditor() {
         </div>
         <Button variant="outline" onClick={baAdd} className="rounded-xl mt-3" data-testid="website-ba-add"><Plus className="w-4 h-4 mr-1" /> {t("website.baAdd")}</Button>
       </Card>
+      </>)}
 
-      {/* Chat & Forms */}
+      {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
+      {tab === "forms" && (
       <Card className="card-elevated border-0 shadow-none p-5">
-        <div className="flex items-center justify-between gap-4">
+        <div className="font-semibold mb-1">{t("website.formsTitle")}</div>
+        <p className="text-sm text-slate-500 mb-4">{t("website.formsDesc")}</p>
+
+        {/* Contact / quote form */}
+        <div className="flex items-center justify-between gap-4 py-3 border-t border-slate-100">
           <div className="flex items-start gap-2">
-            <Bot className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
+            <FileText className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
             <div>
-              <div className="font-semibold">{t("website.chatTitle")}</div>
-              <p className="text-sm text-slate-500 mt-0.5">{t("website.chatDesc")}</p>
+              <div className="font-semibold text-sm">{t("website.formContact")}</div>
+              <p className="text-sm text-slate-500 mt-0.5">{t("website.formContactDesc")}</p>
             </div>
           </div>
-          <Switch checked={!!w.chat_enabled} onCheckedChange={(v) => save({ chat_enabled: v })} data-testid="website-chat-toggle" />
+          <Switch checked={w.sections?.contact !== false} data-testid="website-form-contact"
+            onCheckedChange={(v) => save({ sections: { ...w.sections, contact: v } })} />
         </div>
-        {w.chat_enabled && (
-          <div className="mt-4 grid sm:grid-cols-2 gap-3">
-            <div>
-              <Label>{t("website.chatLauncher")}</Label>
-              <Input value={w.chat_launcher || ""} onChange={(e) => patch({ chat_launcher: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder={t("website.chatLauncherPh")} data-testid="website-chat-launcher" />
-            </div>
-            <div>
-              <Label>{t("website.chatPosition")}</Label>
-              <div className="flex gap-2 mt-1.5">
-                {["right", "left"].map((p) => (
-                  <button key={p} onClick={() => save({ chat_position: p })} data-testid={`website-chat-pos-${p}`}
-                    className={`flex-1 h-11 rounded-xl border-2 text-sm font-semibold ${(w.chat_position || "right") === p ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500"}`}>
-                    {t(`website.pos_${p}`)}
-                  </button>
-                ))}
+
+        {/* Appointment booking */}
+        <div className="py-3 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-2">
+              <CalendarClock className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
+              <div>
+                <div className="font-semibold text-sm">{t("website.formBooking")}</div>
+                <p className="text-sm text-slate-500 mt-0.5">{t("website.formBookingDesc")}</p>
               </div>
             </div>
+            <Switch checked={w.sections?.booking !== false} data-testid="website-form-booking"
+              onCheckedChange={(v) => save({ sections: { ...w.sections, booking: v } })} />
           </div>
-        )}
+          {w.sections?.booking !== false && (
+            <a href="/tarjeta" className="mt-2 ml-7 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5" data-testid="website-booking-hint">
+              <HelpCircle className="w-3.5 h-3.5" /> {t("website.formBookingHint")}
+            </a>
+          )}
+        </div>
+
+        {/* AI chat bot */}
+        <div className="py-3 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-2">
+              <Bot className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
+              <div>
+                <div className="font-semibold text-sm">{t("website.chatTitle")}</div>
+                <p className="text-sm text-slate-500 mt-0.5">{t("website.chatDesc")}</p>
+              </div>
+            </div>
+            <Switch checked={!!w.chat_enabled} onCheckedChange={(v) => save({ chat_enabled: v })} data-testid="website-chat-toggle" />
+          </div>
+          {w.chat_enabled && (
+            <div className="mt-4 grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>{t("website.chatLauncher")}</Label>
+                <Input value={w.chat_launcher || ""} onChange={(e) => patch({ chat_launcher: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder={t("website.chatLauncherPh")} data-testid="website-chat-launcher" />
+              </div>
+              <div>
+                <Label>{t("website.chatPosition")}</Label>
+                <div className="flex gap-2 mt-1.5">
+                  {["right", "left"].map((p) => (
+                    <button key={p} onClick={() => save({ chat_position: p })} data-testid={`website-chat-pos-${p}`}
+                      className={`flex-1 h-11 rounded-xl border-2 text-sm font-semibold ${(w.chat_position || "right") === p ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500"}`}>
+                      {t(`website.pos_${p}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <a href="/sitio-web" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600" data-testid="website-embed-link"><MessageSquare className="w-4 h-4" /> {t("website.embedLink")}</a>
       </Card>
+      )}
 
       {/* Custom Domain */}
+      {tab === "publish" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Globe className="w-4 h-4" /> {t("website.domainTitle")}
           {domain?.verified && <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">{t("website.domainVerifiedBadge")}</span>}
@@ -504,8 +569,10 @@ export default function WebsiteEditor() {
           </div>
         )}
       </Card>
+      )}
 
       {/* Content */}
+      {tab === "content" && (
       <Card className="card-elevated border-0 shadow-none p-5 space-y-4">
         <div className="font-semibold">{t("website.heroContent")}</div>
         <div>
@@ -526,8 +593,10 @@ export default function WebsiteEditor() {
         </div>
         <div><Label>{t("website.callPhone")}</Label><Input value={w.cta_phone || ""} onChange={(e) => patch({ cta_phone: e.target.value })} className="h-12 rounded-xl mt-1.5" /></div>
       </Card>
+      )}
 
       {/* Services */}
+      {tab === "services" && (
       <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
         <div className="font-semibold flex items-center gap-2"><Briefcase className="w-4 h-4" /> {t("website.servicesTitle")}</div>
         <p className="text-sm text-slate-500 -mt-1">{t("website.servicesDesc")}</p>
@@ -543,8 +612,10 @@ export default function WebsiteEditor() {
         ))}
         <Button variant="outline" onClick={() => listAdd("services", { name: "", description: "", starting_price: "" })} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>
       </Card>
+      )}
 
       {/* How It Works */}
+      {tab === "content" && (<>
       <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
         <div className="font-semibold flex items-center gap-2"><ListChecks className="w-4 h-4" /> {t("website.howTitle")}</div>
         {(w.how_it_works || []).map((s, i) => (
@@ -622,8 +693,10 @@ export default function WebsiteEditor() {
       <Button onClick={saveAndToast} disabled={saving} className="rounded-xl h-13 py-3 bg-emerald-600 hover:bg-emerald-700 w-full text-base font-bold" data-testid="website-save-content">
         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : t("website.saveContent")}
       </Button>
+      </>)}
 
       {/* Sections */}
+      {tab === "sections" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1">{t("website.sections")}</div>
         <p className="text-sm text-slate-500 mb-3">{t("website.sectionsDesc")}</p>
@@ -637,6 +710,7 @@ export default function WebsiteEditor() {
           ))}
         </div>
       </Card>
+      )}
 
       <p className="text-center text-xs text-slate-400 pb-4">{t("website.autofillNote")}</p>
     </div>
@@ -697,3 +771,4 @@ function TemplateThumb({ kind, accent }) {
       return wrap(TPL_SWATCH[kind] || "#e5e7eb", null);
   }
 }
+

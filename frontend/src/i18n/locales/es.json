@@ -106,7 +106,7 @@
     "chatPosition": "Posición",
     "pos_right": "Derecha",
     "pos_left": "Izquierda",
-    "embedLink": "Administrar formularios y bot de IA (código)",
+    "embedLink": "Agregar esto a otro sitio web (código embed)",
     "domainTitle": "Dominio propio",
     "domainVerifiedBadge": "Conectado",
     "domainDesc": "Usa tu propio dominio (ej. minegocio.com) para que tu sitio sea 100% tuyo.",
@@ -160,21 +160,54 @@
     "seoMetaDesc": "Descripción meta",
     "seoMetaDescPh": "Una frase que describa tu negocio para Google.",
     "tpl": {
-      "cinematicName": "Cine Oscuro", "cinematicDesc": "Premium, foto a pantalla completa",
-      "responderName": "Respuesta Urgente", "responderDesc": "24/7, con energía, llama ya",
-      "bentoName": "Bento Moderno", "bentoDesc": "Limpio, tipo app, menú lateral",
-      "craftsmanName": "Artesano Cálido", "craftsmanDesc": "Elegante, editorial, cálido",
-      "trustName": "Confianza Local", "trustDesc": "Familiar, con formulario, convierte",
-      "sliderName": "Antes / Después", "sliderDesc": "Muestra transformaciones con slider",
-      "onepageName": "Una Sola Página", "onepageDesc": "Limpio, minimalista, con aire",
-      "neonName": "App / Tecnología", "neonDesc": "Oscuro futurista con brillo neón",
-      "playfulName": "Colorido y Amigable", "playfulDesc": "Cálido, redondeado, con energía",
-      "luxeName": "Lujo Elegante", "luxeDesc": "Alta gama, sofisticado, serif"
+      "cinematicName": "Cine Oscuro",
+      "cinematicDesc": "Premium, foto a pantalla completa",
+      "responderName": "Respuesta Urgente",
+      "responderDesc": "24/7, con energía, llama ya",
+      "bentoName": "Bento Moderno",
+      "bentoDesc": "Limpio, tipo app, menú lateral",
+      "craftsmanName": "Artesano Cálido",
+      "craftsmanDesc": "Elegante, editorial, cálido",
+      "trustName": "Confianza Local",
+      "trustDesc": "Familiar, con formulario, convierte",
+      "sliderName": "Antes / Después",
+      "sliderDesc": "Muestra transformaciones con slider",
+      "onepageName": "Una Sola Página",
+      "onepageDesc": "Limpio, minimalista, con aire",
+      "neonName": "App / Tecnología",
+      "neonDesc": "Oscuro futurista con brillo neón",
+      "playfulName": "Colorido y Amigable",
+      "playfulDesc": "Cálido, redondeado, con energía",
+      "luxeName": "Lujo Elegante",
+      "luxeDesc": "Alta gama, sofisticado, serif"
     },
     "sec": {
-      "services": "Servicios", "gallery": "Galería (fotos de trabajos)", "reviews": "Reseñas",
-      "how": "Cómo funciona", "why": "Por qué elegirnos", "faq": "Preguntas frecuentes", "areas": "Zonas que atendemos",
-      "about": "Sobre nosotros / horarios / zonas", "contact": "Contacto + formulario", "booking": "Reservar cita"
+      "services": "Servicios",
+      "gallery": "Galería (fotos de trabajos)",
+      "reviews": "Reseñas",
+      "how": "Cómo funciona",
+      "why": "Por qué elegirnos",
+      "faq": "Preguntas frecuentes",
+      "areas": "Zonas que atendemos",
+      "about": "Sobre nosotros / horarios / zonas",
+      "contact": "Contacto + formulario",
+      "booking": "Reservar cita"
+    },
+    "formsTitle": "Formularios, citas y chat IA",
+    "formsDesc": "Decide qué pueden hacer los visitantes directo en tu sitio web.",
+    "formContact": "Formulario de contacto / cotización",
+    "formContactDesc": "Los visitantes envían su nombre, teléfono y proyecto — los leads llegan directo a tu CRM.",
+    "formBooking": "Reserva de citas",
+    "formBookingDesc": "Muestra un botón 'Reservar cita' para que los visitantes elijan un horario.",
+    "formBookingHint": "Activa tu disponibilidad en la Tarjeta Digital para que funcione la reserva →",
+    "tab": {
+      "publish": "Publicar",
+      "design": "Diseño",
+      "content": "Contenido",
+      "services": "Servicios",
+      "media": "Fotos",
+      "forms": "Formularios",
+      "sections": "Secciones"
     }
   },
   "auth": {
@@ -1695,10 +1728,22 @@
       "subtitle": "Acabas de ver cómo UniTech crea la cotización, el contrato y la factura en inglés — en segundos. Empieza gratis 14 días.",
       "trust": "14 días gratis · Cancela cuando quieras",
       "benefits": [
-        { "title": "Cotizaciones y facturas en inglés", "desc": "La IA las arma en segundos, listas para cobrar." },
-        { "title": "Cobra como quieras", "desc": "Card, Venmo, Zelle, Cash App y PayPal." },
-        { "title": "Contratos que te protegen", "desc": "Service Agreement con firma digital del cliente." },
-        { "title": "Todo tu negocio en una app", "desc": "Clientes, trabajos, agenda y recordatorios." }
+        {
+          "title": "Cotizaciones y facturas en inglés",
+          "desc": "La IA las arma en segundos, listas para cobrar."
+        },
+        {
+          "title": "Cobra como quieras",
+          "desc": "Card, Venmo, Zelle, Cash App y PayPal."
+        },
+        {
+          "title": "Contratos que te protegen",
+          "desc": "Service Agreement con firma digital del cliente."
+        },
+        {
+          "title": "Todo tu negocio en una app",
+          "desc": "Clientes, trabajos, agenda y recordatorios."
+        }
       ]
     },
     "overlayTitle": "Generando tu Service Agreement…",
