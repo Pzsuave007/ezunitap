@@ -1,128 +1,216 @@
 {
-  "project_context": "Redesign 3 React templates (clean, bold, warm) for ContractorSite.js, making them image-forward, premium, and highly visual while retaining existing section structures.",
-  "global_instructions": {
-    "file_target": "ContractorSite.js",
-    "styling": "Tailwind CSS + inline styles for dynamic accent_color.",
-    "component_architecture": "Keep existing React component structure and data bindings. Enhance visually with Tailwind, dynamic classes, and proper section treatments.",
-    "theme_handling": "Accent color is dynamic (user-selected). Ensure text contrast over accent colors (use white or black conditionally, or stick to safe accent usages like borders/text/buttons)."
-  },
-  "image_strategy": {
-    "logic": "Always prefer user-uploaded photos (data.hero_photo, data.photos). If missing or empty, use trade-specific high-quality stock fallbacks.",
-    "fallbacks_by_template": {
-      "clean": {
-        "trade": "Plumbing/Electrical/General",
-        "hero_fallback": "https://images.unsplash.com/photo-1749532125405-70950966b0e5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxwbHVtYmluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
-      },
-      "bold": {
-        "trade": "Roofing/HVAC/Concrete",
-        "hero_fallback": "https://images.unsplash.com/photo-1633759593085-1eaeb724fc88?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHw0fHxyb29maW5nJTIwY29udHJhY3RvcnxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
-      },
-      "warm": {
-        "trade": "Landscaping/Cleaning/Painting",
-        "hero_fallback": "https://images.unsplash.com/photo-1734303023491-db8037a21f09?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxsYW5kc2NhcGluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
-      }
+  "project_name": "Done-For-You Contractor Site Builder",
+  "app_type": "marketing_site",
+  "typography": {
+    "T1_Cinematic_Dark": {
+      "heading": "Syne",
+      "body": "Inter",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap');"
     },
-    "treatment": "Hero images MUST have an overlay to ensure text legibility. Service cards should have a fixed aspect ratio (e.g., aspect-video) with object-cover. Images must drive the visual flavor of the site."
-  },
-  "templates": {
-    "clean": {
-      "name": "Clean & Modern",
-      "theme": "Light mode primary, with white/gray surfaces.",
-      "typography": {
-        "headings": "Outfit, tracking-tight, font-semibold to font-bold",
-        "body": "IBM Plex Sans, leading-relaxed, text-gray-600"
-      },
-      "colors": {
-        "background": "bg-white",
-        "surface": "bg-gray-50",
-        "ink": "text-gray-900",
-        "accent_usage": "Primary buttons, hover states, icons, subtle section borders"
-      },
-      "surfaces": {
-        "header": "Crystal Glass: backdrop-blur-xl bg-white/70, sticky top-0, z-50, 1px border-b border-gray-200/50",
-        "cards": "rounded-2xl, border border-gray-100, shadow-sm hover:shadow-md transition-shadow bg-white"
-      },
-      "section_treatments": {
-        "hero": "Full-bleed image. Gradient overlay (bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent). White text. Left-aligned content. Accent color CTA.",
-        "services": "Alternating bands (Image Left / Text Right) or simple grid with large 16:9 images and content below.",
-        "how_it_works": "Simple vertical timeline or clean horizontal steps with subtle accent lines.",
-        "why_us": "Bento Grid: asymmetrical layout with icons inside cards.",
-        "gallery": "Clean 3-column masonry or uniform grid with hover-zoom."
-      }
+    "T2_Urgent_Responder": {
+      "heading": "Anton",
+      "body": "Roboto",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;500;700&display=swap');"
     },
-    "bold": {
-      "name": "Bold & Industrial",
-      "theme": "Dark mode primary (or ultra high-contrast light), representing heavy-duty work.",
-      "typography": {
-        "headings": "Anton, uppercase, tracking-normal",
-        "body": "Manrope, font-medium, text-gray-300"
-      },
-      "colors": {
-        "background": "bg-zinc-950",
-        "surface": "bg-zinc-900",
-        "ink": "text-white",
-        "accent_usage": "Solid background for buttons, thick borders, large numbers in 'How it works'."
-      },
-      "surfaces": {
-        "header": "Solid bg-zinc-950 with a sharp bottom border using the accent color.",
-        "cards": "Brutalist: rounded-none, border-2 border-zinc-800, hover styles applying the accent color, solid shadows"
-      },
-      "section_treatments": {
-        "hero": "Full-bleed with heavy bg-black/60 overlay. Centered, massive typography (text-5xl to text-6xl+). Badge at the top.",
-        "services": "Dense, tall cards with dark gradient overlays on the images.",
-        "how_it_works": "Massive outlined numbers (text-7xl, text-transparent, stroke).",
-        "why_us": "High contrast, sharp-edged icon cards.",
-        "reviews": "High contrast blocks, large quote marks."
-      }
+    "T3_Modern_Bento": {
+      "heading": "Plus Jakarta Sans",
+      "body": "Inter",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');"
     },
-    "warm": {
-      "name": "Warm & Trustworthy",
-      "theme": "Light mode, earthy, organic, approachable.",
-      "typography": {
-        "headings": "Playfair Display, tracking-tight",
-        "body": "Nunito, leading-relaxed, text-stone-600"
-      },
-      "colors": {
-        "background": "bg-[#FAFAF8] (warm off-white)",
-        "surface": "bg-white",
-        "ink": "text-stone-900",
-        "accent_usage": "Soft overlays, badge backgrounds, icons, primary buttons."
-      },
-      "surfaces": {
-        "header": "Floating pill-shaped nav (rounded-full) just below top margin, shadow-sm bg-white/90 backdrop-blur.",
-        "cards": "rounded-3xl, soft ambient shadow (shadow-xl shadow-stone-200/50), border border-stone-100"
-      },
-      "section_treatments": {
-        "hero": "Not full bleed. Large rounded container (rounded-[2rem] or [3rem]) with the image. Warm tint overlay.",
-        "services": "Cards where the image has a soft corner radius and overlaps the text section.",
-        "how_it_works": "Staggered layout with circular image steps.",
-        "why_us": "Cards with soft colored backgrounds (using accent color at 10-15% opacity).",
-        "gallery": "Grid with rounded-2xl edges, slightly overlapping or staggered."
-      }
+    "T4_Organic_Craftsman": {
+      "heading": "Playfair Display",
+      "body": "DM Sans",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');"
+    },
+    "T5_Local_Trust": {
+      "heading": "Montserrat",
+      "body": "Open Sans",
+      "css_import": "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap');"
     }
   },
-  "trust_urgency_elements": {
-    "badges": "Include 'Licensed & Insured' and 'X Years Experience' pills near the H1 in the hero.",
-    "phone_forward": "Header and sticky mobile bar must prominently feature the phone number.",
-    "ctas": "Use high-conversion copy: 'Get a Fast Quote', 'Book Now', 'Text Us'.",
-    "social_proof": "Highlight 5-star ratings with visual stars (lucide-react stars) near the CTAs and in the reviews section."
+  "colors": {
+    "strategy": "The dynamic `accent_color` from the data MUST drive each palette uniquely. Do not hardcode a single theme. Apply the `accent_color` inline via style={{ color: accent_color }} or style={{ backgroundColor: accent_color }} for primary CTA buttons, icons, and highlights."
+  },
+  "layouts": [
+    {
+      "name": "T1_Cinematic_Dark",
+      "best_for_trades": "Luxury Landscaping, High-end Remodeling, Custom Home Builders",
+      "vibe": "Premium, Moody, High-End",
+      "wow_element": "Full-screen cinematic dark hero with deep gradients, overlapping masonry job gallery, glassmorphism floating bottom-nav for mobile.",
+      "section_by_section": {
+        "header": "Transparent, sticky. Becomes frosted glass (`backdrop-blur-xl bg-black/60`) on scroll. Mobile: Floating pill-shaped bottom nav.",
+        "hero": "100vh full-bleed image. Heavy gradient overlay `bg-gradient-to-t from-black via-black/50 to-transparent`. Text massive (text-5xl to 7xl), bottom-left aligned. The `accent_color` is used for a glowing scroll indicator.",
+        "how_it_works": "Dark mode vertical timeline with glowing nodes colored by `accent_color`.",
+        "services": "Large dark cards with edge-to-edge background images, heavily dimmed. On hover, image brightens and service details slide up.",
+        "why_us": "Minimalist text over a dark grainy background, using massive numbers (01, 02) outlined in `accent_color`.",
+        "gallery": "3-column masonry grid (no gaps on desktop). High visual impact.",
+        "reviews": "Single active review center-screen fading in/out, with stars in `accent_color`.",
+        "areas": "Clean comma-separated list under a map silhouette.",
+        "form": "Minimalist dark inputs (`bg-white/5 border-white/10`) with a glowing `accent_color` submit button."
+      },
+      "tailwind_tokens": {
+        "theme": "Dark Mode Only (`bg-black text-white`)",
+        "radius": "rounded-none",
+        "border": "border-white/10",
+        "shadow": "shadow-[0_0_40px_rgba(0,0,0,0.5)]",
+        "spacing_rhythm": "py-32 (massive breathing room)"
+      }
+    },
+    {
+      "name": "T2_Urgent_Responder",
+      "best_for_trades": "Towing, Emergency Plumbing, HVAC Repair, 24/7 Roadside",
+      "vibe": "High-Energy, Urgent, Conversion-Optimized",
+      "wow_element": "Sticky pulsing 'Call Now' rail at the bottom, diagonal section cuts, continuous marquee of trust badges.",
+      "section_by_section": {
+        "header": "Top bar is a massive bold band featuring Trust Badges (Licensed/Insured) and a huge Phone Number. Uses `accent_color` as background.",
+        "hero": "Diagonal bottom cut via `clip-path`. Left text container with high urgency copy. Right side is a cropped action image.",
+        "how_it_works": "3 massive bold numbered blocks stacked horizontally.",
+        "services": "Accordion style. Saves space and forces users to the CTA faster. Clicking expands the price and description.",
+        "why_us": "Marquee auto-scrolling row of benefits (e.g. 24/7 • Fast Response • Insured).",
+        "gallery": "Horizontal scrolling carousel of action shots.",
+        "reviews": "Grid of high-contrast cards (white on gray) with bold black text.",
+        "areas": "Ticker-tape style marquee of cities.",
+        "form": "Embedded directly under the hero on mobile, sticky sidebar floating next to content on desktop."
+      },
+      "tailwind_tokens": {
+        "theme": "High Contrast Light (`bg-gray-100 text-gray-900`)",
+        "radius": "rounded-md",
+        "border": "border-black",
+        "shadow": "shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] (Neo-brutalist)",
+        "spacing_rhythm": "py-16 (tighter, fast-paced)"
+      }
+    },
+    {
+      "name": "T3_Modern_SaaS_Bento",
+      "best_for_trades": "Junk Removal, Cleaning Services, Tech-Forward Handymen",
+      "vibe": "Clean, Transparent, App-like",
+      "wow_element": "Left sidebar navigation (Desktop), strict Bento Grid mosaic for layout, horizontal scroll snap for 'How it Works'.",
+      "section_by_section": {
+        "header": "Desktop: Fixed left sidebar (250px wide) with navigation and CTA. Mobile: Top bar with hamburger.",
+        "hero": "Crisp white background. Text left, stylized floating bento-box image right.",
+        "how_it_works": "Horizontal swipeable cards on mobile, 3-column grid on desktop. `bg-gray-50`.",
+        "services": "Clean minimalist grid, `shadow-sm`, border `border-gray-200`. Price is prominently displayed like a SaaS pricing tier.",
+        "why_us": "Bento grid layout. One large square, two smaller rectangles. Distinctive and modern.",
+        "gallery": "Square-cropped images inside a strict grid to maintain the bento aesthetic.",
+        "reviews": "Clean white cards with gray borders, mimicking app store reviews.",
+        "areas": "Pill-shaped tags grouped together.",
+        "form": "Multi-step looking clean form, center screen, floating label inputs."
+      },
+      "tailwind_tokens": {
+        "theme": "Pure White (`bg-white text-slate-800`)",
+        "radius": "rounded-2xl",
+        "border": "border-slate-200",
+        "shadow": "shadow-xl shadow-slate-200/50",
+        "spacing_rhythm": "py-24"
+      }
+    },
+    {
+      "name": "T4_Organic_Craftsman",
+      "best_for_trades": "Painting, Boutique Carpentry, Specialty Masonry",
+      "vibe": "Editorial, Approachable, Artistic",
+      "wow_element": "Editorial magazine typography, overlapping offset image blocks, soft rounded corners, warm earthy backgrounds.",
+      "section_by_section": {
+        "header": "Centered logo, navigation links flanking left/right. Soft and elegant.",
+        "hero": "Padded container hero (not edge-to-edge full bleed), massive border-radius `rounded-[3rem]`. Text inside overlapping the image.",
+        "how_it_works": "Vertical list with soft connecting lines. Numbers are large, overlapping serif fonts.",
+        "services": "Alternating offset design. Row 1: Image left, text right (overlapping slightly). Row 2: Text left, image right.",
+        "why_us": "Text wrapping around a central organic-shaped image.",
+        "gallery": "Parallax scrolling staggered images (different heights and widths).",
+        "reviews": "Large serif quotes in italics. Very editorial.",
+        "areas": "Simple elegant text list separated by bullet points.",
+        "form": "Integrated into a warm beige section. Inputs have bottom borders only (`border-b border-gray-400 bg-transparent`)."
+      },
+      "tailwind_tokens": {
+        "theme": "Warm Neutral (`bg-[#F9F8F6] text-[#2C2A28]`)",
+        "radius": "rounded-3xl",
+        "border": "border-[#E5E3DB]",
+        "shadow": "shadow-md",
+        "spacing_rhythm": "py-24 gap-16"
+      }
+    },
+    {
+      "name": "T5_Local_Trust",
+      "best_for_trades": "General Contracting, Roofing, Established traditional businesses",
+      "vibe": "Familiar, Highly Trustworthy, Conversion-Heavy",
+      "wow_element": "Centered hero with a massive floating 'Quick Quote' form embedded directly over the hero image bottom edge. Wavy section dividers.",
+      "section_by_section": {
+        "header": "Standard layout: Logo left, nav center, CTA right. Very familiar UX.",
+        "hero": "Centered text over a darkened image. The bottom half contains a massive white floating card containing the Lead Form that overlaps into the next section.",
+        "how_it_works": "Classic 3-column layout with circular icons taking the `accent_color`.",
+        "services": "Zig-zag pattern (Image left/Text right, then Text left/Image right). Highly readable.",
+        "why_us": "2x2 grid of cards with prominent bold icons.",
+        "gallery": "Large 'Before/After' style gallery with split layout.",
+        "reviews": "Carousel of large, chunky testimonial cards with drop shadows.",
+        "areas": "Two-column list with checkmarks.",
+        "form": "Moved to the Hero. The footer simply contains a 'Call Us' massive banner."
+      },
+      "tailwind_tokens": {
+        "theme": "Light Mode (`bg-gray-50 text-gray-800`)",
+        "radius": "rounded-lg",
+        "border": "border-gray-200",
+        "shadow": "shadow-lg",
+        "spacing_rhythm": "py-20"
+      }
+    }
+  ],
+  "visual_enhancers": {
+    "T1_Cinematic_Dark": "Use heavy noise/grain texture over the background. Ensure glassmorphism `backdrop-blur-xl` is used heavily on nav and cards.",
+    "T2_Urgent_Responder": "Use `clip-path` for diagonal cuts. Use CSS animations for a pulsing 'Call Now' button. Implement `react-fast-marquee` for trust badges.",
+    "T3_Modern_SaaS_Bento": "Use strict CSS grid (`grid-cols-4`, `grid-cols-8`). Ensure equal spacing (`gap-6`). Hover states should lift cards up `-translate-y-1`.",
+    "T4_Organic_Craftsman": "Use negative margins (`-mt-12`, `-ml-8`) to create overlapping editorial layouts. Rely on Serif typography for numbers and quotes.",
+    "T5_Local_Trust": "Use SVG wavy dividers between sections (`fill-white` or `fill-gray-50`). Floating elements must have standard `shadow-2xl`."
+  },
+  "grids": {
+    "bento_grid_protocol": "For T3, ensure spans mix correctly: One big hero card `col-span-2 row-span-2`, flanked by smaller `col-span-1 row-span-1` widgets.",
+    "masonry_grid_protocol": "For T1 gallery, use CSS columns (`columns-1 md:columns-3 gap-4`) and `break-inside-avoid` on children to simulate masonry."
   },
   "motion": {
-    "hover_states": "All buttons should have subtle scale (hover:-translate-y-0.5) and shadow transitions. Service cards should slightly lift on hover.",
-    "scroll": "Use simple entrance animations for sections using CSS transitions where possible."
+    "framer_motion_usage": "Wrap sections in simple scroll-reveal triggers. T1: Fade up. T2: Slide in from left/right (fast). T3: Scale up slightly. T4: Slow fade and slight rotation. T5: Standard slide up.",
+    "micro_interactions": "All buttons MUST have hover states. E.g., `hover:scale-105 transition-transform duration-300`."
   },
   "accessibility": {
-    "contrast": "Ensure text over hero images and accent colors meets 4.5:1 ratio. Use text-shadow on text if the image overlay is too light.",
-    "interactive": "Include focus-visible rings on all links and buttons."
+    "contrast": "Ensure the dynamic `accent_color` passes APCA contrast. If the accent is light, text ON the accent button must be black. If dark, white.",
+    "focus_states": "Add `focus-visible:ring-2 focus-visible:ring-offset-2` to all inputs and buttons.",
+    "testing_ids": "Every CTA, form input, and service card MUST have a `data-testid` attribute (e.g., `data-testid='hero-cta-button'`)."
   },
-  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
-    "You tend to converge toward generic outputs. Avoid this by strictly following the typography, spacing, and surface rules for each specific template.",
-    "For the dynamic accent color, use React inline styles for dynamic classes (e.g., style={{ backgroundColor: accentColor }}) because Tailwind cannot compile dynamic arbitrary values.",
-    "DO NOT use transparent backgrounds on dropdowns or overlays. Overlays must have proper background/opacity.",
-    "Images MUST NOT be empty. Implement fallback logic: if data.hero_photo or data.photos is undefined/empty, use the specific stock fallbacks provided.",
-    "All interactive and key informational elements MUST include a data-testid attribute.",
-    "Keep the structure of the ContractorSite.js component intact; do not remove any existing sections, functionalities, or data props. Only elevate them visually.",
-    "Ensure layouts are mobile-first, heavily utilizing flex and grid. Mobile conversions matter most.",
-    "Use generous padding (py-16, py-24) to let sections breathe, instead of cramping them together."
+  "media": {
+    "image_constraints": "Mobile hero images must not exceed 80vh to ensure text/forms are visible. Apply `object-cover` to all backgrounds.",
+    "hero_overlays": "Never use flat opaque black. Use gradients: `bg-gradient-to-r from-black/80 via-black/40 to-transparent`."
+  },
+  "image_urls": {
+    "fallback_roofing": [
+      "https://images.unsplash.com/photo-1633759593085-1eaeb724fc88?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1635424709845-3a85ad5e1f5e?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1635424824849-1b09bdcc55b1?ixlib=rb-4.1.0&q=85"
+    ],
+    "fallback_plumbing": [
+      "https://images.unsplash.com/photo-1676210134188-4c05dd172f89?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1545193329-4a052e14eb8f?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1676210133055-eab6ef033ce3?ixlib=rb-4.1.0&q=85"
+    ],
+    "fallback_landscaping": [
+      "https://images.unsplash.com/photo-1749803915455-a7642520d0d3?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1722725648713-f73f1cd1f5b7?ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1722881445875-bdd5f4d9e6fa?ixlib=rb-4.1.0&q=85"
+    ],
+    "usage_instructions": "Always attempt to render `data.photos` or `data.hero_photo` first. If null or empty, match the `data.business_type` to a fallback array above to ensure image-forward design."
+  },
+  "instructions_to_main_agent": {
+    "critical_directive_1": "DO NOT create one generic layout and just change the colors/fonts. You MUST implement 5 completely separate component trees or highly conditional rendering blocks inside `ContractorSite.js`. The DOM structure, grid choices, and element ordering MUST be entirely distinct per template according to the layouts array.",
+    "critical_directive_2": "Use `lucide-react` for icons. Ensure icons inherit the `accent_color` where appropriate.",
+    "critical_directive_3": "Do not hardcode a single color. Use inline styles mapped to the data payload: `style={{ backgroundColor: data.accent_color }}` for buttons, and `style={{ color: data.accent_color }}` for text highlights.",
+    "critical_directive_4": "The provided layout designs are mobile-first. Ensure complex Desktop structures (like T3's Sidebar) collapse gracefully into Mobile (Top bar hamburger).",
+    "critical_directive_5": "Never leave transparent headers fully transparent without a blur if content scrolls under them. Use `backdrop-blur-md`."
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic outputs. Avoid this. Make these 5 templates truly structurally different.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Every interaction needs micro-animations - hover states, transitions. Static = dead.",
+    "All interactive and key informational elements MUST include a `data-testid` attribute.",
+    "Use proper image aspect ratios. No stretched imagery.",
+    "Do not use complete `transparent` background in headers, overlays, any surface that has content under it. Add solid colors or glassmorphism blur.",
+    "Never center-align the app container globally (`text-align: center`). Keep natural reading flow.",
+    "Do not use AI assistant Emoji characters (🤖🧠💭) for icons. Use real SVG icons."
   ]
 }
