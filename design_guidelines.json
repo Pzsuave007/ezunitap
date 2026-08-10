@@ -1,167 +1,128 @@
 {
-  "project_name": "UniTech Contractor Website Modules",
-  "positioning": "Premium, agency-built public sites for service contractors (Roofing, HVAC, Plumbing, Landscaping, Cleaning).",
-  "app_type": "marketing_site",
-  "target_audience": "Homeowners seeking reliable local service professionals.",
-  "theme_strategy": "Provide a base architecture that switches seamlessly between 3 distinct emotional archetypes using a `template` prop. The data (name, logo, services) remains constant, but the visual wrapper changes drastically.",
+  "project_context": "Redesign 3 React templates (clean, bold, warm) for ContractorSite.js, making them image-forward, premium, and highly visual while retaining existing section structures.",
+  "global_instructions": {
+    "file_target": "ContractorSite.js",
+    "styling": "Tailwind CSS + inline styles for dynamic accent_color.",
+    "component_architecture": "Keep existing React component structure and data bindings. Enhance visually with Tailwind, dynamic classes, and proper section treatments.",
+    "theme_handling": "Accent color is dynamic (user-selected). Ensure text contrast over accent colors (use white or black conditionally, or stick to safe accent usages like borders/text/buttons)."
+  },
+  "image_strategy": {
+    "logic": "Always prefer user-uploaded photos (data.hero_photo, data.photos). If missing or empty, use trade-specific high-quality stock fallbacks.",
+    "fallbacks_by_template": {
+      "clean": {
+        "trade": "Plumbing/Electrical/General",
+        "hero_fallback": "https://images.unsplash.com/photo-1749532125405-70950966b0e5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxwbHVtYmluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
+      },
+      "bold": {
+        "trade": "Roofing/HVAC/Concrete",
+        "hero_fallback": "https://images.unsplash.com/photo-1633759593085-1eaeb724fc88?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHw0fHxyb29maW5nJTIwY29udHJhY3RvcnxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
+      },
+      "warm": {
+        "trade": "Landscaping/Cleaning/Painting",
+        "hero_fallback": "https://images.unsplash.com/photo-1734303023491-db8037a21f09?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxsYW5kc2NhcGluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85"
+      }
+    },
+    "treatment": "Hero images MUST have an overlay to ensure text legibility. Service cards should have a fixed aspect ratio (e.g., aspect-video) with object-cover. Images must drive the visual flavor of the site."
+  },
   "templates": {
-    "template_1_bold_industrial": {
-      "name": "Bold & Industrial",
-      "best_for": "Roofing, HVAC, Concrete, Heavy Construction",
-      "vibe": "Strong, durable, no-nonsense, high-performance.",
-      "typography": {
-        "heading_font": "Anton or Bebas Neue",
-        "body_font": "Manrope",
-        "heading_classes": "font-black tracking-tighter uppercase",
-        "body_classes": "font-sans tracking-wide"
-      },
-      "colors": {
-        "primary": "bg-[#FF3B30] text-white",
-        "secondary": "bg-[#0A0A0A] text-white",
-        "background": "bg-[#F5F5F5]",
-        "surface": "bg-white",
-        "accent": "text-[#FF3B30]",
-        "border": "border-[#E5E5E5]"
-      },
-      "button_style": "rounded-none uppercase tracking-[0.1em] font-bold border-2 border-transparent hover:border-[#0A0A0A] shadow-[4px_4px_0px_0px_rgba(10,10,10,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all",
-      "card_style": "rounded-none border-2 border-[#0A0A0A] shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] bg-white",
-      "image_treatment": "High contrast, sharp edges. Black and white filters on background images with heavy brand-color overlays (e.g., bg-black/70 mix-blend-multiply)."
-    },
-    "template_2_clean_modern": {
+    "clean": {
       "name": "Clean & Modern",
-      "best_for": "Plumbing, Electrical, General Contractors",
-      "vibe": "Professional, efficient, precise, tech-forward.",
+      "theme": "Light mode primary, with white/gray surfaces.",
       "typography": {
-        "heading_font": "Outfit or Cabinet Grotesk",
-        "body_font": "IBM Plex Sans",
-        "heading_classes": "font-bold tracking-tight",
-        "body_classes": "font-sans leading-relaxed"
+        "headings": "Outfit, tracking-tight, font-semibold to font-bold",
+        "body": "IBM Plex Sans, leading-relaxed, text-gray-600"
       },
       "colors": {
-        "primary": "bg-[#007AFF] text-white",
-        "secondary": "bg-[#F3F4F6] text-[#111827]",
         "background": "bg-white",
-        "surface": "bg-[#F9FAFB]",
-        "accent": "text-[#007AFF]",
-        "border": "border-gray-200"
+        "surface": "bg-gray-50",
+        "ink": "text-gray-900",
+        "accent_usage": "Primary buttons, hover states, icons, subtle section borders"
       },
-      "button_style": "rounded-lg font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all",
-      "card_style": "rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300",
-      "image_treatment": "Bright, clear, natural lighting. Subtle rounded corners (rounded-xl) on all imagery."
+      "surfaces": {
+        "header": "Crystal Glass: backdrop-blur-xl bg-white/70, sticky top-0, z-50, 1px border-b border-gray-200/50",
+        "cards": "rounded-2xl, border border-gray-100, shadow-sm hover:shadow-md transition-shadow bg-white"
+      },
+      "section_treatments": {
+        "hero": "Full-bleed image. Gradient overlay (bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent). White text. Left-aligned content. Accent color CTA.",
+        "services": "Alternating bands (Image Left / Text Right) or simple grid with large 16:9 images and content below.",
+        "how_it_works": "Simple vertical timeline or clean horizontal steps with subtle accent lines.",
+        "why_us": "Bento Grid: asymmetrical layout with icons inside cards.",
+        "gallery": "Clean 3-column masonry or uniform grid with hover-zoom."
+      }
     },
-    "template_3_warm_trustworthy": {
-      "name": "Warm & Trustworthy",
-      "best_for": "Landscaping, House Cleaning, Painting, Remodeling",
-      "vibe": "Friendly, safe, organic, detail-oriented.",
+    "bold": {
+      "name": "Bold & Industrial",
+      "theme": "Dark mode primary (or ultra high-contrast light), representing heavy-duty work.",
       "typography": {
-        "heading_font": "Playfair Display or Lora",
-        "body_font": "Nunito",
-        "heading_classes": "font-serif font-semibold tracking-normal",
-        "body_classes": "font-sans text-gray-700 leading-loose"
+        "headings": "Anton, uppercase, tracking-normal",
+        "body": "Manrope, font-medium, text-gray-300"
       },
       "colors": {
-        "primary": "bg-[#2F5233] text-white",
-        "secondary": "bg-[#F1E9D2] text-[#2F5233]",
-        "background": "bg-[#FAFAFA]",
-        "surface": "bg-[#FFFFFF]",
-        "accent": "text-[#D4A373]",
-        "border": "border-[#E5E0D8]"
+        "background": "bg-zinc-950",
+        "surface": "bg-zinc-900",
+        "ink": "text-white",
+        "accent_usage": "Solid background for buttons, thick borders, large numbers in 'How it works'."
       },
-      "button_style": "rounded-full font-bold shadow-sm hover:opacity-90 hover:scale-105 transition-transform duration-200",
-      "card_style": "rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1E9D2]/50",
-      "image_treatment": "Warm filters. Soft, large rounded corners (rounded-2xl or completely circular for portraits)."
+      "surfaces": {
+        "header": "Solid bg-zinc-950 with a sharp bottom border using the accent color.",
+        "cards": "Brutalist: rounded-none, border-2 border-zinc-800, hover styles applying the accent color, solid shadows"
+      },
+      "section_treatments": {
+        "hero": "Full-bleed with heavy bg-black/60 overlay. Centered, massive typography (text-5xl to text-6xl+). Badge at the top.",
+        "services": "Dense, tall cards with dark gradient overlays on the images.",
+        "how_it_works": "Massive outlined numbers (text-7xl, text-transparent, stroke).",
+        "why_us": "High contrast, sharp-edged icon cards.",
+        "reviews": "High contrast blocks, large quote marks."
+      }
+    },
+    "warm": {
+      "name": "Warm & Trustworthy",
+      "theme": "Light mode, earthy, organic, approachable.",
+      "typography": {
+        "headings": "Playfair Display, tracking-tight",
+        "body": "Nunito, leading-relaxed, text-stone-600"
+      },
+      "colors": {
+        "background": "bg-[#FAFAF8] (warm off-white)",
+        "surface": "bg-white",
+        "ink": "text-stone-900",
+        "accent_usage": "Soft overlays, badge backgrounds, icons, primary buttons."
+      },
+      "surfaces": {
+        "header": "Floating pill-shaped nav (rounded-full) just below top margin, shadow-sm bg-white/90 backdrop-blur.",
+        "cards": "rounded-3xl, soft ambient shadow (shadow-xl shadow-stone-200/50), border border-stone-100"
+      },
+      "section_treatments": {
+        "hero": "Not full bleed. Large rounded container (rounded-[2rem] or [3rem]) with the image. Warm tint overlay.",
+        "services": "Cards where the image has a soft corner radius and overlaps the text section.",
+        "how_it_works": "Staggered layout with circular image steps.",
+        "why_us": "Cards with soft colored backgrounds (using accent color at 10-15% opacity).",
+        "gallery": "Grid with rounded-2xl edges, slightly overlapping or staggered."
+      }
     }
   },
-  "sections": {
-    "header": {
-      "layout": "Sticky top (z-50). Mobile: Logo left, Hamburger right. Desktop: Logo left, Nav center, CTA button right.",
-      "design_rules": "Must have a background. For Bold: Solid white with heavy bottom border. For Clean: Glassmorphism (backdrop-blur-xl bg-white/80). For Warm: Solid #FAFAFA with soft shadow."
-    },
-    "hero": {
-      "layout": "Grid split (text left, image right) OR Center-aligned with massive background image + overlay. Always include trust badges (e.g., 'Licensed & Insured', '20+ Years Experience') above or below the H1.",
-      "content": "H1 (Business Name/Tagline max text-5xl md:text-6xl+), Subtitle (text-lg md:text-xl), Primary CTA (Call Now), Secondary CTA (Get Free Quote).",
-      "design_rules": "Overlay opacity max bg-black/50. If text needs contrast, use text-shadow."
-    },
-    "services": {
-      "layout": "Bento Grid or CSS Grid (grid-cols-1 md:grid-cols-3 gap-6 md:gap-8).",
-      "content": "Cards with icon (lucide-react), Title, Short description.",
-      "design_rules": "Use the respective template's `card_style`. Icons must use the template's `accent` color."
-    },
-    "gallery": {
-      "layout": "Masonry or tight grid (grid-cols-2 md:grid-cols-4).",
-      "content": "Before/After or job site photos.",
-      "design_rules": "Images must have object-cover. On hover, slight scale-up (scale-105) inside an overflow-hidden container."
-    },
-    "reviews": {
-      "layout": "Horizontal scroll / Swiper carousel or 3-column grid.",
-      "content": "Google Review Stars (5 Yellow stars), Customer Name, Review text, 'Verified via Google' badge.",
-      "design_rules": "Ensure high contrast for review text. Use quotes typography."
-    },
-    "contact_and_booking": {
-      "layout": "Two columns: Left side text + business info (Hours, Areas, Address, Phone), Right side Lead Capture Form.",
-      "content": "Form: Name, Phone, Email, Message, Submit Button. Booking link below or integrated.",
-      "design_rules": "Use Shadcn Form components heavily styled to match the template. Inputs must have clear focus states (e.g., ring-2 ring-primary)."
-    },
-    "sticky_mobile_cta": {
-      "layout": "Fixed bottom-0 left-0 right-0 w-full p-4 bg-white border-t z-50 md:hidden flex justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]",
-      "content": "Button 1: Call Now (Icon + Text), Button 2: Get Quote (Icon + Text)",
-      "design_rules": "One button should use `primary` style, the other an outline/secondary style. Ensure safe-area-inset-bottom is respected."
-    },
-    "footer": {
-      "layout": "Dark background (e.g., bg-gray-900 text-white) with large padding (py-16).",
-      "content": "Logo, Quick links, Contact Info, Copyright.",
-      "design_rules": "Massive text for the final CTA ('Let's Build It' or 'Get Your Free Estimate')."
-    }
-  },
-  "image_urls": {
-    "hero_backgrounds": {
-      "bold_industrial": "https://images.pexels.com/photos/37677476/pexels-photo-37677476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "clean_modern": "https://images.unsplash.com/photo-1721815693498-cc28507c0ba2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3VzZSUyMGV4dGVyaW9yJTIwYXJjaGl0ZWN0dXJlfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85",
-      "warm_trustworthy": "https://images.unsplash.com/photo-1686663048931-6df69f577a2f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwzfHxsYW5kc2NhcGluZyUyMGJlYXV0aWZ1bCUyMHlhcmR8ZW58MHx8fHwxNzg2MzM0MzcwfDA&ixlib=rb-4.1.0&q=85"
-    },
-    "team_photos": [
-      "https://images.unsplash.com/photo-1679000265956-3bd0f356b2b3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwxfHxzZXJ2aWNlJTIwY29udHJhY3RvciUyMHRlYW0lMjBwb3NpbmclMjBzbWlsaW5nfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85",
-      "https://images.unsplash.com/photo-1659353589112-005e063abdaf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwyfHxzZXJ2aWNlJTIwY29udHJhY3RvciUyMHRlYW0lMjBwb3NpbmclMjBzbWlsaW5nfGVufDB8fHx8MTc4NjMzNDM3OXww&ixlib=rb-4.1.0&q=85"
-    ],
-    "service_photos": [
-      "https://images.pexels.com/photos/38524253/pexels-photo-38524253.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwyfHxodmFjJTIwdGVjaG5pY2lhbiUyMHdvcmtpbmd8ZW58MHx8fHwxNzg2MzM0MzcwfDA&ixlib=rb-4.1.0&q=85"
-    ]
-  },
-  "instructions_to_main_agent": [
-    "Build ONE main React page component (e.g. ContractorSite.jsx) that accepts a `templateKey` prop (bold, clean, warm).",
-    "Use a configuration object or CSS variables to swap styles dynamically based on the templateKey without rewriting the HTML structure.",
-    "Ensure the hero overlay opacity never exceeds bg-black/50 so images are visible.",
-    "Use Lucide-react for all icons (Phone, MapPin, Clock, Star, ShieldCheck).",
-    "Implement the sticky mobile bottom CTA using `fixed bottom-0` classes with high z-index and padding-bottom on the main layout to prevent overlap.",
-    "DO NOT use generic AI placeholder characters or emojis. Use the provided high-quality image URLs.",
-    "Ensure contrast ratios are accessible (use white text on primary color backgrounds).",
-    "Apply `data-testid` to all CTAs, forms, and major sections.",
-    "Do not center-align body text or lists; always left-align for readability.",
-    "Use Shadcn components for the Contact Form and any Modals/Dialogs."
-  ],
-  "accessibility": {
-    "focus_states": "All interactive elements must have a visible focus ring (e.g., focus:ring-2 focus:ring-offset-2).",
-    "contrast": "Text below 18px must have at least 4.5:1 contrast against its background.",
-    "aria": "Add aria-label to icon-only buttons. Add aria-hidden='true' to decorative icons."
+  "trust_urgency_elements": {
+    "badges": "Include 'Licensed & Insured' and 'X Years Experience' pills near the H1 in the hero.",
+    "phone_forward": "Header and sticky mobile bar must prominently feature the phone number.",
+    "ctas": "Use high-conversion copy: 'Get a Fast Quote', 'Book Now', 'Text Us'.",
+    "social_proof": "Highlight 5-star ratings with visual stars (lucide-react stars) near the CTAs and in the reviews section."
   },
   "motion": {
-    "hover": "Buttons and cards must have hover states (transform, shadow, or color shift).",
-    "scroll": "Consider mild staggered fade-in animations on scroll for Service cards and Gallery images using Framer Motion (only if it doesn't hurt performance)."
+    "hover_states": "All buttons should have subtle scale (hover:-translate-y-0.5) and shadow transitions. Service cards should slightly lift on hover.",
+    "scroll": "Use simple entrance animations for sections using CSS transitions where possible."
   },
-  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "Do not converge toward generic, 'on distribution' outputs. Avoid the 'AI slop' aesthetic.",
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
-    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy.",
-    "Use glass-morphism effects with backdrop filters (12-24px blur) where specified.",
-    "You MUST NOT apply universal transition (e.g., transition: all). Add transitions for specific properties.",
-    "You MUST NOT center align the app container; do not add `.App { text-align: center; }`.",
-    "Always use modern button styles relevant to the app style.",
-    "NEVER use AI assistant Emoji characters.",
-    "Every interaction needs micro-animations.",
-    "Use 2-3x more spacing than feels comfortable.",
-    "Add subtle grain textures or noise overlays where it fits the aesthetic.",
-    "Missing categories = main agent will use placeholder text which is FORBIDDEN. Rely on the provided image URLs."
+  "accessibility": {
+    "contrast": "Ensure text over hero images and accent colors meets 4.5:1 ratio. Use text-shadow on text if the image overlay is too light.",
+    "interactive": "Include focus-visible rings on all links and buttons."
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic outputs. Avoid this by strictly following the typography, spacing, and surface rules for each specific template.",
+    "For the dynamic accent color, use React inline styles for dynamic classes (e.g., style={{ backgroundColor: accentColor }}) because Tailwind cannot compile dynamic arbitrary values.",
+    "DO NOT use transparent backgrounds on dropdowns or overlays. Overlays must have proper background/opacity.",
+    "Images MUST NOT be empty. Implement fallback logic: if data.hero_photo or data.photos is undefined/empty, use the specific stock fallbacks provided.",
+    "All interactive and key informational elements MUST include a data-testid attribute.",
+    "Keep the structure of the ContractorSite.js component intact; do not remove any existing sections, functionalities, or data props. Only elevate them visually.",
+    "Ensure layouts are mobile-first, heavily utilizing flex and grid. Mobile conversions matter most.",
+    "Use generous padding (py-16, py-24) to let sections breathe, instead of cramping them together."
   ]
 }
