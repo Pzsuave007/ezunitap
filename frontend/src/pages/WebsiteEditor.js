@@ -7,13 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, Bot } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot } from "lucide-react";
 import { toast } from "sonner";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about", "contact", "booking"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
+// Curated color palettes per template — one tap for a pro look.
+const PALETTES = {
+  cinematic: ["#F5B301", "#22D3EE", "#EF4444", "#A855F7"],
+  responder: ["#DC2626", "#EA580C", "#2563EB", "#111827"],
+  bento: ["#2563EB", "#0EA5E9", "#10B981", "#6366F1"],
+  craftsman: ["#B45309", "#2F5233", "#9A3412", "#166534"],
+  trust: ["#0F766E", "#1D4ED8", "#0891B2", "#047857"],
+  slider: ["#111827", "#DC2626", "#2563EB", "#F59E0B"],
+  onepage: ["#111111", "#2563EB", "#B45309", "#0F766E"],
+  neon: ["#22D3EE", "#A3E635", "#F472B6", "#818CF8"],
+  playful: ["#FB7185", "#F59E0B", "#34D399", "#60A5FA"],
+  luxe: ["#C9A227", "#B08D57", "#10B981", "#9CA3AF"],
+};
 const photoSrc = (id) => `${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${id}`;
 
 export default function WebsiteEditor() {
@@ -31,8 +44,10 @@ export default function WebsiteEditor() {
   const [domainInput, setDomainInput] = useState("");
   const [domainBusy, setDomainBusy] = useState(false);
   const [domainMsg, setDomainMsg] = useState("");
+  const [baTarget, setBaTarget] = useState(null);
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
+  const baFileRef = useRef(null);
   const publicUrl = w ? `${window.location.origin}/sitio/${w.slug}` : "";
 
   useEffect(() => {
@@ -166,6 +181,25 @@ export default function WebsiteEditor() {
   };
   const copyText = (v) => { navigator.clipboard.writeText(v); toast.success(t("website.linkCopied")); };
 
+  const baPairs = () => w.before_after || [];
+  const baAdd = () => patch({ before_after: [...baPairs(), { before: "", after: "" }] });
+  const baDel = (idx) => patch({ before_after: baPairs().filter((_, i) => i !== idx) });
+  const pickBa = (idx, slot) => { setBaTarget({ idx, slot }); baFileRef.current?.click(); };
+  const uploadBa = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !baTarget) return;
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/photos?label=website", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setPhotos((prev) => [data, ...prev]);
+      const pairs = [...baPairs()];
+      pairs[baTarget.idx] = { ...pairs[baTarget.idx], [baTarget.slot]: data.id };
+      patch({ before_after: pairs });
+    } catch { toast.error(t("website.saveError")); }
+    finally { setBaTarget(null); if (baFileRef.current) baFileRef.current.value = ""; }
+  };
+
   if (!w) return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-slate-400" /></div>;
 
   // Array helpers
@@ -294,6 +328,21 @@ export default function WebsiteEditor() {
       {/* Brand color */}
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-3 flex items-center gap-2"><Palette className="w-4 h-4" /> {t("website.brandColor")}</div>
+        {PALETTES[w.template] && (
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t("website.paletteRecommended")}</div>
+            <div className="flex flex-wrap gap-2">
+              {PALETTES[w.template].map((c) => (
+                <button key={c} onClick={() => save({ accent_color: c })} data-testid={`website-palette-${c}`}
+                  className={`h-10 px-4 rounded-xl flex items-center gap-2 border-2 transition-transform hover:-translate-y-0.5 ${w.accent_color?.toLowerCase() === c.toLowerCase() ? "ring-2 ring-offset-2 ring-slate-800" : "border-transparent"}`}
+                  style={{ background: c }}>
+                  {w.accent_color?.toLowerCase() === c.toLowerCase() && <Check className="w-4 h-4 text-white" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t("website.paletteAll")}</div>
         <div className="flex flex-wrap gap-2">
           {COLORS.map((c) => (
             <button key={c} onClick={() => save({ accent_color: c })} data-testid={`website-color-${c}`}
@@ -360,6 +409,25 @@ export default function WebsiteEditor() {
           ))}
         </div>
         <p className="text-xs text-slate-400 mt-3">{t("website.galleryHint")}</p>
+      </Card>
+
+      {/* Before / After pairs (for the "Before/After" template) */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Images className="w-4 h-4" /> {t("website.baTitle")}</div>
+        <p className="text-sm text-slate-500 mb-3">{t("website.baDesc")}</p>
+        <input ref={baFileRef} type="file" accept="image/*" className="hidden" onChange={uploadBa} data-testid="website-ba-upload-input" />
+        <div className="space-y-3">
+          {baPairs().map((p, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50" data-testid={`website-ba-pair-${i}`}>
+              <BaSlot label={t("website.baBefore")} id={p.before} onClick={() => pickBa(i, "before")} testid={`website-ba-before-${i}`} />
+              <ArrowRight className="w-5 h-5 text-slate-400 flex-none" />
+              <BaSlot label={t("website.baAfter")} id={p.after} onClick={() => pickBa(i, "after")} testid={`website-ba-after-${i}`} />
+              <div className="flex-1" />
+              <Button variant="ghost" size="icon" onClick={() => baDel(i)} className="text-slate-400 flex-none" data-testid={`website-ba-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" onClick={baAdd} className="rounded-xl mt-3" data-testid="website-ba-add"><Plus className="w-4 h-4 mr-1" /> {t("website.baAdd")}</Button>
       </Card>
 
       {/* Chat & Forms */}
@@ -573,8 +641,8 @@ export default function WebsiteEditor() {
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after };
 }
 
 function DnsRow({ label, value, onCopy }) {
@@ -584,6 +652,15 @@ function DnsRow({ label, value, onCopy }) {
       <code className="flex-1 text-xs bg-white border border-slate-200 rounded px-2 py-1 truncate">{value}</code>
       {onCopy && <button onClick={() => onCopy(value)} className="text-slate-400 hover:text-slate-700 flex-none"><Copy className="w-3.5 h-3.5" /></button>}
     </div>
+  );
+}
+
+function BaSlot({ label, id, onClick, testid }) {
+  return (
+    <button onClick={onClick} data-testid={testid} className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-dashed border-slate-300 flex items-center justify-center flex-none bg-white hover:border-slate-400">
+      {id ? <img src={photoSrc(id)} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] text-slate-400 text-center px-1 flex flex-col items-center gap-0.5"><Plus className="w-4 h-4" />{label}</span>}
+      {id && <span className="absolute bottom-0 inset-x-0 text-[9px] font-bold text-center text-white bg-black/50">{label}</span>}
+    </button>
   );
 }
 

@@ -3973,6 +3973,7 @@ class WebsiteIn(BaseModel):
     chat_enabled: Optional[bool] = None       # show UniTech AI chat widget on the site
     chat_launcher: Optional[str] = None        # optional chat button text
     chat_position: Optional[str] = None        # "right" | "left"
+    before_after: Optional[list] = None        # [{before: photo_id, after: photo_id}] for the slider template
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -4262,28 +4263,83 @@ async def public_website_lead(slug: str, payload: CardLeadIn):
     w = await db.websites.find_one({"slug": slug}, {"_id": 0})
     if not w:
         raise HTTPException(404, "Not found")
+    user_id = w["user_id"]
+    via_site = (w.get("custom_domain") if w.get("custom_domain_verified") else slug) or slug
+    service_label = (payload.service or "").strip()
     lead = {
         "id": _new_id(),
-        "user_id": w["user_id"],
+        "user_id": user_id,
         "name": payload.name,
         "phone": payload.phone or "",
         "email": payload.email or "",
         "address": payload.address or "",
-        "service": payload.service or "",
+        "service": service_label,
         "description": payload.description or "",
         "lead_type": "estimate",
         "source": "website",
+        "source_site": via_site,
+        "status": "new",
         "created_at": _now_iso(),
     }
     await db.card_leads.insert_one(dict(lead))
+    # Route the lead directly into the CRM (Clientes). Dedupe by phone/email so a
+    # visitor submitting twice doesn't clutter the CRM with duplicate contacts.
+    notes_lines = [f"[Lead desde tu sitio web: {via_site}]"]
+    if service_label:
+        notes_lines.append(f"Interested in: {service_label}")
+    if payload.description:
+        notes_lines.append((payload.description or "").strip())
+    client_notes = "\n".join([l for l in notes_lines if l])
+    dedupe_or = []
+    if (payload.phone or "").strip():
+        dedupe_or.append({"phone": payload.phone.strip()})
+    if (payload.email or "").strip():
+        dedupe_or.append({"email": payload.email.strip()})
+    existing = None
+    if dedupe_or:
+        existing = await db.clients.find_one({"user_id": user_id, "$or": dedupe_or}, {"_id": 0})
+    if existing:
+        updates = {
+            "lead_type": "estimate",
+            "lead_source": "website",
+            "source_site": via_site,
+        }
+        if service_label:
+            updates["job_type"] = service_label
+        if (payload.description or "").strip():
+            updates["project_request"] = payload.description.strip()
+        await db.clients.update_one({"id": existing["id"], "user_id": user_id}, {"$set": updates})
+        await db.client_notes.insert_one({
+            "id": _new_id(), "client_id": existing["id"], "user_id": user_id,
+            "text": client_notes, "created_at": _now_iso(),
+        })
+    else:
+        await db.clients.insert_one({
+            "id": _new_id(),
+            "user_id": user_id,
+            "name": payload.name,
+            "phone": payload.phone or "",
+            "email": payload.email or "",
+            "address": payload.address or "",
+            "job_type": service_label,
+            "notes": client_notes,
+            "lead_type": "estimate",
+            "interests": [],
+            "preferred_contact": payload.preferred_contact or "",
+            "lead_source": "website",
+            "source_site": via_site,
+            "project_request": (payload.description or "").strip(),
+            "project_photo_path": None,
+            "created_at": _now_iso(),
+        })
     try:
         await _create_notification(
-            user_id=w["user_id"],
+            user_id=user_id,
             title="🌐 Nuevo lead desde tu sitio web",
-            body=f"{payload.name} pidió información desde tu página web.",
+            body=f"{payload.name} pidió información desde tu página web. Ya está en tu CRM.",
             kind="success",
-            action_url="/leads",
-            action_label="Ver leads",
+            action_url="/clientes",
+            action_label="Ver en CRM",
         )
     except Exception as e:
         logger.error(f"website lead notif failed: {e!r}")

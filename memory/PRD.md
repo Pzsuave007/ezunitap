@@ -15,6 +15,12 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## 🧲 Jun 2026 — Leads del Sitio Web → CRM (entrada directa a Clientes) [COMPLETO; verificado curl e2e]
+- **Petición dueño**: cuando un visitante llena el formulario del sitio web público, el lead debe entrar directo al CRM (sin notificación externa por ahora).
+- **Backend** (`server.py` `POST /public/website/{slug}/lead`): antes solo insertaba en `card_leads`. Ahora **crea/reutiliza un Cliente** en `db.clients` con `lead_source="website"`, `source_site` (= dominio propio verificado si existe, si no el slug), `project_request` (descripción), `job_type` (servicio) y notas. **Dedupe** por teléfono/email: si el visitante ya existe, no duplica — actualiza campos y agrega una nota en la bitácora (`client_notes`). Sigue guardando en `card_leads` e in-app notification (action_url `/clientes`, "Ver en CRM"). El CRM (`ClientDetail.js`) ya renderiza la tarjeta "🌐 Contacto desde tu sitio web" + "Vino de: {source_site}" (ya existía).
+- Verificado curl: submit → aparece en `/clients` con lead_source=website; 2º submit mismo teléfono → sigue 1 cliente + nota nueva. Datos de prueba limpiados. Cambio backend-only (sin rebuild).
+
+
 ## 🌐 Ago 10 2026 (d) — Botones Guardar + Dominio Propio (Fase 2a) + SEO Automático [COMPLETO; verificado curl + screenshots]
 - **Botones Guardar** (petición dueño: no hacer scroll): barra fija arriba del editor (badge borrador/publicado + "Ver mi sitio" + Guardar), botón Guardar en la tarjeta de Plantillas, y el de abajo. i18n `website.save`.
 - **Dominio Propio (Fase 2a — mapeo + verificación + instrucciones)**: modelo (2ii, dominio 100% del cliente). Endpoints: `GET/POST/DELETE /website/domain`, `POST /website/domain/verify` (lookup DNS TXT `_unitech-verify.<domain>` con dnspython, token guardado server-side, `custom_domain_verified`), `GET /public/website-by-domain/{domain}` (sirve por dominio verificado+publicado). Editor: tarjeta "Dominio propio" — input, instrucciones TXT (verificar) + registro A (apuntar) con copiar, botón verificar, badge Conectado, quitar. `_website_payload(w)` refactor reutilizado. Front: `App.js` resuelve dominios de cliente en `/` (si host no es primario/preview → `website-by-domain` → `<ContractorSite injected/>`), primarios (ezunitap/ezunitech/emergentagent/localhost) no hacen lookup. **SSL/DNS reales los hace el dueño en cPanel (AutoSSL) — la app da instrucciones**; `WEBSITE_DOMAIN_TARGET` env opcional para mostrar la IP. i18n `website.domain*`.

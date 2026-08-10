@@ -784,6 +784,9 @@ function BeforeAfter({ before, after, accent, tall }) {
 // ===========================================================================
 function Slider({ ctx }) {
   const { w, b, data, sec, accent, accentText, th, poolAt, services, goContact, heroImg } = ctx;
+  const ba = (w.before_after || []).filter((p) => p && p.before && p.after);
+  const heroBefore = ba[0] ? photoUrl(ba[0].before) : poolAt(1);
+  const heroAfter = ba[0] ? photoUrl(ba[0].after) : (poolAt(0) || heroImg);
   return (
     <div className="pb-24 md:pb-0">
       <header className="sticky top-0 z-40 border-b-2 bg-white" style={{ borderColor: th.ink }}>
@@ -805,7 +808,7 @@ function Slider({ ctx }) {
           </div>
         </div>
         <div className="relative min-h-[280px] md:min-h-[560px] order-1 md:order-2">
-          <BeforeAfter before={poolAt(1)} after={poolAt(0) || heroImg} accent={accent} tall />
+          <BeforeAfter before={heroBefore} after={heroAfter} accent={accent} tall />
         </div>
       </section>
 
@@ -851,14 +854,20 @@ function Slider({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.gallery !== false && data.photos.length > 1 && (
+      {sec.gallery !== false && (ba.length > 0 || data.photos.length > 1) && (
         <SectionLight id="gallery" kicker="Transformations" title="See The Difference" ctx={ctx} alt>
           <div className="grid md:grid-cols-2 gap-5">
-            {[0, 2].map((base) => data.photos[base] && data.photos[base + 1] && (
-              <div key={base} className="border-2" style={{ borderColor: th.ink }}>
-                <BeforeAfter before={photoUrl(data.photos[base].id)} after={photoUrl(data.photos[base + 1].id)} accent={accent} />
-              </div>
-            ))}
+            {ba.length > 0
+              ? ba.map((p, i) => (
+                  <div key={i} className="border-2" style={{ borderColor: th.ink }} data-testid={`site-ba-${i}`}>
+                    <BeforeAfter before={photoUrl(p.before)} after={photoUrl(p.after)} accent={accent} />
+                  </div>
+                ))
+              : [0, 2].map((base) => data.photos[base] && data.photos[base + 1] && (
+                  <div key={base} className="border-2" style={{ borderColor: th.ink }}>
+                    <BeforeAfter before={photoUrl(data.photos[base].id)} after={photoUrl(data.photos[base + 1].id)} accent={accent} />
+                  </div>
+                ))}
           </div>
         </SectionLight>
       )}
