@@ -44,9 +44,50 @@
     "dayOne": "{{count}} day",
     "dayOther": "{{count}} days",
     "appointments": "Appointments",
-    "embed": "Website",
+    "embed": "Forms / AI Bot",
     "website": "Web Page",
     "qrCodes": "QR Codes"
+  },
+  "website": {
+    "title": "Web Page",
+    "subtitle": "Your professional website, ready for your customers.",
+    "status": "Status",
+    "published": "Published",
+    "draft": "Draft",
+    "publishedDesc": "Anyone with the link can view it.",
+    "draftDesc": "Only you can see it until you publish.",
+    "customLink": "Custom link (slug)",
+    "template": "Template",
+    "brandColor": "Brand color",
+    "heroContent": "Homepage content",
+    "headline": "Main headline",
+    "headlinePh": "e.g. Trusted Roofing Experts in Houston",
+    "subheadline": "Subheadline",
+    "aboutUs": "About us",
+    "serviceArea": "Service area",
+    "serviceAreaPh": "Houston, TX and surrounding areas",
+    "hours": "Hours",
+    "hoursPh": "Mon-Fri 8am-6pm",
+    "callPhone": "Phone for \"Call\" button",
+    "saveContent": "Save content",
+    "saved": "Saved ✓",
+    "sections": "Sections",
+    "sectionsDesc": "Turn on or off what shows on your site.",
+    "autofillNote": "Your site was auto-filled from your profile, services, photos and reviews. Edit anything you want — we set it up for you.",
+    "publishedToast": "Your site is live! 🎉",
+    "unpublishedToast": "Site unpublished",
+    "linkCopied": "Link copied",
+    "loadError": "Could not load",
+    "saveError": "Could not save",
+    "tpl": {
+      "cleanName": "Clean & Modern", "cleanDesc": "Plumbing, electrical, general",
+      "boldName": "Bold & Industrial", "boldDesc": "Roofing, HVAC, concrete",
+      "warmName": "Warm & Trustworthy", "warmDesc": "Landscaping, cleaning, painting"
+    },
+    "sec": {
+      "services": "Services", "gallery": "Gallery (job photos)", "reviews": "Reviews",
+      "about": "About us / hours / areas", "contact": "Contact + form", "booking": "Book appointment"
+    }
   },
   "auth": {
     "login": {

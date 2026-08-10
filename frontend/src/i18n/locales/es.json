@@ -44,9 +44,50 @@
     "dayOne": "{{count}} día",
     "dayOther": "{{count}} días",
     "appointments": "Citas",
-    "embed": "Sitio Web",
+    "embed": "Formularios / Bot IA",
     "website": "Página Web",
     "qrCodes": "Códigos QR"
+  },
+  "website": {
+    "title": "Página Web",
+    "subtitle": "Tu página web profesional, lista para tus clientes.",
+    "status": "Estado",
+    "published": "Publicado",
+    "draft": "Borrador",
+    "publishedDesc": "Cualquiera con el enlace puede verlo.",
+    "draftDesc": "Solo tú lo ves hasta que publiques.",
+    "customLink": "Enlace personalizado (slug)",
+    "template": "Plantilla",
+    "brandColor": "Color de marca",
+    "heroContent": "Contenido de la portada",
+    "headline": "Título principal",
+    "headlinePh": "Ej: Techos de confianza en Houston",
+    "subheadline": "Subtítulo",
+    "aboutUs": "Sobre nosotros",
+    "serviceArea": "Zona de servicio",
+    "serviceAreaPh": "Houston, TX y alrededores",
+    "hours": "Horario",
+    "hoursPh": "Lun-Vie 8am-6pm",
+    "callPhone": "Teléfono para \"Llamar\"",
+    "saveContent": "Guardar contenido",
+    "saved": "Guardado ✓",
+    "sections": "Secciones",
+    "sectionsDesc": "Prende o apaga lo que aparece en tu sitio.",
+    "autofillNote": "Tu sitio se llenó solo con tu perfil, servicios, fotos y reseñas. Edita lo que quieras — nosotros lo dejamos listo por ti.",
+    "publishedToast": "¡Tu sitio está publicado! 🎉",
+    "unpublishedToast": "Sitio despublicado",
+    "linkCopied": "Enlace copiado",
+    "loadError": "No se pudo cargar",
+    "saveError": "No se pudo guardar",
+    "tpl": {
+      "cleanName": "Limpio y Moderno", "cleanDesc": "Plomería, eléctrico, general",
+      "boldName": "Fuerte e Industrial", "boldDesc": "Techos, HVAC, concreto",
+      "warmName": "Cálido y Confiable", "warmDesc": "Jardinería, limpieza, pintura"
+    },
+    "sec": {
+      "services": "Servicios", "gallery": "Galería (fotos de trabajos)", "reviews": "Reseñas",
+      "about": "Sobre nosotros / horarios / zonas", "contact": "Contacto + formulario", "booking": "Reservar cita"
+    }
   },
   "auth": {
     "login": {
