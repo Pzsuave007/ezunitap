@@ -27,6 +27,7 @@ const KIND_LABELS = {
     description: "Envía el quote al cliente para que lo revise y lo acepte.",
     cta: "Quote",
     enShort: "your quote",
+    noun: "quote",
     enAction: "Please review and let me know if you have any questions",
   },
   agreement: {
@@ -34,6 +35,7 @@ const KIND_LABELS = {
     description: "Envía el contrato al cliente para que lo firme.",
     cta: "Service Agreement",
     enShort: "your service agreement",
+    noun: "service agreement",
     enAction: "Please review and sign at the link below",
   },
   invoice: {
@@ -41,6 +43,7 @@ const KIND_LABELS = {
     description: "Envía el invoice al cliente para que vea el monto a pagar.",
     cta: "Invoice",
     enShort: "your invoice",
+    noun: "invoice",
     enAction: "You can review, download, or print it from the link below",
   },
   review: {
@@ -48,6 +51,7 @@ const KIND_LABELS = {
     description: "Pídele al cliente que te deje una reseña. Solo le toma 30 segundos.",
     cta: "Review request",
     enShort: "",
+    noun: "",
     enAction: "",
   },
 };
@@ -106,6 +110,17 @@ export default function SendDocumentDialog({
     ? `Quick favor — leave ${businessName || "us"} a review?`
     : `${meta.cta}${jobTitle ? ` - ${jobTitle}` : ""}${businessName ? ` from ${businessName}` : ""}`;
 
+  // Message used when the PDF is actually attached (share / attach flow) — it
+  // references the attached document and adapts to invoice/quote/agreement.
+  const attachMessage = useMemo(() => {
+    const firstName = clientName ? clientName.split(" ")[0] : "";
+    const greet = firstName ? `Hi ${firstName},` : "Hi,";
+    const biz = businessName ? `\n\n— ${businessName}` : "";
+    const job = jobTitle ? ` for ${jobTitle}` : "";
+    const noun = meta.noun || "document";
+    return `${greet}\n\nPlease find your ${noun}${job} attached as a PDF. ${meta.enAction}. You can also view it here:\n\n${publicUrl}${biz}`;
+  }, [clientName, jobTitle, businessName, meta.noun, meta.enAction, publicUrl]);
+
   const openWhatsApp = () => {
     const text = encodeURIComponent(message);
     const url = phone
@@ -124,9 +139,9 @@ export default function SendDocumentDialog({
     window.location.href = `sms:+${phone}?&body=${text}`;
   };
 
-  const openEmail = () => {
+  const openEmail = (bodyText) => {
     const subject = encodeURIComponent(emailSubject);
-    const body = encodeURIComponent(message);
+    const body = encodeURIComponent(bodyText || message);
     // Always open the user's mail app. If the client has no saved email, leave
     // the "to" blank so they can type it — never a silent no-op.
     const href = `mailto:${email || ""}?subject=${subject}&body=${body}`;
@@ -161,7 +176,7 @@ export default function SendDocumentDialog({
       const { blob, filename } = await getPdfBlob();
       const file = new File([blob], filename, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: emailSubject, text: message });
+        await navigator.share({ files: [file], title: emailSubject, text: attachMessage });
       } else {
         // Fallback: download the PDF so they can attach it, then open email.
         const url = URL.createObjectURL(blob);
@@ -173,7 +188,7 @@ export default function SendDocumentDialog({
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 4000);
         toast.success("PDF descargado — adjúntalo en el correo que se abrió");
-        openEmail();
+        openEmail(attachMessage);
       }
     } catch (err) {
       if (err?.name !== "AbortError") toast.error("No se pudo generar el PDF");
