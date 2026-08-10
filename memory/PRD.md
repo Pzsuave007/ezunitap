@@ -15,6 +15,15 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 
 ---
 
+## ✅ Ago 2026 — Regla "NO popups": convertir modales de acción a páginas [add cliente + add trabajo hechos]
+- **Regla del dueño (INNEGOCIABLE, ver `/app/memory/UX_RULES.md`)**: nada de modales/diálogos centrados con overlay gris para funciones del app (causan botones cortados y varían entre navegadores). Toda función = página propia con su ruta. Únicas excepciones: bottom-sheets de "IA trabajando" y los resultados slide-up del Marketing Studio.
+- **Fix urgente**: "Agregar cliente" (bug: modal no cabía en laptop, escondía Guardar) → nueva página `pages/ClientForm.js`, ruta `/clientes/nuevo`. `Clients.js` ahora solo navega (Dialog eliminado). Dashboard step1 y atajo actualizados. Editar cliente ya era inline (OK).
+- **Agregar trabajo** → nueva página `pages/JobForm.js`, ruta `/trabajos/nuevo`. `Jobs.js` Dialog de nuevo trabajo eliminado; botones navegan. (Quedan popups menores en Jobs: agendar/foto/SendDocument — solo si el dueño los pide.)
+- Verificación: compila OK; `POST /clients` y `POST /jobs` confirmados por curl (200). ⚠️ NO se pudo screenshotear la pantalla autenticada (la tool de captura re-navega en contexto nuevo y descarta el login). ⚠️ NO se usó testing_agent por instrucción explícita del dueño (créditos). Build + `git add -f build/*`. Usuario: Save to Github + deploy.
+
+---
+
+
 ## ✅ Ago 3 2026 (b) — Demo corto: página de cierre dedicada + quitar FAB WhatsApp + texto guía más grande [COMPLETO; verificado screenshots]
 - **Página de cierre como landing de venta (paso 5)**: al tocar "Pagar (demo)", `payNow` ahora hace `setStep(5)` (antes el `FinalCTA` se apilaba DEBAJO del invoice → página larguísima y confusa en móvil). Nuevo componente `DemoClose` (data-testid `demo-close`): hero de éxito ("Demo completado / Now do it with YOUR business"), grid de 4 beneficios (`demo-close-benefit-{i}`: cotizaciones IA en inglés, cobra Card/Venmo/Zelle/CashApp/PayPal, contratos con firma, todo en una app), reutiliza `FinalCTA` (captura de contacto + WhatsApp + oferta Fundador + checkout) y línea de garantía. StepBar se oculta en paso 5 (`step <= 4`). `InvoiceStep` ahora recibe `hideFinalCta` en /demo (el cierre vive en su propia pantalla). i18n `demoFlow.close.*` (badge/title/subtitle/trust/benefits[]) ES/EN.
 - **Bug móvil: FAB de WhatsApp tapaba los botones de avanzar** → removido `WhatsAppFab` del import y del render de `DemoFlow.js` (sigue existiendo solo en `/demo-flujo`). El WhatsApp del cierre (dentro de FinalCTA) se mantiene.

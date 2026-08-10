@@ -26,9 +26,6 @@ export default function Jobs() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [clients, setClients] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_id: "", title: "", status: "new_lead", scheduled_date: "", notes: "" });
-  const [saving, setSaving] = useState(false);
 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewClient, setReviewClient] = useState(null);
@@ -81,20 +78,6 @@ export default function Jobs() {
     setReviewClient(client);
     setReviewJobTitle(job.title);
     setReviewOpen(true);
-  };
-
-  const save = async () => {
-    if (!form.client_id || !form.title) return toast.error(t("jobs.missingClientTitle"));
-    setSaving(true);
-    try {
-      await api.post("/jobs", form);
-      toast.success(t("jobs.created"));
-      setOpen(false);
-      setForm({ client_id: "", title: "", status: "new_lead", scheduled_date: "", notes: "" });
-      load();
-    } catch {
-      toast.error(t("jobs.error"));
-    } finally { setSaving(false); }
   };
 
   const updateStatus = async (job, status) => {
@@ -173,7 +156,7 @@ export default function Jobs() {
           </div>
           <TourButton tourKey="jobs" />
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-job-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap">
+        <Button onClick={() => navigate("/trabajos/nuevo")} data-testid="new-job-btn" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 h-12 px-5 w-full sm:w-auto whitespace-nowrap">
           <Plus className="w-4 h-4 mr-1" /> {t("jobs.newJob")}
         </Button>
       </div>
@@ -185,7 +168,7 @@ export default function Jobs() {
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
           <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
           <p className="text-slate-500 mb-4">{t("jobs.empty")}</p>
-          <Button onClick={() => setOpen(true)} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">{t("jobs.create")}</Button>
+          <Button onClick={() => navigate("/trabajos/nuevo")} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">{t("jobs.create")}</Button>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -306,46 +289,6 @@ export default function Jobs() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setScheduleJob(null)} className="rounded-xl">{t("common.cancel")}</Button>
             <Button onClick={saveSchedule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700" data-testid="sched-save">{t("jobs.saveSchedule")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader><DialogTitle className="font-heading">{t("jobs.newJob")}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>{t("jobs.client")} *</Label>
-              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="job-client-select"><SelectValue placeholder={t("jobs.select")} /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t("jobs.titleField")} *</Label>
-              <Input data-testid="job-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-            </div>
-            <div>
-              <Label>{t("jobs.statusField")}</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger className="h-12 rounded-xl mt-1.5"><SelectValue /></SelectTrigger>
-                <SelectContent>{JOB_STATUSES.map((s) => <SelectItem key={s} value={s}>{labelFor(s)}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t("jobs.scheduledDate")}</Label>
-              <Input type="date" value={form.scheduled_date} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} className="h-12 rounded-xl mt-1.5" />
-            </div>
-            <div>
-              <Label>{t("jobs.notes")}</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl mt-1.5" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl">{t("common.cancel")}</Button>
-            <Button onClick={save} data-testid="save-job" disabled={saving} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -27,7 +27,8 @@ centrada con overlay gris → convertir a página.
 ## Historial de conversión (modal → página)
 - Ago 2026: "Agregar cliente" pasó de `<Dialog>` en `Clients.js` a página
   `pages/ClientForm.js` (rutas `/clientes/nuevo`). `Clients.js` ahora solo navega.
-  Pendiente de barrido: revisar y convertir otros `<Dialog>` de acción del app
-  (Clientes ✅ add). Editar cliente ya era inline (OK). Otros por revisar:
-  Calendar, Jobs, InvoiceDetail, QuoteDetail, AgreementDetail, CardAdmin,
-  AdminAccounts, componentes SendDocumentDialog/ClientScopeDialog, etc.
+- Ago 2026: "Agregar trabajo" pasó de `<Dialog>` en `Jobs.js` a página
+  `pages/JobForm.js` (ruta `/trabajos/nuevo`). `Jobs.js` ahora solo navega.
+  Editar cliente ya era inline (OK). En `Jobs.js` QUEDAN (por decisión del dueño,
+  solo pidió convertir "agregar trabajo") popups menores: agendar (scheduleJob),
+  subir foto (photoJob) y SendDocumentDialog — revisar/convertir si el dueño lo pide.
