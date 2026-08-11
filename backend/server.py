@@ -2363,6 +2363,7 @@ async def upload_photo(
         "storage_path": result.get("path", path),
         "content_type": content_type,
         "size": result.get("size", len(data)),
+        "storage_backend": getattr(backend, "name", "emergent"),
         "is_deleted": False,
         "created_at": _now_iso(),
     }
@@ -2436,7 +2437,7 @@ async def get_photo_file(
     if not doc:
         raise HTTPException(404, "Foto no encontrada")
     try:
-        backend = storage_service.get_storage()
+        backend = storage_service.get_backend(doc.get("storage_backend"))
         data, ct = backend.get(doc["storage_path"])
     except Exception as e:
         logger.exception("Storage download failed")
@@ -2762,6 +2763,7 @@ async def _upload_card_asset(file: UploadFile, user_id: str, kind: str, card_id:
         "storage_path": result.get("path", path),
         "content_type": content_type,
         "size": result.get("size", len(data)),
+        "storage_backend": getattr(backend, "name", "emergent"),
         "is_deleted": False,
         "is_logo": (kind == "logo"),
         "is_profile": (kind == "profile_photo"),
@@ -2804,6 +2806,7 @@ async def _store_card_photo(user_id: str, data: bytes, content_type: str, kind: 
         "storage_path": result.get("path", path),
         "content_type": content_type,
         "size": result.get("size", len(data)),
+        "storage_backend": getattr(backend, "name", "emergent"),
         "is_deleted": False,
         "is_logo": (kind == "logo"),
         "is_profile": (kind == "profile_photo"),
@@ -4172,10 +4175,30 @@ async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f:
     return {**_domain_status(w), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
 
 
+def _schedule_gbp_review_refresh(user_id: str, background_tasks: BackgroundTasks):
+    """If the owner's cached Google reviews are stale, refresh them in the
+    background (non-blocking) so public visitors always get a fast response."""
+    async def _maybe():
+        try:
+            import gbp_routes
+            if await gbp_routes.should_resync_reviews(user_id):
+                await gbp_routes.sync_reviews_to_cache(user_id)
+        except Exception as e:
+            logger.warning("gbp review refresh skipped: %r", e)
+    background_tasks.add_task(_maybe)
+
+
 async def _website_payload(w):
     user = await db.users.find_one({"id": w["user_id"]}, {"_id": 0, "password_hash": 0}) or {}
     card = await db.cards.find_one({"user_id": w["user_id"]}, {"_id": 0}) or {}
-    reviews = await db.reviews.find({"user_id": w["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    # Reviews: Google Business reviews (auto-synced when GBP is connected) shown
+    # first, then any manually-added reviews. Only real 4-5★ reviews with text.
+    manual_reviews = await db.reviews.find({"user_id": w["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    google_reviews = await db.gbp_reviews.find(
+        {"user_id": w["user_id"], "rating": {"$gte": 4}, "text": {"$nin": ["", None]}},
+        {"_id": 0, "customer_name": 1, "rating": 1, "text": 1, "created_at": 1, "source": 1},
+    ).sort([("rating", -1), ("created_at", -1)]).to_list(20)
+    reviews = (google_reviews + manual_reviews)[:20]
     gids = w.get("gallery_photo_ids")
     if gids:
         gdocs = await db.photos.find(
@@ -4223,21 +4246,23 @@ async def _website_payload(w):
 
 
 @api_router.get("/public/website/{slug}")
-async def public_website(slug: str, preview: int = 0):
+async def public_website(slug: str, background_tasks: BackgroundTasks, preview: int = 0):
     w = await db.websites.find_one({"slug": slug}, {"_id": 0})
     if not w or (not w.get("published") and not preview):
         raise HTTPException(404, "Not found")
+    _schedule_gbp_review_refresh(w["user_id"], background_tasks)
     return await _website_payload(w)
 
 
 @api_router.get("/public/website-by-domain/{domain}")
-async def public_website_by_domain(domain: str):
+async def public_website_by_domain(domain: str, background_tasks: BackgroundTasks):
     d = (domain or "").strip().lower()
     if d.startswith("www."):
         d = d[4:]
     w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True, "published": True}, {"_id": 0})
     if not w:
         raise HTTPException(404, "Not found")
+    _schedule_gbp_review_refresh(w["user_id"], background_tasks)
     return await _website_payload(w)
 
 
@@ -4358,7 +4383,7 @@ async def public_photo(photo_id: str):
     if not card:
         raise HTTPException(404, "Not found")
     try:
-        backend = storage_service.get_storage()
+        backend = storage_service.get_backend(doc.get("storage_backend"))
         data, ct = backend.get(doc["storage_path"])
     except Exception:
         raise HTTPException(500, "Storage error")
@@ -4373,7 +4398,7 @@ async def public_gmb_media(photo_id: str):
     if not doc:
         raise HTTPException(404, "Not found")
     try:
-        backend = storage_service.get_storage()
+        backend = storage_service.get_backend(doc.get("storage_backend"))
         data, ct = backend.get(doc["storage_path"])
     except Exception:
         raise HTTPException(500, "Storage error")

@@ -15,6 +15,25 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## 🖼️ Jun 2026 — FIX: subir/aplicar fotos se quedaba "atorado guardando" en PRODUCCIÓN [COMPLETO; self-test curl+e2e, SIN testing_agent por regla del dueño]
+- **Reporte dueño**: en la sección Fotos no dejaba subir ni aplicar las fotos elegidas; "se pone a salvar y se queda atorado por mucho tiempo".
+- **Causa raíz**: `storage_service.py` guardaba/servía las fotos en **Emergent Object Storage** (`integrations.emergentagent.com`, requests SÍNCRONOS, timeout 120s) usando `EMERGENT_LLM_KEY`. En **producción self-hosted ese storage está bloqueado/inaccesible** (igual que la llave LLM) → la subida colgaba hasta 120s. En preview (plataforma Emergent) sí funcionaba (por eso no se veía el bug ahí).
+- **Fix** (`storage_service.py`): nuevo backend **`LocalDiskStorage`** (disco local persistente) + selección por env **`STORAGE_BACKEND`** (default `emergent` → preview intacto; producción usa `local`). `UPLOADS_DIR` (default `/app/uploads`). Timeouts Emergent reducidos (120→45, 60→30) para fallar rápido. `get_backend(name)` sirve cada foto desde el backend con que se guardó.
+- **Fix** (`server.py`): cada foto nueva guarda `storage_backend` (photos + card profile/cover/logo); los 3 endpoints que sirven fotos (`/photos/{id}/file`, `/public/card/photo/{id}` x2) usan `get_backend(doc.get("storage_backend"))` → compatibilidad mixta (fotos viejas Emergent + nuevas locales conviven).
+- Verificado (curl + unit + e2e real con STORAGE_BACKEND=local): subida 0.17s → archivo en disco + doc.storage_backend="local" → se sirve 200 image/webp; tras revertir a emergent, fotos viejas (Emergent) y nuevas (local) se sirven por dispatch. Sin regresiones. Datos de prueba limpiados.
+- ⚠️ DESPLIEGUE PRODUCCIÓN: re-desplegar BACKEND y en `backend/.env` de producción agregar **`STORAGE_BACKEND=local`** y **`UPLOADS_DIR=/ruta/persistente`** (p.ej. una carpeta con respaldo). Las fotos viejas que estaban en Emergent no serán accesibles en prod (nunca lo fueron); las nuevas funcionarán al instante.
+
+
+## ⭐ Jun 2026 — Reseñas de Google (GBP) se muestran AUTOMÁTICAMENTE en el sitio web [COMPLETO; self-test curl+Playwright, sin testing_agent]
+- **Petición dueño**: si ya tiene Google My Business conectado, jalar las reseñas de ahí y mostrarlas automáticamente en el sitio web.
+- **Antes**: `gbp_routes /reviews` traía las reseñas EN VIVO de Google pero NO las guardaba; el sitio público leía solo `db.reviews` (reseñas manuales) → las de Google no aparecían.
+- **Backend** (`gbp_routes.py`): nueva caché `db.gbp_reviews` + `sync_reviews_to_cache(user_id)` (pagina hasta ~200 reseñas, normaliza reviewer/starRating→int/comment, upsert por `g_review_id`, borra las eliminadas en Google, guarda `last_reviews_sync`) — best-effort, nunca lanza. `should_resync_reviews()` (stale > 6h). Endpoint manual `POST /api/google-business/reviews/sync`. Se dispara sync al conectar (callback OAuth, best-effort).
+- **Backend** (`server.py`): `_website_payload` ahora mezcla reseñas Google (caché, solo ≥4★ con texto, primero) + manuales, cap 20. Endpoints públicos `/public/website/{slug}` y `/public/website-by-domain/{domain}` agendan un refresco EN SEGUNDO PLANO (`_schedule_gbp_review_refresh` con `BackgroundTasks`) si la caché está vieja — no bloquea la respuesta pública.
+- **Frontend** (`GbpConnectCard.js` → `ReviewsList`): banner azul "Tus reseñas de 4-5★ se muestran automáticamente en tu sitio web" + botón "Actualizar mi web" (`gbp-sync-website-btn` → POST sync).
+- Verificado: sin GBP conectado el payload devuelve 0 y el endpoint sync responde 400 amable; insertando reseña google 5★ en caché aparece en el payload y la 2★ se filtra; página /reviews carga sin errores; backend/frontend compilan.
+- ⚠️ DESPLIEGUE: cambio de BACKEND + FRONTEND → producción debe re-desplegar backend y frontend. En producción, con GBP conectado, las reseñas 4-5★ aparecerán solas (refresco cada ~6h + al conectar + botón manual).
+
+
 
 ## Credenciales de prueba
 - Super-admin: pzsuave007@gmail.com / Uni2mkt007!

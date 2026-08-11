@@ -16,6 +16,7 @@ the `/status` endpoint reports `configured=false` and the UI shows a friendly
 """
 from __future__ import annotations
 
+import logging
 import os
 import secrets
 import uuid
@@ -53,6 +54,10 @@ _client = AsyncIOMotorClient(os.environ["MONGO_URL"])
 _db = _client[os.environ["DB_NAME"]]
 conns = _db["gbp_connections"]
 states = _db["gbp_oauth_states"]
+gbp_reviews = _db["gbp_reviews"]  # cache of Google reviews so the public website can show them
+
+logger = logging.getLogger(__name__)
+_STAR = {"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5}
 
 
 def _now() -> datetime:
@@ -171,6 +176,12 @@ async def callback(code: Optional[str] = None, state: Optional[str] = None, erro
     # Best-effort: auto-pick the first account + location so the UI is ready.
     try:
         await _auto_select_location(user_id, access_token)
+    except Exception:
+        pass
+    # Best-effort: pull the owner's Google reviews right away so the website
+    # can show them without waiting for the first background refresh.
+    try:
+        await sync_reviews_to_cache(user_id)
     except Exception:
         pass
 
@@ -453,6 +464,88 @@ async def reviews(user_id: str = Depends(get_current_user_id)):
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail=f"Google rechazó la consulta: {resp.text[:300]}")
     return resp.json()
+
+
+async def sync_reviews_to_cache(user_id: str) -> int:
+    """Fetch the connected Google Business reviews and cache them in `gbp_reviews`
+    so the public website can show them automatically. Best-effort: never raises
+    (returns -1 when GBP isn't connected or Google errors out)."""
+    try:
+        doc = await conns.find_one({"user_id": user_id})
+        if not doc or not doc.get("account_id") or not doc.get("location_id") or not doc.get("refresh_token"):
+            return -1
+        token = await _valid_token(user_id)
+        path = f"{MB_V4}/v4/accounts/{doc['account_id']}/locations/{doc['location_id']}/reviews"
+        collected, page_token = [], None
+        async with httpx.AsyncClient() as cli:
+            for _ in range(4):  # up to ~200 reviews
+                params = {"pageSize": 50, "orderBy": "updateTime desc"}
+                if page_token:
+                    params["pageToken"] = page_token
+                resp = await cli.get(path, headers={"Authorization": f"Bearer {token}"}, params=params, timeout=30.0)
+                if resp.status_code != 200:
+                    break
+                jd = resp.json()
+                collected.extend(jd.get("reviews", []) or [])
+                page_token = jd.get("nextPageToken")
+                if not page_token:
+                    break
+        now = _now().isoformat()
+        seen = []
+        for r in collected:
+            gid = r.get("reviewId") or (r.get("name", "").split("/")[-1])
+            if not gid:
+                continue
+            reviewer = r.get("reviewer") or {}
+            seen.append(gid)
+            await gbp_reviews.update_one(
+                {"user_id": user_id, "g_review_id": gid},
+                {"$set": {
+                    "user_id": user_id, "g_review_id": gid, "source": "google",
+                    "customer_name": reviewer.get("displayName") or "Google user",
+                    "profile_photo": reviewer.get("profilePhotoUrl") or "",
+                    "rating": _STAR.get(r.get("starRating", ""), 0),
+                    "text": (r.get("comment") or "").strip(),
+                    "reply": (r.get("reviewReply") or {}).get("comment", ""),
+                    "created_at": r.get("updateTime") or r.get("createTime") or now,
+                    "synced_at": now,
+                }},
+                upsert=True,
+            )
+        # Remove reviews that were deleted on Google so the site stays accurate.
+        if seen:
+            await gbp_reviews.delete_many({"user_id": user_id, "g_review_id": {"$nin": seen}})
+        await conns.update_one({"user_id": user_id}, {"$set": {"last_reviews_sync": now, "reviews_count": len(seen)}})
+        return len(seen)
+    except Exception as e:  # never break callers (public website, callback)
+        logger.warning("gbp sync_reviews_to_cache failed for %s: %s", user_id, e)
+        return -1
+
+
+async def should_resync_reviews(user_id: str, max_age_hours: int = 6) -> bool:
+    """True if GBP is connected and the cached reviews are stale/missing."""
+    doc = await conns.find_one(
+        {"user_id": user_id},
+        {"last_reviews_sync": 1, "account_id": 1, "location_id": 1, "refresh_token": 1},
+    )
+    if not doc or not doc.get("account_id") or not doc.get("location_id") or not doc.get("refresh_token"):
+        return False
+    last = doc.get("last_reviews_sync")
+    if not last:
+        return True
+    try:
+        return datetime.fromisoformat(last) <= _now() - timedelta(hours=max_age_hours)
+    except Exception:
+        return True
+
+
+@router.post("/reviews/sync")
+async def sync_reviews_endpoint(user_id: str = Depends(get_current_user_id)):
+    """Manual 'pull my Google reviews now' button."""
+    n = await sync_reviews_to_cache(user_id)
+    if n < 0:
+        raise HTTPException(status_code=400, detail="Conecta primero tu Google Business Profile y selecciona una ubicación.")
+    return {"synced": n}
 
 
 class ReplyIn(BaseModel):

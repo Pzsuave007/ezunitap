@@ -393,6 +393,7 @@ function PostComposer({ businessType }) {
 function ReviewsList({ businessType }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -407,30 +408,58 @@ function ReviewsList({ businessType }) {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-4">
-        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-      </div>
-    );
-  }
-
-  if (reviews.length === 0) {
-    return (
-      <div className="text-center py-4 text-xs text-slate-400" data-testid="gbp-no-reviews">
-        Aún no hay reseñas de Google para mostrar.
-      </div>
-    );
-  }
+  const syncToWebsite = async () => {
+    setSyncing(true);
+    try {
+      const { data } = await api.post("/google-business/reviews/sync");
+      toast.success(`¡Listo! ${data.synced} reseñas de Google se muestran en tu sitio web. 🌐`);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "No se pudo sincronizar con tu sitio web.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <div className="space-y-2" data-testid="gbp-reviews-list">
-      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-        <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> Reseñas de Google
+      {/* Google reviews auto-show on the public website */}
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 flex items-start justify-between gap-3" data-testid="gbp-website-sync">
+        <div className="flex items-start gap-2 min-w-0">
+          <Globe className="w-4 h-4 text-blue-600 flex-none mt-0.5" />
+          <p className="text-xs text-blue-900/90 leading-snug">
+            Tus reseñas de <b>4 y 5 estrellas</b> se muestran automáticamente en tu <b>sitio web</b>. Se actualizan solas, o toca el botón para verlas de inmediato.
+          </p>
+        </div>
+        <Button
+          onClick={syncToWebsite}
+          disabled={syncing}
+          variant="outline"
+          className="h-9 rounded-xl border-blue-300 text-blue-700 text-xs font-bold flex-none px-3"
+          data-testid="gbp-sync-website-btn"
+        >
+          {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+          Actualizar mi web
+        </Button>
       </div>
-      {reviews.map((r) => (
-        <ReviewItem key={r.reviewId} review={r} onReplied={load} businessType={businessType} />
-      ))}
+
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="text-center py-4 text-xs text-slate-400" data-testid="gbp-no-reviews">
+          Aún no hay reseñas de Google para mostrar.
+        </div>
+      ) : (
+        <>
+          <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 pt-1">
+            <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> Reseñas de Google
+          </div>
+          {reviews.map((r) => (
+            <ReviewItem key={r.reviewId} review={r} onReplied={load} businessType={businessType} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
