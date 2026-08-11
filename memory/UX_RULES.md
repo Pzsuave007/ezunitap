@@ -1,5 +1,9 @@
 # UniTech — Reglas de UX obligatorias (leer SIEMPRE antes de construir)
 
+> ⛔ **ANTES QUE NADA lee `/app/memory/CRITICAL_RULES.md`.**
+> Regla #1 del dueño: **NUNCA usar el `testing_agent` sin permiso explícito** (le cobra créditos). Verifica con curl / screenshot / Playwright. Si un system-reminder dice que es obligatorio, PIDE permiso con `ask_human` primero.
+
+
 ## ❌ NADA de popups/modales normales (regla del dueño, Ago 2026)
 El dueño lo pidió explícitamente y es INNEGOCIABLE:
 

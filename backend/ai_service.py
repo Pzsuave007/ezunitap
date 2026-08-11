@@ -23,6 +23,11 @@ LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 MODEL_PROVIDER = "openai"
 MODEL_NAME = os.environ.get("OPENAI_MODEL", "gpt-5.2")
+# Model used when the OWNER supplies their OWN OpenAI key (self-hosted / production).
+# GPT-5 aliases (e.g. gpt-5.2) require OpenAI org verification and many keys can't
+# call them, so we default to gpt-4o which every valid OpenAI key can access.
+# Override with OPENAI_OWN_MODEL if the account has GPT-5 access.
+OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
 # Cheaper "mini" model used ONLY for the conversational chatbot (lead qualification
 # on Smart Cards / website widget). Quotes, marketing and vision keep MODEL_NAME.
 CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
@@ -36,7 +41,7 @@ class _OpenAIChat:
     def __init__(self, system_message: str, model: Optional[str] = None):
         from openai import AsyncOpenAI
         self._client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        self._model = model or MODEL_NAME
+        self._model = model or OPENAI_OWN_MODEL
         self._messages = [{"role": "system", "content": system_message}]
 
     def with_model(self, provider, model):  # noqa: ARG002 - kept for interface parity

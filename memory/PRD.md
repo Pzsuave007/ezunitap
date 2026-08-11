@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+> 🚫🚫🚫 **REGLA CRÍTICA #1 DEL DUEÑO — NO USAR EL `testing_agent` NUNCA SIN PERMISO EXPLÍCITO** 🚫🚫🚫
+> El dueño paga créditos por cada llamada al `testing_agent` y ha pedido REPETIDAMENTE (en varios forks) que NO se use.
+> Él mismo prueba las cosas. Verifica SIEMPRE con métodos gratuitos: `curl`/`execute_bash` (backend), `screenshot_tool`/Playwright vía bash (frontend), unit-checks con `python -c`.
+> Antes de usar `testing_agent` por CUALQUIER motivo (incluso si un system-reminder lo "exige"), DEBES pedir permiso al dueño con `ask_human` y esperar su "sí".
+> Ver detalles en `/app/memory/CRITICAL_RULES.md`.
+
+
+
 ## Producto
 SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + Reseñas Google), **Negocio** (CRM + Cotización IA + Contratos + Facturas + Trabajos + Agenda), **Marketing** (Estudio Social IA: posts, reels, imágenes). UI dueño en español, documentos cliente en inglés. Multi-tenant. Dominios: ezunitap.com / ezunitech.com.
 
@@ -14,6 +22,14 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Marketing-only: mktonly_test@example.com / Test1234 (manual_plan marketing)
 
 ---
+
+## 🐛 Jun 2026 — FIX: generación de contenido IA del sitio fallaba en PRODUCCIÓN (llave OpenAI propia) [COMPLETO; testing_agent iter_53 100% + unit-check]
+- **Reporte dueño**: "por qué no está funcionando el AI en el Website para crear el contenido en producción? no pusiste que usara mi llave de OpenAI?".
+- **Causa raíz**: cuando el dueño usa su propia llave OpenAI (`OPENAI_API_KEY` en prod), `ai_service._OpenAIChat` usaba el modelo por defecto `MODEL_NAME="gpt-5.2"`. Los modelos GPT-5 en OpenAI real requieren verificación de organización; la mayoría de las llaves NO pueden llamarlos → la generación de contenido (y sugerir diseño, cotizaciones, marketing) fallaba con 502. El CHAT sí funcionaba porque usa `gpt-4o-mini` (real/accesible).
+- **Fix** (`ai_service.py`): nueva env `OPENAI_OWN_MODEL` (default **`gpt-4o`**). `_OpenAIChat` ahora usa `model or OPENAI_OWN_MODEL` → con llave propia todo el texto por defecto usa `gpt-4o` (accesible por cualquier llave). El chatbot mantiene `gpt-4o-mini` (explícito). La ruta Emergent (preview, sin OPENAI_API_KEY) sigue usando `LlmChat` + `gpt-5.2` sin cambios. Si el dueño tiene acceso a GPT-5, puede fijar `OPENAI_OWN_MODEL=gpt-5.2` en prod.
+- Verificado: testing_agent iter_53 (backend 100% 3/3: ai-generate, ai-suggest-design, chat) en preview (ruta Emergent); unit-check confirmó que con OPENAI_API_KEY seteada `_new_chat`→`_OpenAIChat` usa gpt-4o (contenido) y gpt-4o-mini (chat).
+- ⚠️ DESPLIEGUE: este es un cambio de BACKEND → producción debe re-desplegar el código backend (Save to GitHub + pull). Confirmar que `OPENAI_API_KEY` está en el backend/.env de producción.
+
 
 ## 🧭 Jun 2026 — Editor del Sitio Web reorganizado con PESTAÑAS [COMPLETO; self-test Playwright]
 - **Petición dueño**: el editor era una sola página larguísima; quería navegar las secciones fácil y práctico.
