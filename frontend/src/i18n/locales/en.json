@@ -220,6 +220,8 @@
     "serviceImgAdded": "Photo added to service",
     "choosePhoto": "Choose photo",
     "galleryAddBtn": "Add photos",
+    "igLabel": "Instagram link (optional)",
+    "igHint": "Paste a public Instagram profile. The AI will read the public bio/description as extra context when you generate content. Photos still come from your uploads or stock.",
     "done": "Done",
     "teamPhotoTitle": "About photos (up to 4)",
     "teamPhotoDesc": "Pick up to 4 photos for the About collage. Empty slots fill with professional stock photos.",

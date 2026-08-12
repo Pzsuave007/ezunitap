@@ -221,6 +221,8 @@
     "serviceImgAdded": "Foto agregada al servicio",
     "choosePhoto": "Elegir foto",
     "galleryAddBtn": "Agregar fotos",
+    "igLabel": "Link de Instagram (opcional)",
+    "igHint": "Pega un perfil público de Instagram. La IA leerá la bio/descripción pública como contexto extra al generar el contenido. Las fotos siguen viniendo de tus subidas o de stock.",
     "done": "Listo",
     "teamPhotoTitle": "Fotos de ‘Sobre nosotros’ (hasta 4)",
     "teamPhotoDesc": "Elige hasta 4 fotos para el collage de About. Los espacios vacíos se rellenan con fotos de stock.",

@@ -3981,6 +3981,7 @@ class WebsiteIn(BaseModel):
     about_photo_ids: Optional[list] = None       # up to 4 photos for the About collage
     why_photo_id: Optional[str] = None          # image shown alongside the "Why choose us" section
     band_photo_id: Optional[str] = None         # background image for the mid-page CTA band
+    instagram_url: Optional[str] = None          # public Instagram link (shown on site + used for AI content)
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -4033,7 +4034,7 @@ async def _get_or_init_website(user_id: str) -> dict:
 @api_router.get("/website")
 async def get_website(user_id: str = Depends(get_current_user_id)):
     w = await _get_or_init_website(user_id)
-    for k in ("team_photo_id", "why_photo_id", "band_photo_id"):
+    for k in ("team_photo_id", "why_photo_id", "band_photo_id", "instagram_url"):
         w.setdefault(k, "")
     w.setdefault("about_photo_ids", [])
     w["public_path"] = f"/sitio/{w['slug']}"
@@ -4059,6 +4060,34 @@ async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_
     return w
 
 
+async def _fetch_instagram_context(url: str) -> str:
+    """Best-effort: fetch a PUBLIC Instagram profile's meta text (bio/description)
+    to feed the AI as context. Returns "" on any failure (login walls, blocks)."""
+    if not url:
+        return ""
+    try:
+        import re as _re
+        import httpx
+        handle = url.strip().rstrip("/").split("/")[-1].split("?")[0].lstrip("@")
+        if not handle:
+            return ""
+        target = f"https://www.instagram.com/{handle}/"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36", "Accept-Language": "en-US,en;q=0.9"}
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            r = await client.get(target, headers=headers)
+        html = r.text or ""
+        bits = []
+        for pat in [r'<meta property="og:description" content="([^"]+)"', r'<meta name="description" content="([^"]+)"', r'<title>([^<]+)</title>']:
+            m = _re.search(pat, html)
+            if m:
+                bits.append(m.group(1).strip())
+        text = " | ".join(dict.fromkeys([b for b in bits if b]))[:1500]
+        return f"Instagram (@{handle}): {text}" if text else ""
+    except Exception as e:
+        logger.warning(f"instagram context fetch failed: {e!r}")
+        return ""
+
+
 @api_router.post("/website/ai-generate")
 async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Generate SEO-rich website content (headline, about, how-it-works, why-us,
@@ -4072,6 +4101,8 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     services = w.get("services") if w.get("services") else (card.get("services") or [])
     service_area = w.get("service_area") or card.get("service_area") or ""
     reviews = await db.reviews.find({"user_id": user_id}, {"_id": 0, "text": 1, "comment": 1, "rating": 1}).sort("created_at", -1).to_list(5)
+    ig_context = await _fetch_instagram_context(w.get("instagram_url") or "")
+    combined_context = " ".join([c for c in [card.get("ai_context") or "", ig_context] if c]).strip()
     try:
         content = await ai_service.generate_website_content(
             business_name=business_name,
@@ -4084,7 +4115,7 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
             is_licensed=bool(card.get("is_licensed")),
             is_insured=bool(card.get("is_insured")),
             hours=w.get("hours") or card.get("hours") or "",
-            ai_context=card.get("ai_context") or "",
+            ai_context=combined_context,
             reviews=reviews,
         )
     except Exception as e:
@@ -4267,7 +4298,7 @@ async def _website_payload(w):
         "is_insured": bool(card.get("is_insured")),
         "whatsapp": card.get("whatsapp") or "",
         "facebook": card.get("facebook") or "",
-        "instagram": card.get("instagram") or "",
+        "instagram": w.get("instagram_url") or card.get("instagram") or "",
     }
     return {
         "website": w,

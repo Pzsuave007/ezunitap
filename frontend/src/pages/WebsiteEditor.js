@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram } from "lucide-react";
 import { toast } from "sonner";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
@@ -305,8 +305,14 @@ export default function WebsiteEditor() {
           <div className="min-w-0 flex-1">
             <div className="font-bold text-lg">{t("website.aiTitle")}</div>
             <p className="text-sm text-white/85 mt-0.5">{t("website.aiDesc")}</p>
+            <div className="mt-4 mb-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-white/90 mb-1.5"><Instagram className="w-4 h-4" /> {t("website.igLabel")}</div>
+              <input value={w.instagram_url || ""} onChange={(e) => patch({ instagram_url: e.target.value })} onBlur={() => save(pick(w))} placeholder="https://instagram.com/negocio" data-testid="website-instagram-url"
+                className="w-full h-11 px-4 rounded-xl bg-white/15 border border-white/30 text-white placeholder-white/50 outline-none focus:bg-white/20 text-sm" />
+              <p className="text-[11px] text-white/70 mt-1">{t("website.igHint")}</p>
+            </div>
             <Button onClick={generate} disabled={generating} data-testid="website-ai-generate"
-              className="mt-4 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto">
+              className="mt-1 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto">
               {generating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.aiWorking")}</> : <><Sparkles className="w-4 h-4 mr-2" /> {t("website.aiBtn")}</>}
             </Button>
             <div className="mt-3 pt-3 border-t border-white/20">
@@ -876,8 +882,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url };
 }
 
 function DnsRow({ label, value, onCopy }) {
