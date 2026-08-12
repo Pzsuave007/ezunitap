@@ -315,7 +315,7 @@ Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
 {
   "headline": "punchy hero headline, 4-9 words, includes trade + city if known",
   "subheadline": "1-2 sentence value proposition, benefit-driven and specific to this business",
-  "about": "3-5 sentence 'About' story that builds real trust: who they are, experience, what they specialize in (from the knowledge base), why customers choose them, and their commitment to quality. Specific, warm, human — not generic filler.",
+  "about": "5-7 sentence 'About' story that builds real trust: who they are, years/experience, their specialties and typical projects (from the knowledge base), materials/brands they trust, guarantees, why customers choose them. Specific, warm, human — never generic filler.",
   "how_it_works": [
     {"title": "step title (2-4 words)", "desc": "1 concrete sentence describing what happens in this step for THIS trade"}
   ],
@@ -326,7 +326,7 @@ Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
     {"q": "a real question this trade's customers ask", "a": "clear, reassuring, specific answer (1-3 sentences) grounded in the knowledge base"}
   ],
   "services": [
-    {"name": "service name", "description": "1-2 vivid sentences describing this specific service and its value"}
+    {"name": "service name", "description": "2-3 vivid, specific sentences describing this service, what's included, materials/process, and its value to the customer"}
   ],
   "areas": ["City or neighborhood 1", "City 2", "City 3", "City 4", "City 5", "City 6"],
   "seo_title": "SEO page title, ~55-60 chars, trade + city + brand",

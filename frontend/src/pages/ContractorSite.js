@@ -8,6 +8,33 @@ const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}`
 
 // ---- Trade-aware professional stock fallbacks (verified URLs) --------------
 const STOCK = {
+  concrete: {
+    hero: "https://images.unsplash.com/photo-1695327057610-3821e847601d?ixlib=rb-4.1.0&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1685464196343-c377192f9387?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1669170930713-f7c778496177?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1685464196332-ed9c9da28d9a?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1695327057610-3821e847601d?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  fence: {
+    hero: "https://images.unsplash.com/photo-1604015641586-6fa03629f976?ixlib=rb-4.1.0&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1508263073532-98ed924de82d?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1604015641586-6fa03629f976?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1583805978118-ba9a81ac1399?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1530328881134-8c525cc57036?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  towing: {
+    hero: "https://images.unsplash.com/photo-1730514784243-f0e7f09c9f50?ixlib=rb-4.1.0&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1730514784243-f0e7f09c9f50?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1730514785075-b065c757b653?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1601508836900-ee2aa7840a7b?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1616728827388-84563c099b29?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
   bold: {
     hero: "https://images.unsplash.com/photo-1633759593085-1eaeb724fc88?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHw0fHxyb29maW5nJTIwY29udHJhY3RvcnxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85&w=1600",
     imgs: [
@@ -89,6 +116,9 @@ function stockFor(businessType = "") {
   if (/(paint|drywall|stucco|coating)/.test(s)) return STOCK.painting;
   if (/(clean|maid|janitor|housekeep|pressure ?wash|window wash)/.test(s)) return STOCK.cleaning;
   if (/(landscap|lawn|garden|tree|irrigation|nursery|sod)/.test(s)) return STOCK.warm;
+  if (/(concret|cement|foundation|slab|driveway|paver|mason|stucco|patio)/.test(s)) return STOCK.concrete;
+  if (/(fenc|gate|railing)/.test(s)) return STOCK.fence;
+  if (/(tow|roadside|wrecker|junk|haul)/.test(s)) return STOCK.towing;
   if (/(roof|hvac|concret|constru|remodel|excav|demol|paver|deck|fenc|tow|mason|gutter)/.test(s)) return STOCK.bold;
   if (/(handyman|appliance|repair|install)/.test(s)) return STOCK.clean;
   return STOCK.bold;
