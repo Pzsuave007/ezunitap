@@ -26,3 +26,8 @@
 - **Fix de rendimiento (causa raíz del load lento):** las fotos se servían en tamaño/formato original (una foto = 2.6MB PNG, 3.3s). Ahora `GET /api/public/card/photo/{id}` reconvierte a **WebP** y **redimensiona al vuelo** (`?w=`), con caché en memoria y cabecera `Cache-Control: immutable` (1 año). Frontend pide tamaños exactos por sección + **lazy-load** debajo del pliegue. Reducción ~87–98% (2.6MB → 42–212KB).
   - Nota: el ingress de **preview** fuerza `no-store` (no cachea entre visitas); en **producción (Apache propio)** sí se respeta `immutable`.
 - **Verificado:** testing_agent (autorizado por el dueño esta vez) — 100% frontend, backend 5/6 (1 sugerencia menor aplicada). Sin regresiones.
+
+## Jun 2026 — Fix: fotos de galería "en todos lados" + selectores más limpios
+- **Bug:** al elegir fotos de galería, aparecían en About/Feature/banda/servicios. Causa: los respaldos usaban `data.photos` (galería). **Fix (`ContractorSite.js`):** cada sección usa SOLO su foto asignada o **stock** (`pool`, `teamImg`, `whyImg`, `bandImg`, `_collage` ya no usan fotos de galería). La galería queda solo en su sección.
+- **Editor (`WebsiteEditor.js`):** `PhotoField` rediseñado — muestra SOLO la foto en uso + botón "Elegir/Cambiar" que abre el chooser (carpeta o subir). Hero ahora usa `PhotoField`. Galería: grid de todas las fotos oculto tras botón "Agregar fotos". Ya no se ven todas las fotos de la cuenta en cada sección.
+- Nuevas claves i18n: choosePhoto, galleryAddBtn, done. Verificado con navegador headless (0 fotos de usuario filtradas en About/banda; editor sin grid por defecto). Footer del bloque anterior queda intacto.

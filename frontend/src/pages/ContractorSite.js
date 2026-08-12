@@ -236,19 +236,19 @@ export default function ContractorSite({ injected }) {
   const stock = stockFor(b.business_type);
   const realPhotos = (data.photos || []).map((p) => photoUrl(p.id, 1000));
   const heroImg = photoUrl(w.hero_photo_id, 1600) || realPhotos[0] || stock.hero;
-  const pool = [...realPhotos, ...stock.imgs];
+  const pool = [...stock.imgs];
   const poolAt = (i) => pool[i % pool.length] || stock.hero;
   const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
   const _rawServices = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
   const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id, 800) || null }));
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
-  const teamImg = photoUrl(w.team_photo_id, 700) || realPhotos[0] || stock.imgs[0] || stock.hero;
-  const whyImg = photoUrl(w.why_photo_id, 900) || realPhotos[1] || stock.imgs[1] || stock.hero;
-  const bandImg = photoUrl(w.band_photo_id, 1600) || heroImg || stock.hero;
+  const teamImg = photoUrl(w.team_photo_id, 700) || stock.imgs[0] || stock.hero;
+  const whyImg = photoUrl(w.why_photo_id, 900) || stock.imgs[1] || stock.hero;
+  const bandImg = photoUrl(w.band_photo_id, 1600) || stock.hero;
   const whyImgOn = !!photoUrl(w.why_photo_id);
   const bandImgOn = !!photoUrl(w.band_photo_id);
-  const _collage = [photoUrl(w.team_photo_id, 600), ...(data.photos || []).map((p) => photoUrl(p.id, 600)), ...stock.imgs, stock.hero].filter(Boolean);
+  const _collage = [photoUrl(w.team_photo_id, 600), ...stock.imgs, stock.hero].filter(Boolean);
   const aboutImgs = [0, 1, 2, 3].map((i) => _collage[i % _collage.length]);
 
   const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };

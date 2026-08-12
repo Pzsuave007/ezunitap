@@ -47,6 +47,7 @@ export default function WebsiteEditor() {
   const [domainBusy, setDomainBusy] = useState(false);
   const [domainMsg, setDomainMsg] = useState("");
   const [baTarget, setBaTarget] = useState(null);
+  const [galPicking, setGalPicking] = useState(false);
   const [tab, setTab] = useState("publish");
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
@@ -420,24 +421,7 @@ export default function WebsiteEditor() {
 
       {/* Hero photo */}
       {tab === "media" && (<>
-      <Card className="card-elevated border-0 shadow-none p-5">
-        <div className="font-semibold mb-1 flex items-center gap-2"><ImagePlus className="w-4 h-4" /> {t("website.heroPhoto")}</div>
-        <p className="text-sm text-slate-500 mb-3">{t("website.heroPhotoDesc")}</p>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadHero} data-testid="website-hero-upload-input" />
-        <div className="flex flex-wrap gap-3">
-          <button onClick={() => fileRef.current?.click()} disabled={uploading} data-testid="website-hero-upload"
-            className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-xs mt-1">{t("website.upload")}</span></>}
-          </button>
-          {photos.slice(0, 11).map((p) => (
-            <button key={p.id} onClick={() => save({ hero_photo_id: p.id })} data-testid={`website-hero-pick-${p.id}`}
-              className={`w-24 h-24 rounded-xl overflow-hidden border-2 flex-none transition-all ${w.hero_photo_id === p.id ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
-              <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-        {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
-      </Card>
+      <PhotoField label={t("website.heroPhoto")} desc={t("website.heroPhotoDesc")} value={w.hero_photo_id} photos={photos} onPick={(id) => save({ hero_photo_id: id })} onUpload={(f) => uploadField("hero_photo_id", f)} onRemove={() => save({ hero_photo_id: "" })} testid="hero" t={t} />
 
       <PhotoField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} value={w.team_photo_id} photos={photos} onPick={(id) => save({ team_photo_id: id })} onUpload={(f) => uploadField("team_photo_id", f)} onRemove={() => save({ team_photo_id: "" })} testid="team" t={t} />
       <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
@@ -464,21 +448,29 @@ export default function WebsiteEditor() {
             ))}
           </div>
         )}
-        {/* Picker: all photos */}
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t("website.galleryAdd")}</div>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={() => galFileRef.current?.click()} disabled={galUploading} data-testid="website-gallery-upload"
-            className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
-            {galUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
-          </button>
-          {photos.map((p) => (
-            <button key={p.id} onClick={() => toggleGallery(p.id)} data-testid={`website-gallery-pick-${p.id}`}
-              className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${inGallery(p.id) ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
-              <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
-              {inGallery(p.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
-            </button>
-          ))}
-        </div>
+        {/* Picker: choose from folder or upload — hidden until requested */}
+        <Button variant="outline" onClick={() => setGalPicking((v) => !v)} className="rounded-xl" data-testid="website-gallery-add-toggle">
+          <Plus className="w-4 h-4 mr-1" /> {galPicking ? t("website.done") : t("website.galleryAddBtn")}
+        </Button>
+        {galPicking && (
+          <div className="mt-3 p-3 rounded-xl bg-slate-50">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t("website.galleryAdd")}</div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => galFileRef.current?.click()} disabled={galUploading} data-testid="website-gallery-upload"
+                className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+                {galUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+              </button>
+              {photos.map((p) => (
+                <button key={p.id} onClick={() => toggleGallery(p.id)} data-testid={`website-gallery-pick-${p.id}`}
+                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${inGallery(p.id) ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+                  <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+                  {inGallery(p.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
+                </button>
+              ))}
+            </div>
+            {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
+          </div>
+        )}
         <p className="text-xs text-slate-400 mt-3">{t("website.galleryHint")}</p>
       </Card>
 
@@ -775,10 +767,11 @@ export default function WebsiteEditor() {
 function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, testid, t }) {
   const ref = useRef(null);
   const [busy, setBusy] = useState(false);
+  const [choosing, setChoosing] = useState(false);
   const up = async (f) => {
     if (!f) return;
     setBusy(true);
-    try { await onUpload(f); } catch { toast.error(t("website.saveError")); }
+    try { await onUpload(f); setChoosing(false); } catch { toast.error(t("website.saveError")); }
     finally { setBusy(false); if (ref.current) ref.current.value = ""; }
   };
   return (
@@ -786,19 +779,36 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
       <div className="font-semibold mb-1 flex items-center gap-2"><ImagePlus className="w-4 h-4" /> {label}</div>
       <p className="text-sm text-slate-500 mb-3">{desc}</p>
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => up(e.target.files?.[0])} data-testid={`website-${testid}-upload-input`} />
-      <div className="flex flex-wrap gap-3">
-        <button onClick={() => ref.current?.click()} disabled={busy} data-testid={`website-${testid}-upload`}
-          className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
-          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
-        </button>
-        {photos.slice(0, 11).map((p) => (
-          <button key={p.id} onClick={() => onPick(p.id)} data-testid={`website-${testid}-pick-${p.id}`}
-            className={`w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${value === p.id ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
-            <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
-          </button>
-        ))}
+
+      <div className="flex items-center gap-3">
+        {value
+          ? <img src={photoSrc(value)} alt="" className="w-24 h-24 rounded-xl object-cover flex-none border border-slate-200" data-testid={`website-${testid}-current`} />
+          : <div className="w-24 h-24 rounded-xl bg-slate-100 flex items-center justify-center text-slate-300 flex-none"><ImagePlus className="w-7 h-7" /></div>}
+        <div className="flex flex-col items-start gap-2">
+          <Button variant="outline" onClick={() => setChoosing((v) => !v)} className="rounded-xl h-10" data-testid={`website-${testid}-choose`}>
+            {value ? t("website.changePhoto") : t("website.choosePhoto")}
+          </Button>
+          {value && <button onClick={onRemove} className="text-xs text-slate-400" data-testid={`website-${testid}-remove`}>{t("website.removePhoto")}</button>}
+        </div>
       </div>
-      {value && <button onClick={onRemove} className="text-xs text-slate-400 mt-2" data-testid={`website-${testid}-remove`}>{t("website.removePhoto")}</button>}
+
+      {choosing && (
+        <div className="mt-4 p-3 rounded-xl bg-slate-50" data-testid={`website-${testid}-chooser`}>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => ref.current?.click()} disabled={busy} data-testid={`website-${testid}-upload`}
+              className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+              {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+            </button>
+            {photos.map((p) => (
+              <button key={p.id} onClick={() => { onPick(p.id); setChoosing(false); }} data-testid={`website-${testid}-pick-${p.id}`}
+                className={`w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${value === p.id ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+                <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+          {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
+        </div>
+      )}
     </Card>
   );
 }
