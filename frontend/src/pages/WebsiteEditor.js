@@ -305,6 +305,11 @@ export default function WebsiteEditor() {
           <div className="min-w-0 flex-1">
             <div className="font-bold text-lg">{t("website.aiTitle")}</div>
             <p className="text-sm text-white/85 mt-0.5">{t("website.aiDesc")}</p>
+            <div className="mb-3">
+              <div className="text-xs font-semibold text-white/90 mb-1.5">{t("website.briefLabel")}</div>
+              <textarea value={w.ai_brief || ""} onChange={(e) => patch({ ai_brief: e.target.value })} onBlur={() => save(pick(w))} placeholder={t("website.briefPh")} data-testid="website-ai-brief"
+                className="w-full min-h-[110px] p-4 rounded-xl bg-white/15 border border-white/30 text-white placeholder-white/50 outline-none focus:bg-white/20 text-sm" />
+            </div>
             <div className="mt-4 mb-1">
               <div className="flex items-center gap-2 text-xs font-semibold text-white/90 mb-1.5"><Instagram className="w-4 h-4" /> {t("website.igLabel")}</div>
               <input value={w.instagram_url || ""} onChange={(e) => patch({ instagram_url: e.target.value })} onBlur={() => save(pick(w))} placeholder="https://instagram.com/negocio" data-testid="website-instagram-url"
@@ -882,8 +887,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief };
 }
 
 function DnsRow({ label, value, onCopy }) {

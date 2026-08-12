@@ -3982,6 +3982,7 @@ class WebsiteIn(BaseModel):
     why_photo_id: Optional[str] = None          # image shown alongside the "Why choose us" section
     band_photo_id: Optional[str] = None         # background image for the mid-page CTA band
     instagram_url: Optional[str] = None          # public Instagram link (shown on site + used for AI content)
+    ai_brief: Optional[str] = None               # free-text description of the business/job → feeds AI content
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -4034,7 +4035,7 @@ async def _get_or_init_website(user_id: str) -> dict:
 @api_router.get("/website")
 async def get_website(user_id: str = Depends(get_current_user_id)):
     w = await _get_or_init_website(user_id)
-    for k in ("team_photo_id", "why_photo_id", "band_photo_id", "instagram_url"):
+    for k in ("team_photo_id", "why_photo_id", "band_photo_id", "instagram_url", "ai_brief"):
         w.setdefault(k, "")
     w.setdefault("about_photo_ids", [])
     w["public_path"] = f"/sitio/{w['slug']}"
@@ -4102,7 +4103,7 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     service_area = w.get("service_area") or card.get("service_area") or ""
     reviews = await db.reviews.find({"user_id": user_id}, {"_id": 0, "text": 1, "comment": 1, "rating": 1}).sort("created_at", -1).to_list(5)
     ig_context = await _fetch_instagram_context(w.get("instagram_url") or "")
-    combined_context = " ".join([c for c in [card.get("ai_context") or "", ig_context] if c]).strip()
+    combined_context = " ".join([c for c in [w.get("ai_brief") or "", card.get("ai_context") or "", ig_context] if c]).strip()
     try:
         content = await ai_service.generate_website_content(
             business_name=business_name,

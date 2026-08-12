@@ -222,6 +222,8 @@
     "choosePhoto": "Elegir foto",
     "galleryAddBtn": "Agregar fotos",
     "igLabel": "Link de Instagram (opcional)",
+    "briefLabel": "Describe el negocio (entre más detalle, mejor)",
+    "briefPh": "ej. Somos una empresa familiar de concreto con 12 años en Dallas. Nos especializamos en driveways estampados, patios y cimientos, usamos mezcla reforzada con fibra, damos garantía de 5 años y cuidamos dejar el sitio limpio y a tiempo.",
     "igHint": "Pega un perfil público de Instagram. La IA leerá la bio/descripción pública como contexto extra al generar el contenido. Las fotos siguen viniendo de tus subidas o de stock.",
     "done": "Listo",
     "teamPhotoTitle": "Fotos de ‘Sobre nosotros’ (hasta 4)",

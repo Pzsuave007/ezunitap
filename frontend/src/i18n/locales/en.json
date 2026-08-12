@@ -221,6 +221,8 @@
     "choosePhoto": "Choose photo",
     "galleryAddBtn": "Add photos",
     "igLabel": "Instagram link (optional)",
+    "briefLabel": "Describe the business (the more detail, the better)",
+    "briefPh": "e.g. We're a family concrete company with 12 years experience in Dallas. We specialize in stamped driveways, patios and foundations, use fiber-reinforced mix, offer a 5-year warranty, and pride ourselves on clean job sites and on-time finishes.",
     "igHint": "Paste a public Instagram profile. The AI will read the public bio/description as extra context when you generate content. Photos still come from your uploads or stock.",
     "done": "Done",
     "teamPhotoTitle": "About photos (up to 4)",
