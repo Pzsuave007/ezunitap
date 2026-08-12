@@ -35,12 +35,62 @@ const STOCK = {
       "https://images.unsplash.com/photo-1503789146722-cf137a3c0fea?ixlib=rb-4.1.0&q=85&w=900",
     ],
   },
+  plumbing: {
+    hero: "https://images.unsplash.com/photo-1748442001865-5583ec02ae22?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1676210134188-4c05dd172f89?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1676210133055-eab6ef033ce3?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1676210134190-3f2c0d5cf58d?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1581783898377-1c85bf937427?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  hvac: {
+    hero: "https://images.unsplash.com/photo-1601993198415-19d86ae28424?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1642749776312-aa42ce20c9f5?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1698479603408-1a66a6d9e80f?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1660330589827-da8ab7dd3c02?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  electrical: {
+    hero: "https://images.unsplash.com/photo-1758101755915-462eddc23f57?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1660330589693-99889d60181e?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1558227691-41ea78d1f631?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  painting: {
+    hero: "https://images.unsplash.com/photo-1688372198189-de6a51777a81?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1693985120993-e9b203ce7631?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1688372199140-cade7ae820fe?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
+  cleaning: {
+    hero: "https://images.unsplash.com/photo-1647381518264-97ff1835026f?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
+    imgs: [
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1713110824336-f78c320dcf8e?ixlib=rb-4.1.0&q=85&w=900",
+      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?ixlib=rb-4.1.0&q=85&w=900",
+    ],
+  },
 };
 function stockFor(businessType = "") {
   const s = (businessType || "").toLowerCase();
-  if (/(roof|hvac|concret|constru|remodel|excav|demol|paver|deck|fenc|tow)/.test(s)) return STOCK.bold;
-  if (/(landscap|lawn|garden|clean|maid|janitor|paint|tree|pressure)/.test(s)) return STOCK.warm;
-  if (/(plumb|electric|handyman|drain|appliance|repair)/.test(s)) return STOCK.clean;
+  if (/(plumb|drain|sewer|water heater|pipe|leak)/.test(s)) return STOCK.plumbing;
+  if (/(hvac|air ?condition|\bac\b|heating|cooling|furnace|ventilation)/.test(s)) return STOCK.hvac;
+  if (/(electric|wiring|panel|lighting|solar)/.test(s)) return STOCK.electrical;
+  if (/(paint|drywall|stucco|coating)/.test(s)) return STOCK.painting;
+  if (/(clean|maid|janitor|housekeep|pressure ?wash|window wash)/.test(s)) return STOCK.cleaning;
+  if (/(landscap|lawn|garden|tree|irrigation|nursery|sod)/.test(s)) return STOCK.warm;
+  if (/(roof|hvac|concret|constru|remodel|excav|demol|paver|deck|fenc|tow|mason|gutter)/.test(s)) return STOCK.bold;
+  if (/(handyman|appliance|repair|install)/.test(s)) return STOCK.clean;
   return STOCK.bold;
 }
 

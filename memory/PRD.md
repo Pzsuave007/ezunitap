@@ -15,6 +15,15 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## 🖼️ Jun 2026 — IA de Stock por oficio mejorada (central, 10 templates) [COMPLETO; self-test, SIN testing_agent]
+- **Petición dueño**: fotos de stock más específicas al oficio para secciones sin foto (+ imágenes por sección — esto último pendiente, ver abajo).
+- **Fix** (`ContractorSite.js` `stockFor` + `STOCK`): antes eran 3 buckets genéricos. Ahora hay buckets curados por oficio (plumbing, hvac, electrical, painting, cleaning, + bold=roofing/construction, warm=landscaping, clean=handyman), con imágenes Unsplash reales por oficio (obtenidas con image_selector). `stockFor` enruta por regex del business_type a su set. Es CENTRAL → los 10 templates muestran fotos relevantes al oficio en hero/secciones/galería sin foto propia. Verificado: compila, sitio renderiza sin errores.
+- ⚠️ DESPLIEGUE: solo frontend (build).
+
+### 🔜 PENDIENTE (grande) — Subir/elegir imagen POR SLOT
+- Falta: 1 foto por servicio, foto de equipo/dueño, foto por cada paso de How-it-works, fondos de sección — elegibles/subibles desde el editor. Complejidad: cada uno de los 10 templates pinta servicios/pasos con markup propio (10 lugares distintos, sin componente compartido) → requiere schema nuevo + UI por slot en editor + wiring en los 10. Hacer en turno dedicado.
+
+
 ## 🌐 Jun 2026 — Botón de idioma ESPAÑOL para visitantes del sitio [COMPLETO; self-test curl+Playwright, SIN testing_agent]
 - **Petición dueño**: un switch para que los visitantes vean el sitio en español.
 - **Backend** (`ai_service.py` `translate_website_content` + `WEBSITE_TRANSLATE_SYSTEM`; `server.py` `POST /website/translate-es`): traduce el contenido del sitio (headline, subheadline, about, how_it_works, why_us, faqs, services, seo) a español latino natural con IA y lo guarda en `website.content_es` + `lang_toggle=True`. Los nombres de ciudades/negocio no se traducen. El payload público ya incluye `content_es`/`lang_toggle` (devuelve el doc completo).
