@@ -13,3 +13,16 @@
 - **Tracking A/B propio**: sesiones etiquetadas `corto` vs `flujo`; panel `/admin/demo` con toggle de variante.
 - **i18n por link**: `?lang=es` / `?lang=en` fuerzan idioma.
 - Verificado: curl (anon start, contact capture, founder $29 checkout Stripe) + screenshots (intro sin gate, factura con banner, final con oferta+captura).
+
+
+## Jun 2026 — Website Builder: imágenes por sección + optimización de carga
+- **Nuevas secciones visuales (todas las 10 plantillas, componentes compartidos y theme-aware en `ContractorSite.js`):**
+  - `AboutBlock`: collage 2x2 (foto de equipo + galería + stock) + historia + badges + CTA. Se muestra si hay texto de About.
+  - `FeatureBlock`: imagen al lado de un checklist de beneficios + botón "Get Started Today". Reemplaza el grid clásico de "Why" cuando está activo (sin duplicación).
+  - `CtaBand`: banner full-bleed con imagen de fondo + overlay + botón "Call Now".
+  - Todas se muestran **por defecto con stock del oficio** para que el sitio se vea completo (vendible); el dueño/cliente puede subir sus fotos luego.
+- **Editor (`WebsiteEditor.js`):** pestaña "Photos" con 3 selectores nuevos (`team_photo_id`, `why_photo_id`, `band_photo_id`) vía componente `PhotoField`. Pestaña "Sections" con toggles `feature` y `band`.
+- **Backend (`server.py`):** `WebsiteIn` + `_WEBSITE_DEFAULT_SECTIONS` + GET /website con los 3 campos nuevos (default "").
+- **Fix de rendimiento (causa raíz del load lento):** las fotos se servían en tamaño/formato original (una foto = 2.6MB PNG, 3.3s). Ahora `GET /api/public/card/photo/{id}` reconvierte a **WebP** y **redimensiona al vuelo** (`?w=`), con caché en memoria y cabecera `Cache-Control: immutable` (1 año). Frontend pide tamaños exactos por sección + **lazy-load** debajo del pliegue. Reducción ~87–98% (2.6MB → 42–212KB).
+  - Nota: el ingress de **preview** fuerza `no-store` (no cachea entre visitas); en **producción (Apache propio)** sí se respeta `immutable`.
+- **Verificado:** testing_agent (autorizado por el dueño esta vez) — 100% frontend, backend 5/6 (1 sugerencia menor aplicada). Sin regresiones.

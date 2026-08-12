@@ -9,7 +9,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://all-in-one-web-15.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-website-pro-8.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = "pzsuave007@gmail.com"
 ADMIN_PASSWORD = "Uni2mkt007!"
 
@@ -220,7 +220,7 @@ def test_08_delete_non_primary_and_block_primary(admin_session, state):
 def test_09_checkout_num_cards_2(admin_session):
     payload = {
         "plan_id": "pro_monthly",
-        "origin_url": "https://all-in-one-web-15.preview.emergentagent.com",
+        "origin_url": "https://ai-website-pro-8.preview.emergentagent.com",
         "num_cards": 2,
     }
     r = admin_session.post(f"{BASE_URL}/api/payments/checkout", json=payload, timeout=45)
@@ -234,7 +234,7 @@ def test_09_checkout_num_cards_2(admin_session):
 def test_10_checkout_num_cards_1(admin_session):
     payload = {
         "plan_id": "pro_monthly",
-        "origin_url": "https://all-in-one-web-15.preview.emergentagent.com",
+        "origin_url": "https://ai-website-pro-8.preview.emergentagent.com",
         "num_cards": 1,
     }
     r = admin_session.post(f"{BASE_URL}/api/payments/checkout", json=payload, timeout=45)

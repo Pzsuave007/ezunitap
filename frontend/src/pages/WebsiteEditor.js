@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "gallery", "reviews", "how", "why", "faq", "areas", "about"];
+const SECTION_KEYS = ["services", "about", "feature", "gallery", "reviews", "how", "why", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["publish", "design", "content", "services", "media", "forms", "sections"];
 // Curated color palettes per template — one tap for a pro look.
@@ -126,6 +126,16 @@ export default function WebsiteEditor() {
     } catch {
       toast.error(t("website.aiError"));
     }
+  };
+
+  const uploadField = async (field, file) => {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    const { data } = await api.post("/photos?label=website", fd, { headers: { "Content-Type": "multipart/form-data" } });
+    setPhotos((prev) => [data, ...prev]);
+    await save({ [field]: data.id });
+    toast.success(t("website.photoAdded"));
   };
 
   const uploadHero = async (e) => {
@@ -428,6 +438,10 @@ export default function WebsiteEditor() {
         </div>
         {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
       </Card>
+
+      <PhotoField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} value={w.team_photo_id} photos={photos} onPick={(id) => save({ team_photo_id: id })} onUpload={(f) => uploadField("team_photo_id", f)} onRemove={() => save({ team_photo_id: "" })} testid="team" t={t} />
+      <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
+      <PhotoField label={t("website.bandPhotoTitle")} desc={t("website.bandPhotoDesc")} value={w.band_photo_id} photos={photos} onPick={(id) => save({ band_photo_id: id })} onUpload={(f) => uploadField("band_photo_id", f)} onRemove={() => save({ band_photo_id: "" })} testid="band" t={t} />
 
       {/* Gallery editor (Recent Work) */}
       <Card className="card-elevated border-0 shadow-none p-5">
@@ -758,9 +772,40 @@ export default function WebsiteEditor() {
   );
 }
 
+function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, testid, t }) {
+  const ref = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const up = async (f) => {
+    if (!f) return;
+    setBusy(true);
+    try { await onUpload(f); } catch { toast.error(t("website.saveError")); }
+    finally { setBusy(false); if (ref.current) ref.current.value = ""; }
+  };
+  return (
+    <Card className="card-elevated border-0 shadow-none p-5">
+      <div className="font-semibold mb-1 flex items-center gap-2"><ImagePlus className="w-4 h-4" /> {label}</div>
+      <p className="text-sm text-slate-500 mb-3">{desc}</p>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => up(e.target.files?.[0])} data-testid={`website-${testid}-upload-input`} />
+      <div className="flex flex-wrap gap-3">
+        <button onClick={() => ref.current?.click()} disabled={busy} data-testid={`website-${testid}-upload`}
+          className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+        </button>
+        {photos.slice(0, 11).map((p) => (
+          <button key={p.id} onClick={() => onPick(p.id)} data-testid={`website-${testid}-pick-${p.id}`}
+            className={`w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${value === p.id ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+            <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+          </button>
+        ))}
+      </div>
+      {value && <button onClick={onRemove} className="text-xs text-slate-400 mt-2" data-testid={`website-${testid}-remove`}>{t("website.removePhoto")}</button>}
+    </Card>
+  );
+}
+
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, why_photo_id, band_photo_id } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, why_photo_id, band_photo_id };
 }
 
 function DnsRow({ label, value, onCopy }) {

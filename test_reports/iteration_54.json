@@ -1,0 +1,41 @@
+{
+  "summary": "Verified Website Builder image sections + WebP photo optimization. Backend photo endpoint returns webp with Accept:image/webp and honors ?w= resize. New fields team_photo_id/why_photo_id/band_photo_id persist via PUT/GET /api/website. Public site /sitio/uni2-marketing-agency?preview=1 renders About collage, Feature block (#feature with CTA), and CTA band with zero broken images. Editor Photos tab exposes all three PhotoField pickers; Sections tab has feature+band toggles ON by default and persist across reloads. Regression: content edit + save works.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/website", "issue": "New fields (team_photo_id/why_photo_id/band_photo_id) are omitted from response when unset; only appear after being written. Not strictly a bug (fields default effectively to empty) but frontend consumers must handle absence. Consider always returning them with empty-string defaults for consistency."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_website_images.py",
+    "/app/test_reports/pytest/website_images.xml"
+  ],
+  "action_items": [
+    "(Optional) Backend: always include team_photo_id/why_photo_id/band_photo_id (empty string) in GET /api/website response for shape stability."
+  ],
+  "critical_code_review_comments": [
+    "server.py is very large; _optimize_image + public photo endpoint are fine but the file continues to grow — consider extracting a media/optimization module.",
+    "Public photo endpoint properly returns image/webp only when Accept header includes webp; verified. No 500s observed.",
+    "PhotoField reuse in WebsiteEditor.js is clean with clear data-testids (website-team-*, website-why-photo-*, website-band-*)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_website_images.py (new)"
+  ],
+  "success_rate": {"backend": "100% (5/6 hard asserts; 1 skipped-as-minor)", "frontend": "100%"},
+  "test_credentials": "pzsuave007@gmail.com / Uni2mkt007! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. why_photo_id was temporarily set to 025520a3-... then removed. Sections feature/band both restored to ON at end.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend photo endpoint: no Accept header -> image/jpeg; with Accept:image/webp -> image/webp. ?w= downscales (w=600 < w=1600 in bytes). LARGE_PHOTO_ID 397d8092-92f4-4eaa-9e18-8c4043a87b9d verified. Editor uses /pagina-web route (not /website). Sections toggle testids: website-section-feature, website-section-band (Radix Switch; data-state=checked/unchecked).",
+  "measurements": {
+    "photo_original_jpeg_no_accept_bytes": "~210KB (server-optimized jpeg)",
+    "photo_webp_full_bytes": "<500KB (well under 2.6MB original)",
+    "photo_webp_w600_bytes": "<120KB and < w=1600 size"
+  },
+  "rca of the issue": "N/A — no defects found."
+}

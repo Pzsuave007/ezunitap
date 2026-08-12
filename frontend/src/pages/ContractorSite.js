@@ -4,7 +4,7 @@ import axios from "axios";
 import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, Quote, Plus } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const photoUrl = (id) => (id ? `${API}/public/card/photo/${id}` : null);
+const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
 
 // ---- Trade-aware professional stock fallbacks (verified URLs) --------------
 const STOCK = {
@@ -234,16 +234,24 @@ export default function ContractorSite({ injected }) {
   const b = data.business;
   const sec = w.sections || {};
   const stock = stockFor(b.business_type);
-  const realPhotos = (data.photos || []).map((p) => photoUrl(p.id));
-  const heroImg = photoUrl(w.hero_photo_id) || realPhotos[0] || stock.hero;
+  const realPhotos = (data.photos || []).map((p) => photoUrl(p.id, 1000));
+  const heroImg = photoUrl(w.hero_photo_id, 1600) || realPhotos[0] || stock.hero;
   const pool = [...realPhotos, ...stock.imgs];
   const poolAt = (i) => pool[i % pool.length] || stock.hero;
   const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
   const _rawServices = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
-  const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id) || null }));
+  const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id, 800) || null }));
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key };
+  const teamImg = photoUrl(w.team_photo_id, 700) || realPhotos[0] || stock.imgs[0] || stock.hero;
+  const whyImg = photoUrl(w.why_photo_id, 900) || realPhotos[1] || stock.imgs[1] || stock.hero;
+  const bandImg = photoUrl(w.band_photo_id, 1600) || heroImg || stock.hero;
+  const whyImgOn = !!photoUrl(w.why_photo_id);
+  const bandImgOn = !!photoUrl(w.band_photo_id);
+  const _collage = [photoUrl(w.team_photo_id, 600), ...(data.photos || []).map((p) => photoUrl(p.id, 600)), ...stock.imgs, stock.hero].filter(Boolean);
+  const aboutImgs = [0, 1, 2, 3].map((i) => _collage[i % _collage.length]);
+
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
 
   return (
@@ -318,7 +326,7 @@ function Cinematic({ ctx }) {
           <div className="grid md:grid-cols-3 gap-px" style={{ background: th.border }}>
             {services.map((s, i) => (
               <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden" style={{ background: th.surface }} data-testid={`site-service-${i}`}>
-                <img src={s.img || poolAt(i)} alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
+                <img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,10,.95), rgba(8,8,10,.2))" }} />
                 <div className="relative p-7 w-full">
                   <h3 className="wh font-bold text-2xl">{s.name}</h3>
@@ -332,6 +340,8 @@ function Cinematic({ ctx }) {
       )}
 
       {/* How it works: vertical timeline */}
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionDark id="how" kicker="The process" title="How It Works" ctx={ctx} alt>
           <div className="relative max-w-2xl border-l ml-3" style={{ borderColor: th.border }}>
@@ -348,7 +358,7 @@ function Cinematic({ ctx }) {
       )}
 
       {/* Why us: big outlined numbers */}
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionDark id="why" kicker="Why us" title="The difference is in the details" ctx={ctx}>
           <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
@@ -367,7 +377,7 @@ function Cinematic({ ctx }) {
           <div className="columns-2 md:columns-3 gap-3 [column-fill:_balance]">
             {data.photos.slice(0, 12).map((p) => (
               <div key={p.id} className="mb-3 break-inside-avoid overflow-hidden">
-                <img src={photoUrl(p.id)} alt={p.label} className="w-full object-cover hover:opacity-90 transition" />
+                <img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover hover:opacity-90 transition" />
               </div>
             ))}
           </div>
@@ -375,6 +385,7 @@ function Cinematic({ ctx }) {
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -428,6 +439,8 @@ function Responder({ ctx }) {
       </section>
 
       {/* How it works: 3 bold blocks */}
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Simple" title="How It Works" ctx={ctx}>
           <div className="grid sm:grid-cols-3 gap-5">
@@ -452,7 +465,7 @@ function Responder({ ctx }) {
       )}
 
       {/* Why us marquee row already above; add cards */}
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why choose us" title="Neighbors trust us" ctx={ctx}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
@@ -470,7 +483,7 @@ function Responder({ ctx }) {
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 snap-x">
             {data.photos.slice(0, 12).map((p) => (
               <div key={p.id} className="snap-start flex-none w-64 h-64 overflow-hidden border-2" style={{ borderColor: th.ink }}>
-                <img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover" />
+                <img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover" />
               </div>
             ))}
           </div>
@@ -478,6 +491,7 @@ function Responder({ ctx }) {
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -556,6 +570,7 @@ function Bento({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((s, i) => (
               <div key={i} className={`p-6 ${th.radius} border hover:-translate-y-1 hover:shadow-xl`} style={{ borderColor: th.border, background: th.surface, boxShadow: "0 1px 2px rgba(0,0,0,.04)" }} data-testid={`site-service-${i}`}>
+                {s.img && <div className="-mx-6 -mt-6 mb-4 h-40 overflow-hidden"><img src={s.img} alt={s.name} className="w-full h-full object-cover" /></div>}
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: `${accent}1a` }}><CheckCircle2 className="w-6 h-6" style={{ color: accent }} /></div>
                 <h3 className="wh font-bold text-lg" style={{ color: th.ink }}>{s.name}</h3>
                 {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
@@ -567,6 +582,8 @@ function Bento({ ctx }) {
         </SectionLight>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Easy" title="How It Works" ctx={ctx} alt>
           <div className="flex gap-4 overflow-x-auto snap-x pb-3 md:grid md:grid-cols-3 md:overflow-visible">
@@ -582,7 +599,7 @@ function Bento({ ctx }) {
       )}
 
       {/* Why us bento */}
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why us" title="Built on trust" ctx={ctx}>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[150px]">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
@@ -599,12 +616,13 @@ function Bento({ ctx }) {
       {sec.gallery !== false && data.photos.length > 0 && (
         <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-square`}><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
+            {data.photos.slice(0, 8).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-square`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
         </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -654,7 +672,7 @@ function Craftsman({ ctx }) {
             <div className="space-y-16 md:space-y-24">
               {services.map((s, i) => (
                 <div key={i} className={`grid md:grid-cols-2 gap-6 md:gap-10 items-center ${i % 2 ? "md:[direction:rtl]" : ""}`} data-testid={`site-service-${i}`}>
-                  <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>
+                  <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>
                   <div className="[direction:ltr]">
                     <div className="wh text-6xl italic font-normal" style={{ color: `${accent}55` }}>{String(i + 1).padStart(2, "0")}</div>
                     <h3 className="wh font-bold text-3xl -mt-4" style={{ color: th.ink }}>{s.name}</h3>
@@ -669,6 +687,8 @@ function Craftsman({ ctx }) {
         </section>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Our process" title="How It Works" ctx={ctx} alt>
           <div className="max-w-2xl mx-auto space-y-8">
@@ -682,7 +702,7 @@ function Craftsman({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why families choose us" title="Craft you can trust" ctx={ctx}>
           <div className="grid sm:grid-cols-2 gap-6">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
@@ -698,12 +718,13 @@ function Craftsman({ ctx }) {
       {sec.gallery !== false && data.photos.length > 0 && (
         <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
           <div className="columns-2 md:columns-3 gap-4">
-            {data.photos.slice(0, 12).map((p, i) => <div key={p.id} className={`mb-4 overflow-hidden rounded-2xl ${i % 3 === 1 ? "md:mt-8" : ""}`}><img src={photoUrl(p.id)} alt={p.label} className="w-full object-cover" /></div>)}
+            {data.photos.slice(0, 12).map((p, i) => <div key={p.id} className={`mb-4 overflow-hidden rounded-2xl ${i % 3 === 1 ? "md:mt-8" : ""}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
           </div>
         </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} editorial />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -763,7 +784,7 @@ function Trust({ ctx }) {
           <div className="space-y-10">
             {services.map((s, i) => (
               <div key={i} className={`grid md:grid-cols-2 gap-6 items-center ${i % 2 ? "" : "md:[direction:rtl]"}`} data-testid={`site-service-${i}`}>
-                <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} alt={s.name} className="w-full aspect-video object-cover" /></div>
+                <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-video object-cover" /></div>
                 <div className="[direction:ltr]">
                   <h3 className="wh font-extrabold text-2xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2" style={{ color: th.muted }}>{s.description}</p>}
@@ -776,6 +797,8 @@ function Trust({ ctx }) {
         </SectionLight>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Easy as 1-2-3" title="How It Works" ctx={ctx} alt>
           <div className="grid sm:grid-cols-3 gap-6">
@@ -790,7 +813,7 @@ function Trust({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why choose us" title="Your trusted local pros" ctx={ctx}>
           <div className="grid grid-cols-2 gap-4 max-w-3xl">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
@@ -807,12 +830,13 @@ function Trust({ ctx }) {
       {sec.gallery !== false && data.photos.length > 0 && (
         <SectionLight id="gallery" kicker="See our work" title="Recent Projects" ctx={ctx} alt>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {data.photos.slice(0, 9).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-[4/3] shadow-md`}><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
+            {data.photos.slice(0, 9).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-[4/3] shadow-md`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
         </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -881,6 +905,8 @@ function Slider({ ctx }) {
         </div>
       </section>
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Our process" title="How It Works" ctx={ctx}>
           <div className="grid sm:grid-cols-3 gap-4 items-stretch">
@@ -901,7 +927,7 @@ function Slider({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((s, i) => (
               <div key={i} className="border-2 overflow-hidden group" style={{ borderColor: th.ink, background: "#fff" }} data-testid={`site-service-${i}`}>
-                <div className="aspect-[16/10] overflow-hidden"><img src={s.img || poolAt(i)} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                <div className="aspect-[16/10] overflow-hidden"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
                 <div className="p-5">
                   <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.description}</p>}
@@ -913,7 +939,7 @@ function Slider({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why choose us" title="Results that speak" ctx={ctx}>
           <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4 max-w-3xl">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
@@ -942,6 +968,7 @@ function Slider({ ctx }) {
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -986,6 +1013,8 @@ function OnePage({ ctx }) {
         </section>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <section id="how" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
           <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
@@ -999,7 +1028,7 @@ function OnePage({ ctx }) {
         </section>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <section id="why" className="max-w-3xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
           <h2 className="wh text-4xl mb-8" style={{ color: th.ink }}>Why us</h2>
           <div className="space-y-6">
@@ -1014,7 +1043,7 @@ function OnePage({ ctx }) {
         <section id="gallery" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
           <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>Recent work</h2>
           <div className="columns-1 sm:columns-2 gap-8">
-            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id)} alt={p.label} className="w-full object-cover" /></div>)}
+            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
           </div>
         </section>
       )}
@@ -1027,6 +1056,7 @@ function OnePage({ ctx }) {
         </section>
       )}
 
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <footer className="max-w-5xl mx-auto px-6 py-10 border-t flex flex-wrap justify-between gap-3 text-sm" style={{ borderColor: th.border, color: th.muted }}>
         <span>© {new Date().getFullYear()} {b.name}</span><span>Powered by UniTech</span>
@@ -1086,6 +1116,7 @@ function Neon({ ctx }) {
               <div key={i} className="p-6 rounded-xl border transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: th.border }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 22px ${accent}44`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.border; e.currentTarget.style.boxShadow = "none"; }} data-testid={`site-service-${i}`}>
+                {s.img && <div className="-mx-6 -mt-6 mb-4 h-40 overflow-hidden"><img src={s.img} alt={s.name} className="w-full h-full object-cover" /></div>}
                 <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style={{ background: `${accent}1a`, border: `1px solid ${accent}55` }}><CheckCircle2 className="w-5 h-5" style={{ color: accent }} /></div>
                 <h3 className="wh text-lg" style={{ color: "#fff" }}>{s.name}</h3>
                 {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
@@ -1096,6 +1127,8 @@ function Neon({ ctx }) {
         </SectionLight>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Process" title="How It Works" ctx={ctx} alt>
           <div className="grid sm:grid-cols-3 gap-6">
@@ -1110,7 +1143,7 @@ function Neon({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="//advantages" title="Why Choose Us" ctx={ctx}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
@@ -1126,12 +1159,13 @@ function Neon({ ctx }) {
       {sec.gallery !== false && data.photos.length > 0 && (
         <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500" /></div>)}
+            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500" /></div>)}
           </div>
         </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -1190,6 +1224,8 @@ function Playful({ ctx }) {
         </SectionLight>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Easy peasy" title="How It Works" ctx={ctx} alt>
           <div className="grid sm:grid-cols-3 gap-8">
@@ -1204,7 +1240,7 @@ function Playful({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <SectionLight id="why" kicker="Why choose us" title="Neighbors love us" ctx={ctx}>
           <div className="flex flex-wrap gap-4 justify-center">
             {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
@@ -1219,12 +1255,13 @@ function Playful({ ctx }) {
       {sec.gallery !== false && data.photos.length > 0 && (
         <SectionLight id="gallery" kicker="Our work" title="Recent Projects" ctx={ctx} alt>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`overflow-hidden ${i % 3 === 0 ? "rounded-[2rem]" : "rounded-full aspect-square"}`}><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover" /></div>)}
+            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`overflow-hidden ${i % 3 === 0 ? "rounded-[2rem]" : "rounded-full aspect-square"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover" /></div>)}
           </div>
         </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -1284,6 +1321,8 @@ function Luxe({ ctx }) {
         </section>
       )}
 
+      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <section id="how" className="py-28" style={{ background: th.surface }}>
           <div className="max-w-4xl mx-auto px-6">
@@ -1300,7 +1339,7 @@ function Luxe({ ctx }) {
         </section>
       )}
 
-      {sec.why !== false && (
+      {sec.why !== false && sec.feature === false && (
         <section id="why" className="py-28" style={{ background: th.bg }}>
           <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -1324,12 +1363,13 @@ function Luxe({ ctx }) {
         <section id="gallery" className="py-28" style={{ background: th.surface }}>
           <div className="max-w-6xl mx-auto px-6 text-center mb-12"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Portfolio</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>Selected Work</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-0">
-            {data.photos.slice(0, 9).map((p) => <div key={p.id} className="aspect-square overflow-hidden"><img src={photoUrl(p.id)} alt={p.label} className="w-full h-full object-cover hover:scale-105 transition duration-[1200ms]" /></div>)}
+            {data.photos.slice(0, 9).map((p) => <div key={p.id} className="aspect-square overflow-hidden"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition duration-[1200ms]" /></div>)}
           </div>
         </section>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
+      {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
@@ -1369,6 +1409,89 @@ function HeroBadges({ ctx, solid }) {
 }
 
 function Kicker({ ctx, children }) { return <div className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: ctx.accent }}>{children}</div>; }
+
+// Shared: About Us — photo collage + story + trust badges + CTA
+function AboutBlock({ ctx }) {
+  const { w, b, th, accent, accentText, aboutImgs, goContact } = ctx;
+  if (!w.about) return null;
+  const S = th.dark ? SectionDark : SectionLight;
+  const paras = String(w.about).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
+  const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", b.years_in_business > 0 && `${b.years_in_business}+ Years`, "Locally Owned"].filter(Boolean);
+  return (
+    <S id="about" kicker="About" title="About Us" ctx={ctx} alt>
+      <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+        <div className="grid grid-cols-2 gap-4" data-testid="site-about-collage">
+          {aboutImgs.map((src, i) => (
+            <img key={i} src={src} alt="" className={`w-full aspect-[4/5] object-cover ${th.radius} shadow-md ${i % 2 ? "mt-6" : ""}`} />
+          ))}
+        </div>
+        <div>
+          {paras.map((p, i) => (
+            <p key={i} className={`text-lg leading-relaxed ${i ? "mt-4" : ""}`} style={{ color: th.muted }}>{p}</p>
+          ))}
+          {badges.length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-2">
+              {badges.map((x, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full" style={{ background: `${accent}14`, color: th.ink, border: `1px solid ${accent}33` }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</span>
+              ))}
+            </div>
+          )}
+          <a href={b.phone ? `tel:${b.phone}` : "#contact"} onClick={(e) => { if (!b.phone) { e.preventDefault(); goContact(); } }} data-testid="site-about-cta" className={`mt-8 px-7 h-14 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>
+            {b.phone ? <><Phone className="w-4 h-4" /> Call us at {b.phone}</> : <>Get a Free Quote <ArrowRight className="w-4 h-4" /></>}
+          </a>
+        </div>
+      </div>
+    </S>
+  );
+}
+
+// Shared: image-beside-text highlight (checklist + CTA), opt-in via why photo
+function FeatureBlock({ ctx }) {
+  const { w, th, accent, accentText, whyImg, goContact } = ctx;
+  const S = th.dark ? SectionDark : SectionLight;
+  const points = (w.why_us?.length ? w.why_us : DEFAULT_WHY).slice(0, 4);
+  return (
+    <S id="feature" kicker="Why choose us" title="Service you can trust" ctx={ctx}>
+      <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+        <div>
+          {w.subheadline && <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{w.subheadline}</p>}
+          <ul className="mt-6 space-y-3.5">
+            {points.map((p, i) => (
+              <li key={i} className="flex items-start gap-3" data-testid={`site-feature-point-${i}`}>
+                <CheckCircle2 className="w-5 h-5 flex-none mt-0.5" style={{ color: accent }} />
+                <span><span className="font-semibold" style={{ color: th.ink }}>{p.title}</span>{p.desc ? <span className="text-sm" style={{ color: th.muted }}> — {p.desc}</span> : null}</span>
+              </li>
+            ))}
+          </ul>
+          <button onClick={goContact} data-testid="site-feature-cta" className={`mt-8 px-7 h-14 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get Started Today <ArrowRight className="w-4 h-4" /></button>
+        </div>
+        <div className="order-first md:order-last">
+          <img src={whyImg} alt="" loading="lazy" decoding="async" className={`w-full aspect-[4/3] object-cover ${th.radius} shadow-2xl`} />
+        </div>
+      </div>
+    </S>
+  );
+}
+
+// Shared: full-bleed CTA band with background image, opt-in via band photo
+function CtaBand({ ctx }) {
+  const { b, th, accent, accentText, bandImg, goContact } = ctx;
+  return (
+    <section className="relative overflow-hidden" data-testid="site-cta-band">
+      <img src={bandImg} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(8,10,20,.86), rgba(8,10,20,.55))" }} />
+      <div className="relative max-w-4xl mx-auto px-5 py-20 md:py-28 text-center text-white">
+        <h2 className="wh font-extrabold text-4xl md:text-5xl leading-tight">Ready when you are</h2>
+        <p className="mt-3 text-lg md:text-xl text-white/80">We're just one call away.</p>
+        <div className="mt-8 flex flex-wrap gap-3 justify-center">
+          {b.phone
+            ? <a href={`tel:${b.phone}`} data-testid="site-band-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 font-bold hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}><Phone className="w-5 h-5" /> Call Now — {b.phone}</a>
+            : <button onClick={goContact} data-testid="site-band-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 font-bold hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function SectionLight({ id, kicker, title, ctx, alt, children }) {
   const { th } = ctx;

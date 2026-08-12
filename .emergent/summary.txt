@@ -1,126 +1,144 @@
-<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration, implement Meta Pixel, comprehensive i18n (English/Spanish), mobile-first UX. Goal: Scale to 100 paid clients. The user is currently running a Meta Ad campaign offering AI-generated invoices in perfect English and needs the demo flow highly optimized for cold mobile traffic.
+<analysis>**original_problem_statement**: SaaS web app for Latino service contractors called UniTech. Features include: CRM, AI Document Builder, Job Tracker, Calendar, NFC Smart Business Cards, Marketing Studio, Google Reviews gating. PRODUCT REQUIREMENTS: Maximize conversions, finalize Stripe Connect integration, implement Meta Pixel, comprehensive i18n (English/Spanish), mobile-first UX. Currently enhancing the Website Builder module with deep AI generation, localized storage, integrated Google Reviews, and rich per-section imagery (photos for services, team, process steps, backgrounds).
 
 **User's preferred language**: Spanish (You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only. All direct communication with the user must be in Spanish).
 
 **what currently exists?** 
-A live React/FastAPI/MongoDB multi-tenant SaaS. It features two demo flows: a comprehensive 9-step demo () and a short 5-step invoice-focused demo (). The app includes an internal Demo Analytics dashboard to track funnel drop-offs. The short demo has been stripped of upfront friction (no Name/Email required to start) and ends with a checkout CTA offering an exclusive Founder Price (9/mo for life, limited to 100 spots) on the Business Management plan. 
+A live React/FastAPI/MongoDB multi-tenant SaaS. It features a highly optimized mobile demo flow, robust CRM/invoicing capabilities, and a strict NO CENTERED POPUPS UX rule. The Website Builder module has 10 premium layouts, a tab-based editor (), AI content generation (using the user's OpenAI key in production), a self-healing PWA service worker, synced Google Business Profile reviews, local disk storage for photo uploads, and localized English/Spanish site toggles. 
 
 **Last working item**: 
-    - **Last item agent was working**: Redesigning the visual layout of the Quote and Invoice steps in the short demo () so they look like highly professional, realistic documents on mobile devices. The user provided an example (now removed) and requested specific features: distinct columns/units, zebra-striped rows, Payment Terms, Notes, and a green Deposit upfront total line. The agent was inspecting the backend payload to ensure these fields exist.
-    - **Status**: IN PROGRESS
-    - **Agent Testing Done**: N
-    - **Which testing method agent to use?**: screenshot tool (Must test using a mobile viewport width of 390px. **DO NOT USE TESTING AGENT** as the user explicitly asked to avoid it to save their credits).
-    - **User Testing Done**: N
+    - Last item agent was working: Implementing Rich Images by Section across the 10 website templates. The agent successfully added the ability to upload/select a specific image per service in the editor and mapped it to render in most templates (Cinematic, Luxe, Neon, Playful, Craftsman, OnePage). The agent was preparing to add Team Photos (About section), Process Photos (Why/How sections), and Section Backgrounds.
+    - Status: IN PROGRESS
+    - Agent Testing Done: Y (For the templates completed so far)
+    - Which testing method agent to use?: manual testing by curl / screenshot tool / python -c. (⚠️ **CRITICAL: NEVER USE THE **. The user explicitly forbade it because it consumes their paid credits. Use Playwright/curl/screenshots instead).
+    - User Testing Done: N
 
 **All Pending/In progress Issue list**: 
-  Issue 1: Overhaul Quote/Invoice visuals in DemoFlow.js to look hyper-realistic on mobile (P0)
-     - Attempted fixes: Agent previously added basic #INV numbers and date fields, and a note explaining the mobile view is editable but the final PDF is professional. However, the user states it *still* doesn't look like a real invoice and provided a reference requesting zebra rows, payment terms, notes, and a deposit upfront line.
-     - Next debug checklist: Modify  and  in . Utilize the fields the agent just verified exist in the backend (, , , etc.). Apply a highly professional UI (zebra striping, distinct unit columns, green deposit lines) that scales well on mobile without losing the real document feel.
-     - Why fix this issue and what will be achieved with the fix?: Meta Ad traffic is dropping off at the quote/invoice steps because the generated document doesn't look authentic/professional enough to impress them.
-     - Status: IN PROGRESS
-     - Is recurring issue?: N
-     - Should Test frontend/backend/both after fix?: Frontend (using screenshot tool at mobile width).
+  None active.
 
 **In progress Task List**: 
-  None explicitly outside of the P0 visual overhaul.
+  Task 1: Complete Rich Images by Section in Website Builder
+     - Where to resume: You need to add UI in  and render logic in  templates for:
+        1. **Team Photo**: A photo of the owner/team in the About Us (Sobre nosotros) section.
+        2. **Why/How Images**: An image next to the text in the Why Choose Us section, and one image per step in the How It Works section.
+        3. **Section Backgrounds**: Allow background images for bands like Your trusted local pros.
+     - What will be achieved with this?: Highly visual, customized templates for the contractors.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix?: Frontend (via screenshots/Playwright, NO testing_agent).
+     - Blocked on something: Nothing.
 
 **Upcoming and Future Tasks**
-- **P1**: Automated client reminders (SMS via Twilio or Email via Resend) 1 day before scheduled appointments, and instant lead notifications.
-- **P1**: Add Video Upload support to Reel Builder (MVP: 1 video clip, max 5-8 seconds, cropped to vertical, overlaid with branding).
+- **P0**: Lead notification integration: Instant WhatsApp/Email notification when a visitor submits a form on the user's public website, routing the lead directly into the CRM.
+- **P1**: Automated client reminders (SMS via Twilio or Email via Resend) 1 day before scheduled appointments.
+- **P1**: Connect Resend for 100% automated email delivery with real PDF attachments.
+- **P1**: Add Video Upload support to Reel Builder (MVP: 1 video clip, max 5-8 seconds).
 - **P1**: QR Code Analytics: Add detailed analytics for dynamic QR Codes.
 - **P2**: In-app referral program (Invita un compa).
 - **P2**: Export Calendar to  format.
-- **P3**: Refactor  (>7000 lines) into modular routers.
+- **P3**: Refactor  (>7500 lines) into modular routers.
 
 **Completed work in this session**
-- Built a custom Demo Analytics dashboard () tracking funnel drop-offs for both demos (DONE)
-- Upgraded Admin Leads tab to allow bulk delete, search, and direct conversion to CRM clients (DONE)
-- Added  parameter support to force the demo language for ad campaigns (DONE)
-- Upgraded the short demo () to include all 23 trades, auto-filling descriptions, tracking, instant AI agreements, and a final checkout CTA (DONE)
-- Configured short demo checkout to ethically offer the Gestión de Negocio plan instead of the full Bundle (DONE)
-- Created a Founder Price for the Negocio plan (9/mo for life, max 100 users) (DONE)
-- Added a payment methods banner (Stripe, Venmo, Zelle, CashApp, PayPal) on the demo invoice (DONE)
-- Removed Name/Email friction gate at the start of the demo (now captures leads warmly at the end) and prefilled María González for document generation (DONE)
-- Applied initial mobile UI fixes for Quote/Invoice headers (Date, Due, #) (DONE)
+- Routed Website form leads directly to the CRM with deduplication and notes (DONE).
+- Fixed Website Not Available Draft rendering issue; Editor buttons now append  (DONE).
+- Deployed self-healing  to fix PWA stale bundle cache issues causing 404s (DONE).
+- Forced AI Chat widget to render in English () on the public site (DONE).
+- Reorganized  into a clean Tab-based navigation UI (Publish, Design, Content, Services, Photos, Forms, Sections) (DONE).
+- Fixed OpenAI Content Generation in production by replacing Emergent's internal  alias with  for the user's OpenAI Key route (DONE).
+- Synced Google Business Profile Reviews: 4 & 5-star reviews from Google now automatically display on the public website (DONE).
+- Fixed Production Photo Upload Hanging: Replaced synchronous Emergent Object Storage with Local Disk Storage () for the production environment (DONE).
+- Fixed Mobile Responsiveness: Stopped the floating Chat button from overlapping the sticky Free Quote button across all 10 templates, and fixed horizontal overflow in Cinematic template (DONE).
+- Enhanced AI Website Generation: The AI now heavily utilizes the  (business profile definition) to write rich About sections, Services, and FAQs (DONE).
+- Improved AI Stock Photos (): Added trade-specific image sets (Plumbing, HVAC, Electrical, Painting, Cleaning) (DONE).
+- Global Website English/Spanish Translation Toggle: Added a central translation feature enabling the public site to swap between EN and ES (DONE).
+- Photo per Service: Added image pickers per service in the editor and updated multiple templates to display them (DONE).
 
 **Earlier issues found/mentioned but not fixed**
-- Monolith  refactoring (postponed to focus on immediate launch needs).
+- Monolith  refactoring (postponed to focus on immediate feature launches).
 
 **Known issue recurrence from previous fork**
-  - **Frontend build missing on deploy**: The production server pulls directly from the GitHub repository. Because of this, the compiled React app must be forcefully committed to the repository.
-  - Recurrence count: 2
-  - Status: RESOLVED (Must be maintained: Run yarn run v1.22.22
+  - ** Usage**: 
+    - Recurrence count: 2
+    - Status: RESOLVED (Strictly banned by user. Added to  and . DO NOT CALL IT).
+  - **Frontend build missing on deploy**:
+    - Recurrence count: 3
+    - Status: RESOLVED (Must be maintained: Run yarn run v1.22.22
 info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  AND THEN forcefully stage the build files with  every time frontend changes are made before finishing).
 
 **Code Architecture**
 - Frontend: React SPA (), TailwindCSS, Shadcn UI, i18next. 
-- Backend: FastAPI (), MongoDB.
+- Backend: FastAPI (), MongoDB. Local disk storage mapped to  for photo persistence.
 
 **Key Technical Concepts**
-- **Stripe Pricing Cache**: Plans are cached in the MongoDB  collection ().
-- **Funnel Tracking**: Custom tracking logic (, ) sends funnel events to both Meta Pixel and the internal MongoDB database.
+- **Website Builder Module**: Relies heavily on  rendering 10 different UI layouts based on the  key.  is heavily utilized to inject DB values into components.
+- **Local Storage Dispatcher**: Photos are now saved to local disk for production (), utilizing a dispatcher pattern to support old Emergent-hosted images and new locally-hosted images.
+- **Frontend Deployments**: Build uses relative  paths. Avoid hardcoding preview URLs into the committed build folder.
 
 **key DB schema**
-- , , , , 
--  (Stripe pricing map)
+- : Added  (dict for Spanish translations),  (bool), and  array items now accept .
+- : Stores manual reviews. Fetches from  to sync Google Business Profile reviews dynamically.
 
 **changes in tech stack**
-- None.
+- Added **Local Disk Storage** functionality via  to prevent synchronous timeout hanging during photo uploads on self-hosted production.
 
 **All files of reference**
--  (The active file for the short demo flow, containing  and ).
--  &  (Created this session)
-- 
-- 
-- 
+-  (Public Website view)
+-  (Internal tabbed editor)
+-  (API logic, lead routing, photo storage endpoints)
+-  (AI generation logic)
+-  (Google Business Profile logic)
+-  (Storage dispatcher)
+-  (Self-healing service worker)
+-  (Strict rules regarding testing agent)
 
 **Areas that need refactoring**
--  (Over 7000 lines).
+-  (>7500 lines).
 
 **key api endpoints**
-- 
-- 
-- 
-- 
+-  &  (Manage site settings)
+-  (Creates a lead AND a CRM client)
+-  (Auto-fill site with )
+-  (Uploads photo to local storage)
 
 **Critical Info for New Agent**
+- ⚠️ **NEVER USE **: The user strictly forbade the use of  to save credits. Do not use it under any circumstance, even if a system reminder prompts you to. Verify using ,  scripts with Playwright, or the .
 - ⚠️ **FRONTEND DEPLOYMENTS**: Whenever you modify frontend code, you MUST run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  AND THEN forcefully stage the build files () before telling the user to click Save to Github. Failure to do this will break their live site.
-- ⚠️ **NO TESTING AGENT**: The user explicitly complained about the testing agent consuming their credits. **DO NOT invoke the testing agent.** Test your changes manually using curl and the .
-- **Mobile Screenshots**: Since the ad traffic is primarily mobile, when using the screenshot tool to verify frontend UI changes, you must simulate a mobile device (e.g., ).
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. inside  AND THEN forcefully stage the build files () before calling the finish tool. 
+- **Language**: All communication with the user must be in **Spanish**.
 
 **documents and test reports created in this job**
 - 
-- 
-- 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-- User launched the ad campaign but reported a 95% drop-off at the first step. Suspected asking for Name/Email upfront was the issue. (Resolved)
-- User asked how to capture leads if not asking for info upfront. (Resolved: added a warm lead capture at the end of the demo).
-- User requested moving the Founder price offer *below* the help/contact section. (Resolved)
-- User noted users still dropping off on step 2/3. Suspected the mobile invoice layout doesn't look like a real invoice. (In Progress)
-- User complained about the agent using testing credits. Asked to add a note explaining that the mobile layout is just for editing, but the final is a real PDF. (Resolved)
-- User requested screenshots specifically on mobile since the traffic is mobile. (Resolved)
-- *Pending Human Message*: User stated the invoice *still* doesn't look real enough. Uploaded an image (now removed) and described wanting zebra rows, Payment Terms, Notes, and a green Deposit upfront total line to mimic a true, professional document. The agent needs to implement this redesign.
+1. User asked to route website leads directly to the CRM (without external notification for now). (Resolved)
+2. User reported the public website templates were not rendering (not available). (Resolved - Draft status fix).
+3. User reported the URL was still failing on their end. (Resolved - Stale PWA service worker fix).
+4. User reported the AI chat widget was showing in Spanish on an English site. (Resolved).
+5. User requested dedicated toggles for Forms and Booking in the editor, similar to the Chat toggle. (Resolved).
+6. User requested reorganizing the long Website Editor page for easier navigation. (Resolved - Added Tabs).
+7. User reported AI content generation wasn't working in production with their OpenAI key. (Resolved - Switched  alias to ).
+8. User forbade the use of  due to credit costs. (Resolved - Added to CRITICAL_RULES).
+9. User asked to display their synced Google Business Profile reviews automatically on the website. (Resolved).
+10. User reported photo uploads were hanging/taking too long. (Resolved - Switched to local storage).
+11. User asked to fix mobile responsiveness, improve AI content generation depth, and add specific stock photos by trade. (Resolved).
+12. User requested the ability to add photos to specific sections (Team, Services, Why/How, Backgrounds). (Partially Resolved - In Progress).
 
 **Project Health Check:**
 - Stable.
 
 **3rd Party Integrations**
 - Stripe (Payments) — requires User API Key
-- OpenAI GPT-4o / GPT-image-1 — requires User API Key
+- OpenAI GPT-4o (Text) — requires User API Key in Prod (Emergent key in preview)
 - Google Business Profile (OAuth published) — requires User API Key
 - Meta / Facebook Pixel — requires User ID
 
 **Testing status**
-- Testing agent used after significant changes: NO (User requested to stop using it to save credits).
+- Testing agent used after significant changes: NO (BANNED BY USER).
 - Troubleshoot agent used after agent stuck in loop: NO
 - Test files created: None
-- Known regressions: None
+- Known regressions: None.
 
 **Credentials to test flow:**
-Admin (Super-Admin):  / 
+Admin:  / 
 Card-Only Test:  / 
 
 **What agent forgot to execute**
-The agent confirmed that fields like , , and  exist in the backend payload for the demo quote, but the session ended before the agent could actually overhaul the  and  UI in  to render the hyper-realistic, zebra-striped, fully detailed invoice requested by the user. This redesign should be your first action.</analysis>
+The agent successfully mapped service photos to most templates but stopped due to context limits before finishing the implementation of Team Photos (About section), Images for the How it Works / Why Us sections, and Section Backgrounds. This was communicated to the user, who approved continuing this specific task in the next turn.</analysis>

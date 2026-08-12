@@ -189,6 +189,8 @@
       "faq": "FAQ",
       "areas": "Areas We Serve",
       "about": "About us / hours / areas",
+      "feature": "Highlight (image + benefits)",
+      "band": "Call-to-action banner",
       "contact": "Contact + form",
       "booking": "Book appointment"
     },
@@ -215,7 +217,13 @@
     "addPhoto": "Add photo",
     "changePhoto": "Change photo",
     "removePhoto": "Remove",
-    "serviceImgAdded": "Photo added to service"
+    "serviceImgAdded": "Photo added to service",
+    "teamPhotoTitle": "Team / About photo",
+    "teamPhotoDesc": "Shown in the About section. Your gallery photos fill the rest of the collage.",
+    "whyPhotoTitle": "‘Why choose us’ image",
+    "whyPhotoDesc": "Adds an image-beside-text highlight section with a checklist and a button.",
+    "bandPhotoTitle": "Call-to-action banner",
+    "bandPhotoDesc": "Adds a full-width banner using this photo with a big call button."
   },
   "auth": {
     "login": {

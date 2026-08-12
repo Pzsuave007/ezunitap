@@ -3977,12 +3977,16 @@ class WebsiteIn(BaseModel):
     chat_launcher: Optional[str] = None        # optional chat button text
     chat_position: Optional[str] = None        # "right" | "left"
     before_after: Optional[list] = None        # [{before: photo_id, after: photo_id}] for the slider template
+    team_photo_id: Optional[str] = None         # owner/team photo shown in the About section
+    why_photo_id: Optional[str] = None          # image shown alongside the "Why choose us" section
+    band_photo_id: Optional[str] = None         # background image for the mid-page CTA band
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
     "services": True, "gallery": True, "reviews": True,
     "contact": True, "booking": False, "about": True,
     "how": True, "why": True, "faq": True, "areas": True,
+    "feature": True, "band": True,
 }
 
 
@@ -4028,6 +4032,8 @@ async def _get_or_init_website(user_id: str) -> dict:
 @api_router.get("/website")
 async def get_website(user_id: str = Depends(get_current_user_id)):
     w = await _get_or_init_website(user_id)
+    for k in ("team_photo_id", "why_photo_id", "band_photo_id"):
+        w.setdefault(k, "")
     w["public_path"] = f"/sitio/{w['slug']}"
     return w
 
@@ -4401,9 +4407,60 @@ async def public_website_lead(slug: str, payload: CardLeadIn):
 
 
 
+_IMG_CACHE = {}          # key -> (bytes, media_type)
+_IMG_CACHE_ORDER = []    # simple FIFO eviction
+_IMG_CACHE_MAX = 240
+
+
+def _optimize_image(data: bytes, ctype: str, photo_id: str, w: int, quality: int, want_webp: bool):
+    """Re-encode a stored image to a lighter WebP/JPEG, optionally down-scaling
+    to a max width `w`. Falls back to the original bytes on any error. Results
+    are cached in-process (photos are immutable, keyed by an unguessable UUID)."""
+    if not ctype.startswith("image/") or "svg" in ctype or "gif" in ctype:
+        return data, ctype
+    quality = max(40, min(quality, 95))
+    key = (photo_id, w, quality, want_webp)
+    hit = _IMG_CACHE.get(key)
+    if hit is not None:
+        return hit
+    try:
+        from io import BytesIO
+        from PIL import Image, ImageOps
+        im = Image.open(BytesIO(data))
+        im = ImageOps.exif_transpose(im)  # honor camera orientation
+        has_alpha = im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
+        if w and im.width > w:
+            ratio = w / float(im.width)
+            im = im.resize((w, max(1, int(im.height * ratio))), Image.LANCZOS)
+        out = BytesIO()
+        if want_webp:
+            im = im.convert("RGBA" if has_alpha else "RGB")
+            im.save(out, format="WEBP", quality=quality, method=4)
+            result = (out.getvalue(), "image/webp")
+        else:
+            im = im.convert("RGB")
+            im.save(out, format="JPEG", quality=quality, optimize=True, progressive=True)
+            result = (out.getvalue(), "image/jpeg")
+    except Exception:
+        return data, ctype
+    # Only keep the optimized version if it is actually smaller
+    if len(result[0]) >= len(data) and not w:
+        result = (data, ctype)
+    _IMG_CACHE[key] = result
+    _IMG_CACHE_ORDER.append(key)
+    if len(_IMG_CACHE_ORDER) > _IMG_CACHE_MAX:
+        old = _IMG_CACHE_ORDER.pop(0)
+        _IMG_CACHE.pop(old, None)
+    return result
+
+
 @api_router.get("/public/card/photo/{photo_id}")
-async def public_photo(photo_id: str):
-    """Public endpoint to serve photos referenced on a Smart Card."""
+async def public_photo(photo_id: str, request: Request, w: int = 0, q: int = 82):
+    """Public endpoint to serve photos referenced on a Smart Card.
+
+    Serves an optimized (WebP/JPEG, optionally down-scaled) version so pages
+    with many images stay lightweight. `w` caps the output width in px.
+    """
     doc = await db.photos.find_one({"id": photo_id, "is_deleted": False}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Not found")
@@ -4416,7 +4473,11 @@ async def public_photo(photo_id: str):
         data, ct = backend.get(doc["storage_path"])
     except Exception:
         raise HTTPException(500, "Storage error")
-    return Response(content=data, media_type=doc.get("content_type", ct))
+    ctype = doc.get("content_type", ct) or "application/octet-stream"
+    want_webp = "image/webp" in (request.headers.get("accept") or "")
+    out_data, out_type = _optimize_image(data, ctype, photo_id, int(w or 0), int(q or 82), want_webp)
+    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+    return Response(content=out_data, media_type=out_type, headers=headers)
 
 
 @api_router.get("/public/gmb-media/{photo_id}")
