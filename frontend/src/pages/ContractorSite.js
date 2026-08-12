@@ -1617,7 +1617,6 @@ function FooterBlock({ ctx }) {
   const bg = FOOTER_BG[key] || "#0F172A";
   const logo = photoUrl(b.logo_photo_id, 220);
   const about = (w.about ? String(w.about).split(/\n+/)[0] : "") || w.subheadline || `${b.name} — licensed & insured local service you can trust.`;
-  const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", "5-Star Rated"].filter(Boolean);
   const hours = w.hours || data.hours || "";
   const areas = (w.areas?.length ? w.areas : (data.service_area ? [data.service_area] : []));
   const nav = [
@@ -1646,13 +1645,8 @@ function FooterBlock({ ctx }) {
       {/* Info columns (SEO-rich) */}
       <div className="max-w-6xl mx-auto px-5 pt-14 mt-14 pb-12 relative grid md:grid-cols-3 gap-10 md:gap-12 border-t border-white/10">
         <div>
-          {logo ? <img src={logo} alt={b.name} className="h-11 w-auto object-contain" /> : <div className="wh font-bold text-2xl">{b.name}</div>}
-          <p className="mt-4 text-sm leading-relaxed text-white/55 max-w-xs">{about}</p>
-          {badges.length > 0 && (
-            <div className="mt-5 inline-flex flex-wrap items-center gap-x-2 px-3 py-2 rounded-md text-[11px] font-bold uppercase tracking-widest" style={{ background: `${accent}1f`, color: accent }}>
-              {badges.map((x, i) => <span key={i}>{i ? "• " : ""}{x}</span>)}
-            </div>
-          )}
+          {logo ? <img src={logo} alt={b.name} className="h-20 md:h-24 w-auto object-contain" /> : <div className="wh font-extrabold text-3xl md:text-4xl">{b.name}</div>}
+          <p className="mt-5 text-sm leading-relaxed text-white/55 max-w-sm line-clamp-3">{about}</p>
           {socials.length > 0 && (
             <div className="mt-5 flex gap-3">
               {socials.map(([Icon, href], i) => (
@@ -1675,7 +1669,6 @@ function FooterBlock({ ctx }) {
           <ul className="space-y-3">
             {nav.map(([l, href], i) => <li key={i}><a href={href} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">{l}</a></li>)}
             <li><button onClick={goContact} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">Request Quote</button></li>
-            <li><a href="/" className="text-white/35 hover:text-white/70 uppercase tracking-wide text-[12px] mt-2 inline-block">Owner Login</a></li>
           </ul>
         </div>
       </div>
