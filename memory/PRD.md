@@ -15,6 +15,28 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## 📋 PLAN LISTO PARA EJECUTAR — Imágenes por SLOT (servicio / equipo / fondos) [PENDIENTE — hacer en sesión fresca]
+Contexto: la sesión anterior quedó sin presupuesto de contexto para este build grande (toca los 10 templates). Plan exacto para ejecutar rápido:
+
+**A. Backend (`server.py`)**
+- Modelo `WebsiteIn`/PUT allow-list: agregar campos `team_photo_id: Optional[str]`, `section_bg: Optional[dict]` ({trusted: photoId, ...}). Las fotos por servicio van DENTRO de cada objeto service como `image_id` (los services ya se guardan en `website.services`).
+- No requiere endpoint nuevo (usa el `/photos` existente para subir y el PUT `/website`).
+
+**B. Editor (`WebsiteEditor.js`)**
+- Reusar el patrón de subida/selección ya existente (hero/gallery usan `api.post('/photos', fd)` + picker de la galería `data.photos`).
+- Tab Servicios: por cada service, botón "＋ Foto" que sube/elige y setea `service.image_id`.
+- Tab Fotos (o Contenido): pickers para `team_photo_id` y `section_bg.trusted`.
+
+**C. Público (`ContractorSite.js`) — CENTRAL + por template**
+- Central: en el ctx, mapear `services = services.map(s => ({...s, img: photoUrl(s.image_id) || poolAt(i)}))`; resolver `teamImg = photoUrl(w.team_photo_id)`; `bgTrusted = photoUrl(w.section_bg?.trusted) || stock`.
+- Los ~10 bloques `services.map` (líneas aprox 318 cinematic, 448 trust=accordion, 556 craftsman, 654 bento, 763 neon, 901 playful, 984 onepage=accordion, + responder/slider/luxe): agregar `<img src={s.img}>` en el tope de la tarjeta (para grids). Acordeones (trust/onepage): opcional thumbnail.
+- "About": si `teamImg`, mostrarla en la sección about de cada template.
+- Fondos ("Your trusted local pros"/CTA band): usar `bgTrusted` como background-image donde exista esa banda.
+- data-testids: `website-service-img-{i}`, `website-team-photo`, `site-service-img-{i}`.
+
+**D. Verificación**: curl PUT con service.image_id + Playwright a 390px y desktop en los 10 templates (self-test; NO testing_agent sin permiso).
+
+
 ## 🖼️ Jun 2026 — IA de Stock por oficio mejorada (central, 10 templates) [COMPLETO; self-test, SIN testing_agent]
 - **Petición dueño**: fotos de stock más específicas al oficio para secciones sin foto (+ imágenes por sección — esto último pendiente, ver abajo).
 - **Fix** (`ContractorSite.js` `stockFor` + `STOCK`): antes eran 3 buckets genéricos. Ahora hay buckets curados por oficio (plumbing, hvac, electrical, painting, cleaning, + bold=roofing/construction, warm=landscaping, clean=handyman), con imágenes Unsplash reales por oficio (obtenidas con image_selector). `stockFor` enruta por regex del business_type a su set. Es CENTRAL → los 10 templates muestran fotos relevantes al oficio en hero/secciones/galería sin foto propia. Verificado: compila, sitio renderiza sin errores.
