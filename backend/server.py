@@ -10,6 +10,7 @@ import base64
 import json
 import logging
 import os
+import random
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY is set)
+import pexels_service  # noqa: E402
 import storage_service  # noqa: E402
 import social_service  # noqa: E402
 import video_service  # noqa: E402
@@ -4088,6 +4090,139 @@ async def _fetch_instagram_context(url: str) -> str:
         logger.warning(f"instagram context fetch failed: {e!r}")
         return ""
 
+async def _is_stock_photo(pid: str) -> bool:
+    """True if this photo_id is a Pexels stock image WE auto-placed (safe to replace)."""
+    if not pid:
+        return False
+    doc = await db.photos.find_one({"id": pid}, {"_id": 0, "label": 1})
+    return bool(doc and doc.get("label") == "website_stock")
+
+
+async def _store_stock_url(user_id: str, url: str) -> Optional[str]:
+    """Download a Pexels URL and store it locally as a 'website_stock' photo. None on failure."""
+    try:
+        data, ct = await pexels_service.download_image(url)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("stock photo download failed: %r", e)
+        return None
+    ext = "png" if "png" in ct else ("webp" if "webp" in ct else "jpg")
+    try:
+        return await _store_card_photo(user_id, data, ct, "website_stock", ext)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("stock photo store failed: %r", e)
+        return None
+
+
+async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh: bool = False) -> dict:
+    """Auto-assign trade-relevant Pexels photos to EMPTY website image slots
+    (hero, About collage, Why, CTA band, and each service). NEVER overwrites a
+    photo the owner uploaded. When `refresh=True`, also replaces slots that
+    currently hold an auto-placed stock photo (so the owner can request different
+    ones). Saves directly to db.websites. Returns the dict of updated fields."""
+    business_type = (card.get("business_type") or "").strip()
+    pool = await pexels_service.fetch_trade_pool(business_type, count=14, refresh=refresh)
+    pi = 0
+
+    def _next_url():
+        nonlocal pi
+        if pi < len(pool):
+            u = pool[pi]
+            pi += 1
+            return u
+        return None
+
+    async def _should_fill(pid) -> bool:
+        if not pid:
+            return True
+        return refresh and await _is_stock_photo(pid)
+
+    to_delete = []  # old stock photos we replace
+    update: dict = {}
+
+    # Hero
+    if await _should_fill(w.get("hero_photo_id")):
+        u = _next_url()
+        if u:
+            nid = await _store_stock_url(user_id, u)
+            if nid:
+                if w.get("hero_photo_id"):
+                    to_delete.append(w["hero_photo_id"])
+                update["hero_photo_id"] = nid
+
+    # About collage (fill up to 3 if the whole slot is empty/stock)
+    about_ids = list(w.get("about_photo_ids") or ([] if not w.get("team_photo_id") else [w["team_photo_id"]]))
+    about_empty = len(about_ids) == 0
+    about_replaceable = about_empty or (refresh and all([await _is_stock_photo(x) for x in about_ids]))
+    if about_replaceable:
+        new_about = []
+        for _ in range(3):
+            u = _next_url()
+            if not u:
+                break
+            nid = await _store_stock_url(user_id, u)
+            if nid:
+                new_about.append(nid)
+        if new_about:
+            if refresh:
+                to_delete.extend([x for x in about_ids if await _is_stock_photo(x)])
+            update["about_photo_ids"] = new_about
+            update["team_photo_id"] = new_about[0]
+
+    # Why-us side image
+    if await _should_fill(w.get("why_photo_id")):
+        u = _next_url()
+        if u:
+            nid = await _store_stock_url(user_id, u)
+            if nid:
+                if w.get("why_photo_id"):
+                    to_delete.append(w["why_photo_id"])
+                update["why_photo_id"] = nid
+
+    # CTA band background
+    if await _should_fill(w.get("band_photo_id")):
+        u = _next_url()
+        if u:
+            nid = await _store_stock_url(user_id, u)
+            if nid:
+                if w.get("band_photo_id"):
+                    to_delete.append(w["band_photo_id"])
+                update["band_photo_id"] = nid
+
+    # Per-service images (own search per service name; cap 6)
+    services = [dict(s) if isinstance(s, dict) else {"name": str(s)} for s in (w.get("services") or [])]
+    svc_changed = False
+    filled_svc = 0
+    for s in services:
+        if filled_svc >= 6:
+            break
+        if not await _should_fill(s.get("image_id")):
+            continue
+        name = (s.get("name") or "").strip()
+        query = f"{name} {pexels_service.trade_query(business_type)}".strip() if name else pexels_service.trade_query(business_type)
+        urls = await pexels_service.search_photos(query, per_page=3, orientation="landscape",
+                                                  page=(random.randint(1, 2) if refresh else 1))
+        url = urls[0] if urls else _next_url()
+        if not url:
+            continue
+        nid = await _store_stock_url(user_id, url)
+        if nid:
+            if s.get("image_id") and await _is_stock_photo(s["image_id"]):
+                to_delete.append(s["image_id"])
+            s["image_id"] = nid
+            svc_changed = True
+            filled_svc += 1
+    if svc_changed:
+        update["services"] = services
+
+    if update:
+        update["updated_at"] = _now_iso()
+        await db.websites.update_one({"user_id": user_id}, {"$set": update})
+    if to_delete:
+        await db.photos.update_many({"id": {"$in": to_delete}}, {"$set": {"is_deleted": True}})
+    return update
+
+
+
 
 @api_router.post("/website/ai-generate")
 async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
@@ -4122,7 +4257,25 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     except Exception as e:
         logger.error(f"website ai-generate failed: {e!r}")
         raise HTTPException(502, "AI could not generate content. Try again in a moment.")
-    return content
+
+    # Auto-fill EMPTY image slots with trade-relevant Pexels stock photos (applied
+    # directly). Never overwrites the owner's own photos. If the site has no
+    # services yet, seed them from the AI output so each service also gets a photo.
+    photos = {}
+    try:
+        w_for_fill = dict(w)
+        if (not w.get("services")) and isinstance(content.get("services"), list) and content["services"]:
+            seeded = [{"name": s.get("name"), "description": s.get("description", "")}
+                      for s in content["services"] if isinstance(s, dict) and s.get("name")]
+            if seeded:
+                w_for_fill["services"] = seeded
+        photos = await _fill_website_stock_photos(user_id, w_for_fill, card, refresh=False)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("website stock photo autofill failed: %r", e)
+
+    result = dict(content)
+    result["photos"] = photos
+    return result
 
 
 @api_router.post("/website/translate-es")
@@ -4152,6 +4305,28 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
         raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
     await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "lang_toggle": True}})
     return {"ok": True, "content_es": content_es}
+
+
+@api_router.post("/website/stock-photos")
+async def website_stock_photos(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Fetch fresh trade-relevant Pexels stock photos and apply them to the
+    website's image slots. Fills empty slots and REPLACES previously auto-placed
+    stock photos (so the owner can request different ones), but NEVER overwrites a
+    photo the owner uploaded. Applied directly and returns the updated website."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    try:
+        update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"website stock-photos failed: {e!r}")
+        raise HTTPException(502, "Could not fetch stock photos. Try again in a moment.")
+    w2 = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    for k in ("team_photo_id", "why_photo_id", "band_photo_id", "instagram_url", "ai_brief"):
+        w2.setdefault(k, "")
+    w2.setdefault("about_photo_ids", [])
+    w2["public_path"] = f"/sitio/{w2['slug']}"
+    filled = len([k for k in update if k != "updated_at"])
+    return {"filled": filled, "website": w2}
 
 
 @api_router.post("/website/ai-suggest-design")

@@ -36,6 +36,7 @@ export default function WebsiteEditor() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [stocking, setStocking] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
@@ -87,6 +88,7 @@ export default function WebsiteEditor() {
     setGenerating(true);
     try {
       const { data } = await api.post("/website/ai-generate");
+      const ph = data.photos || {};
       patch({
         headline: data.headline || w.headline,
         subheadline: data.subheadline || w.subheadline,
@@ -97,12 +99,34 @@ export default function WebsiteEditor() {
         areas: Array.isArray(data.areas) ? data.areas : w.areas,
         seo_title: data.seo_title || w.seo_title,
         seo_description: data.seo_description || w.seo_description,
-        services: (Array.isArray(data.services) && data.services.length && (!w.services || w.services.length === 0)) ? data.services : w.services,
+        // Auto-placed stock photos (from backend) take priority; else AI-suggested services if the site had none.
+        services: (Array.isArray(ph.services) && ph.services.length)
+          ? ph.services
+          : ((Array.isArray(data.services) && data.services.length && (!w.services || w.services.length === 0)) ? data.services : w.services),
+        ...(ph.hero_photo_id ? { hero_photo_id: ph.hero_photo_id } : {}),
+        ...(ph.why_photo_id ? { why_photo_id: ph.why_photo_id } : {}),
+        ...(ph.band_photo_id ? { band_photo_id: ph.band_photo_id } : {}),
+        ...(Array.isArray(ph.about_photo_ids) ? { about_photo_ids: ph.about_photo_ids } : {}),
+        ...(ph.team_photo_id ? { team_photo_id: ph.team_photo_id } : {}),
       });
+      // Refresh the gallery so the new stock photos show up in the pickers.
+      api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
       toast.success(t("website.aiDone"));
     } catch (e) {
       toast.error(e?.response?.data?.detail || t("website.aiError"));
     } finally { setGenerating(false); }
+  };
+
+  const stockPhotos = async () => {
+    setStocking(true);
+    try {
+      const { data } = await api.post("/website/stock-photos");
+      if (data.website) setW(data.website);
+      api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
+      toast.success(data.filled ? t("website.stockDone") : t("website.stockNone"));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.stockError"));
+    } finally { setStocking(false); }
   };
 
   const translateEs = async () => {
@@ -320,6 +344,13 @@ export default function WebsiteEditor() {
               className="mt-1 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto">
               {generating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.aiWorking")}</> : <><Sparkles className="w-4 h-4 mr-2" /> {t("website.aiBtn")}</>}
             </Button>
+            <div className="mt-3">
+              <Button onClick={stockPhotos} disabled={stocking} variant="outline" data-testid="website-stock-photos"
+                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
+                {stocking ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.stockWorking")}</> : <><ImagePlus className="w-4 h-4 mr-2" /> {t("website.stockBtn")}</>}
+              </Button>
+              <p className="text-[11px] text-white/70 mt-1">{t("website.stockHint")}</p>
+            </div>
             <div className="mt-3 pt-3 border-t border-white/20">
               <p className="text-xs text-white/80 mb-2">{t("website.transDesc")}</p>
               <Button onClick={translateEs} disabled={translating} variant="outline" data-testid="website-translate-es"

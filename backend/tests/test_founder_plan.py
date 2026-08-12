@@ -3,7 +3,7 @@ import os
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-website-pro-8.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-ai-site.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 ADMIN_EMAIL = "pzsuave007@gmail.com"
@@ -48,7 +48,7 @@ def test_founder_status_shape():
 def test_founder_checkout_charges_5900_cents(auth_headers):
     payload = {
         "plan_id": "bundle_founder",
-        "origin_url": "https://ai-website-pro-8.preview.emergentagent.com",
+        "origin_url": "https://unitech-ai-site.preview.emergentagent.com",
         "num_cards": 1,
     }
     r = requests.post(f"{API}/payments/checkout", json=payload, headers=auth_headers, timeout=60)
@@ -73,7 +73,7 @@ def test_founder_checkout_charges_5900_cents(auth_headers):
 def test_bundle_monthly_still_charges_7500_cents(auth_headers):
     payload = {
         "plan_id": "bundle_monthly",
-        "origin_url": "https://ai-website-pro-8.preview.emergentagent.com",
+        "origin_url": "https://unitech-ai-site.preview.emergentagent.com",
         "num_cards": 1,
     }
     r = requests.post(f"{API}/payments/checkout", json=payload, headers=auth_headers, timeout=60)

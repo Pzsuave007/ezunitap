@@ -16,7 +16,7 @@ import uuid
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-website-pro-8.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-ai-site.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 TEST_USER_EMAIL = "pzsuave007@gmail.com"

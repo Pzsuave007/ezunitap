@@ -15,6 +15,15 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+
+## 📷 Jun 2026 — Fotos de stock por OFICIO vía Pexels (auto-relleno de slots) [COMPLETO; self-test curl+screenshot, SIN testing_agent]
+- **Petición dueño**: al "Generar con IA", traer fotos relevantes al oficio automáticamente (Pexels) y asignarlas a hero/servicios/secciones. Elecciones del dueño: (1a+1b) automático dentro de Generar con IA **Y** botón aparte para volver a pedir; (2a) solo rellenar slots vacíos, nunca pisar fotos propias; (3a) aplicar directo.
+- **Backend nuevo** `pexels_service.py`: `trade_query()` mapea business_type (EN/ES) → frase de búsqueda; `search_photos()` (Pexels API, `PEXELS_API_KEY` en `.env`), `download_image()`, `fetch_trade_pool()` (page aleatoria en refresh para variedad).
+- **Backend** `server.py`: helper `_fill_website_stock_photos(user_id, w, card, refresh)` — descarga y guarda fotos localmente vía `_store_card_photo(..., "website_stock", ...)` (WebP, servidas por `/public/card/photo/{id}`), asigna a `hero_photo_id`, `about_photo_ids`(+`team_photo_id`), `why_photo_id`, `band_photo_id`, y `image_id` por servicio (cap 6). NUNCA pisa fotos del dueño; con `refresh=True` reemplaza SOLO las stock previas (label `website_stock`) y soft-borra las viejas. `POST /website/ai-generate` ahora también rellena slots vacíos (refresh=False) y devuelve `photos`; NUEVO `POST /website/stock-photos` (refresh=True) para el botón "volver a pedir". Import `random` agregado.
+- **Frontend** `WebsiteEditor.js`: `generate()` aplica `data.photos` (hero/why/band/about/team/services) al estado y refresca la galería; nuevo `stockPhotos()` + botón "📷 Traer fotos del oficio" (`website-stock-photos`) en la tarjeta de IA. i18n `website.stock*` (EN/ES).
+- Verificado: curl e2e con admin — filled=5, hero propio intacto, why/band/about/servicio rellenados con stock, foto sirve 200 image/jpeg; 2ª llamada reemplaza slots stock con IDs nuevos y la vieja da 404 (soft-deleted). Screenshot del editor con el botón. Build recompilado (relativo) + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: backend (nuevo `pexels_service.py` + server.py) + frontend. Producción necesita `PEXELS_API_KEY` en `backend/.env` y agregarla a la whitelist de `deploy/fix.sh`.
+
 ## �photo Jun 2026 — Fotos por SERVICIO [COMPLETO self-test; templates de imagen. Iconos/acordeón pendientes]
 - **Petición**: poder ponerle una imagen a cada servicio.
 - **Editor** (`WebsiteEditor.js`): en cada servicio, botón "Agregar/Cambiar foto" (sube a `/photos?label=service`) + thumbnail + "Quitar" → guarda `image_id` en el objeto service (persiste vía PUT `/website` que ya guarda `services`). i18n `addPhoto/changePhoto/removePhoto/serviceImgAdded`.
