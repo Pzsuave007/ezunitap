@@ -96,7 +96,7 @@ function stockFor(businessType = "") {
 
 // ---- Per-template design tokens (5 DISTINCT templates) ---------------------
 const THEME = {
-  cinematic: { dark: true, h: "'Syne',sans-serif", b: "'Inter',sans-serif", hc: "font-extrabold tracking-tight",
+  cinematic: { dark: true, h: "'Anton',sans-serif", b: "'Inter',sans-serif", hc: "font-normal tracking-tight uppercase",
     bg: "#08080A", surface: "#141418", ink: "#FFFFFF", muted: "#A1A1AA", border: "rgba(255,255,255,.12)", radius: "rounded-none", btn: "rounded-none font-semibold tracking-wide" },
   responder: { dark: false, h: "'Anton',sans-serif", b: "'Roboto',sans-serif", hc: "font-normal uppercase tracking-wide",
     bg: "#F3F4F6", surface: "#FFFFFF", ink: "#111827", muted: "#4B5563", border: "#111827", radius: "rounded-md", btn: "rounded-md uppercase font-bold tracking-wide" },
@@ -269,7 +269,7 @@ export default function ContractorSite({ injected }) {
         @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
       `}</style>
       {w.content_es && (w.lang_toggle !== false) && (
-        <div className="fixed top-3 right-3 z-[60] flex rounded-full overflow-hidden shadow-lg border border-black/10 bg-white/95 backdrop-blur text-xs font-bold" data-testid="site-lang-switch">
+        <div className="fixed left-3 bottom-24 md:bottom-6 md:left-6 z-[55] flex rounded-full overflow-hidden shadow-lg border border-black/10 bg-white/95 backdrop-blur text-xs font-bold" data-testid="site-lang-switch">
           {["en", "es"].map((lg) => (
             <button key={lg} onClick={() => setLang(lg)} data-testid={`site-lang-${lg}`}
               className={`px-3 py-1.5 ${lang === lg ? "text-white" : "text-slate-600"}`}
@@ -297,9 +297,9 @@ function Cinematic({ ctx }) {
   return (
     <div className="pb-20 md:pb-0">
       <header className="fixed top-0 inset-x-0 z-40" style={{ background: scr ? "rgba(8,8,10,.7)" : "transparent", backdropFilter: scr ? "blur(16px)" : "none", borderBottom: scr ? `1px solid ${th.border}` : "1px solid transparent" }}>
-        <div className="max-w-6xl mx-auto px-5 h-20 flex items-center justify-between text-white">
-          <Brand ctx={ctx} light />
-          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> Call Now</a>
+        <div className="max-w-6xl mx-auto px-5 h-16 md:h-20 flex items-center justify-between gap-3 text-white">
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} light /></div>
+          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`flex-none whitespace-nowrap px-4 md:px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>
         </div>
       </header>
 
@@ -310,11 +310,11 @@ function Cinematic({ ctx }) {
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
         <div className="relative max-w-6xl mx-auto px-5 pb-24 pt-32 text-white w-full wfade">
           <HeroBadges ctx={ctx} />
-          <h1 className="wh font-extrabold tracking-tight text-5xl sm:text-6xl lg:text-7xl mt-6 leading-[0.98] max-w-4xl">{w.headline || b.name}</h1>
-          {w.subheadline && <p className="mt-6 text-lg md:text-2xl text-white/80 max-w-2xl font-light">{w.subheadline}</p>}
-          <div className="mt-9 flex flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
-            {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} text-base inline-flex items-center gap-2 border border-white/25 text-white hover:bg-white/10`}><Phone className="w-5 h-5" /> {b.phone}</a>}
+          <h1 className="wh font-extrabold tracking-tight text-4xl sm:text-6xl lg:text-7xl mt-6 leading-[0.98] max-w-4xl break-words">{w.headline || b.name}</h1>
+          {w.subheadline && <p className="mt-6 text-lg md:text-2xl text-white/80 max-w-2xl font-light break-words">{w.subheadline}</p>}
+          <div className="mt-9 flex flex-col sm:flex-row flex-wrap gap-3">
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
+            {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 border border-white/25 text-white hover:bg-white/10`}><Phone className="w-5 h-5" /> {b.phone}</a>}
           </div>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-white/70 animate-bounce"><ChevronDown className="w-6 h-6" style={{ color: accent }} /></div>
@@ -408,9 +408,9 @@ function Responder({ ctx }) {
         {b.phone && <a href={`tel:${b.phone}`} className="inline-flex items-center gap-1 underline"><Phone className="w-4 h-4" /> {b.phone}</a>}
       </div>
       <header className="sticky top-0 z-40 border-b-2" style={{ background: th.surface, borderColor: th.ink }}>
-        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-          <Brand ctx={ctx} />
-          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> Call Now</a>
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
+          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`flex-none whitespace-nowrap px-4 md:px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>
         </div>
       </header>
 
@@ -532,7 +532,7 @@ function Bento({ ctx }) {
           </nav>
         </div>
         <div>
-          {b.phone && <a href={`tel:${b.phone}`} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> Call Now</a>}
+          {b.phone && <a href={`tel:${b.phone}`} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>}
           <div className="mt-3 text-xs" style={{ color: th.muted }}>{b.is_licensed && "Licensed"} {b.is_insured && "· Insured"}</div>
         </div>
       </aside>
@@ -747,7 +747,7 @@ function Trust({ ctx }) {
           <Brand ctx={ctx} />
           <nav className="hidden md:flex gap-7 text-sm font-semibold" style={{ color: th.muted }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
           <div className="flex items-center gap-2">
-            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className={`hidden sm:inline-flex px-5 h-10 items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> Call Now</a>}
+            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className={`hidden sm:inline-flex px-5 h-10 items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>}
             <button className="md:hidden p-2" onClick={() => setMenu(!menu)} style={{ color: th.ink }}>{menu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
           </div>
         </div>
@@ -1386,7 +1386,7 @@ function Brand({ ctx, light, center }) {
     <div className={`flex items-center gap-2.5 min-w-0 ${center ? "justify-center" : ""}`}>
       {logo ? <img src={logo} alt="logo" className="w-9 h-9 rounded-lg object-cover flex-none" />
         : <div className="w-9 h-9 rounded-lg flex-none flex items-center justify-center font-bold" style={{ background: accent, color: accentText }}>{(b.name || "?")[0]}</div>}
-      <span className="wh font-bold text-lg truncate" style={{ color: light ? "#fff" : th.ink }}>{b.name}</span>
+      <span className="wh font-bold text-base sm:text-lg truncate" style={{ color: light ? "#fff" : th.ink }}>{b.name}</span>
     </div>
   );
 }
