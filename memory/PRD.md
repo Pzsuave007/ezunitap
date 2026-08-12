@@ -15,6 +15,18 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## 🌐 Jun 2026 — Botón de idioma ESPAÑOL para visitantes del sitio [COMPLETO; self-test curl+Playwright, SIN testing_agent]
+- **Petición dueño**: un switch para que los visitantes vean el sitio en español.
+- **Backend** (`ai_service.py` `translate_website_content` + `WEBSITE_TRANSLATE_SYSTEM`; `server.py` `POST /website/translate-es`): traduce el contenido del sitio (headline, subheadline, about, how_it_works, why_us, faqs, services, seo) a español latino natural con IA y lo guarda en `website.content_es` + `lang_toggle=True`. Los nombres de ciudades/negocio no se traducen. El payload público ya incluye `content_es`/`lang_toggle` (devuelve el doc completo).
+- **Frontend** (`ContractorSite.js`): switch flotante **EN|ES** (arriba-derecha, `site-lang-switch`) visible solo si existe `content_es`. Al cambiar a ES, el contenido se intercambia de forma **central** (`wl = {...w, ...w.content_es}` + `services` ES) → los **10 templates** muestran español sin editar cada uno. (`WebsiteEditor.js`): botón "🌐 Crear versión en Español" (`website-translate-es`) en la tarjeta de IA del tab Contenido; i18n `website.trans*`.
+- Verificado: translate-es guarda content_es (español natural); Playwright: switch presente, EN "Smart Digital Marketing Nationwide" → ES "Marketing Digital Inteligente en Todo el País" → vuelve a EN, sin errores.
+- NOTA: las etiquetas decorativas específicas de cada template (p.ej. "Distinction", "Selected Work") quedan en inglés; el CONTENIDO real del dueño sí se traduce. Se puede ampliar después.
+- ⚠️ DESPLIEGUE: backend + frontend.
+
+### 🔜 PENDIENTE (grande) — Imágenes por sección + IA stock
+- Elegir/subir imagen por slot: 1 por servicio, equipo/dueño, cada paso de How-it-works, fondos ("Your trusted local pros"), full-width media. Requiere: campos nuevos en schema `websites`, UI de selección/subida por slot en el editor, y render en los 10 templates. NOTA: hoy los templates YA usan stock relevante al oficio (`stockFor`) como relleno en secciones sin foto. Hacer en turno enfocado.
+
+
 ## 📱 Jun 2026 — Templates responsive en mobile + IA de contenido mucho mejor [COMPLETO; self-test Playwright/curl, SIN testing_agent]
 - **Petición dueño**: (1) los templates no se adaptaban bien al ancho del teléfono; (2) que el AI genere contenido del sitio mucho mejor/detallado usando todo el perfil; (3) más imágenes en las secciones (pendiente, siguiente paso).
 - **Mobile FIX** (`ContractorSite.js` + `embed.js`): (a) el botón flotante del chat tapaba el botón "Free Quote" de la barra inferior fija → se le puso `id="unitech-chat-fab"` a la burbuja y una media-query `@media(max-width:767px){#unitech-chat-fab{bottom:88px}}` que lo sube por encima de la barra; (b) `overflow-x-clip` en el wrapper `.ws` elimina desbordamientos horizontales (arregló el 63px de *Cinematic*) sin romper headers sticky/fixed. Verificado Playwright a 390px en los 10 templates: overflow=0, chat no tapa el botón, headers sticky OK, todos renderizan.

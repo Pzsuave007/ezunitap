@@ -36,6 +36,7 @@ export default function WebsiteEditor() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
   const [photos, setPhotos] = useState([]);
@@ -101,6 +102,17 @@ export default function WebsiteEditor() {
     } catch (e) {
       toast.error(e?.response?.data?.detail || t("website.aiError"));
     } finally { setGenerating(false); }
+  };
+
+  const translateEs = async () => {
+    setTranslating(true);
+    try {
+      const { data } = await api.post("/website/translate-es");
+      setW((prev) => ({ ...prev, content_es: data.content_es, lang_toggle: true }));
+      toast.success(t("website.transDone"));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setTranslating(false); }
   };
 
   const uploadHero = async (e) => {
@@ -265,6 +277,13 @@ export default function WebsiteEditor() {
               className="mt-4 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto">
               {generating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.aiWorking")}</> : <><Sparkles className="w-4 h-4 mr-2" /> {t("website.aiBtn")}</>}
             </Button>
+            <div className="mt-3 pt-3 border-t border-white/20">
+              <p className="text-xs text-white/80 mb-2">{t("website.transDesc")}</p>
+              <Button onClick={translateEs} disabled={translating} variant="outline" data-testid="website-translate-es"
+                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
+                {translating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🌐 {t("website.transBtn")}{w?.content_es ? " ✓" : ""}</>}
+              </Button>
+            </div>
           </div>
         </div>
       </Card>

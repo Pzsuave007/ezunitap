@@ -82,6 +82,7 @@ export default function ContractorSite({ injected }) {
   const { slug } = useParams();
   const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
+  const [lang, setLang] = useState("en");
 
   useEffect(() => {
     const l = document.createElement("link");
@@ -174,6 +175,8 @@ export default function ContractorSite({ injected }) {
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
   const w = data.website;
+  const esOn = lang === "es" && w.content_es && typeof w.content_es === "object";
+  const wl = esOn ? { ...w, ...w.content_es } : w;
   const key = resolveTpl(w.template);
   const th = THEME[key];
   const accent = w.accent_color || "#2563EB";
@@ -185,10 +188,11 @@ export default function ContractorSite({ injected }) {
   const heroImg = photoUrl(w.hero_photo_id) || realPhotos[0] || stock.hero;
   const pool = [...realPhotos, ...stock.imgs];
   const poolAt = (i) => pool[i % pool.length] || stock.hero;
-  const services = data.services.length ? data.services : DEFAULT_SERVICES;
+  const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
+  const services = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
-  const ctx = { w, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key };
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key };
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
 
   return (
@@ -205,6 +209,17 @@ export default function ContractorSite({ injected }) {
         /* On phones, lift the floating chat button above the sticky Call/Quote bar */
         @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
       `}</style>
+      {w.content_es && (w.lang_toggle !== false) && (
+        <div className="fixed top-3 right-3 z-[60] flex rounded-full overflow-hidden shadow-lg border border-black/10 bg-white/95 backdrop-blur text-xs font-bold" data-testid="site-lang-switch">
+          {["en", "es"].map((lg) => (
+            <button key={lg} onClick={() => setLang(lg)} data-testid={`site-lang-${lg}`}
+              className={`px-3 py-1.5 ${lang === lg ? "text-white" : "text-slate-600"}`}
+              style={lang === lg ? { background: accent, color: accentText } : {}}>
+              {lg.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="ws overflow-x-clip">
         <Layout ctx={ctx} />
       </div>

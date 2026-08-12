@@ -4085,6 +4085,35 @@ async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat
     return content
 
 
+@api_router.post("/website/translate-es")
+async def website_translate_es(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Create a Spanish version of the current website content so visitors can
+    switch the public site to Spanish. Saves it as `content_es` and enables the
+    language switch."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    services = w.get("services") if w.get("services") else (card.get("services") or [])
+    content = {
+        "headline": w.get("headline") or "",
+        "subheadline": w.get("subheadline") or "",
+        "about": w.get("about") or "",
+        "how_it_works": w.get("how_it_works") or [],
+        "why_us": w.get("why_us") or [],
+        "faqs": w.get("faqs") or [],
+        "services": services,
+        "areas": w.get("areas") or [],
+        "seo_title": w.get("seo_title") or "",
+        "seo_description": w.get("seo_description") or "",
+    }
+    try:
+        content_es = await ai_service.translate_website_content(content)
+    except Exception as e:
+        logger.error(f"website translate-es failed: {e!r}")
+        raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
+    await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "lang_toggle": True}})
+    return {"ok": True, "content_es": content_es}
+
+
 @api_router.post("/website/ai-suggest-design")
 async def website_ai_suggest_design(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Suggest the best template + brand color for this contractor's trade.

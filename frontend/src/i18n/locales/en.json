@@ -207,7 +207,11 @@
       "media": "Photos",
       "forms": "Forms",
       "sections": "Sections"
-    }
+    },
+    "transDesc": "Add a Spanish version so visitors can switch the site to Spanish.",
+    "transBtn": "Create Spanish version",
+    "transWorking": "Translating…",
+    "transDone": "Spanish version ready! A language switch now shows on your site."
   },
   "auth": {
     "login": {

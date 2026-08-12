@@ -401,6 +401,32 @@ async def generate_website_content(
     return data
 
 
+WEBSITE_TRANSLATE_SYSTEM = """You are a professional bilingual (English↔Spanish) marketing translator
+for U.S. Latino home-service contractors. You translate a website's content JSON from English to natural,
+warm, professional LATIN-AMERICAN SPANISH (the kind a U.S. Hispanic customer expects — friendly, clear,
+not robotic). Keep it persuasive and locally focused.
+
+You receive a JSON object of website content. Translate ONLY the human-readable TEXT values to Spanish.
+Rules:
+- Keep the EXACT same JSON structure and keys. Do not add or remove keys.
+- Translate: headline, subheadline, about, each how_it_works/why_us title+desc, each faq q+a,
+  each service name+description, seo_title, seo_description.
+- For "areas": keep city/neighborhood names as-is (do NOT translate proper place names).
+- Do not translate brand/business names or phone numbers.
+- Return ONLY the translated JSON (no markdown, no commentary)."""
+
+
+async def translate_website_content(content: dict) -> dict:
+    """Translate a website content dict to Spanish, preserving structure."""
+    import json as _json
+    chat = _new_chat(WEBSITE_TRANSLATE_SYSTEM)
+    response = await chat.send_message(UserMessage(text=_json.dumps(content, ensure_ascii=False)))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not translate the content. Try again.")
+    return data
+
+
 WEBSITE_DESIGN_SYSTEM = """You are a brand & web-design consultant for U.S. home-service contractors.
 Given a contractor's trade, pick the single best website TEMPLATE and a brand ACCENT color.
 
