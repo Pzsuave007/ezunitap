@@ -249,8 +249,7 @@ export default function ContractorSite({ injected }) {
   const whyImgOn = !!photoUrl(w.why_photo_id);
   const bandImgOn = !!photoUrl(w.band_photo_id);
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
-  const _collage = [..._aboutIds.map((id) => photoUrl(id, 600)), ...stock.imgs, stock.hero].filter(Boolean);
-  const aboutImgs = [0, 1, 2, 3].map((i) => _collage[i % _collage.length]);
+  const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [stock.imgs[0], stock.imgs[1], stock.imgs[2], stock.hero].filter(Boolean);
 
   const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
@@ -1419,9 +1418,9 @@ function AboutBlock({ ctx }) {
   return (
     <S id="about" kicker="About" title="About Us" ctx={ctx} alt>
       <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
-        <div className="grid grid-cols-2 gap-4" data-testid="site-about-collage">
+        <div className={aboutImgs.length === 1 ? "" : "grid grid-cols-2 gap-4"} data-testid="site-about-collage">
           {aboutImgs.map((src, i) => (
-            <img key={i} src={src} alt="" className={`w-full aspect-[4/5] object-cover ${th.radius} shadow-md ${i % 2 ? "mt-6" : ""}`} />
+            <img key={i} src={src} alt="" loading="lazy" decoding="async" className={`w-full object-cover ${th.radius} shadow-md ${aboutImgs.length === 1 ? "aspect-[4/3]" : "aspect-[4/5]"} ${aboutImgs.length > 1 && i % 2 ? "mt-6" : ""}`} />
           ))}
         </div>
         <div>
