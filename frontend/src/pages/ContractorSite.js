@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, Quote, Plus } from "lucide-react";
+import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, Quote, Plus, Mail, Facebook, Instagram } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
@@ -1058,9 +1058,7 @@ function OnePage({ ctx }) {
 
       {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
-      <footer className="max-w-5xl mx-auto px-6 py-10 border-t flex flex-wrap justify-between gap-3 text-sm" style={{ borderColor: th.border, color: th.muted }}>
-        <span>© {new Date().getFullYear()} {b.name}</span><span>Powered by UniTech</span>
-      </footer>
+      <FooterBlock ctx={ctx} />
     </div>
   );
 }
@@ -1608,20 +1606,85 @@ function ContactBlock({ ctx }) {
   );
 }
 
+const FOOTER_BG = {
+  cinematic: "#08080A", responder: "#141821", bento: "#0F172A", craftsman: "#241F1B",
+  trust: "#111827", slider: "#0E1116", onepage: "#141414", neon: "#0A0A0C",
+  playful: "#2A2520", luxe: "#0E0E0E",
+};
+
 function FooterBlock({ ctx }) {
-  const { b, th, accent, accentText, goContact } = ctx;
+  const { w, b, data, sec, th, accent, accentText, goContact, key } = ctx;
+  const bg = FOOTER_BG[key] || "#0F172A";
+  const logo = photoUrl(b.logo_photo_id, 220);
+  const about = (w.about ? String(w.about).split(/\n+/)[0] : "") || w.subheadline || `${b.name} — licensed & insured local service you can trust.`;
+  const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", "5-Star Rated"].filter(Boolean);
+  const hours = w.hours || data.hours || "";
+  const areas = (w.areas?.length ? w.areas : (data.service_area ? [data.service_area] : []));
+  const nav = [
+    sec.services !== false && ["Services", "#services"],
+    sec.gallery !== false && ["Gallery", "#gallery"],
+    (sec.about !== false && w.about) && ["About", "#about"],
+    sec.reviews !== false && ["Reviews", "#reviews"],
+    sec.faq !== false && ["FAQ", "#faq"],
+  ].filter(Boolean);
+  const socials = [
+    b.facebook && [Facebook, b.facebook],
+    b.instagram && [Instagram, b.instagram],
+  ].filter(Boolean);
   return (
-    <footer className="py-20 relative overflow-hidden" style={{ background: th.dark ? "#000" : "#0F172A", color: "#fff" }}>
+    <footer className="relative overflow-hidden" style={{ background: bg, color: "#fff" }} data-testid="site-footer">
       <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full blur-3xl opacity-20" style={{ background: accent }} />
-      <div className="max-w-6xl mx-auto px-5 relative">
+      {/* CTA */}
+      <div className="max-w-6xl mx-auto px-5 pt-20 relative">
         <div className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>Ready when you are</div>
         <h2 className="wh font-extrabold text-4xl md:text-5xl max-w-2xl leading-tight">Let's get your project done right.</h2>
         <div className="mt-8 flex flex-wrap gap-3">
           <button onClick={goContact} data-testid="site-footer-quote" className={`px-8 h-14 font-bold ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get Your Free Estimate <ArrowRight className="w-4 h-4" /></button>
           {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 inline-flex items-center gap-2 ${th.btn} bg-white/10 hover:bg-white/20 font-bold`}><Phone className="w-4 h-4" /> {b.phone}</a>}
         </div>
-        <div className="mt-12 pt-6 border-t border-white/15 text-sm text-white/60 flex flex-wrap justify-between gap-3">
-          <span>© {new Date().getFullYear()} {b.name}. All rights reserved.</span><span>Powered by UniTech</span>
+      </div>
+      {/* Info columns (SEO-rich) */}
+      <div className="max-w-6xl mx-auto px-5 pt-14 mt-14 pb-12 relative grid md:grid-cols-3 gap-10 md:gap-12 border-t border-white/10">
+        <div>
+          {logo ? <img src={logo} alt={b.name} className="h-11 w-auto object-contain" /> : <div className="wh font-bold text-2xl">{b.name}</div>}
+          <p className="mt-4 text-sm leading-relaxed text-white/55 max-w-xs">{about}</p>
+          {badges.length > 0 && (
+            <div className="mt-5 inline-flex flex-wrap items-center gap-x-2 px-3 py-2 rounded-md text-[11px] font-bold uppercase tracking-widest" style={{ background: `${accent}1f`, color: accent }}>
+              {badges.map((x, i) => <span key={i}>{i ? "• " : ""}{x}</span>)}
+            </div>
+          )}
+          {socials.length > 0 && (
+            <div className="mt-5 flex gap-3">
+              {socials.map(([Icon, href], i) => (
+                <a key={i} href={href} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center border border-white/15 text-white/70 hover:text-white hover:border-white/40 transition"><Icon className="w-4 h-4" /></a>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>Contact</div>
+          <ul className="space-y-3.5 text-sm text-white/75">
+            {b.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
+            {b.phone && <li><a href={`tel:${b.phone}`} data-testid="site-footer-phone" className="flex gap-3 hover:text-white"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.phone}</span></a></li>}
+            {b.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:text-white break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
+            {hours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{hours}</span></li>}
+          </ul>
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>Navigate</div>
+          <ul className="space-y-3">
+            {nav.map(([l, href], i) => <li key={i}><a href={href} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">{l}</a></li>)}
+            <li><button onClick={goContact} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">Request Quote</button></li>
+            <li><a href="/" className="text-white/35 hover:text-white/70 uppercase tracking-wide text-[12px] mt-2 inline-block">Owner Login</a></li>
+          </ul>
+        </div>
+      </div>
+      {/* Bottom bar */}
+      <div className="border-t border-white/10 relative">
+        <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap justify-between items-center gap-3 text-xs text-white/45">
+          <span>© {new Date().getFullYear()} {b.name}. All rights reserved.</span>
+          {areas.length > 0 && <span className="uppercase tracking-widest text-white/35">{areas.slice(0, 3).join(" • ")}</span>}
+          <span>Powered by UniTech</span>
         </div>
       </div>
     </footer>
