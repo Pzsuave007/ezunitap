@@ -1613,18 +1613,100 @@ function AreasBlock({ ctx }) {
 function ContactBlock({ ctx }) {
   const { b, data, th, accent, accentText, w } = ctx;
   const sec = w.sections || {};
+  const bookingOn = (sec.booking || data.appt_enabled) && data.card_slug;
   return (
-    <SectionLight id="contact" kicker="Let's talk" title="Get Your Free Estimate" ctx={ctx}>
+    <SectionLight id="contact" kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-5">
-          <p className="text-lg leading-relaxed" style={{ color: th.muted }}>Tell us about your project and we'll get back to you fast — no obligation.</p>
+          <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time that works for you and we'll confirm your appointment." : "Tell us about your project and we'll get back to you fast — no obligation."}</p>
           {b.phone && <a href={`tel:${b.phone}`} data-testid="site-contact-call" className="flex items-center gap-3 font-bold text-lg" style={{ color: th.ink }}><span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: accent, color: accentText }}><Phone className="w-5 h-5" /></span> {b.phone}</a>}
-          {(sec.booking || data.appt_enabled) && data.card_slug && <a href={`/c/${data.card_slug}`} className={`inline-flex items-center gap-2 px-5 h-12 ${th.btn} border-2`} style={{ borderColor: accent, color: accent }}><Calendar className="w-4 h-4" /> Book an appointment</a>}
           <div className="flex items-center gap-2 pt-1"><Stars n={5} /><span className="text-sm font-semibold" style={{ color: th.muted }}>Trusted by our community</span></div>
         </div>
-        <LeadForm ctx={ctx} />
+        {bookingOn ? <BookingForm ctx={ctx} /> : <LeadForm ctx={ctx} />}
       </div>
     </SectionLight>
+  );
+}
+
+function BookingForm({ ctx }) {
+  const { data, th, accent, accentText } = ctx;
+  const cslug = data.card_slug;
+  const [avail, setAvail] = useState(null);
+  const [date, setDate] = useState("");
+  const [slot, setSlot] = useState("");
+  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "" });
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    axios.get(`${API}/public/card/${cslug}/availability?days=21`).then((r) => setAvail(r.data)).catch(() => setAvail({ enabled: false, dates: [] }));
+  }, [cslug]);
+  const dates = (avail?.dates || []).slice(0, 14);
+  const slots = (dates.find((d) => d.date === date) || {}).slots || [];
+  const fmtDate = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  const fmtSlot = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const h12 = ((h + 11) % 12) + 1; return `${h12}:${String(m).padStart(2, "0")} ${ap}`; };
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !date || !slot) { setErr("Please choose a date, a time and enter your name."); return; }
+    setSending(true); setErr("");
+    try { await axios.post(`${API}/public/card/${cslug}/appointment`, { ...form, date, start_time: slot }); setDone(true); }
+    catch (ex) { setErr(ex?.response?.data?.detail || "That time is no longer available — please pick another."); setSending(false); }
+  };
+  const inpStyle = { borderColor: th.border, background: th.dark ? "rgba(255,255,255,.06)" : "#fff", color: th.ink };
+  const inp = "w-full h-12 px-4 rounded-xl border outline-none focus-visible:ring-2";
+  const box = `p-6 space-y-4 ${th.radius}`;
+  const boxStyle = { background: th.surface, border: `1px solid ${th.border}` };
+  if (done) return (
+    <div className={`p-8 text-center ${th.radius}`} style={boxStyle} data-testid="site-booking-success">
+      <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: accent }} />
+      <h3 className="wh font-bold text-2xl mt-3" style={{ color: th.ink }}>Appointment requested!</h3>
+      <p className="mt-2 text-sm" style={{ color: th.muted }}>We'll confirm your {fmtDate(date)} at {fmtSlot(slot)} appointment shortly.</p>
+    </div>
+  );
+  if (avail && avail.enabled === false) return (
+    <div className={box} style={boxStyle} data-testid="site-booking-unavailable"><LeadForm ctx={ctx} /></div>
+  );
+  return (
+    <form onSubmit={submit} className={box} style={boxStyle} data-testid="site-booking-form">
+      <div>
+        <div className="text-sm font-bold mb-2" style={{ color: th.ink }}>1. Choose a day</div>
+        {!avail ? <div className="flex items-center gap-2 text-sm" style={{ color: th.muted }}><Loader2 className="w-4 h-4 animate-spin" /> Loading availability…</div>
+          : dates.length === 0 ? <p className="text-sm" style={{ color: th.muted }}>No open days right now — please call us.</p>
+          : <div className="flex flex-wrap gap-2">
+              {dates.map((d) => (
+                <button type="button" key={d.date} onClick={() => { setDate(d.date); setSlot(""); }} data-testid={`site-booking-date-${d.date}`}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold border" style={date === d.date ? { background: accent, color: accentText, borderColor: accent } : { ...inpStyle }}>
+                  {fmtDate(d.date)}
+                </button>
+              ))}
+            </div>}
+      </div>
+      {date && (
+        <div>
+          <div className="text-sm font-bold mb-2" style={{ color: th.ink }}>2. Pick a time</div>
+          <div className="flex flex-wrap gap-2">
+            {slots.length === 0 ? <p className="text-sm" style={{ color: th.muted }}>No times left on this day.</p>
+              : slots.map((s) => (
+                <button type="button" key={s} onClick={() => setSlot(s)} data-testid={`site-booking-slot-${s}`}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold border" style={slot === s ? { background: accent, color: accentText, borderColor: accent } : { ...inpStyle }}>
+                  {fmtSlot(s)}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+      <div className="pt-1 space-y-3">
+        <div className="text-sm font-bold" style={{ color: th.ink }}>3. Your details</div>
+        <input required data-testid="site-booking-name" placeholder="Your name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inp} style={inpStyle} />
+        <input required data-testid="site-booking-phone" placeholder="Phone *" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inp} style={inpStyle} />
+        <input type="email" data-testid="site-booking-email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inp} style={inpStyle} />
+        <textarea placeholder="Anything we should know? (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full min-h-[72px] p-4 rounded-xl border outline-none focus-visible:ring-2" style={inpStyle} />
+      </div>
+      {err && <p className="text-sm font-semibold" style={{ color: "#DC2626" }} data-testid="site-booking-error">{err}</p>}
+      <button type="submit" disabled={sending} data-testid="site-booking-submit" className={`w-full h-13 py-3.5 font-bold flex items-center justify-center gap-2 ${th.btn}`} style={{ background: accent, color: accentText }}>
+        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Calendar className="w-4 h-4" /> Request Appointment</>}
+      </button>
+    </form>
   );
 }
 
