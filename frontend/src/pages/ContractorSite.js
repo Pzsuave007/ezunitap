@@ -797,7 +797,7 @@ function Trust({ ctx }) {
         <div id="contact" className="max-w-4xl mx-auto px-5 -mt-28 md:-mt-36 relative z-10">
           <div className={`p-6 md:p-8 ${th.radius} shadow-2xl`} style={{ background: th.surface, border: `1px solid ${th.border}` }}>
             {(() => {
-              const bookingOn = (ctx.sec?.booking || ctx.data?.appt_enabled) && ctx.data?.card_slug;
+              const bookingOn = ctx.sec?.booking && ctx.data?.card_slug;
               return (<>
                 <h2 className="wh font-extrabold text-2xl mb-1" style={{ color: th.ink }}>{bookingOn ? "Book an Appointment" : "Get Your Free Estimate"}</h2>
                 <p className="text-sm mb-4" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time — we'll confirm fast" : "Fast response · No obligation"}</p>
@@ -1618,7 +1618,7 @@ function AreasBlock({ ctx }) {
 function ContactBlock({ ctx }) {
   const { b, data, th, accent, accentText, w } = ctx;
   const sec = w.sections || {};
-  const bookingOn = (sec.booking || data.appt_enabled) && data.card_slug;
+  const bookingOn = sec.booking && data.card_slug;
   return (
     <SectionLight id="contact" kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
       <div className="grid md:grid-cols-2 gap-8">
