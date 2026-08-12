@@ -299,7 +299,6 @@ function Cinematic({ ctx }) {
       <header className="fixed top-0 inset-x-0 z-40" style={{ background: scr ? "rgba(8,8,10,.7)" : "transparent", backdropFilter: scr ? "blur(16px)" : "none", borderBottom: scr ? `1px solid ${th.border}` : "1px solid transparent" }}>
         <div className="max-w-6xl mx-auto px-5 h-16 md:h-20 flex items-center justify-between gap-3 text-white">
           <div className="min-w-0 flex-1"><Brand ctx={ctx} light /></div>
-          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`flex-none whitespace-nowrap px-4 md:px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>
         </div>
       </header>
 
@@ -410,7 +409,6 @@ function Responder({ ctx }) {
       <header className="sticky top-0 z-40 border-b-2" style={{ background: th.surface, borderColor: th.ink }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
-          <a href={b.phone ? `tel:${b.phone}` : "#contact"} data-testid="site-header-call" className={`flex-none whitespace-nowrap px-4 md:px-5 h-11 inline-flex items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>
         </div>
       </header>
 
@@ -639,10 +637,9 @@ function Craftsman({ ctx }) {
   return (
     <div className="pb-20 md:pb-0">
       <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: `${th.bg}cc` }}>
-        <div className="max-w-6xl mx-auto px-5 h-16 grid grid-cols-3 items-center">
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
           <nav className="hidden md:flex gap-6 text-sm font-semibold" style={{ color: th.muted }}><a href="#services">Services</a><a href="#gallery">Work</a></nav>
-          <div className="col-start-2 flex justify-center"><Brand ctx={ctx} center /></div>
-          <div className="flex justify-end">{b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className={`px-5 h-10 ${th.btn} inline-flex items-center gap-2 text-sm`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> Call</a>}</div>
         </div>
       </header>
 
@@ -747,7 +744,6 @@ function Trust({ ctx }) {
           <Brand ctx={ctx} />
           <nav className="hidden md:flex gap-7 text-sm font-semibold" style={{ color: th.muted }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
           <div className="flex items-center gap-2">
-            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className={`hidden sm:inline-flex px-5 h-10 items-center gap-2 text-sm ${th.btn}`} style={{ background: accent, color: accentText }}><Phone className="w-4 h-4" /> <span className="hidden sm:inline">Call Now</span></a>}
             <button className="md:hidden p-2" onClick={() => setMenu(!menu)} style={{ color: th.ink }}>{menu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
           </div>
         </div>
@@ -989,7 +985,6 @@ function OnePage({ ctx }) {
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Brand ctx={ctx} />
           <nav className="hidden md:flex gap-8 text-sm" style={{ color: th.muted }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`} className="hover:text-black">{l}</a>)}</nav>
-          {b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> {b.phone}</a>}
         </div>
       </header>
 
@@ -1281,7 +1276,7 @@ function Luxe({ ctx }) {
         <div className="max-w-6xl mx-auto px-6 h-20 grid grid-cols-3 items-center text-white">
           <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]"><a href="#services">Services</a><a href="#gallery">Portfolio</a></nav>
           <div className="col-start-2 flex justify-center"><Brand ctx={ctx} light center /></div>
-          <div className="flex justify-end">{b.phone && <a href={`tel:${b.phone}`} data-testid="site-header-call" className="text-xs uppercase tracking-[0.2em] border-b pb-0.5" style={{ borderColor: gold, color: "#fff" }}>Call {b.phone}</a>}</div>
+          <div className="flex justify-end"></div>
         </div>
       </header>
 
@@ -1527,7 +1522,7 @@ function ReviewsBlock({ ctx, dark, editorial }) {
             {data.reviews.slice(0, 4).map((r, i) => (
               <div key={i}>
                 <Stars n={r.rating} />
-                <p className="wh italic text-2xl md:text-3xl leading-snug mt-3" style={{ color: th.ink }}>"{r.text}"</p>
+                <p className="italic text-lg leading-relaxed mt-3" style={{ color: th.ink }}>"{r.text}"</p>
                 <div className="mt-3 font-bold" style={{ color: th.ink }}>— {r.customer_name}</div>
               </div>
             ))}
