@@ -212,7 +212,11 @@
     "transDesc": "Agrega una versión en español para que los visitantes cambien el idioma del sitio.",
     "transBtn": "Crear versión en Español",
     "transWorking": "Traduciendo…",
-    "transDone": "¡Versión en español lista! Ya aparece el botón de idioma en tu sitio."
+    "transDone": "¡Versión en español lista! Ya aparece el botón de idioma en tu sitio.",
+    "addPhoto": "Agregar foto",
+    "changePhoto": "Cambiar foto",
+    "removePhoto": "Quitar",
+    "serviceImgAdded": "Foto agregada al servicio"
   },
   "auth": {
     "login": {

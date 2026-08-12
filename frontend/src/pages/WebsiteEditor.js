@@ -115,6 +115,19 @@ export default function WebsiteEditor() {
     } finally { setTranslating(false); }
   };
 
+  const uploadServiceImg = async (i, file) => {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const { data } = await api.post("/photos?label=service", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      listSet("services", i, "image_id", data.id);
+      toast.success(t("website.serviceImgAdded"));
+    } catch {
+      toast.error(t("website.aiError"));
+    }
+  };
+
   const uploadHero = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -628,6 +641,14 @@ export default function WebsiteEditor() {
             </div>
             <Textarea value={s.description || ""} onChange={(e) => listSet("services", i, "description", e.target.value)} className="rounded-lg bg-white min-h-[56px]" placeholder={t("website.serviceDesc")} />
             <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
+            <div className="flex items-center gap-2">
+              {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />}
+              <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-img-${i}`}>
+                <ImagePlus className="w-4 h-4" /> {s.image_id ? t("website.changePhoto") : t("website.addPhoto")}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadServiceImg(i, e.target.files?.[0])} />
+              </label>
+              {s.image_id && <button onClick={() => listSet("services", i, "image_id", "")} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
+            </div>
           </div>
         ))}
         <Button variant="outline" onClick={() => listAdd("services", { name: "", description: "", starting_price: "" })} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>

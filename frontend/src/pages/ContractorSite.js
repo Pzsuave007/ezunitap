@@ -239,7 +239,8 @@ export default function ContractorSite({ injected }) {
   const pool = [...realPhotos, ...stock.imgs];
   const poolAt = (i) => pool[i % pool.length] || stock.hero;
   const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
-  const services = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
+  const _rawServices = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
+  const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id) || null }));
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
   const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key };
@@ -317,7 +318,7 @@ function Cinematic({ ctx }) {
           <div className="grid md:grid-cols-3 gap-px" style={{ background: th.border }}>
             {services.map((s, i) => (
               <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden" style={{ background: th.surface }} data-testid={`site-service-${i}`}>
-                <img src={poolAt(i)} alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
+                <img src={s.img || poolAt(i)} alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,10,.95), rgba(8,8,10,.2))" }} />
                 <div className="relative p-7 w-full">
                   <h3 className="wh font-bold text-2xl">{s.name}</h3>
@@ -653,7 +654,7 @@ function Craftsman({ ctx }) {
             <div className="space-y-16 md:space-y-24">
               {services.map((s, i) => (
                 <div key={i} className={`grid md:grid-cols-2 gap-6 md:gap-10 items-center ${i % 2 ? "md:[direction:rtl]" : ""}`} data-testid={`site-service-${i}`}>
-                  <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={poolAt(i)} alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>
+                  <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>
                   <div className="[direction:ltr]">
                     <div className="wh text-6xl italic font-normal" style={{ color: `${accent}55` }}>{String(i + 1).padStart(2, "0")}</div>
                     <h3 className="wh font-bold text-3xl -mt-4" style={{ color: th.ink }}>{s.name}</h3>
@@ -762,7 +763,7 @@ function Trust({ ctx }) {
           <div className="space-y-10">
             {services.map((s, i) => (
               <div key={i} className={`grid md:grid-cols-2 gap-6 items-center ${i % 2 ? "" : "md:[direction:rtl]"}`} data-testid={`site-service-${i}`}>
-                <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={poolAt(i)} alt={s.name} className="w-full aspect-video object-cover" /></div>
+                <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} alt={s.name} className="w-full aspect-video object-cover" /></div>
                 <div className="[direction:ltr]">
                   <h3 className="wh font-extrabold text-2xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2" style={{ color: th.muted }}>{s.description}</p>}
@@ -900,7 +901,7 @@ function Slider({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((s, i) => (
               <div key={i} className="border-2 overflow-hidden group" style={{ borderColor: th.ink, background: "#fff" }} data-testid={`site-service-${i}`}>
-                <div className="aspect-[16/10] overflow-hidden"><img src={poolAt(i)} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                <div className="aspect-[16/10] overflow-hidden"><img src={s.img || poolAt(i)} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
                 <div className="p-5">
                   <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.description}</p>}

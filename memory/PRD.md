@@ -15,6 +15,14 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## �photo Jun 2026 — Fotos por SERVICIO [COMPLETO self-test; templates de imagen. Iconos/acordeón pendientes]
+- **Petición**: poder ponerle una imagen a cada servicio.
+- **Editor** (`WebsiteEditor.js`): en cada servicio, botón "Agregar/Cambiar foto" (sube a `/photos?label=service`) + thumbnail + "Quitar" → guarda `image_id` en el objeto service (persiste vía PUT `/website` que ya guarda `services`). i18n `addPhoto/changePhoto/removePhoto/serviceImgAdded`.
+- **Público** (`ContractorSite.js`): central — `services` ahora incluye `img: photoUrl(s.image_id)`; las tarjetas que muestran imagen usan `src={s.img || poolAt(i)}` (foto propia si existe, si no stock). Cubre templates con imagen de servicio: **cinematic, luxe, neon, playful** (los 4 que ya usaban `poolAt(i) alt={s.name}`).
+- Verificado end-to-end: subir foto → PUT → payload trae `image_id` → cinematic renderiza `/photo/<id>` del dueño (no stock). Datos de prueba limpiados, template restaurado a craftsman. Solo frontend → build.
+- 🔜 PENDIENTE: templates de ICONO/ACORDEÓN (craftsman, bento, responder, slider, trust, onepage) aún no muestran la foto por servicio (usan ícono/acordeón). Falta también: foto de equipo en "About", imagen lateral en "Why us", imagen por paso en "How it works", fondos de sección. El editor ya permite ASIGNAR la foto por servicio para todos; solo falta el render en esos templates.
+
+
 ## 📋 PLAN LISTO PARA EJECUTAR — Imágenes por SLOT (servicio / equipo / fondos) [PENDIENTE — hacer en sesión fresca]
 Contexto: la sesión anterior quedó sin presupuesto de contexto para este build grande (toca los 10 templates). Plan exacto para ejecutar rápido:
 
