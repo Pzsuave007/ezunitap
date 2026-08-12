@@ -287,6 +287,32 @@ export default function ContractorSite({ injected }) {
   );
 }
 
+function NavMenu({ ctx, light }) {
+  const { th, sec, w } = ctx;
+  const [open, setOpen] = useState(false);
+  const links = [
+    sec.services !== false && ["Services", "#services"],
+    sec.gallery !== false && ["Work", "#gallery"],
+    (sec.about !== false && w.about) && ["About", "#about"],
+    sec.reviews !== false && ["Reviews", "#reviews"],
+    sec.faq !== false && ["FAQ", "#faq"],
+    ["Contact", "#contact"],
+  ].filter(Boolean);
+  return (
+    <div className="relative flex-none">
+      <button onClick={() => setOpen(!open)} data-testid="site-menu-toggle" aria-label="Menu" className="relative z-[60] p-2 -mr-2" style={{ color: light ? "#fff" : th.ink }}>
+        {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+      {open && (<>
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+        <div className="absolute right-0 top-full mt-2 w-56 py-2 z-50 shadow-2xl border" data-testid="site-menu-panel" style={{ background: th.surface, borderColor: th.border, borderRadius: 12 }}>
+          {links.map(([l, href], i) => <a key={i} href={href} onClick={() => setOpen(false)} className="block px-5 py-2.5 text-sm font-semibold hover:opacity-70" style={{ color: th.ink }}>{l}</a>)}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
 // ===========================================================================
 // TEMPLATE 1 — CINEMATIC DARK
 // ===========================================================================
@@ -299,6 +325,7 @@ function Cinematic({ ctx }) {
       <header className="fixed top-0 inset-x-0 z-40" style={{ background: scr ? "rgba(8,8,10,.7)" : "transparent", backdropFilter: scr ? "blur(16px)" : "none", borderBottom: scr ? `1px solid ${th.border}` : "1px solid transparent" }}>
         <div className="max-w-6xl mx-auto px-5 h-16 md:h-20 flex items-center justify-between gap-3 text-white">
           <div className="min-w-0 flex-1"><Brand ctx={ctx} light /></div>
+          <NavMenu ctx={ctx} light />
         </div>
       </header>
 
@@ -409,6 +436,7 @@ function Responder({ ctx }) {
       <header className="sticky top-0 z-40 border-b-2" style={{ background: th.surface, borderColor: th.ink }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
+          <NavMenu ctx={ctx} />
         </div>
       </header>
 
@@ -639,7 +667,7 @@ function Craftsman({ ctx }) {
       <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: `${th.bg}cc` }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
-          <nav className="hidden md:flex gap-6 text-sm font-semibold" style={{ color: th.muted }}><a href="#services">Services</a><a href="#gallery">Work</a></nav>
+          <NavMenu ctx={ctx} />
         </div>
       </header>
 
@@ -880,8 +908,8 @@ function Slider({ ctx }) {
     <div className="pb-24 md:pb-0">
       <header className="sticky top-0 z-40 border-b-2 bg-white" style={{ borderColor: th.ink }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-          <Brand ctx={ctx} />
-          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-11 ${th.btn} inline-flex items-center gap-2 text-sm`} style={{ background: accent, color: accentText }}>Free Quote</button>
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
+          <NavMenu ctx={ctx} />
         </div>
       </header>
       <section className="grid md:grid-cols-2">
@@ -984,7 +1012,7 @@ function OnePage({ ctx }) {
       <header className="sticky top-0 z-40 bg-[#FAFAFA]/90 backdrop-blur border-b" style={{ borderColor: th.border }}>
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Brand ctx={ctx} />
-          <nav className="hidden md:flex gap-8 text-sm" style={{ color: th.muted }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`} className="hover:text-black">{l}</a>)}</nav>
+          <NavMenu ctx={ctx} />
         </div>
       </header>
 
@@ -1046,7 +1074,7 @@ function OnePage({ ctx }) {
       {sec.reviews !== false && data.reviews.length > 0 && (
         <section id="reviews" className="max-w-3xl mx-auto px-6 py-28 border-t text-center" style={{ borderColor: th.border }}>
           <Stars n={data.reviews[0].rating} />
-          <p className="wh text-3xl md:text-4xl leading-snug mt-4" style={{ color: th.ink }}>"{data.reviews[0].text}"</p>
+          <p className="wh text-xl md:text-2xl leading-relaxed mt-4" style={{ color: th.ink }}>"{data.reviews[0].text}"</p>
           <div className="mt-5 text-sm tracking-widest uppercase" style={{ color: th.muted }}>{data.reviews[0].customer_name}</div>
         </section>
       )}
@@ -1083,7 +1111,7 @@ function Neon({ ctx }) {
       <header className="sticky top-0 z-40 backdrop-blur-md border-b" style={{ background: "rgba(10,10,12,.8)", borderColor: th.border }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
           <Brand ctx={ctx} light />
-          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText, ...glow }}>Get Quote</button>
+          <NavMenu ctx={ctx} light />
         </div>
       </header>
 
@@ -1177,8 +1205,8 @@ function Playful({ ctx }) {
     <div className="pb-24 md:pb-0">
       <header className="sticky top-0 z-40 pt-4 px-4">
         <div className="max-w-5xl mx-auto rounded-full bg-white shadow-md px-5 h-14 flex items-center justify-between">
-          <Brand ctx={ctx} />
-          <button onClick={goContact} data-testid="site-header-call" className={`px-5 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText }}>Get a Quote</button>
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} /></div>
+          <NavMenu ctx={ctx} />
         </div>
       </header>
 
@@ -1273,10 +1301,9 @@ function Luxe({ ctx }) {
   return (
     <div className="pb-20 md:pb-0">
       <header className="absolute top-0 inset-x-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 h-20 grid grid-cols-3 items-center text-white">
-          <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]"><a href="#services">Services</a><a href="#gallery">Portfolio</a></nav>
-          <div className="col-start-2 flex justify-center"><Brand ctx={ctx} light center /></div>
-          <div className="flex justify-end"></div>
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between gap-3 text-white">
+          <div className="min-w-0 flex-1"><Brand ctx={ctx} light /></div>
+          <NavMenu ctx={ctx} light />
         </div>
       </header>
 
