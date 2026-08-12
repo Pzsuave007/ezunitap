@@ -796,9 +796,14 @@ function Trust({ ctx }) {
         {/* floating form overlapping */}
         <div id="contact" className="max-w-4xl mx-auto px-5 -mt-28 md:-mt-36 relative z-10">
           <div className={`p-6 md:p-8 ${th.radius} shadow-2xl`} style={{ background: th.surface, border: `1px solid ${th.border}` }}>
-            <h2 className="wh font-extrabold text-2xl mb-1" style={{ color: th.ink }}>Get Your Free Estimate</h2>
-            <p className="text-sm mb-4" style={{ color: th.muted }}>Fast response · No obligation</p>
-            <LeadForm ctx={ctx} inline />
+            {(() => {
+              const bookingOn = (ctx.sec?.booking || ctx.data?.appt_enabled) && ctx.data?.card_slug;
+              return (<>
+                <h2 className="wh font-extrabold text-2xl mb-1" style={{ color: th.ink }}>{bookingOn ? "Book an Appointment" : "Get Your Free Estimate"}</h2>
+                <p className="text-sm mb-4" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time — we'll confirm fast" : "Fast response · No obligation"}</p>
+                {bookingOn ? <BookingForm ctx={ctx} inline /> : <LeadForm ctx={ctx} inline />}
+              </>);
+            })()}
           </div>
         </div>
       </section>
@@ -1628,7 +1633,7 @@ function ContactBlock({ ctx }) {
   );
 }
 
-function BookingForm({ ctx }) {
+function BookingForm({ ctx, inline }) {
   const { data, th, accent, accentText } = ctx;
   const cslug = data.card_slug;
   const [avail, setAvail] = useState(null);
@@ -1654,8 +1659,8 @@ function BookingForm({ ctx }) {
   };
   const inpStyle = { borderColor: th.border, background: th.dark ? "rgba(255,255,255,.06)" : "#fff", color: th.ink };
   const inp = "w-full h-12 px-4 rounded-xl border outline-none focus-visible:ring-2";
-  const box = `p-6 space-y-4 ${th.radius}`;
-  const boxStyle = { background: th.surface, border: `1px solid ${th.border}` };
+  const box = inline ? "space-y-4" : `p-6 space-y-4 ${th.radius}`;
+  const boxStyle = inline ? undefined : { background: th.surface, border: `1px solid ${th.border}` };
   if (done) return (
     <div className={`p-8 text-center ${th.radius}`} style={boxStyle} data-testid="site-booking-success">
       <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: accent }} />
