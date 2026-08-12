@@ -15,6 +15,17 @@ SaaS móvil para contratistas latinos. 3 módulos: **Presencia** (Tarjeta NFC + 
 - Frontend React (`/app/frontend`) Tailwind + Shadcn. Backend FastAPI (`/app/backend`) + MongoDB.
 - **Producción cPanel**: compilar con `REACT_APP_BACKEND_URL=''` (relativo `/api`) y `git add -f frontend/build`. Producción corre **Python 3.9** → usar `Optional[x]`, no `x | None`.
 - Integraciones: Stripe (Connect), Meta Pixel, ElevenLabs, Google Business OAuth, OpenAI/Gemini vía Emergent LLM Key.
+## 📱 Jun 2026 — Templates responsive en mobile + IA de contenido mucho mejor [COMPLETO; self-test Playwright/curl, SIN testing_agent]
+- **Petición dueño**: (1) los templates no se adaptaban bien al ancho del teléfono; (2) que el AI genere contenido del sitio mucho mejor/detallado usando todo el perfil; (3) más imágenes en las secciones (pendiente, siguiente paso).
+- **Mobile FIX** (`ContractorSite.js` + `embed.js`): (a) el botón flotante del chat tapaba el botón "Free Quote" de la barra inferior fija → se le puso `id="unitech-chat-fab"` a la burbuja y una media-query `@media(max-width:767px){#unitech-chat-fab{bottom:88px}}` que lo sube por encima de la barra; (b) `overflow-x-clip` en el wrapper `.ws` elimina desbordamientos horizontales (arregló el 63px de *Cinematic*) sin romper headers sticky/fixed. Verificado Playwright a 390px en los 10 templates: overflow=0, chat no tapa el botón, headers sticky OK, todos renderizan.
+- **IA de contenido FIX** (`ai_service.py` `WEBSITE_CONTENT_SYSTEM` + `website_ai_generate`): el prompt ahora usa la **base de conocimiento del bot (`ai_context`)** como fuente de verdad principal e infiere detalle específico del oficio (como el AI de facturas). Genera contenido más rico: about 3-5 frases, 4 how_it_works, 6 why_us, 7 faqs, y NUEVO array `services` con descripciones (el frontend las aplica solo si el sitio no tiene servicios, sin pisar precios). Verificado curl: about 739 chars, 6 servicios, 7 FAQs específicas.
+- Idioma: sigue en INGLÉS (cliente pidió botón de español "más adelante").
+- ⚠️ DESPLIEGUE: backend (ai_service.py) + frontend (build). Requiere re-desplegar ambos.
+
+### 🔜 PENDIENTE (pedido del dueño, siguiente paso) — Más imágenes en secciones
+El dueño quiere más imágenes en: Servicios (1 foto por servicio), Sobre nosotros/equipo, Galería "Trabajos recientes" (más fotos), How It Works (cada paso), "Your trusted local pros" (foto de fondo), y quizá una imagen full-width a media sección. Fuentes: sube él / galería existente / IA sugiera stock. Es un cambio grande a través de los 10 templates → hacerlo en un turno enfocado.
+
+
 ## 🖼️ Jun 2026 — FIX: subir/aplicar fotos se quedaba "atorado guardando" en PRODUCCIÓN [COMPLETO; self-test curl+e2e, SIN testing_agent por regla del dueño]
 - **Reporte dueño**: en la sección Fotos no dejaba subir ni aplicar las fotos elegidas; "se pone a salvar y se queda atorado por mucho tiempo".
 - **Causa raíz**: `storage_service.py` guardaba/servía las fotos en **Emergent Object Storage** (`integrations.emergentagent.com`, requests SÍNCRONOS, timeout 120s) usando `EMERGENT_LLM_KEY`. En **producción self-hosted ese storage está bloqueado/inaccesible** (igual que la llave LLM) → la subida colgaba hasta 120s. En preview (plataforma Emergent) sí funcionaba (por eso no se veía el bug ahí).

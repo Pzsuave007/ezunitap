@@ -95,6 +95,7 @@ export default function WebsiteEditor() {
         areas: Array.isArray(data.areas) ? data.areas : w.areas,
         seo_title: data.seo_title || w.seo_title,
         seo_description: data.seo_description || w.seo_description,
+        services: (Array.isArray(data.services) && data.services.length && (!w.services || w.services.length === 0)) ? data.services : w.services,
       });
       toast.success(t("website.aiDone"));
     } catch (e) {

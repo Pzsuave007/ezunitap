@@ -521,6 +521,7 @@
       st(fab, { width: "60px", height: "60px", borderRadius: "50%", fontSize: "26px" });
       fab.innerHTML = "&#128172;";
     }
+    fab.id = "unitech-chat-fab";
     document.body.appendChild(fab);
 
     var panelCss = {

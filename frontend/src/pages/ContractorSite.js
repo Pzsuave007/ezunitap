@@ -202,8 +202,10 @@ export default function ContractorSite({ injected }) {
         @keyframes wpulse{0%,100%{box-shadow:0 0 0 0 ${accent}66}50%{box-shadow:0 0 0 10px ${accent}00}}
         .wfade{animation:wfade .8s ease both}
         .wmarq{display:flex;gap:2rem;width:max-content;animation:wmarquee 22s linear infinite}
+        /* On phones, lift the floating chat button above the sticky Call/Quote bar */
+        @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
       `}</style>
-      <div className="ws">
+      <div className="ws overflow-x-clip">
         <Layout ctx={ctx} />
       </div>
       <MobileBar ctx={ctx} />
