@@ -3977,7 +3977,8 @@ class WebsiteIn(BaseModel):
     chat_launcher: Optional[str] = None        # optional chat button text
     chat_position: Optional[str] = None        # "right" | "left"
     before_after: Optional[list] = None        # [{before: photo_id, after: photo_id}] for the slider template
-    team_photo_id: Optional[str] = None         # owner/team photo shown in the About section
+    team_photo_id: Optional[str] = None         # (legacy) main About photo
+    about_photo_ids: Optional[list] = None       # up to 4 photos for the About collage
     why_photo_id: Optional[str] = None          # image shown alongside the "Why choose us" section
     band_photo_id: Optional[str] = None         # background image for the mid-page CTA band
 
@@ -4034,6 +4035,7 @@ async def get_website(user_id: str = Depends(get_current_user_id)):
     w = await _get_or_init_website(user_id)
     for k in ("team_photo_id", "why_photo_id", "band_photo_id"):
         w.setdefault(k, "")
+    w.setdefault("about_photo_ids", [])
     w["public_path"] = f"/sitio/{w['slug']}"
     return w
 

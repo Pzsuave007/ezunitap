@@ -248,7 +248,8 @@ export default function ContractorSite({ injected }) {
   const bandImg = photoUrl(w.band_photo_id, 1600) || stock.hero;
   const whyImgOn = !!photoUrl(w.why_photo_id);
   const bandImgOn = !!photoUrl(w.band_photo_id);
-  const _collage = [photoUrl(w.team_photo_id, 600), ...stock.imgs, stock.hero].filter(Boolean);
+  const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
+  const _collage = [..._aboutIds.map((id) => photoUrl(id, 600)), ...stock.imgs, stock.hero].filter(Boolean);
   const aboutImgs = [0, 1, 2, 3].map((i) => _collage[i % _collage.length]);
 
   const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };

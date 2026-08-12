@@ -139,6 +139,14 @@ export default function WebsiteEditor() {
     toast.success(t("website.photoAdded"));
   };
 
+  const uploadPhoto = async (file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const { data } = await api.post("/photos?label=website", fd, { headers: { "Content-Type": "multipart/form-data" } });
+    setPhotos((prev) => [data, ...prev]);
+    return data.id;
+  };
+
   const uploadHero = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -423,7 +431,7 @@ export default function WebsiteEditor() {
       {tab === "media" && (<>
       <PhotoField label={t("website.heroPhoto")} desc={t("website.heroPhotoDesc")} value={w.hero_photo_id} photos={photos} onPick={(id) => save({ hero_photo_id: id })} onUpload={(f) => uploadField("hero_photo_id", f)} onRemove={() => save({ hero_photo_id: "" })} testid="hero" t={t} />
 
-      <PhotoField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} value={w.team_photo_id} photos={photos} onPick={(id) => save({ team_photo_id: id })} onUpload={(f) => uploadField("team_photo_id", f)} onRemove={() => save({ team_photo_id: "" })} testid="team" t={t} />
+      <PhotoMultiField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} values={(w.about_photo_ids && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : [])} photos={photos} onChange={(ids) => save({ about_photo_ids: ids, team_photo_id: ids[0] || "" })} onUpload={uploadPhoto} testid="about" t={t} max={4} />
       <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
       <PhotoField label={t("website.bandPhotoTitle")} desc={t("website.bandPhotoDesc")} value={w.band_photo_id} photos={photos} onPick={(id) => save({ band_photo_id: id })} onUpload={(f) => uploadField("band_photo_id", f)} onRemove={() => save({ band_photo_id: "" })} testid="band" t={t} />
 
@@ -764,6 +772,60 @@ export default function WebsiteEditor() {
   );
 }
 
+function PhotoMultiField({ label, desc, values, photos, onChange, onUpload, testid, t, max = 4 }) {
+  const ref = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const arr = values || [];
+  const toggle = (id) => { if (arr.includes(id)) onChange(arr.filter((x) => x !== id)); else if (arr.length < max) onChange([...arr, id]); };
+  const up = async (f) => {
+    if (!f) return;
+    setBusy(true);
+    try { const id = await onUpload(f); if (id && !arr.includes(id) && arr.length < max) onChange([...arr, id]); }
+    catch { toast.error(t("website.saveError")); }
+    finally { setBusy(false); if (ref.current) ref.current.value = ""; }
+  };
+  return (
+    <Card className="card-elevated border-0 shadow-none p-5">
+      <div className="font-semibold mb-1 flex items-center gap-2"><ImagePlus className="w-4 h-4" /> {label}</div>
+      <p className="text-sm text-slate-500 mb-3">{desc}</p>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => up(e.target.files?.[0])} data-testid={`website-${testid}-upload-input`} />
+      <div className="flex flex-wrap gap-3 items-center">
+        {arr.map((id) => (
+          <div key={id} className="relative w-20 h-20 rounded-xl overflow-hidden flex-none border border-slate-200" data-testid={`website-${testid}-item-${id}`}>
+            <img src={photoSrc(id)} alt="" className="w-full h-full object-cover" />
+            <button onClick={() => onChange(arr.filter((x) => x !== id))} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center" data-testid={`website-${testid}-remove-${id}`}><Trash2 className="w-3 h-3" /></button>
+          </div>
+        ))}
+        {arr.length < max && (
+          <Button variant="outline" onClick={() => setChoosing((v) => !v)} className="rounded-xl h-20 px-4" data-testid={`website-${testid}-choose`}>
+            <Plus className="w-4 h-4 mr-1" /> {t("website.choosePhoto")}
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-slate-400 mt-2">{arr.length}/{max}</p>
+      {choosing && (
+        <div className="mt-3 p-3 rounded-xl bg-slate-50" data-testid={`website-${testid}-chooser`}>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => ref.current?.click()} disabled={busy} data-testid={`website-${testid}-upload`}
+              className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+              {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+            </button>
+            {photos.map((p) => (
+              <button key={p.id} onClick={() => toggle(p.id)} data-testid={`website-${testid}-pick-${p.id}`}
+                className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${arr.includes(p.id) ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+                <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+                {arr.includes(p.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
+              </button>
+            ))}
+          </div>
+          {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, testid, t }) {
   const ref = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -814,8 +876,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, why_photo_id, band_photo_id } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, why_photo_id, band_photo_id };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id };
 }
 
 function DnsRow({ label, value, onCopy }) {
