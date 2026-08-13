@@ -114,12 +114,19 @@ function RoutedErrorBoundary({ children }) {
 }
 
 function App() {
+  // UniTech-branded banners (language suggestion + install app) must NEVER show
+  // on public client-facing pages (custom domains, /sitio, smart cards, public
+  // quotes/invoices/reviews). Only show them inside the UniTech app itself.
+  const _host = window.location.hostname;
+  const _path = window.location.pathname;
+  const _isPrimary = _host === "localhost" || _host.endsWith("emergentagent.com") || /ezunitap|ezunitech/i.test(_host);
+  const _isPublicSite = !_isPrimary || /^\/(sitio|c|r|p|demo)/.test(_path);
   return (
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
-          <LanguageSuggestBanner />
-          <InstallPWA />
+          {!_isPublicSite && <LanguageSuggestBanner />}
+          {!_isPublicSite && <InstallPWA />}
           <RoutedErrorBoundary>
           <Routes>
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />

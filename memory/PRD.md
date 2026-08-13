@@ -1,5 +1,12 @@
 # UniTech — PRD (resumen vivo)
 
+## 🧹 Jun 2026 — Quitar banners de UniTech de sitios de clientes [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Pedido**: el banner "¿Hablas español? VER EN ESPAÑOL" (`LanguageSuggestBanner`) y el prompt "bajar app" (`InstallPWA`) salían en los sitios públicos de clientes. Quitarlos de ahí.
+- **Fix** (`App.js`): esos banners estaban en el árbol global (se renderizaban en TODA ruta, incluidos dominios custom y /sitio). Ahora se calcula `_isPublicSite` (host no-primary O path /sitio|/c|/r|/p|/demo) y solo se renderizan cuando NO es sitio público (o sea, solo dentro de la app UniTech).
+- Verificado screenshot en /sitio/...?preview=1: banner ausente, install prompt ausente, sitio limpio. Build recompilado + staged.
+- ⚠️ Frontend: Save to GitHub + deploy para producción.
+
+
 ## 🖼️ Jun 2026 — Imágenes lentas/rotas: mover storage a LOCAL (tu servidor) + caché + servir sin bloquear [App+infra listas; verificado curl, SIN testing_agent]
 - **Causa raíz**: `STORAGE_BACKEND` por defecto = **emergent** → todas las fotos se guardaban en Emergent Object Storage, no en el servidor del dueño. En prod cada imagen se bajaba por red desde Emergent (lento ~45s) y a veces fallaba ("SEO Optimization" rota). Además el endpoint de servir procesaba Pillow SÍNCRONO (bloqueaba event loop → se serializaban) y sin caché.
 - **Fixes**: (1) `.env` preview + `deploy/fix.sh` + `backend.env.production.example`: `STORAGE_BACKEND=local` + `UPLOADS_DIR` (prod: /home/ezunitap/uploads) → fotos NUEVAS en disco del servidor. (2) `public_photo`: `backend.get` y `_optimize_image` a `asyncio.to_thread` (cargan en paralelo) + **caché en disco** de variantes optimizadas (`_img_cache_get/put`, IMG_CACHE_DIR). (3) `deploy/migrate-photos-to-local.py`: mueve fotos EXISTENTES de Emergent → local. (4) `ContractorSite.js`: handler global que oculta cualquier `<img>` roto (nunca se muestra ícono roto al cliente).
