@@ -4524,6 +4524,19 @@ async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f:
     return {**_domain_status(w), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
 
 
+async def _prewarm_domain_cert(domain: str):
+    """Hit https://<domain> so the edge (Caddy on-demand TLS) issues the SSL cert
+    now, in the background. Best-effort — errors are ignored."""
+    if not domain:
+        return
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=25, verify=False, follow_redirects=False) as c:
+            await c.get(f"https://{domain}/", headers={"User-Agent": "UniTech-Prewarm"})
+    except Exception as e:  # noqa: BLE001
+        logger.info(f"cert prewarm for {domain}: {e!r}")
+
+
 @api_router.post("/website/domain/verify-a")
 async def verify_website_domain_a(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
     """Confirm the A record for the domain points to this server's IP (Step 2)."""
@@ -4543,6 +4556,9 @@ async def verify_website_domain_a(user_id: str = Depends(get_current_user_id), _
         await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_a_ok": True}})
         w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
         st = _domain_status(w)
+        # Pre-warm: trigger the edge (Caddy on-demand TLS) to issue the SSL cert
+        # NOW, in the background, so the first real visit is instant.
+        asyncio.create_task(_prewarm_domain_cert(domain))
         msg = "All set — your domain is connected! 🎉" if st["connected"] else "A record confirmed! Now verify ownership (Step 1) to finish."
         return {**st, "checked": True, "message": msg}
     found = ", ".join(records) if records else "none"
