@@ -4360,6 +4360,42 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
     return {"filled": filled, "reason": ("ok" if filled else "none"), "website": w2}
 
 
+@api_router.post("/website/ai-suggest-services")
+async def website_ai_suggest_services(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Suggest common services for the owner's trade (checklist for the editor)."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    try:
+        services = await ai_service.suggest_services(card.get("business_type") or "", w.get("ai_brief") or "")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"website ai-suggest-services failed: {e!r}")
+        raise HTTPException(502, "AI could not suggest services. Try again in a moment.")
+    return {"services": services}
+
+
+@api_router.post("/website/ai-write")
+async def website_ai_write(body: dict = Body(...), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Write one short website text field (service description, why-us point,
+    how-it-works step, or FAQ answer) from a title/name the owner provides."""
+    kind = (body.get("kind") or "").strip()
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Add a title/name first so the AI knows what to write about.")
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "business_name": 1}) or {}
+    try:
+        text = await ai_service.write_field(
+            kind=kind, name=name,
+            business_type=card.get("business_type") or "",
+            business_name=user.get("business_name") or card.get("business_name") or "",
+            context=(body.get("context") or ""),
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"website ai-write failed: {e!r}")
+        raise HTTPException(502, "AI could not write that. Try again in a moment.")
+    return {"text": text}
+
+
 @api_router.post("/website/ai-suggest-design")
 async def website_ai_suggest_design(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Suggest the best template + brand color for this contractor's trade.

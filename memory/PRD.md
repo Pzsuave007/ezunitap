@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## ✨ Jun 2026 — IA en la sección de Servicios + "Escribir con IA" en todo el contenido [COMPLETO; verificado UI en vivo + curl, SIN testing_agent]
+- **Petición dueño**: (A) botón que sugiera servicios según el oficio para elegir con checkboxes; (B) botón de IA para rellenar descripciones cuando no sabe qué poner; poner IA en TODAS las secciones de texto. Elecciones: inglés (cliente-facing), servicio sugerido = nombre + descripción corta automática, aplicar a Servicios + Why/How/FAQ.
+- **Backend** (`ai_service.py`): `suggest_services(business_type, brief)` → 10-12 {name, description} en inglés; `write_field(kind, name, business_type, business_name, context)` → texto corto (kinds: service_desc, why_desc, how_desc, faq_answer). (`server.py`): `POST /website/ai-suggest-services` (usa business_type + ai_brief) y `POST /website/ai-write`.
+- **Frontend** (`WebsiteEditor.js`): en Servicios, panel "✨ Sugerir servicios" con checkboxes (todos marcados) → "Agregar seleccionados" agrega name+description; botón inline `AiBtn` "Write with AI" bajo cada descripción de Servicio, y bajo cada Why/How/FAQ (llama `aiWrite(kind,name,...)`). i18n `website.aiWrite/suggestServices/...` (EN/ES). testids: `website-suggest-services`, `website-suggestion-check-N`, `website-add-selected-services`, `ai-write-service-N`, `ai-write-how-N`, `ai-write-why-N`, `ai-write-faq-N`.
+- Verificado: endpoints por curl (12 servicios, descripciones y FAQ pro); UI en vivo → sugerir + agregar (name+desc) + "Write with AI" rellenó descripción de un servicio.
+- ⚠️ Backend + frontend. Producción necesita Save to GitHub + `deploy.sh`.
+- NOTA idioma: la traducción ES NO es automática; el dueño debe tocar "Crear versión en Español" para actualizar `content_es` (que sí incluye services).
+
+
 ## 🧾 Jun 2026 — AI Quote/Invoice: volver a desglosar en detalle [COMPLETO; verificado LLM real + curl endpoint, SIN testing_agent]
 - **Bug dueño**: al meter una descripción SENCILLA en un invoice/quote, la IA sacaba UNA sola línea con el total (poco impresionante). Reprodujo: input "baño $6000" → 1 line item = $6000.
 - **Causa**: el prompt `QUOTE_SYSTEM` en `ai_service.py` había sido endurecido (cambio anterior) hacia "NO agrupar / NO inventar líneas" para preservar desgloses detallados — efecto colateral: con entradas simples ya no expandía nada. Modelo intacto (gpt-4o). NINGÚN cambio reciente mío tocó esto.

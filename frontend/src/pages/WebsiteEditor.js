@@ -164,6 +164,52 @@ export default function WebsiteEditor() {
     }
   };
 
+  // ---- AI content helpers (services suggestions + per-field "write for me") ----
+  const [aiField, setAiField] = useState(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [svcSuggesting, setSvcSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+
+  const aiWrite = async (kind, name, fieldKey, applyFn) => {
+    if (!name || !name.trim()) { toast.error(t("website.aiNeedName")); return; }
+    setAiField(fieldKey);
+    try {
+      const { data } = await api.post("/website/ai-write", { kind, name });
+      if (data.text) applyFn(data.text);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setAiField(null); }
+  };
+
+  const suggestServices = async () => {
+    setSvcSuggesting(true); setSuggestOpen(true);
+    try {
+      const { data } = await api.post("/website/ai-suggest-services", {});
+      setSuggestions((data.services || []).map((s) => ({ ...s, checked: true })));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+      setSuggestOpen(false);
+    } finally { setSvcSuggesting(false); }
+  };
+
+  const addSelectedServices = () => {
+    const picked = suggestions.filter((s) => s.checked).map((s) => ({ name: s.name, description: s.description || "", starting_price: "" }));
+    if (!picked.length) { setSuggestOpen(false); return; }
+    patch({ services: [...(w.services || []), ...picked] });
+    setSuggestOpen(false); setSuggestions([]);
+    toast.success(t("website.servicesAdded"));
+  };
+
+  const AiBtn = ({ fieldKey, onClick, label }) => (
+    <button type="button" onClick={onClick} disabled={aiField === fieldKey}
+      className="flex-none inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+      data-testid={`ai-write-${fieldKey}`}>
+      {aiField === fieldKey ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+      {label || t("website.aiWrite")}
+    </button>
+  );
+
+
   const uploadField = async (field, file) => {
     if (!file) return;
     const fd = new FormData();
@@ -700,6 +746,30 @@ export default function WebsiteEditor() {
       <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
         <div className="font-semibold flex items-center gap-2"><Briefcase className="w-4 h-4" /> {t("website.servicesTitle")}</div>
         <p className="text-sm text-slate-500 -mt-1">{t("website.servicesDesc")}</p>
+
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="text-sm text-slate-600">{t("website.suggestServicesHint")}</div>
+            <Button onClick={suggestServices} disabled={svcSuggesting} size="sm" className="rounded-lg bg-indigo-600 hover:bg-indigo-700" data-testid="website-suggest-services">
+              {svcSuggesting ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" /> {t("website.suggesting")}</> : <><Sparkles className="w-4 h-4 mr-1.5" /> {t("website.suggestServices")}</>}
+            </Button>
+          </div>
+          {suggestOpen && suggestions.length > 0 && (
+            <div className="mt-3 space-y-1.5" data-testid="website-suggestions-panel">
+              {suggestions.map((s, i) => (
+                <label key={i} className="flex items-start gap-2.5 p-2 rounded-lg bg-white cursor-pointer hover:bg-slate-50" data-testid={`website-suggestion-${i}`}>
+                  <input type="checkbox" checked={s.checked} onChange={(e) => setSuggestions((prev) => prev.map((x, j) => j === i ? { ...x, checked: e.target.checked } : x))} className="mt-1 h-4 w-4 accent-indigo-600" data-testid={`website-suggestion-check-${i}`} />
+                  <span className="min-w-0"><span className="font-semibold text-sm block">{s.name}</span>{s.description && <span className="text-xs text-slate-500">{s.description}</span>}</span>
+                </label>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <Button onClick={addSelectedServices} size="sm" className="rounded-lg bg-emerald-600 hover:bg-emerald-700" data-testid="website-add-selected-services"><Plus className="w-4 h-4 mr-1" /> {t("website.addSelected")}</Button>
+                <Button onClick={() => { setSuggestOpen(false); setSuggestions([]); }} size="sm" variant="ghost" className="rounded-lg" data-testid="website-suggestions-cancel">{t("common.cancel") || "Cancel"}</Button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {(w.services || []).map((s, i) => (
           <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-service-${i}`}>
             <div className="flex items-center gap-2">
@@ -707,6 +777,9 @@ export default function WebsiteEditor() {
               <Button variant="ghost" size="icon" onClick={() => listDel("services", i)} className="text-slate-400 flex-none" data-testid={`website-service-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
             <Textarea value={s.description || ""} onChange={(e) => listSet("services", i, "description", e.target.value)} className="rounded-lg bg-white min-h-[56px]" placeholder={t("website.serviceDesc")} />
+            <div className="flex justify-end -mt-1">
+              <AiBtn fieldKey={`service-${i}`} onClick={() => aiWrite("service_desc", s.name, `service-${i}`, (txt) => listSet("services", i, "description", txt))} />
+            </div>
             <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
             <div className="flex items-center gap-2">
               {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />}
@@ -733,6 +806,9 @@ export default function WebsiteEditor() {
               <Button variant="ghost" size="icon" onClick={() => listDel("how_it_works", i)} className="text-slate-400 flex-none" data-testid={`website-how-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
             <Textarea value={s.desc || ""} onChange={(e) => listSet("how_it_works", i, "desc", e.target.value)} className="rounded-lg bg-white min-h-[60px]" placeholder={t("website.stepDesc")} />
+            <div className="flex justify-end -mt-1">
+              <AiBtn fieldKey={`how-${i}`} onClick={() => aiWrite("how_desc", s.title, `how-${i}`, (txt) => listSet("how_it_works", i, "desc", txt))} />
+            </div>
           </div>
         ))}
         <Button variant="outline" onClick={() => listAdd("how_it_works", { title: "", desc: "" })} className="rounded-xl" data-testid="website-how-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addStep")}</Button>
@@ -748,6 +824,9 @@ export default function WebsiteEditor() {
               <Button variant="ghost" size="icon" onClick={() => listDel("why_us", i)} className="text-slate-400 flex-none" data-testid={`website-why-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
             <Input value={s.desc || ""} onChange={(e) => listSet("why_us", i, "desc", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.whyItemDesc")} />
+            <div className="flex justify-end">
+              <AiBtn fieldKey={`why-${i}`} onClick={() => aiWrite("why_desc", s.title, `why-${i}`, (txt) => listSet("why_us", i, "desc", txt))} />
+            </div>
           </div>
         ))}
         <Button variant="outline" onClick={() => listAdd("why_us", { title: "", desc: "" })} className="rounded-xl" data-testid="website-why-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addReason")}</Button>
@@ -763,6 +842,9 @@ export default function WebsiteEditor() {
               <Button variant="ghost" size="icon" onClick={() => listDel("faqs", i)} className="text-slate-400 flex-none" data-testid={`website-faq-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
             <Textarea value={f.a || ""} onChange={(e) => listSet("faqs", i, "a", e.target.value)} className="rounded-lg bg-white min-h-[60px]" placeholder={t("website.faqA")} />
+            <div className="flex justify-end -mt-1">
+              <AiBtn fieldKey={`faq-${i}`} onClick={() => aiWrite("faq_answer", f.q, `faq-${i}`, (txt) => listSet("faqs", i, "a", txt))} />
+            </div>
           </div>
         ))}
         <Button variant="outline" onClick={() => listAdd("faqs", { q: "", a: "" })} className="rounded-xl" data-testid="website-faq-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addFaq")}</Button>

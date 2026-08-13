@@ -296,6 +296,71 @@ async def generate_quote_from_text(description_es: str, language: str = "es") ->
     return data
 
 
+SUGGEST_SERVICES_SYSTEM = """You help a U.S. service/home-improvement contractor list the
+services they offer, for their public website. Given their trade/business type, output a
+list of the most common, sellable services a customer would search for in that trade.
+
+Output ONLY valid JSON (no markdown, no commentary):
+{"services": [{"name": "Short service name", "description": "One customer-facing sentence (max ~18 words) describing the service and its benefit."}]}
+
+Rules:
+- ALL text in ENGLISH (customers read English).
+- Return 10-12 distinct, realistic services for the trade — specific, not generic filler.
+- Names are short (2-4 words). Descriptions are one polished, benefit-driven sentence.
+- No prices, no emojis, no numbering. Order from most popular to more specialized.
+"""
+
+
+async def suggest_services(business_type: str = "", brief: str = "") -> list:
+    """Return a list of {name, description} service suggestions for the trade."""
+    chat = _new_chat(SUGGEST_SERVICES_SYSTEM)
+    parts = [f"Trade / business type: {business_type or 'general home services contractor'}"]
+    if brief:
+        parts.append(f"Extra context about the business: {brief}")
+    response = await chat.send_message(UserMessage(text="\n".join(parts)))
+    data = _extract_json(response)
+    out = []
+    for s in (data.get("services") or []):
+        if isinstance(s, dict) and (s.get("name") or "").strip():
+            out.append({"name": s["name"].strip(), "description": (s.get("description") or "").strip()})
+    if not out:
+        raise ValueError("AI could not suggest services. Try again.")
+    return out[:12]
+
+
+_WRITE_KINDS = {
+    "service_desc": "a customer-facing description of this SERVICE the contractor offers",
+    "why_desc": "a short supporting sentence for this 'Why choose us' selling point",
+    "how_desc": "a short explanation of this step in the contractor's process",
+    "faq_answer": "a helpful, reassuring answer to this customer FAQ question",
+}
+
+
+async def write_field(kind: str, name: str, business_type: str = "", business_name: str = "", context: str = "") -> str:
+    """Write one short English text field for the website editor (service description,
+    why-us point, how-it-works step, or FAQ answer)."""
+    what = _WRITE_KINDS.get(kind, "a short professional website text")
+    length = "2-3 sentences" if kind == "faq_answer" else "one polished sentence (max ~25 words)"
+    system = (
+        "You are a professional copywriter for U.S. home-service/contractor websites. "
+        "Write clear, benefit-driven, trustworthy marketing copy in ENGLISH. "
+        f"Write {what}. Length: {length}. "
+        "Output ONLY the finished text — no quotes, no labels, no preamble, no markdown."
+    )
+    chat = _new_chat(system)
+    parts = []
+    if business_name:
+        parts.append(f"Business: {business_name}")
+    if business_type:
+        parts.append(f"Trade: {business_type}")
+    parts.append(f"Topic / title: {name}")
+    if context:
+        parts.append(f"Extra context: {context}")
+    response = await chat.send_message(UserMessage(text="\n".join(parts)))
+    return (response or "").strip().strip('"').strip("\u201c\u201d").strip()
+
+
+
 SCOPE_SYSTEM = """You generate a professional Scope of Work in ENGLISH for U.S. clients,
 based on a Spanish description from a contractor.
 
