@@ -37,10 +37,12 @@ fi
 # 0b. Ensure the custom-domain A-record target IP is set (used by the Website
 #     Builder "connect your domain" step). Defaults to this server's public IP;
 #     override by putting WEBSITE_DOMAIN_TARGET=... in keys.txt (handled above).
-if ! grep -q "^WEBSITE_DOMAIN_TARGET=" "$PROD/.env" 2>/dev/null; then
-    echo "WEBSITE_DOMAIN_TARGET=132.148.78.187" >> "$PROD/.env"
-    echo "  WEBSITE_DOMAIN_TARGET set to default 132.148.78.187"
-fi
+# 0b. Force the custom-domain A-record target to the dedicated edge droplet IP
+#     (used by the Website Builder "connect your domain" step). We normalize it
+#     every deploy so an older value (e.g. the cPanel IP) gets corrected.
+sed -i '/^WEBSITE_DOMAIN_TARGET=/d' "$PROD/.env" 2>/dev/null || true
+echo "WEBSITE_DOMAIN_TARGET=164.92.79.162" >> "$PROD/.env"
+echo "  WEBSITE_DOMAIN_TARGET set to 164.92.79.162 (custom-domain edge droplet)"
 
 
 # 1. Pull latest
