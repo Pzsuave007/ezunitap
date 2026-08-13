@@ -707,6 +707,11 @@ export default function WebsiteEditor() {
             <div className="flex items-center gap-2 text-emerald-800 font-bold"><CheckCircle2 className="w-5 h-5" /> {t("website.domainConnectedTitle")}</div>
             <p className="text-sm text-emerald-700 mt-1">{t("website.domainConnectedDesc")}</p>
             <a href={`https://${domain.domain}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:underline" data-testid="website-domain-visit"><Globe className="w-4 h-4" /> {domain.domain}</a>
+            {!w.published && (
+              <div className="mt-3 rounded-lg bg-amber-100 border border-amber-300 p-2.5 text-xs text-amber-900" data-testid="website-domain-publish-warn">
+                {t("website.domainPublishWarn")}
+              </div>
+            )}
             <div className="mt-3">
               <button onClick={removeDomain} className="text-xs text-slate-400 hover:text-red-500 font-semibold" data-testid="website-domain-remove">{t("website.domainRemove")}</button>
             </div>

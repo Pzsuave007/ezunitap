@@ -131,6 +131,7 @@
     "domainVerifyABtn": "Verify A record",
     "domainConnected": "Domain connected! 🎉",
     "domainAok": "A record confirmed ✓",
+    "domainPublishWarn": "⚠️ Your site is still in Draft. Turn the Status toggle above to Published so this domain shows your website.",
     "domainDesc": "Use your own domain (e.g. mybusiness.com) so your site is 100% yours.",
     "domainSaved": "Domain saved — now add the DNS records below.",
     "domainVerified": "Domain verified!",

@@ -131,6 +131,7 @@
     "domainVerifyABtn": "Verificar registro A",
     "domainConnected": "¡Dominio conectado! 🎉",
     "domainAok": "Registro A confirmado ✓",
+    "domainPublishWarn": "⚠️ Tu sitio sigue en Borrador. Activa el interruptor de Estado (arriba) a Publicado para que este dominio muestre tu página.",
     "domainDesc": "Usa tu propio dominio (ej. minegocio.com) para que tu sitio sea 100% tuyo.",
     "domainSaved": "Dominio guardado — ahora agrega los registros DNS de abajo.",
     "domainVerified": "¡Dominio verificado!",

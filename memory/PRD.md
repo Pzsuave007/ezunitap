@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🌐 Jun 2026 — Dominio "Record not found": faltan PUBLICAR + servir el dominio en cPanel [DIAGNOSTICADO+mejoras; SIN testing_agent]
+- **Síntoma**: `https://growthally.uni2mkt.com` → texto plano "Record not found" + "Not secure". El string NO está en el código → viene del servidor (Apache/cPanel default vhost).
+- **Causa raíz (2)**: (1) el sitio está `published: False` → `/api/public/website-by-domain` exige `published:True` → 404. (2) El VPS no sirve la app para ese hostname: falta agregar el dominio en cPanel (alias/parked al docroot de la app) + AutoSSL. El DNS SÍ está bien (llega al servidor, A→132.148.78.187, verify-a=OK).
+- **Arquitectura confirmada**: `App.js` (l.86-100) detecta `window.location.hostname` y si no es primary llama `/public/website-by-domain/{host}` → renderiza `ContractorSite`. `.htaccess` solo proxya /api; el root sirve index.html. Para un dominio nuevo, cPanel debe servir el mismo `public_html` (alias/parked) — igual patrón que `deploy-ezunitech.sh`.
+- **Mejoras hechas**: aviso en la tarjeta "Conectado" cuando `!w.published` (`domainPublishWarn`, EN/ES) para recordar publicar; nuevo `deploy/add-custom-domain.sh` (whmapi1 create_parked_domain + AutoSSL) para agregar dominios custom de un comando.
+- **Acción del dueño (fuera de la app)**: (1) Publicar el sitio (toggle Status→Publicado). (2) En cPanel del acct que sirve la app: agregar `growthally.uni2mkt.com` como **Alias/Parked** + correr **AutoSSL**. Luego Save to GitHub + deploy.
+
+
 ## 🌐 Jun 2026 — Dominio: botón confirmar paso 2, estado "Conectado" limpio, y re-guardar no reinicia [COMPLETO; verificado curl+screenshot, SIN testing_agent]
 - **Pedidos dueño**: (1) el paso 2 (A record) no tenía botón para confirmar como el paso 1; (2) cuando todo esté bien, mostrar solo "Conectado" y ocultar la info del servidor (confusa); (3) volver a "Guardar" el mismo dominio reiniciaba las instrucciones.
 - **Backend** (`server.py`): nuevo flag `custom_domain_a_ok` + `_dns_a_records()`; nuevo endpoint `POST /website/domain/verify-a` (resuelve A y compara con `WEBSITE_DOMAIN_TARGET`). `_domain_status` devuelve `a_ok` y `connected` (verified && a_ok). `set_website_domain`: si el dominio es el MISMO y ya tiene token → devuelve status sin resetear (arregla #3). delete limpia `custom_domain_a_ok`.
