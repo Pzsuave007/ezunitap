@@ -6,123 +6,6 @@ import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
 
-// ---- Trade-aware professional stock fallbacks (verified URLs) --------------
-const STOCK = {
-  concrete: {
-    hero: "https://images.unsplash.com/photo-1695327057610-3821e847601d?ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1685464196343-c377192f9387?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1669170930713-f7c778496177?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1685464196332-ed9c9da28d9a?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1695327057610-3821e847601d?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  fence: {
-    hero: "https://images.unsplash.com/photo-1604015641586-6fa03629f976?ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1508263073532-98ed924de82d?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1604015641586-6fa03629f976?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1583805978118-ba9a81ac1399?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1530328881134-8c525cc57036?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  towing: {
-    hero: "https://images.unsplash.com/photo-1730514784243-f0e7f09c9f50?ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1730514784243-f0e7f09c9f50?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1730514785075-b065c757b653?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1601508836900-ee2aa7840a7b?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1616728827388-84563c099b29?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  bold: {
-    hero: "https://images.unsplash.com/photo-1633759593085-1eaeb724fc88?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHw0fHxyb29maW5nJTIwY29udHJhY3RvcnxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1635424709961-f3a150459ad4?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1558227691-41ea78d1f631?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1635424709845-3a85ad5e1f5e?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  warm: {
-    hero: "https://images.unsplash.com/photo-1734303023491-db8037a21f09?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxsYW5kc2NhcGluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1458245201577-fc8a130b8829?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1734079692160-fcbe4be6ab96?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1558904541-efa843a96f01?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1728917416100-40c8d78324b7?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  clean: {
-    hero: "https://images.unsplash.com/photo-1749532125405-70950966b0e5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxwbHVtYmluZyUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3ODYzMzkzNTN8MA&ixlib=rb-4.1.0&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1581783898377-1c85bf937427?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1426927308491-6380b6a9936f?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1676311396794-f14881e9daaa?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1503789146722-cf137a3c0fea?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  plumbing: {
-    hero: "https://images.unsplash.com/photo-1748442001865-5583ec02ae22?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1676210134188-4c05dd172f89?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1676210133055-eab6ef033ce3?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1676210134190-3f2c0d5cf58d?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1581783898377-1c85bf937427?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  hvac: {
-    hero: "https://images.unsplash.com/photo-1601993198415-19d86ae28424?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1642749776312-aa42ce20c9f5?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1698479603408-1a66a6d9e80f?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1660330589827-da8ab7dd3c02?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  electrical: {
-    hero: "https://images.unsplash.com/photo-1758101755915-462eddc23f57?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1660330589693-99889d60181e?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1558227691-41ea78d1f631?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  painting: {
-    hero: "https://images.unsplash.com/photo-1688372198189-de6a51777a81?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1693985120993-e9b203ce7631?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1688372199140-cade7ae820fe?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-  cleaning: {
-    hero: "https://images.unsplash.com/photo-1647381518264-97ff1835026f?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600",
-    imgs: [
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1713110824336-f78c320dcf8e?ixlib=rb-4.1.0&q=85&w=900",
-      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?ixlib=rb-4.1.0&q=85&w=900",
-    ],
-  },
-};
-function stockFor(businessType = "") {
-  const s = (businessType || "").toLowerCase();
-  if (/(plumb|drain|sewer|water heater|pipe|leak)/.test(s)) return STOCK.plumbing;
-  if (/(hvac|air ?condition|\bac\b|heating|cooling|furnace|ventilation)/.test(s)) return STOCK.hvac;
-  if (/(electric|wiring|panel|lighting|solar)/.test(s)) return STOCK.electrical;
-  if (/(paint|drywall|stucco|coating)/.test(s)) return STOCK.painting;
-  if (/(clean|maid|janitor|housekeep|pressure ?wash|window wash)/.test(s)) return STOCK.cleaning;
-  if (/(landscap|lawn|garden|tree|irrigation|nursery|sod)/.test(s)) return STOCK.warm;
-  if (/(concret|cement|foundation|slab|driveway|paver|mason|stucco|patio)/.test(s)) return STOCK.concrete;
-  if (/(fenc|gate|railing)/.test(s)) return STOCK.fence;
-  if (/(tow|roadside|wrecker|junk|haul)/.test(s)) return STOCK.towing;
-  if (/(roof|hvac|concret|constru|remodel|excav|demol|paver|deck|fenc|tow|mason|gutter)/.test(s)) return STOCK.bold;
-  if (/(handyman|appliance|repair|install)/.test(s)) return STOCK.clean;
-  return STOCK.bold;
-}
 
 // ---- Per-template design tokens (5 DISTINCT templates) ---------------------
 const THEME = {
@@ -263,25 +146,25 @@ export default function ContractorSite({ injected }) {
   const accentText = isLight(accent) ? "#0A0A0A" : "#FFFFFF";
   const b = data.business;
   const sec = w.sections || {};
-  const stock = stockFor(b.business_type);
-  const realPhotos = (data.photos || []).map((p) => photoUrl(p.id, 1000));
-  const heroImg = photoUrl(w.hero_photo_id, 1600) || realPhotos[0] || stock.hero;
-  const pool = [...stock.imgs];
-  const poolAt = (i) => pool[i % pool.length] || stock.hero;
+  // Images come ONLY from photos the owner assigned (upload / AI / stock button).
+  // No hardcoded fallbacks — an empty slot renders nothing, never a random photo.
+  const heroImg = photoUrl(w.hero_photo_id, 1600) || null;
+  const poolAt = () => null;
   const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
   const _rawServices = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
   const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id, 800) || null }));
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
-  const teamImg = photoUrl(w.team_photo_id, 700) || stock.imgs[0] || stock.hero;
-  const whyImg = photoUrl(w.why_photo_id, 900) || stock.imgs[1] || stock.hero;
-  const bandImg = photoUrl(w.band_photo_id, 1600) || stock.hero;
-  const whyImgOn = !!photoUrl(w.why_photo_id);
-  const bandImgOn = !!photoUrl(w.band_photo_id);
+  const teamImg = photoUrl(w.team_photo_id, 700) || null;
+  const whyImg = photoUrl(w.why_photo_id, 900) || null;
+  const bandImg = photoUrl(w.band_photo_id, 1600) || null;
+  const heroImgOn = !!heroImg;
+  const whyImgOn = !!whyImg;
+  const bandImgOn = !!bandImg;
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
-  const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [stock.imgs[0], stock.imgs[1], stock.imgs[2], stock.hero].filter(Boolean);
+  const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
 
   return (
@@ -361,7 +244,7 @@ function Cinematic({ ctx }) {
 
       {/* Hero 100vh */}
       <section className="relative min-h-[100svh] flex items-end">
-        <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #08080A 4%, rgba(8,8,10,.55) 45%, rgba(8,8,10,.25) 100%)" }} />
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
         <div className="relative max-w-6xl mx-auto px-5 pb-24 pt-32 text-white w-full wfade">
@@ -382,7 +265,7 @@ function Cinematic({ ctx }) {
           <div className="grid md:grid-cols-3 gap-px" style={{ background: th.border }}>
             {services.map((s, i) => (
               <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden" style={{ background: th.surface }} data-testid={`site-service-${i}`}>
-                <img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
+                {s.img && <img src={s.img} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,10,.95), rgba(8,8,10,.2))" }} />
                 <div className="relative p-7 w-full">
                   <h3 className="wh font-bold text-2xl">{s.name}</h3>
@@ -472,7 +355,7 @@ function Responder({ ctx }) {
 
       {/* Hero with diagonal cut */}
       <section className="relative">
-        <div className="grid md:grid-cols-2">
+        <div className={`grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"}`}>
           <div className="px-5 py-14 md:py-24 max-w-xl mx-auto md:mx-0 md:ml-auto md:pr-12 wfade">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-black uppercase mb-4" style={{ background: `${accent}1a`, color: accent }}>Open 24/7 · Emergency Service</div>
             <h1 className="wh uppercase text-5xl sm:text-6xl leading-[0.95]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
@@ -482,9 +365,11 @@ function Responder({ ctx }) {
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2 border-2`} style={{ borderColor: th.ink, color: th.ink }}>Get a Fast Quote</button>
             </div>
           </div>
+          {heroImg && (
           <div className="relative min-h-[280px] md:min-h-full">
             <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
           </div>
+          )}
         </div>
         {/* trust marquee */}
         <div className="overflow-hidden py-3 border-y-2" style={{ background: th.ink, borderColor: th.ink }}>
@@ -612,13 +497,13 @@ function Bento({ ctx }) {
             {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: th.ink }}><Phone className="w-4 h-4" /> Call</a>}
           </div>
         </div>
-        {/* bento mosaic */}
+        {/* bento mosaic — only when a hero image is set */}
+        {heroImg && (
         <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[130px] md:auto-rows-[150px]">
           <div className="col-span-2 row-span-2 overflow-hidden rounded-2xl"><img src={heroImg} alt="" className="w-full h-full object-cover" /></div>
-          <div className="rounded-2xl p-5 flex flex-col justify-center" style={{ background: accent, color: accentText }}><div className="wh text-4xl font-extrabold">{b.years_in_business > 0 ? `${b.years_in_business}+` : "5.0"}</div><div className="text-sm font-semibold opacity-90">{b.years_in_business > 0 ? "Years experience" : "Star rating"}</div></div>
-          <div className="overflow-hidden rounded-2xl"><img src={poolAt(1)} alt="" className="w-full h-full object-cover" /></div>
-          <div className="col-span-2 overflow-hidden rounded-2xl"><img src={poolAt(2)} alt="" className="w-full h-full object-cover" /></div>
+          <div className="col-span-2 rounded-2xl p-5 flex flex-col justify-center" style={{ background: accent, color: accentText }}><div className="wh text-4xl font-extrabold">{b.years_in_business > 0 ? `${b.years_in_business}+` : "5.0"}</div><div className="text-sm font-semibold opacity-90">{b.years_in_business > 0 ? "Years experience" : "Star rating"}</div></div>
         </div>
+        )}
       </section>
 
       {sec.services !== false && (
@@ -703,8 +588,8 @@ function Craftsman({ ctx }) {
 
       {/* Hero: padded rounded container */}
       <section className="px-4 md:px-6 pt-6 md:pt-10">
-        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[2rem] md:rounded-[3rem] min-h-[460px] md:min-h-[600px] flex items-center">
-          <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[2rem] md:rounded-[3rem] min-h-[460px] md:min-h-[600px] flex items-center" style={!heroImg ? { background: "#1b1714" } : undefined}>
+          {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(20,16,12,.7), rgba(20,16,12,.25))" }} />
           <div className="relative p-8 md:p-16 text-white max-w-2xl wfade">
             <HeroBadges ctx={ctx} />
@@ -726,8 +611,8 @@ function Craftsman({ ctx }) {
             <h2 className="wh font-bold text-4xl md:text-5xl mb-12" style={{ color: th.ink }}>Our Services</h2>
             <div className="space-y-16 md:space-y-24">
               {services.map((s, i) => (
-                <div key={i} className={`grid md:grid-cols-2 gap-6 md:gap-10 items-center ${i % 2 ? "md:[direction:rtl]" : ""}`} data-testid={`site-service-${i}`}>
-                  <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>
+                <div key={i} className={`grid ${s.img ? "md:grid-cols-2" : "grid-cols-1"} gap-6 md:gap-10 items-center ${i % 2 && s.img ? "md:[direction:rtl]" : ""}`} data-testid={`site-service-${i}`}>
+                  {s.img && <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>}
                   <div className="[direction:ltr]">
                     <div className="wh text-6xl italic font-normal" style={{ color: `${accent}55` }}>{String(i + 1).padStart(2, "0")}</div>
                     <h3 className="wh font-bold text-3xl -mt-4" style={{ color: th.ink }}>{s.name}</h3>
@@ -810,8 +695,8 @@ function Trust({ ctx }) {
 
       {/* Centered hero with floating form */}
       <section className="relative">
-        <div className="relative">
-          <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="relative" style={!heroImg ? { background: "#111827" } : undefined}>
+          {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(17,24,39,.78), rgba(17,24,39,.62))" }} />
           <div className="relative max-w-3xl mx-auto px-5 pt-20 pb-40 md:pb-52 text-center text-white wfade">
             <div className="flex justify-center"><HeroBadges ctx={ctx} /></div>
@@ -842,8 +727,8 @@ function Trust({ ctx }) {
         <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
           <div className="space-y-10">
             {services.map((s, i) => (
-              <div key={i} className={`grid md:grid-cols-2 gap-6 items-center ${i % 2 ? "" : "md:[direction:rtl]"}`} data-testid={`site-service-${i}`}>
-                <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-video object-cover" /></div>
+              <div key={i} className={`grid ${s.img ? "md:grid-cols-2" : "grid-cols-1"} gap-6 items-center ${!s.img ? "" : (i % 2 ? "" : "md:[direction:rtl]")}`} data-testid={`site-service-${i}`}>
+                {s.img && <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-video object-cover" /></div>}
                 <div className="[direction:ltr]">
                   <h3 className="wh font-extrabold text-2xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2" style={{ color: th.muted }}>{s.description}</p>}
@@ -937,8 +822,9 @@ function BeforeAfter({ before, after, accent, tall }) {
 function Slider({ ctx }) {
   const { w, b, data, sec, accent, accentText, th, poolAt, services, goContact, heroImg } = ctx;
   const ba = (w.before_after || []).filter((p) => p && p.before && p.after);
-  const heroBefore = ba[0] ? photoUrl(ba[0].before) : poolAt(1);
-  const heroAfter = ba[0] ? photoUrl(ba[0].after) : (poolAt(0) || heroImg);
+  const heroBefore = ba[0] ? photoUrl(ba[0].before) : null;
+  const heroAfter = ba[0] ? photoUrl(ba[0].after) : null;
+  const showBA = !!(heroBefore && heroAfter);
   return (
     <div className="pb-24 md:pb-0">
       <header className="sticky top-0 z-40 border-b-2 bg-white" style={{ borderColor: th.ink }}>
@@ -947,7 +833,7 @@ function Slider({ ctx }) {
           <NavMenu ctx={ctx} />
         </div>
       </header>
-      <section className="grid md:grid-cols-2">
+      <section className={`grid ${(showBA || heroImg) ? "md:grid-cols-2" : "grid-cols-1"}`}>
         <div className="px-5 py-14 md:py-0 md:flex md:flex-col md:justify-center md:px-12 order-2 md:order-1" style={{ background: th.ink }}>
           <div className="text-white wfade max-w-lg">
             <HeroBadges ctx={ctx} />
@@ -959,9 +845,11 @@ function Slider({ ctx }) {
             </div>
           </div>
         </div>
+        {(showBA || heroImg) && (
         <div className="relative min-h-[280px] md:min-h-[560px] order-1 md:order-2">
-          <BeforeAfter before={heroBefore} after={heroAfter} accent={accent} tall />
+          {showBA ? <BeforeAfter before={heroBefore} after={heroAfter} accent={accent} tall /> : <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         </div>
+        )}
       </section>
 
       {sec.about !== false && <AboutBlock ctx={ctx} />}
@@ -986,7 +874,7 @@ function Slider({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((s, i) => (
               <div key={i} className="border-2 overflow-hidden group" style={{ borderColor: th.ink, background: "#fff" }} data-testid={`site-service-${i}`}>
-                <div className="aspect-[16/10] overflow-hidden"><img src={s.img || poolAt(i)} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                {s.img && <div className="aspect-[16/10] overflow-hidden"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>}
                 <div className="p-5">
                   <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.description}</p>}
@@ -1051,8 +939,8 @@ function OnePage({ ctx }) {
         </div>
       </header>
 
-      <section className="max-w-5xl mx-auto px-6 pt-16 md:pt-28 pb-16 grid md:grid-cols-5 gap-10 items-center">
-        <div className="md:col-span-3 wfade">
+      <section className={`max-w-5xl mx-auto px-6 pt-16 md:pt-28 pb-16 grid ${heroImg ? "md:grid-cols-5" : "grid-cols-1"} gap-10 items-center`}>
+        <div className={`${heroImg ? "md:col-span-3" : ""} wfade`}>
           <div className="flex items-center gap-2 text-sm mb-6" style={{ color: th.muted }}><span className="w-2 h-2 rounded-full" style={{ background: accent }} /> {b.is_licensed || b.is_insured ? "Licensed & Insured" : "Trusted local service"}</div>
           <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-6 text-xl leading-relaxed max-w-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
@@ -1061,7 +949,7 @@ function OnePage({ ctx }) {
             {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.ink, color: th.ink }}>Call now</a>}
           </div>
         </div>
-        <div className="md:col-span-2"><div className="overflow-hidden rounded-sm"><img src={heroImg} alt="" className="w-full aspect-[3/4] object-cover" /></div></div>
+        {heroImg && <div className="md:col-span-2"><div className="overflow-hidden rounded-sm"><img src={heroImg} alt="" className="w-full aspect-[3/4] object-cover" /></div></div>}
       </section>
 
       {sec.services !== false && (
@@ -1151,7 +1039,7 @@ function Neon({ ctx }) {
       </header>
 
       <section className="relative">
-        <div className="max-w-6xl mx-auto px-5 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
+        <div className={`max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
           <div className="wfade">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent }}><span className="w-1.5 h-1.5 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} /> ONLINE 24/7</div>
             <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02]" style={{ color: "#fff", textShadow: `0 0 30px ${accent}88` }}>{w.headline || b.name}</h1>
@@ -1161,7 +1049,7 @@ function Neon({ ctx }) {
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
             </div>
           </div>
-          <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}44`, ...glow }}><img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" /></div>
+          {heroImg && <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}44`, ...glow }}><img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" /></div>}
         </div>
       </section>
 
@@ -1248,7 +1136,7 @@ function Playful({ ctx }) {
       <section className="relative overflow-hidden">
         <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full" style={{ background: `${accent}22` }} />
         <div className="absolute top-40 right-0 w-56 h-56 rounded-full" style={{ background: "#FDE68A55" }} />
-        <div className="relative max-w-6xl mx-auto px-5 py-14 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+        <div className={`relative max-w-6xl mx-auto px-5 py-14 md:py-20 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
           <div className="wfade">
             <div className="flex flex-wrap gap-2 mb-4">{[b.is_licensed && "✓ Licensed", b.is_insured && "✓ Insured", "★ 5-Star"].filter(Boolean).map((x, i) => <span key={i} className="px-3 py-1 rounded-full text-xs font-extrabold" style={{ background: pastels[i + 1], color: th.ink }}>{x}</span>)}</div>
             <h1 className="wh text-5xl sm:text-6xl leading-[1] tracking-tight" style={{ color: th.ink }}>{w.headline || b.name}</h1>
@@ -1258,10 +1146,12 @@ function Playful({ ctx }) {
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white shadow`} style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> Call</a>}
             </div>
           </div>
+          {heroImg && (
           <div className="relative flex justify-center">
             <div className="absolute right-4 top-6 w-3/4 h-3/4 rounded-[42%_58%_60%_40%]" style={{ background: `${accent}22` }} />
             <div className="relative w-full max-w-md aspect-square bg-cover bg-center shadow-2xl" style={{ backgroundImage: `url(${heroImg})`, borderRadius: "62% 38% 46% 54% / 60% 57% 43% 40%" }} />
           </div>
+          )}
         </div>
       </section>
 
@@ -1330,7 +1220,7 @@ function Playful({ ctx }) {
 // TEMPLATE 10 — LUXURY ELEGANT
 // ===========================================================================
 function Luxe({ ctx }) {
-  const { w, b, data, sec, accent, th, poolAt, services, goContact, heroImg } = ctx;
+  const { w, b, data, sec, accent, th, poolAt, services, goContact, heroImg, aboutImgs } = ctx;
   const gold = accent || "#C9A227";
   const roman = ["I", "II", "III", "IV", "V"];
   return (
@@ -1343,7 +1233,7 @@ function Luxe({ ctx }) {
       </header>
 
       <section className="relative min-h-[100svh] flex items-center">
-        <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ transition: "transform 10s ease" }} />
+        {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ transition: "transform 10s ease" }} />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(20,20,20,.5), rgba(20,20,20,.8))" }} />
         <div className="absolute inset-6 md:inset-10 border pointer-events-none" style={{ borderColor: `${gold}55` }} />
         <div className="relative max-w-4xl mx-auto px-8 text-center text-white wfade">
@@ -1363,7 +1253,7 @@ function Luxe({ ctx }) {
             <div className="divide-y" style={{ borderColor: th.border }}>
               {services.map((s, i) => (
                 <div key={i} className="group relative py-8 overflow-hidden" data-testid={`site-service-${i}`} style={{ borderColor: th.border }}>
-                  <img src={poolAt(i)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-20 transition-opacity duration-700" />
+                  {s.img && <img src={s.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-20 transition-opacity duration-700" />}
                   <div className="relative flex flex-wrap items-baseline justify-between gap-2">
                     <h3 className="wh text-3xl" style={{ color: th.ink }}>{s.name}</h3>
                     {s.starting_price && <span className="text-sm tracking-widest" style={{ color: gold }}>{s.starting_price}</span>}
@@ -1406,10 +1296,13 @@ function Luxe({ ctx }) {
                 ))}
               </div>
             </div>
+            {aboutImgs.length > 0 && (
             <div className="grid grid-cols-2 gap-4">
-              <img src={poolAt(1)} alt="" className="w-full aspect-[3/4] object-cover mt-8" />
-              <img src={poolAt(2)} alt="" className="w-full aspect-[3/4] object-cover" />
+              {aboutImgs.slice(0, 2).map((src, i) => (
+                <img key={i} src={src} alt="" className={`w-full aspect-[3/4] object-cover ${i === 0 ? "mt-8" : ""}`} />
+              ))}
             </div>
+            )}
           </div>
         </section>
       )}
@@ -1474,12 +1367,14 @@ function AboutBlock({ ctx }) {
   const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", b.years_in_business > 0 && `${b.years_in_business}+ Years`, "Locally Owned"].filter(Boolean);
   return (
     <S id="about" kicker="About" title="About Us" ctx={ctx} alt>
-      <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+      <div className={`grid ${aboutImgs.length ? "md:grid-cols-2" : "grid-cols-1"} gap-8 md:gap-14 items-center`}>
+        {aboutImgs.length > 0 && (
         <div className={aboutImgs.length === 1 ? "" : "grid grid-cols-2 gap-4"} data-testid="site-about-collage">
           {aboutImgs.map((src, i) => (
             <img key={i} src={src} alt="" loading="lazy" decoding="async" className={`w-full object-cover ${th.radius} shadow-md ${aboutImgs.length === 1 ? "aspect-[4/3]" : "aspect-[4/5]"} ${aboutImgs.length > 1 && i % 2 ? "mt-6" : ""}`} />
           ))}
         </div>
+        )}
         <div>
           {paras.map((p, i) => (
             <p key={i} className={`text-lg leading-relaxed ${i ? "mt-4" : ""}`} style={{ color: th.muted }}>{p}</p>
@@ -1507,7 +1402,7 @@ function FeatureBlock({ ctx }) {
   const points = (w.why_us?.length ? w.why_us : DEFAULT_WHY).slice(0, 4);
   return (
     <S id="feature" kicker="Why choose us" title="Service you can trust" ctx={ctx}>
-      <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+      <div className={`grid ${whyImg ? "md:grid-cols-2" : "grid-cols-1"} gap-8 md:gap-14 items-center`}>
         <div>
           {w.subheadline && <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{w.subheadline}</p>}
           <ul className="mt-6 space-y-3.5">
@@ -1520,9 +1415,11 @@ function FeatureBlock({ ctx }) {
           </ul>
           <button onClick={goContact} data-testid="site-feature-cta" className={`mt-8 px-7 h-14 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get Started Today <ArrowRight className="w-4 h-4" /></button>
         </div>
+        {whyImg && (
         <div className="order-first md:order-last">
           <img src={whyImg} alt="" loading="lazy" decoding="async" className={`w-full aspect-[4/3] object-cover ${th.radius} shadow-2xl`} />
         </div>
+        )}
       </div>
     </S>
   );
@@ -1532,8 +1429,8 @@ function FeatureBlock({ ctx }) {
 function CtaBand({ ctx }) {
   const { b, th, accent, accentText, bandImg, goContact } = ctx;
   return (
-    <section className="relative overflow-hidden" data-testid="site-cta-band">
-      <img src={bandImg} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+    <section className="relative overflow-hidden" data-testid="site-cta-band" style={!bandImg ? { background: accent } : undefined}>
+      {bandImg && <img src={bandImg} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(8,10,20,.86), rgba(8,10,20,.55))" }} />
       <div className="relative max-w-4xl mx-auto px-5 py-20 md:py-28 text-center text-white">
         <h2 className="wh font-extrabold text-4xl md:text-5xl leading-tight">Ready when you are</h2>

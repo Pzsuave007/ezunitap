@@ -1,5 +1,12 @@
 # UniTech — PRD (resumen vivo)
 
+## 🖼️ Jun 2026 — Sin fotos de stock quemadas: imágenes SOLO desde slots asignados [COMPLETO; verificado screenshot+curl, SIN testing_agent]
+- **Petición dueño**: borró fotos del sistema pero el sitio seguía mostrando imágenes (fallbacks de Unsplash quemados en `ContractorSite.js`). Quiere que el sitio NO muestre ninguna imagen hasta que él las pida (subir / IA / botón). "Que la sección de imágenes controle TODAS las imágenes."
+- **Fix `ContractorSite.js`**: eliminado el objeto `STOCK` (URLs Unsplash) y `stockFor()`. `heroImg/whyImg/bandImg/teamImg/poolAt/aboutImgs` ahora son `null`/`[]` cuando no hay foto asignada (sin fallback). Cada `<img>` de las 10 plantillas + bloques compartidos (AboutBlock, FeatureBlock=Why, CtaBand) se envuelve en guardas: slot vacío → no renderiza imagen y el layout colapsa a 1 columna. Heroes full-bleed con texto blanco (Craftsman/Trust) usan fondo sólido oscuro cuando no hay imagen; CtaBand usa fondo `accent` sólido. Slider before/after solo muestra si hay pares reales; bento mosaic solo si hay hero.
+- **Servicios**: la foto por servicio también solo aparece si el servicio tiene `image_id` (nada de stock).
+- Verificado por screenshot en 5 plantillas (trust, bento, slider, playful, luxe) con slots vacíos: **0 imágenes externas (unsplash/pexels), 0 `src=null`, 0 `background url(null)`**. Layouts limpios. Build recompilado + `git add -f frontend/build`.
+
+
 > 🚫🚫🚫 **REGLA CRÍTICA #1 DEL DUEÑO — NO USAR EL `testing_agent` NUNCA SIN PERMISO EXPLÍCITO** 🚫🚫🚫
 > El dueño paga créditos por cada llamada al `testing_agent` y ha pedido REPETIDAMENTE (en varios forks) que NO se use.
 > Él mismo prueba las cosas. Verifica SIEMPRE con métodos gratuitos: `curl`/`execute_bash` (backend), `screenshot_tool`/Playwright vía bash (frontend), unit-checks con `python -c`.
