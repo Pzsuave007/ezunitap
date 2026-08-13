@@ -1,0 +1,46 @@
+# ============================================================================
+# Caddyfile for the DEDICATED custom-domain edge (DigitalOcean droplet)
+# ----------------------------------------------------------------------------
+# This tiny server ONLY handles customer custom domains. Customers point an
+# A record to THIS droplet's IP. Caddy:
+#   • Issues Let's Encrypt SSL automatically (On-Demand TLS), asking the main
+#     UniTech backend whether the domain is a verified customer domain.
+#   • Serves the React build and proxies /api to the main backend, so the whole
+#     site is same-origin (no CORS headaches).
+#
+# The 28 existing cPanel sites are NOT touched — they stay on the cPanel server.
+#
+# Replace MAIN_BACKEND below if your API host differs.
+# ============================================================================
+
+{
+	email admin@ezunitap.com
+	on_demand_tls {
+		ask https://ezunitap.com/api/public/domain-allowed
+		interval 2m
+		burst 5
+	}
+}
+
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+
+	# Send /api to the main UniTech backend (same-origin for the browser).
+	@api path /api/*
+	reverse_proxy @api https://ezunitap.com {
+		header_up Host ezunitap.com
+	}
+
+	# Serve the React build for everything else (SPA fallback to index.html).
+	root * /var/www/unitech
+	try_files {path} /index.html
+	file_server
+}
+
+# HTTP -> HTTPS
+http:// {
+	redir https://{host}{uri} permanent
+}
