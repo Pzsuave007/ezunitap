@@ -91,6 +91,7 @@
     "stockHint": "Rellena los espacios de fotos vacíos con imágenes de tu oficio. Toca de nuevo para traer otras. Nunca reemplaza las fotos que tú subiste.",
     "stockDone": "Fotos agregadas — toca Guardar para conservarlas.",
     "stockNone": "No hay espacios de foto vacíos por rellenar (o no se encontraron).",
+    "stockNoKey": "Las fotos de stock aún no están configuradas en este servidor (falta la llave de Pexels). Agrega PEXELS_API_KEY al servidor y vuelve a desplegar.",
     "stockError": "No se pudieron traer las fotos. Intenta de nuevo.",
     "suggestDesc": "¿No sabes qué estilo va mejor? Deja que la IA elija plantilla y color según tu oficio.",
     "suggestBtn": "✨ Sugerir un diseño",

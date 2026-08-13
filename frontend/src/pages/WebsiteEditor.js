@@ -132,7 +132,9 @@ export default function WebsiteEditor() {
       const { data } = await api.post("/website/stock-photos", slotState());
       if (data.website) setW(data.website);
       api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
-      toast.success(data.filled ? t("website.stockDone") : t("website.stockNone"));
+      if (data.reason === "no_key") toast.error(t("website.stockNoKey"));
+      else if (data.filled) toast.success(t("website.stockDone"));
+      else toast.info(t("website.stockNone"));
     } catch (e) {
       toast.error(e?.response?.data?.detail || t("website.stockError"));
     } finally { setStocking(false); }

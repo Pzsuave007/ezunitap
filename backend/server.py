@@ -4332,6 +4332,13 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
     w = await _get_or_init_website(user_id)
     _overlay_slots(w, body)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    # If the server has no Pexels key configured, say so clearly (common in prod
+    # if PEXELS_API_KEY wasn't added to the server .env / keys.txt).
+    if not pexels_service.PEXELS_API_KEY:
+        logger.warning("website stock-photos: PEXELS_API_KEY not configured on this server")
+        w2 = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+        w2["public_path"] = f"/sitio/{w2['slug']}"
+        return {"filled": 0, "reason": "no_key", "website": w2}
     # Persist the client's current slot state (e.g. photos just removed on screen)
     # so the fill respects it and the returned website reflects it.
     if isinstance(body, dict):
@@ -4350,7 +4357,7 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
     w2.setdefault("about_photo_ids", [])
     w2["public_path"] = f"/sitio/{w2['slug']}"
     filled = len([k for k in update if k != "updated_at"])
-    return {"filled": filled, "website": w2}
+    return {"filled": filled, "reason": ("ok" if filled else "none"), "website": w2}
 
 
 @api_router.post("/website/ai-suggest-design")
