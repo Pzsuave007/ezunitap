@@ -2347,12 +2347,14 @@ async def upload_photo(
     if len(data) > MAX_IMAGE_BYTES:
         raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
     ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "jpg"
-    data, content_type, ext = _compress_image(data, content_type, ext)
+    # Offload CPU-heavy compression off the event loop so concurrent uploads don't block each other.
+    data, content_type, ext = await asyncio.to_thread(_compress_image, data, content_type, ext)
     photo_id = _new_id()
     path = f"{app_name}/photos/{user_id}/{photo_id}.{ext}"
     try:
         backend = storage_service.get_storage()
-        result = backend.put(path, data, content_type)
+        # backend.put() is a blocking network/disk call — run it in a thread too.
+        result = await asyncio.to_thread(backend.put, path, data, content_type)
     except Exception as e:
         logger.exception("Storage upload failed")
         raise HTTPException(500, f"Storage error: {e}")
@@ -2794,11 +2796,11 @@ async def _delete_card_asset(user_id: str, kind: str, card_id: Optional[str] = N
 async def _store_card_photo(user_id: str, data: bytes, content_type: str, kind: str, ext: str = "png") -> str:
     """Store image bytes to object storage + create a photo doc (without binding
     it to a card). Returns the new photo asset_id."""
-    data, content_type, ext = _compress_image(data, content_type, ext)
+    data, content_type, ext = await asyncio.to_thread(_compress_image, data, content_type, ext)
     asset_id = _new_id()
     path = f"{app_name}/cards/{kind}/{user_id}/{asset_id}.{ext}"
     backend = storage_service.get_storage()
-    result = backend.put(path, data, content_type)
+    result = await asyncio.to_thread(backend.put, path, data, content_type)
     await db.photos.insert_one({
         "id": asset_id,
         "user_id": user_id,
@@ -2980,7 +2982,7 @@ def _compress_image(data: bytes, orig_ct: str = "image/jpeg", orig_ext: str = "j
             scale = max_dim / longest
             img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), _PILImage.LANCZOS)
         buf = _io.BytesIO()
-        img.save(buf, format="WEBP", quality=quality, method=6)
+        img.save(buf, format="WEBP", quality=quality, method=4)
         out = buf.getvalue()
         if out and len(out) < len(data):
             return out, "image/webp", "webp"
