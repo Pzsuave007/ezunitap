@@ -4427,14 +4427,37 @@ def _dns_txt_records(name: str):
     return out
 
 
+_MULTI_PART_TLDS = {
+    "com.mx", "com.ar", "com.br", "com.co", "com.pe", "com.ve", "com.uy", "com.gt",
+    "com.do", "com.sv", "com.hn", "com.ni", "com.pa", "com.ec", "com.bo", "com.py",
+    "co.uk", "org.uk", "com.au", "co.nz", "com.es", "com.pr",
+}
+
+
+def _domain_dns_host(domain: str):
+    """Return (a_host, is_subdomain) for the DNS A record.
+    Root domain (example.com / example.com.mx) -> "@". Subdomain
+    (shop.example.com) -> the left label(s) ("shop"). Handles two-part TLDs."""
+    parts = [p for p in (domain or "").split(".") if p]
+    if len(parts) < 2:
+        return "@", False
+    root_labels = 3 if (len(parts) >= 3 and ".".join(parts[-2:]) in _MULTI_PART_TLDS) else 2
+    is_sub = len(parts) > root_labels
+    a_host = ".".join(parts[:-root_labels]) if is_sub else "@"
+    return a_host, is_sub
+
+
 def _domain_status(w):
     domain = w.get("custom_domain") or ""
+    a_host, is_sub = _domain_dns_host(domain)
     return {
         "domain": domain,
         "verified": bool(w.get("custom_domain_verified")),
         "txt_host": f"_unitech-verify.{domain}" if domain else "",
         "txt_value": w.get("custom_domain_token") or "",
         "a_target": os.environ.get("WEBSITE_DOMAIN_TARGET", ""),
+        "a_host": a_host,
+        "is_subdomain": is_sub,
     }
 
 

@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🌐 Jun 2026 — Conectar dominio: paso 2 (A record) mostraba IP vacía + host incorrecto en subdominios [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Bug dueño**: al conectar `growthally.uni2mkt.com` en su servidor, el paso 2 mostraba "La IP de tu servidor UniTech (pregúntale a tu hosting)" en vez de la IP, y ponía Host `@` (incorrecto para subdominio).
+- **Causa 1**: `WEBSITE_DOMAIN_TARGET` no estaba en el `.env` de producción → `a_target` vacío. **Causa 2**: el flujo asumía dominio raíz (Host `@` + www), incorrecto para subdominios.
+- **Fix**: `.env` preview + `deploy/backend.env.production.example` con `WEBSITE_DOMAIN_TARGET=132.148.78.187`; `deploy/fix.sh` lo agrega al whitelist de keys.txt Y lo pone por defecto (132.148.78.187) si falta en el `.env` de prod. `_domain_status()` ahora calcula `a_host` (subdominio → label izquierdo p.ej. `growthally`; raíz → `@`) e `is_subdomain`. Frontend usa `domain.a_host`, muestra registro www SOLO en dominios raíz, y textos guía (subdominio vs raíz). i18n domainRootLabel/domainSubLabel/domainWwwLabel/domainStep2Note (EN/ES).
+- Verificado curl: subdominio → a_host=growthally, a_target=132.148.78.187, is_subdomain=True; raíz example.com → a_host=@. Screenshot editor muestra IP + host correcto.
+- ⚠️ Backend+frontend+deploy. Producción: Save to GitHub + `deploy.sh` (fix.sh setea la IP solo).
+
+
 ## ✨ Jun 2026 — IA en la sección de Servicios + "Escribir con IA" en todo el contenido [COMPLETO; verificado UI en vivo + curl, SIN testing_agent]
 - **Petición dueño**: (A) botón que sugiera servicios según el oficio para elegir con checkboxes; (B) botón de IA para rellenar descripciones cuando no sabe qué poner; poner IA en TODAS las secciones de texto. Elecciones: inglés (cliente-facing), servicio sugerido = nombre + descripción corta automática, aplicar a Servicios + Why/How/FAQ.
 - **Backend** (`ai_service.py`): `suggest_services(business_type, brief)` → 10-12 {name, description} en inglés; `write_field(kind, name, business_type, business_name, context)` → texto corto (kinds: service_desc, why_desc, how_desc, faq_answer). (`server.py`): `POST /website/ai-suggest-services` (usa business_type + ai_brief) y `POST /website/ai-write`.

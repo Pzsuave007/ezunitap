@@ -706,10 +706,20 @@ export default function WebsiteEditor() {
             )}
             <div className={`rounded-xl border p-3 text-sm ${domain.verified ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
               <div className="font-bold mb-2" style={{ color: domain.verified ? "#065f46" : "#334155" }}>{t("website.domainStep2")}</div>
+              <div className="text-xs text-slate-500 mb-2">{domain.is_subdomain ? t("website.domainSubLabel") : t("website.domainRootLabel")}</div>
               <DnsRow label="Type" value="A" onCopy={copyText} />
-              <DnsRow label="Host / Name" value="@" onCopy={copyText} />
+              <DnsRow label="Host / Name" value={domain.a_host || "@"} onCopy={copyText} />
               <DnsRow label="Points to" value={domain.a_target || t("website.domainAskHost")} onCopy={domain.a_target ? copyText : undefined} />
-              <p className="text-xs text-slate-500 mt-2">{t("website.domainSslNote")}</p>
+              {domain.a_target && !domain.is_subdomain && (
+                <>
+                  <div className="text-xs text-slate-500 mt-3 mb-2">{t("website.domainWwwLabel")}</div>
+                  <DnsRow label="Type" value="A" onCopy={copyText} />
+                  <DnsRow label="Host / Name" value="www" onCopy={copyText} />
+                  <DnsRow label="Points to" value={domain.a_target} onCopy={copyText} />
+                </>
+              )}
+              <p className="text-xs text-slate-500 mt-3">{t("website.domainStep2Note")}</p>
+              <p className="text-xs text-slate-500 mt-1">{t("website.domainSslNote")}</p>
             </div>
             <button onClick={removeDomain} className="text-xs text-slate-400 hover:text-red-500 font-semibold" data-testid="website-domain-remove">{t("website.domainRemove")}</button>
           </div>
