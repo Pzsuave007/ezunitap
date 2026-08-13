@@ -1,5 +1,12 @@
 # UniTech — PRD (resumen vivo)
 
+## 🖼️ Jun 2026 — Imágenes lentas/rotas: mover storage a LOCAL (tu servidor) + caché + servir sin bloquear [App+infra listas; verificado curl, SIN testing_agent]
+- **Causa raíz**: `STORAGE_BACKEND` por defecto = **emergent** → todas las fotos se guardaban en Emergent Object Storage, no en el servidor del dueño. En prod cada imagen se bajaba por red desde Emergent (lento ~45s) y a veces fallaba ("SEO Optimization" rota). Además el endpoint de servir procesaba Pillow SÍNCRONO (bloqueaba event loop → se serializaban) y sin caché.
+- **Fixes**: (1) `.env` preview + `deploy/fix.sh` + `backend.env.production.example`: `STORAGE_BACKEND=local` + `UPLOADS_DIR` (prod: /home/ezunitap/uploads) → fotos NUEVAS en disco del servidor. (2) `public_photo`: `backend.get` y `_optimize_image` a `asyncio.to_thread` (cargan en paralelo) + **caché en disco** de variantes optimizadas (`_img_cache_get/put`, IMG_CACHE_DIR). (3) `deploy/migrate-photos-to-local.py`: mueve fotos EXISTENTES de Emergent → local. (4) `ContractorSite.js`: handler global que oculta cualquier `<img>` roto (nunca se muestra ícono roto al cliente).
+- Verificado curl: foto nueva → storage_backend=local, en disco, sirve 200 webp 0.23s; caché 2ª carga 0.15s.
+- ⚠️ Prod: Save to GitHub + `deploy.sh` (setea STORAGE_BACKEND=local) y luego correr `migrate-photos-to-local.py` UNA vez para mover las fotos viejas. Las que fallen (no estén en Emergent) se re-agregan en la app.
+
+
 ## 🚀 Jun 2026 — "Solo agregar DNS y funciona" (custom domains automáticos) [App lista + infra preparada; SIN testing_agent]
 - **Petición dueño**: como Vercel/Netlify — el usuario solo agrega el registro DNS y el dominio funciona con SSL, sin pasos de cPanel/servidor (que son muy técnicos).
 - **Investigación**: estándar de industria = proxy con **On-Demand TLS** (Caddy) + endpoint "ask" que autoriza el dominio. Emite Let's Encrypt automáticamente en la 1ª visita.

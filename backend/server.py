@@ -4810,13 +4810,50 @@ def _optimize_image(data: bytes, ctype: str, photo_id: str, w: int, quality: int
     return result
 
 
+IMG_CACHE_DIR = os.environ.get("IMG_CACHE_DIR", "/tmp/unitech_imgcache")
+
+
+def _img_cache_key(photo_id, w, q, webp):
+    return f"{photo_id}_{w}_{q}_{'w' if webp else 'o'}"
+
+
+def _img_cache_get(photo_id, w, q, webp):
+    """Return (bytes, content_type) for a previously-optimized variant, or None."""
+    try:
+        base = os.path.join(IMG_CACHE_DIR, _img_cache_key(photo_id, w, q, webp))
+        with open(base, "rb") as f:
+            data = f.read()
+        with open(base + ".ct", "r") as f:
+            ct = f.read().strip()
+        return data, ct
+    except Exception:
+        return None
+
+
+def _img_cache_put(photo_id, w, q, webp, data, ct):
+    """Cache an optimized variant on disk (atomic write). Best-effort."""
+    try:
+        os.makedirs(IMG_CACHE_DIR, exist_ok=True)
+        base = os.path.join(IMG_CACHE_DIR, _img_cache_key(photo_id, w, q, webp))
+        tmp = f"{base}.{uuid.uuid4().hex}.tmp"
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.replace(tmp, base)
+        with open(base + ".ct", "w") as f:
+            f.write(ct or "application/octet-stream")
+    except Exception:
+        pass
+
+
 @api_router.get("/public/card/photo/{photo_id}")
 async def public_photo(photo_id: str, request: Request, w: int = 0, q: int = 82):
     """Public endpoint to serve photos referenced on a Smart Card.
 
     Serves an optimized (WebP/JPEG, optionally down-scaled) version so pages
     with many images stay lightweight. `w` caps the output width in px.
-    """
+    Heavy work (storage read + Pillow) runs in a worker thread so many images
+    load in parallel, and each optimized variant is cached on disk so it's only
+    computed once (then served instantly for everyone)."""
     doc = await db.photos.find_one({"id": photo_id, "is_deleted": False}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Not found")
@@ -4824,15 +4861,26 @@ async def public_photo(photo_id: str, request: Request, w: int = 0, q: int = 82)
     card = await db.cards.find_one({"user_id": doc["user_id"], "enabled": True}, {"_id": 0})
     if not card:
         raise HTTPException(404, "Not found")
+
+    want_webp = "image/webp" in (request.headers.get("accept") or "")
+    wq = int(w or 0)
+    qq = int(q or 82)
+    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+
+    # 1) Disk cache: skip all processing if we already made this variant.
+    cached = await asyncio.to_thread(_img_cache_get, photo_id, wq, qq, want_webp)
+    if cached:
+        return Response(content=cached[0], media_type=cached[1], headers=headers)
+
     try:
         backend = storage_service.get_backend(doc.get("storage_backend"))
-        data, ct = backend.get(doc["storage_path"])
+        data, ct = await asyncio.to_thread(backend.get, doc["storage_path"])
     except Exception:
         raise HTTPException(500, "Storage error")
     ctype = doc.get("content_type", ct) or "application/octet-stream"
-    want_webp = "image/webp" in (request.headers.get("accept") or "")
-    out_data, out_type = _optimize_image(data, ctype, photo_id, int(w or 0), int(q or 82), want_webp)
-    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+    # 2) Optimize off the event loop so concurrent image requests don't serialize.
+    out_data, out_type = await asyncio.to_thread(_optimize_image, data, ctype, photo_id, wq, qq, want_webp)
+    await asyncio.to_thread(_img_cache_put, photo_id, wq, qq, want_webp, out_data, out_type)
     return Response(content=out_data, media_type=out_type, headers=headers)
 
 

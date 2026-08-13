@@ -44,6 +44,17 @@ sed -i '/^WEBSITE_DOMAIN_TARGET=/d' "$PROD/.env" 2>/dev/null || true
 echo "WEBSITE_DOMAIN_TARGET=164.92.79.162" >> "$PROD/.env"
 echo "  WEBSITE_DOMAIN_TARGET set to 164.92.79.162 (custom-domain edge droplet)"
 
+# 0c. Store uploaded/stock photos on THIS server's disk (not Emergent Object
+#     Storage), so images are fast and never depend on an external service.
+if ! grep -q "^STORAGE_BACKEND=" "$PROD/.env" 2>/dev/null; then
+    echo "STORAGE_BACKEND=local" >> "$PROD/.env"
+fi
+if ! grep -q "^UPLOADS_DIR=" "$PROD/.env" 2>/dev/null; then
+    echo "UPLOADS_DIR=/home/ezunitap/uploads" >> "$PROD/.env"
+fi
+mkdir -p /home/ezunitap/uploads 2>/dev/null || true
+echo "  STORAGE_BACKEND=local, UPLOADS_DIR=/home/ezunitap/uploads"
+
 
 # 1. Pull latest
 cd "$REPO"

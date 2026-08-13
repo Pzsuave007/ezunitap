@@ -55,6 +55,18 @@ export default function ContractorSite({ injected }) {
     return () => { document.head.removeChild(l); };
   }, []);
 
+  // Safety net: if any image fails to load (e.g. a missing photo), hide it so a
+  // broken-image icon is never shown to a visitor.
+  useEffect(() => {
+    const onErr = (e) => {
+      const el = e.target;
+      if (el && el.tagName === "IMG") el.style.display = "none";
+    };
+    document.addEventListener("error", onErr, true);
+    return () => document.removeEventListener("error", onErr, true);
+  }, []);
+
+
   useEffect(() => {
     if (injected) { setData(injected); return; }
     const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
