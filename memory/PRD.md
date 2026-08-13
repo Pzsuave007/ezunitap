@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🧾 Jun 2026 — AI Quote/Invoice: volver a desglosar en detalle [COMPLETO; verificado LLM real + curl endpoint, SIN testing_agent]
+- **Bug dueño**: al meter una descripción SENCILLA en un invoice/quote, la IA sacaba UNA sola línea con el total (poco impresionante). Reprodujo: input "baño $6000" → 1 line item = $6000.
+- **Causa**: el prompt `QUOTE_SYSTEM` en `ai_service.py` había sido endurecido (cambio anterior) hacia "NO agrupar / NO inventar líneas" para preservar desgloses detallados — efecto colateral: con entradas simples ya no expandía nada. Modelo intacto (gpt-4o). NINGÚN cambio reciente mío tocó esto.
+- **Fix** (`ai_service.py` `QUOTE_SYSTEM`): prompt reescrito con DOS ramas claras — (A) entrada simple/lump-sum → SIEMPRE descompone en 5-9 líneas realistas (demo, prep, materiales, labor, disposal, cleanup) que SUMAN al total dado; (B) entrada ya detallada por el usuario → preserva cada línea sin agrupar. Se agregaron ejemplos A y B en el prompt. Consistencia aritmética exigida.
+- Verificado: (A) "baño $6000" → 9 líneas que suman 6000; "piso laminado ~$3500" vía `POST /api/ai/quote` → 8 líneas + 6 bullets. (B) "Mon/Tue/Wed labor" → 3 líneas preservadas ($2000/$2000/$2500). Ambos endpoints (`/api/ai/quote` y demo) usan la misma función, así que cubre invoices y quotes.
+- ⚠️ Solo backend (`ai_service.py`, hot-reload en preview). Producción necesita Save to GitHub + `deploy.sh`.
+
+
 ## 🖼️ Jun 2026 — Sin fotos de stock quemadas: imágenes SOLO desde slots asignados [COMPLETO; verificado screenshot+curl, SIN testing_agent]
 - **Petición dueño**: borró fotos del sistema pero el sitio seguía mostrando imágenes (fallbacks de Unsplash quemados en `ContractorSite.js`). Quiere que el sitio NO muestre ninguna imagen hasta que él las pida (subir / IA / botón). "Que la sección de imágenes controle TODAS las imágenes."
 - **Fix `ContractorSite.js`**: eliminado el objeto `STOCK` (URLs Unsplash) y `stockFor()`. `heroImg/whyImg/bandImg/teamImg/poolAt/aboutImgs` ahora son `null`/`[]` cuando no hay foto asignada (sin fallback). Cada `<img>` de las 10 plantillas + bloques compartidos (AboutBlock, FeatureBlock=Why, CtaBand) se envuelve en guardas: slot vacío → no renderiza imagen y el layout colapsa a 1 columna. Heroes full-bleed con texto blanco (Craftsman/Trust) usan fondo sólido oscuro cuando no hay imagen; CtaBand usa fondo `accent` sólido. Slider before/after solo muestra si hay pares reales; bento mosaic solo si hay hero.

@@ -234,31 +234,54 @@ Output ONLY valid JSON with this exact schema (no markdown, no commentary):
 
 Rules:
 - All client-facing strings MUST be in English.
-- Use realistic ballpark U.S. residential pricing if not specified.
-- Ensure totals are arithmetically consistent.
+- Use realistic ballpark U.S. residential pricing.
+- Ensure totals are arithmetically consistent: the sum of line_items amounts MUST equal
+  subtotal; subtotal + tax_amount MUST equal total.
 - Return ONLY the JSON, nothing else.
 
-CRITICAL — PRESERVE THE USER'S ITEMIZATION (DO NOT GROUP OR SUMMARIZE):
+BUILD A DETAILED, IMPRESSIVE QUOTE — NEVER a single lump-sum line:
+- ALWAYS break the job into MULTIPLE itemized line_items (aim for 5-9) that a customer would
+  expect to see for this trade: demolition/prep, materials (grouped by category), labor,
+  fixtures/equipment, permits, haul-away/disposal, and final cleanup as relevant.
+- Even when the user gives only a vague description OR a single lump-sum price, you MUST
+  decompose it into realistic, professional sub-line-items. If the user gave a target total
+  or ballpark price, make the sub-items ADD UP to that amount (distribute it realistically
+  across the items). NEVER output a single line whose amount equals the total.
+- Always write 5-8 clear, benefit-driven scope_of_work bullets, and professional notes
+  (workmanship warranty, what's excluded). Fill materials_estimate and labor_estimate.
+- The goal is a polished quote that WOWS the client and makes the contractor look premium.
+
+PRESERVE THE USER'S OWN ITEMIZATION (only when they actually provide it):
 - If the user already lists individual sub-items WITH their own price (per day, per unit,
-  per room, per material, etc.), you MUST output ONE separate line item for EACH sub-item.
-- NEVER merge, group, or collapse several priced sub-items into a single combined line.
-  Do NOT create "weekly totals", "lump sums", or "grouped" lines when the user gave detail.
-- Keep the user's exact dollar amount for each sub-item. quantity=1, unit="ea",
-  unit_price = that sub-item's amount, amount = the same value. Do not re-price.
+  per room, per material, etc.), output ONE separate line item for EACH sub-item and keep
+  their exact dollar amount. In that case do NOT merge, group, collapse, or re-price them,
+  and do NOT create "weekly totals" or "lump sums".
 - Make each description self-explanatory in English: include the period/day, the crew,
   the hours and the rate when the user provided them.
-- Only invent grouped/estimated lines when the user did NOT provide a per-item breakdown.
 
-EXAMPLE — user input (Spanish/Spanglish):
+EXAMPLE A — user gave a per-item breakdown (PRESERVE each line):
 "Week 1 Labor (Apr 20-26, 2026): Mon 2 guys x 10 hrs ($2,000); Tue 2 guys x 10 hrs ($2,000);
 Wed 3 guys x 10 hrs ($2,500)"
-CORRECT line_items output (one line PER day, NOT one weekly total):
+CORRECT line_items (one line PER day, NOT one weekly total):
 [
   {"description": "Week 1 - Mon (Apr 20): 2 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2000.0, "amount": 2000.0},
   {"description": "Week 1 - Tue (Apr 21): 2 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2000.0, "amount": 2000.0},
   {"description": "Week 1 - Wed (Apr 22): 3 workers x 10 hrs", "quantity": 1, "unit": "ea", "unit_price": 2500.0, "amount": 2500.0}
 ]
-WRONG (do NOT do this): a single line "Week 1 Labor ... $6,500".
+
+EXAMPLE B — user gave a SIMPLE description + lump price (DECOMPOSE into a rich breakdown):
+"Complete bathroom remodel, gut everything and install new. Around $6,000"
+CORRECT line_items (several realistic items that SUM to ~$6,000, never one $6,000 line):
+[
+  {"description": "Demolition & removal of existing fixtures, tile and vanity", "quantity": 1, "unit": "ea", "unit_price": 700.0, "amount": 700.0},
+  {"description": "Debris haul-away & disposal fees", "quantity": 1, "unit": "ea", "unit_price": 300.0, "amount": 300.0},
+  {"description": "Plumbing rough-in & fixture reconnection", "quantity": 1, "unit": "ea", "unit_price": 900.0, "amount": 900.0},
+  {"description": "Waterproofing & new tile installation (floor & shower walls)", "quantity": 1, "unit": "ea", "unit_price": 1400.0, "amount": 1400.0},
+  {"description": "New vanity, sink, faucet & toilet — supply & install", "quantity": 1, "unit": "ea", "unit_price": 1200.0, "amount": 1200.0},
+  {"description": "Paint, trim, accessories & fixtures", "quantity": 1, "unit": "ea", "unit_price": 700.0, "amount": 700.0},
+  {"description": "Labor, project management & final cleanup", "quantity": 1, "unit": "ea", "unit_price": 800.0, "amount": 800.0}
+]
+WRONG (never do this for a simple input): a single line "Complete bathroom remodel ... $6,000".
 """
 
 
