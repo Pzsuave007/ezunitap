@@ -4628,6 +4628,23 @@ async def public_website(slug: str, background_tasks: BackgroundTasks, preview: 
     return await _website_payload(w)
 
 
+@api_router.get("/public/domain-allowed")
+async def public_domain_allowed(domain: str = ""):
+    """'ask' endpoint for Caddy on-demand TLS. Returns 200 ONLY for domains that
+    a customer has connected + verified, so Caddy auto-issues a Let's Encrypt cert
+    for them (and refuses random domains). This is what makes 'just add a DNS
+    record and it works' possible — no per-domain server config needed."""
+    d = (domain or "").strip().lower().rstrip(".")
+    if d.startswith("www."):
+        d = d[4:]
+    if not d:
+        raise HTTPException(400, "domain required")
+    w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True}, {"_id": 0, "id": 1})
+    if not w:
+        raise HTTPException(404, "unknown domain")
+    return {"ok": True}
+
+
 @api_router.get("/public/website-by-domain/{domain}")
 async def public_website_by_domain(domain: str, background_tasks: BackgroundTasks):
     d = (domain or "").strip().lower()

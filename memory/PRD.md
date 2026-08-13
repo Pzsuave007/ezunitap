@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🚀 Jun 2026 — "Solo agregar DNS y funciona" (custom domains automáticos) [App lista + infra preparada; SIN testing_agent]
+- **Petición dueño**: como Vercel/Netlify — el usuario solo agrega el registro DNS y el dominio funciona con SSL, sin pasos de cPanel/servidor (que son muy técnicos).
+- **Investigación**: estándar de industria = proxy con **On-Demand TLS** (Caddy) + endpoint "ask" que autoriza el dominio. Emite Let's Encrypt automáticamente en la 1ª visita.
+- **App (hecho + probado)**: nuevo `GET /api/public/domain-allowed?domain=` → 200 si es custom_domain verificado, 404 si no (endpoint que Caddy consulta). Verificado curl: verificado→200, aleatorio→404, www→200. El front ya resuelve por hostname (`website-by-domain`).
+- **Infra preparada (one-time, corre el dueño)**: `deploy/Caddyfile` (sirve SPA + proxy /api a :8007 + on_demand_tls ask), `deploy/setup-caddy.sh` (instala Caddy, valida, arranca — exige mover Apache a 8080/8443 primero), `deploy/CUSTOM_DOMAINS.md` (guía + rollback). ⚠️ Cambio en servidor VIVO (mover puertos Apache en WHM Tweak Settings). Requiere go-ahead del dueño.
+- Tras el setup one-time: cliente solo agrega A record → 132.148.78.187 y Verifica en la app → SSL automático. Adiós al paso de cPanel por dominio.
+
+
 ## 🌐 Jun 2026 — Dominio "Record not found": faltan PUBLICAR + servir el dominio en cPanel [DIAGNOSTICADO+mejoras; SIN testing_agent]
 - **Síntoma**: `https://growthally.uni2mkt.com` → texto plano "Record not found" + "Not secure". El string NO está en el código → viene del servidor (Apache/cPanel default vhost).
 - **Causa raíz (2)**: (1) el sitio está `published: False` → `/api/public/website-by-domain` exige `published:True` → 404. (2) El VPS no sirve la app para ese hostname: falta agregar el dominio en cPanel (alias/parked al docroot de la app) + AutoSSL. El DNS SÍ está bien (llega al servidor, A→132.148.78.187, verify-a=OK).

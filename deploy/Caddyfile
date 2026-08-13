@@ -1,0 +1,54 @@
+# ============================================================================
+# Caddyfile — "just add a DNS record and it works" for UniTech custom domains
+# ----------------------------------------------------------------------------
+# Caddy sits in front on ports 80/443 and:
+#   • Serves the React app (public_html) + proxies /api to FastAPI (127.0.0.1:8007)
+#   • Issues Let's Encrypt SSL AUTOMATICALLY for any customer domain the first
+#     time it's visited (On-Demand TLS), asking the app whether the domain is a
+#     verified customer domain first (so nobody can abuse it).
+#
+# Result: a customer only needs to point an A record to this server's IP
+# (132.148.78.187). No cPanel step, no manual SSL. Exactly like Vercel/Netlify.
+#
+# One-time prerequisite: Apache (cPanel) must be moved OFF ports 80/443 so Caddy
+# can own them (see deploy/setup-caddy.sh). Apache keeps serving nothing publicly;
+# Caddy serves everything and proxies /api to the shared backend.
+# ============================================================================
+
+{
+	email admin@ezunitap.com
+	on_demand_tls {
+		# Caddy calls this before issuing a cert: 200 = allow, 404 = reject.
+		ask http://127.0.0.1:8007/api/public/domain-allowed
+		interval 2m
+		burst 5
+	}
+}
+
+# --- Primary UniTech domains (normal automatic HTTPS) ----------------------
+ezunitap.com, www.ezunitap.com, ezunitech.com, www.ezunitech.com {
+	root * /home/ezunitap/public_html
+	encode zstd gzip
+	@api path /api/*
+	reverse_proxy @api 127.0.0.1:8007
+	try_files {path} /index.html
+	file_server
+}
+
+# --- ANY customer custom domain (On-Demand TLS, same app) ------------------
+https:// {
+	tls {
+		on_demand
+	}
+	root * /home/ezunitap/public_html
+	encode zstd gzip
+	@api path /api/*
+	reverse_proxy @api 127.0.0.1:8007
+	try_files {path} /index.html
+	file_server
+}
+
+# HTTP -> HTTPS for everything
+http:// {
+	redir https://{host}{uri} permanent
+}
