@@ -4224,12 +4224,28 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
 
 
 
+_SLOT_KEYS = ("hero_photo_id", "why_photo_id", "band_photo_id", "team_photo_id", "about_photo_ids", "services")
+
+
+def _overlay_slots(w: dict, body: dict) -> dict:
+    """Overlay the client's CURRENT (possibly unsaved) photo-slot state onto the
+    DB website, so auto-fill respects photos the owner just removed/added on screen."""
+    if not isinstance(body, dict):
+        return w
+    for k in _SLOT_KEYS:
+        if k in body:
+            w[k] = body[k]
+    return w
+
+
 @api_router.post("/website/ai-generate")
-async def website_ai_generate(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+async def website_ai_generate(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Generate SEO-rich website content (headline, about, how-it-works, why-us,
-    FAQ, service areas, SEO tags) from the owner's trade/services. Does NOT save —
-    the editor populates the fields so the owner can review before publishing."""
+    FAQ, service areas, SEO tags) from the owner's trade/services. Does NOT save
+    content — the editor populates the fields so the owner can review before
+    publishing. It DOES auto-fill empty image slots with stock photos (applied)."""
     w = await _get_or_init_website(user_id)
+    _overlay_slots(w, body)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
     business_name = user.get("business_name") or card.get("business_name") or ""
@@ -4308,13 +4324,21 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
 
 
 @api_router.post("/website/stock-photos")
-async def website_stock_photos(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+async def website_stock_photos(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Fetch fresh trade-relevant Pexels stock photos and apply them to the
     website's image slots. Fills empty slots and REPLACES previously auto-placed
     stock photos (so the owner can request different ones), but NEVER overwrites a
     photo the owner uploaded. Applied directly and returns the updated website."""
     w = await _get_or_init_website(user_id)
+    _overlay_slots(w, body)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    # Persist the client's current slot state (e.g. photos just removed on screen)
+    # so the fill respects it and the returned website reflects it.
+    if isinstance(body, dict):
+        persist = {k: w[k] for k in _SLOT_KEYS if k in body}
+        if persist:
+            persist["updated_at"] = _now_iso()
+            await db.websites.update_one({"user_id": user_id}, {"$set": persist})
     try:
         update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
     except Exception as e:  # noqa: BLE001

@@ -84,10 +84,19 @@ export default function WebsiteEditor() {
   };
   const copy = () => { navigator.clipboard.writeText(publicUrl); setCopied(true); toast.success(t("website.linkCopied")); setTimeout(() => setCopied(false), 2000); };
 
+  const slotState = () => ({
+    hero_photo_id: w.hero_photo_id || "",
+    why_photo_id: w.why_photo_id || "",
+    band_photo_id: w.band_photo_id || "",
+    team_photo_id: w.team_photo_id || "",
+    about_photo_ids: Array.isArray(w.about_photo_ids) ? w.about_photo_ids : [],
+    services: Array.isArray(w.services) ? w.services : [],
+  });
+
   const generate = async () => {
     setGenerating(true);
     try {
-      const { data } = await api.post("/website/ai-generate");
+      const { data } = await api.post("/website/ai-generate", slotState());
       const ph = data.photos || {};
       patch({
         headline: data.headline || w.headline,
@@ -120,7 +129,7 @@ export default function WebsiteEditor() {
   const stockPhotos = async () => {
     setStocking(true);
     try {
-      const { data } = await api.post("/website/stock-photos");
+      const { data } = await api.post("/website/stock-photos", slotState());
       if (data.website) setW(data.website);
       api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
       toast.success(data.filled ? t("website.stockDone") : t("website.stockNone"));
