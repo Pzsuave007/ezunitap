@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🌐 Jun 2026 — Dominio: botón confirmar paso 2, estado "Conectado" limpio, y re-guardar no reinicia [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Pedidos dueño**: (1) el paso 2 (A record) no tenía botón para confirmar como el paso 1; (2) cuando todo esté bien, mostrar solo "Conectado" y ocultar la info del servidor (confusa); (3) volver a "Guardar" el mismo dominio reiniciaba las instrucciones.
+- **Backend** (`server.py`): nuevo flag `custom_domain_a_ok` + `_dns_a_records()`; nuevo endpoint `POST /website/domain/verify-a` (resuelve A y compara con `WEBSITE_DOMAIN_TARGET`). `_domain_status` devuelve `a_ok` y `connected` (verified && a_ok). `set_website_domain`: si el dominio es el MISMO y ya tiene token → devuelve status sin resetear (arregla #3). delete limpia `custom_domain_a_ok`.
+- **Frontend** (`WebsiteEditor.js`): handler `verifyDomainA`; cuando `connected` → tarjeta verde "¡Conectado!" con link al dominio + "Quitar", ocultando TODOS los registros DNS (#2). Si no, Paso 1 (TXT+verify) y Paso 2 (A+"Verificar registro A") con check ✓ por paso (#1). Badge cabecera: Conectado / Propiedad verificada. i18n domainConnected*/domainStep*Done/domainVerifyABtn (EN/ES). **Fix crash**: faltaba importar `CheckCircle2` en WebsiteEditor.js.
+- Verificado curl: re-guardar mismo dominio mantiene token+verified (no reinicia); verify-a con DNS real de growthally.uni2mkt.com → a_ok:True, connected:True ("¡Dominio conectado!"). Screenshot: badge "Connected" + tarjeta verde, IP del servidor OCULTA.
+- ⚠️ Backend+frontend+deploy. NOTA: DNS OK ≠ sitio sirviendo; el servidor (cPanel) debe tener el subdominio agregado + AutoSSL.
+
+
 ## 🌐 Jun 2026 — Conectar dominio: paso 2 (A record) mostraba IP vacía + host incorrecto en subdominios [COMPLETO; verificado curl+screenshot, SIN testing_agent]
 - **Bug dueño**: al conectar `growthally.uni2mkt.com` en su servidor, el paso 2 mostraba "La IP de tu servidor UniTech (pregúntale a tu hosting)" en vez de la IP, y ponía Host `@` (incorrecto para subdominio).
 - **Causa 1**: `WEBSITE_DOMAIN_TARGET` no estaba en el `.env` de producción → `a_target` vacío. **Causa 2**: el flujo asumía dominio raíz (Host `@` + www), incorrecto para subdominios.

@@ -4415,6 +4415,12 @@ async def website_ai_suggest_design(user_id: str = Depends(get_current_user_id),
     return out
 
 
+def _dns_a_records(name: str):
+    import dns.resolver
+    ans = dns.resolver.resolve(name, "A", lifetime=6)
+    return [r.address for r in ans]
+
+
 def _dns_txt_records(name: str):
     import dns.resolver
     ans = dns.resolver.resolve(name, "TXT", lifetime=6)
@@ -4450,9 +4456,13 @@ def _domain_dns_host(domain: str):
 def _domain_status(w):
     domain = w.get("custom_domain") or ""
     a_host, is_sub = _domain_dns_host(domain)
+    verified = bool(w.get("custom_domain_verified"))
+    a_ok = bool(w.get("custom_domain_a_ok"))
     return {
         "domain": domain,
-        "verified": bool(w.get("custom_domain_verified")),
+        "verified": verified,
+        "a_ok": a_ok,
+        "connected": bool(domain) and verified and a_ok,
         "txt_host": f"_unitech-verify.{domain}" if domain else "",
         "txt_value": w.get("custom_domain_token") or "",
         "a_target": os.environ.get("WEBSITE_DOMAIN_TARGET", ""),
@@ -4481,14 +4491,17 @@ async def set_website_domain(payload: dict = Body(...), user_id: str = Depends(g
     if dup:
         raise HTTPException(409, "That domain is already connected to another account.")
     w = await _get_or_init_website(user_id)
-    token = w.get("custom_domain_token") or _new_id().replace("-", "")[:20]
-    await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain": raw, "custom_domain_token": token, "custom_domain_verified": False}})
+    # Re-saving the SAME domain must NOT reset progress (keep token + verified flags).
+    if raw == (w.get("custom_domain") or "") and w.get("custom_domain_token"):
+        return _domain_status(w)
+    token = _new_id().replace("-", "")[:20]
+    await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain": raw, "custom_domain_token": token, "custom_domain_verified": False, "custom_domain_a_ok": False}})
     return _domain_status(await db.websites.find_one({"user_id": user_id}, {"_id": 0}))
 
 
 @api_router.delete("/website/domain")
 async def delete_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
-    await db.websites.update_one({"user_id": user_id}, {"$unset": {"custom_domain": "", "custom_domain_token": "", "custom_domain_verified": ""}})
+    await db.websites.update_one({"user_id": user_id}, {"$unset": {"custom_domain": "", "custom_domain_token": "", "custom_domain_verified": "", "custom_domain_a_ok": ""}})
     return {"ok": True}
 
 
@@ -4507,8 +4520,33 @@ async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f:
     if any(token in r for r in records):
         await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_verified": True}})
         w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
-        return {**_domain_status(w), "checked": True, "message": "Domain verified! 🎉 Point your A record and enable SSL on your server to go live."}
+        return {**_domain_status(w), "checked": True, "message": "Ownership verified! 🎉 Now confirm your A record (Step 2)."}
     return {**_domain_status(w), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
+
+
+@api_router.post("/website/domain/verify-a")
+async def verify_website_domain_a(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    """Confirm the A record for the domain points to this server's IP (Step 2)."""
+    w = await _get_or_init_website(user_id)
+    domain = w.get("custom_domain")
+    target = os.environ.get("WEBSITE_DOMAIN_TARGET", "")
+    if not domain:
+        raise HTTPException(400, "Add a domain first.")
+    if not target:
+        raise HTTPException(400, "Server IP is not configured yet. Ask the admin to set WEBSITE_DOMAIN_TARGET.")
+    try:
+        records = _dns_a_records(domain)
+    except Exception as e:
+        logger.info(f"domain A verify lookup failed {domain}: {e!r}")
+        return {**_domain_status(w), "checked": True, "message": "We couldn't find the A record yet — DNS can take up to 30 min to update. Try again shortly."}
+    if target in records:
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_a_ok": True}})
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+        st = _domain_status(w)
+        msg = "All set — your domain is connected! 🎉" if st["connected"] else "A record confirmed! Now verify ownership (Step 1) to finish."
+        return {**st, "checked": True, "message": msg}
+    found = ", ".join(records) if records else "none"
+    return {**_domain_status(w), "checked": True, "message": f"Your A record points to {found}, not {target} yet. Update it and try again (DNS can take up to 30 min)."}
 
 
 def _schedule_gbp_review_refresh(user_id: str, background_tasks: BackgroundTasks):

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram } from "lucide-react";
 import { toast } from "sonner";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
@@ -302,6 +302,16 @@ export default function WebsiteEditor() {
       const { data } = await api.post("/website/domain/verify");
       setDomain(data); setDomainMsg(data.message || "");
       if (data.verified) toast.success(t("website.domainVerified"));
+    } catch (e) { toast.error(e?.response?.data?.detail || t("website.saveError")); }
+    finally { setDomainBusy(false); }
+  };
+  const verifyDomainA = async () => {
+    setDomainBusy(true);
+    try {
+      const { data } = await api.post("/website/domain/verify-a");
+      setDomain(data); setDomainMsg(data.message || "");
+      if (data.connected) toast.success(t("website.domainConnected"));
+      else if (data.a_ok) toast.success(t("website.domainAok"));
     } catch (e) { toast.error(e?.response?.data?.detail || t("website.saveError")); }
     finally { setDomainBusy(false); }
   };
@@ -681,7 +691,9 @@ export default function WebsiteEditor() {
       {tab === "publish" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Globe className="w-4 h-4" /> {t("website.domainTitle")}
-          {domain?.verified && <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">{t("website.domainVerifiedBadge")}</span>}
+          {domain?.connected
+            ? <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">{t("website.domainConnectedBadge")}</span>
+            : domain?.verified && <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">{t("website.domainVerifiedBadge")}</span>}
         </div>
         <p className="text-sm text-slate-500 mb-3">{t("website.domainDesc")}</p>
         <div className="flex items-center gap-2">
@@ -690,37 +702,69 @@ export default function WebsiteEditor() {
           <Button onClick={saveDomain} disabled={domainBusy || !domainInput} className="rounded-xl h-11 flex-none" data-testid="website-domain-save">{domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.save")}</Button>
         </div>
 
-        {domain?.domain && (
-          <div className="mt-4 space-y-3">
-            {!domain.verified && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
-                <div className="font-bold text-amber-900 mb-2">{t("website.domainStep1")}</div>
-                <DnsRow label="Type" value="TXT" onCopy={copyText} />
-                <DnsRow label="Host / Name" value={domain.txt_host} onCopy={copyText} />
-                <DnsRow label="Value" value={domain.txt_value} onCopy={copyText} />
-                <Button onClick={verifyDomain} disabled={domainBusy} size="sm" className="rounded-xl h-9 mt-2 bg-amber-600 hover:bg-amber-700" data-testid="website-domain-verify">
-                  {domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.domainVerifyBtn")}
-                </Button>
-                {domainMsg && <p className="text-xs text-amber-800 mt-2" data-testid="website-domain-msg">{domainMsg}</p>}
-              </div>
-            )}
-            <div className={`rounded-xl border p-3 text-sm ${domain.verified ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
-              <div className="font-bold mb-2" style={{ color: domain.verified ? "#065f46" : "#334155" }}>{t("website.domainStep2")}</div>
-              <div className="text-xs text-slate-500 mb-2">{domain.is_subdomain ? t("website.domainSubLabel") : t("website.domainRootLabel")}</div>
-              <DnsRow label="Type" value="A" onCopy={copyText} />
-              <DnsRow label="Host / Name" value={domain.a_host || "@"} onCopy={copyText} />
-              <DnsRow label="Points to" value={domain.a_target || t("website.domainAskHost")} onCopy={domain.a_target ? copyText : undefined} />
-              {domain.a_target && !domain.is_subdomain && (
-                <>
-                  <div className="text-xs text-slate-500 mt-3 mb-2">{t("website.domainWwwLabel")}</div>
-                  <DnsRow label="Type" value="A" onCopy={copyText} />
-                  <DnsRow label="Host / Name" value="www" onCopy={copyText} />
-                  <DnsRow label="Points to" value={domain.a_target} onCopy={copyText} />
-                </>
-              )}
-              <p className="text-xs text-slate-500 mt-3">{t("website.domainStep2Note")}</p>
-              <p className="text-xs text-slate-500 mt-1">{t("website.domainSslNote")}</p>
+        {domain?.domain && domain.connected && (
+          <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4" data-testid="website-domain-connected">
+            <div className="flex items-center gap-2 text-emerald-800 font-bold"><CheckCircle2 className="w-5 h-5" /> {t("website.domainConnectedTitle")}</div>
+            <p className="text-sm text-emerald-700 mt-1">{t("website.domainConnectedDesc")}</p>
+            <a href={`https://${domain.domain}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:underline" data-testid="website-domain-visit"><Globe className="w-4 h-4" /> {domain.domain}</a>
+            <div className="mt-3">
+              <button onClick={removeDomain} className="text-xs text-slate-400 hover:text-red-500 font-semibold" data-testid="website-domain-remove">{t("website.domainRemove")}</button>
             </div>
+          </div>
+        )}
+
+        {domain?.domain && !domain.connected && (
+          <div className="mt-4 space-y-3">
+            {/* Step 1 — verify ownership (TXT) */}
+            <div className={`rounded-xl border p-3 text-sm ${domain.verified ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+              <div className="font-bold mb-2 flex items-center gap-1.5" style={{ color: domain.verified ? "#065f46" : "#78350f" }}>
+                {domain.verified && <CheckCircle2 className="w-4 h-4" />}{t("website.domainStep1")}
+              </div>
+              {!domain.verified ? (
+                <>
+                  <DnsRow label="Type" value="TXT" onCopy={copyText} />
+                  <DnsRow label="Host / Name" value={domain.txt_host} onCopy={copyText} />
+                  <DnsRow label="Value" value={domain.txt_value} onCopy={copyText} />
+                  <Button onClick={verifyDomain} disabled={domainBusy} size="sm" className="rounded-xl h-9 mt-2 bg-amber-600 hover:bg-amber-700" data-testid="website-domain-verify">
+                    {domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.domainVerifyBtn")}
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-emerald-700">{t("website.domainStep1Done")}</p>
+              )}
+            </div>
+
+            {/* Step 2 — point the A record */}
+            <div className={`rounded-xl border p-3 text-sm ${domain.a_ok ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
+              <div className="font-bold mb-2 flex items-center gap-1.5" style={{ color: domain.a_ok ? "#065f46" : "#334155" }}>
+                {domain.a_ok && <CheckCircle2 className="w-4 h-4" />}{t("website.domainStep2")}
+              </div>
+              {!domain.a_ok ? (
+                <>
+                  <div className="text-xs text-slate-500 mb-2">{domain.is_subdomain ? t("website.domainSubLabel") : t("website.domainRootLabel")}</div>
+                  <DnsRow label="Type" value="A" onCopy={copyText} />
+                  <DnsRow label="Host / Name" value={domain.a_host || "@"} onCopy={copyText} />
+                  <DnsRow label="Points to" value={domain.a_target || t("website.domainAskHost")} onCopy={domain.a_target ? copyText : undefined} />
+                  {domain.a_target && !domain.is_subdomain && (
+                    <>
+                      <div className="text-xs text-slate-500 mt-3 mb-2">{t("website.domainWwwLabel")}</div>
+                      <DnsRow label="Type" value="A" onCopy={copyText} />
+                      <DnsRow label="Host / Name" value="www" onCopy={copyText} />
+                      <DnsRow label="Points to" value={domain.a_target} onCopy={copyText} />
+                    </>
+                  )}
+                  <p className="text-xs text-slate-500 mt-3">{t("website.domainStep2Note")}</p>
+                  <p className="text-xs text-slate-500 mt-1">{t("website.domainSslNote")}</p>
+                  <Button onClick={verifyDomainA} disabled={domainBusy} size="sm" className="rounded-xl h-9 mt-2 bg-blue-600 hover:bg-blue-700" data-testid="website-domain-verify-a">
+                    {domainBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.domainVerifyABtn")}
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-emerald-700">{t("website.domainStep2Done")}</p>
+              )}
+            </div>
+
+            {domainMsg && <p className="text-xs text-slate-600" data-testid="website-domain-msg">{domainMsg}</p>}
             <button onClick={removeDomain} className="text-xs text-slate-400 hover:text-red-500 font-semibold" data-testid="website-domain-remove">{t("website.domainRemove")}</button>
           </div>
         )}
