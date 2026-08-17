@@ -2722,6 +2722,12 @@ async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] =
         update["slug"] = new_slug
     update["updated_at"] = _now_iso()
     await db.cards.update_one({"id": card["id"]}, {"$set": update})
+    # Keep services in sync with the public Website (same company, one service list).
+    if "services" in update and card.get("is_primary"):
+        await db.websites.update_one(
+            {"user_id": user_id},
+            {"$set": {"services": update["services"], "updated_at": update["updated_at"]}},
+        )
     return await db.cards.find_one({"id": card["id"]}, {"_id": 0})
 
 
@@ -4091,6 +4097,12 @@ async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_
         update["slug"] = s
     update["updated_at"] = _now_iso()
     await db.websites.update_one({"user_id": user_id}, {"$set": update})
+    # Keep services in sync with the Business Card (same company, one service list).
+    if "services" in update:
+        await db.cards.update_one(
+            {"user_id": user_id, "is_primary": True},
+            {"$set": {"services": update["services"], "updated_at": update["updated_at"]}},
+        )
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     w["public_path"] = f"/sitio/{w['slug']}"
     return w

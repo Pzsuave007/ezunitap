@@ -55,11 +55,18 @@ export default function QuoteBuilder() {
 
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
-    api.get("/card/settings").then((r) => {
-      const names = (r.data?.services || []).map((s) => (s.name || "").trim()).filter(Boolean);
-      if (!names.length && r.data?.business_type) names.push(r.data.business_type.trim());
-      setServices([...new Set(names)]);
-    }).catch(() => {});
+    (async () => {
+      try {
+        const w = await api.get("/website");
+        let names = (w.data?.services || []).map((s) => (s.name || "").trim()).filter(Boolean);
+        if (!names.length) {
+          const c = await api.get("/card/settings");
+          names = (c.data?.services || []).map((s) => (s.name || "").trim()).filter(Boolean);
+          if (!names.length && c.data?.business_type) names.push(c.data.business_type.trim());
+        }
+        setServices([...new Set(names)]);
+      } catch { /* ignore */ }
+    })();
   }, []);
 
   const applyGuided = (data, detail = "single") => {

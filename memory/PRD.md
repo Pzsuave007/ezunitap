@@ -1,11 +1,17 @@
 # UniTech — PRD (resumen vivo)
 
-## 🧰 Jun 2026 — Chips de oficio = servicios del perfil del dueño [COMPLETO; verificado screenshot, SIN testing_agent]
-- **Petición del dueño**: la pregunta "¿Qué tipo de trabajo?" debe mostrar automáticamente los servicios que él configuró en su perfil ("servicios que ofreces"), no una lista genérica que lo obligue a escoger lo mismo cada vez.
-- **Fix**: `QuoteBuilder.js` e `InvoiceDetail.js` cargan `GET /card/settings` → `services[].name` (fallback a `business_type` si no hay servicios) y los pasan a `GuidedJobForm` vía `serviceOptions`. `GuidedJobForm` usa esos chips si existen (si no, la lista genérica TRADES), pre-selecciona el primero (useEffect cuando cargan) y muestra nota "servicios de tu perfil — agrégalo en tu Tarjeta". Chips mantienen "Otro" para casos sueltos.
-- El DEMO (`DemoFlow.js`) NO recibe serviceOptions → mantiene la lista genérica (no hay dueño logueado).
-- Verificado screenshot: quote muestra chips Interior Painting / Drywall Repair / Pressure Washing (servicios del perfil), primero pre-seleccionado, sin genéricos. Build recompilado + `git add -f`.
-- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+## 🔗 Jun 2026 — Servicios sincronizados: Tarjeta ↔ Página Web ↔ Quotes/Facturas [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Petición del dueño**: hay 2 lugares con servicios (Tarjeta y Página Web); prefiere el de la Web (sugiere más servicios + descripciones). Quiere que ambos estén SINCRONIZADOS y que quotes/facturas los tomen de ahí.
+- **Backend** (`server.py`): sincronización bidireccional al guardar. `update_card_settings` (PUT /card/settings): si manda `services` y es la card primaria → espeja a `websites`. `update_website` (PUT /website): si manda `services` → espeja a la card primaria (`is_primary`). Misma forma `{name, description, starting_price, icon}`, sin loop (escritura directa a la otra colección).
+- **Frontend** (`QuoteBuilder.js` + `InvoiceDetail.js`): el fetch de servicios ahora lee primero `GET /website` (preferido, más rico), fallback a `/card/settings` (y a `business_type`). Pasa a `GuidedJobForm` como `serviceOptions`.
+- Verificado: curl (editar Web → refleja en Tarjeta y viceversa) + screenshot (chips del quote = servicios de la Web: Deck Building, Fence Install; los viejos de solo-tarjeta ya no salen).
+- ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `deploy.sh`.
+- NOTA: en preview la cuenta admin quedó con servicios de prueba (Deck Building, Fence Install) — el dueño puede cambiarlos desde su Tarjeta/Web.
+
+## 🧰 Jun 2026 — Chips de oficio = servicios del perfil del dueño [COMPLETO]
+- `GuidedJobForm` usa `serviceOptions` (servicios del perfil) como chips, pre-selecciona el primero, mantiene "Otro". Demo mantiene lista genérica TRADES.
+
+
 
 ## 📋 Jun 2026 — Pregunta "¿Una línea o desglose?" en el asistente (página 1) [COMPLETO]
 - `GuidedJobForm` Q6 `guided-detail-single`(default)/`guided-detail-breakdown`; `onResult(data, detail)` → handlers cargan 1 línea o desglose. Toggle en borrador sigue disponible.
