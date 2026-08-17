@@ -39,6 +39,15 @@ const TRADES = [
   "Otro",
 ];
 
+// Fictitious client shown on the demo documents so the invoice looks complete.
+const DEMO_CLIENT = {
+  name: "María González",
+  address: "1847 Oak Street, Houston, TX 77002",
+  phone: "(713) 555-0142",
+  email: "maria.gonzalez@email.com",
+};
+
+
 // Localized display label for a trade (the stored value stays bilingual for lookups).
 export const TRADE_LABELS = {
   "Techos / Roofing": { es: "Techos", en: "Roofing" },
@@ -265,7 +274,7 @@ export default function DemoFlow() {
         )}
         {step === 0 && <LeadStep onStart={startDemo} loading={loading} />}
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} guidedRequest={demoGuidedRequest} onGuided={onGuidedQuote} />}
-        {step === 2 && <InvoiceStep quote={quote} business={business} lead={lead} demoId={demoId} simple hideFinalCta onContinue={goClose} />}
+        {step === 2 && <InvoiceStep quote={quote} business={business} lead={lead} demoId={demoId} client={DEMO_CLIENT} simple hideFinalCta onContinue={goClose} />}
         {step === 3 && <DemoClose demoId={demoId} lead={lead} quote={quote} business={business} />}
       </div>
       <GuideBar step={step} onNext={guideNext} loading={loading} />
@@ -542,6 +551,7 @@ function DescribeStep({ desc, setDesc, onGen, loading, onBack, lead, setLead, gu
           <GuidedJobForm
             lang={i18n.language}
             initial={{ trade: startTrade, work: jobRequestText(startTrade, t), hasPrice: false, materials: "unsure", deposit: "none" }}
+            autoWork={(tr) => jobRequestText(tr, t)}
             request={guidedRequest}
             onResult={onGuided}
             ctaLabel={es ? "Crear con IA — mira la magia ✨" : "Create with AI — watch the magic ✨"}
@@ -769,9 +779,10 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
   );
 }
 
-export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFinalCta = false, simple = false, onContinue }) {
+export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFinalCta = false, simple = false, onContinue, client }) {
   const { t, i18n } = useTranslation();
   const es = i18n.language === "es";
+  const c = client || { name: lead.name, email: lead.email };
   const [dl, setDl] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const total = Number(quote?.total || 0);
@@ -787,7 +798,7 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
         amount_paid: 0,
         status: "sent",
       };
-      await generateInvoicePDF(invoice, business, { name: lead.name, email: lead.email });
+      await generateInvoicePDF(invoice, business, { name: c.name, address: c.address, email: c.email, phone: c.phone });
     } finally {
       setDl(false);
     }
@@ -801,7 +812,10 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
         <div className="p-5 sm:p-6 space-y-5">
           <div>
             <div className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
-            <div className="font-semibold">{lead.name}</div>
+            <div className="font-semibold">{c.name}</div>
+            {c.address && <div className="text-sm text-slate-600">{c.address}</div>}
+            {c.phone && <div className="text-sm text-slate-600">{c.phone}</div>}
+            {c.email && <div className="text-sm text-slate-600">{c.email}</div>}
           </div>
           <div>
             <h2 className="font-heading text-xl font-bold">{quote?.job_title}</h2>
@@ -1007,24 +1021,20 @@ function DemoClose({ demoId, lead, quote, business }) {
   const ICONS = [Sparkles, Wallet, ShieldCheck, CalendarDays];
   const list = Array.isArray(benefits) ? benefits : [];
   return (
-    <div data-testid="demo-close" className="space-y-6">
-      {/* Success hero */}
-      <div className="text-center pt-2">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+    <div data-testid="demo-close" className="space-y-5">
+      {/* Compact success hero */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
+          <CheckCircle2 className="w-3.5 h-3.5" /> {t("demoFlow.close.badge")}
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-3">
-          <PartyPopper className="w-3.5 h-3.5" /> {t("demoFlow.close.badge")}
-        </div>
-        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.close.title")}</h1>
-        <p className="text-base text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.close.subtitle")}</p>
-        <div data-testid="demo-close-also" className="mt-4 mx-auto max-w-md rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-sm font-semibold px-4 py-3 flex items-center justify-center gap-2">
-          <FileText className="w-4 h-4 flex-none text-blue-700" />
-          {es ? "UniTech también hace Estimados (cotizaciones) y Contratos de Servicio — pregúntanos." : "UniTech also makes Estimates (quotes) and Service Agreements — just ask."}
-        </div>
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight leading-tight">{t("demoFlow.close.title")}</h1>
+        <p className="text-sm sm:text-base text-slate-600 mt-1.5 max-w-md mx-auto">{t("demoFlow.close.subtitle")}</p>
       </div>
 
-      {/* Benefits — why sign up */}
+      {/* PRIMARY CTA — visible without scrolling, especially on mobile */}
+      <FinalCTA demoId={demoId} />
+
+      {/* Secondary: why sign up + also-does note (below the fold is fine) */}
       <div className="grid sm:grid-cols-2 gap-3">
         {list.map((b, i) => {
           const Icon = ICONS[i % ICONS.length];
@@ -1041,13 +1051,9 @@ function DemoClose({ demoId, lead, quote, business }) {
           );
         })}
       </div>
-
-      {/* Founder offer + help + checkout (reused) */}
-      <FinalCTA demoId={demoId} />
-
-      {/* Trust line */}
-      <p className="text-center text-sm text-slate-500 flex items-center justify-center gap-1.5">
-        <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t("demoFlow.close.trust")}
+      <p data-testid="demo-close-also" className="text-center text-sm text-slate-500 flex items-center justify-center gap-1.5">
+        <FileText className="w-4 h-4 flex-none text-blue-700" />
+        {es ? "También hacemos Estimados y Contratos de Servicio." : "We also make Estimates and Service Agreements."}
       </p>
     </div>
   );
@@ -1081,17 +1087,29 @@ function FinalCTA({ demoId }) {
   };
 
   return (
-    <Card className="mt-6 p-8 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
-      <PartyPopper className="w-10 h-10 mx-auto mb-3" />
-      <h2 className="font-heading text-2xl font-bold">{t("demoFlow.finalTitle")}</h2>
-      <p className="text-white/85 mt-2 max-w-md mx-auto">
-        {t("demoFlow.finalDesc")}
+    <Card className="p-5 sm:p-6 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
+      {/* PRIMARY CTA first — above the fold */}
+      {founderOn && (
+        <div data-testid="demo-founder-offer" className="mx-auto max-w-md rounded-xl bg-amber-400 text-blue-950 px-4 py-2.5 shadow-lg mb-3">
+          <span className="font-heading font-extrabold text-base leading-tight">{t("demoFlow.founderTitle")}</span>
+          <span className="text-sm font-semibold"> · {t("demoFlow.founderRemaining", { n: founder.remaining })}</span>
+        </div>
+      )}
+      <Link
+        data-testid="demo-final-cta"
+        to={to}
+        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
+        className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-blue-900 font-bold text-lg hover:bg-slate-100"
+      >
+        {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-5 h-5" />
+      </Link>
+      <p className="text-xs text-white/80 mt-2.5 flex items-center justify-center gap-1.5">
+        <ShieldCheck className="w-4 h-4" /> {t("demoFlow.close.trust")}
       </p>
 
-      {/* Warm, no-pressure invitation FIRST — offer personal help */}
-      <div className="mt-6 max-w-md mx-auto">
-        <p className="text-sm font-bold text-white mb-1">{t("demoFlow.helpTitle")}</p>
-        <p className="text-xs text-white/75 mb-3">{t("demoFlow.helpDesc")}</p>
+      {/* Secondary: personal help / contact — below the CTA */}
+      <div className="mt-5 pt-5 border-t border-white/20 max-w-md mx-auto">
+        <p className="text-sm font-bold text-white mb-2">{t("demoFlow.helpTitle")}</p>
         {capSaved ? (
           <div data-testid="demo-contact-saved" className="text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2 py-2">
             <CheckCircle2 className="w-4 h-4" /> {t("demoFlow.saveDone")}
@@ -1114,26 +1132,6 @@ function FinalCTA({ demoId }) {
           testid="demo-flow-final-whatsapp"
           onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
         />
-      </div>
-
-      {/* Founder offer + checkout CTA BELOW */}
-      <div className="mt-7 pt-6 border-t border-white/20">
-        {founderOn && (
-          <div data-testid="demo-founder-offer" className="mx-auto max-w-md rounded-2xl bg-amber-400 text-blue-950 px-5 py-4 shadow-lg">
-            <div className="font-heading font-extrabold text-lg leading-tight">{t("demoFlow.founderTitle")}</div>
-            <div className="text-sm font-semibold mt-1">
-              {t("demoFlow.founderRemaining", { n: founder.remaining })}
-            </div>
-          </div>
-        )}
-        <Link
-          data-testid="demo-final-cta"
-          to={to}
-          onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
-          className="inline-flex items-center gap-2 mt-4 h-13 px-7 py-3 rounded-2xl bg-white text-blue-900 font-bold hover:bg-slate-100"
-        >
-          {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
-        </Link>
       </div>
     </Card>
   );

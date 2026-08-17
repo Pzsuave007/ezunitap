@@ -1,5 +1,26 @@
 # UniTech — PRD (resumen vivo)
 
+## 🎯 Jun 2026 — Pantalla de cierre del demo compacta (CTA sin scroll) [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Queja del dueño**: la página CTA del demo repetía mensajes (subtítulo + nota azul + 4 tarjetas + tarjeta azul "Eso fue todo" con lo mismo) y el botón de crear cuenta quedaba enterrado (había que hacer scroll, peor en móvil).
+- **Fix** (`DemoFlow.js` `DemoClose` + `FinalCTA`): hero compacto (sin ícono gigante, título text-2xl/3xl, 1 subtítulo). `FinalCTA` reordenado: oferta fundador + **botón "Crear cuenta" full-width ARRIBA** + línea de confianza; ayuda/contacto/WhatsApp DEBAJO. Se quitó el texto redundante (`finalTitle`/`finalDesc`/`helpDesc` y la nota azul duplicada). Beneficios + "también Estimados/Contratos" (one-liner) van al final.
+- Verificado screenshot móvil (390×844): CTA `demo-final-cta` en y≈339, bottom≈395 → VISIBLE sin scroll.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+## 🧾 Jun 2026 — Demo: cliente ficticio completo + Scope en PDF + auto-relleno de descripción [COMPLETO]
+- `DEMO_CLIENT` {name,address,phone,email} en Bill To (pantalla + PDF). `generateInvoicePDF` ahora incluye Scope of Work. `GuidedJobForm` prop `autoWork` → al elegir servicio auto-rellena la descripción (sin sobrescribir lo tecleado). Demo pasa ambos.
+
+
+
+## 🧾 Jun 2026 — Demo: cliente ficticio completo + Scope en PDF + auto-relleno de descripción [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Peticiones del dueño** (viendo el PDF del demo): (1) la factura debe traer info completa del cliente ficticio (nombre, dirección, teléfono, email); (2) el invoice no mostraba Scope of Work; (3) al escoger un servicio en la 1ª página, la descripción del trabajo no se auto-rellenaba.
+- **Fix #1 cliente** (`DemoFlow.js`): nuevo `DEMO_CLIENT` {name, address, phone, email}. `InvoiceStep` acepta prop `client`, muestra Bill To completo en pantalla y lo pasa al PDF (`generateInvoicePDF(invoice, business, {name,address,email,phone})`). El demo pasa `client={DEMO_CLIENT}`.
+- **Fix #2 scope en PDF** (`lib/pdf.js`): `generateInvoicePDF` ahora renderiza bloque "Scope of Work" (antes solo lo tenía `generateQuotePDF`). En pantalla ya se mostraba.
+- **Fix #3 auto-relleno** (`GuidedJobForm.js`): nuevo prop `autoWork`; `pickTrade()` al elegir un chip auto-rellena la descripción vía `autoWork(trade)` sin sobrescribir texto tecleado por el usuario (solo si vacío o igual al último auto). El demo pasa `autoWork={(tr)=>jobRequestText(tr,t)}`.
+- Verificado screenshot demo: cambiar de servicio actualiza la descripción; Bill To con dirección/tel/email; Scope of Work visible; factura simple con Enviar/insignia.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🧾 Jun 2026 — Demo simplificado: solo FACTURA (alinear con el anuncio) [COMPLETO; verificado screenshots e2e, SIN testing_agent]
 - **Insight del dueño**: el anuncio promete "haz invoices" pero el demo hacía pasar por cotización → contrato → invoice → pago (demasiado, causa abandono). Quiere: preguntas → SOLO factura → cierre; mencionar en el cierre que también hay Estimados y Contratos + WhatsApp/formulario.
 - **Fix** (`DemoFlow.js`): flujo nuevo = step 0 start, step 1 DescribeStep (asistente guiado), step 2 `InvoiceStep simple`, step 3 `DemoClose`. Se quitaron del flujo QuoteStep/AgreementStep/paso de pago (componentes siguen exportados para DemoAll.js). `goClose()` reemplaza genAgreement/signNow/payNow. `GuideBar` solo en step 2 ("¡Tu factura está lista!" → Continuar). `StepBar` ahora 2 pasos (Describe / Factura).

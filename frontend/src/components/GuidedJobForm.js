@@ -19,13 +19,14 @@ const TRADES = [
 // quote/invoice via the AI. Calls onResult(data) with the normalized result.
 // `initial` pre-fills the answers (used by the demo for a 1-tap experience).
 // `request` overrides the default authed API call (used by the public demo).
-export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial = {}, serviceOptions = [], request, onResult, ctaLabel }) {
+export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial = {}, serviceOptions = [], autoWork, request, onResult, ctaLabel }) {
   const { t } = useTranslation();
   const es = lang === "es";
   // Use the account owner's own services when available, else the generic list.
   const useOwnServices = Array.isArray(serviceOptions) && serviceOptions.length > 0;
   const tradeChips = useOwnServices ? serviceOptions : TRADES;
   const [trade, setTrade] = useState(initial.trade || defaultTrade || "");
+  const [autoWorkPrev, setAutoWorkPrev] = useState(initial.work || ""); // last value we auto-filled
   const [otherTrade, setOtherTrade] = useState("");
   const [work, setWork] = useState(initial.work || "");
   const [hasPrice, setHasPrice] = useState(initial.hasPrice ?? null); // null | true | false
@@ -43,6 +44,20 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
   }, [useOwnServices, serviceOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const chosenTrade = trade === "__other__" ? otherTrade : trade;
+
+  // Pick a trade/service. If an autoWork(trade) generator is provided (demo),
+  // auto-fill the "what needs to be done" field — but never overwrite text the
+  // user typed themselves (only replace our own previous auto value or empty).
+  const pickTrade = (tr) => {
+    setTrade(tr);
+    if (autoWork && tr !== "__other__") {
+      const next = autoWork(tr) || "";
+      if (!work.trim() || work === autoWorkPrev) {
+        setWork(next);
+        setAutoWorkPrev(next);
+      }
+    }
+  };
 
   const generate = async () => {
     if (!work.trim()) return toast.error(es ? "Dime qué hay que hacer" : "Tell us what needs to be done");
@@ -89,7 +104,7 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
         <Label className="font-bold">{es ? "1. ¿Qué tipo de trabajo es?" : "1. What kind of job is it?"}</Label>
         <div className="flex flex-wrap gap-2 mt-2">
           {tradeChips.map((tr) => (
-            <Opt key={tr} testid={`guided-trade-${tr}`} active={trade === tr} onClick={() => setTrade(tr)}>
+            <Opt key={tr} testid={`guided-trade-${tr}`} active={trade === tr} onClick={() => pickTrade(tr)}>
               {tr.includes(" / ") ? (es ? tr.split(" / ")[0] : (tr.split(" / ")[1] || tr)) : tr}
             </Opt>
           ))}
