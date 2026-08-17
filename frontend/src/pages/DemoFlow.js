@@ -170,7 +170,10 @@ export default function DemoFlow() {
     setErr("");
     setLoading(true);
     try {
-      const r = await axios.post(`${API}/public/demo/start`, lead);
+      // Only send the trade — NOT the fictitious client name/email we prefill
+      // for the sample documents. The lead's real contact is captured at the
+      // end (final form) so the leads dashboard never fills with "María".
+      const r = await axios.post(`${API}/public/demo/start`, { trade: lead.trade || "" });
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
       // Meta Pixel: mid-funnel lead — prospect started the live demo.

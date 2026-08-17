@@ -5772,6 +5772,7 @@ async def demo_capture_contact(demo_id: str, payload: DemoContactIn):
     if phone:
         patch["phone"] = phone
     if patch:
+        patch["contact_captured"] = True
         patch["last_activity"] = _now_iso()
         await db.demo_leads.update_one({"id": demo_id}, {"$set": patch})
     return {"ok": True}
@@ -5826,8 +5827,16 @@ async def demo_agreement(payload: DemoAgreementIn):
 
 @api_router.get("/admin/demo-leads")
 async def admin_demo_leads(_admin: dict = Depends(_require_super_admin)):
-    """All captured demo visitors (most recent first) so the owner can follow up."""
-    leads = await db.demo_leads.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    """Demo visitors who actually left their contact in the final form (most
+    recent first). Sessions that only opened the demo — which carry the
+    fictitious client 'María González' used to make the sample documents look
+    real — are NOT leads and are excluded."""
+    q = {"$or": [
+        {"contact_captured": True},
+        {"email": {"$nin": ["", None]}},
+        {"phone": {"$nin": ["", None]}},
+    ]}
+    leads = await db.demo_leads.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return {"leads": leads}
 
 
