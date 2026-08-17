@@ -1,5 +1,15 @@
 # UniTech — PRD (resumen vivo)
 
+## 🎬 Jun 2026 — Asistente guiado también en el DEMO (`/demo`) [COMPLETO; verificado curl+screenshots, SIN testing_agent]
+- **Petición del dueño**: aplicar el asistente guiado al demo. Decisiones: preguntas PRE-RELLENADAS (1 tap "Crear con IA"), precio default = "que la IA sugiera" (momento wow).
+- **Backend** (`server.py`): `POST /public/demo/quote-guided` + `DemoGuidedQuoteIn` (público, sin auth). Usa `ai_service.generate_quote_from_answers`. Devuelve `quote` con `line_items=[summary_item]` (1 línea default) + `detailed_line_items` (desglose) + total/deposit/scope/price_estimated. Respeta `DEMO_MAX_QUOTES`.
+- **Frontend** `components/GuidedJobForm.js`: ahora reusable — props nuevos `initial` (pre-rellena respuestas), `request` (override del API call, usado por el demo público) y `ctaLabel`.
+- **Frontend** `DemoFlow.js`: `DescribeStep` (paso 1) ahora muestra el asistente guiado PRE-RELLENADO como opción principal + "describir yo mismo" secundario (el select+textarea viejo). `demoGuidedRequest` llama al endpoint público (setea loading del padre → BusySheet). `onGuidedQuote` setea quote y avanza a paso 2. GuideBar oculto en paso 1 (el asistente tiene su propio CTA). `QuoteStep` tiene toggle `demo-quote-breakdown` (una línea ↔ desglose).
+- Verificado: curl (sin precio → IA sugiere $2150, 8 líneas suman 2150) + screenshots móvil e2e (paso 1 asistente pre-rellenado "Pintura" → tap Crear con IA → quote 1 línea "Interior Painting" → "Mostrar desglose" expande y colapsa → sigue a paso 3). Build recompilado + `git add -f`.
+- ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🧙 Jun 2026 — Asistente guiado de Quotes/Facturas: "Contéstame unas preguntas" + resultado de UNA sola línea [COMPLETO; verificado curl+screenshots e2e, SIN testing_agent]
 - **Insight del dueño** (de su gente real): (1) la mayoría de contratistas hispanos NO quieren desglose de líneas — prefieren UNA sola línea con el detalle + el total (su amigo borró las líneas de la IA y dejó una sola); (2) se ATORAN describiéndole el trabajo a la IA (no saben qué escribir). Decisiones: resultado = 1 línea por defecto + botón "Mostrar desglose"; asistente en quotes Y facturas; si el contratista sabe el precio lo pone y la IA solo redacta; si no, la IA sugiere; voz = después; preguntas = todas en una pantalla.
 - **Backend** (`ai_service.py` `generate_quote_from_answers` + `GUIDED_QUOTE_SYSTEM`; `server.py` `POST /ai/quote-guided` + `AIGuidedQuoteRequest`): recibe trade, work_es, total_price(opcional), includes_materials(yes/no/unsure), deposit_kind(none/half/custom)+percent. Devuelve `summary_line` (1 línea profesional en inglés), `summary_item` (la línea única default), `line_items` (desglose 4-8), scope, notes, payment_terms, total, deposit_amount, price_estimated. Normaliza números server-side: si hay precio, el desglose se re-escala para SUMAR exacto al total; si no, la IA estima. Depósito calculado (half=50%, custom=%).

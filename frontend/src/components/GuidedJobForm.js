@@ -17,28 +17,30 @@ const TRADES = [
 
 // A single-screen guided questionnaire that turns a few simple answers into a
 // quote/invoice via the AI. Calls onResult(data) with the normalized result.
-export default function GuidedJobForm({ lang = "es", defaultTrade = "", onResult }) {
+// `initial` pre-fills the answers (used by the demo for a 1-tap experience).
+// `request` overrides the default authed API call (used by the public demo).
+export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial = {}, request, onResult, ctaLabel }) {
   const { t } = useTranslation();
   const es = lang === "es";
-  const [trade, setTrade] = useState(defaultTrade || "");
+  const [trade, setTrade] = useState(initial.trade || defaultTrade || "");
   const [otherTrade, setOtherTrade] = useState("");
-  const [work, setWork] = useState("");
-  const [hasPrice, setHasPrice] = useState(null); // null | true | false
-  const [price, setPrice] = useState("");
-  const [materials, setMaterials] = useState("unsure"); // yes | no | unsure
-  const [deposit, setDeposit] = useState("none"); // none | half | custom
+  const [work, setWork] = useState(initial.work || "");
+  const [hasPrice, setHasPrice] = useState(initial.hasPrice ?? null); // null | true | false
+  const [price, setPrice] = useState(initial.price || "");
+  const [materials, setMaterials] = useState(initial.materials || "unsure"); // yes | no | unsure
+  const [deposit, setDeposit] = useState(initial.deposit || "none"); // none | half | custom
   const [depositPct, setDepositPct] = useState("");
   const [loading, setLoading] = useState(false);
 
   const chosenTrade = trade === "__other__" ? otherTrade : trade;
 
   const generate = async () => {
-    if (!work.trim()) return toast.error(es ? "Dime qué hay que hacer" : "Tell me what needs to be done");
+    if (!work.trim()) return toast.error(es ? "Dime qué hay que hacer" : "Tell us what needs to be done");
     if (hasPrice === null) return toast.error(es ? "Dinos si ya tienes un precio" : "Tell us if you have a price");
     if (hasPrice && !(Number(price) > 0)) return toast.error(es ? "Escribe el precio total" : "Enter the total price");
     setLoading(true);
     try {
-      const { data } = await api.post("/ai/quote-guided", {
+      const payload = {
         trade: chosenTrade || "",
         work_es: work.trim(),
         total_price: hasPrice ? Number(price) : null,
@@ -46,9 +48,10 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", onResult
         deposit_kind: deposit,
         deposit_percent: deposit === "custom" ? Number(depositPct) || 0 : null,
         language: lang,
-      });
+      };
+      const data = request ? await request(payload) : (await api.post("/ai/quote-guided", payload)).data;
       onResult?.(data);
-      toast.success(es ? "¡Listo! Revísalo abajo" : "Done! Review it below");
+      toast.success(es ? "¡Listo!" : "Done!");
     } catch (err) {
       toast.error(err?.response?.data?.detail || (es ? "No se pudo generar. Intenta de nuevo." : "Could not generate. Try again."));
     } finally {
@@ -148,7 +151,7 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", onResult
 
       <Button data-testid="guided-generate" onClick={generate} disabled={loading}
         className="w-full h-14 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Wand2 className="w-5 h-5 mr-2" /> {es ? "Crear con IA" : "Create with AI"}</>}
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Wand2 className="w-5 h-5 mr-2" /> {ctaLabel || (es ? "Crear con IA" : "Create with AI")}</>}
       </Button>
     </div>
   );

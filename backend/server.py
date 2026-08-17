@@ -5729,6 +5729,17 @@ class DemoQuoteIn(BaseModel):
     description_es: str
 
 
+class DemoGuidedQuoteIn(BaseModel):
+    demo_id: str
+    trade: Optional[str] = ""
+    work_es: Optional[str] = ""
+    total_price: Optional[float] = None
+    includes_materials: Optional[str] = "unsure"
+    deposit_kind: Optional[str] = "none"
+    deposit_percent: Optional[float] = None
+    language: Optional[str] = "es"
+
+
 class DemoAgreementIn(BaseModel):
     demo_id: str
     description_es: str
@@ -5830,6 +5841,53 @@ async def demo_quote(payload: DemoQuoteIn):
     data["number"] = f"Q-{1000 + int(lead.get('quote_count') or 0) + 1}"
     data["created_at"] = _now_iso()
     return {"quote": data, "business": DEMO_BUSINESS}
+
+
+@api_router.post("/public/demo/quote-guided")
+async def demo_quote_guided(payload: DemoGuidedQuoteIn):
+    """Guided demo quote: turns a few simple answers into a quote. Defaults to a
+    single summary line + total with a detailed breakdown available on toggle —
+    mirrors the real product experience."""
+    lead = await _get_demo_lead(payload.demo_id)
+    if int(lead.get("quote_count") or 0) >= DEMO_MAX_QUOTES:
+        raise HTTPException(status_code=429, detail="Demo limit reached. Create a free account to keep going.")
+    if not (payload.work_es or "").strip():
+        raise HTTPException(status_code=400, detail="Cuéntanos qué hay que hacer.")
+    try:
+        data = await ai_service.generate_quote_from_answers(
+            trade=payload.trade or "",
+            work_es=(payload.work_es or "")[:1500],
+            total_price=payload.total_price,
+            includes_materials=payload.includes_materials or "unsure",
+            deposit_kind=payload.deposit_kind or "none",
+            deposit_percent=payload.deposit_percent,
+            language=payload.language or "es",
+        )
+    except Exception as e:
+        logger.exception("Demo guided quote failed")
+        raise HTTPException(503, "La IA no está disponible en este momento. Intenta de nuevo en un momento.")
+    await db.demo_leads.update_one(
+        {"id": payload.demo_id},
+        {"$inc": {"quote_count": 1}, "$set": {"last_activity": _now_iso(), "last_desc": (payload.work_es or "")[:500], "trade": payload.trade or lead.get("trade", "")}},
+    )
+    # Shape for the demo QuoteStep: single line by default + detailed for toggle.
+    summary_item = data.get("summary_item") or {"description": data.get("summary_line", ""), "quantity": 1, "unit": "ea", "unit_price": data.get("total", 0), "amount": data.get("total", 0)}
+    quote = {
+        "job_title": data.get("job_title", ""),
+        "description": data.get("summary_line", ""),
+        "scope_of_work": data.get("scope_of_work", []),
+        "line_items": [summary_item],
+        "detailed_line_items": data.get("line_items", []),
+        "summary_item": summary_item,
+        "subtotal": data.get("total", 0), "tax_rate": 0, "tax_amount": 0, "total": data.get("total", 0),
+        "deposit_amount": data.get("deposit_amount", 0),
+        "payment_terms": data.get("payment_terms", ""),
+        "notes": data.get("notes", ""),
+        "price_estimated": data.get("price_estimated", False),
+        "number": f"Q-{1000 + int(lead.get('quote_count') or 0) + 1}",
+        "created_at": _now_iso(),
+    }
+    return {"quote": quote, "business": DEMO_BUSINESS}
 
 
 @api_router.post("/public/demo/agreement")

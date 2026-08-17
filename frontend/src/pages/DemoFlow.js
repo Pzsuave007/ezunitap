@@ -15,9 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
-  MessageCircle, Smartphone, Wallet, FileText, CalendarDays,
+  MessageCircle, Smartphone, Wallet, FileText, CalendarDays, ListTree, Minus,
 } from "lucide-react";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
+import GuidedJobForm from "@/components/GuidedJobForm";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 import { trackDemo } from "@/lib/demoAnalytics";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -212,6 +213,28 @@ export default function DemoFlow() {
     }
   };
 
+  // Guided demo quote: pre-filled answers, AI suggests the price → 1-tap "wow".
+  const demoGuidedRequest = async (payload) => {
+    setErr("");
+    setLoading(true);
+    try {
+      const r = await axios.post(`${API}/public/demo/quote-guided`, { demo_id: demoId, ...payload });
+      return r.data; // { quote, business }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGuidedQuote = (data) => {
+    setQuote(data.quote);
+    setBusiness(data.business);
+    fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(data.quote?.total || 0), currency: "USD" });
+    fbTrackCustom("DemoQuoteGenerated");
+    track("quote_generated", { step: 2, trade: lead.trade, meta: { total: Number(data.quote?.total || 0) } });
+    setStep(2);
+    window.scrollTo(0, 0);
+  };
+
   const genAgreement = () => {
     setErr("");
     setAgreement(buildDemoAgreement());
@@ -255,7 +278,7 @@ export default function DemoFlow() {
           </div>
         )}
         {step === 0 && <LeadStep onStart={startDemo} loading={loading} />}
-        {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} />}
+        {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} guidedRequest={demoGuidedRequest} onGuided={onGuidedQuote} />}
         {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
         {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={signNow} />}
         {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} hideFinalCta />}
@@ -271,7 +294,8 @@ export default function DemoFlow() {
 // button so demo users never get stuck hunting for the in-document button.
 function GuideBar({ step, onNext, loading, paid }) {
   const { t } = useTranslation();
-  if (step < 1 || (step === 4 && paid)) return null;
+  // Step 1 has its own "Create with AI" button inside the guided assistant.
+  if (step < 1 || step === 1 || (step === 4 && paid)) return null;
   const cfg = {
     1: { instr: t("demoFlow.guide.s1"), cta: t("demoFlow.guide.s1cta"), Icon: Sparkles },
     2: { instr: t("demoFlow.guide.s2"), cta: t("demoFlow.guide.s2cta"), Icon: ArrowRight },
@@ -516,8 +540,11 @@ function StartBar({ onStart, loading }) {
   );
 }
 
-function DescribeStep({ desc, setDesc, onGen, loading, onBack, lead, setLead }) {
+function DescribeStep({ desc, setDesc, onGen, loading, onBack, lead, setLead, guidedRequest, onGuided }) {
   const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
+  const [manual, setManual] = useState(false);
+  const startTrade = lead?.trade || "Pintura / Painting";
   const onTrade = (e) => {
     const v = e.target.value;
     setLead({ ...lead, trade: v });
@@ -527,20 +554,43 @@ function DescribeStep({ desc, setDesc, onGen, loading, onBack, lead, setLead }) 
     <Card className="p-6 sm:p-8 rounded-2xl border-slate-200">
       <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 mb-4"><ArrowLeft className="w-4 h-4" /> {t("demoFlow.back")}</button>
       <h2 className="font-heading text-2xl font-bold">{t("demoFlow.describeTitle")}</h2>
-      <p className="text-slate-600 mt-1">{t("demoFlow.describeDesc")}</p>
-      <div className="mt-4">
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startTradeLabel")}</label>
-        <select data-testid="demo-trade" value={lead?.trade || ""} onChange={onTrade} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
-          <option value="">{t("demoFlow.startTradeChoose")}</option>
-          {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
-        </select>
-      </div>
-      <Textarea data-testid="demo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={5}
-        placeholder={t("demoFlow.descPlaceholder")}
-        className="mt-3 rounded-xl text-base" />
-      <Button data-testid="demo-gen-quote-btn" onClick={onGen} disabled={loading} className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base">
-        {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlow.genQuoteLoading")}</> : <><Sparkles className="w-5 h-5 mr-2" /> {t("demoFlow.genQuoteBtn")}</>}
-      </Button>
+      <p className="text-slate-600 mt-1">{es ? "Contesta unas preguntas rápidas (ya las llenamos por ti) y toca el botón — la IA hace el resto." : "Answer a few quick questions (we pre-filled them for you) and tap the button — the AI does the rest."}</p>
+
+      {!manual && (
+        <div className="mt-5">
+          <GuidedJobForm
+            lang={i18n.language}
+            initial={{ trade: startTrade, work: jobRequestText(startTrade, t), hasPrice: false, materials: "unsure", deposit: "none" }}
+            request={guidedRequest}
+            onResult={onGuided}
+            ctaLabel={es ? "Crear con IA — mira la magia ✨" : "Create with AI — watch the magic ✨"}
+          />
+          <button data-testid="demo-describe-manual" onClick={() => setManual(true)} className="mt-4 w-full text-sm text-slate-500 hover:text-slate-800 font-semibold">
+            {es ? "O describir el trabajo yo mismo" : "Or describe the job myself"}
+          </button>
+        </div>
+      )}
+
+      {manual && (
+        <>
+          <div className="mt-4">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("demoFlow.startTradeLabel")}</label>
+            <select data-testid="demo-trade" value={lead?.trade || ""} onChange={onTrade} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
+              <option value="">{t("demoFlow.startTradeChoose")}</option>
+              {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
+            </select>
+          </div>
+          <Textarea data-testid="demo-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={5}
+            placeholder={t("demoFlow.descPlaceholder")}
+            className="mt-3 rounded-xl text-base" />
+          <Button data-testid="demo-gen-quote-btn" onClick={onGen} disabled={loading} className="mt-5 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base">
+            {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("demoFlow.genQuoteLoading")}</> : <><Sparkles className="w-5 h-5 mr-2" /> {t("demoFlow.genQuoteBtn")}</>}
+          </Button>
+          <button onClick={() => setManual(false)} className="mt-3 w-full text-sm text-slate-500 hover:text-slate-800 font-semibold">
+            {es ? "← Volver al asistente" : "← Back to the assistant"}
+          </button>
+        </>
+      )}
     </Card>
   );
 }
@@ -615,9 +665,13 @@ function LineItems({ items }) {
 const docDate = () => new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 
 export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
   const [dl, setDl] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   if (!quote) return null;
+  const hasBreakdown = (quote.detailed_line_items || []).length > 0;
+  const shownItems = showBreakdown && hasBreakdown ? quote.detailed_line_items : quote.line_items;
   const downloadPdf = async () => {
     setDl(true);
     try {
@@ -648,7 +702,15 @@ export function QuoteStep({ quote, business, lead, onAccept, loading, onBack }) 
               <ul className="list-disc ml-5 space-y-1 text-sm">{quote.scope_of_work.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </div>
           )}
-          <LineItems items={quote.line_items} />
+          {hasBreakdown && (
+            <div className="flex justify-end -mb-2">
+              <button data-testid="demo-quote-breakdown" onClick={() => setShowBreakdown((v) => !v)}
+                className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                {showBreakdown ? <><Minus className="w-3.5 h-3.5" /> {es ? "Una sola línea" : "Single line"}</> : <><ListTree className="w-3.5 h-3.5" /> {es ? "Mostrar desglose por partes" : "Show breakdown"}</>}
+              </button>
+            </div>
+          )}
+          <LineItems items={shownItems} />
           <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm sm:ml-auto sm:max-w-xs">
             <div className="flex justify-between"><span>Subtotal</span><span>{fmtMoney(quote.subtotal)}</span></div>
             <div className="flex justify-between"><span>Tax</span><span>{fmtMoney(quote.tax_amount)}</span></div>
