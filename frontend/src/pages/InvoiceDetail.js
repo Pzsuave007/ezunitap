@@ -114,20 +114,21 @@ export default function InvoiceDetail() {
   const [phase, setPhase] = useState("input"); // input (questions) -> draft (review & edit); only for new invoices
   const goDraft = () => { setPhase("draft"); window.scrollTo(0, 0); };
 
-  const applyGuided = (data) => {
+  const applyGuided = (data, detail = "single") => {
     const sum = data.summary_item || { description: data.summary_line || "", quantity: 1, unit: "ea", unit_price: data.total || 0, amount: data.total || 0 };
     const detailed = (data.line_items || []).map((li) => ({
       description: li.description || "", quantity: Number(li.quantity) || 1, unit: li.unit || "ea",
       unit_price: Number(li.unit_price) || 0, amount: Number(li.amount) || 0,
     }));
+    const wantBreakdown = detail === "breakdown" && detailed.length > 0;
     setSummaryItem(sum);
     setDetailedItems(detailed);
-    setBreakdownOn(false);
+    setBreakdownOn(wantBreakdown);
     setPriceEstimated(!!data.price_estimated);
     recompute({
       ...invoice,
       job_title: data.job_title || invoice.job_title,
-      line_items: [sum],
+      line_items: wantBreakdown ? detailed : [sum],
       tax_rate: 0,
       deposit_amount: Number(data.deposit_amount) || 0,
       notes: data.notes || invoice.notes,

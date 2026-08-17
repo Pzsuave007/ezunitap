@@ -225,12 +225,16 @@ export default function DemoFlow() {
     }
   };
 
-  const onGuidedQuote = (data) => {
-    setQuote(data.quote);
+  const onGuidedQuote = (data, detail = "single") => {
+    const quote = { ...data.quote };
+    if (detail === "breakdown" && (quote.detailed_line_items || []).length > 0) {
+      quote.line_items = quote.detailed_line_items;
+    }
+    setQuote(quote);
     setBusiness(data.business);
-    fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(data.quote?.total || 0), currency: "USD" });
+    fbTrack("ViewContent", { content_name: "Demo AI Quote", value: Number(quote?.total || 0), currency: "USD" });
     fbTrackCustom("DemoQuoteGenerated");
-    track("quote_generated", { step: 2, trade: lead.trade, meta: { total: Number(data.quote?.total || 0) } });
+    track("quote_generated", { step: 2, trade: lead.trade, meta: { total: Number(quote?.total || 0) } });
     setStep(2);
     window.scrollTo(0, 0);
   };

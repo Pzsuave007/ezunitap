@@ -1,10 +1,16 @@
 # UniTech — PRD (resumen vivo)
 
-## 🪜 Jun 2026 — Crear Quote/Factura en 2 pasos (preguntas → borrador arriba, sin scroll) [COMPLETO; verificado screenshots, SIN testing_agent]
-- **Queja del dueño**: al crear quote/factura, el documento vacío estaba ABAJO y tras generar había que hacer scroll hasta el fondo para verlo/editarlo — tedioso en compu, peor en teléfono. Pidió que tras contestar/generar la pantalla vaya al borrador ya lleno, editable ahí mismo.
-- **Fix** (`QuoteBuilder.js` + `InvoiceDetail.js`): flujo de 2 fases con estado `phase` (input | draft) + `goDraft()` que hace `scrollTo(0,0)`. Fase "input" muestra SOLO las preguntas/asistente (y select de cliente). Al generar (guided, texto libre, o foto) → salta a fase "draft" ARRIBA mostrando el documento lleno y editable. Botón "Volver a las preguntas" (`qb-back-to-questions` / `inv-back-to-questions`) regresa a editar respuestas. En facturas solo aplica cuando `isNew`; facturas existentes muestran el detalle directo. En InvoiceDetail las 2 cards (header+detalle) se envolvieron en fragment `<>` bajo `{(!isNew || phase==="draft") && (...)}`.
-- Verificado screenshots móvil: quote (antes de generar qb-title ausente → generar → scrollY 0 + qb-title visible + asistente oculto + back button) y factura (igual + "back to questions" restaura las preguntas). Build recompilado + `git add -f`.
+## 📋 Jun 2026 — Pregunta "¿Una línea o desglose?" en el asistente (página 1) [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Petición del dueño**: en la página 1 (preguntas) del quote/factura debe preguntar si quiere UNA línea o VARIAS (desglose) — importante.
+- **Fix** (`GuidedJobForm.js`): nueva pregunta 6 "¿Cómo quieres el detalle?" con opciones `guided-detail-single` (Una sola línea + total, default) y `guided-detail-breakdown` (Desglose por partes). `onResult(data, detail)` ahora pasa la elección.
+- Handlers respetan la elección: `QuoteBuilder.applyGuided(data, detail)` e `InvoiceDetail.applyGuided(data, detail)` cargan `line_items = detailed` y `breakdownOn=true` si eligió desglose, si no, la línea única. `DemoFlow.onGuidedQuote(data, detail)` muestra el quote con desglose si lo pidió. El toggle en el borrador sigue permitiendo cambiar después.
+- Verificado screenshot: quote con "Desglose" → borrador carga varias líneas, toggle dice "Single line", total exacto $2800. Build recompilado + `git add -f`.
 - ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+## 🪜 Jun 2026 — Crear Quote/Factura en 2 pasos + cliente en página 1 [COMPLETO]
+- 2 fases (`phase` input→draft, `goDraft()` scrollTo 0). Fase input = preguntas/asistente (+ select de cliente arriba, también en facturas nuevas vía `inv-client-select-input`). Al generar → salta arriba al borrador editable. Botón "Volver a las preguntas". Facturas existentes van directo al detalle.
+
+
 
 
 

@@ -30,6 +30,7 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
   const [materials, setMaterials] = useState(initial.materials || "unsure"); // yes | no | unsure
   const [deposit, setDeposit] = useState(initial.deposit || "none"); // none | half | custom
   const [depositPct, setDepositPct] = useState("");
+  const [detail, setDetail] = useState(initial.detail || "single"); // single | breakdown
   const [loading, setLoading] = useState(false);
 
   const chosenTrade = trade === "__other__" ? otherTrade : trade;
@@ -50,7 +51,7 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
         language: lang,
       };
       const data = request ? await request(payload) : (await api.post("/ai/quote-guided", payload)).data;
-      onResult?.(data);
+      onResult?.(data, detail);
       toast.success(es ? "¡Listo!" : "Done!");
     } catch (err) {
       toast.error(err?.response?.data?.detail || (es ? "No se pudo generar. Intenta de nuevo." : "Could not generate. Try again."));
@@ -147,6 +148,24 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
           </div>
         )}
+      </div>
+
+      {/* Q6: single line vs breakdown */}
+      <div>
+        <Label className="font-bold">{es ? "6. ¿Cómo quieres el detalle en el documento?" : "6. How do you want the detail on the document?"}</Label>
+        <div className="grid grid-cols-1 gap-2 mt-2">
+          <button type="button" data-testid="guided-detail-single" onClick={() => setDetail("single")}
+            className={`text-left px-3.5 py-3 rounded-xl border-2 transition-all active:scale-[0.99] ${detail === "single" ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-300"}`}>
+            <div className="text-sm font-bold text-slate-800">{detail === "single" && <Check className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-emerald-600" />}{es ? "Una sola línea con el total" : "A single line with the total"}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{es ? "Todo el trabajo descrito en una línea + el precio. (Lo más común)" : "All the work in one line + the price. (Most common)"}</div>
+          </button>
+          <button type="button" data-testid="guided-detail-breakdown" onClick={() => setDetail("breakdown")}
+            className={`text-left px-3.5 py-3 rounded-xl border-2 transition-all active:scale-[0.99] ${detail === "breakdown" ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-300"}`}>
+            <div className="text-sm font-bold text-slate-800">{detail === "breakdown" && <Check className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-emerald-600" />}{es ? "Desglose por partes" : "Itemized breakdown"}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{es ? "Varias líneas: preparación, materiales, mano de obra, etc." : "Several lines: prep, materials, labor, etc."}</div>
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mt-1.5">{es ? "Puedes cambiarlo después con un toque." : "You can switch it later with one tap."}</p>
       </div>
 
       <Button data-testid="guided-generate" onClick={generate} disabled={loading}

@@ -56,21 +56,22 @@ export default function QuoteBuilder() {
     api.get("/clients").then((r) => setClients(r.data));
   }, []);
 
-  const applyGuided = (data) => {
+  const applyGuided = (data, detail = "single") => {
     const sum = data.summary_item || { description: data.summary_line || "", quantity: 1, unit: "ea", unit_price: data.total || 0, amount: data.total || 0 };
     const detailed = (data.line_items || []).map((li) => ({
       description: li.description || "", quantity: Number(li.quantity) || 1, unit: li.unit || "ea",
       unit_price: Number(li.unit_price) || 0, amount: Number(li.amount) || 0,
     }));
+    const wantBreakdown = detail === "breakdown" && detailed.length > 0;
     setSummaryItem(sum);
     setDetailedItems(detailed);
-    setBreakdownOn(false);
+    setBreakdownOn(wantBreakdown);
     setPriceEstimated(!!data.price_estimated);
     setDraft({
       job_title: data.job_title || "",
       description: data.summary_line || "",
       scope_of_work: data.scope_of_work || [],
-      line_items: [sum],
+      line_items: wantBreakdown ? detailed : [sum],
       materials_estimate: 0, labor_estimate: 0,
       subtotal: Number(data.total) || 0, tax_rate: 0, tax_amount: 0, total: Number(data.total) || 0,
       deposit_amount: Number(data.deposit_amount) || 0,
