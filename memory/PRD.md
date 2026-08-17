@@ -1,14 +1,19 @@
 # UniTech — PRD (resumen vivo)
 
-## 📋 Jun 2026 — Pregunta "¿Una línea o desglose?" en el asistente (página 1) [COMPLETO; verificado screenshot, SIN testing_agent]
-- **Petición del dueño**: en la página 1 (preguntas) del quote/factura debe preguntar si quiere UNA línea o VARIAS (desglose) — importante.
-- **Fix** (`GuidedJobForm.js`): nueva pregunta 6 "¿Cómo quieres el detalle?" con opciones `guided-detail-single` (Una sola línea + total, default) y `guided-detail-breakdown` (Desglose por partes). `onResult(data, detail)` ahora pasa la elección.
-- Handlers respetan la elección: `QuoteBuilder.applyGuided(data, detail)` e `InvoiceDetail.applyGuided(data, detail)` cargan `line_items = detailed` y `breakdownOn=true` si eligió desglose, si no, la línea única. `DemoFlow.onGuidedQuote(data, detail)` muestra el quote con desglose si lo pidió. El toggle en el borrador sigue permitiendo cambiar después.
-- Verificado screenshot: quote con "Desglose" → borrador carga varias líneas, toggle dice "Single line", total exacto $2800. Build recompilado + `git add -f`.
+## 🧰 Jun 2026 — Chips de oficio = servicios del perfil del dueño [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Petición del dueño**: la pregunta "¿Qué tipo de trabajo?" debe mostrar automáticamente los servicios que él configuró en su perfil ("servicios que ofreces"), no una lista genérica que lo obligue a escoger lo mismo cada vez.
+- **Fix**: `QuoteBuilder.js` e `InvoiceDetail.js` cargan `GET /card/settings` → `services[].name` (fallback a `business_type` si no hay servicios) y los pasan a `GuidedJobForm` vía `serviceOptions`. `GuidedJobForm` usa esos chips si existen (si no, la lista genérica TRADES), pre-selecciona el primero (useEffect cuando cargan) y muestra nota "servicios de tu perfil — agrégalo en tu Tarjeta". Chips mantienen "Otro" para casos sueltos.
+- El DEMO (`DemoFlow.js`) NO recibe serviceOptions → mantiene la lista genérica (no hay dueño logueado).
+- Verificado screenshot: quote muestra chips Interior Painting / Drywall Repair / Pressure Washing (servicios del perfil), primero pre-seleccionado, sin genéricos. Build recompilado + `git add -f`.
 - ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
 
+## 📋 Jun 2026 — Pregunta "¿Una línea o desglose?" en el asistente (página 1) [COMPLETO]
+- `GuidedJobForm` Q6 `guided-detail-single`(default)/`guided-detail-breakdown`; `onResult(data, detail)` → handlers cargan 1 línea o desglose. Toggle en borrador sigue disponible.
+
 ## 🪜 Jun 2026 — Crear Quote/Factura en 2 pasos + cliente en página 1 [COMPLETO]
-- 2 fases (`phase` input→draft, `goDraft()` scrollTo 0). Fase input = preguntas/asistente (+ select de cliente arriba, también en facturas nuevas vía `inv-client-select-input`). Al generar → salta arriba al borrador editable. Botón "Volver a las preguntas". Facturas existentes van directo al detalle.
+- 2 fases (`phase` input→draft, `goDraft()` scrollTo 0). Fase input = preguntas + select de cliente arriba (facturas: `inv-client-select-input`). Al generar → borrador editable arriba. Botón "Volver a las preguntas".
+
+
 
 
 

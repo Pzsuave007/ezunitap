@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,12 @@ const TRADES = [
 // quote/invoice via the AI. Calls onResult(data) with the normalized result.
 // `initial` pre-fills the answers (used by the demo for a 1-tap experience).
 // `request` overrides the default authed API call (used by the public demo).
-export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial = {}, request, onResult, ctaLabel }) {
+export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial = {}, serviceOptions = [], request, onResult, ctaLabel }) {
   const { t } = useTranslation();
   const es = lang === "es";
+  // Use the account owner's own services when available, else the generic list.
+  const useOwnServices = Array.isArray(serviceOptions) && serviceOptions.length > 0;
+  const tradeChips = useOwnServices ? serviceOptions : TRADES;
   const [trade, setTrade] = useState(initial.trade || defaultTrade || "");
   const [otherTrade, setOtherTrade] = useState("");
   const [work, setWork] = useState(initial.work || "");
@@ -32,6 +35,12 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
   const [depositPct, setDepositPct] = useState("");
   const [detail, setDetail] = useState(initial.detail || "single"); // single | breakdown
   const [loading, setLoading] = useState(false);
+
+  // When the owner's services load, default-select the first one so they don't
+  // have to pick the same trade every time.
+  useEffect(() => {
+    if (useOwnServices && !trade) setTrade(serviceOptions[0]);
+  }, [useOwnServices, serviceOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const chosenTrade = trade === "__other__" ? otherTrade : trade;
 
@@ -79,15 +88,18 @@ export default function GuidedJobForm({ lang = "es", defaultTrade = "", initial 
       <div>
         <Label className="font-bold">{es ? "1. ¿Qué tipo de trabajo es?" : "1. What kind of job is it?"}</Label>
         <div className="flex flex-wrap gap-2 mt-2">
-          {TRADES.map((tr) => (
+          {tradeChips.map((tr) => (
             <Opt key={tr} testid={`guided-trade-${tr}`} active={trade === tr} onClick={() => setTrade(tr)}>
-              {es ? tr.split(" / ")[0] : (tr.split(" / ")[1] || tr)}
+              {tr.includes(" / ") ? (es ? tr.split(" / ")[0] : (tr.split(" / ")[1] || tr)) : tr}
             </Opt>
           ))}
           <Opt testid="guided-trade-other" active={trade === "__other__"} onClick={() => setTrade("__other__")}>
             {es ? "Otro" : "Other"}
           </Opt>
         </div>
+        {useOwnServices && (
+          <p className="text-xs text-slate-400 mt-1.5">{es ? "Estos son los servicios de tu perfil. ¿Falta uno? Agrégalo en tu Tarjeta." : "These are the services from your profile. Missing one? Add it in your Card."}</p>
+        )}
         {trade === "__other__" && (
           <Input data-testid="guided-trade-other-input" value={otherTrade} onChange={(e) => setOtherTrade(e.target.value)}
             placeholder={es ? "Escribe tu oficio" : "Type your trade"} className="h-11 rounded-xl mt-2" />

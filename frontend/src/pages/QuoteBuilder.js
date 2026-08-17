@@ -33,6 +33,7 @@ export default function QuoteBuilder() {
   const projectPhotoClientId = location.state?.projectPhotoClientId || null;
 
   const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]); // owner's own services for the trade chips
   const [clientId, setClientId] = useState(presetClient || "");
   const [description, setDescription] = useState(prefillDescription);
   const [aiLoading, setAiLoading] = useState(false);
@@ -54,6 +55,11 @@ export default function QuoteBuilder() {
 
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
+    api.get("/card/settings").then((r) => {
+      const names = (r.data?.services || []).map((s) => (s.name || "").trim()).filter(Boolean);
+      if (!names.length && r.data?.business_type) names.push(r.data.business_type.trim());
+      setServices([...new Set(names)]);
+    }).catch(() => {});
   }, []);
 
   const applyGuided = (data, detail = "single") => {
@@ -236,7 +242,7 @@ export default function QuoteBuilder() {
         </div>
 
         {builderMode === "guided" && (
-          <GuidedJobForm lang={lang} onResult={applyGuided} />
+          <GuidedJobForm lang={lang} serviceOptions={services} onResult={applyGuided} />
         )}
 
         {builderMode === "free" && (

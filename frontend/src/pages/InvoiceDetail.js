@@ -101,6 +101,7 @@ export default function InvoiceDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]); // owner's own services for the trade chips
   const [invoice, setInvoice] = useState(blank());
   const [client, setClient] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -175,6 +176,11 @@ export default function InvoiceDetail() {
 
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
+    api.get("/card/settings").then((r) => {
+      const names = (r.data?.services || []).map((s) => (s.name || "").trim()).filter(Boolean);
+      if (!names.length && r.data?.business_type) names.push(r.data.business_type.trim());
+      setServices([...new Set(names)]);
+    }).catch(() => {});
     if (isNew) {
       const presetClient = params.get("client_id") || "";
       setInvoice({ ...blank(), client_id: presetClient });
@@ -332,7 +338,7 @@ export default function InvoiceDetail() {
 
           {builderMode === "guided" && (
             <div className="rounded-xl bg-white p-3">
-              <GuidedJobForm lang={lang} onResult={applyGuided} />
+              <GuidedJobForm lang={lang} serviceOptions={services} onResult={applyGuided} />
             </div>
           )}
 
