@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🪜 Jun 2026 — Crear Quote/Factura en 2 pasos (preguntas → borrador arriba, sin scroll) [COMPLETO; verificado screenshots, SIN testing_agent]
+- **Queja del dueño**: al crear quote/factura, el documento vacío estaba ABAJO y tras generar había que hacer scroll hasta el fondo para verlo/editarlo — tedioso en compu, peor en teléfono. Pidió que tras contestar/generar la pantalla vaya al borrador ya lleno, editable ahí mismo.
+- **Fix** (`QuoteBuilder.js` + `InvoiceDetail.js`): flujo de 2 fases con estado `phase` (input | draft) + `goDraft()` que hace `scrollTo(0,0)`. Fase "input" muestra SOLO las preguntas/asistente (y select de cliente). Al generar (guided, texto libre, o foto) → salta a fase "draft" ARRIBA mostrando el documento lleno y editable. Botón "Volver a las preguntas" (`qb-back-to-questions` / `inv-back-to-questions`) regresa a editar respuestas. En facturas solo aplica cuando `isNew`; facturas existentes muestran el detalle directo. En InvoiceDetail las 2 cards (header+detalle) se envolvieron en fragment `<>` bajo `{(!isNew || phase==="draft") && (...)}`.
+- Verificado screenshots móvil: quote (antes de generar qb-title ausente → generar → scrollY 0 + qb-title visible + asistente oculto + back button) y factura (igual + "back to questions" restaura las preguntas). Build recompilado + `git add -f`.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🎬 Jun 2026 — Asistente guiado también en el DEMO (`/demo`) [COMPLETO; verificado curl+screenshots, SIN testing_agent]
 - **Petición del dueño**: aplicar el asistente guiado al demo. Decisiones: preguntas PRE-RELLENADAS (1 tap "Crear con IA"), precio default = "que la IA sugiera" (momento wow).
 - **Backend** (`server.py`): `POST /public/demo/quote-guided` + `DemoGuidedQuoteIn` (público, sin auth). Usa `ai_service.generate_quote_from_answers`. Devuelve `quote` con `line_items=[summary_item]` (1 línea default) + `detailed_line_items` (desglose) + total/deposit/scope/price_estimated. Respeta `DEMO_MAX_QUOTES`.

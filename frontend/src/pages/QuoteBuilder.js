@@ -49,6 +49,8 @@ export default function QuoteBuilder() {
     tax_amount: 0, total: 0, deposit_amount: 0, payment_terms: "", notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState("input"); // input (questions) -> draft (review & edit)
+  const goDraft = () => { setPhase("draft"); window.scrollTo(0, 0); };
 
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
@@ -74,6 +76,7 @@ export default function QuoteBuilder() {
       deposit_amount: Number(data.deposit_amount) || 0,
       payment_terms: data.payment_terms || "", notes: data.notes || "",
     });
+    goDraft();
   };
 
   // Swap between the single summary line and the detailed AI breakdown.
@@ -111,6 +114,7 @@ export default function QuoteBuilder() {
         notes: data.notes || "",
       });
       toast.success(t("quoteBuilder.generated"));
+      goDraft();
     } catch (err) {
       toast.error(err?.response?.data?.detail || t("quoteBuilder.aiError"));
     } finally {
@@ -130,6 +134,7 @@ export default function QuoteBuilder() {
         notes: [d.notes, data.questions_for_contractor?.length ? `Questions: ${data.questions_for_contractor.join("; ")}` : ""].filter(Boolean).join("\n"),
       }));
       toast.success(t("quoteBuilder.photoReady"));
+      goDraft();
     } catch (err) {
       toast.error(err?.response?.data?.detail || t("quoteBuilder.photoError"));
     } finally {
@@ -201,6 +206,7 @@ export default function QuoteBuilder() {
         <p className="text-slate-500 mt-1">{t("quoteBuilder.subtitle")}</p>
       </div>
 
+      {phase === "input" && (
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
         <div>
           <Label>{t("quoteBuilder.client")} *</Label>
@@ -300,8 +306,16 @@ export default function QuoteBuilder() {
           </>
         )}
       </Card>
+      )}
 
+      {phase === "draft" && (
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" onClick={() => setPhase("input")} data-testid="qb-back-to-questions" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> {lang === "es" ? "Volver a las preguntas" : "Back to questions"}
+          </button>
+          <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{lang === "es" ? "Borrador" : "Draft"}</span>
+        </div>
         <h2 className="font-heading text-xl font-bold">{t("quoteBuilder.detailsTitle")}</h2>
 
         <div>
@@ -398,6 +412,7 @@ export default function QuoteBuilder() {
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : t("quoteBuilder.saveQuote")}
         </Button>
       </Card>
+      )}
     </div>
   );
 }

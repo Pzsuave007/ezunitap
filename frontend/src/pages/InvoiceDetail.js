@@ -111,6 +111,8 @@ export default function InvoiceDetail() {
   const [summaryItem, setSummaryItem] = useState(null);
   const [breakdownOn, setBreakdownOn] = useState(false);
   const [priceEstimated, setPriceEstimated] = useState(false);
+  const [phase, setPhase] = useState("input"); // input (questions) -> draft (review & edit); only for new invoices
+  const goDraft = () => { setPhase("draft"); window.scrollTo(0, 0); };
 
   const applyGuided = (data) => {
     const sum = data.summary_item || { description: data.summary_line || "", quantity: 1, unit: "ea", unit_price: data.total || 0, amount: data.total || 0 };
@@ -130,6 +132,7 @@ export default function InvoiceDetail() {
       deposit_amount: Number(data.deposit_amount) || 0,
       notes: data.notes || invoice.notes,
     });
+    goDraft();
   };
 
   const toggleBreakdown = () => {
@@ -161,6 +164,7 @@ export default function InvoiceDetail() {
       };
       recompute(next);
       toast.success(t("invoiceDetail.aiOk"));
+      goDraft();
     } catch (err) {
       toast.error(err?.response?.data?.detail || t("invoiceDetail.aiError"));
     } finally {
@@ -289,8 +293,8 @@ export default function InvoiceDetail() {
         <ArrowLeft className="w-4 h-4" /> {t("invoiceDetail.back")}
       </button>
 
-      {/* AI Generation (only for new invoices) */}
-      {isNew && (
+      {/* AI Generation (only for new invoices, step 1) */}
+      {isNew && phase === "input" && (
         <Card className="card-elevated p-5 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white shadow-none">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
@@ -341,7 +345,14 @@ export default function InvoiceDetail() {
         </Card>
       )}
 
+      {(!isNew || phase === "draft") && (
+      <>
       <Card className="card-elevated p-5 border-0 shadow-none">
+        {isNew && phase === "draft" && (
+          <button type="button" onClick={() => setPhase("input")} data-testid="inv-back-to-questions" className="mb-3 text-sm font-semibold text-violet-700 hover:text-violet-800 inline-flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> {lang === "es" ? "Volver a las preguntas" : "Back to questions"}
+          </button>
+        )}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
@@ -546,6 +557,8 @@ export default function InvoiceDetail() {
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isNew ? t("invoiceDetail.saveDraft") : t("invoiceDetail.saveChanges"))}
         </Button>
       </Card>
+      </>
+      )}
 
       {!isNew && (
         <PaymentStatusCard
