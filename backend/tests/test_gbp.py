@@ -12,7 +12,7 @@ live OAuth + post + reviews flows become testable end-to-end.
 import os
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-ai-site.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://latino-funnel.preview.emergentagent.com").rstrip("/")
 SUPER_EMAIL = "pzsuave007@gmail.com"
 SUPER_PASS = "Uni2mkt007!"
 

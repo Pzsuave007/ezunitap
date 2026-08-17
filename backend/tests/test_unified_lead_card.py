@@ -11,7 +11,7 @@ import uuid
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://unitech-ai-site.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://latino-funnel.preview.emergentagent.com").rstrip("/")
 SLUG = "uni2-marketing-agency"
 OWNER_EMAIL = "pzsuave007@gmail.com"
 OWNER_PASSWORD = "Uni2mkt007!"
