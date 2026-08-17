@@ -293,6 +293,19 @@ export default function InvoiceDetail() {
         <ArrowLeft className="w-4 h-4" /> {t("invoiceDetail.back")}
       </button>
 
+      {/* Choose the client on page 1 (before the questions) */}
+      {isNew && phase === "input" && (
+        <Card className="card-elevated p-5 border-0 shadow-none mb-4">
+          <Label>{t("invoiceDetail.client")}</Label>
+          <Select value={invoice.client_id} onValueChange={(v) => setInvoice({ ...invoice, client_id: v })}>
+            <SelectTrigger className="h-12 rounded-xl mt-1.5" data-testid="inv-client-select-input"><SelectValue placeholder={t("invoiceDetail.selectPlaceholder")} /></SelectTrigger>
+            <SelectContent>
+              {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Card>
+      )}
+
       {/* AI Generation (only for new invoices, step 1) */}
       {isNew && phase === "input" && (
         <Card className="card-elevated p-5 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white shadow-none">
