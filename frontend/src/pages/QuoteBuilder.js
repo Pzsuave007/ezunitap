@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Camera, Loader2, ArrowLeft, Plus, Trash2, Wand2 } from "lucide-react";
+import { Sparkles, Camera, Loader2, ArrowLeft, Plus, Trash2, Wand2, ListTree, Minus } from "lucide-react";
 import { toast } from "sonner";
+import GuidedJobForm from "@/components/GuidedJobForm";
 
 const blankItem = () => ({ description: "", quantity: 1, unit: "ea", unit_price: 0, amount: 0 });
 
@@ -28,7 +29,6 @@ export default function QuoteBuilder() {
   const [params] = useSearchParams();
   const location = useLocation();
   const presetClient = params.get("client_id");
-  const aiMode = params.get("ai") === "1";
   const prefillDescription = location.state?.prefillDescription || "";
   const projectPhotoClientId = location.state?.projectPhotoClientId || null;
 
@@ -38,6 +38,11 @@ export default function QuoteBuilder() {
   const [aiLoading, setAiLoading] = useState(false);
   const [photoAnalysis, setPhotoAnalysis] = useState(null);
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [builderMode, setBuilderMode] = useState("guided"); // guided | free
+  const [detailedItems, setDetailedItems] = useState([]); // AI breakdown for the toggle
+  const [summaryItem, setSummaryItem] = useState(null);    // the single-line default
+  const [breakdownOn, setBreakdownOn] = useState(false);
+  const [priceEstimated, setPriceEstimated] = useState(false);
   const [draft, setDraft] = useState({
     job_title: "", description: "", scope_of_work: [], line_items: [],
     materials_estimate: 0, labor_estimate: 0, subtotal: 0, tax_rate: 0,
@@ -48,6 +53,36 @@ export default function QuoteBuilder() {
   useEffect(() => {
     api.get("/clients").then((r) => setClients(r.data));
   }, []);
+
+  const applyGuided = (data) => {
+    const sum = data.summary_item || { description: data.summary_line || "", quantity: 1, unit: "ea", unit_price: data.total || 0, amount: data.total || 0 };
+    const detailed = (data.line_items || []).map((li) => ({
+      description: li.description || "", quantity: Number(li.quantity) || 1, unit: li.unit || "ea",
+      unit_price: Number(li.unit_price) || 0, amount: Number(li.amount) || 0,
+    }));
+    setSummaryItem(sum);
+    setDetailedItems(detailed);
+    setBreakdownOn(false);
+    setPriceEstimated(!!data.price_estimated);
+    setDraft({
+      job_title: data.job_title || "",
+      description: data.summary_line || "",
+      scope_of_work: data.scope_of_work || [],
+      line_items: [sum],
+      materials_estimate: 0, labor_estimate: 0,
+      subtotal: Number(data.total) || 0, tax_rate: 0, tax_amount: 0, total: Number(data.total) || 0,
+      deposit_amount: Number(data.deposit_amount) || 0,
+      payment_terms: data.payment_terms || "", notes: data.notes || "",
+    });
+  };
+
+  // Swap between the single summary line and the detailed AI breakdown.
+  const toggleBreakdown = () => {
+    const next = !breakdownOn;
+    setBreakdownOn(next);
+    const items = next ? (detailedItems.length ? detailedItems : draft.line_items) : (summaryItem ? [summaryItem] : draft.line_items);
+    recompute({ ...draft, line_items: items });
+  };
 
   const generateWithAI = async () => {
     if (!description.trim()) return toast.error(t("quoteBuilder.errWriteDesc"));
@@ -181,7 +216,23 @@ export default function QuoteBuilder() {
           </Select>
         </div>
 
-        {aiMode && (
+        {/* Mode switch: guided assistant (default) vs describe yourself */}
+        <div className="grid grid-cols-2 gap-2" data-testid="qb-mode-switch">
+          <button type="button" data-testid="qb-mode-guided" onClick={() => setBuilderMode("guided")}
+            className={`h-11 rounded-xl text-sm font-bold border-2 flex items-center justify-center gap-1.5 transition-all ${builderMode === "guided" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 text-slate-600"}`}>
+            <Sparkles className="w-4 h-4" /> {lang === "es" ? "Contéstame preguntas" : "Answer questions"}
+          </button>
+          <button type="button" data-testid="qb-mode-free" onClick={() => setBuilderMode("free")}
+            className={`h-11 rounded-xl text-sm font-bold border-2 flex items-center justify-center gap-1.5 transition-all ${builderMode === "free" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 text-slate-600"}`}>
+            <Wand2 className="w-4 h-4" /> {lang === "es" ? "Describir yo mismo" : "Describe it myself"}
+          </button>
+        </div>
+
+        {builderMode === "guided" && (
+          <GuidedJobForm lang={lang} onResult={applyGuided} />
+        )}
+
+        {builderMode === "free" && (
           <>
             {prefillDescription && (
               <div data-testid="quote-prefill-note" className="rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2 text-xs font-semibold text-amber-800 flex items-center gap-2">
@@ -273,7 +324,14 @@ export default function QuoteBuilder() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label>{t("quoteBuilder.lineItems")}</Label>
-            <Button data-testid="add-line-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> {t("quoteBuilder.add")}</Button>
+            <div className="flex items-center gap-2">
+              {detailedItems.length > 0 && (
+                <Button data-testid="qb-toggle-breakdown" size="sm" variant="ghost" onClick={toggleBreakdown} className="rounded-xl text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50">
+                  {breakdownOn ? <><Minus className="w-3 h-3 mr-1" /> {lang === "es" ? "Una sola línea" : "Single line"}</> : <><ListTree className="w-3 h-3 mr-1" /> {lang === "es" ? "Mostrar desglose" : "Show breakdown"}</>}
+                </Button>
+              )}
+              <Button data-testid="add-line-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> {t("quoteBuilder.add")}</Button>
+            </div>
           </div>
           {draft.line_items.length === 0 && <div className="text-sm text-slate-400 py-2">{t("quoteBuilder.noItems")}</div>}
           {draft.line_items.map((li, i) => (
@@ -321,6 +379,11 @@ export default function QuoteBuilder() {
         </div>
 
         <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm">
+          {priceEstimated && (
+            <div data-testid="qb-price-estimated" className="mb-2 rounded-lg bg-amber-50 ring-1 ring-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
+              {lang === "es" ? "💡 Precio sugerido por la IA — ajústalo si quieres" : "💡 AI-suggested price — adjust it if you want"}
+            </div>
+          )}
           <div className="flex justify-between"><span className="text-slate-600">{t("quoteBuilder.subtotal")}</span><span className="font-semibold">${draft.subtotal.toFixed(2)}</span></div>
           <div className="flex justify-between"><span className="text-slate-600">{t("quoteBuilder.tax")}</span><span className="font-semibold">${draft.tax_amount.toFixed(2)}</span></div>
           <div className="flex justify-between text-lg pt-2 border-t border-slate-200 mt-2"><span className="font-heading font-bold">{t("quoteBuilder.total")}</span><span className="font-heading font-bold">${draft.total.toFixed(2)}</span></div>

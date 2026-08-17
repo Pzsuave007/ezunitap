@@ -296,6 +296,124 @@ async def generate_quote_from_text(description_es: str, language: str = "es") ->
     return data
 
 
+GUIDED_QUOTE_SYSTEM = """You help a U.S. service/home-improvement contractor turn a few
+SIMPLE answers into a clean, professional quote or invoice. Many of these contractors don't
+know how to describe the job well, so you do the professional writing for them.
+
+Output ONLY valid JSON (no markdown, no commentary):
+{
+  "job_title": "Short professional job title (3-6 words, English)",
+  "summary_line": "ONE polished, detailed customer-facing line describing ALL the work in this job (English, 1-2 sentences, include prep, materials handling, execution and cleanup as relevant). This is what most clients will see.",
+  "line_items": [{"description": "...", "quantity": 1, "unit": "ea", "unit_price": 0.0, "amount": 0.0}],
+  "scope_of_work": ["Short English bullet", "..."],
+  "notes": "",
+  "payment_terms": "Short English payment terms sentence",
+  "price_estimated": false,
+  "estimated_total": 0.0
+}
+
+RULES:
+- ALL customer-facing text in ENGLISH (their clients read English). The contractor's answers may be in Spanish/Spanglish.
+- Always produce BOTH: (1) a single rich `summary_line` covering the whole job, AND (2) a detailed `line_items` breakdown of 4-8 realistic items (prep, materials, labor, disposal, cleanup) for contractors who want it.
+- PRICE:
+  * If the contractor GAVE a total price: the detailed line_items MUST sum to that exact total. Set `price_estimated` false and `estimated_total` to that total.
+  * If the contractor did NOT give a price: estimate a realistic market total for the trade and scope, make the line_items sum to it, set `price_estimated` true and `estimated_total` to your estimate.
+- MATERIALS: if materials are NOT included, make that clear in scope_of_work/notes ("Materials provided by client" / "Materials not included") and price for labor only. If included, include materials in the breakdown. If unsure, assume materials included and note it can be adjusted.
+- Keep it realistic and specific to the trade. No emojis. `summary_line` must read like a pro wrote it.
+"""
+
+
+async def generate_quote_from_answers(
+    trade: str = "",
+    work_es: str = "",
+    total_price: Optional[float] = None,
+    includes_materials: str = "unsure",  # yes | no | unsure
+    deposit_kind: str = "none",          # none | half | custom
+    deposit_percent: Optional[float] = None,
+    language: str = "es",
+) -> dict:
+    """Turn the guided assistant's simple answers into a normalized quote dict.
+    Defaults to a single summary line + total, but also returns a detailed
+    breakdown so the UI can offer a 'show breakdown' toggle."""
+    chat = _new_chat(GUIDED_QUOTE_SYSTEM)
+    has_price = total_price is not None and float(total_price) > 0
+    parts = [
+        f"Trade / business type: {trade or 'general home services'}",
+        f"What needs to be done (contractor's words): {work_es or trade}",
+        ("Total price the contractor will charge: $%.2f (use EXACTLY this total)" % float(total_price))
+            if has_price else "The contractor does NOT have a price — estimate a realistic total.",
+        f"Materials included: {includes_materials}",
+    ]
+    response = await chat.send_message(UserMessage(text="\n".join(parts)))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not produce a quote. Try again.")
+
+    # --- Normalize numbers server-side for reliability ---
+    def _num(x):
+        try:
+            return round(float(x), 2)
+        except Exception:
+            return 0.0
+
+    items = []
+    for li in (data.get("line_items") or []):
+        if not isinstance(li, dict):
+            continue
+        qty = _num(li.get("quantity")) or 1.0
+        up = _num(li.get("unit_price"))
+        amt = _num(li.get("amount")) or round(qty * up, 2)
+        items.append({
+            "description": (li.get("description") or "").strip(),
+            "quantity": qty, "unit": (li.get("unit") or "ea"),
+            "unit_price": up or (amt / qty if qty else 0.0), "amount": amt,
+        })
+    detailed_sum = round(sum(i["amount"] for i in items), 2)
+
+    if has_price:
+        total = round(float(total_price), 2)
+        # Rescale the detailed breakdown so it sums EXACTLY to the given total.
+        if items and detailed_sum > 0 and abs(detailed_sum - total) > 0.5:
+            factor = total / detailed_sum
+            for i in items:
+                i["unit_price"] = round(i["unit_price"] * factor, 2)
+                i["amount"] = round(i["amount"] * factor, 2)
+            drift = round(total - sum(i["amount"] for i in items), 2)
+            if items and abs(drift) >= 0.01:
+                items[-1]["amount"] = round(items[-1]["amount"] + drift, 2)
+                items[-1]["unit_price"] = items[-1]["amount"]
+    else:
+        total = detailed_sum or _num(data.get("estimated_total"))
+        if total <= 0:
+            total = _num(data.get("estimated_total"))
+
+    # Deposit
+    deposit = 0.0
+    if deposit_kind == "half":
+        deposit = round(total * 0.5, 2)
+    elif deposit_kind == "custom" and deposit_percent:
+        deposit = round(total * (float(deposit_percent) / 100.0), 2)
+
+    summary_line = (data.get("summary_line") or data.get("job_title") or work_es or "").strip()
+    summary_item = {
+        "description": summary_line, "quantity": 1, "unit": "ea",
+        "unit_price": total, "amount": total,
+    }
+    return {
+        "job_title": (data.get("job_title") or "").strip() or (trade or "Service"),
+        "summary_line": summary_line,
+        "summary_item": summary_item,       # the single-line default
+        "line_items": items,                # the detailed breakdown (for the toggle)
+        "scope_of_work": [s for s in (data.get("scope_of_work") or []) if isinstance(s, str) and s.strip()],
+        "notes": (data.get("notes") or "").strip(),
+        "payment_terms": (data.get("payment_terms") or "").strip(),
+        "subtotal": total, "tax_rate": 0.0, "tax_amount": 0.0, "total": total,
+        "deposit_amount": deposit,
+        "price_estimated": bool(data.get("price_estimated")) and not has_price,
+    }
+
+
+
 SUGGEST_SERVICES_SYSTEM = """You help a U.S. service/home-improvement contractor list the
 services they offer, for their public website. Given their trade/business type, output a
 list of the most common, sellable services a customer would search for in that trade.

@@ -13,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import { generateInvoicePDF } from "@/lib/pdf";
-import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy, Briefcase, CalendarClock, ChevronDown, Wallet } from "lucide-react";
+import { ArrowLeft, FileDown, MoreVertical, Plus, Trash2, Loader2, Check, Sparkles, Send, Receipt, Copy, Briefcase, CalendarClock, ChevronDown, Wallet, Wand2, ListTree, Minus } from "lucide-react";
 import { toast } from "sonner";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { listAgreementClauses } from "@/lib/pdf";
+import GuidedJobForm from "@/components/GuidedJobForm";
 
 // Allow only digits + a single decimal point (keeps numeric fields freely editable on iOS Safari).
 const numClean = (v) => String(v).replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
@@ -105,6 +106,38 @@ export default function InvoiceDetail() {
   const [saving, setSaving] = useState(false);
   const [aiDescription, setAiDescription] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [builderMode, setBuilderMode] = useState("guided"); // guided | free
+  const [detailedItems, setDetailedItems] = useState([]);
+  const [summaryItem, setSummaryItem] = useState(null);
+  const [breakdownOn, setBreakdownOn] = useState(false);
+  const [priceEstimated, setPriceEstimated] = useState(false);
+
+  const applyGuided = (data) => {
+    const sum = data.summary_item || { description: data.summary_line || "", quantity: 1, unit: "ea", unit_price: data.total || 0, amount: data.total || 0 };
+    const detailed = (data.line_items || []).map((li) => ({
+      description: li.description || "", quantity: Number(li.quantity) || 1, unit: li.unit || "ea",
+      unit_price: Number(li.unit_price) || 0, amount: Number(li.amount) || 0,
+    }));
+    setSummaryItem(sum);
+    setDetailedItems(detailed);
+    setBreakdownOn(false);
+    setPriceEstimated(!!data.price_estimated);
+    recompute({
+      ...invoice,
+      job_title: data.job_title || invoice.job_title,
+      line_items: [sum],
+      tax_rate: 0,
+      deposit_amount: Number(data.deposit_amount) || 0,
+      notes: data.notes || invoice.notes,
+    });
+  };
+
+  const toggleBreakdown = () => {
+    const next = !breakdownOn;
+    setBreakdownOn(next);
+    const items = next ? (detailedItems.length ? detailedItems : invoice.line_items) : (summaryItem ? [summaryItem] : invoice.line_items);
+    recompute({ ...invoice, line_items: items });
+  };
   const [sendOpen, setSendOpen] = useState(false);
 
   const generateWithAI = async () => {
@@ -268,22 +301,43 @@ export default function InvoiceDetail() {
               <p className="text-[11px] text-slate-500">{t("invoiceDetail.aiSubtitle")}</p>
             </div>
           </div>
-          <Textarea
-            data-testid="inv-ai-description"
-            value={aiDescription}
-            onChange={(e) => setAiDescription(e.target.value)}
-            className="rounded-xl min-h-[100px] bg-white"
-            placeholder={t("invoiceDetail.aiPlaceholder")}
-          />
-          <Button
-            data-testid="inv-ai-generate"
-            onClick={generateWithAI}
-            disabled={aiLoading || !aiDescription.trim()}
-            className="mt-3 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 w-full gap-2"
-          >
-            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {aiLoading ? t("invoiceDetail.generating") : t("invoiceDetail.generateBtn")}
-          </Button>
+          <div className="grid grid-cols-2 gap-2 mb-3" data-testid="inv-mode-switch">
+            <button type="button" data-testid="inv-mode-guided" onClick={() => setBuilderMode("guided")}
+              className={`h-11 rounded-xl text-sm font-bold border-2 flex items-center justify-center gap-1.5 transition-all ${builderMode === "guided" ? "border-violet-500 bg-violet-50 text-violet-800" : "border-slate-200 text-slate-600 bg-white"}`}>
+              <Sparkles className="w-4 h-4" /> {lang === "es" ? "Contéstame preguntas" : "Answer questions"}
+            </button>
+            <button type="button" data-testid="inv-mode-free" onClick={() => setBuilderMode("free")}
+              className={`h-11 rounded-xl text-sm font-bold border-2 flex items-center justify-center gap-1.5 transition-all ${builderMode === "free" ? "border-violet-500 bg-violet-50 text-violet-800" : "border-slate-200 text-slate-600 bg-white"}`}>
+              <Wand2 className="w-4 h-4" /> {lang === "es" ? "Describir yo mismo" : "Describe it myself"}
+            </button>
+          </div>
+
+          {builderMode === "guided" && (
+            <div className="rounded-xl bg-white p-3">
+              <GuidedJobForm lang={lang} onResult={applyGuided} />
+            </div>
+          )}
+
+          {builderMode === "free" && (
+            <>
+              <Textarea
+                data-testid="inv-ai-description"
+                value={aiDescription}
+                onChange={(e) => setAiDescription(e.target.value)}
+                className="rounded-xl min-h-[100px] bg-white"
+                placeholder={t("invoiceDetail.aiPlaceholder")}
+              />
+              <Button
+                data-testid="inv-ai-generate"
+                onClick={generateWithAI}
+                disabled={aiLoading || !aiDescription.trim()}
+                className="mt-3 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 w-full gap-2"
+              >
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {aiLoading ? t("invoiceDetail.generating") : t("invoiceDetail.generateBtn")}
+              </Button>
+            </>
+          )}
         </Card>
       )}
 
@@ -376,7 +430,14 @@ export default function InvoiceDetail() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label>Line Items</Label>
-            <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> {t("invoiceDetail.addItem")}</Button>
+            <div className="flex items-center gap-2">
+              {detailedItems.length > 0 && (
+                <Button data-testid="inv-toggle-breakdown" size="sm" variant="ghost" onClick={toggleBreakdown} className="rounded-xl text-violet-700 hover:text-violet-800 hover:bg-violet-50">
+                  {breakdownOn ? <><Minus className="w-3 h-3 mr-1" /> {lang === "es" ? "Una sola línea" : "Single line"}</> : <><ListTree className="w-3 h-3 mr-1" /> {lang === "es" ? "Mostrar desglose" : "Show breakdown"}</>}
+                </Button>
+              )}
+              <Button data-testid="add-inv-item" size="sm" variant="outline" onClick={addItem} className="rounded-xl"><Plus className="w-3 h-3 mr-1" /> {t("invoiceDetail.addItem")}</Button>
+            </div>
           </div>
           {invoice.line_items.length === 0 && (
             <p className="text-xs text-slate-400 mb-2">{t("invoiceDetail.itemsHint")}</p>
@@ -450,6 +511,11 @@ export default function InvoiceDetail() {
         </div>
 
         <div className="bg-slate-50 rounded-xl p-4 space-y-1 text-sm">
+          {priceEstimated && (
+            <div data-testid="inv-price-estimated" className="mb-2 rounded-lg bg-amber-50 ring-1 ring-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
+              {lang === "es" ? "💡 Precio sugerido por la IA — ajústalo si quieres" : "💡 AI-suggested price — adjust it if you want"}
+            </div>
+          )}
           <div className="flex justify-between"><span className="text-slate-600">Subtotal</span><span className="font-semibold">${invoice.subtotal.toFixed(2)}</span></div>
           <div className="flex justify-between"><span className="text-slate-600">Tax</span><span className="font-semibold">${invoice.tax_amount.toFixed(2)}</span></div>
           <div className="flex justify-between text-lg pt-2 border-t border-slate-200 mt-2"><span className="font-heading font-bold">TOTAL</span><span className="font-heading font-bold">${invoice.total.toFixed(2)}</span></div>

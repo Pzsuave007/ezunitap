@@ -242,6 +242,16 @@ class AIPhotoRequest(BaseModel):
     language: Optional[str] = "es"
 
 
+class AIGuidedQuoteRequest(BaseModel):
+    trade: Optional[str] = ""
+    work_es: Optional[str] = ""
+    total_price: Optional[float] = None
+    includes_materials: Optional[str] = "unsure"  # yes | no | unsure
+    deposit_kind: Optional[str] = "none"           # none | half | custom
+    deposit_percent: Optional[float] = None
+    language: Optional[str] = "es"
+
+
 class AIAgreementRequest(BaseModel):
     description_es: str
     client_id: Optional[str] = None
@@ -2297,6 +2307,27 @@ async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_u
         data = await ai_service.generate_quote_from_text(payload.description_es)
     except Exception as e:
         logger.exception("AI quote failed")
+        raise HTTPException(500, f"AI error: {e}")
+    return data
+
+
+@api_router.post("/ai/quote-guided")
+async def ai_quote_guided(payload: AIGuidedQuoteRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
+    """Guided assistant: turn a few simple answers into a quote/invoice.
+    Defaults to a single summary line + total, and also returns a detailed
+    breakdown so the UI can offer a 'show breakdown' toggle."""
+    try:
+        data = await ai_service.generate_quote_from_answers(
+            trade=payload.trade or "",
+            work_es=payload.work_es or "",
+            total_price=payload.total_price,
+            includes_materials=payload.includes_materials or "unsure",
+            deposit_kind=payload.deposit_kind or "none",
+            deposit_percent=payload.deposit_percent,
+            language=payload.language or "es",
+        )
+    except Exception as e:
+        logger.exception("AI guided quote failed")
         raise HTTPException(500, f"AI error: {e}")
     return data
 
