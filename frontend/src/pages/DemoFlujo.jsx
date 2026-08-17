@@ -118,6 +118,7 @@ export default function DemoFlujo() {
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState("");
   const [founder, setFounder] = useState(null);
+  const [pending, setPending] = useState("");
 
   useEffect(() => {
     axios.get(`${API}/payments/founder-status`).then((r) => setFounder(r.data)).catch(() => {});
@@ -152,25 +153,29 @@ export default function DemoFlujo() {
     return () => document.removeEventListener("visibilitychange", onHide);
   }, []);
 
-  const start = async () => {
+  // One-tap start: pick a trade card and the demo begins immediately.
+  // No name/email form up front (that killed 93% of mobile visitors) — we
+  // capture contact at the END, after they've seen the value.
+  const startWithTrade = async (tr) => {
+    if (loading) return;
     setErr("");
-    if (!lead.name.trim() || !lead.email.includes("@")) { setErr(t("demo.errEmail")); return; }
-    if (!lead.trade) { setErr(t("demoFlujo.errTrade")); return; }
+    setPending(tr);
+    setLead((l) => ({ ...l, trade: tr }));
     setLoading(true);
     try {
-      const r = await axios.post(`${API}/public/demo/start`, { ...lead });
+      const r = await axios.post(`${API}/public/demo/start`, { trade: tr });
       setDemoId(r.data.demo_id);
       setBusiness(r.data.business);
       // Pre-fill the quote description with what the client already requested,
       // so the demo user sees how easy it is to reuse the client's own words.
-      setDesc(clientRequestText(lead.trade, t));
-      fbTrack("Lead", { content_name: "Story Demo Start", content_category: lead.trade });
-      fbTrackCustom("DemoFlujoStarted", { trade: lead.trade });
-      trackDemo("demo_start", { step: 1, trade: lead.trade });
+      setDesc(clientRequestText(tr, t));
+      fbTrack("Lead", { content_name: "Story Demo Start", content_category: tr });
+      fbTrackCustom("DemoFlujoStarted", { trade: tr });
+      trackDemo("demo_start", { step: 1, trade: tr });
       go(1);
     } catch (e) {
       setErr(e?.response?.data?.detail || t("demo.errStart"));
-    } finally { setLoading(false); }
+    } finally { setLoading(false); setPending(""); }
   };
 
   const genQuote = async () => {
@@ -241,7 +246,7 @@ export default function DemoFlujo() {
         {step >= 1 && step <= 9 && <ProgressHeader step={step} head={HEAD[step]} t={t} />}
         {err && <div data-testid="flujo-error" className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{err}</div>}
 
-        {step === 0 && <Intro lead={lead} setLead={setLead} onStart={start} loading={loading} i18n={i18n} t={t} />}
+        {step === 0 && <Intro onPick={startWithTrade} loading={loading} pending={pending} i18n={i18n} t={t} />}
 
         {step === 1 && (
           <SceneShell onNext={() => go(2)} onBack={() => go(0)} t={t}>
@@ -344,7 +349,7 @@ export default function DemoFlujo() {
           </SceneShell>
         )}
 
-        {step === 10 && <FinalCTA founder={founder} brand={(lead.businessName || lead.name || "").trim()} t={t} />}
+        {step === 10 && <FinalCTA founder={founder} brand={(lead.businessName || lead.name || "").trim()} demoId={demoId} t={t} />}
       </div>
       <BusySheet busy={busy} t={t} />
       {step !== 10 && <WhatsAppFab onClick={() => trackDemo("whatsapp_click", { step, trade: lead.trade, meta: { place: "fab" } })} />}
@@ -462,40 +467,34 @@ function SceneShell({ children, onNext, onBack, nextLabel, t }) {
   );
 }
 
-function Intro({ lead, setLead, onStart, loading, i18n, t }) {
-  const set = (k) => (e) => setLead({ ...lead, [k]: e.target.value });
+function Intro({ onPick, loading, pending, i18n, t }) {
   return (
-    <Card className="p-6 sm:p-8 rounded-2xl border-slate-200" data-testid="flujo-intro">
+    <Card className="p-5 sm:p-8 rounded-2xl border-slate-200" data-testid="flujo-intro">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
         <Sparkles className="w-3.5 h-3.5" /> {t("demoFlujo.badge")}
       </div>
       <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight">{t("demoFlujo.introTitle")}</h1>
-      <p className="text-base sm:text-lg text-slate-600 mt-2 leading-relaxed">{t("demoFlujo.introDesc")}</p>
-      <div className="mt-6 space-y-4">
-        <div>
-          <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.name")}</label>
-          <Input data-testid="flujo-name" value={lead.name} onChange={set("name")} placeholder="Carlos García" className="mt-1 h-12 rounded-xl text-base" />
-        </div>
-        <div>
-          <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.businessName")}</label>
-          <Input data-testid="flujo-business-name" value={lead.businessName} onChange={set("businessName")} placeholder={t("demoFlujo.businessNamePh")} className="mt-1 h-12 rounded-xl text-base" />
-        </div>
-        <div>
-          <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.email")}</label>
-          <Input data-testid="flujo-email" type="email" value={lead.email} onChange={set("email")} placeholder={t("demo.emailPlaceholder")} className="mt-1 h-12 rounded-xl text-base" />
-        </div>
-        <div>
-          <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t("demoFlujo.trade")}</label>
-          <select data-testid="flujo-trade" value={lead.trade} onChange={set("trade")} className="mt-1 h-12 w-full rounded-xl border border-slate-200 px-3 text-base bg-white">
-            <option value="">{t("demoFlujo.choose")}</option>
-            {TRADES.map((tr) => <option key={tr} value={tr}>{tradeLabel(tr, i18n.language)}</option>)}
-          </select>
-        </div>
+      <p className="text-base sm:text-lg text-slate-600 mt-2 leading-relaxed">{t("demoFlujo.pickTradeDesc")}</p>
+      <div className="mt-5 grid grid-cols-2 gap-2.5" data-testid="flujo-trade-grid">
+        {TRADES.map((tr, i) => {
+          const isPending = pending === tr;
+          return (
+            <button
+              key={tr}
+              data-testid={`flujo-trade-${i}`}
+              onClick={() => onPick(tr)}
+              disabled={loading}
+              className={`group flex items-center gap-2 text-left rounded-xl border-2 px-3.5 py-3.5 min-h-[52px] text-sm sm:text-base font-semibold transition-all duration-150 active:scale-[0.97] disabled:opacity-60 ${isPending ? "border-emerald-500 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-emerald-400 hover:bg-emerald-50/60 hover:shadow-sm"}`}
+            >
+              {isPending
+                ? <Loader2 className="w-4 h-4 animate-spin flex-none text-emerald-600" />
+                : <Hammer className="w-4 h-4 flex-none text-emerald-600 transition-transform group-hover:scale-110" />}
+              <span className="leading-tight">{tradeLabel(tr, i18n.language)}</span>
+            </button>
+          );
+        })}
       </div>
-      <Button data-testid="flujo-start" onClick={onStart} disabled={loading} className="mt-6 w-full py-4 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlujo.start")} <ArrowRight className="w-5 h-5 ml-2" /></>}
-      </Button>
-      <p className="text-sm text-slate-400 mt-3 text-center">{t("demoFlujo.freeNote")}</p>
+      <p className="text-sm text-slate-400 mt-4 text-center">{t("demoFlujo.freeNote")}</p>
     </Card>
   );
 }
@@ -722,10 +721,26 @@ function ReviewScene({ client, t }) {
   );
 }
 
-function FinalCTA({ founder, brand, t }) {
+function FinalCTA({ founder, brand, demoId, t }) {
   const available = founder?.available;
   const price = founder?.display_price || "$59";
   const to = available ? "/register?plan=bundle_founder&billing=month" : "/register?plan=bundle";
+  const [cap, setCap] = useState({ name: "", email: "" });
+  const [capSaved, setCapSaved] = useState(false);
+  const [capBusy, setCapBusy] = useState(false);
+  const saveContact = async () => {
+    const v = (cap.email || "").trim();
+    if (!cap.name.trim() && !v) return;
+    const isPhone = v && /^[\d\s()+.-]{7,}$/.test(v);
+    const payload = { name: cap.name.trim(), email: isPhone ? "" : v, phone: isPhone ? v : "" };
+    setCapBusy(true);
+    try {
+      if (demoId) await axios.post(`${API}/public/demo/${demoId}/contact`, payload);
+      trackDemo("contact_captured", { step: 10, demo: "flujo" });
+      setCapSaved(true);
+    } catch { /* non-blocking */ }
+    finally { setCapBusy(false); }
+  };
   const recap = [
     t("demoFlujo.recap1"), t("demoFlujo.recap2"), t("demoFlujo.recap3"),
     t("demoFlujo.recap4"), t("demoFlujo.recap5"),
@@ -774,6 +789,25 @@ function FinalCTA({ founder, brand, t }) {
           ))}
         </div>
       </div>
+
+      {/* Optional warm-lead capture — AFTER they've seen the value (no entry form) */}
+      <Card className="mt-4 p-5 rounded-2xl border-slate-200" data-testid="flujo-capture">
+        <div className="text-sm font-bold text-slate-800">{t("demoFlow.helpTitle")}</div>
+        <div className="text-xs text-slate-500 mt-0.5 mb-3">{t("demoFlow.helpDesc")}</div>
+        {capSaved ? (
+          <div data-testid="flujo-contact-saved" className="text-sm font-semibold text-emerald-700 flex items-center gap-2 py-2">
+            <CheckCircle2 className="w-4 h-4" /> {t("demoFlow.saveDone")}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Input data-testid="flujo-capture-name" value={cap.name} onChange={(e) => setCap({ ...cap, name: e.target.value })} placeholder={t("demoFlow.saveName")} className="h-11 rounded-xl" />
+            <Input data-testid="flujo-capture-email" type="email" value={cap.email} onChange={(e) => setCap({ ...cap, email: e.target.value })} placeholder={t("demoFlow.saveEmail")} className="h-11 rounded-xl" />
+            <Button data-testid="flujo-capture-btn" onClick={saveContact} disabled={capBusy} className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700">
+              {capBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("demoFlow.saveBtn")}
+            </Button>
+          </div>
+        )}
+      </Card>
 
       {/* The offer */}
       <Card className="mt-6 p-6 rounded-2xl border-0 bg-gradient-to-br from-blue-900 to-emerald-700 text-white text-center shadow-xl">

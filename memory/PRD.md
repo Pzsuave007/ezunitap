@@ -1,5 +1,15 @@
 # UniTech — PRD (resumen vivo)
 
+## 📱🔥 Jun 2026 — FIX conversión: 93% de abandono en el funnel de la campaña `/demo` (móvil) [COMPLETO; verificado screenshots móvil 390px, SIN testing_agent]
+- **Reporte dueño**: de 344 visitantes solo 22 (6%) llegaban a "Describió el trabajo"; 339 con oficio vacío ("—"). 89% tráfico móvil. Link REAL de la campaña = **`https://ezunitech.com/demo?lang=es`** (= `DemoFlow.js`, NO `/demo-flujo`). El dueño recordaba una versión de "solo pedir datos al final" — esa es `/demo`, correcto; el problema era otro.
+- **Causa raíz** (confirmada por screenshot): en `DemoFlow.js` el `LeadStep` (paso 0) mostraba titular + una **factura de ejemplo enorme** ANTES del botón "Empezar" → el CTA `demo-start-btn` quedaba en **y=910px** (fuera de pantalla en móvil de 844px). El visitante llegaba, veía una factura estática y rebotaba sin ver que había un demo interactivo abajo.
+- **Fix** (`DemoFlow.js`): (1) CTA primario "Ver la demostración" movido ARRIBA, justo bajo la descripción → ahora en **y=396px** (visible sin scroll). (2) La factura de ejemplo pasó DEBAJO con etiqueta "Esto es lo que vas a crear" (`startSampleLabel`) como prueba visual + CTA secundario `demo-start-btn-2`. (3) Nueva barra fija inferior **solo móvil** `StartBar` (`demo-start-bar` / `demo-start-bar-btn`) → el CTA siempre a un toque. i18n `demoFlow.startSampleLabel` (ES/EN).
+- **Bonus** (`DemoFlujo.jsx`, funnel `/demo-flujo`): también se quitó su formulario pesado de 4 campos (name/businessName/email/trade). Ahora arranca con **tarjetas de oficio tocables** (`flujo-trade-grid` / `flujo-trade-{i}`) → 1 toque entra directo al paso 1. Captura de contacto opcional movida al final (`flujo-capture`, endpoint `/public/demo/{id}/contact`). i18n `demoFlujo.pickTradeDesc` + `freeNote` actualizado.
+- Verificado screenshots móvil 390px: `/demo` CTA a y=396 + barra fija + arranca a DescribeStep con desc precargada; `/demo-flujo` grid de oficios + 1 toque → paso 1 de 9. Build recompilado + `git add -f frontend/build/*` (63 archivos) + fuentes staged.
+- ⚠️ DESPLIEGUE: solo FRONTEND → producción necesita "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🧹 Jun 2026 — Quitar banners de UniTech de sitios de clientes [COMPLETO; verificado screenshot, SIN testing_agent]
 - **Pedido**: el banner "¿Hablas español? VER EN ESPAÑOL" (`LanguageSuggestBanner`) y el prompt "bajar app" (`InstallPWA`) salían en los sitios públicos de clientes. Quitarlos de ahí.
 - **Fix** (`App.js`): esos banners estaban en el árbol global (se renderizaban en TODA ruta, incluidos dominios custom y /sitio). Ahora se calcula `_isPublicSite` (host no-primary O path /sitio|/c|/r|/p|/demo) y solo se renderizan cuando NO es sitio público (o sea, solo dentro de la app UniTech).

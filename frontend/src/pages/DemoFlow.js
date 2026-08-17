@@ -259,6 +259,7 @@ export default function DemoFlow() {
         {step === 5 && <DemoClose demoId={demoId} lead={lead} quote={quote} business={business} />}
       </div>
       <GuideBar step={step} onNext={guideNext} loading={loading} paid={paid} />
+      {step === 0 && <StartBar onStart={startDemo} loading={loading} />}
     </div>
   );
 }
@@ -475,17 +476,40 @@ function LeadStep({ onStart, loading }) {
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-4">
         <Sparkles className="w-3.5 h-3.5" /> {t("demo.liveBadge")}
       </div>
-      <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
+      <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.startHeroTitle")}</h1>
       <p className="text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.startHeroDesc")}</p>
 
-      {/* Realistic invoice sample so they SEE exactly what they'll create — no form to fill */}
-      <SampleInvoicePreview />
-
-      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-6 w-full h-14 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg">
+      {/* PRIMARY CTA above the fold — mobile visitors must see it instantly.
+          (The tall sample invoice used to bury the button ~910px down → 93% bounce.) */}
+      <Button data-testid="demo-start-btn" onClick={onStart} disabled={loading} className="mt-5 w-full h-14 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg shadow-lg">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-5 h-5 ml-2" /></>}
       </Button>
-      <p className="text-xs text-slate-400 mt-3">{t("demoFlow.startHeroNote")}</p>
+      <p className="text-xs text-slate-400 mt-2.5">{t("demoFlow.startHeroNote")}</p>
+
+      {/* Realistic invoice sample so they SEE exactly what they'll create — no form to fill */}
+      <div className="mt-6 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+        <span className="h-px w-6 bg-slate-200" /> {t("demoFlow.startSampleLabel")} <span className="h-px w-6 bg-slate-200" />
+      </div>
+      <SampleInvoicePreview />
+
+      {/* Secondary CTA for those who scrolled through the sample */}
+      <Button data-testid="demo-start-btn-2" onClick={onStart} disabled={loading} className="mt-6 w-full h-14 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-lg">
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-5 h-5 ml-2" /></>}
+      </Button>
     </Card>
+  );
+}
+
+// Sticky bottom Start bar (mobile only) for step 0 — guarantees the CTA is
+// always one tap away no matter where the visitor is scrolled.
+function StartBar({ onStart, loading }) {
+  const { t } = useTranslation();
+  return (
+    <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3" data-testid="demo-start-bar">
+      <Button data-testid="demo-start-bar-btn" onClick={onStart} disabled={loading} className="w-full h-13 py-3 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base">
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t("demoFlow.startHeroBtn")} <ArrowRight className="w-5 h-5 ml-2" /></>}
+      </Button>
+    </div>
   );
 }
 
