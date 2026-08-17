@@ -1774,7 +1774,7 @@
     "close": {
       "badge": "Demo complete",
       "title": "Now do it with YOUR business",
-      "subtitle": "You just saw how UniTech builds the quote, contract and invoice in English — in seconds. Start free for 14 days.",
+      "subtitle": "You just created a professional invoice in English — in seconds. Start free for 14 days.",
       "trust": "14 days free · Cancel anytime",
       "benefits": [
         {
@@ -1800,7 +1800,7 @@
     "quoteBanner": "This is how your client receives and approves the quote 👇",
     "tryAnother": "Try another job",
     "agreementBanner": "The legal contract is built by the AI. Your client signs it with a finger 👇",
-    "invoiceBanner": "Done! The signed contract generates the invoice automatically, with a payment link 👇",
+    "invoiceBanner": "Done! This is the professional invoice your client receives 👇",
     "paidTitle": "✅ This is a demo!",
     "paidDesc": "In your real account, the client pays right here by card and the money goes straight to you.",
     "orPayWith": "or pay with",

@@ -15,8 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Hammer, CheckCircle2, Sparkles, ArrowRight, ArrowLeft,
   ShieldCheck, CreditCard, PartyPopper, Send, PenLine, Lock, FileDown, Printer,
-  MessageCircle, Smartphone, Wallet, FileText, CalendarDays, ListTree, Minus,
+  MessageCircle, Smartphone, Wallet, FileText, CalendarDays, ListTree, Minus, Mail,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { generateQuotePDF, generateInvoicePDF } from "@/lib/pdf";
 import GuidedJobForm from "@/components/GuidedJobForm";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
@@ -239,35 +240,16 @@ export default function DemoFlow() {
     window.scrollTo(0, 0);
   };
 
-  const genAgreement = () => {
-    setErr("");
-    setAgreement(buildDemoAgreement());
+  // Move to the closing/sales page after they've seen (and can send) the invoice.
+  const goClose = () => {
+    track("demo_completed", { step: 2, trade: lead.trade });
     setStep(3);
     window.scrollTo(0, 0);
   };
 
-  // Sign the agreement and move to the invoice.
-  const signNow = () => {
-    setSigned(true);
-    setStep(4);
-    window.scrollTo(0, 0);
-  };
-
-  // Complete the (simulated) payment and move to the dedicated closing page.
-  const payNow = () => {
-    if (paid) return;
-    setPaid(true);
-    track("demo_completed", { step: 4, trade: lead.trade });
-    setStep(5);
-    window.scrollTo(0, 0);
-  };
-
-  // Guide bar "Continue" — advances the demo without hunting for the in-document button.
+  // Guide bar "Continue" — advances the demo without hunting for the button.
   const guideNext = () => {
-    if (step === 1) return genQuote();
-    if (step === 2) return genAgreement();
-    if (step === 3) return signNow();
-    if (step === 4) return payNow();
+    if (step === 2) return goClose();
   };
 
   return (
@@ -275,7 +257,7 @@ export default function DemoFlow() {
       <TopBar />
       {loading && step === 1 && <BusySheet />}
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-32">
-        {step <= 4 && <StepBar step={step} />}
+        {step >= 1 && step <= 2 && <StepBar step={step} />}
         {err && (
           <div data-testid="demo-error" className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
             {err}
@@ -283,12 +265,10 @@ export default function DemoFlow() {
         )}
         {step === 0 && <LeadStep onStart={startDemo} loading={loading} />}
         {step === 1 && <DescribeStep desc={desc} setDesc={setDesc} onGen={genQuote} loading={loading} onBack={() => setStep(0)} lead={lead} setLead={setLead} guidedRequest={demoGuidedRequest} onGuided={onGuidedQuote} />}
-        {step === 2 && <QuoteStep quote={quote} business={business} lead={lead} onAccept={genAgreement} loading={loading} onBack={() => setStep(1)} />}
-        {step === 3 && <AgreementStep agreement={agreement} business={business} lead={lead} signed={signed} onSign={signNow} />}
-        {step === 4 && <InvoiceStep quote={quote} business={business} lead={lead} paid={paid} demoId={demoId} onPay={payNow} hideFinalCta />}
-        {step === 5 && <DemoClose demoId={demoId} lead={lead} quote={quote} business={business} />}
+        {step === 2 && <InvoiceStep quote={quote} business={business} lead={lead} demoId={demoId} simple hideFinalCta onContinue={goClose} />}
+        {step === 3 && <DemoClose demoId={demoId} lead={lead} quote={quote} business={business} />}
       </div>
-      <GuideBar step={step} onNext={guideNext} loading={loading} paid={paid} />
+      <GuideBar step={step} onNext={guideNext} loading={loading} />
       {step === 0 && <StartBar onStart={startDemo} loading={loading} />}
     </div>
   );
@@ -296,18 +276,11 @@ export default function DemoFlow() {
 
 // Sticky bottom guide bar: explains each step and gives one obvious "Continue"
 // button so demo users never get stuck hunting for the in-document button.
-function GuideBar({ step, onNext, loading, paid }) {
-  const { t } = useTranslation();
-  // Step 1 has its own "Create with AI" button inside the guided assistant.
-  if (step < 1 || step === 1 || (step === 4 && paid)) return null;
-  const cfg = {
-    1: { instr: t("demoFlow.guide.s1"), cta: t("demoFlow.guide.s1cta"), Icon: Sparkles },
-    2: { instr: t("demoFlow.guide.s2"), cta: t("demoFlow.guide.s2cta"), Icon: ArrowRight },
-    3: { instr: t("demoFlow.guide.s3"), cta: t("demoFlow.guide.s3cta"), Icon: PenLine },
-    4: { instr: t("demoFlow.guide.s4"), cta: t("demoFlow.guide.s4cta"), Icon: CreditCard },
-  }[step];
-  if (!cfg) return null;
-  const { Icon } = cfg;
+function GuideBar({ step, onNext, loading }) {
+  const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
+  // Only the invoice step (2) shows a guide bar; questions (1) has its own CTA.
+  if (step !== 2) return null;
   return (
     <div
       data-testid="demo-guide-bar"
@@ -317,9 +290,9 @@ function GuideBar({ step, onNext, loading, paid }) {
       <div className="max-w-3xl mx-auto px-4 py-3.5 flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-600">
-            {t("demoFlow.guide.stepLabel", { n: step + 1, total: 5 })}
+            {es ? "¡Tu factura está lista!" : "Your invoice is ready!"}
           </div>
-          <div className="text-base font-semibold text-slate-800 leading-snug">{cfg.instr}</div>
+          <div className="text-base font-semibold text-slate-800 leading-snug">{es ? "Descárgala o mira cómo enviarla" : "Download it or see how to send it"}</div>
         </div>
         <Button
           data-testid="demo-guide-next"
@@ -327,7 +300,7 @@ function GuideBar({ step, onNext, loading, paid }) {
           disabled={loading}
           className="flex-none h-14 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base"
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{cfg.cta} <Icon className="w-5 h-5 ml-1.5 flex-none" /></>}
+          {es ? "Continuar" : "Continue"} <ArrowRight className="w-5 h-5 ml-1.5 flex-none" />
         </Button>
       </div>
     </div>
@@ -406,16 +379,20 @@ function TopBar() {
 }
 
 function StepBar({ step }) {
-  const { t } = useTranslation();
-  const steps = t("demoFlow.steps", { returnObjects: true });
+  const { i18n } = useTranslation();
+  const es = i18n.language === "es";
+  const labels = es ? ["Describe el trabajo", "Tu factura"] : ["Describe the job", "Your invoice"];
   return (
     <div className="flex items-center gap-1.5 mb-6" data-testid="demo-stepbar">
-      {steps.map((label, i) => (
-        <div key={label} className="flex-1">
-          <div className={`h-1.5 rounded-full transition-colors ${i <= step ? "bg-emerald-500" : "bg-slate-200"}`} />
-          <div className={`text-xs mt-1 font-semibold ${i <= step ? "text-emerald-700" : "text-slate-400"}`}>{label}</div>
-        </div>
-      ))}
+      {labels.map((label, i) => {
+        const active = step >= i + 1;
+        return (
+          <div key={label} className="flex-1">
+            <div className={`h-1.5 rounded-full transition-colors ${active ? "bg-emerald-500" : "bg-slate-200"}`} />
+            <div className={`text-xs mt-1 font-semibold ${active ? "text-emerald-700" : "text-slate-400"}`}>{label}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -792,9 +769,11 @@ export function AgreementStep({ agreement, business, lead, signed, onSign }) {
   );
 }
 
-export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFinalCta = false }) {
-  const { t } = useTranslation();
+export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFinalCta = false, simple = false, onContinue }) {
+  const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
   const [dl, setDl] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const total = Number(quote?.total || 0);
   const deposit = Number(quote?.deposit_amount || 0) || Math.round(total * 0.5 * 100) / 100;
   const due = deposit > 0 ? deposit : total;
@@ -849,7 +828,12 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
             <span className="text-sm font-semibold leading-tight">{t("demoFlow.payMethodsBanner")}</span>
           </div>
 
-          {paid ? (
+          {simple ? (
+            <div data-testid="demo-pay-card-badge" className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <CreditCard className="w-5 h-5 text-emerald-600 flex-none" />
+              <span className="text-sm font-semibold text-emerald-900">{es ? "Tus clientes pueden pagar con tarjeta 💳" : "Your clients can pay by card 💳"}</span>
+            </div>
+          ) : paid ? (
             <div data-testid="demo-paid-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-6 text-center space-y-2">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
               <div className="font-heading text-xl font-bold text-emerald-800">{t("demoFlow.paidTitle")}</div>
@@ -880,12 +864,58 @@ export function InvoiceStep({ quote, business, lead, paid, onPay, demoId, hideFi
         </div>
       </Card>
 
+      {simple && (
+        <Button data-testid="demo-send-invoice" onClick={() => setSendOpen(true)}
+          className="mt-4 w-full h-14 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-base">
+          <Send className="w-5 h-5 mr-2" /> {es ? "Enviar factura al cliente" : "Send invoice to client"}
+        </Button>
+      )}
+
       <PdfActions onDownload={downloadPdf} downloading={dl} />
+
+      {simple && <DemoSendSheet open={sendOpen} onOpenChange={setSendOpen} onDownload={downloadPdf} downloading={dl} es={es} />}
 
       {paid && !hideFinalCta && (
         <FinalCTA demoId={demoId} />
       )}
     </div>
+  );
+}
+
+// Bottom sheet showing HOW you send an invoice. Download works (real PDF);
+// WhatsApp/Text/Email are shown greyed to prove the feature exists on a plan.
+function DemoSendSheet({ open, onOpenChange, onDownload, downloading, es }) {
+  const channels = [
+    { icon: MessageCircle, label: "WhatsApp", color: "text-emerald-600" },
+    { icon: Smartphone, label: es ? "Mensaje de texto" : "Text message", color: "text-blue-600" },
+    { icon: Mail, label: "Email", color: "text-violet-600" },
+  ];
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" data-testid="demo-send-sheet" className="rounded-t-3xl max-w-lg mx-auto">
+        <SheetHeader className="text-left">
+          <SheetTitle>{es ? "Enviar factura" : "Send invoice"}</SheetTitle>
+        </SheetHeader>
+        <p className="text-sm text-slate-500 mt-1 mb-4">{es ? "Manda el PDF a tu cliente en un toque." : "Send the PDF to your client in one tap."}</p>
+        <div className="space-y-2.5">
+          <button data-testid="demo-send-download" onClick={onDownload} disabled={downloading}
+            className="w-full flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 text-left hover:border-emerald-300 active:scale-[0.99] transition-all">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-none">
+              {downloading ? <Loader2 className="w-5 h-5 animate-spin text-emerald-600" /> : <FileDown className="w-5 h-5 text-emerald-600" />}
+            </div>
+            <div className="min-w-0"><div className="font-bold text-slate-900">{es ? "Descargar PDF" : "Download PDF"}</div><div className="text-xs text-slate-500">{es ? "Guárdalo o compártelo — ¡funciona ya!" : "Save or share it — works now!"}</div></div>
+          </button>
+          {channels.map((c) => (
+            <div key={c.label} data-testid={`demo-send-${c.label}`} className="w-full flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-none"><c.icon className={`w-5 h-5 ${c.color} opacity-60`} /></div>
+              <div className="min-w-0 flex-1"><div className="font-bold text-slate-600">{c.label}</div><div className="text-xs text-slate-400">{es ? "Envío automático al cliente" : "Auto-send to your client"}</div></div>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 flex-none"><Lock className="w-3.5 h-3.5" /> {es ? "Con tu plan" : "With your plan"}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-xs text-slate-400 mt-4">{es ? "Crea tu cuenta para enviar por WhatsApp, texto y email automáticamente." : "Create your account to send by WhatsApp, text and email automatically."}</p>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -971,7 +1001,8 @@ function PdfActions({ onDownload, downloading }) {
 // (success + benefits + founder offer + checkout) on its own screen, instead of
 // piling everything under the long invoice (bad on mobile).
 function DemoClose({ demoId, lead, quote, business }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
   const benefits = t("demoFlow.close.benefits", { returnObjects: true });
   const ICONS = [Sparkles, Wallet, ShieldCheck, CalendarDays];
   const list = Array.isArray(benefits) ? benefits : [];
@@ -987,6 +1018,10 @@ function DemoClose({ demoId, lead, quote, business }) {
         </div>
         <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight leading-tight">{t("demoFlow.close.title")}</h1>
         <p className="text-base text-slate-600 mt-3 max-w-md mx-auto">{t("demoFlow.close.subtitle")}</p>
+        <div data-testid="demo-close-also" className="mt-4 mx-auto max-w-md rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-sm font-semibold px-4 py-3 flex items-center justify-center gap-2">
+          <FileText className="w-4 h-4 flex-none text-blue-700" />
+          {es ? "UniTech también hace Estimados (cotizaciones) y Contratos de Servicio — pregúntanos." : "UniTech also makes Estimates (quotes) and Service Agreements — just ask."}
+        </div>
       </div>
 
       {/* Benefits — why sign up */}

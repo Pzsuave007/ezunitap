@@ -1775,7 +1775,7 @@
     "close": {
       "badge": "Demo completado",
       "title": "Ahora hazlo con TU negocio",
-      "subtitle": "Acabas de ver cómo UniTech crea la cotización, el contrato y la factura en inglés — en segundos. Empieza gratis 14 días.",
+      "subtitle": "Acabas de crear una factura profesional en inglés — en segundos. Empieza gratis 14 días.",
       "trust": "14 días gratis · Cancela cuando quieras",
       "benefits": [
         {
@@ -1801,7 +1801,7 @@
     "quoteBanner": "Así es como tu cliente recibe y aprueba la cotización 👇",
     "tryAnother": "Probar con otro trabajo",
     "agreementBanner": "El contrato legal lo arma la IA solo. Tu cliente lo firma con el dedo 👇",
-    "invoiceBanner": "¡Listo! El contrato firmado genera la factura solo, con link de pago 👇",
+    "invoiceBanner": "¡Listo! Así se ve la factura profesional que recibe tu cliente 👇",
     "paidTitle": "✅ ¡Esto es un demo!",
     "paidDesc": "En tu cuenta real, el cliente paga aquí mismo con tarjeta y el dinero te llega directo.",
     "orPayWith": "o paga con",

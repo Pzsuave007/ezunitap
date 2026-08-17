@@ -1,5 +1,15 @@
 # UniTech — PRD (resumen vivo)
 
+## 🧾 Jun 2026 — Demo simplificado: solo FACTURA (alinear con el anuncio) [COMPLETO; verificado screenshots e2e, SIN testing_agent]
+- **Insight del dueño**: el anuncio promete "haz invoices" pero el demo hacía pasar por cotización → contrato → invoice → pago (demasiado, causa abandono). Quiere: preguntas → SOLO factura → cierre; mencionar en el cierre que también hay Estimados y Contratos + WhatsApp/formulario.
+- **Fix** (`DemoFlow.js`): flujo nuevo = step 0 start, step 1 DescribeStep (asistente guiado), step 2 `InvoiceStep simple`, step 3 `DemoClose`. Se quitaron del flujo QuoteStep/AgreementStep/paso de pago (componentes siguen exportados para DemoAll.js). `goClose()` reemplaza genAgreement/signNow/payNow. `GuideBar` solo en step 2 ("¡Tu factura está lista!" → Continuar). `StepBar` ahora 2 pasos (Describe / Factura).
+- **InvoiceStep `simple`**: insignia "Tus clientes pueden pagar con tarjeta 💳" (sin proceso de pago), botón "Enviar factura al cliente" abre `DemoSendSheet` (bottom sheet): Descargar PDF FUNCIONA (real), WhatsApp/Texto/Email en gris con candado 🔒 "Con tu plan" + nota de crear cuenta. `Sheet` de shadcn (side=bottom).
+- **DemoClose**: nota `demo-close-also` "UniTech también hace Estimados (cotizaciones) y Contratos de Servicio — pregúntanos." (ya tenía form de contacto + WhatsApp). i18n `close.subtitle` e `invoiceBanner` actualizados (ya no mencionan contrato/pago).
+- Verificado screenshots e2e: start → preguntas → Crear con IA → factura INVOICE con insignia + Enviar (sheet con Descargar PDF real + canales en gris) → Continuar → cierre con nota de Estimados/Contratos + WhatsApp + form.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🔗 Jun 2026 — Servicios sincronizados: Tarjeta ↔ Página Web ↔ Quotes/Facturas [COMPLETO; verificado curl+screenshot, SIN testing_agent]
 - **Petición del dueño**: hay 2 lugares con servicios (Tarjeta y Página Web); prefiere el de la Web (sugiere más servicios + descripciones). Quiere que ambos estén SINCRONIZADOS y que quotes/facturas los tomen de ahí.
 - **Backend** (`server.py`): sincronización bidireccional al guardar. `update_card_settings` (PUT /card/settings): si manda `services` y es la card primaria → espeja a `websites`. `update_website` (PUT /website): si manda `services` → espeja a la card primaria (`is_primary`). Misma forma `{name, description, starting_price, icon}`, sin loop (escritura directa a la otra colección).
