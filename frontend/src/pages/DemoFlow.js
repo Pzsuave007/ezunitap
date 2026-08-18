@@ -1060,7 +1060,8 @@ function DemoClose({ demoId, lead, quote, business }) {
 }
 
 function FinalCTA({ demoId }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const es = i18n.language === "es";
   const [founder, setFounder] = useState(null);
   const [cap, setCap] = useState({ name: "", email: "" });
   const [capSaved, setCapSaved] = useState(false);
@@ -1088,28 +1089,19 @@ function FinalCTA({ demoId }) {
 
   return (
     <Card className="p-5 sm:p-6 rounded-2xl text-center bg-gradient-to-br from-blue-900 to-emerald-700 text-white border-0">
-      {/* PRIMARY CTA first — above the fold */}
-      {founderOn && (
-        <div data-testid="demo-founder-offer" className="mx-auto max-w-md rounded-xl bg-amber-400 text-blue-950 px-4 py-2.5 shadow-lg mb-3">
-          <span className="font-heading font-extrabold text-base leading-tight">{t("demoFlow.founderTitle")}</span>
-          <span className="text-sm font-semibold"> · {t("demoFlow.founderRemaining", { n: founder.remaining })}</span>
+      {/* PRIMARY: personal help + lead capture (low commitment, captures the lead) */}
+      <p className="text-lg font-bold text-white leading-snug">{t("demoFlow.helpTitle")}</p>
+      <p className="text-xs text-white/75 mt-1 mb-4 max-w-md mx-auto">{t("demoFlow.helpDesc")}</p>
+      <div className="max-w-md mx-auto">
+        <WhatsAppButton
+          testid="demo-flow-final-whatsapp"
+          onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
+        />
+        <div className="flex items-center gap-3 my-3">
+          <div className="h-px flex-1 bg-white/20" />
+          <span className="text-xs text-white/60">{t("demoFlow.orText")}</span>
+          <div className="h-px flex-1 bg-white/20" />
         </div>
-      )}
-      <Link
-        data-testid="demo-final-cta"
-        to={to}
-        onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
-        className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl bg-white text-blue-900 font-bold text-lg hover:bg-slate-100"
-      >
-        {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-5 h-5" />
-      </Link>
-      <p className="text-xs text-white/80 mt-2.5 flex items-center justify-center gap-1.5">
-        <ShieldCheck className="w-4 h-4" /> {t("demoFlow.close.trust")}
-      </p>
-
-      {/* Secondary: personal help / contact — below the CTA */}
-      <div className="mt-5 pt-5 border-t border-white/20 max-w-md mx-auto">
-        <p className="text-sm font-bold text-white mb-2">{t("demoFlow.helpTitle")}</p>
         {capSaved ? (
           <div data-testid="demo-contact-saved" className="text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2 py-2">
             <CheckCircle2 className="w-4 h-4" /> {t("demoFlow.saveDone")}
@@ -1123,15 +1115,25 @@ function FinalCTA({ demoId }) {
             </Button>
           </div>
         )}
-        <div className="flex items-center gap-3 my-3">
-          <div className="h-px flex-1 bg-white/20" />
-          <span className="text-xs text-white/60">{t("demoFlow.orText")}</span>
-          <div className="h-px flex-1 bg-white/20" />
-        </div>
-        <WhatsAppButton
-          testid="demo-flow-final-whatsapp"
-          onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
-        />
+      </div>
+
+      {/* SECONDARY: create account / founder price — for those ready to start now */}
+      <div className="mt-5 pt-5 border-t border-white/20 max-w-md mx-auto">
+        <p className="text-xs text-white/70 mb-2">
+          {es ? "¿List@ para empezar hoy?" : "Ready to start today?"}
+          {founderOn && <span className="font-semibold text-amber-300"> {t("demoFlow.founderTitle")} · {t("demoFlow.founderRemaining", { n: founder.remaining })}</span>}
+        </p>
+        <Link
+          data-testid="demo-final-cta"
+          to={to}
+          onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
+          className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl border-2 border-white/70 text-white font-bold hover:bg-white/10"
+        >
+          {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />
+        </Link>
+        <p className="text-[11px] text-white/70 mt-2 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5" /> {t("demoFlow.close.trust")}
+        </p>
       </div>
     </Card>
   );

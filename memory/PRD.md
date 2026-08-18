@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🤝 Jun 2026 — Cierre del demo Opción B: WhatsApp/ayuda como CTA principal, registro secundario [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Decisión del dueño**: en vez de empujar la suscripción de primero (mucho compromiso para tráfico frío), poner WhatsApp + "Te ayudamos a montarlo gratis" + captura de datos como acción PRINCIPAL (captura el lead aunque no compre hoy); el registro/Precio Fundador queda como secundario.
+- **Fix** (`DemoFlow.js` `FinalCTA`): arriba = encabezado helpTitle/helpDesc + botón WhatsApp (primario) + captura nombre/email (`demo-capture-*`). Abajo (borde superior) = "¿List@ para empezar hoy?" + Precio Fundador inline + botón registro `demo-final-cta` en estilo secundario (contorno) + trust. `FinalCTA` ahora usa `i18n`/`es`.
+- Verificado screenshot móvil (390×844): WhatsApp primario en y≈368 (visible sin scroll), registro secundario en y≈706 (abajo).
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🎯 Jun 2026 — Pantalla de cierre del demo compacta (CTA sin scroll) [COMPLETO; verificado screenshot, SIN testing_agent]
 - **Queja del dueño**: la página CTA del demo repetía mensajes (subtítulo + nota azul + 4 tarjetas + tarjeta azul "Eso fue todo" con lo mismo) y el botón de crear cuenta quedaba enterrado (había que hacer scroll, peor en móvil).
 - **Fix** (`DemoFlow.js` `DemoClose` + `FinalCTA`): hero compacto (sin ícono gigante, título text-2xl/3xl, 1 subtítulo). `FinalCTA` reordenado: oferta fundador + **botón "Crear cuenta" full-width ARRIBA** + línea de confianza; ayuda/contacto/WhatsApp DEBAJO. Se quitó el texto redundante (`finalTitle`/`finalDesc`/`helpDesc` y la nota azul duplicada). Beneficios + "también Estimados/Contratos" (one-liner) van al final.
