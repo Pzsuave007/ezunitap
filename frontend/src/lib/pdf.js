@@ -220,6 +220,15 @@ export async function generateInvoicePDF(invoice, business, client, opts = {}) {
   doc.text(invoice.job_title || "Services", 14, y);
   y += 6;
 
+  if (invoice.description) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...COLOR_TEXT);
+    const dl = doc.splitTextToSize(invoice.description, 182);
+    doc.text(dl, 14, y);
+    y += dl.length * 5 + 2;
+  }
+
   if (Array.isArray(invoice.scope_of_work) && invoice.scope_of_work.length) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);

@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## 📄 Jun 2026 — Descripción del trabajo en el PDF de factura + "gratis" en cierre [COMPLETO; verificado extrayendo texto del PDF real, SIN testing_agent]
+- **Peticiones del dueño**: (1) el PDF de factura no mostraba la descripción del trabajo (el párrafo `quote.description` que sí sale en pantalla); (2) agregar "gratis" a "¿Te gustó? Te ayudamos a montarlo gratis en tu negocio 🙌".
+- **Fix #1** (`lib/pdf.js` `generateInvoicePDF`): renderiza `invoice.description` (párrafo) justo después del job_title y antes del Scope of Work. Antes solo salía título/scope/líneas.
+- **Fix #2** (i18n `demoFlow.helpTitle` es/en): agregado "gratis"/"free".
+- Verificado con pypdf extrayendo el texto del PDF descargado del demo: contiene Bill To completo (nombre/dirección/tel/email), el párrafo de descripción del trabajo y el Scope of Work.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 🤝 Jun 2026 — Cierre del demo Opción B: WhatsApp/ayuda como CTA principal, registro secundario [COMPLETO; verificado screenshot, SIN testing_agent]
 - **Decisión del dueño**: en vez de empujar la suscripción de primero (mucho compromiso para tráfico frío), poner WhatsApp + "Te ayudamos a montarlo gratis" + captura de datos como acción PRINCIPAL (captura el lead aunque no compre hoy); el registro/Precio Fundador queda como secundario.
 - **Fix** (`DemoFlow.js` `FinalCTA`): arriba = encabezado helpTitle/helpDesc + botón WhatsApp (primario) + captura nombre/email (`demo-capture-*`). Abajo (borde superior) = "¿List@ para empezar hoy?" + Precio Fundador inline + botón registro `demo-final-cta` en estilo secundario (contorno) + trust. `FinalCTA` ahora usa `i18n`/`es`.
