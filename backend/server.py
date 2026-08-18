@@ -6045,15 +6045,14 @@ DEMO_STEP_LABELS = {
     10: "Final · ¡Terminó el demo!",
 }
 DEMO_STEP_LABELS_CORTO = {
-    0: "Vio el demo (datos)",
+    0: "Entró al demo",
     1: "Describió el trabajo",
-    2: "Cotización con IA",
-    3: "Contrato / Acuerdo",
-    4: "Factura + Pago",
+    2: "Creó su factura con IA",
+    3: "Vio la oferta / terminó",
 }
 DEMO_VARIANTS = {
     "flujo": {"labels": DEMO_STEP_LABELS, "max": 10},
-    "corto": {"labels": DEMO_STEP_LABELS_CORTO, "max": 4},
+    "corto": {"labels": DEMO_STEP_LABELS_CORTO, "max": 3},
 }
 DEMO_MAX_STEP = 10
 

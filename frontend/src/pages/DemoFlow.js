@@ -251,7 +251,7 @@ export default function DemoFlow() {
 
   // Move to the closing/sales page after they've seen (and can send) the invoice.
   const goClose = () => {
-    track("demo_completed", { step: 2, trade: lead.trade });
+    track("demo_completed", { step: 3, trade: lead.trade });
     setStep(3);
     window.scrollTo(0, 0);
   };
@@ -1081,7 +1081,7 @@ function FinalCTA({ demoId }) {
     setCapBusy(true);
     try {
       if (demoId) await axios.post(`${API}/public/demo/${demoId}/contact`, payload);
-      trackDemo("contact_captured", { step: 4, demo: "corto" });
+      trackDemo("contact_captured", { step: 3, demo: "corto" });
       setCapSaved(true);
     } catch { /* non-blocking */ }
     finally { setCapBusy(false); }
@@ -1095,7 +1095,7 @@ function FinalCTA({ demoId }) {
       <div className="max-w-md mx-auto">
         <WhatsAppButton
           testid="demo-flow-final-whatsapp"
-          onClick={() => trackDemo("whatsapp_click", { step: 4, demo: "corto", meta: { place: "final" } })}
+          onClick={() => trackDemo("whatsapp_click", { step: 3, demo: "corto", meta: { place: "final" } })}
         />
         <div className="flex items-center gap-3 my-3">
           <div className="h-px flex-1 bg-white/20" />
@@ -1126,7 +1126,7 @@ function FinalCTA({ demoId }) {
         <Link
           data-testid="demo-final-cta"
           to={to}
-          onClick={() => trackDemo("checkout_click", { step: 4, demo: "corto", meta: { founder: !!founderOn } })}
+          onClick={() => trackDemo("checkout_click", { step: 3, demo: "corto", meta: { founder: !!founderOn } })}
           className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl border-2 border-white/70 text-white font-bold hover:bg-white/10"
         >
           {founderOn ? t("demoFlow.founderCta") : t("demoFlow.finalCta")} <ArrowRight className="w-4 h-4" />

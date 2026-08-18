@@ -37,7 +37,7 @@ export default function AdminDemoAnalytics() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [forbidden, setForbidden] = useState(false);
-  const [variant, setVariant] = useState("flujo");
+  const [variant, setVariant] = useState("corto");
 
   const load = async (v = variant) => {
     setRefreshing(true);
@@ -95,7 +95,7 @@ export default function AdminDemoAnalytics() {
             <Activity className="w-7 h-7 text-emerald-600" /> Analíticas del Demo
           </h1>
           <p className="text-slate-500 mt-2 max-w-2xl">
-            Comportamiento real de la gente en <span className="font-semibold text-slate-700">/demo-flujo</span>:
+            Comportamiento real de la gente en <span className="font-semibold text-slate-700">/demo</span>:
             en qué paso se atoran, si lo terminan y si piden ayuda. Datos tuyos, no de Meta.
           </p>
         </div>
@@ -146,13 +146,14 @@ export default function AdminDemoAnalytics() {
         </p>
         {t.sessions === 0 ? (
           <div className="text-sm text-slate-500 text-center py-6">
-            Aún no hay datos. En cuanto la gente entre a <b>/demo-flujo</b> los verás aquí.
+            Aún no hay datos. En cuanto la gente entre a <b>/demo</b> los verás aquí.
           </div>
         ) : (
           <div className="space-y-2.5">
-            {funnel.map((f) => {
+            {funnel.map((f, idx) => {
               const pct = Math.round((f.count / maxCount) * 100);
               const bigDrop = f.drop_from_prev != null && f.drop_from_prev >= 40;
+              const isLast = idx === funnel.length - 1;
               return (
                 <div key={f.step} className="flex items-center gap-3" data-testid={`funnel-step-${f.step}`}>
                   <div className="w-7 text-right text-xs font-bold text-slate-400 flex-none">{f.step}</div>
@@ -163,7 +164,7 @@ export default function AdminDemoAnalytics() {
                     </div>
                     <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${f.step === 10 ? "bg-emerald-500" : "bg-blue-600"}`}
+                        className={`h-full rounded-full transition-all ${isLast ? "bg-emerald-500" : "bg-blue-600"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

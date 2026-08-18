@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## 📊 Jun 2026 — Analíticas del Demo actualizadas al flujo corto (sin cotización/contrato) [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Petición del dueño**: la página de analíticas seguía mostrando pasos de Cotización y Contrato del flujo viejo; quiere ver el flujo nuevo. (Conversión ya subió de 22 → 28/29 con los cambios.)
+- **Backend** (`server.py`): `DEMO_STEP_LABELS_CORTO` reescrito a 4 pasos reales — 0 Entró al demo, 1 Describió el trabajo, 2 Creó su factura con IA, 3 Vio la oferta/terminó. `DEMO_VARIANTS["corto"].max = 3`.
+- **Frontend** (`DemoFlow.js`): pasos de tracking corregidos al nuevo flujo — demo_completed/contact_captured/whatsapp_click/checkout_click ahora step 3 (antes 4). (`AdminDemoAnalytics.js`): variant por defecto = "corto"; color verde en el último paso (antes fijo step===10); textos "/demo-flujo" → "/demo".
+- Verificado: curl funnel corto (29→15→13→8, sin Cotización/Contrato) + screenshot (abre en Demo corto, embudo nuevo, sin contrato/cotización).
+- ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 📄 Jun 2026 — Descripción del trabajo en el PDF de factura + "gratis" en cierre [COMPLETO; verificado extrayendo texto del PDF real, SIN testing_agent]
 - **Peticiones del dueño**: (1) el PDF de factura no mostraba la descripción del trabajo (el párrafo `quote.description` que sí sale en pantalla); (2) agregar "gratis" a "¿Te gustó? Te ayudamos a montarlo gratis en tu negocio 🙌".
 - **Fix #1** (`lib/pdf.js` `generateInvoicePDF`): renderiza `invoice.description` (párrafo) justo después del job_title y antes del Scope of Work. Antes solo salía título/scope/líneas.
