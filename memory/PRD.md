@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 📉 Jun 2026 — Analíticas: lista larga → gráfica compacta "Cómo terminaron" [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Petición del dueño**: la tabla larga "Sesiones recientes" al fondo no aportaba nada; hacerla más chica o gráfica.
+- **Fix** (`AdminDemoAnalytics.js`): se reemplazó la tabla por una tarjeta `demo-outcomes` con barra segmentada + 3 métricas: Terminaron el demo (verde), Pidieron ayuda WhatsApp (ámbar), Se fueron antes (gris), con conteo y %. Calculado de `totals` (completed / whatsapp_clicks / resto).
+- Verificado screenshot: gráfica visible (8/28%, 0/0%, 21/72%), tabla larga eliminada.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 📊 Jun 2026 — Analíticas del Demo actualizadas al flujo corto (sin cotización/contrato) [COMPLETO; verificado curl+screenshot, SIN testing_agent]
 - **Petición del dueño**: la página de analíticas seguía mostrando pasos de Cotización y Contrato del flujo viejo; quiere ver el flujo nuevo. (Conversión ya subió de 22 → 28/29 con los cambios.)
 - **Backend** (`server.py`): `DEMO_STEP_LABELS_CORTO` reescrito a 4 pasos reales — 0 Entró al demo, 1 Describió el trabajo, 2 Creó su factura con IA, 3 Vio la oferta/terminó. `DEMO_VARIANTS["corto"].max = 3`.

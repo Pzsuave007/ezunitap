@@ -222,49 +222,39 @@ export default function AdminDemoAnalytics() {
         </Card>
       </div>
 
-      {/* Recent sessions */}
-      <Card className="p-5" data-testid="demo-recent-sessions">
-        <h3 className="font-heading font-bold text-base mb-3">Sesiones recientes</h3>
-        {recent.length === 0 ? (
-          <div className="text-sm text-slate-500 text-center py-4">Sin sesiones todavía.</div>
-        ) : (
-          <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                  <th className="py-2 px-2 font-bold">Oficio</th>
-                  <th className="py-2 px-2 font-bold">Último paso</th>
-                  <th className="py-2 px-2 font-bold">Estado</th>
-                  <th className="py-2 px-2 font-bold">Disp.</th>
-                  <th className="py-2 px-2 font-bold">Duración</th>
-                  <th className="py-2 px-2 font-bold">Cuándo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((s, i) => (
-                  <tr key={`${variant}-${s.session_id}-${i}`} className="border-b border-slate-50 hover:bg-slate-50">
-                    <td className="py-2 px-2 font-semibold text-slate-700 truncate max-w-[140px]">{s.trade}</td>
-                    <td className="py-2 px-2 text-slate-600">
-                      <span className="font-bold text-slate-800">{s.max_step}</span>
-                      <span className="text-slate-400 text-xs"> · {s.max_step_label}</span>
-                    </td>
-                    <td className="py-2 px-2">
-                      {s.completed ? (
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Terminó</span>
-                      ) : s.whatsapp_clicks > 0 ? (
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">WhatsApp</span>
-                      ) : (
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Se fue</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-2 text-slate-500">{s.device}</td>
-                    <td className="py-2 px-2 text-slate-500">{fmtDur(s.duration_sec)}</td>
-                    <td className="py-2 px-2 text-slate-400 whitespace-nowrap">{fmtWhen(s.last_seen)}</td>
-                  </tr>
+      {/* How sessions ended — compact graph (replaces the long list) */}
+      <Card className="p-5" data-testid="demo-outcomes">
+        <h3 className="font-heading font-bold text-base mb-4">Cómo terminaron las sesiones</h3>
+        {t.sessions ? (() => {
+          const finished = t.completed || 0;
+          const help = t.whatsapp_clicks || 0;
+          const left = Math.max(0, (t.sessions || 0) - finished - help);
+          const total = t.sessions || 1;
+          const segs = [
+            { label: "Terminaron el demo", value: finished, color: "bg-emerald-500", text: "text-emerald-700" },
+            { label: "Pidieron ayuda (WhatsApp)", value: help, color: "bg-amber-500", text: "text-amber-700" },
+            { label: "Se fueron antes", value: left, color: "bg-slate-300", text: "text-slate-500" },
+          ];
+          return (
+            <>
+              <div className="flex h-5 w-full rounded-full overflow-hidden bg-slate-100">
+                {segs.map((s) => s.value > 0 && (
+                  <div key={s.label} className={`${s.color} h-full`} style={{ width: `${(s.value / total) * 100}%` }} title={`${s.label}: ${s.value}`} />
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                {segs.map((s) => (
+                  <div key={s.label} data-testid={`outcome-${s.label}`} className="text-center">
+                    <div className={`font-heading text-2xl font-bold ${s.text}`}>{s.value}</div>
+                    <div className="text-xs text-slate-500 mt-0.5 leading-tight">{s.label}</div>
+                    <div className="text-[11px] text-slate-400">{Math.round((s.value / total) * 100)}%</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })() : (
+          <div className="text-sm text-slate-500 text-center py-4">Sin sesiones todavía.</div>
         )}
       </Card>
     </div>
