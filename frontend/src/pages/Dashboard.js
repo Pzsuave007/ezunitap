@@ -406,6 +406,16 @@ export default function Dashboard() {
   const hasMarketing = hasFeature("marketing");
 
   useEffect(() => {
+    // Mandatory onboarding: send new accounts to the guided wizard first.
+    (async () => {
+      try {
+        const { data } = await api.get("/onboarding/status");
+        if (!data?.completed) navigate("/onboarding", { replace: true });
+      } catch (e) { /* ignore */ }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (hasBusiness) {
       (async () => {
         try {

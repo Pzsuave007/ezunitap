@@ -6593,6 +6593,29 @@ class OnboardingStateUpdate(BaseModel):
     celebrated: Optional[bool] = None
 
 
+@api_router.post("/onboarding/complete")
+async def onboarding_complete(payload: dict = Body(...), user_id: str = Depends(get_current_user_id)):
+    """Called at the end of the guided wizard. Saves account-level fields and
+    marks onboarding as finished. Card/website content is saved by the wizard
+    via the existing /card/settings and /website endpoints."""
+    now = _now_iso()
+    uset = {"updated_at": now,
+            "onboarding_state.completed": True,
+            "onboarding_state.dismissed": True,
+            "onboarding_state.celebrated": True,
+            "onboarding_state.welcome_seen": True}
+    for k in ("phone", "business_address"):
+        if payload.get(k) is not None:
+            uset[k] = payload.get(k)
+    if payload.get("payment_prefs") is not None:
+        uset["payment_prefs"] = payload["payment_prefs"]
+    if payload.get("invoice_defaults") is not None:
+        uset["invoice_defaults"] = payload["invoice_defaults"]
+    await db.users.update_one({"id": user_id}, {"$set": uset})
+    return {"ok": True}
+
+
+
 @api_router.get("/onboarding/status")
 async def onboarding_status(user_id: str = Depends(get_current_user_id)):
     """Returns checklist progress (auto-computed from real data) + persisted UI state."""
@@ -6637,7 +6660,7 @@ async def onboarding_status(user_id: str = Depends(get_current_user_id)):
              for it in all_items if it["feature"] is None or it["feature"] in feats]
     done_count = sum(1 for i in items if i["done"])
     progress = int(done_count * 100 / len(items)) if items else 0
-    completed = done_count == len(items)
+    completed = (done_count == len(items)) or bool(onb.get("completed")) or bool(onb.get("dismissed"))
 
     return {
         "welcome_seen": welcome_seen,

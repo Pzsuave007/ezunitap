@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
+import Onboarding from "@/pages/Onboarding";
 import Clients from "@/pages/Clients";
 import ClientForm from "@/pages/ClientForm";
 import ClientDetail from "@/pages/ClientDetail";
@@ -147,6 +148,7 @@ function App() {
 
             <Route element={<HomeOrAuth />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/clientes" element={<FeatureGate feature={["card", "business"]}><Clients /></FeatureGate>} />
               <Route path="/clientes/nuevo" element={<FeatureGate feature={["card", "business"]}><ClientForm /></FeatureGate>} />
               <Route path="/clientes/:id" element={<FeatureGate feature={["card", "business"]}><ClientDetail /></FeatureGate>} />

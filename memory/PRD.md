@@ -1,5 +1,17 @@
 # UniTech — PRD (resumen vivo)
 
+## 🚀 Jun 2026 — Wizard de Onboarding único (deja TODO listo) [MVP COMPLETO; verificado screenshot+curl, SIN testing_agent]
+- **Problema del dueño**: onboarding regado por muchas páginas; el usuario nuevo no sabe navegar para llenar lo que alimenta Tarjeta/Web/Facturas. Quiere un cuestionario único que al terminar deje todo listo y funcional.
+- **Decisiones**: obligatorio hasta terminar; Stripe = botón opcional (métodos manuales sí quedan); logo casi-obligatorio con **monograma de iniciales** como fallback; una pregunta por pantalla; **ayudante IA** en el proceso.
+- **Frontend** `pages/Onboarding.js` (`/onboarding`): 6 pasos (business, brand+logo, about, services, payments, reviews). Monograma canvas→PNG subido a `/card/logo` si no suben logo. IA: `onb-ai-services` (POST /website/ai-suggest-services) y `onb-ai-about` (POST /website/ai-write). Al terminar: sube logo → `PUT /card/settings` (card+servicios+business_type+marca+social, que ya sincroniza a la web) → `POST /onboarding/complete` (phone, business_address, payment_prefs, invoice_defaults + marca onboarding_state.completed). testids `onb-*`.
+- **Backend** `server.py`: nuevo `POST /onboarding/complete`. `/onboarding/status` ahora devuelve `completed=True` también si `onboarding_state.completed`/`dismissed` (para el gating).
+- **Gating** (`Dashboard.js`): al montar consulta `/onboarding/status`; si `!completed` → redirige a `/onboarding`. Ruta registrada en `App.js`.
+- Verificado: screenshot (paso 1 → paso "Tu marca" con monograma "GP") + curl (`/onboarding/complete` 200, status `completed=True`).
+- **PENDIENTE/FOLLOW-UP**: (1) wiring de `invoice_defaults`/`payment_prefs` dentro del builder de facturas (se guardan pero aún no se aplican automáticamente en cada factura); (2) subida de FOTOS de trabajos (galería) — el wizard hoy cubre logo+datos, no galería; (3) confirmar que cuentas nuevas tengan feature "card" para permitir subir logo. (4) `/website/ai-write` puede no existir — el botón "Escribir con IA" degrada con toast si falla.
+- ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `deploy.sh`.
+
+
+
 ## 📉 Jun 2026 — Analíticas: lista larga → gráfica compacta "Cómo terminaron" [COMPLETO; verificado screenshot, SIN testing_agent]
 - **Petición del dueño**: la tabla larga "Sesiones recientes" al fondo no aportaba nada; hacerla más chica o gráfica.
 - **Fix** (`AdminDemoAnalytics.js`): se reemplazó la tabla por una tarjeta `demo-outcomes` con barra segmentada + 3 métricas: Terminaron el demo (verde), Pidieron ayuda WhatsApp (ámbar), Se fueron antes (gris), con conteo y %. Calculado de `totals` (completed / whatsapp_clicks / resto).
