@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, ArrowLeft, Upload, Sparkles, CheckCircle2, Plus, Trash2, Camera } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Upload, Sparkles, CheckCircle2, Plus, Trash2, Camera, Globe, CreditCard, FileText, MessageCircle, Copy, ExternalLink, Star, Rocket } from "lucide-react";
 
 // Build a square PNG monogram (initials on brand color) so branding is never empty.
 function monogramBlob(name, color) {
@@ -52,6 +52,7 @@ export default function Onboarding() {
   const [personalFile, setPersonalFile] = useState(null);
   const [personalPreview, setPersonalPreview] = useState("");
   const [buildMsg, setBuildMsg] = useState("");
+  const [done, setDone] = useState(null);
   const [d, setD] = useState({
     business_name: "", business_type: "", tagline: "", phone: "", contact_email: "",
     business_address: "", service_area: "", hours: "Mon–Fri 8am–6pm", years_in_business: "",
@@ -189,12 +190,79 @@ export default function Onboarding() {
         },
       });
       toast.success(es ? "¡Tu sitio está listo y publicado! 🎉" : "Your site is live! 🎉");
-      // Land on the website editor so they can preview & switch template if they want.
-      nav("/pagina-web");
+      // Show the celebration / summary screen with links to share.
+      setDone(done || {});
+      window.scrollTo(0, 0);
     } catch (e) {
       toast.error(e?.response?.data?.detail || (es ? "Error al guardar. Intenta de nuevo." : "Save error. Try again."));
     } finally { setBusy(false); setBuildMsg(""); }
   };
+
+  if (done) {
+    const origin = window.location.origin;
+    const siteUrl = done.site_slug ? `${origin}/sitio/${done.site_slug}` : "";
+    const cardUrl = done.card_slug ? `${origin}/c/${done.card_slug}` : "";
+    const copyLink = (url) => { navigator.clipboard.writeText(url); toast.success(es ? "Enlace copiado" : "Link copied"); };
+    const waShare = siteUrl ? `https://wa.me/?text=${encodeURIComponent((es ? "¡Mira mi nuevo sitio web! " : "Check out my new website! ") + siteUrl)}` : "";
+    const ready = [
+      { icon: Globe, t: es ? "Sitio web profesional publicado" : "Professional website published", d: es ? "Contenido escrito por IA, fotos, tu logo y colores — ya en vivo." : "AI-written content, photos, your logo and colors — already live." },
+      { icon: CreditCard, t: es ? "Tarjeta de presentación digital" : "Digital business card", d: es ? "Lista para compartir por link o QR con tus clientes." : "Ready to share by link or QR with your clients." },
+      { icon: FileText, t: es ? "Facturas y cotizaciones con tu branding" : "Invoices & quotes with your branding", d: es ? "Ya llevan tu logo, nombre e información de contacto." : "Already carry your logo, name and contact info." },
+      { icon: Sparkles, t: es ? "Servicios, precios y pagos guardados" : "Services, pricing & payments saved", d: es ? "Tus servicios, depósito e impuesto quedaron configurados." : "Your services, deposit and tax are configured." },
+      { icon: Star, t: es ? "Reseñas y redes conectadas" : "Reviews & social connected", d: es ? "Google, WhatsApp y redes listas en tu sitio y tarjeta." : "Google, WhatsApp and socials ready on your site and card." },
+    ];
+    return (
+      <div className="min-h-screen bg-slate-50" data-testid="onb-done">
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 flex items-center justify-center shadow-lg mb-3">
+              <Rocket className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="font-heading text-3xl font-bold">{es ? "¡Tu negocio está en línea! 🎉" : "Your business is online! 🎉"}</h1>
+            <p className="text-slate-500 mt-1">{es ? "Con solo llenar el cuestionario, dejamos TODO listo:" : "Just from the questionnaire, we set EVERYTHING up:"}</p>
+          </div>
+
+          {siteUrl && (
+            <Card className="p-5 rounded-2xl mb-4 border-emerald-200 bg-emerald-50/60">
+              <div className="flex items-center gap-2 text-emerald-700 font-bold"><CheckCircle2 className="w-5 h-5" /> {es ? "Tu sitio web está EN VIVO" : "Your website is LIVE"}</div>
+              <div className="mt-2 flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2">
+                <Globe className="w-4 h-4 text-slate-400 flex-none" />
+                <span className="text-sm truncate flex-1" data-testid="onb-done-site-url">{siteUrl}</span>
+                <button onClick={() => copyLink(siteUrl)} data-testid="onb-copy-site" className="text-slate-400 hover:text-slate-700"><Copy className="w-4 h-4" /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <Button asChild variant="outline" className="rounded-xl" data-testid="onb-view-site"><a href={siteUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4 mr-1" /> {es ? "Ver mi sitio" : "View site"}</a></Button>
+                <Button asChild className="rounded-xl bg-[#25D366] hover:bg-[#1EBE57] text-white" data-testid="onb-wa-share"><a href={waShare} target="_blank" rel="noreferrer"><MessageCircle className="w-4 h-4 mr-1" /> {es ? "Compartir" : "Share"}</a></Button>
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-5 rounded-2xl mb-4">
+            <div className="space-y-3">
+              {ready.map((r, i) => (
+                <div key={i} className="flex items-start gap-3" data-testid={`onb-ready-${i}`}>
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-none"><r.icon className="w-4.5 h-4.5 text-emerald-600" /></div>
+                  <div>
+                    <div className="font-bold text-sm flex items-center gap-1.5">{r.t} <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /></div>
+                    <div className="text-xs text-slate-500">{r.d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {cardUrl && <Button asChild variant="outline" className="rounded-xl" data-testid="onb-view-card"><a href={cardUrl} target="_blank" rel="noreferrer"><CreditCard className="w-4 h-4 mr-1" /> {es ? "Mi tarjeta" : "My card"}</a></Button>}
+            <Button onClick={() => nav("/pagina-web")} variant="outline" className="rounded-xl" data-testid="onb-edit-site"><Sparkles className="w-4 h-4 mr-1" /> {es ? "Cambiar diseño" : "Change design"}</Button>
+          </div>
+          <Button onClick={() => nav("/")} className="w-full h-12 rounded-xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold" data-testid="onb-go-dashboard">
+            {es ? "Ir a mi panel" : "Go to my dashboard"} <ArrowRight className="w-5 h-5 ml-1" />
+          </Button>
+          <p className="text-center text-xs text-slate-400 mt-3">{es ? "Puedes cambiar el diseño o cualquier dato cuando quieras." : "You can change the design or any detail anytime."}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

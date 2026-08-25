@@ -1144,6 +1144,23 @@ async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_
             }
             if not data.get("deposit_amount"):
                 data["deposit_amount"] = float(a.get("deposit") or 0)
+    # Apply the owner's saved invoice defaults (set during onboarding) when the
+    # caller didn't specify them and the invoice isn't inheriting from a quote/
+    # agreement. Keeps every new invoice consistent with their preferences.
+    if not payload.quote_id and not payload.agreement_id:
+        u = await db.users.find_one({"id": user_id}, {"_id": 0, "invoice_defaults": 1}) or {}
+        defs = u.get("invoice_defaults") or {}
+        subtotal = float(data.get("subtotal") or 0)
+        if not float(data.get("tax_rate") or 0) and float(defs.get("tax_rate") or 0) > 0 and subtotal > 0:
+            tr = float(defs["tax_rate"])
+            data["tax_rate"] = tr
+            data["tax_amount"] = round(subtotal * tr / 100, 2)
+            data["total"] = round(subtotal + data["tax_amount"], 2)
+        if not float(data.get("deposit_amount") or 0) and float(defs.get("deposit_percent") or 0) > 0:
+            base_total = float(data.get("total") or subtotal)
+            data["deposit_amount"] = round(base_total * float(defs["deposit_percent"]) / 100, 2)
+        if not (data.get("notes") or "").strip() and (defs.get("payment_terms") or "").strip():
+            data["notes"] = defs["payment_terms"]
     doc = {
         "id": _new_id(),
         "user_id": user_id,
@@ -6734,7 +6751,16 @@ async def onboarding_complete(payload: dict = Body(...), user_id: str = Depends(
         except Exception as e:  # noqa: BLE001
             logger.error(f"onboarding build_site failed: {e!r}")
 
-    return {"ok": True, "site_slug": (site or {}).get("slug"), "published": bool((site or {}).get("published"))}
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    u2 = await db.users.find_one({"id": user_id}, {"_id": 0, "business_name": 1, "whatsapp": 1}) or {}
+    return {
+        "ok": True,
+        "site_slug": (site or {}).get("slug"),
+        "published": bool((site or {}).get("published")),
+        "card_slug": card.get("slug") or "",
+        "business_name": u2.get("business_name") or card.get("business_name") or "",
+        "whatsapp": card.get("whatsapp") or payload.get("phone") or "",
+    }
 
 
 

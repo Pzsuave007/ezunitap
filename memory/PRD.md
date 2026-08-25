@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## 🎉 Jun 2026 — Pantalla de Bienvenida post-onboarding + defaults de factura aplicados [COMPLETO; verificado e2e curl+screenshot, SIN testing_agent]
+- **Petición dueño**: al terminar el onboarding, mostrar "¡Tu negocio está en línea!" con link para compartir + WhatsApp, y decir que la tarjeta digital está lista y las facturas ya tienen su info/branding. Listar todo lo que queda listo.
+- **Frontend** (`Onboarding.js`): nuevo estado `done` → pantalla de celebración: hero cohete, tarjeta "Tu sitio web está EN VIVO" (URL + copiar + "Ver mi sitio" + botón "Compartir" WhatsApp verde `wa.me`), checklist de 5 (Sitio publicado / Tarjeta digital / Facturas con branding / Servicios+precios+pagos guardados / Reseñas y redes), botones "Mi tarjeta", "Cambiar diseño", "Ir a mi panel". testids `onb-done`, `onb-view-site`, `onb-wa-share`, `onb-ready-*`, etc.
+- **Backend** (`onboarding/complete`): ahora devuelve `card_slug`, `business_name`, `whatsapp` (además de site_slug/published) para armar los links de la pantalla.
+- **Defaults de factura AHORA SÍ se aplican** (`server.py` `create_invoice`): si la factura no viene de quote/agreement y no trae tax/deposit/notes, aplica los `invoice_defaults` del onboarding (tax %, deposit %, payment_terms) y recalcula tax_amount/total. Verificado curl: factura de $100 sin tax → tax 8% ($8), total $108, depósito 50% ($54), notes "Payment due on receipt." (Task 1 P1 → HECHO.)
+- **Verificado**: screenshot móvil de la pantalla de bienvenida (link real, 5 checks, botón Compartir) + curl de factura con defaults.
+- ⚠️ DESPLIEGUE: backend + frontend (build recompilado, 63 archivos staged) → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🚀 Jun 2026 — Onboarding ahora DEJA EL SITIO 100% HECHO y PUBLICADO (IA + fotos + logo + foto personal) [COMPLETO; verificado e2e curl+screenshots, SIN testing_agent]
 - **Petición dueño**: con solo llenar el onboarding, el cliente debe salir con sitio web TERMINADO y publicado, tarjeta digital, e invoices con branding. Antes tenía que llenar cada sección a mano; la IA no jalaba; no pedía foto personal; el logo no salía.
 - **Bugs de IA arreglados**: (1) `writeAbout` mandaba `{field,prompt}` pero `/website/ai-write` espera `{kind,name}` → 400 siempre. Ahora manda `{kind:"bio",name,business_type,business_name,context}` (nuevo kind "bio" en `ai_service.write_field`). (2) `/website/ai-suggest-services` usaba `card.business_type` (no guardado aún en el wizard) → ahora acepta override `{business_type,brief}` en el body. Ambos endpoints aceptan override para funcionar durante el wizard.
