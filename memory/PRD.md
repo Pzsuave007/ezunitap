@@ -1,5 +1,19 @@
 # UniTech — PRD (resumen vivo)
 
+## 🎨 Jun 2026 — Auditoría de templates TANDA 1: fotos en servicios + CTA arriba/abajo + rediseños [COMPLETO tanda 1; verificado screenshots, SIN testing_agent]
+- **Feedback dueño** (verbatim en trayectoria): fotos protagonistas en TODOS los templates; servicios con foto en todos; CTA/formulario arriba Y abajo sin excepción. Responder (sin foto en servicios), Bento (plano, sin impacto, pero le gustan los servicios), Trust (favorito; quiere servicios estilo Bento), OnePage (foto+desc al abrir servicio), Neon (idéntico a Cinematic), Playful (el que menos le gusta, plano).
+- **Diseñador**: se generó `/app/design_guidelines.json` (patrones service-card-with-photo, bento-grid, accordion photo reveal, hero top-CTA + bottom form, art direction por template, motion). Ingerido.
+- **Implementado** (`ContractorSite.js`): 2 componentes reutilizables `ServiceBento` (bento fotos con overlay) y `ServiceCardsBold` (neo-brutalist con foto). 
+  - Responder → `ServiceCardsBold` (fotos + borde grueso + sombra dura). ✅ verificado screenshot.
+  - Trust → `ServiceBento` para servicios + `ContactBlock id="contact2"` al final (form arriba flotante Y abajo). ✅ verificado (#contact2 presente + bento).
+  - OnePage → `OneAccordion` ahora revela FOTO + descripción + CTA al abrir (grid-rows animación). ✅ verificado.
+  - Playful → tarjetas de servicio con FOTO + borde 3px + hard shadow neo-pop. ✅ verificado.
+  - Bento → hero mosaic más grande (auto-rows 190px) + 2 tiles extra con fotos de servicios.
+  - `ContactBlock` acepta prop `id` (default "contact") para permitir form arriba y abajo sin id duplicado.
+- **PENDIENTE tanda 2** (aún NO hecho): diferenciar **Neon** de Cinematic (hero cyber/duotone/scanlines), y auditar Cinematic/Slider/Craftsman/Luxe en móvil. Animaciones de entrada al scroll (IntersectionObserver) globales — no implementadas aún.
+- Build recompilado (main.81078230.js, 63 archivos staged). ⚠️ DESPLIEGUE: solo frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🔘 Jun 2026 — CTAs adaptables al tipo de negocio (Book Now vs Get a Free Quote) en todos los templates [COMPLETO; verificado screenshots, SIN testing_agent]
 - **Petición dueño**: el botón "Get a Quote" por servicio y la banda inferior "Ready when you are / Let's get your project done right / Get your free estimate" no aplican a todos los negocios de servicio; poner algo genérico que funcione con todos.
 - **Fix** (`ContractorSite.js`): CTAs centralizados en el `ctx` según el modo — `ctx.cta = bookingOn ? "Book Now" : "Get a Free Quote"`, `ctx.ctaShort` para la barra móvil. Reemplazados TODOS los CTAs hardcodeados de los 10 templates (heros: Get a Free/Fast Quote, Request an Estimate/Quote; por-servicio "Get a quote"; CtaBand; barra móvil "Free Quote"; footer "Get Your Free Estimate" + link "Request Quote"). Footer h2 ahora genérico ("Let's get you booked in." / "Let's get you taken care of."). Se conservan CTAs de carácter por template (slider "See Your Transformation", luxe "Request a Consultation"). Los títulos del formulario ya eran adaptables (booking → "Book an Appointment").

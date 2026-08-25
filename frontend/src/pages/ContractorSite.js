@@ -413,12 +413,10 @@ function Responder({ ctx }) {
         </SectionLight>
       )}
 
-      {/* Services accordion */}
+      {/* Services — bold photo cards */}
       {sec.services !== false && (
         <SectionLight id="services" kicker="What we fix" title="Our Services" ctx={ctx} alt>
-          <div className="max-w-3xl space-y-3">
-            {services.map((s, i) => <Accordion key={i} title={s.name} price={s.starting_price} body={s.description} ctx={ctx} />)}
-          </div>
+          <ServiceCardsBold ctx={ctx} />
         </SectionLight>
       )}
 
@@ -514,11 +512,13 @@ function Bento({ ctx }) {
             {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: th.ink }}><Phone className="w-4 h-4" /> Call</a>}
           </div>
         </div>
-        {/* bento mosaic — only when a hero image is set */}
+        {/* bento mosaic — big photos for visual impact */}
         {heroImg && (
-        <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[130px] md:auto-rows-[150px]">
-          <div className="col-span-2 row-span-2 overflow-hidden rounded-2xl"><img src={heroImg} alt="" className="w-full h-full object-cover" /></div>
-          <div className="col-span-2 rounded-2xl p-5 flex flex-col justify-center" style={{ background: accent, color: accentText }}><div className="wh text-4xl font-extrabold">{b.years_in_business > 0 ? `${b.years_in_business}+` : "5.0"}</div><div className="text-sm font-semibold opacity-90">{b.years_in_business > 0 ? "Years experience" : "Star rating"}</div></div>
+        <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[140px] md:auto-rows-[190px]">
+          <div className="col-span-2 row-span-2 overflow-hidden rounded-3xl group"><img src={heroImg} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /></div>
+          <div className="col-span-2 rounded-3xl p-6 flex flex-col justify-center" style={{ background: accent, color: accentText }}><div className="wh text-5xl font-extrabold">{b.years_in_business > 0 ? `${b.years_in_business}+` : "5.0"}</div><div className="text-sm font-semibold opacity-90">{b.years_in_business > 0 ? "Years experience" : "Star rating"}</div></div>
+          <div className="col-span-1 overflow-hidden rounded-3xl group" style={{ background: th.surface }}>{services[0]?.img ? <img src={services[0].img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center"><Star className="w-8 h-8" style={{ color: accent }} /></div>}</div>
+          <div className="col-span-1 overflow-hidden rounded-3xl group" style={{ background: th.surface }}>{services[1]?.img ? <img src={services[1].img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center"><CheckCircle2 className="w-8 h-8" style={{ color: accent }} /></div>}</div>
         </div>
         )}
       </section>
@@ -742,19 +742,7 @@ function Trust({ ctx }) {
 
       {sec.services !== false && (
         <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <div className="space-y-10">
-            {services.map((s, i) => (
-              <div key={i} className={`grid ${s.img ? "md:grid-cols-2" : "grid-cols-1"} gap-6 items-center ${!s.img ? "" : (i % 2 ? "" : "md:[direction:rtl]")}`} data-testid={`site-service-${i}`}>
-                {s.img && <div className="overflow-hidden rounded-lg shadow-lg [direction:ltr]"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-video object-cover" /></div>}
-                <div className="[direction:ltr]">
-                  <h3 className="wh font-extrabold text-2xl" style={{ color: th.ink }}>{s.name}</h3>
-                  {s.description && <p className="mt-2" style={{ color: th.muted }}>{s.description}</p>}
-                  {s.starting_price && <p className="mt-2 font-bold" style={{ color: accent }}>{s.starting_price}</p>}
-                  <button onClick={goContact} className={`mt-4 px-5 h-11 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ServiceBento ctx={ctx} />
         </SectionLight>
       )}
 
@@ -800,6 +788,7 @@ function Trust({ ctx }) {
       {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.contact !== false && <ContactBlock ctx={ctx} id="contact2" />}
       <FooterBlock ctx={ctx} />
     </div>
   );
@@ -1026,15 +1015,72 @@ function OnePage({ ctx }) {
   );
 }
 function OneAccordion({ s, ctx }) {
-  const { th, accent } = ctx;
+  const { th, accent, accentText } = ctx;
   const [open, setOpen] = useState(false);
   return (
     <div className="border-t" style={{ borderColor: th.border }} data-testid="site-service-acc">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-4 py-6 text-left">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center justify-between gap-4 py-6 text-left">
         <span className="wh text-2xl" style={{ color: th.ink }}>{s.name}</span>
-        <span className="flex items-center gap-4">{s.starting_price && <span className="text-sm" style={{ color: accent }}>{s.starting_price}</span>}<span style={{ color: accent, transform: open ? "rotate(45deg)" : "none", transition: "transform .2s" }}>+</span></span>
+        <span className="flex items-center gap-4">{s.starting_price && <span className="text-sm" style={{ color: accent }}>{s.starting_price}</span>}<span className="text-2xl leading-none" style={{ color: accent, transform: open ? "rotate(45deg)" : "none", transition: "transform .3s" }}>+</span></span>
       </button>
-      {open && s.description && <p className="pb-6 text-lg leading-relaxed max-w-2xl" style={{ color: th.muted }}>{s.description}</p>}
+      <div className="grid transition-all duration-500 ease-out" style={{ gridTemplateRows: open ? "1fr" : "0fr" }}>
+        <div className="overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-6 pb-8 items-center">
+            {s.img && <div className="overflow-hidden rounded-lg order-1"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-video object-cover" /></div>}
+            <div className="order-2">
+              {s.description && <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{s.description}</p>}
+              <button onClick={ctx.goContact} className={`mt-5 px-6 h-12 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Reusable photo-forward service layouts (shared across templates) -----------
+function ServiceBento({ ctx }) {
+  const { services, accent, accentText, goContact } = ctx;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5">
+      {services.map((s, i) => {
+        const wide = i % 4 === 0 || i % 4 === 3;
+        return (
+          <div key={i} className={`group relative overflow-hidden rounded-3xl min-h-[300px] md:min-h-[340px] flex items-end col-span-1 ${wide ? "md:col-span-4" : "md:col-span-2"}`} style={{ background: "#0b0b0d" }} data-testid={`site-service-${i}`}>
+            {s.img && <img src={s.img} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-75 group-hover:opacity-95 group-hover:scale-105 transition-all duration-700" />}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,.35) 55%, rgba(0,0,0,.05))" }} />
+            <div className="relative p-7 w-full text-white">
+              <h3 className="wh font-bold text-2xl md:text-3xl">{s.name}</h3>
+              {s.description && <p className="mt-2 text-sm text-white/85 max-w-xl">{s.description}</p>}
+              <div className="mt-4 flex items-center gap-3 flex-wrap">
+                <button onClick={goContact} className="text-sm font-bold inline-flex items-center gap-1.5 px-5 h-10 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-3.5 h-3.5" /></button>
+                {s.starting_price && <span className="text-sm font-bold text-white">{s.starting_price}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ServiceCardsBold({ ctx }) {
+  const { services, accent, accentText, th, goContact } = ctx;
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {services.map((s, i) => (
+        <div key={i} className="group overflow-hidden bg-white border-2 flex flex-col" style={{ borderColor: th.ink, boxShadow: "6px 6px 0 0 rgba(17,24,39,1)" }} data-testid={`site-service-${i}`}>
+          {s.img && <div className="aspect-[16/10] overflow-hidden border-b-2" style={{ borderColor: th.ink }}><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>}
+          <div className="p-5 flex flex-col flex-1">
+            <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
+            {s.description && <p className="mt-2 text-sm flex-1" style={{ color: th.muted }}>{s.description}</p>}
+            <div className="mt-4 flex items-center justify-between gap-2">
+              {s.starting_price ? <span className="font-bold" style={{ color: accent }}>{s.starting_price}</span> : <span />}
+              <button onClick={goContact} className={`px-4 h-10 ${th.btn} text-sm inline-flex items-center gap-1.5`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1176,11 +1222,16 @@ function Playful({ ctx }) {
         <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((s, i) => (
-              <div key={i} className={`p-7 ${th.radius} hover:-translate-y-2 transition`} style={{ background: pastels[i % pastels.length] }} data-testid={`site-service-${i}`}>
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-4 shadow"><CheckCircle2 className="w-6 h-6" style={{ color: accent }} /></div>
-                <h3 className="wh text-xl" style={{ color: th.ink }}>{s.name}</h3>
-                {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
-                {s.starting_price && <p className="mt-3 font-extrabold" style={{ color: accent }}>{s.starting_price}</p>}
+              <div key={i} className={`overflow-hidden ${th.radius} hover:-translate-y-2 transition-transform duration-300`} style={{ background: pastels[i % pastels.length], border: "3px solid #33302E", boxShadow: "6px 6px 0 0 #33302E" }} data-testid={`site-service-${i}`}>
+                {s.img && <div className="h-44 overflow-hidden border-b-[3px]" style={{ borderColor: "#33302E" }}><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" /></div>}
+                <div className="p-6">
+                  <h3 className="wh text-xl" style={{ color: th.ink }}>{s.name}</h3>
+                  {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
+                  <div className="mt-4 flex items-center justify-between gap-2">
+                    {s.starting_price ? <span className="font-extrabold" style={{ color: accent }}>{s.starting_price}</span> : <span />}
+                    <button onClick={goContact} className={`px-4 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1561,12 +1612,12 @@ function AreasBlock({ ctx }) {
   );
 }
 
-function ContactBlock({ ctx }) {
+function ContactBlock({ ctx, id = "contact" }) {
   const { b, data, th, accent, accentText, w } = ctx;
   const sec = w.sections || {};
   const bookingOn = sec.booking && data.card_slug;
   return (
-    <SectionLight id="contact" kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
+    <SectionLight id={id} kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-5">
           <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time that works for you and we'll confirm your appointment." : "Tell us about your project and we'll get back to you fast — no obligation."}</p>
