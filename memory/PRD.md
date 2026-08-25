@@ -1,5 +1,10 @@
 # UniTech — PRD (resumen vivo)
 
+## ✅ Jun 2026 — Bug de tipeo en Onboarding VERIFICADO arreglado + build recompilado para servidor [COMPLETO; verificado screenshot en vivo, SIN testing_agent]
+- El componente `Field` ya estaba fuera de `Onboarding` (línea 38). Verificado en vivo (móvil 390px, login admin → /onboarding): escribí "Gonzalez Painting LLC" y "7135550142" letra por letra con delay → valor completo, sin pérdida de foco. Bug RESUELTO.
+- Recompilado `frontend/build` con `REACT_APP_BACKEND_URL=''` (URL relativa `/api`, sin dominio preview) + `git add -f frontend/build/*`. Listo para "Save to GitHub" + `deploy.sh`.
+
+
 ## 🚀 Jun 2026 — Wizard de Onboarding único (deja TODO listo) [MVP COMPLETO; verificado screenshot+curl, SIN testing_agent]
 - **Problema del dueño**: onboarding regado por muchas páginas; el usuario nuevo no sabe navegar para llenar lo que alimenta Tarjeta/Web/Facturas. Quiere un cuestionario único que al terminar deje todo listo y funcional.
 - **Decisiones**: obligatorio hasta terminar; Stripe = botón opcional (métodos manuales sí quedan); logo casi-obligatorio con **monograma de iniciales** como fallback; una pregunta por pantalla; **ayudante IA** en el proceso.

@@ -35,6 +35,10 @@ const PAY_METHODS = [
   { id: "transfer", en: "Bank transfer", es: "Transferencia" },
 ];
 
+const Field = ({ label, children }) => (
+  <div className="mb-3"><Label className="font-bold">{label}</Label><div className="mt-1.5">{children}</div></div>
+);
+
 export default function Onboarding() {
   const nav = useNavigate();
   const es = (localStorage.getItem("i18nextLng") || "es").startsWith("es");
@@ -159,10 +163,6 @@ export default function Onboarding() {
       toast.error(e?.response?.data?.detail || (es ? "Error al guardar. Intenta de nuevo." : "Save error. Try again."));
     } finally { setBusy(false); }
   };
-
-  const Field = ({ label, children }) => (
-    <div className="mb-3"><Label className="font-bold">{label}</Label><div className="mt-1.5">{children}</div></div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50">

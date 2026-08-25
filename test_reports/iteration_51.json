@@ -8,7 +8,7 @@
   },
   "verified_behaviors": [
     "Site status is Draft (data-testid=website-publish -> data-state=unchecked).",
-    "data-testid=website-view-site anchor href = https://latino-funnel.preview.emergentagent.com/sitio/uni2-marketing-agency?preview=1 (ends with ?preview=1 in Draft).",
+    "data-testid=website-view-site anchor href = https://guided-quotes.preview.emergentagent.com/sitio/uni2-marketing-agency?preview=1 (ends with ?preview=1 in Draft).",
     "data-testid=website-preview anchor href = .../sitio/uni2-marketing-agency?preview=1.",
     "ExternalLink icon anchor next to website-url row href = .../sitio/uni2-marketing-agency?preview=1.",
     "All 10 template thumbnails render in editor: website-tpl-{cinematic,responder,bento,craftsman,trust,slider,onepage,neon,playful,luxe}.",
