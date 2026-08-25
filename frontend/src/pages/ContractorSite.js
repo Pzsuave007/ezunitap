@@ -1664,11 +1664,12 @@ function HeroForm({ ctx, dark }) {
     try { await axios.post(`${API}/public/website/${slug}/lead`, { name: form.name, phone: form.phone, service: form.service, description: form.service, source: "hero" }); setOk(true); }
     catch { setOk(true); } finally { setSending(false); }
   };
-  const cardBg = dark ? "rgba(20,20,24,.55)" : "#fff";
-  const cardBorder = dark ? "rgba(255,255,255,.22)" : th.border;
-  const txt = dark ? "#fff" : th.ink;
-  const inpBg = dark ? "rgba(255,255,255,.12)" : "#fff";
-  const inpBorder = dark ? "rgba(255,255,255,.28)" : th.border;
+  const cardBg = dark ? "rgba(20,20,24,.72)" : "#fff";
+  const cardBorder = dark ? "rgba(255,255,255,.28)" : "#e2e8f0";
+  const txt = dark ? "#ffffff" : "#0f172a";
+  const inpBg = dark ? "rgba(255,255,255,.16)" : "#ffffff";
+  const inpBorder = dark ? "rgba(255,255,255,.45)" : "#cbd5e1";
+  const phClass = dark ? "placeholder-white/80" : "placeholder-slate-500";
   const wrap = `p-5 sm:p-6 ${th.radius} shadow-2xl w-full max-w-sm backdrop-blur-md`;
   if (ok) return (
     <div className={`${wrap} text-center`} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form-success">
@@ -1676,7 +1677,7 @@ function HeroForm({ ctx, dark }) {
       <p className="mt-2 font-bold" style={{ color: txt }}>Thanks! We'll reach out shortly.</p>
     </div>
   );
-  const inp = "w-full h-11 px-3.5 rounded-xl border outline-none mb-2.5 text-sm placeholder:opacity-60";
+  const inp = `w-full h-11 px-3.5 rounded-xl border outline-none mb-2.5 text-sm font-medium ${phClass}`;
   return (
     <form onSubmit={submit} className={wrap} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form">
       <div className="wh font-bold text-lg mb-3" style={{ color: txt }}>{bookingOn ? "Book your appointment" : "Get your free quote"}</div>

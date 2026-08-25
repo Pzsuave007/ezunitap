@@ -1,3 +1,7 @@
+## 🔤 Jun 2026 — Contraste del HeroForm (texto legible) [COMPLETO; verificado screenshot]
+- **Reporte dueño**: el texto/placeholder del formulario del hero era muy tenue.
+- **Fix** (`ContractorSite.js` HeroForm): texto sólido (#fff en oscuro, #0f172a en claro), placeholders `placeholder-white/80` (oscuro) / `placeholder-slate-500` (claro), inputs `font-medium`, fondos y bordes más marcados (dark bg .16, border .45). Verificado screenshot Bento: "Maria Lopez"/teléfono blancos nítidos, placeholder legible. Build main.5c61549c.js (63 staged).
+
 # UniTech — PRD (resumen vivo)
 
 ## 🧩 Jun 2026 — Formulario del hero: reposicionado para no agrandar el hero (2-col o band debajo) [COMPLETO; verificado screenshots, SIN testing_agent]
