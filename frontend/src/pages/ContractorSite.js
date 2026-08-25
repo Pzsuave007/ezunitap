@@ -40,6 +40,21 @@ function isLight(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
 }
 
+// Reveal-on-scroll: adds `.wshow` when the element enters the viewport.
+function useReveal() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { el.classList.add("wshow"); return; }
+    const io = new IntersectionObserver((ents) => ents.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("wshow"); io.unobserve(e.target); }
+    }), { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return ref;
+}
+
 // ===========================================================================
 export default function ContractorSite({ injected }) {
   const { slug } = useParams();
@@ -194,6 +209,9 @@ export default function ContractorSite({ injected }) {
         @keyframes wmarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         @keyframes wpulse{0%,100%{box-shadow:0 0 0 0 ${accent}66}50%{box-shadow:0 0 0 10px ${accent}00}}
         .wfade{animation:wfade .8s ease both}
+        .wreveal{opacity:0;transform:translateY(28px);transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1)}
+        .wreveal.wshow{opacity:1;transform:none}
+        @media (prefers-reduced-motion:reduce){.wreveal{opacity:1 !important;transform:none !important}}
         .wmarq{display:flex;gap:2rem;width:max-content;animation:wmarquee 22s linear infinite}
         /* On phones, lift the floating chat button above the sticky Call/Quote bar */
         @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
@@ -610,7 +628,7 @@ function Craftsman({ ctx }) {
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(20,16,12,.7), rgba(20,16,12,.25))" }} />
           <div className="relative p-8 md:p-16 text-white max-w-2xl wfade">
             <HeroBadges ctx={ctx} />
-            <h1 className="wh font-bold text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05]">{w.headline || b.name}</h1>
+            <h1 className="wh font-bold text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05] break-words">{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 font-light">{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
@@ -843,7 +861,7 @@ function Slider({ ctx }) {
         <div className="px-5 py-14 md:py-0 md:flex md:flex-col md:justify-center md:px-12 order-2 md:order-1" style={{ background: th.ink }}>
           <div className="text-white wfade max-w-lg">
             <HeroBadges ctx={ctx} />
-            <h1 className="wh uppercase text-5xl sm:text-6xl mt-5 leading-[0.95]">{w.headline || b.name}</h1>
+            <h1 className="wh uppercase text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[0.98] break-words">{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg text-white/80">{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 group`} style={{ background: accent, color: accentText }}>See Your Transformation <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></button>
@@ -1101,18 +1119,27 @@ function Neon({ ctx }) {
         </div>
       </header>
 
-      <section className="relative">
-        <div className={`max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: accent }} />
+        <div className="pointer-events-none absolute top-10 right-0 w-80 h-80 rounded-full blur-3xl opacity-20" style={{ background: "#22D3EE" }} />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.10]" style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,.6) 0px, rgba(255,255,255,.6) 1px, transparent 1px, transparent 3px)" }} />
+        <div className={`relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
           <div className="wfade">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent }}><span className="w-1.5 h-1.5 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} /> ONLINE 24/7</div>
-            <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02]" style={{ color: "#fff", textShadow: `0 0 30px ${accent}88` }}>{w.headline || b.name}</h1>
-            {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent, boxShadow: `inset 0 0 14px ${accent}44` }}><span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} /> SYSTEM ONLINE · 24/7</div>
+            <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02] break-words" style={{ backgroundImage: `linear-gradient(90deg,#ffffff,${accent})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: `drop-shadow(0 0 22px ${accent}55)` }}>{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-5 text-lg font-mono" style={{ color: th.muted }}>{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, ...glow }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
-              {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText, ...glow }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
+              {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: `${accent}66`, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
             </div>
           </div>
-          {heroImg && <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}44`, ...glow }}><img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" /></div>}
+          {heroImg && (
+          <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}66`, boxShadow: `0 0 40px ${accent}55` }}>
+            <img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" style={{ filter: "grayscale(.35) contrast(1.12)" }} />
+            <div className="absolute inset-0 mix-blend-color" style={{ background: accent, opacity: 0.42 }} />
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,.6) 0px, rgba(0,0,0,.6) 1px, transparent 1px, transparent 3px)" }} />
+          </div>
+          )}
         </div>
       </section>
 
@@ -1306,7 +1333,7 @@ function Luxe({ ctx }) {
         <div className="absolute inset-6 md:inset-10 border pointer-events-none" style={{ borderColor: `${gold}55` }} />
         <div className="relative max-w-4xl mx-auto px-8 text-center text-white wfade">
           <div className="text-xs uppercase tracking-[0.35em] mb-5" style={{ color: gold }}>{b.years_in_business > 0 ? `Est. — ${b.years_in_business}+ Years of Excellence` : "Crafted to Perfection"}</div>
-          <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.05]">{w.headline || b.name}</h1>
+          <h1 className="wh text-4xl sm:text-5xl lg:text-7xl leading-[1.05] break-words">{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-6 text-lg md:text-xl font-light max-w-2xl mx-auto" style={{ color: "rgba(245,245,240,.85)" }}>{w.subheadline}</p>}
           <div className="mt-10 flex flex-wrap gap-4 justify-center">
             <button onClick={goContact} data-testid="site-hero-quote" className={`px-9 h-14 ${th.btn} border`} style={{ borderColor: gold, color: "#fff" }}>Request a Consultation</button>
@@ -1517,9 +1544,10 @@ function CtaBand({ ctx }) {
 
 function SectionLight({ id, kicker, title, ctx, alt, children }) {
   const { th } = ctx;
+  const r = useReveal();
   return (
     <section id={id} className="py-16 md:py-24" style={alt ? { background: th.surface } : undefined}>
-      <div className="max-w-6xl mx-auto px-5">
+      <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <Kicker ctx={ctx}>{kicker}</Kicker>
         <h2 className="wh text-3xl md:text-4xl font-extrabold mb-8" style={{ color: th.ink }}>{title}</h2>
         {children}
@@ -1529,9 +1557,10 @@ function SectionLight({ id, kicker, title, ctx, alt, children }) {
 }
 function SectionDark({ id, kicker, title, ctx, alt, children }) {
   const { th } = ctx;
+  const r = useReveal();
   return (
     <section id={id} className="py-20 md:py-28" style={{ background: alt ? th.surface : th.bg }}>
-      <div className="max-w-6xl mx-auto px-5">
+      <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <Kicker ctx={ctx}>{kicker}</Kicker>
         <h2 className="wh text-3xl md:text-5xl font-extrabold mb-10" style={{ color: th.ink }}>{title}</h2>
         {children}

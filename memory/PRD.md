@@ -1,5 +1,12 @@
 # UniTech — PRD (resumen vivo)
 
+## ✨ Jun 2026 — Templates TANDA 2: Neon diferenciado + móvil Luxe/Slider/Craftsman + animaciones al scroll [COMPLETO; verificado screenshots, SIN testing_agent]
+- **Neon rediseñado** (`ContractorSite.js` hero): ahora es cyber real y distinto de Cinematic — glow blobs rosa/cyan, scanlines, hero split con la FOTO en duotono/color-burn (mix-blend-color + grayscale/contrast) y borde glow, titular con degradado brillante (bg-clip-text) + drop-shadow, badge "SYSTEM ONLINE · 24/7" con pulse, subheadline mono. Verificado screenshot.
+- **Móvil** (break-words + tamaños): Luxe `text-4xl sm:text-5xl lg:text-7xl break-words`; Slider `text-4xl sm:text-5xl lg:text-6xl break-words`; Craftsman h1 `break-words`. Verificado móvil Luxe sin overflow (scrollWidth==clientWidth).
+- **Animaciones al scroll**: hook `useReveal()` (IntersectionObserver) + CSS `.wreveal/.wshow` (respeta prefers-reduced-motion). Aplicado a `SectionLight` y `SectionDark` → cubre about/how/why/gallery/reviews/faq/areas/contact + servicios de Responder/Trust/Playful/Bento/Cinematic/Neon en todos los templates. Secciones custom (Craftsman/Luxe/OnePage services) no cubiertas (aceptable).
+- Build recompilado (main.60fc7081.js, 63 staged). ⚠️ DESPLIEGUE: solo frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🎨 Jun 2026 — Auditoría de templates TANDA 1: fotos en servicios + CTA arriba/abajo + rediseños [COMPLETO tanda 1; verificado screenshots, SIN testing_agent]
 - **Feedback dueño** (verbatim en trayectoria): fotos protagonistas en TODOS los templates; servicios con foto en todos; CTA/formulario arriba Y abajo sin excepción. Responder (sin foto en servicios), Bento (plano, sin impacto, pero le gustan los servicios), Trust (favorito; quiere servicios estilo Bento), OnePage (foto+desc al abrir servicio), Neon (idéntico a Cinematic), Playful (el que menos le gusta, plano).
 - **Diseñador**: se generó `/app/design_guidelines.json` (patrones service-card-with-photo, bento-grid, accordion photo reveal, hero top-CTA + bottom form, art direction por template, motion). Ingerido.
