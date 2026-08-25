@@ -1,5 +1,12 @@
 # UniTech — PRD (resumen vivo)
 
+## 🖼️ Jun 2026 — Fotos del oficio no funcionan en PRODUCCIÓN (falta PEXELS_API_KEY) + búsquedas de belleza [DIAGNOSTICADO + mejora código]
+- **Reporte dueño**: "Traer fotos del oficio" dice "No hay espacios de foto vacíos por rellenar (o no se encontraron)". Negocio = Nail Art. Pasa en el sitio de PRODUCCIÓN.
+- **Causa raíz**: producción NO tiene `PEXELS_API_KEY` en su `.env` (viene de `/home/ezunitap/public_html/keys.txt` vía `fix.sh`; el ejemplo de prod la trae comentada). En preview SÍ está → funciona (verificado: Pexels devuelve 14 fotos para "Nail Art"; endpoint `/website/stock-photos` admin → filled=6). Sin llave, la búsqueda vuelve vacía → filled=0 → mensaje "none".
+- **Mejora código** (`pexels_service.py` `_TRADE_QUERIES`): agregadas búsquedas específicas para nail/uñas/manicure/pedicure/salon/beauty/spa/lash/makeup/hair/barber/tattoo/photo/catering/bakery → antes "Nail Art" caía a búsqueda genérica; ahora "nail salon manicure". Verificado trade_query.
+- **Acción del dueño**: (1) agregar `PEXELS_API_KEY=kEUzeNfuB0bYiHBxe0P8LVcqqp7yiIqdMFkYYGCgWnGLEDlfkauh7u2k` a `keys.txt`; (2) Save to GitHub; (3) `cd /home/ezunitap/repo && git pull && bash deploy.sh`.
+
+
 ## ✅ Jun 2026 — Bug de tipeo en Onboarding VERIFICADO arreglado + build recompilado para servidor [COMPLETO; verificado screenshot en vivo, SIN testing_agent]
 - El componente `Field` ya estaba fuera de `Onboarding` (línea 38). Verificado en vivo (móvil 390px, login admin → /onboarding): escribí "Gonzalez Painting LLC" y "7135550142" letra por letra con delay → valor completo, sin pérdida de foco. Bug RESUELTO.
 - Recompilado `frontend/build` con `REACT_APP_BACKEND_URL=''` (URL relativa `/api`, sin dominio preview) + `git add -f frontend/build/*`. Listo para "Save to GitHub" + `deploy.sh`.
