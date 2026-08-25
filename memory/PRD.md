@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## 🖼️ Jun 2026 — Templates TANDA 3: hero con imagen de fondo (Bento/Craftsman/OnePage/Playful) + formulario arriba en los 10 [COMPLETO; verificado screenshots, SIN testing_agent]
+- **Feedback dueño**: (1) hero con imagen de fondo completa para Bento, Organic Craftsman, Minimal OnePage y Colorful&Friendly Playful (mapeo confirmado vía i18n en.json); (2) formulario de agendar/estimado ARRIBA en TODOS los templates (posición libre), sin quitar el de abajo.
+- **Nuevo componente `HeroForm`** (`ContractorSite.js`): tarjeta compacta glass (nombre + teléfono + servicio → POST `/public/website/{slug}/lead`), etiqueta adaptable (booking → "Request Appointment" / estimado → "Get My Free Quote"), variantes dark/light.
+- **Heros convertidos a imagen de fondo completa + HeroForm**: Bento (era mosaico plano → full-bleed rounded + form), OnePage (era split minimal → full-bleed 90svh overlay + form), Playful (era pastel plano → full-bleed + blobs + form). Craftsman ya era full-image → + HeroForm.
+- **HeroForm agregado arriba** también en Cinematic, Responder, Slider, Neon, Luxe. Trust ya tenía formulario arriba. → 10/10 con form arriba. El formulario de abajo (`ContactBlock`) se mantiene intacto.
+- **Verificado screenshots**: Bento y Playful con hero de imagen completa + form "Book your appointment"; `site-hero-form` presente. Build compila OK (main.efdcd54c.js, 63 staged).
+- ⚠️ DESPLIEGUE: solo frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## ✨ Jun 2026 — Templates TANDA 2: Neon diferenciado + móvil Luxe/Slider/Craftsman + animaciones al scroll [COMPLETO; verificado screenshots, SIN testing_agent]
 - **Neon rediseñado** (`ContractorSite.js` hero): ahora es cyber real y distinto de Cinematic — glow blobs rosa/cyan, scanlines, hero split con la FOTO en duotono/color-burn (mix-blend-color + grayscale/contrast) y borde glow, titular con degradado brillante (bg-clip-text) + drop-shadow, badge "SYSTEM ONLINE · 24/7" con pulse, subheadline mono. Verificado screenshot.
 - **Móvil** (break-words + tamaños): Luxe `text-4xl sm:text-5xl lg:text-7xl break-words`; Slider `text-4xl sm:text-5xl lg:text-6xl break-words`; Craftsman h1 `break-words`. Verificado móvil Luxe sin overflow (scrollWidth==clientWidth).

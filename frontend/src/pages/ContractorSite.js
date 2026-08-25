@@ -290,6 +290,7 @@ function Cinematic({ ctx }) {
             <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
             {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 border border-white/25 text-white hover:bg-white/10`}><Phone className="w-5 h-5" /> {b.phone}</a>}
           </div>
+          <div className="mt-8 max-w-sm"><HeroForm ctx={ctx} dark /></div>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-white/70 animate-bounce"><ChevronDown className="w-6 h-6" style={{ color: accent }} /></div>
       </section>
@@ -399,6 +400,7 @@ function Responder({ ctx }) {
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, animation: "wpulse 2s infinite" }}><Phone className="w-5 h-5" /> Call Now</a>}
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2 border-2`} style={{ borderColor: th.ink, color: th.ink }}>{ctx.cta}</button>
             </div>
+            <div className="mt-6 max-w-sm"><HeroForm ctx={ctx} /></div>
           </div>
           {heroImg && (
           <div className="relative min-h-[280px] md:min-h-full">
@@ -519,26 +521,24 @@ function Bento({ ctx }) {
         {menu && <div className="px-5 py-3 space-y-1 border-t" style={{ borderColor: th.border }}>{nav.map(([l, id]) => <a key={id} href={`#${id}`} onClick={() => setMenu(false)} className="block py-2 font-semibold" style={{ color: th.ink }}>{l}</a>)}</div>}
       </header>
 
-      {/* Hero bento */}
-      <section className="px-5 pt-10 md:pt-16 max-w-5xl">
-        <div className="wfade">
-          <HeroBadges ctx={ctx} solid />
-          <h1 className="wh font-extrabold tracking-tight text-4xl md:text-6xl mt-5 leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
-          {w.subheadline && <p className="mt-4 text-lg md:text-xl max-w-2xl" style={{ color: th.muted }}>{w.subheadline}</p>}
-          <div className="mt-7 flex flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
-            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: th.ink }}><Phone className="w-4 h-4" /> Call</a>}
+      {/* Hero — full image background with quote form */}
+      <section className="relative px-4 md:px-6 pt-6 md:pt-8">
+        <div className="relative overflow-hidden rounded-3xl min-h-[540px] md:min-h-[600px] flex items-center" style={!heroImg ? { background: th.ink } : undefined}>
+          {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(105deg, rgba(15,23,42,.88) 30%, rgba(15,23,42,.35))" }} />
+          <div className="relative grid md:grid-cols-2 gap-8 items-center w-full p-7 md:p-12">
+            <div className="text-white wfade">
+              <HeroBadges ctx={ctx} />
+              <h1 className="wh font-extrabold tracking-tight text-4xl md:text-6xl mt-5 leading-[1.02] break-words">{w.headline || b.name}</h1>
+              {w.subheadline && <p className="mt-4 text-lg md:text-xl text-white/85 max-w-xl">{w.subheadline}</p>}
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
+                {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border border-white/30 text-white`}><Phone className="w-4 h-4" /> Call</a>}
+              </div>
+            </div>
+            <div className="md:justify-self-end w-full"><HeroForm ctx={ctx} dark /></div>
           </div>
         </div>
-        {/* bento mosaic — big photos for visual impact */}
-        {heroImg && (
-        <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[140px] md:auto-rows-[190px]">
-          <div className="col-span-2 row-span-2 overflow-hidden rounded-3xl group"><img src={heroImg} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /></div>
-          <div className="col-span-2 rounded-3xl p-6 flex flex-col justify-center" style={{ background: accent, color: accentText }}><div className="wh text-5xl font-extrabold">{b.years_in_business > 0 ? `${b.years_in_business}+` : "5.0"}</div><div className="text-sm font-semibold opacity-90">{b.years_in_business > 0 ? "Years experience" : "Star rating"}</div></div>
-          <div className="col-span-1 overflow-hidden rounded-3xl group" style={{ background: th.surface }}>{services[0]?.img ? <img src={services[0].img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center"><Star className="w-8 h-8" style={{ color: accent }} /></div>}</div>
-          <div className="col-span-1 overflow-hidden rounded-3xl group" style={{ background: th.surface }}>{services[1]?.img ? <img src={services[1].img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center"><CheckCircle2 className="w-8 h-8" style={{ color: accent }} /></div>}</div>
-        </div>
-        )}
       </section>
 
       {sec.services !== false && (
@@ -634,6 +634,7 @@ function Craftsman({ ctx }) {
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
               {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white/95 text-stone-900`}><Phone className="w-4 h-4" /> Call</a>}
             </div>
+            <div className="mt-8 max-w-sm"><HeroForm ctx={ctx} dark /></div>
           </div>
         </div>
       </section>
@@ -867,6 +868,7 @@ function Slider({ ctx }) {
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 group`} style={{ background: accent, color: accentText }}>See Your Transformation <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></button>
               {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 border-2 border-white/40 text-white`}><Phone className="w-4 h-4" /> Call</a>}
             </div>
+            <div className="mt-6 max-w-sm"><HeroForm ctx={ctx} dark /></div>
           </div>
         </div>
         {(showBA || heroImg) && (
@@ -963,17 +965,21 @@ function OnePage({ ctx }) {
         </div>
       </header>
 
-      <section className={`max-w-5xl mx-auto px-6 pt-16 md:pt-28 pb-16 grid ${heroImg ? "md:grid-cols-5" : "grid-cols-1"} gap-10 items-center`}>
-        <div className={`${heroImg ? "md:col-span-3" : ""} wfade`}>
-          <div className="flex items-center gap-2 text-sm mb-6" style={{ color: th.muted }}><span className="w-2 h-2 rounded-full" style={{ background: accent }} /> {b.is_licensed || b.is_insured ? "Licensed & Insured" : "Trusted local service"}</div>
-          <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
-          {w.subheadline && <p className="mt-6 text-xl leading-relaxed max-w-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
-          <div className="mt-9 flex flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>{ctx.cta}</button>
-            {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.ink, color: th.ink }}>Call now</a>}
+      <section className="relative min-h-[90svh] flex items-end">
+        {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <div className="absolute inset-0" style={{ background: heroImg ? "linear-gradient(to top, rgba(10,10,10,.82), rgba(10,10,10,.15))" : th.ink }} />
+        <div className="relative max-w-5xl mx-auto px-6 pb-16 pt-32 w-full grid md:grid-cols-2 gap-10 items-end">
+          <div className="text-white wfade">
+            <div className="flex items-center gap-2 text-sm mb-6 text-white/80"><span className="w-2 h-2 rounded-full" style={{ background: accent }} /> {b.is_licensed || b.is_insured ? "Licensed & Insured" : "Trusted local service"}</div>
+            <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.03] break-words">{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-6 text-lg leading-relaxed max-w-lg text-white/85">{w.subheadline}</p>}
+            <div className="mt-9 flex flex-wrap gap-3">
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>{ctx.cta}</button>
+              {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border border-white/40 text-white`}>Call now</a>}
+            </div>
           </div>
+          <div className="w-full md:justify-self-end"><HeroForm ctx={ctx} dark /></div>
         </div>
-        {heroImg && <div className="md:col-span-2"><div className="overflow-hidden rounded-sm"><img src={heroImg} alt="" className="w-full aspect-[3/4] object-cover" /></div></div>}
       </section>
 
       {sec.services !== false && (
@@ -1132,6 +1138,7 @@ function Neon({ ctx }) {
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText, ...glow }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: `${accent}66`, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
             </div>
+            <div className="mt-6 max-w-sm"><HeroForm ctx={ctx} dark /></div>
           </div>
           {heroImg && (
           <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}66`, boxShadow: `0 0 40px ${accent}55` }}>
@@ -1224,24 +1231,21 @@ function Playful({ ctx }) {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full" style={{ background: `${accent}22` }} />
-        <div className="absolute top-40 right-0 w-56 h-56 rounded-full" style={{ background: "#FDE68A55" }} />
-        <div className={`relative max-w-6xl mx-auto px-5 py-14 md:py-20 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
-          <div className="wfade">
-            <div className="flex flex-wrap gap-2 mb-4">{[b.is_licensed && "✓ Licensed", b.is_insured && "✓ Insured", "★ 5-Star"].filter(Boolean).map((x, i) => <span key={i} className="px-3 py-1 rounded-full text-xs font-extrabold" style={{ background: pastels[i + 1], color: th.ink }}>{x}</span>)}</div>
-            <h1 className="wh text-5xl sm:text-6xl leading-[1] tracking-tight" style={{ color: th.ink }}>{w.headline || b.name}</h1>
-            {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
+        {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <div className="absolute inset-0" style={{ background: heroImg ? "linear-gradient(115deg, rgba(51,48,46,.86) 35%, rgba(51,48,46,.4))" : `${accent}18` }} />
+        <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full opacity-60" style={{ background: `${accent}33` }} />
+        <div className="absolute top-40 right-0 w-56 h-56 rounded-full opacity-50" style={{ background: "#FDE68A55" }} />
+        <div className="relative max-w-6xl mx-auto px-5 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+          <div className="wfade" style={{ color: heroImg ? "#fff" : th.ink }}>
+            <div className="flex flex-wrap gap-2 mb-4">{[b.is_licensed && "✓ Licensed", b.is_insured && "✓ Insured", "★ 5-Star"].filter(Boolean).map((x, i) => <span key={i} className="px-3 py-1 rounded-full text-xs font-extrabold bg-white/90" style={{ color: th.ink }}>{x}</span>)}</div>
+            <h1 className="wh text-4xl sm:text-6xl leading-[1] tracking-tight break-words">{w.headline || b.name}</h1>
+            {w.subheadline && <p className="mt-5 text-lg" style={{ color: heroImg ? "rgba(255,255,255,.9)" : th.muted }}>{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white shadow`} style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> Call</a>}
             </div>
           </div>
-          {heroImg && (
-          <div className="relative flex justify-center">
-            <div className="absolute right-4 top-6 w-3/4 h-3/4 rounded-[42%_58%_60%_40%]" style={{ background: `${accent}22` }} />
-            <div className="relative w-full max-w-md aspect-square bg-cover bg-center shadow-2xl" style={{ backgroundImage: `url(${heroImg})`, borderRadius: "62% 38% 46% 54% / 60% 57% 43% 40%" }} />
-          </div>
-          )}
+          <div className="w-full md:justify-self-end"><HeroForm ctx={ctx} dark={!!heroImg} /></div>
         </div>
       </section>
 
@@ -1338,6 +1342,7 @@ function Luxe({ ctx }) {
           <div className="mt-10 flex flex-wrap gap-4 justify-center">
             <button onClick={goContact} data-testid="site-hero-quote" className={`px-9 h-14 ${th.btn} border`} style={{ borderColor: gold, color: "#fff" }}>Request a Consultation</button>
           </div>
+          <div className="mt-9 flex justify-center"><div className="w-full max-w-sm text-left"><HeroForm ctx={ctx} dark /></div></div>
         </div>
       </section>
 
@@ -1638,6 +1643,44 @@ function AreasBlock({ ctx }) {
         {areas.map((a, i) => <span key={i} className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold ${th.radius}`} style={{ background: `${accent}14`, color: th.ink, border: `1px solid ${accent}33` }}><MapPin className="w-4 h-4" style={{ color: accent }} /> {a}</span>)}
       </div>
     </SectionLight>
+  );
+}
+
+function HeroForm({ ctx, dark }) {
+  const { w, data, th, accent, accentText, slug } = ctx;
+  const sec = w.sections || {};
+  const bookingOn = sec.booking && data.card_slug;
+  const [form, setForm] = useState({ name: "", phone: "", service: "" });
+  const [sending, setSending] = useState(false);
+  const [ok, setOk] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.phone) return;
+    setSending(true);
+    try { await axios.post(`${API}/public/website/${slug}/lead`, { name: form.name, phone: form.phone, service: form.service, description: form.service, source: "hero" }); setOk(true); }
+    catch { setOk(true); } finally { setSending(false); }
+  };
+  const cardBg = dark ? "rgba(20,20,24,.55)" : "#fff";
+  const cardBorder = dark ? "rgba(255,255,255,.22)" : th.border;
+  const txt = dark ? "#fff" : th.ink;
+  const inpBg = dark ? "rgba(255,255,255,.12)" : "#fff";
+  const inpBorder = dark ? "rgba(255,255,255,.28)" : th.border;
+  const wrap = `p-5 sm:p-6 ${th.radius} shadow-2xl w-full max-w-sm backdrop-blur-md`;
+  if (ok) return (
+    <div className={`${wrap} text-center`} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form-success">
+      <CheckCircle2 className="w-10 h-10 mx-auto" style={{ color: accent }} />
+      <p className="mt-2 font-bold" style={{ color: txt }}>Thanks! We'll reach out shortly.</p>
+    </div>
+  );
+  const inp = "w-full h-11 px-3.5 rounded-xl border outline-none mb-2.5 text-sm placeholder:opacity-60";
+  return (
+    <form onSubmit={submit} className={wrap} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form">
+      <div className="wh font-bold text-lg mb-3" style={{ color: txt }}>{bookingOn ? "Book your appointment" : "Get your free quote"}</div>
+      <input required placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="site-hero-form-name" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <input required placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} data-testid="site-hero-form-phone" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <input placeholder={bookingOn ? "Service (optional)" : "What do you need? (optional)"} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} data-testid="site-hero-form-service" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <button type="submit" disabled={sending} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2 font-bold mt-1`} style={{ background: accent, color: accentText }}>{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{bookingOn ? "Request Appointment" : "Get My Free Quote"} <ArrowRight className="w-4 h-4" /></>}</button>
+    </form>
   );
 }
 
