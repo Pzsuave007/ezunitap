@@ -290,10 +290,11 @@ function Cinematic({ ctx }) {
             <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
             {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 border border-white/25 text-white hover:bg-white/10`}><Phone className="w-5 h-5" /> {b.phone}</a>}
           </div>
-          <div className="mt-8 max-w-sm"><HeroForm ctx={ctx} dark /></div>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-white/70 animate-bounce"><ChevronDown className="w-6 h-6" style={{ color: accent }} /></div>
       </section>
+
+      <HeroFormBand ctx={ctx} />
 
       {/* Services: edge-to-edge image cards */}
       {sec.services !== false && (
@@ -626,15 +627,17 @@ function Craftsman({ ctx }) {
         <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[2rem] md:rounded-[3rem] min-h-[460px] md:min-h-[600px] flex items-center" style={!heroImg ? { background: "#1b1714" } : undefined}>
           {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(20,16,12,.7), rgba(20,16,12,.25))" }} />
-          <div className="relative p-8 md:p-16 text-white max-w-2xl wfade">
-            <HeroBadges ctx={ctx} />
-            <h1 className="wh font-bold text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05] break-words">{w.headline || b.name}</h1>
-            {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 font-light">{w.subheadline}</p>}
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
-              {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white/95 text-stone-900`}><Phone className="w-4 h-4" /> Call</a>}
+          <div className="relative p-7 md:p-12 w-full grid md:grid-cols-2 gap-8 items-center text-white wfade">
+            <div>
+              <HeroBadges ctx={ctx} />
+              <h1 className="wh font-bold text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05] break-words">{w.headline || b.name}</h1>
+              {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 font-light">{w.subheadline}</p>}
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
+                {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white/95 text-stone-900`}><Phone className="w-4 h-4" /> Call</a>}
+              </div>
             </div>
-            <div className="mt-8 max-w-sm"><HeroForm ctx={ctx} dark /></div>
+            <div className="w-full md:justify-self-end"><HeroForm ctx={ctx} dark /></div>
           </div>
         </div>
       </section>
@@ -1129,7 +1132,7 @@ function Neon({ ctx }) {
         <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: accent }} />
         <div className="pointer-events-none absolute top-10 right-0 w-80 h-80 rounded-full blur-3xl opacity-20" style={{ background: "#22D3EE" }} />
         <div className="pointer-events-none absolute inset-0 opacity-[0.10]" style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,.6) 0px, rgba(255,255,255,.6) 1px, transparent 1px, transparent 3px)" }} />
-        <div className={`relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-center`}>
+        <div className={`relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-stretch`}>
           <div className="wfade">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent, boxShadow: `inset 0 0 14px ${accent}44` }}><span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} /> SYSTEM ONLINE · 24/7</div>
             <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02] break-words" style={{ backgroundImage: `linear-gradient(90deg,#ffffff,${accent})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: `drop-shadow(0 0 22px ${accent}55)` }}>{w.headline || b.name}</h1>
@@ -1141,8 +1144,8 @@ function Neon({ ctx }) {
             <div className="mt-6 max-w-sm"><HeroForm ctx={ctx} dark /></div>
           </div>
           {heroImg && (
-          <div className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${accent}66`, boxShadow: `0 0 40px ${accent}55` }}>
-            <img src={heroImg} alt="" className="w-full aspect-[4/3] object-cover" style={{ filter: "grayscale(.35) contrast(1.12)" }} />
+          <div className="relative rounded-2xl overflow-hidden border h-full min-h-[340px] self-stretch" style={{ borderColor: `${accent}66`, boxShadow: `0 0 40px ${accent}55` }}>
+            <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: "grayscale(.35) contrast(1.12)" }} />
             <div className="absolute inset-0 mix-blend-color" style={{ background: accent, opacity: 0.42 }} />
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,.6) 0px, rgba(0,0,0,.6) 1px, transparent 1px, transparent 3px)" }} />
           </div>
@@ -1342,9 +1345,10 @@ function Luxe({ ctx }) {
           <div className="mt-10 flex flex-wrap gap-4 justify-center">
             <button onClick={goContact} data-testid="site-hero-quote" className={`px-9 h-14 ${th.btn} border`} style={{ borderColor: gold, color: "#fff" }}>Request a Consultation</button>
           </div>
-          <div className="mt-9 flex justify-center"><div className="w-full max-w-sm text-left"><HeroForm ctx={ctx} dark /></div></div>
         </div>
       </section>
+
+      <HeroFormBand ctx={ctx} />
 
       {sec.services !== false && (
         <section id="services" className="py-28" style={{ background: th.bg }}>
@@ -1681,6 +1685,29 @@ function HeroForm({ ctx, dark }) {
       <input placeholder={bookingOn ? "Service (optional)" : "What do you need? (optional)"} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} data-testid="site-hero-form-service" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
       <button type="submit" disabled={sending} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2 font-bold mt-1`} style={{ background: accent, color: accentText }}>{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{bookingOn ? "Request Appointment" : "Get My Free Quote"} <ArrowRight className="w-4 h-4" /></>}</button>
     </form>
+  );
+}
+
+function HeroFormBand({ ctx }) {
+  const { w, data, th, accent } = ctx;
+  const sec = w.sections || {};
+  const bookingOn = sec.booking && data.card_slug;
+  return (
+    <section className="py-12 md:py-16" style={{ background: th.surface }} data-testid="site-heroform-band">
+      <div className="max-w-6xl mx-auto px-5 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+        <div>
+          <Kicker ctx={ctx}>{bookingOn ? "Book online" : "Free estimate"}</Kicker>
+          <h2 className="wh text-3xl md:text-4xl font-extrabold" style={{ color: th.ink }}>{bookingOn ? "Reserve your spot in seconds" : "Get your free quote today"}</h2>
+          <p className="mt-3 text-lg" style={{ color: th.muted }}>{bookingOn ? "Pick a time that works for you — we'll confirm right away." : "Tell us what you need and we'll respond fast with a no-obligation quote."}</p>
+          <ul className="mt-5 space-y-2.5">
+            {[bookingOn ? "Quick online booking" : "Fast response", "No obligation", "Friendly local service"].map((x, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm font-semibold" style={{ color: th.ink }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="w-full flex md:justify-end"><HeroForm ctx={ctx} /></div>
+      </div>
+    </section>
   );
 }
 

@@ -1,5 +1,16 @@
 # UniTech — PRD (resumen vivo)
 
+## 🧩 Jun 2026 — Formulario del hero: reposicionado para no agrandar el hero (2-col o band debajo) [COMPLETO; verificado screenshots, SIN testing_agent]
+- **Reporte dueño**: el HeroForm que quedaba DEBAJO del texto en heros de 1 columna agrandaba el hero. Idea del dueño: en algunos, poner el form en un band NUEVO justo debajo del hero con texto al lado.
+- **Fixes** (`ContractorSite.js`):
+  - Single-col heros (Craftsman) → 2-col (texto izq + form der). Verificado (hero 640px, se ve bien).
+  - Neon: imagen del hero ahora se ESTIRA (h-full/self-stretch + items-stretch) → sin hueco; form en columna izquierda balanceado. Verificado.
+  - Responder/Slider ya balanceaban (imagen absolute fill) → sin cambios.
+  - **Nuevo `HeroFormBand`**: sección debajo del hero con kicker + titular + bullets a un lado y `HeroForm` al otro. Aplicado a **Cinematic** y **Luxe** (heros full-screen): su hero quedó limpio (imagen+texto+CTA) y el form pasó al band inmediatamente debajo. Verificado screenshot Cinematic ("Reserve your spot in seconds" + form a la derecha).
+  - In-hero form se conserva en Bento, OnePage, Playful, Craftsman (2-col) y Trust (todos se ven bien).
+- Build recompilado (main.763fe0f2.js, 63 staged). ⚠️ DESPLIEGUE: solo frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🖼️ Jun 2026 — Templates TANDA 3: hero con imagen de fondo (Bento/Craftsman/OnePage/Playful) + formulario arriba en los 10 [COMPLETO; verificado screenshots, SIN testing_agent]
 - **Feedback dueño**: (1) hero con imagen de fondo completa para Bento, Organic Craftsman, Minimal OnePage y Colorful&Friendly Playful (mapeo confirmado vía i18n en.json); (2) formulario de agendar/estimado ARRIBA en TODOS los templates (posición libre), sin quitar el de abajo.
 - **Nuevo componente `HeroForm`** (`ContractorSite.js`): tarjeta compacta glass (nombre + teléfono + servicio → POST `/public/website/{slug}/lead`), etiqueta adaptable (booking → "Request Appointment" / estimado → "Get My Free Quote"), variantes dark/light.
