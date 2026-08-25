@@ -4267,6 +4267,89 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
     return update
 
 
+async def _build_full_website(user_id: str, publish: bool = True) -> dict:
+    """After the onboarding wizard: build the ENTIRE website so it's READY to go
+    live (owner only tweaks the template if they want). Generates AI content,
+    picks a template + accent color, fills stock photos, and publishes. Every
+    step is best-effort so one failure never blocks account creation."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    business_name = user.get("business_name") or card.get("business_name") or ""
+    business_type = card.get("business_type") or ""
+    services = w.get("services") if w.get("services") else (card.get("services") or [])
+    service_area = w.get("service_area") or card.get("service_area") or ""
+    update: dict = {}
+
+    # 1) AI content (headline, about, how/why/FAQ, areas, SEO, + services if none)
+    try:
+        reviews = await db.reviews.find(
+            {"user_id": user_id}, {"_id": 0, "text": 1, "comment": 1, "rating": 1}
+        ).sort("created_at", -1).to_list(5)
+        combined_context = " ".join(
+            [c for c in [w.get("ai_brief") or "", card.get("ai_context") or ""] if c]
+        ).strip()
+        content = await ai_service.generate_website_content(
+            business_name=business_name, business_type=business_type, services=services,
+            service_area=service_area, tagline=card.get("tagline") or "",
+            about_me=w.get("about") or card.get("about_me") or "",
+            years_in_business=card.get("years_in_business") or 0,
+            is_licensed=bool(card.get("is_licensed")), is_insured=bool(card.get("is_insured")),
+            hours=w.get("hours") or card.get("hours") or "",
+            ai_context=combined_context, reviews=reviews,
+        )
+        for k in ("headline", "subheadline", "about", "seo_title", "seo_description"):
+            if content.get(k):
+                update[k] = content[k]
+        for k in ("how_it_works", "why_us", "faqs", "areas"):
+            if isinstance(content.get(k), list) and content[k]:
+                update[k] = content[k]
+        if not services and isinstance(content.get("services"), list) and content["services"]:
+            seeded = [{"name": s.get("name"), "description": s.get("description", ""),
+                       "starting_price": "", "icon": ""}
+                      for s in content["services"] if isinstance(s, dict) and s.get("name")]
+            if seeded:
+                update["services"] = seeded
+                services = seeded
+    except Exception as e:  # noqa: BLE001
+        logger.warning("onboarding build: content failed: %r", e)
+
+    # 2) AI design (template + accent color)
+    try:
+        design = await ai_service.suggest_website_design(business_name, business_type, services)
+        if design.get("template"):
+            update["template"] = design["template"]
+        if design.get("accent_color"):
+            update["accent_color"] = design["accent_color"]
+    except Exception as e:  # noqa: BLE001
+        logger.warning("onboarding build: design failed: %r", e)
+
+    if update:
+        update["updated_at"] = _now_iso()
+        await db.websites.update_one({"user_id": user_id}, {"$set": update})
+        if "services" in update:
+            await db.cards.update_one(
+                {"user_id": user_id, "is_primary": True},
+                {"$set": {"services": update["services"], "updated_at": update["updated_at"]}},
+            )
+
+    # 3) Fill empty image slots with trade-relevant stock photos (never overwrites
+    #    the owner's own logo/personal photo). Best-effort.
+    try:
+        w2 = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+        await _fill_website_stock_photos(user_id, w2, card, refresh=False)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("onboarding build: stock photos failed: %r", e)
+
+    # 4) Go live
+    if publish:
+        await db.websites.update_one(
+            {"user_id": user_id}, {"$set": {"published": True, "updated_at": _now_iso()}}
+        )
+
+    return await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+
+
 
 
 _SLOT_KEYS = ("hero_photo_id", "why_photo_id", "band_photo_id", "team_photo_id", "about_photo_ids", "services")
@@ -4420,12 +4503,16 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
 
 
 @api_router.post("/website/ai-suggest-services")
-async def website_ai_suggest_services(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
-    """Suggest common services for the owner's trade (checklist for the editor)."""
+async def website_ai_suggest_services(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Suggest common services for the owner's trade (checklist for the editor).
+    Accepts an optional `business_type`/`brief` override so the onboarding wizard
+    can suggest before the trade is saved to the card."""
     w = await _get_or_init_website(user_id)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    bt = (body.get("business_type") or "").strip() or card.get("business_type") or ""
+    brief = (body.get("brief") or "").strip() or w.get("ai_brief") or ""
     try:
-        services = await ai_service.suggest_services(card.get("business_type") or "", w.get("ai_brief") or "")
+        services = await ai_service.suggest_services(bt, brief)
     except Exception as e:  # noqa: BLE001
         logger.error(f"website ai-suggest-services failed: {e!r}")
         raise HTTPException(502, "AI could not suggest services. Try again in a moment.")
@@ -4435,7 +4522,8 @@ async def website_ai_suggest_services(user_id: str = Depends(get_current_user_id
 @api_router.post("/website/ai-write")
 async def website_ai_write(body: dict = Body(...), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Write one short website text field (service description, why-us point,
-    how-it-works step, or FAQ answer) from a title/name the owner provides."""
+    how-it-works step, FAQ answer, or owner bio). Accepts an optional
+    `business_type`/`business_name` override for the onboarding wizard."""
     kind = (body.get("kind") or "").strip()
     name = (body.get("name") or "").strip()
     if not name:
@@ -4445,8 +4533,8 @@ async def website_ai_write(body: dict = Body(...), user_id: str = Depends(get_cu
     try:
         text = await ai_service.write_field(
             kind=kind, name=name,
-            business_type=card.get("business_type") or "",
-            business_name=user.get("business_name") or card.get("business_name") or "",
+            business_type=(body.get("business_type") or "").strip() or card.get("business_type") or "",
+            business_name=(body.get("business_name") or "").strip() or user.get("business_name") or card.get("business_name") or "",
             context=(body.get("context") or ""),
         )
     except Exception as e:  # noqa: BLE001
@@ -6626,7 +6714,27 @@ async def onboarding_complete(payload: dict = Body(...), user_id: str = Depends(
     if payload.get("invoice_defaults") is not None:
         uset["invoice_defaults"] = payload["invoice_defaults"]
     await db.users.update_one({"id": user_id}, {"$set": uset})
-    return {"ok": True}
+
+    # Make sure the website doc exists, then wire the owner's PERSONAL photo into
+    # the About/team slot so it shows on the site (and stock-fill won't cover it).
+    await _get_or_init_website(user_id)
+    ppid = (payload.get("personal_photo_id") or "").strip()
+    if ppid:
+        await db.websites.update_one(
+            {"user_id": user_id},
+            {"$set": {"team_photo_id": ppid, "about_photo_ids": [ppid], "updated_at": now}},
+        )
+
+    # Build the ENTIRE website (content + design + stock photos + publish) so the
+    # owner finishes onboarding with a finished, live site. Best-effort.
+    site = None
+    if payload.get("build_site"):
+        try:
+            site = await _build_full_website(user_id, publish=bool(payload.get("publish", True)))
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"onboarding build_site failed: {e!r}")
+
+    return {"ok": True, "site_slug": (site or {}).get("slug"), "published": bool((site or {}).get("published"))}
 
 
 

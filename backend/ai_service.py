@@ -451,16 +451,23 @@ _WRITE_KINDS = {
     "why_desc": "a short supporting sentence for this 'Why choose us' selling point",
     "how_desc": "a short explanation of this step in the contractor's process",
     "faq_answer": "a helpful, reassuring answer to this customer FAQ question",
+    "bio": "a warm, first-person professional bio for the business owner",
 }
 
 
 async def write_field(kind: str, name: str, business_type: str = "", business_name: str = "", context: str = "") -> str:
     """Write one short English text field for the website editor (service description,
-    why-us point, how-it-works step, or FAQ answer)."""
+    why-us point, how-it-works step, FAQ answer, or owner bio)."""
     what = _WRITE_KINDS.get(kind, "a short professional website text")
-    length = "2-3 sentences" if kind == "faq_answer" else "one polished sentence (max ~25 words)"
+    if kind == "faq_answer":
+        length = "2-3 sentences"
+    elif kind == "bio":
+        length = "2 warm sentences, first person"
+    else:
+        length = "one polished sentence (max ~25 words)"
     system = (
-        "You are a professional copywriter for U.S. home-service/contractor websites. "
+        "You are a professional copywriter for U.S. local service businesses "
+        "(contractors, beauty/nail salons, cleaning, auto, and other home & personal services). "
         "Write clear, benefit-driven, trustworthy marketing copy in ENGLISH. "
         f"Write {what}. Length: {length}. "
         "Output ONLY the finished text — no quotes, no labels, no preamble, no markdown."
