@@ -4391,6 +4391,14 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
         if persist:
             persist["updated_at"] = _now_iso()
             await db.websites.update_one({"user_id": user_id}, {"$set": persist})
+    # Diagnostic probe: can THIS server actually reach Pexels and get results?
+    # Distinguishes "Pexels unreachable/blocked from the server" from "all slots
+    # already have photos" — both used to return the same vague "none".
+    probe = await pexels_service.search_photos(
+        pexels_service.trade_query((card or {}).get("business_type", "")),
+        per_page=1, orientation="landscape",
+    )
+    pexels_ok = bool(probe)
     try:
         update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
     except Exception as e:  # noqa: BLE001
@@ -4402,7 +4410,13 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
     w2.setdefault("about_photo_ids", [])
     w2["public_path"] = f"/sitio/{w2['slug']}"
     filled = len([k for k in update if k != "updated_at"])
-    return {"filled": filled, "reason": ("ok" if filled else "none"), "website": w2}
+    if filled:
+        reason = "ok"
+    elif not pexels_ok:
+        reason = "pexels_down"
+    else:
+        reason = "no_slots"
+    return {"filled": filled, "reason": reason, "pexels_ok": pexels_ok, "website": w2}
 
 
 @api_router.post("/website/ai-suggest-services")
