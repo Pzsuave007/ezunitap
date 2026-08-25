@@ -29,6 +29,16 @@ fi
 
 as_user() { su -s /bin/bash -l "$CPANEL_USER" -c "$1"; }
 
+# --- Uploads dir: the backend (runs as $CPANEL_USER) stores photos here. Some
+#     subfolders may have been created by root in the past → PermissionError on
+#     write. Force ownership + writable perms every deploy so stock/uploaded
+#     photos always save. Runs as root here so chown always succeeds.
+UPLOADS_DIR="/home/${CPANEL_USER}/uploads"
+mkdir -p "$UPLOADS_DIR"
+chown -R "$CPANEL_USER:$CPANEL_USER" "$UPLOADS_DIR"
+chmod -R 775 "$UPLOADS_DIR"
+echo "  ✅ uploads dir owned by $CPANEL_USER and writable ($UPLOADS_DIR)"
+
 if [ ! -f "$PROD/venv/bin/activate" ]; then
     echo ">>> FIRST-TIME INSTALL for $CPANEL_USER on port $PORT"
 

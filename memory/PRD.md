@@ -1,5 +1,15 @@
 # UniTech — PRD (resumen vivo)
 
+## 🐛 Jun 2026 — FIX real: fotos del oficio no se guardaban en PRODUCCIÓN (PermissionError en uploads) [ARREGLADO en deploy.sh; confirmado por log de prod]
+- **Reporte dueño**: "Traer fotos del oficio" no traía nada; sitio Vanessa's Creations (Nail Art) con 0 imágenes.
+- **Descartado en orden** (con comandos en el server del dueño): llave Pexels PRESENTE en `/opt/ezunitap/backend/.env`; server→Pexels `HTTP 200` (red OK, llave válida). NO era Pexels.
+- **Causa raíz REAL** (log de prod): `WARNING - stock photo store failed: PermissionError(13, 'Permission denied')`. `/home/ezunitap/uploads` raíz era de `ezunitap` pero una SUBCARPETA interna la creó `root` → el backend (corre como `ezunitap`) no podía escribir → `_store_stock_url` devolvía None → `filled:0`.
+- **Fix permanente** (`deploy.sh`, corre como root cada deploy): `mkdir -p /home/ezunitap/uploads && chown -R ezunitap:ezunitap && chmod -R 775`. Así se auto-corrige en cada actualización.
+- **Bonus** (`pexels_service.py`): búsquedas específicas nail/uñas/manicure/salon/beauty/spa/lash/makeup/hair/barber/tattoo/foto/catering/bakery.
+- **Bonus** (`server.py` `/website/stock-photos`): reason ahora distingue `pexels_down` vs `no_slots` (antes ambos "none") + campo `pexels_ok`.
+- **Acción del dueño**: Save to GitHub + `cd /home/ezunitap/repo && git pull && bash deploy.sh`. Backend-only + script (sin rebuild de frontend para este fix).
+
+
 ## 🖼️ Jun 2026 — Fotos del oficio no funcionan en PRODUCCIÓN (falta PEXELS_API_KEY) + búsquedas de belleza [DIAGNOSTICADO + mejora código]
 - **Reporte dueño**: "Traer fotos del oficio" dice "No hay espacios de foto vacíos por rellenar (o no se encontraron)". Negocio = Nail Art. Pasa en el sitio de PRODUCCIÓN.
 - **Causa raíz**: producción NO tiene `PEXELS_API_KEY` en su `.env` (viene de `/home/ezunitap/public_html/keys.txt` vía `fix.sh`; el ejemplo de prod la trae comentada). En preview SÍ está → funciona (verificado: Pexels devuelve 14 fotos para "Nail Art"; endpoint `/website/stock-photos` admin → filled=6). Sin llave, la búsqueda vuelve vacía → filled=0 → mensaje "none".
