@@ -1,5 +1,13 @@
 # UniTech — PRD (resumen vivo)
 
+## 🔘 Jun 2026 — CTAs adaptables al tipo de negocio (Book Now vs Get a Free Quote) en todos los templates [COMPLETO; verificado screenshots, SIN testing_agent]
+- **Petición dueño**: el botón "Get a Quote" por servicio y la banda inferior "Ready when you are / Let's get your project done right / Get your free estimate" no aplican a todos los negocios de servicio; poner algo genérico que funcione con todos.
+- **Fix** (`ContractorSite.js`): CTAs centralizados en el `ctx` según el modo — `ctx.cta = bookingOn ? "Book Now" : "Get a Free Quote"`, `ctx.ctaShort` para la barra móvil. Reemplazados TODOS los CTAs hardcodeados de los 10 templates (heros: Get a Free/Fast Quote, Request an Estimate/Quote; por-servicio "Get a quote"; CtaBand; barra móvil "Free Quote"; footer "Get Your Free Estimate" + link "Request Quote"). Footer h2 ahora genérico ("Let's get you booked in." / "Let's get you taken care of."). Se conservan CTAs de carácter por template (slider "See Your Transformation", luxe "Request a Consultation"). Los títulos del formulario ya eran adaptables (booking → "Book an Appointment").
+- **Bug corregido en el mismo turno**: el replace_all global de "Get a Free Quote" pisó la propia definición `ctx.cta` (quedó `"{ctx.cta}"` literal renderizando en el hero) → corregido a "Get a Free Quote".
+- **Verificado screenshots**: uñas (booking) → "Book Now" / "Request Appointment"; roofing (estimado) → "Get a Free Quote"; sin texto literal `{ctx` en la página. Build recompilado (main.4bb0998e.js, 63 archivos staged).
+- ⚠️ DESPLIEGUE: solo frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🎯 Jun 2026 — Templates enfocados a negocios de servicio: booking vs estimado por oficio + descripciones de servicio + foto About sin cortar [COMPLETO; verificado e2e curl+screenshots, SIN testing_agent]
 - **Petición dueño**: todos los usuarios son negocios de servicio → cada sitio debe VENDER servicios y tener por defecto un "Get a Free Estimate" (ej. roofing) O un "Booking Calendar" (ej. car detail/uñas) según el oficio; la IA decide cuál. Además: (a) las descripciones de servicio no salían tras el onboarding; (b) la foto de About se cortaba.
 - **Booking vs Estimado por oficio** (`server.py` `_build_full_website`): heurística `_BOOKING_HINTS` (nail/salon/spa/barber/lash/makeup/hair/tattoo/massage/car detail/pet groom/clinic/dental/fitness/etc.) → `sections.booking=True` (calendario) para negocios de cita; resto → `False` (formulario de estimado gratis). En modo booking activa el calendario de la tarjeta por defecto (`appt_enabled`, días L-S, 09:00-18:00, 60min) para que funcione al instante. Los 10 templates ya renderizan `ContactBlock` (booking o lead) + Trust en su hero.

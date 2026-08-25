@@ -177,6 +177,11 @@ export default function ContractorSite({ injected }) {
   const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
   const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
+  // Central, business-aware CTA labels so every template converts whether the
+  // business takes appointments (Book) or projects/estimates (Quote).
+  ctx.bookingOn = !!(sec?.booking && data?.card_slug);
+  ctx.cta = ctx.bookingOn ? "Book Now" : "Get a Free Quote";
+  ctx.ctaShort = ctx.bookingOn ? "Book Now" : "Free Quote";
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
 
   return (
@@ -264,7 +269,7 @@ function Cinematic({ ctx }) {
           <h1 className="wh font-extrabold tracking-tight text-4xl sm:text-6xl lg:text-7xl mt-6 leading-[0.98] max-w-4xl break-words">{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-6 text-lg md:text-2xl text-white/80 max-w-2xl font-light break-words">{w.subheadline}</p>}
           <div className="mt-9 flex flex-col sm:flex-row flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
             {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} text-base inline-flex items-center justify-center gap-2 border border-white/25 text-white hover:bg-white/10`}><Phone className="w-5 h-5" /> {b.phone}</a>}
           </div>
         </div>
@@ -374,7 +379,7 @@ function Responder({ ctx }) {
             {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
             <div className="mt-7 flex flex-wrap gap-3">
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, animation: "wpulse 2s infinite" }}><Phone className="w-5 h-5" /> Call Now</a>}
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2 border-2`} style={{ borderColor: th.ink, color: th.ink }}>Get a Fast Quote</button>
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2 border-2`} style={{ borderColor: th.ink, color: th.ink }}>{ctx.cta}</button>
             </div>
           </div>
           {heroImg && (
@@ -505,7 +510,7 @@ function Bento({ ctx }) {
           <h1 className="wh font-extrabold tracking-tight text-4xl md:text-6xl mt-5 leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-4 text-lg md:text-xl max-w-2xl" style={{ color: th.muted }}>{w.subheadline}</p>}
           <div className="mt-7 flex flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
             {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: th.ink }}><Phone className="w-4 h-4" /> Call</a>}
           </div>
         </div>
@@ -608,7 +613,7 @@ function Craftsman({ ctx }) {
             <h1 className="wh font-bold text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05]">{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 font-light">{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>Request an Estimate</button>
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
               {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white/95 text-stone-900`}><Phone className="w-4 h-4" /> Call</a>}
             </div>
           </div>
@@ -715,7 +720,7 @@ function Trust({ ctx }) {
             <h1 className="wh font-extrabold tracking-tight text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05]">{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 max-w-2xl mx-auto">{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>Get a Free Quote</button>
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white text-gray-900`}><Phone className="w-5 h-5" /> Call Now</a>}
             </div>
           </div>
@@ -745,7 +750,7 @@ function Trust({ ctx }) {
                   <h3 className="wh font-extrabold text-2xl" style={{ color: th.ink }}>{s.name}</h3>
                   {s.description && <p className="mt-2" style={{ color: th.muted }}>{s.description}</p>}
                   {s.starting_price && <p className="mt-2 font-bold" style={{ color: accent }}>{s.starting_price}</p>}
-                  <button onClick={goContact} className={`mt-4 px-5 h-11 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>Get a quote</button>
+                  <button onClick={goContact} className={`mt-4 px-5 h-11 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
                 </div>
               </div>
             ))}
@@ -957,7 +962,7 @@ function OnePage({ ctx }) {
           <h1 className="wh text-5xl sm:text-6xl lg:text-7xl leading-[1.02]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-6 text-xl leading-relaxed max-w-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
           <div className="mt-9 flex flex-wrap gap-3">
-            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>Request a quote</button>
+            <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: isLight(accent) ? "#000" : "#fff" }}>{ctx.cta}</button>
             {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.ink, color: th.ink }}>Call now</a>}
           </div>
         </div>
@@ -1057,7 +1062,7 @@ function Neon({ ctx }) {
             <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02]" style={{ color: "#fff", textShadow: `0 0 30px ${accent}88` }}>{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, ...glow }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, ...glow }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-13 py-3.5 ${th.btn} inline-flex items-center gap-2 border`} style={{ borderColor: th.border, color: "#fff" }}><Phone className="w-4 h-4" /> Call</a>}
             </div>
           </div>
@@ -1154,7 +1159,7 @@ function Playful({ ctx }) {
             <h1 className="wh text-5xl sm:text-6xl leading-[1] tracking-tight" style={{ color: th.ink }}>{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition`} style={{ background: accent, color: accentText }}>Get a Free Quote</button>
+              <button onClick={goContact} data-testid="site-hero-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 bg-white shadow`} style={{ color: th.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> Call</a>}
             </div>
           </div>
@@ -1401,7 +1406,7 @@ function AboutBlock({ ctx }) {
             </div>
           )}
           <a href={b.phone ? `tel:${b.phone}` : "#contact"} onClick={(e) => { if (!b.phone) { e.preventDefault(); goContact(); } }} data-testid="site-about-cta" className={`mt-8 px-7 h-14 ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>
-            {b.phone ? <><Phone className="w-4 h-4" /> Call us at {b.phone}</> : <>Get a Free Quote <ArrowRight className="w-4 h-4" /></>}
+            {b.phone ? <><Phone className="w-4 h-4" /> Call us at {b.phone}</> : <>{ctx.cta} <ArrowRight className="w-4 h-4" /></>}
           </a>
         </div>
       </div>
@@ -1452,7 +1457,7 @@ function CtaBand({ ctx }) {
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           {b.phone
             ? <a href={`tel:${b.phone}`} data-testid="site-band-call" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 font-bold hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}><Phone className="w-5 h-5" /> Call Now — {b.phone}</a>
-            : <button onClick={goContact} data-testid="site-band-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 font-bold hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get a Free Quote <ArrowRight className="w-4 h-4" /></button>}
+            : <button onClick={goContact} data-testid="site-band-quote" className={`px-8 h-14 ${th.btn} inline-flex items-center gap-2 font-bold hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>}
         </div>
       </div>
     </section>
@@ -1686,9 +1691,9 @@ function FooterBlock({ ctx }) {
       {/* CTA */}
       <div className="max-w-6xl mx-auto px-5 pt-20 relative">
         <div className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>Ready when you are</div>
-        <h2 className="wh font-extrabold text-4xl md:text-5xl max-w-2xl leading-tight">Let's get your project done right.</h2>
+        <h2 className="wh font-extrabold text-4xl md:text-5xl max-w-2xl leading-tight">{ctx.bookingOn ? "Let's get you booked in." : "Let's get you taken care of."}</h2>
         <div className="mt-8 flex flex-wrap gap-3">
-          <button onClick={goContact} data-testid="site-footer-quote" className={`px-8 h-14 font-bold ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>Get Your Free Estimate <ArrowRight className="w-4 h-4" /></button>
+          <button onClick={goContact} data-testid="site-footer-quote" className={`px-8 h-14 font-bold ${th.btn} inline-flex items-center gap-2 hover:-translate-y-0.5`} style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
           {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 inline-flex items-center gap-2 ${th.btn} bg-white/10 hover:bg-white/20 font-bold`}><Phone className="w-4 h-4" /> {b.phone}</a>}
         </div>
       </div>
@@ -1718,7 +1723,7 @@ function FooterBlock({ ctx }) {
           <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>Navigate</div>
           <ul className="space-y-3">
             {nav.map(([l, href], i) => <li key={i}><a href={href} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">{l}</a></li>)}
-            <li><button onClick={goContact} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">Request Quote</button></li>
+            <li><button onClick={goContact} className="text-white/75 hover:text-white uppercase tracking-wide text-[13px] font-semibold">{ctx.cta}</button></li>
           </ul>
         </div>
       </div>
@@ -1739,7 +1744,7 @@ function MobileBar({ ctx }) {
   return (
     <div className="md:hidden fixed bottom-0 inset-x-0 z-50 flex gap-2 p-3 border-t shadow-[0_-4px_20px_rgba(0,0,0,0.14)]" style={{ background: th.surface, borderColor: th.border, paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}>
       {b.phone && <a href={`tel:${b.phone}`} data-testid="site-sticky-call" className={`flex-1 h-12 inline-flex items-center justify-center gap-2 font-bold ${th.btn} border-2`} style={{ borderColor: accent, color: accent }}><Phone className="w-4 h-4" /> Call</a>}
-      <button onClick={goContact} data-testid="site-sticky-quote" className={`flex-1 h-12 font-bold ${th.btn}`} style={{ background: accent, color: accentText }}>Free Quote</button>
+      <button onClick={goContact} data-testid="site-sticky-quote" className={`flex-1 h-12 font-bold ${th.btn}`} style={{ background: accent, color: accentText }}>{ctx.ctaShort}</button>
     </div>
   );
 }
