@@ -1383,7 +1383,9 @@ function AboutBlock({ ctx }) {
         {aboutImgs.length > 0 && (
         <div className={aboutImgs.length === 1 ? "" : "grid grid-cols-2 gap-4"} data-testid="site-about-collage">
           {aboutImgs.map((src, i) => (
-            <img key={i} src={src} alt="" loading="lazy" decoding="async" className={`w-full object-cover ${th.radius} shadow-md ${aboutImgs.length === 1 ? "aspect-[4/3]" : "aspect-[4/5]"} ${aboutImgs.length > 1 && i % 2 ? "mt-6" : ""}`} />
+            <img key={i} src={src} alt="" loading="lazy" decoding="async" className={aboutImgs.length === 1
+              ? `w-full h-auto max-h-[620px] object-contain ${th.radius} shadow-md`
+              : `w-full object-cover ${th.radius} shadow-md aspect-[4/5] ${i % 2 ? "mt-6" : ""}`} />
           ))}
         </div>
         )}

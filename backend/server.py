@@ -4331,6 +4331,23 @@ async def _build_full_website(user_id: str, publish: bool = True) -> dict:
     except Exception as e:  # noqa: BLE001
         logger.warning("onboarding build: content failed: %r", e)
 
+    # 1b) Make sure EVERY service has a description (the owner usually types only
+    #     names in the wizard). Fill any missing ones with a single AI call.
+    try:
+        svc_list = update.get("services") if "services" in update else list(services or [])
+        svc_list = [dict(s) if isinstance(s, dict) else {"name": str(s)} for s in svc_list]
+        missing = [s.get("name") for s in svc_list if not (s.get("description") or "").strip()]
+        if missing:
+            descs = await ai_service.describe_services(business_type, business_name, missing)
+            if descs:
+                for s in svc_list:
+                    if not (s.get("description") or "").strip():
+                        s["description"] = descs.get(s.get("name"), s.get("description", ""))
+                update["services"] = svc_list
+                services = svc_list
+    except Exception as e:  # noqa: BLE001
+        logger.warning("onboarding build: service descriptions failed: %r", e)
+
     # 2) AI design (template + accent color)
     try:
         design = await ai_service.suggest_website_design(business_name, business_type, services)
@@ -4340,6 +4357,36 @@ async def _build_full_website(user_id: str, publish: bool = True) -> dict:
             update["accent_color"] = design["accent_color"]
     except Exception as e:  # noqa: BLE001
         logger.warning("onboarding build: design failed: %r", e)
+
+    # 3) Lead-capture mode by trade: appointment/personal-service businesses get a
+    #    BOOKING CALENDAR; project/quote trades get a FREE-ESTIMATE form. This is
+    #    what makes each template actually convert for that kind of business.
+    bt_low = (business_type or "").lower()
+    _BOOKING_HINTS = (
+        "nail", "uña", "una", "manicur", "pedicur", "salon", "salón", "beauty", "belleza",
+        "spa", "lash", "pestañ", "makeup", "maquill", "hair", "cabello", "peluqu", "estilis",
+        "barber", "tattoo", "tatua", "massage", "masaje", "detail", "detall", "car wash",
+        "lavado", "pet", "mascota", "groom", "tutor", "photograph", "fotograf", "clinic",
+        "clinica", "dental", "wax", "facial", "brow", "ceja", "esthet", "estetic",
+        "yoga", "fitness", "trainer", "entrenador",
+    )
+    booking_mode = any(h in bt_low for h in _BOOKING_HINTS)
+    sections = dict(w.get("sections") or _WEBSITE_DEFAULT_SECTIONS)
+    sections["booking"] = bool(booking_mode)
+    update["sections"] = sections
+    if booking_mode:
+        # Turn on the card's appointment calendar with sensible defaults so the
+        # booking form works immediately (owner can fine-tune later in the card).
+        appt_set = {"appt_enabled": True}
+        if not card.get("appt_days"):
+            appt_set["appt_days"] = [0, 1, 2, 3, 4, 5]
+        if not card.get("appt_start"):
+            appt_set["appt_start"] = "09:00"
+        if not card.get("appt_end"):
+            appt_set["appt_end"] = "18:00"
+        if not card.get("appt_duration"):
+            appt_set["appt_duration"] = 60
+        await db.cards.update_one({"user_id": user_id, "is_primary": True}, {"$set": appt_set})
 
     if update:
         update["updated_at"] = _now_iso()

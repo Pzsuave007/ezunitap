@@ -429,6 +429,41 @@ Rules:
 """
 
 
+async def describe_services(business_type: str = "", business_name: str = "", names: Optional[list] = None) -> dict:
+    """Write a short customer-facing description for each service NAME the owner
+    already offers. Returns {name: description}. One LLM call for the whole list."""
+    names = [n for n in (names or []) if (n or "").strip()]
+    if not names:
+        return {}
+    import json as _json
+    system = (
+        "You are a marketing copywriter for U.S. local service businesses "
+        "(contractors, beauty/nail salons, cleaning, auto detailing, and other home & personal services). "
+        "For EACH service name given, write ONE polished, benefit-driven customer-facing sentence in ENGLISH "
+        "(max ~22 words, no price, no quotes). "
+        "Return ONLY a JSON object mapping each exact service name to its description. No markdown."
+    )
+    brief = (
+        f"Business: {business_name or 'a local service business'}\n"
+        f"Trade: {business_type or 'general services'}\n"
+        f"Services:\n" + "\n".join(f"- {n}" for n in names)
+    )
+    try:
+        chat = _new_chat(system)
+        response = await chat.send_message(UserMessage(text=brief))
+        data = _extract_json(response) or {}
+    except Exception:
+        return {}
+    out = {}
+    if isinstance(data, dict):
+        low = { (k or "").strip().lower(): v for k, v in data.items() }
+        for n in names:
+            v = low.get(n.strip().lower())
+            if isinstance(v, str) and v.strip():
+                out[n] = v.strip().strip('"')
+    return out
+
+
 async def suggest_services(business_type: str = "", brief: str = "") -> list:
     """Return a list of {name, description} service suggestions for the trade."""
     chat = _new_chat(SUGGEST_SERVICES_SYSTEM)

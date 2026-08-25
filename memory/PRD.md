@@ -1,5 +1,14 @@
 # UniTech — PRD (resumen vivo)
 
+## 🎯 Jun 2026 — Templates enfocados a negocios de servicio: booking vs estimado por oficio + descripciones de servicio + foto About sin cortar [COMPLETO; verificado e2e curl+screenshots, SIN testing_agent]
+- **Petición dueño**: todos los usuarios son negocios de servicio → cada sitio debe VENDER servicios y tener por defecto un "Get a Free Estimate" (ej. roofing) O un "Booking Calendar" (ej. car detail/uñas) según el oficio; la IA decide cuál. Además: (a) las descripciones de servicio no salían tras el onboarding; (b) la foto de About se cortaba.
+- **Booking vs Estimado por oficio** (`server.py` `_build_full_website`): heurística `_BOOKING_HINTS` (nail/salon/spa/barber/lash/makeup/hair/tattoo/massage/car detail/pet groom/clinic/dental/fitness/etc.) → `sections.booking=True` (calendario) para negocios de cita; resto → `False` (formulario de estimado gratis). En modo booking activa el calendario de la tarjeta por defecto (`appt_enabled`, días L-S, 09:00-18:00, 60min) para que funcione al instante. Los 10 templates ya renderizan `ContactBlock` (booking o lead) + Trust en su hero.
+- **Descripciones de servicio automáticas** (`ai_service.describe_services` — 1 sola llamada LLM → {nombre: descripción}; `_build_full_website` paso 1b): rellena la descripción de CADA servicio que el dueño dejó sin descripción en el wizard.
+- **Foto About sin cortar** (`ContractorSite.js` AboutBlock): foto única (personal) ahora `h-auto max-h-[620px] object-contain` (se ve completa); el collage múltiple sigue con aspecto fijo.
+- **Verificado**: curl 2 cuentas → Nail Art: template craftsman, booking=True, servicios CON descripción; Roofing: cinematic, booking=False, servicios CON descripción. Screenshots: sitio de uñas con calendario real (fechas Ago 26–Sep 10 + form), roofing con About collage + Call CTA, y foto About única sin recorte (ratio render=natural). Build recompilado (63 archivos staged).
+- ⚠️ DESPLIEGUE: backend + frontend → Save to GitHub + `git pull && bash deploy.sh`.
+
+
 ## 🎉 Jun 2026 — Pantalla de Bienvenida post-onboarding + defaults de factura aplicados [COMPLETO; verificado e2e curl+screenshot, SIN testing_agent]
 - **Petición dueño**: al terminar el onboarding, mostrar "¡Tu negocio está en línea!" con link para compartir + WhatsApp, y decir que la tarjeta digital está lista y las facturas ya tienen su info/branding. Listar todo lo que queda listo.
 - **Frontend** (`Onboarding.js`): nuevo estado `done` → pantalla de celebración: hero cohete, tarjeta "Tu sitio web está EN VIVO" (URL + copiar + "Ver mi sitio" + botón "Compartir" WhatsApp verde `wa.me`), checklist de 5 (Sitio publicado / Tarjeta digital / Facturas con branding / Servicios+precios+pagos guardados / Reseñas y redes), botones "Mi tarjeta", "Cambiar diseño", "Ir a mi panel". testids `onb-done`, `onb-view-site`, `onb-wa-share`, `onb-ready-*`, etc.
