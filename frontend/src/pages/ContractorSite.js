@@ -420,7 +420,7 @@ function Responder({ ctx }) {
       </section>
 
       {/* Free estimate / booking form band (moved out of hero) */}
-      <HeroFormBand ctx={ctx} />
+      <HeroFormBand ctx={ctx} dark />
 
       {/* How it works: 3 bold blocks */}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
@@ -1694,20 +1694,22 @@ function HeroForm({ ctx, dark }) {
   );
 }
 
-function HeroFormBand({ ctx }) {
+function HeroFormBand({ ctx, dark }) {
   const { w, data, th, accent } = ctx;
   const sec = w.sections || {};
   const bookingOn = sec.booking && data.card_slug;
+  const headColor = dark ? "#ffffff" : th.ink;
+  const bodyColor = dark ? "rgba(255,255,255,0.75)" : th.muted;
   return (
-    <section className="py-12 md:py-16" style={{ background: th.surface }} data-testid="site-heroform-band">
+    <section className="py-12 md:py-16" style={{ background: dark ? th.ink : th.surface }} data-testid="site-heroform-band">
       <div className="max-w-6xl mx-auto px-5 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
         <div>
           <Kicker ctx={ctx}>{bookingOn ? "Book online" : "Free estimate"}</Kicker>
-          <h2 className="wh text-3xl md:text-4xl font-extrabold" style={{ color: th.ink }}>{bookingOn ? "Reserve your spot in seconds" : "Get your free quote today"}</h2>
-          <p className="mt-3 text-lg" style={{ color: th.muted }}>{bookingOn ? "Pick a time that works for you — we'll confirm right away." : "Tell us what you need and we'll respond fast with a no-obligation quote."}</p>
+          <h2 className="wh text-3xl md:text-4xl font-extrabold" style={{ color: headColor }}>{bookingOn ? "Reserve your spot in seconds" : "Get your free quote today"}</h2>
+          <p className="mt-3 text-lg" style={{ color: bodyColor }}>{bookingOn ? "Pick a time that works for you — we'll confirm right away." : "Tell us what you need and we'll respond fast with a no-obligation quote."}</p>
           <ul className="mt-5 space-y-2.5">
             {[bookingOn ? "Quick online booking" : "Fast response", "No obligation", "Friendly local service"].map((x, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm font-semibold" style={{ color: th.ink }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</li>
+              <li key={i} className="flex items-center gap-2 text-sm font-semibold" style={{ color: headColor }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</li>
             ))}
           </ul>
         </div>
