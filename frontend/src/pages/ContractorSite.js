@@ -1033,10 +1033,12 @@ function OnePage({ ctx }) {
       )}
 
       {sec.reviews !== false && data.reviews.length > 0 && (
-        <section id="reviews" className="max-w-3xl mx-auto px-6 py-28 border-t text-center" style={{ borderColor: th.border }}>
-          <Stars n={data.reviews[0].rating} />
-          <p className="wh text-xl md:text-2xl leading-relaxed mt-4" style={{ color: th.ink }}>"{data.reviews[0].text}"</p>
-          <div className="mt-5 text-sm tracking-widest uppercase" style={{ color: th.muted }}>{data.reviews[0].customer_name}</div>
+        <section id="reviews" className="py-28 text-center" style={{ background: th.ink }}>
+          <div className="max-w-3xl mx-auto px-6">
+            <Stars n={data.reviews[0].rating} />
+            <p className="wh text-xl md:text-2xl leading-relaxed mt-4" style={{ color: "#FFFFFF" }}>"{data.reviews[0].text}"</p>
+            <div className="mt-5 text-sm tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.6)" }}>{data.reviews[0].customer_name}</div>
+          </div>
         </section>
       )}
 
@@ -1215,7 +1217,7 @@ function Neon({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} light />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -1427,7 +1429,7 @@ function Luxe({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} light />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -1556,11 +1558,11 @@ function CtaBand({ ctx }) {
   );
 }
 
-function SectionLight({ id, kicker, title, ctx, alt, bg, onDark, dark, children }) {
+function SectionLight({ id, kicker, title, ctx, alt, bg, onDark, dark, light, children }) {
   const { th } = ctx;
   const r = useReveal();
-  const background = bg || (dark ? th.ink : (alt ? th.surface : undefined));
-  const titleColor = (onDark || dark) ? "#FFFFFF" : th.ink;
+  const background = bg || (light ? "#F4F3EF" : (dark ? th.ink : (alt ? th.surface : undefined)));
+  const titleColor = light ? "#141414" : ((onDark || dark) ? "#FFFFFF" : th.ink);
   return (
     <section id={id} className="py-16 md:py-24" style={background ? { background } : undefined}>
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
@@ -1620,25 +1622,29 @@ function ReviewsBlock({ ctx, dark, editorial }) {
   );
 }
 
-function FaqBlock({ ctx, dark }) {
+function FaqBlock({ ctx, dark, light }) {
   const { w, th, accent } = ctx;
   return (
-    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} dark={dark}>
+    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} dark={dark} light={light}>
       <div className="max-w-3xl space-y-3">
-        {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => <FaqItem key={i} q={f.q} a={f.a} th={th} accent={accent} />)}
+        {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => <FaqItem key={i} q={f.q} a={f.a} th={th} accent={accent} light={light} />)}
       </div>
     </SectionLight>
   );
 }
-function FaqItem({ q, a, th, accent }) {
+function FaqItem({ q, a, th, accent, light }) {
   const [open, setOpen] = useState(false);
+  const cardBg = light ? "#FFFFFF" : th.surface;
+  const cardBorder = light ? "#E5E7EB" : th.border;
+  const qColor = light ? "#141414" : th.ink;
+  const aColor = light ? "#4B5563" : th.muted;
   return (
-    <div className={`overflow-hidden ${th.radius}`} style={{ background: th.surface, border: `1px solid ${th.border}` }} data-testid="site-faq-item">
+    <div className={`overflow-hidden ${th.radius}`} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-faq-item">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 p-5 text-left">
-        <span className="font-bold text-base" style={{ color: th.ink }}>{q}</span>
+        <span className="font-bold text-base" style={{ color: qColor }}>{q}</span>
         <span className="flex-none w-7 h-7 rounded-full flex items-center justify-center font-bold transition-transform" style={{ background: accent, color: isLight(accent) ? "#0A0A0A" : "#fff", transform: open ? "rotate(45deg)" : "none" }}>+</span>
       </button>
-      {open && <div className="px-5 pb-5 -mt-1 text-sm leading-relaxed" style={{ color: th.muted }}>{a}</div>}
+      {open && <div className="px-5 pb-5 -mt-1 text-sm leading-relaxed" style={{ color: aColor }}>{a}</div>}
     </div>
   );
 }

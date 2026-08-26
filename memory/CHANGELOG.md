@@ -1,6 +1,13 @@
 # UniTech — Changelog
 
-## Jun 2026 — Cinematic ContactBlock pulido (verificado)
+## Jun 2026 — Manejo de color/contraste en los 10 templates
+- Se agregaron props reutilizables a bloques compartidos: `SectionLight` ahora soporta `dark` (fondo = `th.ink` propio del template, título blanco) y `light` (fondo marfil `#F4F3EF`, título oscuro); `FaqBlock`/`FaqItem` y `AreasBlock` soportan `dark`/`light`.
+- **Cinematic** y **Responder**: pulidos previamente (hero 75%, form band oscuro, marquee negro loop continuo, FAQ/Areas/Recent Work oscuros, ContactBlock alineado).
+- **Templates claros** (Bento, Craftsman, Trust, Slider, Playful): galería + FAQ + Áreas en oscuro usando el tono oscuro propio de cada paleta (slate/marrón/etc.). Verificado con capturas (galerías comparten mecanismo; sitio de prueba sin fotos).
+- **Templates oscuros** (Neon, Luxe): sección **FAQ clara** (marfil, tarjetas blancas) para romper el todo-oscuro. Verificado.
+- **OnePage** (minimalista): sección de reseñas convertida en **banda oscura** (pull-quote). No verificable en vivo (sitios de prueba sin reseñas), cambio CSS simple.
+- NOTA: cambios solo de color; no se tocaron layouts ni el formulario del hero de Bento (a pedido del usuario).
+
 - ContactBlock (`ContractorSite.js` ~L1718): texto alineado con el formulario (`items-start`) y párrafo invitador nuevo debajo de "Trusted by our community" para llenar espacio vacío.
 - Frontend recompilado (`yarn build`) y staged (`git add -f build/*`). Verificado con `screenshot_tool` en `/sitio/spokane-roofing-co` (template Cinematic).
 
