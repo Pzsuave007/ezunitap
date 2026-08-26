@@ -461,7 +461,7 @@ function Responder({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Proof" title="Recent Work" ctx={ctx} bg="#F3F4F6">
+        <SectionLight id="gallery" kicker="Proof" title="Recent Work" ctx={ctx} bg="#000000" onDark>
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 snap-x">
             {data.photos.slice(0, 12).map((p) => (
               <div key={p.id} className="snap-start flex-none w-64 h-64 overflow-hidden border-2" style={{ borderColor: th.ink }}>
@@ -475,7 +475,7 @@ function Responder({ ctx }) {
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} bg="#000000" dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1643,15 +1643,18 @@ function FaqItem({ q, a, th, accent }) {
   );
 }
 
-function AreasBlock({ ctx }) {
+function AreasBlock({ ctx, bg, dark }) {
   const { w, data, th, accent } = ctx;
   if (!(w.areas?.length || data.service_area)) return null;
   const areas = w.areas?.length ? w.areas : (data.service_area ? [data.service_area] : []);
+  const pillText = dark ? "#FFFFFF" : th.ink;
+  const pillBg = dark ? "rgba(255,255,255,0.06)" : `${accent}14`;
+  const bodyColor = dark ? "rgba(255,255,255,0.7)" : th.muted;
   return (
-    <SectionLight id="areas" kicker="Local & nearby" title="Areas We Serve" ctx={ctx} alt>
-      {data.service_area && <p className="mb-6" style={{ color: th.muted }}>Proudly serving {data.service_area} and surrounding communities.</p>}
+    <SectionLight id="areas" kicker="Local & nearby" title="Areas We Serve" ctx={ctx} bg={bg} alt={!bg} onDark={dark}>
+      {data.service_area && <p className="mb-6" style={{ color: bodyColor }}>Proudly serving {data.service_area} and surrounding communities.</p>}
       <div className="flex flex-wrap gap-2.5">
-        {areas.map((a, i) => <span key={i} className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold ${th.radius}`} style={{ background: `${accent}14`, color: th.ink, border: `1px solid ${accent}33` }}><MapPin className="w-4 h-4" style={{ color: accent }} /> {a}</span>)}
+        {areas.map((a, i) => <span key={i} className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold ${th.radius}`} style={{ background: pillBg, color: pillText, border: `1px solid ${accent}55` }}><MapPin className="w-4 h-4" style={{ color: accent }} /> {a}</span>)}
       </div>
     </SectionLight>
   );
