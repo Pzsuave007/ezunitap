@@ -285,7 +285,7 @@ function Cinematic({ ctx }) {
         {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #08080A 4%, rgba(8,8,10,.55) 45%, rgba(8,8,10,.25) 100%)" }} />
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-        <div className="relative max-w-6xl mx-auto px-5 pb-24 pt-32 text-white w-full wfade">
+        <div className="relative max-w-6xl mx-auto px-5 pb-16 pt-24 md:pb-24 md:pt-32 text-white w-full wfade">
           <HeroBadges ctx={ctx} />
           <h1 className="wh font-extrabold tracking-tight text-4xl sm:text-6xl lg:text-7xl mt-6 leading-[0.98] max-w-4xl break-words">{w.headline || b.name}</h1>
           {w.subheadline && <p className="mt-6 text-lg md:text-2xl text-white/80 max-w-2xl font-light break-words">{w.subheadline}</p>}
@@ -396,7 +396,7 @@ function Responder({ ctx }) {
       {/* Hero with diagonal cut */}
       <section className="relative">
         <div className={`grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"}`}>
-          <div className="px-5 py-14 md:py-24 max-w-xl mx-auto md:mx-0 md:ml-auto md:pr-12 wfade">
+          <div className="px-5 py-10 md:py-24 max-w-xl mx-auto md:mx-0 md:ml-auto md:pr-12 wfade">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-black uppercase mb-4" style={{ background: `${accent}1a`, color: accent }}>Open 24/7 · Emergency Service</div>
             <h1 className="wh uppercase text-5xl sm:text-6xl leading-[0.95]" style={{ color: th.ink }}>{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg" style={{ color: th.muted }}>{w.subheadline}</p>}
@@ -628,8 +628,8 @@ function Craftsman({ ctx }) {
       </header>
 
       {/* Hero: padded rounded container */}
-      <section className="px-4 md:px-6 pt-6 md:pt-10">
-        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[2rem] md:rounded-[3rem] min-h-[460px] md:min-h-[600px] flex items-center" style={!heroImg ? { background: "#1b1714" } : undefined}>
+      <section className="md:px-6 pt-0 md:pt-10">
+        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-none md:rounded-[3rem] min-h-[420px] md:min-h-[600px] flex items-center" style={!heroImg ? { background: "#1b1714" } : undefined}>
           {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(20,16,12,.7), rgba(20,16,12,.25))" }} />
           <div className="relative p-7 md:p-12 w-full grid md:grid-cols-2 gap-8 items-center text-white wfade">
@@ -742,7 +742,7 @@ function Trust({ ctx }) {
         <div className="relative" style={!heroImg ? { background: "#111827" } : undefined}>
           {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(17,24,39,.78), rgba(17,24,39,.62))" }} />
-          <div className="relative max-w-3xl mx-auto px-5 pt-20 pb-40 md:pb-52 text-center text-white wfade">
+          <div className="relative max-w-3xl mx-auto px-5 pt-12 pb-40 md:pt-20 md:pb-52 text-center text-white wfade">
             <div className="flex justify-center"><HeroBadges ctx={ctx} /></div>
             <h1 className="wh font-extrabold tracking-tight text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[1.05]">{w.headline || b.name}</h1>
             {w.subheadline && <p className="mt-5 text-lg md:text-xl text-white/85 max-w-2xl mx-auto">{w.subheadline}</p>}
@@ -867,7 +867,7 @@ function Slider({ ctx }) {
         </div>
       </header>
       <section className={`grid ${(showBA || heroImg) ? "md:grid-cols-2" : "grid-cols-1"}`}>
-        <div className="px-5 py-14 md:py-0 md:flex md:flex-col md:justify-center md:px-12 order-2 md:order-1" style={{ background: th.ink }}>
+        <div className="px-5 py-10 md:py-0 md:flex md:flex-col md:justify-center md:px-12 order-2 md:order-1" style={{ background: th.ink }}>
           <div className="text-white wfade max-w-lg">
             <HeroBadges ctx={ctx} />
             <h1 className="wh uppercase text-4xl sm:text-5xl lg:text-6xl mt-5 leading-[0.98] break-words">{w.headline || b.name}</h1>
@@ -973,10 +973,10 @@ function OnePage({ ctx }) {
         </div>
       </header>
 
-      <section className="relative min-h-[75svh] flex items-end">
+      <section className="relative min-h-[60svh] md:min-h-[80svh] flex items-center md:items-end">
         {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0" style={{ background: heroImg ? "linear-gradient(to top, rgba(10,10,10,.82), rgba(10,10,10,.15))" : th.ink }} />
-        <div className="relative max-w-5xl mx-auto px-6 pb-16 pt-32 w-full grid md:grid-cols-2 gap-10 items-end">
+        <div className="relative max-w-5xl mx-auto px-6 pb-14 pt-24 md:pt-32 w-full grid md:grid-cols-2 gap-10 items-end">
           <div className="text-white wfade">
             <div className="flex items-center gap-2 text-sm mb-6 text-white/80"><span className="w-2 h-2 rounded-full" style={{ background: accent }} /> {b.is_licensed || b.is_insured ? "Licensed & Insured" : "Trusted local service"}</div>
             <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.03] break-words">{w.headline || b.name}</h1>
@@ -1141,7 +1141,7 @@ function Neon({ ctx }) {
         <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: accent }} />
         <div className="pointer-events-none absolute top-10 right-0 w-80 h-80 rounded-full blur-3xl opacity-20" style={{ background: "#22D3EE" }} />
         <div className="pointer-events-none absolute inset-0 opacity-[0.10]" style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,.6) 0px, rgba(255,255,255,.6) 1px, transparent 1px, transparent 3px)" }} />
-        <div className={`relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-stretch`}>
+        <div className={`relative max-w-6xl mx-auto px-5 py-12 md:py-28 grid ${heroImg ? "md:grid-cols-2" : "grid-cols-1"} gap-10 items-stretch`}>
           <div className="wfade">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border" style={{ borderColor: `${accent}66`, color: accent, boxShadow: `inset 0 0 14px ${accent}44` }}><span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} /> SYSTEM ONLINE · 24/7</div>
             <h1 className="wh text-5xl lg:text-6xl mt-5 leading-[1.02] break-words" style={{ backgroundImage: `linear-gradient(90deg,#ffffff,${accent})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: `drop-shadow(0 0 22px ${accent}55)` }}>{w.headline || b.name}</h1>
@@ -1247,7 +1247,7 @@ function Playful({ ctx }) {
         <div className="absolute inset-0" style={{ background: heroImg ? "linear-gradient(115deg, rgba(51,48,46,.86) 35%, rgba(51,48,46,.4))" : `${accent}18` }} />
         <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full opacity-60" style={{ background: `${accent}33` }} />
         <div className="absolute top-40 right-0 w-56 h-56 rounded-full opacity-50" style={{ background: "#FDE68A55" }} />
-        <div className="relative max-w-6xl mx-auto px-5 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+        <div className="relative max-w-6xl mx-auto px-5 py-10 md:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div className="wfade" style={{ color: heroImg ? "#fff" : th.ink }}>
             <div className="flex flex-wrap gap-2 mb-4">{[b.is_licensed && "✓ Licensed", b.is_insured && "✓ Insured", "★ 5-Star"].filter(Boolean).map((x, i) => <span key={i} className="px-3 py-1 rounded-full text-xs font-extrabold bg-white/90" style={{ color: th.ink }}>{x}</span>)}</div>
             <h1 className="wh text-4xl sm:text-6xl leading-[1] tracking-tight break-words">{w.headline || b.name}</h1>
