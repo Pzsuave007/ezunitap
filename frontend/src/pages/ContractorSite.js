@@ -564,7 +564,7 @@ function Bento({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Easy" title="How It Works" ctx={ctx} alt>
@@ -596,7 +596,7 @@ function Bento({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} dark>
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} bg="#FAF5EA">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.photos.slice(0, 8).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-square`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
@@ -973,7 +973,7 @@ function OnePage({ ctx }) {
         </div>
       </header>
 
-      <section className="relative min-h-[90svh] flex items-end">
+      <section className="relative min-h-[75svh] flex items-end">
         {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0" style={{ background: heroImg ? "linear-gradient(to top, rgba(10,10,10,.82), rgba(10,10,10,.15))" : th.ink }} />
         <div className="relative max-w-5xl mx-auto px-6 pb-16 pt-32 w-full grid md:grid-cols-2 gap-10 items-end">
@@ -1000,15 +1000,17 @@ function OnePage({ ctx }) {
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
-        <section id="how" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
-          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
-          {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-            <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: th.border }}>
-              <div className="md:col-span-1 wh text-3xl" style={{ color: th.border === "#E5E7EB" ? "#D1D5DB" : th.muted }}>{String(i + 1).padStart(2, "0")}</div>
-              <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
-              <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
-            </div>
-          ))}
+        <section id="how" className="py-24" style={{ background: "#FAF5EA" }}>
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
+            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+              <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: "rgba(0,0,0,.1)" }}>
+                <div className="md:col-span-1 wh text-3xl" style={{ color: "#C9BFAE" }}>{String(i + 1).padStart(2, "0")}</div>
+                <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
+                <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -1470,14 +1472,14 @@ function HeroBadges({ ctx, solid }) {
 function Kicker({ ctx, children }) { return <div className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: ctx.accent }}>{children}</div>; }
 
 // Shared: About Us — photo collage + story + trust badges + CTA
-function AboutBlock({ ctx }) {
+function AboutBlock({ ctx, bg }) {
   const { w, b, th, accent, accentText, aboutImgs, goContact } = ctx;
   if (!w.about) return null;
   const S = th.dark ? SectionDark : SectionLight;
   const paras = String(w.about).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
   const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", b.years_in_business > 0 && `${b.years_in_business}+ Years`, "Locally Owned"].filter(Boolean);
   return (
-    <S id="about" kicker="About" title="About Us" ctx={ctx} alt>
+    <S id="about" kicker="About" title="About Us" ctx={ctx} bg={bg} alt={!bg}>
       <div className={`grid ${aboutImgs.length ? "md:grid-cols-2" : "grid-cols-1"} gap-8 md:gap-14 items-center`}>
         {aboutImgs.length > 0 && (
         <div className={aboutImgs.length === 1 ? "" : "grid grid-cols-2 gap-4"} data-testid="site-about-collage">
