@@ -202,7 +202,7 @@ export default function ContractorSite({ injected }) {
   return (
     <div style={{ background: th.bg, color: th.ink, fontFamily: th.b }} className="min-h-screen antialiased" data-testid={`site-tpl-${key}`}>
       <style>{`
-        .wh{font-family:${th.h}}
+        .wh{font-family:${th.h}${th.h.includes("Anton") ? ";letter-spacing:.04em" : ""}}
         .ws a,.ws button{transition:transform .25s ease,box-shadow .25s ease,background-color .25s ease,opacity .25s ease,color .2s,filter .3s}
         .ws ::selection{background:${accent};color:${accentText}}
         @keyframes wfade{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
@@ -266,6 +266,9 @@ function NavMenu({ ctx, light }) {
 // ===========================================================================
 function Cinematic({ ctx }) {
   const { w, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact } = ctx;
+  // Cream sub-theme so we can alternate light sections and break the all-dark look.
+  const lightCtx = { ...ctx, th: { ...th, dark: false, bg: "#FBF7F0", surface: "#F3ECE0", ink: "#171412", muted: "#6b6259", border: "rgba(0,0,0,.10)" } };
+  const grayCtx = { ...ctx, th: { ...th, dark: false, bg: "#ECECEF", surface: "#ECECEF", ink: "#1a1a1a", muted: "#57534e", border: "rgba(0,0,0,.10)" } };
   const [scr, setScr] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 40); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
   return (
@@ -294,14 +297,14 @@ function Cinematic({ ctx }) {
         <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-white/70 animate-bounce"><ChevronDown className="w-6 h-6" style={{ color: accent }} /></div>
       </section>
 
-      <HeroFormBand ctx={ctx} />
+      <HeroFormBand ctx={grayCtx} />
 
       {/* Services: edge-to-edge image cards */}
       {sec.services !== false && (
         <SectionDark id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <div className="grid md:grid-cols-3 gap-px" style={{ background: th.border }}>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {services.map((s, i) => (
-              <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden" style={{ background: th.surface }} data-testid={`site-service-${i}`}>
+              <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden border" style={{ background: "#0d0d10", borderColor: th.border }} data-testid={`site-service-${i}`}>
                 {s.img && <img src={s.img} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,10,.95), rgba(8,8,10,.2))" }} />
                 <div className="relative p-7 w-full">
@@ -317,7 +320,7 @@ function Cinematic({ ctx }) {
 
       {/* How it works: vertical timeline */}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
+      {sec.feature !== false && <div style={{ background: "#FBF7F0" }}><FeatureBlock ctx={lightCtx} /></div>}
       {sec.how !== false && (
         <SectionDark id="how" kicker="The process" title="How It Works" ctx={ctx} alt>
           <div className="relative max-w-2xl border-l ml-3" style={{ borderColor: th.border }}>
@@ -349,7 +352,7 @@ function Cinematic({ ctx }) {
 
       {/* Gallery masonry */}
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionDark id="gallery" kicker="Our craft" title="Recent Work" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Our craft" title="Recent Work" ctx={lightCtx} alt>
           <div className="columns-2 md:columns-3 gap-3 [column-fill:_balance]">
             {data.photos.slice(0, 12).map((p) => (
               <div key={p.id} className="mb-3 break-inside-avoid overflow-hidden">
@@ -357,14 +360,14 @@ function Cinematic({ ctx }) {
               </div>
             ))}
           </div>
-        </SectionDark>
+        </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
       {sec.faq !== false && <FaqBlock ctx={ctx} />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
-      {sec.contact !== false && <ContactBlock ctx={ctx} />}
+      {sec.contact !== false && <div style={{ background: "#ECECEF" }}><ContactBlock ctx={grayCtx} /></div>}
       <FooterBlock ctx={ctx} />
     </div>
   );
@@ -1720,7 +1723,7 @@ function ContactBlock({ ctx, id = "contact" }) {
     <SectionLight id={id} kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-5">
-          <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time that works for you and we'll confirm your appointment." : "Tell us about your project and we'll get back to you fast — no obligation."}</p>
+          <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time that works for you and we'll confirm your appointment." : "Tell us what you need and we'll get back to you fast — no obligation."}</p>
           {b.phone && <a href={`tel:${b.phone}`} data-testid="site-contact-call" className="flex items-center gap-3 font-bold text-lg" style={{ color: th.ink }}><span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: accent, color: accentText }}><Phone className="w-5 h-5" /></span> {b.phone}</a>}
           <div className="flex items-center gap-2 pt-1"><Stars n={5} /><span className="text-sm font-semibold" style={{ color: th.muted }}>Trusted by our community</span></div>
         </div>
@@ -1936,7 +1939,7 @@ function LeadForm({ ctx, inline }) {
           {services.map((s, i) => <option key={i} value={s.name}>{s.name}</option>)}
         </select>
       )}
-      <textarea placeholder="Tell us about your project" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`w-full min-h-[84px] p-4 rounded-xl border outline-none focus-visible:ring-2 ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
+      <textarea placeholder="Tell us what you need (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`w-full min-h-[84px] p-4 rounded-xl border outline-none focus-visible:ring-2 ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
       <button type="submit" disabled={sending} data-testid="site-lead-submit" className={`h-13 py-3.5 font-bold flex items-center justify-center gap-2 ${th.btn} ${inline ? "sm:col-span-2" : "w-full"}`} style={{ background: accent, color: accentText }}>
         {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Send Request</>}
       </button>

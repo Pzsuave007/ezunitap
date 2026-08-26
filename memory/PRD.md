@@ -2,6 +2,13 @@
 - **Reporte dueño**: el texto/placeholder del formulario del hero era muy tenue.
 - **Fix** (`ContractorSite.js` HeroForm): texto sólido (#fff en oscuro, #0f172a en claro), placeholders `placeholder-white/80` (oscuro) / `placeholder-slate-500` (claro), inputs `font-medium`, fondos y bordes más marcados (dark bg .16, border .45). Verificado screenshot Bento: "Maria Lopez"/teléfono blancos nítidos, placeholder legible. Build main.5c61549c.js (63 staged).
 
+## 🎬 Jun 2026 — Cinematic pulido (font, servicios, texto, secciones crema) [COMPLETO; verificado screenshots, SIN testing_agent]
+- Font Anton legible: `.wh` con `letter-spacing:.04em` cuando la fuente es Anton (cinematic/responder). Verificado.
+- Servicios: quitado el truco `gap-px`+bg gris (mostraba celda vacía gris si no era múltiplo de 3) → `gap-4` + borde por tarjeta + bg #0d0d10. Verificado (2 servicios sin cuadro gris).
+- Texto de contacto genérico (no "project"): ContactBlock + textarea + defaults.
+- Secciones crema para contraste: `lightCtx` (cream #FBF7F0/#F3ECE0, ink oscuro) aplicado a **FeatureBlock** ("Why choose us", envuelto en div crema porque SectionLight sin alt es transparente) y a la **Galería** ("Our craft/Recent Work" → SectionLight alt con lightCtx). FeatureBlock verificado crema; galería mismo patrón (no había fotos en la cuenta de prueba para captura).
+- Build main.0a5d22fe.js (63 staged).
+
 # UniTech — PRD (resumen vivo)
 
 ## 🧩 Jun 2026 — Formulario del hero: reposicionado para no agrandar el hero (2-col o band debajo) [COMPLETO; verificado screenshots, SIN testing_agent]
