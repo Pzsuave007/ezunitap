@@ -596,7 +596,7 @@ function Bento({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} dark>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.photos.slice(0, 8).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-square`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
@@ -605,8 +605,8 @@ function Bento({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -700,7 +700,7 @@ function Craftsman({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} dark>
           <div className="columns-2 md:columns-3 gap-4">
             {data.photos.slice(0, 12).map((p, i) => <div key={p.id} className={`mb-4 overflow-hidden rounded-2xl ${i % 3 === 1 ? "md:mt-8" : ""}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
           </div>
@@ -709,8 +709,8 @@ function Craftsman({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} editorial />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -804,7 +804,7 @@ function Trust({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="See our work" title="Recent Projects" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="See our work" title="Recent Projects" ctx={ctx} dark>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {data.photos.slice(0, 9).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-[4/3] shadow-md`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
@@ -813,8 +813,8 @@ function Trust({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} id="contact2" />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -931,7 +931,7 @@ function Slider({ ctx }) {
       )}
 
       {sec.gallery !== false && (ba.length > 0 || data.photos.length > 1) && (
-        <SectionLight id="gallery" kicker="Transformations" title="See The Difference" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Transformations" title="See The Difference" ctx={ctx} dark>
           <div className="grid md:grid-cols-2 gap-5">
             {ba.length > 0
               ? ba.map((p, i) => (
@@ -950,8 +950,8 @@ function Slider({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1306,7 +1306,7 @@ function Playful({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Our work" title="Recent Projects" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Our work" title="Recent Projects" ctx={ctx} dark>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`overflow-hidden ${i % 3 === 0 ? "rounded-[2rem]" : "rounded-full aspect-square"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover" /></div>)}
           </div>
@@ -1315,8 +1315,8 @@ function Playful({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
+      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1556,11 +1556,11 @@ function CtaBand({ ctx }) {
   );
 }
 
-function SectionLight({ id, kicker, title, ctx, alt, bg, onDark, children }) {
+function SectionLight({ id, kicker, title, ctx, alt, bg, onDark, dark, children }) {
   const { th } = ctx;
   const r = useReveal();
-  const background = bg || (alt ? th.surface : undefined);
-  const titleColor = onDark ? "#FFFFFF" : th.ink;
+  const background = bg || (dark ? th.ink : (alt ? th.surface : undefined));
+  const titleColor = (onDark || dark) ? "#FFFFFF" : th.ink;
   return (
     <section id={id} className="py-16 md:py-24" style={background ? { background } : undefined}>
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
@@ -1623,7 +1623,7 @@ function ReviewsBlock({ ctx, dark, editorial }) {
 function FaqBlock({ ctx, dark }) {
   const { w, th, accent } = ctx;
   return (
-    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} bg={dark ? "#1F2937" : undefined} onDark={dark}>
+    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} dark={dark}>
       <div className="max-w-3xl space-y-3">
         {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => <FaqItem key={i} q={f.q} a={f.a} th={th} accent={accent} />)}
       </div>
@@ -1651,7 +1651,7 @@ function AreasBlock({ ctx, bg, dark }) {
   const pillBg = dark ? "rgba(255,255,255,0.06)" : `${accent}14`;
   const bodyColor = dark ? "rgba(255,255,255,0.7)" : th.muted;
   return (
-    <SectionLight id="areas" kicker="Local & nearby" title="Areas We Serve" ctx={ctx} bg={bg} alt={!bg} onDark={dark}>
+    <SectionLight id="areas" kicker="Local & nearby" title="Areas We Serve" ctx={ctx} bg={bg} dark={dark} alt={!bg && !dark}>
       {data.service_area && <p className="mb-6" style={{ color: bodyColor }}>Proudly serving {data.service_area} and surrounding communities.</p>}
       <div className="flex flex-wrap gap-2.5">
         {areas.map((a, i) => <span key={i} className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold ${th.radius}`} style={{ background: pillBg, color: pillText, border: `1px solid ${accent}55` }}><MapPin className="w-4 h-4" style={{ color: accent }} /> {a}</span>)}
