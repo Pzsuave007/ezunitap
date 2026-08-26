@@ -1180,7 +1180,7 @@ function Neon({ ctx }) {
         </SectionLight>
       )}
 
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.about !== false && <AboutBlock ctx={ctx} light />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <SectionLight id="how" kicker="Process" title="How It Works" ctx={ctx} alt>
@@ -1210,7 +1210,7 @@ function Neon({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} light>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500" /></div>)}
           </div>
@@ -1379,7 +1379,7 @@ function Luxe({ ctx }) {
         </section>
       )}
 
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.about !== false && <AboutBlock ctx={ctx} light />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
         <section id="how" className="py-28" style={{ background: th.surface }}>
@@ -1421,8 +1421,8 @@ function Luxe({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <section id="gallery" className="py-28" style={{ background: th.surface }}>
-          <div className="max-w-6xl mx-auto px-6 text-center mb-12"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Portfolio</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>Selected Work</h2></div>
+        <section id="gallery" className="py-28" style={{ background: "#FAF5EA" }}>
+          <div className="max-w-6xl mx-auto px-6 text-center mb-12"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Portfolio</div><h2 className="wh text-4xl md:text-5xl" style={{ color: "#1a1a1a" }}>Selected Work</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-0">
             {data.photos.slice(0, 9).map((p) => <div key={p.id} className="aspect-square overflow-hidden"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition duration-[1200ms]" /></div>)}
           </div>
@@ -1472,14 +1472,16 @@ function HeroBadges({ ctx, solid }) {
 function Kicker({ ctx, children }) { return <div className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: ctx.accent }}>{children}</div>; }
 
 // Shared: About Us — photo collage + story + trust badges + CTA
-function AboutBlock({ ctx, bg }) {
+function AboutBlock({ ctx, bg, light }) {
   const { w, b, th, accent, accentText, aboutImgs, goContact } = ctx;
   if (!w.about) return null;
-  const S = th.dark ? SectionDark : SectionLight;
+  const S = light ? SectionLight : (th.dark ? SectionDark : SectionLight);
   const paras = String(w.about).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
   const badges = [b.is_licensed && "Licensed", b.is_insured && "Insured", b.years_in_business > 0 && `${b.years_in_business}+ Years`, "Locally Owned"].filter(Boolean);
+  const bodyColor = light ? "#4B5563" : th.muted;
+  const badgeText = light ? "#141414" : th.ink;
   return (
-    <S id="about" kicker="About" title="About Us" ctx={ctx} bg={bg} alt={!bg}>
+    <S id="about" kicker="About" title="About Us" ctx={ctx} bg={bg} alt={!bg && !light} light={light}>
       <div className={`grid ${aboutImgs.length ? "md:grid-cols-2" : "grid-cols-1"} gap-8 md:gap-14 items-center`}>
         {aboutImgs.length > 0 && (
         <div className={aboutImgs.length === 1 ? "" : "grid grid-cols-2 gap-4"} data-testid="site-about-collage">
@@ -1492,12 +1494,12 @@ function AboutBlock({ ctx, bg }) {
         )}
         <div>
           {paras.map((p, i) => (
-            <p key={i} className={`text-lg leading-relaxed ${i ? "mt-4" : ""}`} style={{ color: th.muted }}>{p}</p>
+            <p key={i} className={`text-lg leading-relaxed ${i ? "mt-4" : ""}`} style={{ color: bodyColor }}>{p}</p>
           ))}
           {badges.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">
               {badges.map((x, i) => (
-                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full" style={{ background: `${accent}14`, color: th.ink, border: `1px solid ${accent}33` }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</span>
+                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full" style={{ background: `${accent}14`, color: badgeText, border: `1px solid ${accent}33` }}><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</span>
               ))}
             </div>
           )}
