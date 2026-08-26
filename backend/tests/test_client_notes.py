@@ -13,7 +13,7 @@ import uuid
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://guided-quotes.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://lead-capture-204.preview.emergentagent.com").rstrip("/")
 OWNER_EMAIL = "pzsuave007@gmail.com"
 OWNER_PASSWORD = "Uni2mkt007!"
 

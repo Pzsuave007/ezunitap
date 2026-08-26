@@ -13,7 +13,7 @@ admin). The test account IS the super admin, so card_payment.enabled is True.
 import os
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://guided-quotes.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://lead-capture-204.preview.emergentagent.com").rstrip("/")
 EMAIL = "pzsuave007@gmail.com"
 PASS = "Uni2mkt007!"
 

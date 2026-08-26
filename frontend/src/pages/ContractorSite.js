@@ -1721,11 +1721,12 @@ function ContactBlock({ ctx, id = "contact" }) {
   const bookingOn = sec.booking && data.card_slug;
   return (
     <SectionLight id={id} kicker="Let's talk" title={bookingOn ? "Book an Appointment" : "Get Your Free Estimate"} ctx={ctx}>
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-8 items-start">
         <div className="space-y-5">
           <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Pick a day and time that works for you and we'll confirm your appointment." : "Tell us what you need and we'll get back to you fast — no obligation."}</p>
           {b.phone && <a href={`tel:${b.phone}`} data-testid="site-contact-call" className="flex items-center gap-3 font-bold text-lg" style={{ color: th.ink }}><span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: accent, color: accentText }}><Phone className="w-5 h-5" /></span> {b.phone}</a>}
           <div className="flex items-center gap-2 pt-1"><Stars n={5} /><span className="text-sm font-semibold" style={{ color: th.muted }}>Trusted by our community</span></div>
+          <p className="text-base leading-relaxed" style={{ color: th.muted }}>{bookingOn ? "Have a question before you book? Send us a message or give us a call — we're happy to help and usually reply within the hour." : "Not sure exactly what you need? Reach out with any question and we'll walk you through your options with a clear, honest quote — no pressure."}</p>
         </div>
         {bookingOn ? <BookingForm ctx={ctx} /> : <LeadForm ctx={ctx} />}
       </div>

@@ -1,5 +1,10 @@
 # UniTech — Changelog
 
+## Jun 2026 — Cinematic ContactBlock pulido (verificado)
+- ContactBlock (`ContractorSite.js` ~L1718): texto alineado con el formulario (`items-start`) y párrafo invitador nuevo debajo de "Trusted by our community" para llenar espacio vacío.
+- Frontend recompilado (`yarn build`) y staged (`git add -f build/*`). Verificado con `screenshot_tool` en `/sitio/spokane-roofing-co` (template Cinematic).
+
+
 ## Jul 2026 — Demo corto (/demo) optimizado para campaña de facturas
 - **Fix crítico de conversión (basado en datos):** el embudo mostró -95.7% de caída en el formulario de entrada (nombre/tel/email). Se quitó el gate.
   - Intro sin fricción: solo **nombre del cliente pre-llenado** ("María González", editable, con nota "solo se usa en los documentos") + **oficio (opcional)** + botón "Ver la demostración". Sin email/teléfono.
