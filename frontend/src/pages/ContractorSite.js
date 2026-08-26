@@ -426,7 +426,7 @@ function Responder({ ctx }) {
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
-        <SectionLight id="how" kicker="Simple" title="How It Works" ctx={ctx}>
+        <SectionLight id="how" kicker="Simple" title="How It Works" ctx={ctx} bg="#374151" onDark>
           <div className="grid sm:grid-cols-3 gap-5">
             {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
               <div key={i} className="p-7 border-2 relative" style={{ background: th.surface, borderColor: th.ink, boxShadow: "8px 8px 0 0 rgba(0,0,0,1)" }}>
@@ -461,7 +461,7 @@ function Responder({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Proof" title="Recent Work" ctx={ctx} alt>
+        <SectionLight id="gallery" kicker="Proof" title="Recent Work" ctx={ctx} bg="#F3F4F6">
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 snap-x">
             {data.photos.slice(0, 12).map((p) => (
               <div key={p.id} className="snap-start flex-none w-64 h-64 overflow-hidden border-2" style={{ borderColor: th.ink }}>
@@ -1556,14 +1556,16 @@ function CtaBand({ ctx }) {
   );
 }
 
-function SectionLight({ id, kicker, title, ctx, alt, children }) {
+function SectionLight({ id, kicker, title, ctx, alt, bg, onDark, children }) {
   const { th } = ctx;
   const r = useReveal();
+  const background = bg || (alt ? th.surface : undefined);
+  const titleColor = onDark ? "#FFFFFF" : th.ink;
   return (
-    <section id={id} className="py-16 md:py-24" style={alt ? { background: th.surface } : undefined}>
+    <section id={id} className="py-16 md:py-24" style={background ? { background } : undefined}>
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <Kicker ctx={ctx}>{kicker}</Kicker>
-        <h2 className="wh text-3xl md:text-4xl font-extrabold mb-8" style={{ color: th.ink }}>{title}</h2>
+        <h2 className="wh text-3xl md:text-4xl font-extrabold mb-8" style={{ color: titleColor }}>{title}</h2>
         {children}
       </div>
     </section>
