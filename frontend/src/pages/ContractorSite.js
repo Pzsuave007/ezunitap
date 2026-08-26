@@ -474,7 +474,7 @@ function Responder({ ctx }) {
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
       {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
+      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
       {sec.areas !== false && <AreasBlock ctx={ctx} />}
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -1620,10 +1620,10 @@ function ReviewsBlock({ ctx, dark, editorial }) {
   );
 }
 
-function FaqBlock({ ctx }) {
+function FaqBlock({ ctx, dark }) {
   const { w, th, accent } = ctx;
   return (
-    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx}>
+    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} bg={dark ? "#1F2937" : undefined} onDark={dark}>
       <div className="max-w-3xl space-y-3">
         {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => <FaqItem key={i} q={f.q} a={f.a} th={th} accent={accent} />)}
       </div>
