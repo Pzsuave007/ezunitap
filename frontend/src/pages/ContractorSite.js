@@ -404,7 +404,6 @@ function Responder({ ctx }) {
               {b.phone && <a href={`tel:${b.phone}`} data-testid="site-hero-call" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2`} style={{ background: accent, color: accentText, animation: "wpulse 2s infinite" }}><Phone className="w-5 h-5" /> Call Now</a>}
               <button onClick={goContact} data-testid="site-hero-quote" className={`px-7 h-14 ${th.btn} inline-flex items-center gap-2 border-2`} style={{ borderColor: th.ink, color: th.ink }}>{ctx.cta}</button>
             </div>
-            <div className="mt-6 max-w-sm"><HeroForm ctx={ctx} /></div>
           </div>
           {heroImg && (
           <div className="relative min-h-[280px] md:min-h-full">
@@ -419,6 +418,9 @@ function Responder({ ctx }) {
           </div>
         </div>
       </section>
+
+      {/* Free estimate / booking form band (moved out of hero) */}
+      <HeroFormBand ctx={ctx} />
 
       {/* How it works: 3 bold blocks */}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
