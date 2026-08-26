@@ -997,20 +997,18 @@ function OnePage({ ctx }) {
         </section>
       )}
 
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
+      {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
-        <section id="how" className="py-24" style={{ background: "#FAF5EA" }}>
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: "rgba(0,0,0,.1)" }}>
-                <div className="md:col-span-1 wh text-3xl" style={{ color: "#C9BFAE" }}>{String(i + 1).padStart(2, "0")}</div>
-                <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
+        <section id="how" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
+          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
+          {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
+            <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: th.border }}>
+              <div className="md:col-span-1 wh text-3xl" style={{ color: th.border === "#E5E7EB" ? "#D1D5DB" : th.muted }}>{String(i + 1).padStart(2, "0")}</div>
+              <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
+              <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
+            </div>
+          ))}
         </section>
       )}
 
@@ -1026,10 +1024,12 @@ function OnePage({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <section id="gallery" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
-          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>Recent work</h2>
-          <div className="columns-1 sm:columns-2 gap-8">
-            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
+        <section id="gallery" className="py-24" style={{ background: "#FAF5EA" }}>
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>Recent work</h2>
+            <div className="columns-1 sm:columns-2 gap-8">
+              {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
+            </div>
           </div>
         </section>
       )}
