@@ -212,7 +212,7 @@ export default function ContractorSite({ injected }) {
         .wreveal{opacity:0;transform:translateY(28px);transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1)}
         .wreveal.wshow{opacity:1;transform:none}
         @media (prefers-reduced-motion:reduce){.wreveal{opacity:1 !important;transform:none !important}}
-        .wmarq{display:flex;gap:2rem;width:max-content;animation:wmarquee 22s linear infinite}
+        .wmarq{display:flex;width:max-content;animation:wmarquee 22s linear infinite}
         /* On phones, lift the floating chat button above the sticky Call/Quote bar */
         @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
       `}</style>
@@ -412,9 +412,9 @@ function Responder({ ctx }) {
           )}
         </div>
         {/* trust marquee */}
-        <div className="overflow-hidden py-3 border-y-2" style={{ background: th.ink, borderColor: th.ink }}>
+        <div className="overflow-hidden py-3 border-y-2" style={{ background: "#000000", borderColor: "#000000" }}>
           <div className="wmarq">
-            {[...badges, ...badges].map((x, i) => <span key={i} className="text-white font-bold uppercase text-sm inline-flex items-center gap-2"><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</span>)}
+            {[...badges, ...badges].map((x, i) => <span key={i} className="text-white font-bold uppercase text-sm inline-flex items-center gap-2 mr-8"><CheckCircle2 className="w-4 h-4" style={{ color: accent }} /> {x}</span>)}
           </div>
         </div>
       </section>
