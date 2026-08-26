@@ -1343,7 +1343,7 @@ function Luxe({ ctx }) {
         </div>
       </header>
 
-      <section className="relative min-h-[100svh] flex items-center">
+      <section className="relative min-h-[75svh] flex items-center">
         {heroImg && <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ transition: "transform 10s ease" }} />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(20,20,20,.5), rgba(20,20,20,.8))" }} />
         <div className="absolute inset-6 md:inset-10 border pointer-events-none" style={{ borderColor: `${gold}55` }} />
@@ -1421,12 +1421,11 @@ function Luxe({ ctx }) {
       )}
 
       {sec.gallery !== false && data.photos.length > 0 && (
-        <section id="gallery" className="py-28" style={{ background: "#FAF5EA" }}>
-          <div className="max-w-6xl mx-auto px-6 text-center mb-12"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Portfolio</div><h2 className="wh text-4xl md:text-5xl" style={{ color: "#1a1a1a" }}>Selected Work</h2></div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-0">
-            {data.photos.slice(0, 9).map((p) => <div key={p.id} className="aspect-square overflow-hidden"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition duration-[1200ms]" /></div>)}
+        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} light>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
           </div>
-        </section>
+        </SectionLight>
       )}
 
       {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
