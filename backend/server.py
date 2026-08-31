@@ -5104,6 +5104,7 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False) ->
             "content": content,
             "seo": seo,
             "photo_ids": (existing or {}).get("photo_ids", []),
+            "hero_photo_id": (existing or {}).get("hero_photo_id") or (s.get("image_id") if isinstance(s, dict) else None),
             "created_at": (existing or {}).get("created_at") or _now_iso(),
             "updated_at": _now_iso(),
         }
@@ -5122,6 +5123,7 @@ def _pp_owner_view(pp: dict) -> dict:
         "published": bool(pp.get("published")), "indexable": bool(pp.get("indexable", True)),
         "edited_by_owner": bool(pp.get("edited_by_owner")),
         "content": pp.get("content", {}), "seo": pp.get("seo", {}),
+        "hero_photo_id": pp.get("hero_photo_id"),
         "updated_at": pp.get("updated_at"),
     }
 
@@ -5140,7 +5142,9 @@ async def list_problem_pages(user_id: str = Depends(get_current_user_id), _feat:
         pp = by_service.get(name)
         items.append({"service_name": name, "has_page": bool(pp),
                       "page": _pp_owner_view(pp) if pp else None})
-    return {"website_slug": w["slug"], "public_path": f"/sitio/{w['slug']}", "items": items}
+    wp = await _website_payload(w)
+    return {"website_slug": w["slug"], "public_path": f"/sitio/{w['slug']}",
+            "photos": wp.get("photos", []), "items": items}
 
 
 @api_router.post("/website/problem-pages/generate")
@@ -5168,6 +5172,7 @@ class ProblemPageUpdate(BaseModel):
     published: Optional[bool] = None
     indexable: Optional[bool] = None
     photo_ids: Optional[list] = None
+    hero_photo_id: Optional[str] = None
 
 
 @api_router.put("/website/problem-pages/{page_id}")
@@ -5190,6 +5195,8 @@ async def update_problem_page(page_id: str, payload: ProblemPageUpdate, user_id:
         upd["indexable"] = bool(payload.indexable)
     if payload.photo_ids is not None:
         upd["photo_ids"] = payload.photo_ids
+    if payload.hero_photo_id is not None:
+        upd["hero_photo_id"] = payload.hero_photo_id or None
     await db.problem_pages.update_one({"id": page_id, "user_id": user_id}, {"$set": upd})
     new = await db.problem_pages.find_one({"id": page_id, "user_id": user_id}, {"_id": 0})
     return {"ok": True, "page": _pp_owner_view(new)}
@@ -5215,6 +5222,13 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
         picked = [pmap[i] for i in pp["photo_ids"] if i in pmap]
         if picked:
             photos = picked
+    # Hero background: explicit override → the service's own image → first gallery photo.
+    svc_img = None
+    for s in (w.get("services") or []):
+        if isinstance(s, dict) and s.get("name") == pp["service_name"]:
+            svc_img = s.get("image_id")
+            break
+    hero_photo_id = pp.get("hero_photo_id") or svc_img or (photos[0]["id"] if photos else None)
     return {
         "page": {
             "id": pp["id"], "page_slug": pp["page_slug"], "service_name": pp["service_name"],
@@ -5225,6 +5239,7 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
         "business": biz,
         "theme": {"accent": w.get("accent_color") or "#2563EB", "template": w.get("template") or "clean",
                   "logo_photo_id": biz.get("logo_photo_id")},
+        "hero_photo_id": hero_photo_id,
         "reviews": base["reviews"],
         "photos": photos,
         "service_area": base["service_area"],

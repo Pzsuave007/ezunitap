@@ -1,5 +1,10 @@
 # UniTech — Changelog
 
+## Jun 2026 — Problem pages: hero image control
+- Each Problem/Solution page auto-uses the **service's own image** (`services[].image_id`) as its hero background; falls back to first gallery photo.
+- Owner can override the hero from the editor (thumbnail picker + "Auto (service image)"). New `hero_photo_id` on `problem_pages`, resolved in `_problem_page_payload`, editable via `PUT /website/problem-pages/{id}`. Verified via curl + screenshots.
+- i18n: "Customer Pages" tab + full panel now use i18n keys (EN/ES) — no more hardcoded Spanish.
+
 ## Jun 2026 — AI Problem/Solution Conversion Pages (extends website, does NOT replace it)
 Every active service can now become a dedicated customer-problem landing page (BUSINESS → SERVICE → PROBLEM PAGE(S), architected for multiple pages per service later).
 - **Backend** (`server.py`): new `problem_pages` collection + endpoints:

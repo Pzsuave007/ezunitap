@@ -286,7 +286,9 @@
       "saved": "Saved",
       "saveErr": "Error saving",
       "regenErr": "Error regenerating",
-      "regenOk": "Page regenerated"
+      "regenOk": "Page regenerated",
+      "hero": "Hero background image",
+      "heroAuto": "Auto (service image)"
     }
   },
   "auth": {

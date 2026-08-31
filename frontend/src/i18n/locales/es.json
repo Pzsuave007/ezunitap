@@ -287,7 +287,9 @@
       "saved": "Guardado",
       "saveErr": "Error al guardar",
       "regenErr": "Error al regenerar",
-      "regenOk": "Página regenerada"
+      "regenOk": "Página regenerada",
+      "hero": "Imagen de fondo del hero",
+      "heroAuto": "Auto (imagen del servicio)"
     }
   },
   "auth": {

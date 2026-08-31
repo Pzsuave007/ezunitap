@@ -70,7 +70,7 @@ export default function ProblemPage({ injected }) {
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
   const logo = photoUrl(biz.logo_photo_id, 200);
-  const hero = photoUrl(data.photos?.[0]?.id, 1600);
+  const hero = photoUrl(data.hero_photo_id, 1600);
   const badges = data.trust_badges || [];
   const ctaLabel = page.cta_label || (page.cta_type === "call" ? "Call Now" : "Get a Free Estimate");
 

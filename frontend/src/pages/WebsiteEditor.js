@@ -1131,13 +1131,14 @@ function TemplateThumb({ kind, accent }) {
 function ProblemPagesPanel({ slug }) {
   const { t } = useTranslation();
   const [items, setItems] = useState(null);
+  const [photos, setPhotos] = useState([]);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(null); // page id
   const [draft, setDraft] = useState({});
   const origin = window.location.origin;
 
   const load = async () => {
-    try { const { data } = await api.get("/website/problem-pages"); setItems(data.items || []); }
+    try { const { data } = await api.get("/website/problem-pages"); setItems(data.items || []); setPhotos(data.photos || []); }
     catch { setItems([]); }
   };
   useEffect(() => { load(); }, []); // eslint-disable-line
@@ -1157,13 +1158,14 @@ function ProblemPagesPanel({ slug }) {
     try { await api.put(`/website/problem-pages/${id}`, { published: val }); await load(); }
     catch { toast.error(t("website.pp.saveErr")); }
   };
-  const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "" }); };
+  const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "", hero_photo_id: pp.hero_photo_id || "" }); };
   const saveEdit = async (id) => {
     setBusy(true);
     try {
       await api.put(`/website/problem-pages/${id}`, {
         content: { problem_headline: draft.problem_headline, agitation: draft.agitation, solution: draft.solution, cta_label: draft.cta_label },
         seo: { title: draft.seo_title, meta_description: draft.seo_meta },
+        hero_photo_id: draft.hero_photo_id || "",
       });
       toast.success(t("website.pp.saved")); setEditing(null); await load();
     } catch { toast.error(t("website.pp.saveErr")); } finally { setBusy(false); }
@@ -1219,6 +1221,21 @@ function ProblemPagesPanel({ slug }) {
                 <div><Label className="text-xs">{t("website.pp.agitation")}</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
                 <div><Label className="text-xs">{t("website.pp.solution")}</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
                 <div><Label className="text-xs">{t("website.pp.cta")}</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
+                <div>
+                  <Label className="text-xs">{t("website.pp.hero")}</Label>
+                  <div className="flex gap-2 flex-wrap mt-1.5">
+                    {photos.map((ph) => (
+                      <button key={ph.id} type="button" onClick={() => setDraft({ ...draft, hero_photo_id: ph.id })}
+                        className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${draft.hero_photo_id === ph.id ? "border-blue-600" : "border-transparent"}`} data-testid={`pp-hero-pick-${ph.id}`}>
+                        <img src={photoSrc(ph.id)} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setDraft({ ...draft, hero_photo_id: "" })}
+                      className={`w-16 h-16 rounded-lg border-2 text-[10px] font-semibold text-slate-500 flex items-center justify-center text-center px-1 ${!draft.hero_photo_id ? "border-blue-600 bg-blue-50" : "border-slate-200"}`} data-testid="pp-hero-auto">
+                      {t("website.pp.heroAuto")}
+                    </button>
+                  </div>
+                </div>
                 <div><Label className="text-xs">{t("website.pp.seoTitle")}</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
                 <div><Label className="text-xs">{t("website.pp.seoMeta")}</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
                 <div className="flex gap-2 pt-1">
