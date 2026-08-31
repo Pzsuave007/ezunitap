@@ -373,7 +373,7 @@ export default function WebsiteEditor() {
             {TABS.map((tb) => (
               <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
                 className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                {tb === "problem" ? "Páginas Cliente" : t(`website.tab.${tb}`)}
+                {t(`website.tab.${tb}`)}
               </button>
             ))}
           </div>
@@ -1129,6 +1129,7 @@ function TemplateThumb({ kind, accent }) {
 
 
 function ProblemPagesPanel({ slug }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(null); // page id
@@ -1143,18 +1144,18 @@ function ProblemPagesPanel({ slug }) {
 
   const generate = async (force) => {
     setBusy(true);
-    try { const { data } = await api.post("/website/problem-pages/generate", { force: !!force }); toast.success(`${data.count} páginas listas`); await load(); }
-    catch { toast.error("No se pudo generar. Intenta de nuevo."); }
+    try { const { data } = await api.post("/website/problem-pages/generate", { force: !!force }); toast.success(`${data.count} ${t("website.pp.pagesReady")}`); await load(); }
+    catch { toast.error(t("website.pp.genErr")); }
     finally { setBusy(false); }
   };
   const regenerate = async (id) => {
     setBusy(true);
-    try { await api.post(`/website/problem-pages/${id}/regenerate`, {}); toast.success("Página regenerada"); await load(); }
-    catch { toast.error("Error al regenerar"); } finally { setBusy(false); }
+    try { await api.post(`/website/problem-pages/${id}/regenerate`, {}); toast.success(t("website.pp.regenOk")); await load(); }
+    catch { toast.error(t("website.pp.regenErr")); } finally { setBusy(false); }
   };
   const publish = async (id, val) => {
     try { await api.put(`/website/problem-pages/${id}`, { published: val }); await load(); }
-    catch { toast.error("Error"); }
+    catch { toast.error(t("website.pp.saveErr")); }
   };
   const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "" }); };
   const saveEdit = async (id) => {
@@ -1164,8 +1165,8 @@ function ProblemPagesPanel({ slug }) {
         content: { problem_headline: draft.problem_headline, agitation: draft.agitation, solution: draft.solution, cta_label: draft.cta_label },
         seo: { title: draft.seo_title, meta_description: draft.seo_meta },
       });
-      toast.success("Guardado"); setEditing(null); await load();
-    } catch { toast.error("Error al guardar"); } finally { setBusy(false); }
+      toast.success(t("website.pp.saved")); setEditing(null); await load();
+    } catch { toast.error(t("website.pp.saveErr")); } finally { setBusy(false); }
   };
 
   if (items === null) return <Card className="card-elevated border-0 shadow-none p-5"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></Card>;
@@ -1174,17 +1175,17 @@ function ProblemPagesPanel({ slug }) {
   return (
     <div className="space-y-4" data-testid="website-problem-panel">
       <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-orange-500 to-rose-500 text-white">
-        <div className="font-heading text-xl font-bold">Páginas de Cliente</div>
-        <p className="text-sm text-white/85 mt-1">Convierte los servicios que ya ofreces en páginas diseñadas para captar a quien busca ayuda en Google — enfocadas en el problema del cliente, no en describir el servicio.</p>
+        <div className="font-heading text-xl font-bold">{t("website.pp.title")}</div>
+        <p className="text-sm text-white/85 mt-1">{t("website.pp.desc")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={() => generate(false)} disabled={busy} data-testid="pp-generate" className="rounded-xl bg-white text-rose-600 hover:bg-white/90 font-bold">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (anyPage ? "Generar faltantes" : "Generar páginas")}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (anyPage ? t("website.pp.generateMissing") : t("website.pp.generate"))}
           </Button>
-          {anyPage && <Button onClick={() => generate(true)} disabled={busy} variant="outline" className="rounded-xl bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold">Regenerar todas</Button>}
+          {anyPage && <Button onClick={() => generate(true)} disabled={busy} variant="outline" className="rounded-xl bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold">{t("website.pp.regenAll")}</Button>}
         </div>
       </Card>
 
-      {items.length === 0 && <Card className="card-elevated border-0 shadow-none p-5 text-sm text-slate-500">Agrega servicios en la pestaña "Servicios" y luego genera sus páginas aquí.</Card>}
+      {items.length === 0 && <Card className="card-elevated border-0 shadow-none p-5 text-sm text-slate-500">{t("website.pp.empty")}</Card>}
 
       {items.map((it) => {
         const pp = it.page;
@@ -1196,33 +1197,33 @@ function ProblemPagesPanel({ slug }) {
                 {pp
                   ? <div className="mt-1 flex items-center gap-2 text-xs">
                       {pp.published
-                        ? <span className="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✓ Publicada</span>
-                        : <span className="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">⚠ Revisar</span>}
+                        ? <span className="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✓ {t("website.pp.published")}</span>
+                        : <span className="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">⚠ {t("website.pp.review")}</span>}
                       <span className="text-slate-400 truncate">/p/{pp.page_slug}</span>
                     </div>
-                  : <div className="mt-1 text-xs text-slate-400">Sin página — genera para crearla</div>}
+                  : <div className="mt-1 text-xs text-slate-400">{t("website.pp.noPage")}</div>}
               </div>
               {pp && (
                 <div className="flex items-center gap-2">
-                  <a href={`${origin}/sitio/${slug}/p/${pp.page_slug}?preview=1`} target="_blank" rel="noreferrer" className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 inline-flex items-center gap-1.5" data-testid={`pp-view-${it.service_name}`}><Eye className="w-4 h-4" /> Ver</a>
-                  <button onClick={() => openEdit(pp)} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200" data-testid={`pp-edit-${it.service_name}`}>Editar</button>
-                  <button onClick={() => regenerate(pp.id)} disabled={busy} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200">Regenerar</button>
-                  <div className="flex items-center gap-1.5"><span className="text-xs text-slate-500">Publicar</span><Switch checked={pp.published} onCheckedChange={(v) => publish(pp.id, v)} data-testid={`pp-publish-${it.service_name}`} /></div>
+                  <a href={`${origin}/sitio/${slug}/p/${pp.page_slug}?preview=1`} target="_blank" rel="noreferrer" className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 inline-flex items-center gap-1.5" data-testid={`pp-view-${it.service_name}`}><Eye className="w-4 h-4" /> {t("website.pp.view")}</a>
+                  <button onClick={() => openEdit(pp)} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200" data-testid={`pp-edit-${it.service_name}`}>{t("website.pp.edit")}</button>
+                  <button onClick={() => regenerate(pp.id)} disabled={busy} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200">{t("website.pp.regen")}</button>
+                  <div className="flex items-center gap-1.5"><span className="text-xs text-slate-500">{t("website.pp.publish")}</span><Switch checked={pp.published} onCheckedChange={(v) => publish(pp.id, v)} data-testid={`pp-publish-${it.service_name}`} /></div>
                 </div>
               )}
             </div>
 
             {editing === pp?.id && (
               <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5" data-testid="pp-edit-form">
-                <div><Label className="text-xs">Titular del problema (H1)</Label><Input value={draft.problem_headline || ""} onChange={(e) => setDraft({ ...draft, problem_headline: e.target.value })} /></div>
-                <div><Label className="text-xs">Frase de urgencia</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
-                <div><Label className="text-xs">Solución</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
-                <div><Label className="text-xs">Texto del botón (CTA)</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
-                <div><Label className="text-xs">Título SEO</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
-                <div><Label className="text-xs">Meta descripción SEO</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.headline")}</Label><Input value={draft.problem_headline || ""} onChange={(e) => setDraft({ ...draft, problem_headline: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.agitation")}</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.solution")}</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.cta")}</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.seoTitle")}</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
+                <div><Label className="text-xs">{t("website.pp.seoMeta")}</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
                 <div className="flex gap-2 pt-1">
-                  <Button onClick={() => saveEdit(pp.id)} disabled={busy} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}</Button>
-                  <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">Cancelar</Button>
+                  <Button onClick={() => saveEdit(pp.id)} disabled={busy} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.pp.save")}</Button>
+                  <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">{t("website.pp.cancel")}</Button>
                 </div>
               </div>
             )}

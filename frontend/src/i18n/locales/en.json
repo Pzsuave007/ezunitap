@@ -235,7 +235,8 @@
       "services": "Services",
       "media": "Photos",
       "forms": "Forms",
-      "sections": "Sections"
+      "sections": "Sections",
+      "problem": "Customer Pages"
     },
     "transDesc": "Add a Spanish version so visitors can switch the site to Spanish.",
     "transBtn": "Create Spanish version",
@@ -257,7 +258,36 @@
     "whyPhotoTitle": "‘Why choose us’ image",
     "whyPhotoDesc": "Adds an image-beside-text highlight section with a checklist and a button.",
     "bandPhotoTitle": "Call-to-action banner",
-    "bandPhotoDesc": "Adds a full-width banner using this photo with a big call button."
+    "bandPhotoDesc": "Adds a full-width banner using this photo with a big call button.",
+    "pp": {
+      "title": "Customer Problem Pages",
+      "desc": "Turn the services you already offer into pages designed to convert people searching for help into new customers — focused on the customer's problem, not just describing the service.",
+      "generate": "Generate pages",
+      "generateMissing": "Generate missing",
+      "regenAll": "Regenerate all",
+      "empty": "Add services in the \"Services\" tab, then generate their pages here.",
+      "published": "Published",
+      "review": "Needs review",
+      "noPage": "No page yet — generate to create it",
+      "view": "View",
+      "edit": "Edit",
+      "regen": "Regenerate",
+      "publish": "Publish",
+      "headline": "Problem headline (H1)",
+      "agitation": "Urgency line",
+      "solution": "Solution",
+      "cta": "Button text (CTA)",
+      "seoTitle": "SEO title",
+      "seoMeta": "SEO meta description",
+      "save": "Save",
+      "cancel": "Cancel",
+      "pagesReady": "pages ready",
+      "genErr": "Could not generate. Try again.",
+      "saved": "Saved",
+      "saveErr": "Error saving",
+      "regenErr": "Error regenerating",
+      "regenOk": "Page regenerated"
+    }
   },
   "auth": {
     "login": {
