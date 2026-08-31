@@ -1875,6 +1875,17 @@ function FooterBlock({ ctx }) {
           {b.phone && <a href={`tel:${b.phone}`} className={`px-8 h-14 inline-flex items-center gap-2 ${th.btn} bg-white/10 hover:bg-white/20 font-bold`}><Phone className="w-4 h-4" /> {b.phone}</a>}
         </div>
       </div>
+      {/* Internal links to Problem/Solution pages (SEO + navigation) */}
+      {(data.problem_pages || []).length > 0 && (
+        <div className="max-w-6xl mx-auto px-5 pt-12 relative" data-testid="site-problem-links">
+          <div className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>Common problems we solve</div>
+          <div className="flex flex-wrap gap-2">
+            {data.problem_pages.map((p, i) => (
+              <a key={i} href={`/sitio/${w.slug}/p/${p.page_slug}`} className="px-3.5 py-1.5 rounded-full text-sm bg-white/10 hover:bg-white/20 text-white/85 transition">{p.service_name}</a>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Info columns (SEO-rich) */}
       <div className="max-w-6xl mx-auto px-5 pt-14 mt-14 pb-12 relative grid md:grid-cols-3 gap-10 md:gap-12 border-t border-white/10">
         <div>

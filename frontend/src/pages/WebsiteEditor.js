@@ -14,7 +14,7 @@ const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "sli
 const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "about", "feature", "gallery", "reviews", "how", "why", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
-const TABS = ["publish", "design", "content", "services", "media", "forms", "sections"];
+const TABS = ["publish", "design", "content", "services", "problem", "media", "forms", "sections"];
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
   cinematic: ["#F5B301", "#22D3EE", "#EF4444", "#A855F7"],
@@ -373,7 +373,7 @@ export default function WebsiteEditor() {
             {TABS.map((tb) => (
               <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
                 className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                {t(`website.tab.${tb}`)}
+                {tb === "problem" ? "Páginas Cliente" : t(`website.tab.${tb}`)}
               </button>
             ))}
           </div>
@@ -610,6 +610,8 @@ export default function WebsiteEditor() {
         <Button variant="outline" onClick={baAdd} className="rounded-xl mt-3" data-testid="website-ba-add"><Plus className="w-4 h-4 mr-1" /> {t("website.baAdd")}</Button>
       </Card>
       </>)}
+
+      {tab === "problem" && <ProblemPagesPanel slug={w.slug} />}
 
       {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
       {tab === "forms" && (
@@ -1122,5 +1124,112 @@ function TemplateThumb({ kind, accent }) {
     default:
       return wrap(TPL_SWATCH[kind] || "#e5e7eb", null);
   }
+}
+
+
+
+function ProblemPagesPanel({ slug }) {
+  const [items, setItems] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null); // page id
+  const [draft, setDraft] = useState({});
+  const origin = window.location.origin;
+
+  const load = async () => {
+    try { const { data } = await api.get("/website/problem-pages"); setItems(data.items || []); }
+    catch { setItems([]); }
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line
+
+  const generate = async (force) => {
+    setBusy(true);
+    try { const { data } = await api.post("/website/problem-pages/generate", { force: !!force }); toast.success(`${data.count} páginas listas`); await load(); }
+    catch { toast.error("No se pudo generar. Intenta de nuevo."); }
+    finally { setBusy(false); }
+  };
+  const regenerate = async (id) => {
+    setBusy(true);
+    try { await api.post(`/website/problem-pages/${id}/regenerate`, {}); toast.success("Página regenerada"); await load(); }
+    catch { toast.error("Error al regenerar"); } finally { setBusy(false); }
+  };
+  const publish = async (id, val) => {
+    try { await api.put(`/website/problem-pages/${id}`, { published: val }); await load(); }
+    catch { toast.error("Error"); }
+  };
+  const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "" }); };
+  const saveEdit = async (id) => {
+    setBusy(true);
+    try {
+      await api.put(`/website/problem-pages/${id}`, {
+        content: { problem_headline: draft.problem_headline, agitation: draft.agitation, solution: draft.solution, cta_label: draft.cta_label },
+        seo: { title: draft.seo_title, meta_description: draft.seo_meta },
+      });
+      toast.success("Guardado"); setEditing(null); await load();
+    } catch { toast.error("Error al guardar"); } finally { setBusy(false); }
+  };
+
+  if (items === null) return <Card className="card-elevated border-0 shadow-none p-5"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></Card>;
+
+  const anyPage = items.some((i) => i.has_page);
+  return (
+    <div className="space-y-4" data-testid="website-problem-panel">
+      <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-orange-500 to-rose-500 text-white">
+        <div className="font-heading text-xl font-bold">Páginas de Cliente</div>
+        <p className="text-sm text-white/85 mt-1">Convierte los servicios que ya ofreces en páginas diseñadas para captar a quien busca ayuda en Google — enfocadas en el problema del cliente, no en describir el servicio.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button onClick={() => generate(false)} disabled={busy} data-testid="pp-generate" className="rounded-xl bg-white text-rose-600 hover:bg-white/90 font-bold">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (anyPage ? "Generar faltantes" : "Generar páginas")}
+          </Button>
+          {anyPage && <Button onClick={() => generate(true)} disabled={busy} variant="outline" className="rounded-xl bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold">Regenerar todas</Button>}
+        </div>
+      </Card>
+
+      {items.length === 0 && <Card className="card-elevated border-0 shadow-none p-5 text-sm text-slate-500">Agrega servicios en la pestaña "Servicios" y luego genera sus páginas aquí.</Card>}
+
+      {items.map((it) => {
+        const pp = it.page;
+        return (
+          <Card key={it.service_name} className="card-elevated border-0 shadow-none p-4" data-testid={`pp-item-${it.service_name}`}>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="font-bold truncate">{it.service_name}</div>
+                {pp
+                  ? <div className="mt-1 flex items-center gap-2 text-xs">
+                      {pp.published
+                        ? <span className="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✓ Publicada</span>
+                        : <span className="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">⚠ Revisar</span>}
+                      <span className="text-slate-400 truncate">/p/{pp.page_slug}</span>
+                    </div>
+                  : <div className="mt-1 text-xs text-slate-400">Sin página — genera para crearla</div>}
+              </div>
+              {pp && (
+                <div className="flex items-center gap-2">
+                  <a href={`${origin}/sitio/${slug}/p/${pp.page_slug}?preview=1`} target="_blank" rel="noreferrer" className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 inline-flex items-center gap-1.5" data-testid={`pp-view-${it.service_name}`}><Eye className="w-4 h-4" /> Ver</a>
+                  <button onClick={() => openEdit(pp)} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200" data-testid={`pp-edit-${it.service_name}`}>Editar</button>
+                  <button onClick={() => regenerate(pp.id)} disabled={busy} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200">Regenerar</button>
+                  <div className="flex items-center gap-1.5"><span className="text-xs text-slate-500">Publicar</span><Switch checked={pp.published} onCheckedChange={(v) => publish(pp.id, v)} data-testid={`pp-publish-${it.service_name}`} /></div>
+                </div>
+              )}
+            </div>
+
+            {editing === pp?.id && (
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5" data-testid="pp-edit-form">
+                <div><Label className="text-xs">Titular del problema (H1)</Label><Input value={draft.problem_headline || ""} onChange={(e) => setDraft({ ...draft, problem_headline: e.target.value })} /></div>
+                <div><Label className="text-xs">Frase de urgencia</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
+                <div><Label className="text-xs">Solución</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
+                <div><Label className="text-xs">Texto del botón (CTA)</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
+                <div><Label className="text-xs">Título SEO</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
+                <div><Label className="text-xs">Meta descripción SEO</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
+                <div className="flex gap-2 pt-1">
+                  <Button onClick={() => saveEdit(pp.id)} disabled={busy} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar"}</Button>
+                  <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">Cancelar</Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
 }
 

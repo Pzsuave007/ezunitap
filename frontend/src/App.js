@@ -55,6 +55,7 @@ import DemoFlow from "@/pages/DemoFlow";
 import DemoAll from "@/pages/DemoAll";
 import DemoFlujo from "@/pages/DemoFlujo";
 import ContractorSite from "@/pages/ContractorSite";
+import ProblemPage from "@/pages/ProblemPage";
 import WebsiteEditor from "@/pages/WebsiteEditor";
 import { FeatureGate } from "@/components/FeatureGate";
 import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
@@ -142,6 +143,7 @@ function App() {
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/sitio/:slug" element={<ContractorSite />} />
+            <Route path="/sitio/:slug/p/:pageSlug" element={<ProblemPage />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
             <Route path="/terminos" element={<TermsPage />} />
             <Route path="/privacidad" element={<PrivacyPage />} />

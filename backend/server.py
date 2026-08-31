@@ -364,7 +364,14 @@ class CardLeadIn(BaseModel):
     lead_type: Optional[str] = "estimate"  # "estimate" | "connect"
     preferred_contact: Optional[str] = "phone"  # phone, text, email, whatsapp
     photo_b64: Optional[str] = None  # optional base image
+    photos_b64: Optional[List[str]] = None  # multiple optional photos (problem pages)
     source_site: Optional[str] = ""  # external website domain when submitted via embed widget
+    source: Optional[str] = ""  # e.g. "problem_page", "hero"
+    problem_page: Optional[str] = ""  # page slug the lead came from
+    problem_label: Optional[str] = ""  # the customer-facing problem headline
+    utm_source: Optional[str] = ""
+    utm_medium: Optional[str] = ""
+    utm_campaign: Optional[str] = ""
 
 
 class CardChatIn(BaseModel):
@@ -4841,6 +4848,13 @@ async def _website_payload(w):
         "service_area": w.get("service_area") or card.get("service_area") or "",
         "appt_enabled": bool(card.get("appt_enabled")),
         "card_slug": card.get("slug") or "",
+        "problem_pages": [
+            {"service_name": p.get("service_name"), "page_slug": p.get("page_slug")}
+            for p in await db.problem_pages.find(
+                {"user_id": w["user_id"], "published": True},
+                {"_id": 0, "service_name": 1, "page_slug": 1},
+            ).to_list(100)
+        ],
     }
 
 
@@ -4888,13 +4902,34 @@ async def website_sitemap(request: Request):
     sites = await db.websites.find({"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000)
     urls = []
     for s in sites:
-        if s.get("custom_domain") and s.get("custom_domain_verified"):
-            loc = f"https://{s['custom_domain']}/"
-        elif s.get("slug"):
-            loc = f"{base}/sitio/{s['slug']}"
+        dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
+        slug = s.get("slug")
+        if dom:
+            root = f"https://{dom}"
+        elif slug:
+            root = f"{base}/sitio/{slug}"
         else:
             continue
-        urls.append(f"<url><loc>{loc}</loc><changefreq>weekly</changefreq></url>")
+        urls.append(f"<url><loc>{root}</loc><changefreq>weekly</changefreq></url>")
+    # Problem/Solution pages: published + indexable, listed under their site's host
+    pps = await db.problem_pages.find(
+        {"published": True, "indexable": True},
+        {"_id": 0, "website_slug": 1, "page_slug": 1},
+    ).to_list(4000)
+    if pps:
+        wmap = {s.get("slug"): s for s in sites}
+        # include sites that host a published page even if the site itself is a draft
+        missing = list({p["website_slug"] for p in pps} - set(wmap.keys()))
+        if missing:
+            for s in await db.websites.find({"slug": {"$in": missing}}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000):
+                wmap[s["slug"]] = s
+        for pp in pps:
+            s = wmap.get(pp["website_slug"])
+            if not s:
+                continue
+            dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
+            loc = f"https://{dom}/sitio/{s['slug']}/p/{pp['page_slug']}" if dom else f"{base}/sitio/{s['slug']}/p/{pp['page_slug']}"
+            urls.append(f"<url><loc>{loc}</loc><changefreq>weekly</changefreq></url>")
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     return Response(content=xml, media_type="application/xml")
 
@@ -4984,6 +5019,321 @@ async def public_website_lead(slug: str, payload: CardLeadIn):
         )
     except Exception as e:
         logger.error(f"website lead notif failed: {e!r}")
+    return {"ok": True}
+
+
+# ===========================================================================
+# PROBLEM / SOLUTION CONVERSION PAGES
+# Extends the existing website: each service becomes a customer-problem-focused,
+# conversion + local-SEO page. BUSINESS -> SERVICE -> PROBLEM PAGE(S).
+# ===========================================================================
+_PP_CONTENT_KEYS = [
+    "problem_headline", "agitation", "solution", "cta_type", "cta_label",
+    "s_problem_title", "s_problem", "s_why_matters_title", "s_why_matters",
+    "s_how_title", "s_how", "why_choose", "faqs", "final_cta_headline",
+]
+
+
+async def _pp_reviews_and_rating(user_id: str):
+    manual = await db.reviews.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    google = await db.gbp_reviews.find(
+        {"user_id": user_id, "rating": {"$gte": 4}, "text": {"$nin": ["", None]}},
+        {"_id": 0, "customer_name": 1, "rating": 1, "text": 1},
+    ).sort([("rating", -1)]).to_list(20)
+    reviews = (google + manual)[:20]
+    return reviews
+
+
+async def _generate_problem_pages_for_user(user_id: str, force: bool = False) -> list:
+    """Generate (or refresh) one Problem/Solution page per active service.
+    Idempotent: existing pages are only regenerated when force=True."""
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    if not w:
+        return []
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    services = w.get("services") if w.get("services") is not None else (card.get("services") or [])
+    reviews = await _pp_reviews_and_rating(user_id)
+    out = []
+    for s in (services or []):
+        name = (s.get("name") if isinstance(s, dict) else str(s)) or ""
+        if not name.strip():
+            continue
+        existing = await db.problem_pages.find_one({"user_id": user_id, "service_name": name}, {"_id": 0})
+        if existing and not force:
+            out.append(existing)
+            continue
+        try:
+            data = await ai_service.generate_problem_page(
+                business_name=user.get("business_name", ""),
+                business_type=card.get("business_type", ""),
+                service_name=name,
+                service_description=(s.get("description") if isinstance(s, dict) else "") or "",
+                service_area=w.get("service_area") or card.get("service_area") or "",
+                years_in_business=card.get("years_in_business") or 0,
+                is_licensed=bool(card.get("is_licensed")),
+                is_insured=bool(card.get("is_insured")),
+                rating=float(card.get("rating") or 0.0),
+                review_count=len(reviews),
+                reviews=reviews,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"problem page gen failed for '{name}': {e!r}")
+            continue
+        page_slug = _slugify(data.get("page_slug") or name) or "service"
+        base, n = page_slug, 1
+        while await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug, "service_name": {"$ne": name}}):
+            n += 1
+            page_slug = f"{base}-{n}"
+        content = {k: data.get(k) for k in _PP_CONTENT_KEYS}
+        seo = {
+            "title": (data.get("seo_title") or "")[:70],
+            "meta_description": (data.get("meta_description") or "")[:200],
+            "h1": data.get("h1") or data.get("problem_headline") or name,
+        }
+        doc = {
+            "id": (existing or {}).get("id") or _new_id(),
+            "user_id": user_id,
+            "website_slug": w["slug"],
+            "service_name": name,
+            "page_slug": page_slug,
+            "status": "needs_review",
+            "published": bool((existing or {}).get("published", False)),
+            "indexable": bool((existing or {}).get("indexable", True)),
+            "edited_by_owner": False,
+            "content": content,
+            "seo": seo,
+            "photo_ids": (existing or {}).get("photo_ids", []),
+            "created_at": (existing or {}).get("created_at") or _now_iso(),
+            "updated_at": _now_iso(),
+        }
+        if existing:
+            await db.problem_pages.update_one({"id": doc["id"]}, {"$set": doc})
+        else:
+            await db.problem_pages.insert_one(dict(doc))
+        out.append(doc)
+    return out
+
+
+def _pp_owner_view(pp: dict) -> dict:
+    return {
+        "id": pp.get("id"), "service_name": pp.get("service_name"),
+        "page_slug": pp.get("page_slug"), "status": pp.get("status"),
+        "published": bool(pp.get("published")), "indexable": bool(pp.get("indexable", True)),
+        "edited_by_owner": bool(pp.get("edited_by_owner")),
+        "content": pp.get("content", {}), "seo": pp.get("seo", {}),
+        "updated_at": pp.get("updated_at"),
+    }
+
+
+@api_router.get("/website/problem-pages")
+async def list_problem_pages(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    w = await _get_or_init_website(user_id)
+    pages = await db.problem_pages.find({"user_id": user_id}, {"_id": 0}).to_list(200)
+    by_service = {p["service_name"]: p for p in pages}
+    services = w.get("services") if w.get("services") is not None else []
+    items = []
+    for s in (services or []):
+        name = (s.get("name") if isinstance(s, dict) else str(s)) or ""
+        if not name.strip():
+            continue
+        pp = by_service.get(name)
+        items.append({"service_name": name, "has_page": bool(pp),
+                      "page": _pp_owner_view(pp) if pp else None})
+    return {"website_slug": w["slug"], "public_path": f"/sitio/{w['slug']}", "items": items}
+
+
+@api_router.post("/website/problem-pages/generate")
+async def generate_problem_pages(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    force = bool(body.get("force"))
+    pages = await _generate_problem_pages_for_user(user_id, force=force)
+    return {"ok": True, "count": len(pages)}
+
+
+@api_router.post("/website/problem-pages/{page_id}/regenerate")
+async def regenerate_problem_page(page_id: str, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    pp = await db.problem_pages.find_one({"id": page_id, "user_id": user_id}, {"_id": 0})
+    if not pp:
+        raise HTTPException(404, "Not found")
+    await db.problem_pages.delete_one({"id": page_id, "user_id": user_id})
+    # Re-create only this service's page by generating all-missing (fast: others skipped).
+    await _generate_problem_pages_for_user(user_id, force=False)
+    new = await db.problem_pages.find_one({"user_id": user_id, "service_name": pp["service_name"]}, {"_id": 0})
+    return {"ok": True, "page": _pp_owner_view(new) if new else None}
+
+
+class ProblemPageUpdate(BaseModel):
+    content: Optional[dict] = None
+    seo: Optional[dict] = None
+    published: Optional[bool] = None
+    indexable: Optional[bool] = None
+    photo_ids: Optional[list] = None
+
+
+@api_router.put("/website/problem-pages/{page_id}")
+async def update_problem_page(page_id: str, payload: ProblemPageUpdate, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    pp = await db.problem_pages.find_one({"id": page_id, "user_id": user_id}, {"_id": 0})
+    if not pp:
+        raise HTTPException(404, "Not found")
+    upd = {"updated_at": _now_iso()}
+    if payload.content is not None:
+        upd["content"] = {**pp.get("content", {}), **payload.content}
+        upd["edited_by_owner"] = True
+        upd["status"] = "ready"
+    if payload.seo is not None:
+        upd["seo"] = {**pp.get("seo", {}), **payload.seo}
+    if payload.published is not None:
+        upd["published"] = bool(payload.published)
+        if payload.published:
+            upd["status"] = "ready"
+    if payload.indexable is not None:
+        upd["indexable"] = bool(payload.indexable)
+    if payload.photo_ids is not None:
+        upd["photo_ids"] = payload.photo_ids
+    await db.problem_pages.update_one({"id": page_id, "user_id": user_id}, {"$set": upd})
+    new = await db.problem_pages.find_one({"id": page_id, "user_id": user_id}, {"_id": 0})
+    return {"ok": True, "page": _pp_owner_view(new)}
+
+
+async def _problem_page_payload(w: dict, pp: dict) -> dict:
+    base = await _website_payload(w)
+    card = await db.cards.find_one({"user_id": w["user_id"]}, {"_id": 0}) or {}
+    biz = base["business"]
+    badges = []
+    if biz.get("is_licensed"):
+        badges.append("Licensed")
+    if biz.get("is_insured"):
+        badges.append("Insured")
+    if biz.get("years_in_business"):
+        badges.append(f"{biz['years_in_business']}+ Years in Business")
+    if card.get("rating") and base.get("reviews"):
+        badges.append(f"{float(card['rating']):.1f}★ ({len(base['reviews'])} reviews)")
+    badges.append("Locally Owned")
+    photos = base["photos"]
+    if pp.get("photo_ids"):
+        pmap = {p["id"]: p for p in photos}
+        picked = [pmap[i] for i in pp["photo_ids"] if i in pmap]
+        if picked:
+            photos = picked
+    return {
+        "page": {
+            "id": pp["id"], "page_slug": pp["page_slug"], "service_name": pp["service_name"],
+            "status": pp.get("status"), "published": bool(pp.get("published")),
+            "indexable": bool(pp.get("indexable", True)),
+            "content": pp.get("content", {}), "seo": pp.get("seo", {}),
+        },
+        "business": biz,
+        "theme": {"accent": w.get("accent_color") or "#2563EB", "template": w.get("template") or "clean",
+                  "logo_photo_id": biz.get("logo_photo_id")},
+        "reviews": base["reviews"],
+        "photos": photos,
+        "service_area": base["service_area"],
+        "hours": base["hours"],
+        "card_slug": base["card_slug"],
+        "trust_badges": badges,
+        "website_slug": w["slug"],
+        "website_path": f"/sitio/{w['slug']}",
+    }
+
+
+@api_router.get("/public/problem-page/{slug}/{page_slug}")
+async def public_problem_page(slug: str, page_slug: str, preview: int = 0):
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    pp = await db.problem_pages.find_one({"website_slug": slug, "page_slug": page_slug}, {"_id": 0})
+    if not pp or (not pp.get("published") and not preview):
+        raise HTTPException(404, "Not found")
+    return await _problem_page_payload(w, pp)
+
+
+@api_router.post("/public/problem-page/{slug}/{page_slug}/lead")
+async def public_problem_page_lead(slug: str, page_slug: str, payload: CardLeadIn):
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    pp = await db.problem_pages.find_one({"website_slug": slug, "page_slug": page_slug}, {"_id": 0})
+    if not pp:
+        raise HTTPException(404, "Not found")
+    user_id = w["user_id"]
+    via_site = (w.get("custom_domain") if w.get("custom_domain_verified") else slug) or slug
+    # Optional photos → storage
+    photo_paths = []
+    imgs = list(payload.photos_b64 or [])
+    if payload.photo_b64:
+        imgs.append(payload.photo_b64)
+    for b64 in imgs[:5]:
+        try:
+            if "," in b64 and b64.strip().startswith("data:"):
+                b64 = b64.split(",", 1)[1]
+            data = base64.b64decode(b64)
+            if len(data) <= MAX_IMAGE_BYTES:
+                pid = _new_id()
+                path = f"{app_name}/leads/{user_id}/{pid}.jpg"
+                res = storage_service.get_storage().put(path, data, "image/jpeg")
+                photo_paths.append(res.get("path", path))
+        except Exception:
+            logger.exception("Problem-page lead photo upload failed (non-fatal)")
+    service_label = pp.get("service_name") or (payload.service or "")
+    problem_label = payload.problem_label or (pp.get("content", {}).get("problem_headline") or "")
+    page_path = f"/sitio/{slug}/p/{page_slug}"
+    lead = {
+        "id": _new_id(), "user_id": user_id,
+        "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+        "address": payload.address or "", "service": service_label,
+        "description": payload.description or "",
+        "lead_type": "estimate", "source": "problem_page", "source_site": via_site,
+        "problem_page": page_slug, "problem_label": problem_label, "page_path": page_path,
+        "utm_source": payload.utm_source or "", "utm_medium": payload.utm_medium or "",
+        "utm_campaign": payload.utm_campaign or "",
+        "photo_path": photo_paths[0] if photo_paths else None,
+        "photo_paths": photo_paths, "status": "new", "created_at": _now_iso(),
+    }
+    await db.card_leads.insert_one(dict(lead))
+    notes_lines = [
+        f"[Lead desde Página de Problema: {page_path}]",
+        f"Problem: {problem_label}" if problem_label else "",
+        f"Service: {service_label}" if service_label else "",
+        (payload.description or "").strip(),
+    ]
+    if payload.utm_source or payload.utm_campaign:
+        notes_lines.append(f"UTM: {payload.utm_source or ''}/{payload.utm_medium or ''}/{payload.utm_campaign or ''}")
+    client_notes = "\n".join([l for l in notes_lines if l])
+    dedupe_or = []
+    if (payload.phone or "").strip():
+        dedupe_or.append({"phone": payload.phone.strip()})
+    if (payload.email or "").strip():
+        dedupe_or.append({"email": payload.email.strip()})
+    existing = await db.clients.find_one({"user_id": user_id, "$or": dedupe_or}, {"_id": 0}) if dedupe_or else None
+    if existing:
+        updates = {"lead_type": "estimate", "lead_source": "problem_page", "source_site": via_site}
+        if service_label:
+            updates["job_type"] = service_label
+        if (payload.description or "").strip():
+            updates["project_request"] = payload.description.strip()
+        if photo_paths:
+            updates["project_photo_path"] = photo_paths[0]
+        await db.clients.update_one({"id": existing["id"], "user_id": user_id}, {"$set": updates})
+        await db.client_notes.insert_one({"id": _new_id(), "client_id": existing["id"], "user_id": user_id,
+                                          "text": client_notes, "created_at": _now_iso()})
+    else:
+        await db.clients.insert_one({
+            "id": _new_id(), "user_id": user_id, "name": payload.name,
+            "phone": payload.phone or "", "email": payload.email or "", "address": payload.address or "",
+            "job_type": service_label, "notes": client_notes, "lead_type": "estimate", "interests": [],
+            "preferred_contact": payload.preferred_contact or "", "lead_source": "problem_page",
+            "source_site": via_site, "project_request": (payload.description or "").strip(),
+            "project_photo_path": photo_paths[0] if photo_paths else None, "created_at": _now_iso(),
+        })
+    try:
+        await _create_notification(
+            user_id=user_id,
+            title="🎯 Nuevo lead desde una Página de Problema",
+            body=f"{payload.name} pidió ayuda con: {problem_label or service_label}. Ya está en tu CRM.",
+            kind="success", action_url="/clientes", action_label="Ver en CRM",
+        )
+    except Exception as e:
+        logger.error(f"problem page lead notif failed: {e!r}")
     return {"ok": True}
 
 
@@ -6797,6 +7147,12 @@ async def onboarding_complete(payload: dict = Body(...), user_id: str = Depends(
             site = await _build_full_website(user_id, publish=bool(payload.get("publish", True)))
         except Exception as e:  # noqa: BLE001
             logger.error(f"onboarding build_site failed: {e!r}")
+        # Auto-generate Problem/Solution pages for the services entered during
+        # onboarding (best-effort, drafts the owner can review/publish).
+        try:
+            await _generate_problem_pages_for_user(user_id, force=False)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"onboarding problem-pages gen failed: {e!r}")
 
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
     u2 = await db.users.find_one({"id": user_id}, {"_id": 0, "business_name": 1, "whatsapp": 1}) or {}

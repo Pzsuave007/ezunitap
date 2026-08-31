@@ -649,6 +649,99 @@ async def generate_website_content(
     return data
 
 
+PROBLEM_PAGE_SYSTEM = """You are an elite direct-response conversion copywriter and local-SEO specialist
+for U.S. home-service contractors. Your job: turn ONE service the business offers into a dedicated
+"Problem/Solution" landing page written from the CUSTOMER'S point of view — someone who has a problem
+RIGHT NOW and is searching Google for help. All copy MUST be natural, professional ENGLISH.
+
+Core formula for the top of the page: PROBLEM → AGITATE → SOLUTION → ACTION.
+Within 5-10 seconds a visitor must feel: "They understand my problem, it could get worse if I wait,
+this company can fix it, and I know exactly what to do next."
+
+CRITICAL RULES:
+- Write about the customer's PROBLEM, not a generic service description.
+  BAD: "Professional Water Heater Repair Services".
+  GOOD: "No Hot Water? We'll Get It Running Again — Fast."
+- Keep urgency REALISTIC and helpful. Never use fear-mongering, fake scarcity, or misleading claims.
+- NEVER invent trust signals, certifications, guarantees, review counts, awards, or credentials.
+  Only reference the credentials explicitly provided in the input.
+- Make this page UNIQUE to THIS specific problem — different headline, copy, FAQs and CTA language
+  from any other service. No template text with the service name swapped in.
+- FAQs must be genuinely useful customer questions for THIS problem (5-6 of them).
+
+Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
+{
+  "page_slug": "short-url-slug-describing-the-problem (2-4 words, lowercase, hyphens, no brand name)",
+  "problem_headline": "the customer's problem as a hero headline, 4-9 words, ends with ? when natural",
+  "agitation": "1 sentence, realistic reason not to ignore the problem",
+  "solution": "1 short sentence positioning the business as the fix",
+  "cta_type": "call | quote | service",
+  "cta_label": "the button text, e.g. CALL NOW, GET A FREE ESTIMATE, REQUEST SERVICE",
+  "s_problem_title": "section heading about the problem",
+  "s_problem": "2-3 plain-language sentences describing the customer's problem",
+  "s_why_matters_title": "section heading about why it matters",
+  "s_why_matters": "2-3 factual, non-exaggerated sentences on what happens if ignored",
+  "s_how_title": "section heading about the solution",
+  "s_how": "2-4 sentences on how the business solves this problem for this trade",
+  "why_choose": [{"title": "benefit (2-4 words)", "desc": "1 sentence, grounded ONLY in provided facts"}],
+  "faqs": [{"q": "real customer question about this problem", "a": "useful, concise answer, 1-3 sentences"}],
+  "final_cta_headline": "urgency-light closing headline that repeats the action",
+  "seo_title": "~55-60 chars, problem + city + brand",
+  "meta_description": "~150 chars, speaks to the problem + a call to action",
+  "h1": "the on-page H1 (can equal problem_headline)"
+}
+
+Rules: provide 4 why_choose items (only using provided credentials/facts) and 5-6 faqs.
+Return ONLY the JSON."""
+
+
+async def generate_problem_page(
+    business_name: str = "",
+    business_type: str = "",
+    service_name: str = "",
+    service_description: str = "",
+    service_area: str = "",
+    years_in_business: int = 0,
+    is_licensed: bool = False,
+    is_insured: bool = False,
+    rating: float = 0.0,
+    review_count: int = 0,
+    reviews: Optional[list] = None,
+) -> dict:
+    creds = []
+    if is_licensed:
+        creds.append("licensed")
+    if is_insured:
+        creds.append("insured")
+    if years_in_business:
+        creds.append(f"{years_in_business}+ years in business")
+    if rating and review_count:
+        creds.append(f"{rating:.1f}-star rating from {review_count} reviews")
+    creds.append("locally owned / local business")
+    review_snips = ""
+    for r in (reviews or [])[:4]:
+        txt = (r.get("text") or r.get("comment") or "").strip() if isinstance(r, dict) else str(r)
+        if txt:
+            review_snips += f"- \"{txt[:180]}\"\n"
+    brief = (
+        f"Business name: {business_name or 'a local contractor'}\n"
+        f"Trade / business type: {business_type or 'general home services'}\n"
+        f"Service to turn into a problem page: {service_name}\n"
+        f"Service description (if any): {service_description or '(none)'}\n"
+        f"Service area / city: {service_area or 'local area (unknown)'}\n"
+        f"REAL credentials/facts you may reference (do NOT add any others): {', '.join(creds)}\n"
+        + (f"Real customer reviews (tone only, do NOT fabricate):\n{review_snips}" if review_snips else "")
+        + "\nGenerate the Problem/Solution page JSON now."
+    )
+    chat = _new_chat(PROBLEM_PAGE_SYSTEM)
+    response = await chat.send_message(UserMessage(text=brief))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not produce the problem page. Try again.")
+    return data
+
+
+
 WEBSITE_TRANSLATE_SYSTEM = """You are a professional bilingual (English↔Spanish) marketing translator
 for U.S. Latino home-service contractors. You translate a website's content JSON from English to natural,
 warm, professional LATIN-AMERICAN SPANISH (the kind a U.S. Hispanic customer expects — friendly, clear,
