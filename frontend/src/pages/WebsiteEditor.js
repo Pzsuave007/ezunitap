@@ -164,6 +164,39 @@ export default function WebsiteEditor() {
     }
   };
 
+  const svcPatch = (i, obj) => {
+    const arr = [...(w.services || [])];
+    arr[i] = { ...arr[i], ...obj };
+    patch({ services: arr });
+  };
+  const addServicePhotos = async (i, files) => {
+    const list = Array.from(files || []).slice(0, 8);
+    if (!list.length) return;
+    try {
+      const uploaded = [];
+      for (const f of list) {
+        const fd = new FormData();
+        fd.append("file", f);
+        const { data } = await api.post("/photos?label=service", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        uploaded.push({ id: data.id, kind: "general" });
+      }
+      const cur = (w.services[i] && w.services[i].photos) || [];
+      svcPatch(i, { photos: [...cur, ...uploaded] });
+      toast.success(t("website.serviceImgAdded"));
+    } catch {
+      toast.error(t("website.aiError"));
+    }
+  };
+  const setServicePhotoKind = (i, pi, kind) => {
+    const photos = [...((w.services[i] && w.services[i].photos) || [])];
+    photos[pi] = { ...photos[pi], kind };
+    svcPatch(i, { photos });
+  };
+  const delServicePhoto = (i, pi) => {
+    const photos = ((w.services[i] && w.services[i].photos) || []).filter((_, j) => j !== pi);
+    svcPatch(i, { photos });
+  };
+
   // ---- AI content helpers (services suggestions + per-field "write for me") ----
   const [aiField, setAiField] = useState(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -849,6 +882,34 @@ export default function WebsiteEditor() {
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadServiceImg(i, e.target.files?.[0])} />
               </label>
               {s.image_id && <button onClick={() => listSet("services", i, "image_id", "")} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
+            </div>
+            {/* Work photos for THIS service (used on its Conversion Page proof section) */}
+            <div className="pt-2 border-t border-slate-200/70">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-500">{t("website.workPhotos")}</span>
+                <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-photos-add-${i}`}>
+                  <ImagePlus className="w-3.5 h-3.5" /> {t("website.addWorkPhotos")}
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addServicePhotos(i, e.target.files)} />
+                </label>
+              </div>
+              {(s.photos || []).length > 0 && (
+                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid={`website-service-photos-${i}`}>
+                  {s.photos.map((ph, pi) => (
+                    <div key={ph.id || pi} className="rounded-lg bg-white border border-slate-200 p-1.5 space-y-1">
+                      <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${ph.id}?w=300`} alt="" className="w-full h-20 rounded object-cover" />
+                      <div className="flex items-center gap-1">
+                        <select value={ph.kind || "general"} onChange={(e) => setServicePhotoKind(i, pi, e.target.value)} className="text-[11px] rounded border border-slate-200 bg-white px-1 py-0.5 flex-1" data-testid={`website-service-photo-kind-${i}-${pi}`}>
+                          <option value="general">{t("website.photoKind.general")}</option>
+                          <option value="before">{t("website.photoKind.before")}</option>
+                          <option value="after">{t("website.photoKind.after")}</option>
+                          <option value="completed">{t("website.photoKind.completed")}</option>
+                        </select>
+                        <button onClick={() => delServicePhoto(i, pi)} className="text-slate-400 hover:text-red-500" data-testid={`website-service-photo-del-${i}-${pi}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}

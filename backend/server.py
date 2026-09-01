@@ -5278,17 +5278,29 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
         badges.append(f"{float(card['rating']):.1f}★ ({len(base['reviews'])} reviews)")
     badges.append("Locally Owned")
     photos = base["photos"]
-    if pp.get("photo_ids"):
+    # Proof / Recent Work priority: THIS service's own photos → per-page override → general business photos.
+    svc = None
+    for s in (w.get("services") or []):
+        if isinstance(s, dict) and s.get("name") == pp["service_name"]:
+            svc = s
+            break
+    svc_photo_ids = []
+    if svc:
+        if svc.get("image_id"):
+            svc_photo_ids.append(svc["image_id"])
+        for ph in (svc.get("photos") or []):
+            pid = ph.get("id") if isinstance(ph, dict) else ph
+            if pid and pid not in svc_photo_ids:
+                svc_photo_ids.append(pid)
+    if svc_photo_ids:
+        photos = [{"id": pid, "label": "service"} for pid in svc_photo_ids]
+    elif pp.get("photo_ids"):
         pmap = {p["id"]: p for p in photos}
         picked = [pmap[i] for i in pp["photo_ids"] if i in pmap]
         if picked:
             photos = picked
     # Hero background: explicit override → the service's own image → first gallery photo.
-    svc_img = None
-    for s in (w.get("services") or []):
-        if isinstance(s, dict) and s.get("name") == pp["service_name"]:
-            svc_img = s.get("image_id")
-            break
+    svc_img = svc.get("image_id") if svc else None
     hero_photo_id = pp.get("hero_photo_id") or svc_img or (photos[0]["id"] if photos else None)
     return {
         "page": {
