@@ -744,7 +744,7 @@ CRITICAL RULES:
 
 Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
 {
-  "page_slug": "short-url-slug based on how the customer SEARCHES the problem (2-4 words, lowercase, hyphens, no brand name, e.g. 'roof-leaking', 'clogged-drain', 'cant-find-on-google', 'graphic-designer')",
+  "page_slug": "short-url-slug that describes the PROBLEM (not the service name, not a generic 'near me' term). 2-5 words, lowercase, hyphens, no brand name. e.g. 'roof-leaking', 'clogged-drain', 'no-hot-water', 'outdated-or-unprofessional-visuals', 'website-confuses-customers', 'cant-find-on-google'. NEVER use the bare service like 'graphic-designer' or 'roof-repair'",
   "problem_headline": "the customer's problem in THEIR OWN search/spoken words, 3-9 words, ends with ? when natural — NEVER the service name",
   "agitation": "1 sentence, realistic consequence of not dealing with it",
   "solution": "1 short sentence: the business is the fix, in plain words",
