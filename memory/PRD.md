@@ -1,4 +1,10 @@
-## 🏠 Jun 2026 — FIX: la sección "Problemas que resolvemos" no salía en el home (páginas sin publicar) [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+## ⬆️ Jun 2026 — "Problems We Solve" movida ARRIBA en el home (conversión) [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Petición dueño**: la sección que conecta con las Conversion/Problem Pages estaba hasta abajo (pegada al ContactBlock); estratégicamente debe ir más arriba para captar más clientes.
+- **Fix** (`ContractorSite.js`): desacoplé `ProblemsSection` del `ContactBlock` (quité el render `id==="contact"` de abajo) y la inserté en los **10 templates** justo antes de `AboutBlock` (o sea, después del hero+servicios, cerca del tope). 3 `replace_all` cubrieron las 3 variantes de AboutBlock (plain / `bg="#FAF5EA"` / `light`) → 10 inserts confirmados. Solo se renderiza si `data.problem_pages.length > 0`.
+- **Verificado**: screenshot del home → "Problems We Solve" ahora es el 3er bloque (tras hero y form), en y≈1459 de 9575 (~15% del alto, antes era casi al final). 6 tarjetas enlazando a `/sitio/{slug}/p/{pageSlug}`, sin duplicado. Build main.1f48413c.js recompilado (REACT_APP_BACKEND_URL='') + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Reporte dueño**: aplicó el update pero NO veía en el home la sección que conecta con las Conversion/Problem Pages.
 - **Causa raíz**: el payload público del home (`server.py` `_website_payload`) solo incluye `problem_pages` con `published: True`. Todas las Problem Pages del dueño estaban en `needs_review` / `published: False` → la sección "Common problems we solve" (`ContractorSite.js` `site-problem-links` + `ProblemsSection`) se ocultaba (renderiza solo si `data.problem_pages.length > 0`).
 - **Fix** (`server.py`): las Problem Pages ahora se **publican automáticamente al generarse** (default `published: True` en `_generate_problem_pages_for_user` y en el endpoint `add`), alineado con la filosofía de la app ("todo listo y publicado"). El dueño puede despublicar cualquiera desde el editor (pestaña Problemas, switch `pp-publish-{slug}`).

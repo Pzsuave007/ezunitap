@@ -319,6 +319,7 @@ function Cinematic({ ctx }) {
       )}
 
       {/* How it works: vertical timeline */}
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <div style={{ background: "#FBF7F0" }}><FeatureBlock ctx={lightCtx} /></div>}
       {sec.how !== false && (
@@ -423,6 +424,7 @@ function Responder({ ctx }) {
       <HeroFormBand ctx={ctx} dark />
 
       {/* How it works: 3 bold blocks */}
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -564,6 +566,7 @@ function Bento({ ctx }) {
         </SectionLight>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -671,6 +674,7 @@ function Craftsman({ ctx }) {
         </section>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -773,6 +777,7 @@ function Trust({ ctx }) {
         </SectionLight>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -886,6 +891,7 @@ function Slider({ ctx }) {
         )}
       </section>
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -997,6 +1003,7 @@ function OnePage({ ctx }) {
         </section>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -1180,6 +1187,7 @@ function Neon({ ctx }) {
         </SectionLight>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} light />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -1281,6 +1289,7 @@ function Playful({ ctx }) {
         </SectionLight>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -1379,6 +1388,7 @@ function Luxe({ ctx }) {
         </section>
       )}
 
+      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       {sec.about !== false && <AboutBlock ctx={ctx} light />}
       {sec.feature !== false && <FeatureBlock ctx={ctx} />}
       {sec.how !== false && (
@@ -1763,7 +1773,6 @@ function ContactBlock({ ctx, id = "contact" }) {
   const r = useReveal();
   return (
     <>
-      {id === "contact" && (data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
     <section id={id} className="py-16 md:py-24">
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <div className="grid md:grid-cols-2 gap-8 items-start">
