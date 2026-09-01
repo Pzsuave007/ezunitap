@@ -4849,10 +4849,11 @@ async def _website_payload(w):
         "appt_enabled": bool(card.get("appt_enabled")),
         "card_slug": card.get("slug") or "",
         "problem_pages": [
-            {"service_name": p.get("service_name"), "page_slug": p.get("page_slug")}
+            {"service_name": p.get("service_name"), "page_slug": p.get("page_slug"),
+             "headline": (p.get("content") or {}).get("problem_headline") or p.get("service_name")}
             for p in await db.problem_pages.find(
                 {"user_id": w["user_id"], "published": True},
-                {"_id": 0, "service_name": 1, "page_slug": 1},
+                {"_id": 0, "service_name": 1, "page_slug": 1, "content": 1},
             ).to_list(100)
         ],
     }

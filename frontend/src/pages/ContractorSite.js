@@ -1733,12 +1733,37 @@ function HeroFormBand({ ctx, dark }) {
   );
 }
 
+function ProblemsSection({ ctx }) {
+  const { w, th, accent, data } = ctx;
+  const pages = data.problem_pages || [];
+  if (!pages.length) return null;
+  const S = th.dark ? SectionDark : SectionLight;
+  return (
+    <S id="solutions" kicker="How can we help?" title="Problems We Solve" ctx={ctx}>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pages.map((p, i) => (
+          <a key={i} href={`/sitio/${w.slug}/p/${p.page_slug}`} data-testid={`site-problem-card-${i}`}
+             className={`group block p-6 ${th.radius} transition hover:-translate-y-1`}
+             style={{ background: th.surface, border: `1px solid ${th.border}` }}>
+            <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>{p.service_name}</div>
+            <div className="text-lg font-bold leading-snug" style={{ color: th.ink }}>{p.headline || p.service_name}</div>
+            <div className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>See how we help <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></div>
+          </a>
+        ))}
+      </div>
+    </S>
+  );
+}
+
+
 function ContactBlock({ ctx, id = "contact" }) {
   const { b, data, th, accent, accentText, w } = ctx;
   const sec = w.sections || {};
   const bookingOn = sec.booking && data.card_slug;
   const r = useReveal();
   return (
+    <>
+      {id === "contact" && (data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
     <section id={id} className="py-16 md:py-24">
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <div className="grid md:grid-cols-2 gap-8 items-start">
@@ -1754,6 +1779,7 @@ function ContactBlock({ ctx, id = "contact" }) {
         </div>
       </div>
     </section>
+    </>
   );
 }
 

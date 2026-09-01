@@ -1,5 +1,8 @@
 # UniTech — Changelog
 
+## Jun 2026 — Problem pages surfaced on the main website (SEO / crawlability)
+- New shared **"Problems We Solve"** section (`ProblemsSection` in `ContractorSite.js`, rendered once via `ContactBlock`, all 10 templates, theme-aware) with real `<a href>` cards linking to each published problem page — crawlers follow home → problem pages. Payload `problem_pages` now includes the `headline`. Plus existing footer links + sitemap = full internal-link + indexing coverage. Verified via preview screenshot (Luxe).
+
 ## Jun 2026 — Problem pages: multiple problems per service + editable problem focus
 - A single service can now have MULTIPLE problem pages (BUSINESS → SERVICE → PROBLEM PAGE(S) fully enabled).
 - Editor groups pages by service; per-service **"Add problem"** (type a specific problem → creates a new page), per-page **Regenerate with this problem** (owner-provided focus, stored as `problem_hint`), plus Delete.
