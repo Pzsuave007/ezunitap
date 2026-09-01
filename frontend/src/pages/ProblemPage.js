@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Phone, ArrowRight, CheckCircle2, Star, Loader2, Camera, ShieldCheck } from "lucide-react";
+import { Phone, ArrowRight, CheckCircle2, Star, Loader2, Camera, ShieldCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
@@ -19,6 +19,7 @@ export default function ProblemPage({ injected, byDomain }) {
   const { slug: routeSlug, pageSlug } = useParams();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
+  const [lbIdx, setLbIdx] = useState(null);
   const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
   const slug = injected?.website_slug || routeSlug;
 
@@ -137,7 +138,13 @@ export default function ProblemPage({ injected, byDomain }) {
       {(data.photos || []).length > 0 && (
         <Sec title="Recent work" accent={accent}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="aspect-square overflow-hidden rounded-xl"><img src={photoUrl(p.id, 700)} loading="lazy" alt="" className="w-full h-full object-cover" /></div>)}
+            {data.photos.slice(0, 8).map((p, i) => (
+              <button key={p.id} type="button" onClick={() => setLbIdx(i)} data-testid={`pp-gallery-photo-${i}`}
+                className="group aspect-square overflow-hidden rounded-xl cursor-zoom-in relative focus:outline-none">
+                <img src={photoUrl(p.id, 700)} loading="lazy" alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors" />
+              </button>
+            ))}
           </div>
         </Sec>
       )}
@@ -211,6 +218,20 @@ export default function ProblemPage({ injected, byDomain }) {
         <a href={backHref} className="font-semibold" style={{ color: accent }}>← Back to {biz.name}</a>
         <div className="mt-2">{data.service_area}</div>
       </footer>
+
+      {/* Lightbox popup for the Recent Work gallery */}
+      {lbIdx !== null && (data.photos || [])[lbIdx] && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in" data-testid="pp-lightbox" onClick={() => setLbIdx(null)}>
+          <button data-testid="pp-lightbox-close" onClick={(e) => { e.stopPropagation(); setLbIdx(null); }} className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition"><X className="w-6 h-6" /></button>
+          {data.photos.length > 1 && (
+            <>
+              <button data-testid="pp-lightbox-prev" onClick={(e) => { e.stopPropagation(); setLbIdx((i) => (i - 1 + Math.min(data.photos.length, 8)) % Math.min(data.photos.length, 8)); }} className="absolute left-3 md:left-6 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition"><ChevronLeft className="w-6 h-6" /></button>
+              <button data-testid="pp-lightbox-next" onClick={(e) => { e.stopPropagation(); setLbIdx((i) => (i + 1) % Math.min(data.photos.length, 8)); }} className="absolute right-3 md:right-6 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition"><ChevronRight className="w-6 h-6" /></button>
+            </>
+          )}
+          <img src={photoUrl(data.photos[lbIdx].id, 1600)} alt="" onClick={(e) => e.stopPropagation()} className="max-w-full max-h-[88vh] rounded-xl shadow-2xl object-contain" />
+        </div>
+      )}
 
       {/* Sticky mobile CTA */}
       <div className="fixed bottom-0 inset-x-0 z-50 md:hidden grid grid-cols-2 gap-px bg-slate-200 border-t border-slate-200">

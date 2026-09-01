@@ -5277,8 +5277,9 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
     if card.get("rating") and base.get("reviews"):
         badges.append(f"{float(card['rating']):.1f}★ ({len(base['reviews'])} reviews)")
     badges.append("Locally Owned")
-    photos = base["photos"]
-    # Proof / Recent Work priority: THIS service's own photos → per-page override → general business photos.
+    # Proof / Recent Work: ONLY the real work photos uploaded to THIS service (service.photos).
+    # We deliberately do NOT include the service's hero/background image (image_id) here, and we do
+    # NOT fall back to generic stock/general photos. If there are no real work photos, the section hides.
     svc = None
     for s in (w.get("services") or []):
         if isinstance(s, dict) and s.get("name") == pp["service_name"]:
@@ -5286,8 +5287,6 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
             break
     svc_photo_ids = []
     if svc:
-        if svc.get("image_id"):
-            svc_photo_ids.append(svc["image_id"])
         for ph in (svc.get("photos") or []):
             pid = ph.get("id") if isinstance(ph, dict) else ph
             if pid and pid not in svc_photo_ids:
@@ -5295,11 +5294,11 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
     if svc_photo_ids:
         photos = [{"id": pid, "label": "service"} for pid in svc_photo_ids]
     elif pp.get("photo_ids"):
-        pmap = {p["id"]: p for p in photos}
-        picked = [pmap[i] for i in pp["photo_ids"] if i in pmap]
-        if picked:
-            photos = picked
-    # Hero background: explicit override → the service's own image → first gallery photo.
+        pmap = {p["id"]: p for p in base["photos"]}
+        photos = [pmap[i] for i in pp["photo_ids"] if i in pmap]
+    else:
+        photos = []
+    # Hero background: explicit override → the service's own image → first work photo (if any).
     svc_img = svc.get("image_id") if svc else None
     hero_photo_id = pp.get("hero_photo_id") or svc_img or (photos[0]["id"] if photos else None)
     return {
