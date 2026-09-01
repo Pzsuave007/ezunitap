@@ -5103,7 +5103,7 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False, se
             "service_name": name,
             "page_slug": page_slug,
             "status": "needs_review",
-            "published": bool((existing or {}).get("published", False)),
+            "published": bool((existing or {}).get("published", True)),
             "indexable": bool((existing or {}).get("indexable", True)),
             "edited_by_owner": False,
             "content": content,
@@ -5200,7 +5200,7 @@ async def _pp_add_one(user_id: str, service_name: str, problem_hint: str = "") -
         page_slug = f"{base}-{n}"
     doc = {
         "id": _new_id(), "user_id": user_id, "website_slug": w["slug"], "service_name": service_name,
-        "page_slug": page_slug, "status": "needs_review", "published": False, "indexable": True,
+        "page_slug": page_slug, "status": "needs_review", "published": True, "indexable": True,
         "edited_by_owner": False, "content": {k: data.get(k) for k in _PP_CONTENT_KEYS},
         "seo": {"title": (data.get("seo_title") or "")[:70], "meta_description": (data.get("meta_description") or "")[:200], "h1": data.get("h1") or data.get("problem_headline") or service_name},
         "photo_ids": [], "hero_photo_id": (s.get("image_id") if isinstance(s, dict) else None),
