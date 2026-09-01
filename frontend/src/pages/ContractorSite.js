@@ -191,7 +191,7 @@ export default function ContractorSite({ injected }) {
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
   const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs };
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`) };
   // Central, business-aware CTA labels so every template converts whether the
   // business takes appointments (Book) or projects/estimates (Quote).
   ctx.bookingOn = !!(sec?.booking && data?.card_slug);
@@ -1752,7 +1752,7 @@ function ProblemsSection({ ctx }) {
     <S id="solutions" kicker="How can we help?" title="Problems We Solve" ctx={ctx}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {pages.map((p, i) => (
-          <a key={i} href={`/sitio/${w.slug}/p/${p.page_slug}`} data-testid={`site-problem-card-${i}`}
+          <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`site-problem-card-${i}`}
              className={`group block p-6 ${th.radius} transition hover:-translate-y-1`}
              style={{ background: th.surface, border: `1px solid ${th.border}` }}>
             <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>{p.service_name}</div>
@@ -1916,7 +1916,7 @@ function FooterBlock({ ctx }) {
           <div className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>Common problems we solve</div>
           <div className="flex flex-wrap gap-2">
             {data.problem_pages.map((p, i) => (
-              <a key={i} href={`/sitio/${w.slug}/p/${p.page_slug}`} className="px-3.5 py-1.5 rounded-full text-sm bg-white/10 hover:bg-white/20 text-white/85 transition">{p.service_name}</a>
+              <a key={i} href={ctx.ppHref(p.page_slug)} className="px-3.5 py-1.5 rounded-full text-sm bg-white/10 hover:bg-white/20 text-white/85 transition">{p.service_name}</a>
             ))}
           </div>
         </div>

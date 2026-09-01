@@ -15,7 +15,7 @@ function Stars({ n = 5, color = "#F5B301" }) {
   return <div className="flex gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4" fill={i < n ? color : "none"} style={{ color }} />)}</div>;
 }
 
-export default function ProblemPage({ injected }) {
+export default function ProblemPage({ injected, byDomain }) {
   const { slug: routeSlug, pageSlug } = useParams();
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
@@ -24,8 +24,11 @@ export default function ProblemPage({ injected }) {
 
   useEffect(() => {
     if (injected) { setData(injected); return; }
-    axios.get(`${API}/public/problem-page/${slug}/${pageSlug}${preview}`)
-      .then((r) => setData(r.data)).catch(() => setErr(true));
+    const host = window.location.hostname;
+    const url = byDomain
+      ? `${API}/public/problem-page-by-domain/${host}/${pageSlug}${preview}`
+      : `${API}/public/problem-page/${slug}/${pageSlug}${preview}`;
+    axios.get(url).then((r) => setData(r.data)).catch(() => setErr(true));
   }, [slug, pageSlug]); // eslint-disable-line
 
   const accent = data?.theme?.accent || "#2563EB";
@@ -39,7 +42,9 @@ export default function ProblemPage({ injected }) {
     const title = seo.title || page.problem_headline || biz.name || "";
     document.title = title;
     const desc = seo.meta_description || page.solution || "";
-    const canonical = `${window.location.origin}/sitio/${slug}/p/${data.page.page_slug}`;
+    const canonical = byDomain
+      ? `${window.location.origin}/p/${data.page.page_slug}`
+      : `${window.location.origin}/sitio/${slug}/p/${data.page.page_slug}`;
     const meta = (key, val, prop) => {
       const attr = prop ? "property" : "name";
       let el = document.head.querySelector(`meta[${attr}="${key}"]`);
@@ -70,6 +75,7 @@ export default function ProblemPage({ injected }) {
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
   const logo = photoUrl(biz.logo_photo_id, 200);
+  const backHref = byDomain ? "/" : data.website_path;
   const hero = photoUrl(data.hero_photo_id, 1600);
   const badges = data.trust_badges || [];
   const ctaLabel = page.cta_label || (page.cta_type === "call" ? "Call Now" : "Get a Free Estimate");
@@ -79,7 +85,7 @@ export default function ProblemPage({ injected }) {
       {/* Sticky header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <a href={data.website_path} className="flex items-center gap-2 min-w-0">
+          <a href={backHref} className="flex items-center gap-2 min-w-0">
             {logo ? <img src={logo} alt="" className="w-9 h-9 rounded-lg object-cover" /> : <div className="w-9 h-9 rounded-lg" style={{ background: accent }} />}
             <span className="font-bold truncate">{biz.name}</span>
           </a>
@@ -202,7 +208,7 @@ export default function ProblemPage({ injected }) {
 
       {/* Footer */}
       <footer className="py-8 text-center text-sm text-slate-400">
-        <a href={data.website_path} className="font-semibold" style={{ color: accent }}>← Back to {biz.name}</a>
+        <a href={backHref} className="font-semibold" style={{ color: accent }}>← Back to {biz.name}</a>
         <div className="mt-2">{data.service_area}</div>
       </footer>
 

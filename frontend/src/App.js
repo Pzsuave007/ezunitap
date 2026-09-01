@@ -144,6 +144,7 @@ function App() {
             <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/sitio/:slug" element={<ContractorSite />} />
             <Route path="/sitio/:slug/p/:pageSlug" element={<ProblemPage />} />
+            <Route path="/p/:pageSlug" element={<ProblemPage byDomain />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />
             <Route path="/terminos" element={<TermsPage />} />
             <Route path="/privacidad" element={<PrivacyPage />} />

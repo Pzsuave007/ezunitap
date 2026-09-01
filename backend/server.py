@@ -4929,7 +4929,7 @@ async def website_sitemap(request: Request):
             if not s:
                 continue
             dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
-            loc = f"https://{dom}/sitio/{s['slug']}/p/{pp['page_slug']}" if dom else f"{base}/sitio/{s['slug']}/p/{pp['page_slug']}"
+            loc = f"https://{dom}/p/{pp['page_slug']}" if dom else f"{base}/sitio/{s['slug']}/p/{pp['page_slug']}"
             urls.append(f"<url><loc>{loc}</loc><changefreq>weekly</changefreq></url>")
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     return Response(content=xml, media_type="application/xml")
@@ -5318,6 +5318,20 @@ async def public_problem_page(slug: str, page_slug: str, preview: int = 0):
     if not w:
         raise HTTPException(404, "Not found")
     pp = await db.problem_pages.find_one({"website_slug": slug, "page_slug": page_slug}, {"_id": 0})
+    if not pp or (not pp.get("published") and not preview):
+        raise HTTPException(404, "Not found")
+    return await _problem_page_payload(w, pp)
+
+
+@api_router.get("/public/problem-page-by-domain/{domain}/{page_slug}")
+async def public_problem_page_by_domain(domain: str, page_slug: str, preview: int = 0):
+    d = (domain or "").strip().lower()
+    if d.startswith("www."):
+        d = d[4:]
+    w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    pp = await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug}, {"_id": 0})
     if not pp or (not pp.get("published") and not preview):
         raise HTTPException(404, "Not found")
     return await _problem_page_payload(w, pp)
