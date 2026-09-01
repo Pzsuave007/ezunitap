@@ -108,14 +108,35 @@ export default function ProblemPage({ injected }) {
         </div>
       </section>
 
-      {/* Problem */}
-      {page.s_problem && <Sec title={page.s_problem_title || "The problem"} accent={accent}><p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_problem}</p></Sec>}
-      {/* Why it matters */}
-      {page.s_why_matters && <Sec title={page.s_why_matters_title || "Why it matters"} accent={accent} alt><p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_why_matters}</p></Sec>}
-      {/* How we solve it */}
-      {page.s_how && <Sec title={page.s_how_title || "How we solve it"} accent={accent}><p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_how}</p></Sec>}
+      {/* 2. THE PROBLEM (problem + why it matters, one clean section) */}
+      {(page.s_problem || page.s_why_matters) && (
+        <Sec title={page.s_problem_title || "The problem"} accent={accent}>
+          {page.s_problem && <p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_problem}</p>}
+          {page.s_why_matters && (
+            <div className="mt-6 max-w-3xl flex gap-3 p-5 rounded-2xl bg-slate-50 border-l-4" style={{ borderColor: accent }}>
+              <p className="text-base md:text-lg leading-relaxed text-slate-700 font-medium">{page.s_why_matters}</p>
+            </div>
+          )}
+        </Sec>
+      )}
 
-      {/* Why choose us */}
+      {/* 3. THE SOLUTION */}
+      {page.s_how && (
+        <Sec title={page.s_how_title || "The solution"} accent={accent} alt>
+          <p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_how}</p>
+        </Sec>
+      )}
+
+      {/* 4. PROOF / RECENT WORK */}
+      {(data.photos || []).length > 0 && (
+        <Sec title="Recent work" accent={accent}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="aspect-square overflow-hidden rounded-xl"><img src={photoUrl(p.id, 700)} loading="lazy" alt="" className="w-full h-full object-cover" /></div>)}
+          </div>
+        </Sec>
+      )}
+
+      {/* 5. WHY CHOOSE US */}
       {(page.why_choose || []).length > 0 && (
         <Sec title="Why choose us" accent={accent} alt>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -129,18 +150,9 @@ export default function ProblemPage({ injected }) {
         </Sec>
       )}
 
-      {/* Gallery */}
-      {(data.photos || []).length > 0 && (
-        <Sec title="Recent work" accent={accent}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="aspect-square overflow-hidden rounded-xl"><img src={photoUrl(p.id, 700)} loading="lazy" alt="" className="w-full h-full object-cover" /></div>)}
-          </div>
-        </Sec>
-      )}
-
-      {/* Reviews */}
+      {/* 6. CUSTOMER REVIEWS */}
       {(data.reviews || []).length > 0 && (
-        <Sec title="What customers say" accent={accent} alt>
+        <Sec title="What customers say" accent={accent}>
           <div className="grid md:grid-cols-3 gap-4">
             {data.reviews.slice(0, 3).map((r, i) => (
               <div key={i} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
@@ -153,7 +165,22 @@ export default function ProblemPage({ injected }) {
         </Sec>
       )}
 
-      {/* FAQs */}
+      {/* 7. HOW IT WORKS */}
+      {(page.how_steps || []).length > 0 && (
+        <Sec title="How it works" accent={accent} alt>
+          <div className="grid sm:grid-cols-3 gap-4 md:gap-6" data-testid="pp-how-steps">
+            {page.how_steps.map((s, i) => (
+              <div key={i} className="relative p-6 rounded-2xl bg-white border border-slate-100 shadow-sm" data-testid={`pp-how-step-${i}`}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white text-lg" style={{ background: accent }}>{i + 1}</div>
+                <div className="mt-3 font-bold text-slate-900">{s.title}</div>
+                <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Sec>
+      )}
+
+      {/* 8. FAQ */}
       {(page.faqs || []).length > 0 && (
         <Sec title="Frequently asked questions" accent={accent}>
           <div className="max-w-3xl space-y-3">

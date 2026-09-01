@@ -685,6 +685,7 @@ Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
   "s_how": "2-4 sentences on how the business solves this problem for this trade",
   "why_choose": [{"title": "benefit (2-4 words)", "desc": "1 sentence, grounded ONLY in provided facts"}],
   "faqs": [{"q": "real customer question about this problem", "a": "useful, concise answer, 1-3 sentences"}],
+  "how_steps": [{"title": "3-4 word step", "desc": "1 short sentence"}],
   "final_cta_headline": "urgency-light closing headline that repeats the action",
   "seo_title": "~55-60 chars, problem + city + brand",
   "meta_description": "~150 chars, speaks to the problem + a call to action",
@@ -692,6 +693,15 @@ Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
 }
 
 Rules: provide 4 why_choose items (only using provided credentials/facts) and 5-6 faqs.
+EXTRA CONVERSION RULES (critical):
+- The CUSTOMER is the main character, not the business. Prefer "you / your / if you're experiencing" over "we / our company / our services". The business is the guide.
+- Headline leads with the customer's PROBLEM/situation, never the service name.
+- agitation = ONE concise, realistic consequence of leaving it unresolved (no fake fear, no invented urgency).
+- cta_label = the customer's DESIRED OUTCOME (e.g. "STOP MY ROOF LEAK", "FIX MY DRYWALL", "IMPROVE MY BRAND", "GET MY PAINTING ESTIMATE"), not generic "Request service".
+- how_steps = exactly 3 simple steps customized to this service that make getting started feel easy (e.g. "Show Us the Damage" / "Get Your Estimate" / "We Fix the Problem").
+- faqs must handle OBJECTIONS that block action (cost, free estimates, how fast, can I send photos, small jobs, do I need to be home). Never invent prices, response times, guarantees or policies not provided.
+- final_cta_headline returns to the customer's desired OUTCOME (completes the story from the headline), never a generic "Professional X Services".
+- Do NOT repeat the same idea across s_problem / s_why_matters / s_how — each must add distinct value; keep them concise, no filler.
 Return ONLY the JSON."""
 
 

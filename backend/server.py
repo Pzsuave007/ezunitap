@@ -5031,7 +5031,7 @@ async def public_website_lead(slug: str, payload: CardLeadIn):
 _PP_CONTENT_KEYS = [
     "problem_headline", "agitation", "solution", "cta_type", "cta_label",
     "s_problem_title", "s_problem", "s_why_matters_title", "s_why_matters",
-    "s_how_title", "s_how", "why_choose", "faqs", "final_cta_headline",
+    "s_how_title", "s_how", "why_choose", "faqs", "how_steps", "final_cta_headline",
 ]
 
 

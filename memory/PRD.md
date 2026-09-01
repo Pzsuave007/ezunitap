@@ -1,3 +1,11 @@
+## 🎯 Jun 2026 — Problem Pages: "Cómo funciona" + reorden de secciones (Conversion Optimization Update FINAL) [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Contexto**: la sesión anterior actualizó el prompt del backend (`ai_service.py` `PROBLEM_PAGE_SYSTEM`) para generar copia optimizada + nuevo bloque `how_steps` (3 pasos), pero NO alcanzó a actualizar el frontend.
+- **Frontend** (`ProblemPage.js`): reordenadas las secciones al orden pedido por el dueño → 1. Hero (Problema+Agitación+Solución+CTA, con formulario a la derecha), 2. El Problema (s_problem + s_why_matters como callout con borde de acento, una sola sección limpia para no saturar), 3. La Solución (s_how), 4. Prueba/Trabajos recientes (galería), 5. Por qué elegirnos (why_choose), 6. Reseñas de clientes, 7. **Cómo funciona (how_steps, NUEVO: 3 pasos numerados)**, 8. FAQ, 9. CTA final. testids `pp-how-steps`, `pp-how-step-{i}`. El formulario se mantiene en el hero (decisión del dueño).
+- **Backend**: ya generaba `how_steps` (en `_PP_CONTENT_KEYS`). Las páginas viejas se regeneraron con `force=true` para poblar `how_steps`.
+- **Verificado**: curl regenerando → Deck Building/Fence Install ahora traen `how_steps=3` (ej. "Share What's Wrong"/"Get a Clear Plan"/"Schedule the Build"), why_choose=4, faqs=6. Screenshot del sitio público (`/sitio/uni2-marketing-agency/p/deck-falling-apart?preview=1`): orden de headings correcto, "How it works" con 3 pasos numerados, hero con formulario. Build main.c284de73.js recompilado (REACT_APP_BACKEND_URL='') + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `git pull && bash deploy.sh`. (El backend ya estaba desplegado con el prompt nuevo; el dueño solo debe REGENERAR sus Problem Pages desde el editor para poblar los 3 pasos.)
+
+
 ## 🔤 Jun 2026 — Contraste del HeroForm (texto legible) [COMPLETO; verificado screenshot]
 - **Reporte dueño**: el texto/placeholder del formulario del hero era muy tenue.
 - **Fix** (`ContractorSite.js` HeroForm): texto sólido (#fff en oscuro, #0f172a en claro), placeholders `placeholder-white/80` (oscuro) / `placeholder-slate-500` (claro), inputs `font-medium`, fondos y bordes más marcados (dark bg .16, border .45). Verificado screenshot Bento: "Maria Lopez"/teléfono blancos nítidos, placeholder legible. Build main.5c61549c.js (63 staged).
