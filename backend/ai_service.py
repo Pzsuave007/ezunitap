@@ -673,8 +673,10 @@ THE PATTERN TO LEARN (reproduce the LOGIC, never copy the wording):
 BANNED LANGUAGE — never use these words/phrases or anything that sounds like an ad agency or AI:
   Elevate, Transform, Enhance, Unlock, Empower, Streamline, Seamless, Cutting-edge, Stunning, Stunning visuals,
   Capture attention, Comprehensive solutions, Take your business to the next level, In today's world,
-  "Need Help with <service>?", "Struggling with <anything>?", "Professional <service> Services".
-Never make the headline a rephrase of the service name. Use words a normal customer would actually say.
+  Effortlessly, Engaging, Engaging visuals, "brand's impact", "brand's voice", "aligned with your brand",
+  "convey your professionalism", "How We Elevate ...", "Need Help with <service>?", "Struggling with <anything>?",
+  "Professional <service> Services".
+Never make the headline (or any heading) a rephrase of the service name. Use words a normal customer would actually say.
 
 Style contrasts (learn the direction, don't copy):
   BAD  "Need Help with Graphic Design?"      GOOD "Does Your Business Look as Professional as the Work You Do?"
@@ -717,6 +719,20 @@ For services WITHOUT a physical emergency (design, marketing, branding, consulti
 do NOT invent urgency — surface the underlying real-world business problem the way the owner would describe it.
 
 ===========================================================================
+PLAIN LANGUAGE APPLIES TO EVERY SECTION — not just the hero.
+EVERY heading and paragraph (s_problem, s_why_matters, s_how, why_choose, how_steps, faqs, final_cta_headline)
+must pass this test before you accept it: "Would the actual business owner or customer naturally SAY this in a
+normal conversation?" If it sounds like an ad, a brochure, or AI, rewrite it in simpler, direct words.
+Supporting-section contrasts (learn the direction, don't copy):
+  BAD "How We Elevate Your Brand's Impact"          GOOD "Design That Fits Your Business"
+  BAD "convey your professionalism effortlessly"    GOOD "give customers the right impression"
+  BAD "engaging visuals aligned with your brand's voice"
+  GOOD "graphics that fit your business and give customers the right impression"
+  BAD "The first click or view can influence how seriously customers take your business."
+  GOOD "Customers often form an opinion about your business before they ever call you."
+Keep all copy: simple, direct, conversational, specific, customer-focused. No filler marketing vocabulary anywhere.
+
+===========================================================================
 CRITICAL RULES:
 - The CUSTOMER is the main character; the business is the guide. Prefer "you / your".
 - Keep urgency REALISTIC. No fear-mongering, fake scarcity, or misleading claims.
@@ -752,11 +768,11 @@ Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
 Rules: provide 4 why_choose items (only from provided facts), 5-6 faqs, exactly 3 how_steps.
 
 ===========================================================================
-FINAL SELF-CHECK before returning (silently verify, rewrite if it fails):
-  1) Would a REAL customer actually say or search this? If not, rewrite in simpler words.
+FINAL SELF-CHECK before returning (silently verify EVERY heading and paragraph, rewrite if it fails):
+  1) Would a REAL customer or the business owner actually SAY or search this in conversation? If not, simplify it.
   2) Does the headline start from the customer's SITUATION (not the service name)?
   3) Does the second section (s_problem_title/s_problem) ADVANCE the story instead of repeating the hero?
-  4) Does anything sound like an ad agency, corporate brochure, or generic AI, or use a banned phrase? If yes, rewrite.
+  4) Does ANY section (headings AND paragraphs) sound like an ad agency, brochure, or generic AI, or use a banned phrase? If yes, rewrite it in plain words.
 The goal is the reader thinking "That's exactly my problem" — NOT "That sounds like good marketing copy."
 Return ONLY the JSON."""
 
