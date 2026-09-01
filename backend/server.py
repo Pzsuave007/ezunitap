@@ -5085,11 +5085,15 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False, se
         except Exception as e:  # noqa: BLE001
             logger.error(f"problem page gen failed for '{name}': {e!r}")
             continue
-        page_slug = _slugify(data.get("page_slug") or name) or "service"
-        base, n = page_slug, 1
-        while await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug, "service_name": {"$ne": name}}):
-            n += 1
-            page_slug = f"{base}-{n}"
+        if existing and existing.get("page_slug"):
+            # Preserve the slug of an already-created page so published/indexed URLs never break on regenerate.
+            page_slug = existing["page_slug"]
+        else:
+            page_slug = _slugify(data.get("page_slug") or name) or "service"
+            base, n = page_slug, 1
+            while await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug, "service_name": {"$ne": name}}):
+                n += 1
+                page_slug = f"{base}-{n}"
         content = {k: data.get(k) for k in _PP_CONTENT_KEYS}
         seo = {
             "title": (data.get("seo_title") or "")[:70],

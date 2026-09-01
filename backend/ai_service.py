@@ -738,13 +738,22 @@ CRITICAL RULES:
 - Keep urgency REALISTIC. No fear-mongering, fake scarcity, or misleading claims.
 - NEVER invent trust signals, certifications, guarantees, review counts, awards, prices, response times, or
   credentials. Only reference facts explicitly provided in the input.
+- NO UNSUPPORTED CLAIMS OR GUARANTEES. Describe the likely BENEFIT; never promise or imply a RESULT the business
+  cannot verify. Do NOT auto-generate financial, resale-value, ranking, revenue, savings, lead-count, health,
+  safety, performance, percentage, statistic, or guaranteed-timeframe claims unless that exact information is
+  provided in the business data. Use safe, realistic language:
+    BAD  "A well-detailed car can fetch a higher price."
+    GOOD "A clean, well-detailed car can make a stronger first impression and help it show better to buyers."
+    BAD  "We'll increase your Google rankings."      GOOD "We'll work to improve your visibility in relevant Google searches."
+    BAD  "This will increase the value of your home." GOOD "This can improve the appearance and condition of your home."
+  Rule: describe the likely benefit, do not guarantee the outcome. Prefer "can / helps / works to" over "will / guaranteed".
 - Make this page UNIQUE to THIS problem (headline, copy, FAQs, CTA). No template text with the service name swapped in.
 - FAQs (5-6) must handle real OBJECTIONS that block action (cost, free estimates, how fast, can I send photos,
   small jobs, do I need to be home). Never invent policies.
 
 Output ONLY valid JSON with this EXACT schema (no markdown, no commentary):
 {
-  "page_slug": "short-url-slug that describes the PROBLEM (not the service name, not a generic 'near me' term). 2-5 words, lowercase, hyphens, no brand name. e.g. 'roof-leaking', 'clogged-drain', 'no-hot-water', 'outdated-or-unprofessional-visuals', 'website-confuses-customers', 'cant-find-on-google'. NEVER use the bare service like 'graphic-designer' or 'roof-repair'",
+  "page_slug": "the PRIMARY SEARCH TOPIC for this service — the short phrase a customer would actually type into Google to find this kind of service, NOT the hero headline and NOT the customer's problem sentence. Usually '[qualifier]-[service]'. 2-4 words, lowercase, hyphens, no brand name. e.g. Interior Detailing -> 'interior-car-detailing' (NOT 'car-interior-needs-cleaning'); Pre-Sale Detailing -> 'pre-sale-car-detailing' (NOT 'sell-car-prep'); Exterior Painting -> 'exterior-house-painting'; Graphic Design -> 'small-business-graphic-design'; SEO -> 'local-seo'. Short, natural, descriptive, based on the search topic. No keyword stuffing",
   "problem_headline": "the customer's problem in THEIR OWN search/spoken words, 3-9 words, ends with ? when natural — NEVER the service name",
   "agitation": "1 sentence, realistic consequence of not dealing with it",
   "solution": "1 short sentence: the business is the fix, in plain words",
