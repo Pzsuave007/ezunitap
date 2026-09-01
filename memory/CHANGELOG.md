@@ -1,5 +1,10 @@
 # UniTech — Changelog
 
+## Jun 2026 — Problem pages: multiple problems per service + editable problem focus
+- A single service can now have MULTIPLE problem pages (BUSINESS → SERVICE → PROBLEM PAGE(S) fully enabled).
+- Editor groups pages by service; per-service **"Add problem"** (type a specific problem → creates a new page), per-page **Regenerate with this problem** (owner-provided focus, stored as `problem_hint`), plus Delete.
+- Backend: `generate_problem_page(problem_hint=…)`; `_generate_problem_pages_for_user(service_filter, problem_hint)`; new `POST /website/problem-pages/add`, `DELETE /website/problem-pages/{id}`; list endpoint returns pages grouped per service. Verified via curl + authenticated screenshot.
+
 ## Jun 2026 — Problem pages: hero image control
 - Each Problem/Solution page auto-uses the **service's own image** (`services[].image_id`) as its hero background; falls back to first gallery photo.
 - Owner can override the hero from the editor (thumbnail picker + "Auto (service image)"). New `hero_photo_id` on `problem_pages`, resolved in `_problem_page_payload`, editable via `PUT /website/problem-pages/{id}`. Verified via curl + screenshots.

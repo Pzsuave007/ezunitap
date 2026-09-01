@@ -707,6 +707,7 @@ async def generate_problem_page(
     rating: float = 0.0,
     review_count: int = 0,
     reviews: Optional[list] = None,
+    problem_hint: str = "",
 ) -> dict:
     creds = []
     if is_licensed:
@@ -731,6 +732,7 @@ async def generate_problem_page(
         f"Service area / city: {service_area or 'local area (unknown)'}\n"
         f"REAL credentials/facts you may reference (do NOT add any others): {', '.join(creds)}\n"
         + (f"Real customer reviews (tone only, do NOT fabricate):\n{review_snips}" if review_snips else "")
+        + (f"\nIMPORTANT — the business owner wants THIS page to focus specifically on this customer problem/angle: \"{problem_hint}\". Build the entire page (headline, agitation, sections, FAQs, slug) around THIS specific problem.\n" if (problem_hint or "").strip() else "")
         + "\nGenerate the Problem/Solution page JSON now."
     )
     chat = _new_chat(PROBLEM_PAGE_SYSTEM)

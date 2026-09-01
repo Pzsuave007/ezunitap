@@ -1158,7 +1158,20 @@ function ProblemPagesPanel({ slug }) {
     try { await api.put(`/website/problem-pages/${id}`, { published: val }); await load(); }
     catch { toast.error(t("website.pp.saveErr")); }
   };
-  const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "", hero_photo_id: pp.hero_photo_id || "" }); };
+  const openEdit = (pp) => { setEditing(pp.id); setDraft({ ...pp.content, seo_title: pp.seo?.title || "", seo_meta: pp.seo?.meta_description || "", hero_photo_id: pp.hero_photo_id || "", problem_hint: pp.problem_hint || "" }); };
+  const regenWithProblem = async (id) => {
+    setBusy(true);
+    try { await api.post(`/website/problem-pages/${id}/regenerate`, { problem_hint: draft.problem_hint || "" }); toast.success(t("website.pp.regenOk")); setEditing(null); await load(); }
+    catch { toast.error(t("website.pp.regenErr")); } finally { setBusy(false); }
+  };
+  const [adding, setAdding] = useState(null);
+  const [addHint, setAddHint] = useState("");
+  const addPage = async (service) => {
+    setBusy(true);
+    try { await api.post("/website/problem-pages/add", { service_name: service, problem_hint: addHint || "" }); toast.success(t("website.pp.regenOk")); setAdding(null); setAddHint(""); await load(); }
+    catch { toast.error(t("website.pp.genErr")); } finally { setBusy(false); }
+  };
+  const del = async (id) => { try { await api.delete(`/website/problem-pages/${id}`); await load(); } catch { toast.error(t("website.pp.saveErr")); } };
   const saveEdit = async (id) => {
     setBusy(true);
     try {
@@ -1173,7 +1186,7 @@ function ProblemPagesPanel({ slug }) {
 
   if (items === null) return <Card className="card-elevated border-0 shadow-none p-5"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></Card>;
 
-  const anyPage = items.some((i) => i.has_page);
+  const anyPage = items.some((i) => (i.pages || []).length);
   return (
     <div className="space-y-4" data-testid="website-problem-panel">
       <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-orange-500 to-rose-500 text-white">
@@ -1189,64 +1202,87 @@ function ProblemPagesPanel({ slug }) {
 
       {items.length === 0 && <Card className="card-elevated border-0 shadow-none p-5 text-sm text-slate-500">{t("website.pp.empty")}</Card>}
 
-      {items.map((it) => {
-        const pp = it.page;
-        return (
-          <Card key={it.service_name} className="card-elevated border-0 shadow-none p-4" data-testid={`pp-item-${it.service_name}`}>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <div className="font-bold truncate">{it.service_name}</div>
-                {pp
-                  ? <div className="mt-1 flex items-center gap-2 text-xs">
-                      {pp.published
-                        ? <span className="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✓ {t("website.pp.published")}</span>
-                        : <span className="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">⚠ {t("website.pp.review")}</span>}
-                      <span className="text-slate-400 truncate">/p/{pp.page_slug}</span>
-                    </div>
-                  : <div className="mt-1 text-xs text-slate-400">{t("website.pp.noPage")}</div>}
+      {items.map((it) => (
+        <Card key={it.service_name} className="card-elevated border-0 shadow-none p-4" data-testid={`pp-item-${it.service_name}`}>
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <div className="font-bold">{it.service_name}</div>
+            <button onClick={() => { setAdding(adding === it.service_name ? null : it.service_name); setAddHint(""); }} className="px-3 h-8 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 inline-flex items-center gap-1" data-testid={`pp-add-${it.service_name}`}><Plus className="w-3.5 h-3.5" /> {t("website.pp.addPage")}</button>
+          </div>
+
+          {adding === it.service_name && (
+            <div className="mb-3 p-3 rounded-xl bg-blue-50 border border-blue-100 space-y-2" data-testid="pp-add-form">
+              <Label className="text-xs font-bold text-blue-800">{t("website.pp.focusLabel")}</Label>
+              <Textarea rows={2} value={addHint} onChange={(e) => setAddHint(e.target.value)} placeholder={t("website.pp.focusPh")} className="bg-white" data-testid="pp-add-hint" />
+              <div className="text-[11px] text-slate-500">{t("website.pp.focusHint")}</div>
+              <div className="flex gap-2">
+                <Button onClick={() => addPage(it.service_name)} disabled={busy} className="rounded-xl bg-blue-600 hover:bg-blue-700 font-bold" data-testid="pp-create-page">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.pp.createPage")}</Button>
+                <Button onClick={() => setAdding(null)} variant="outline" className="rounded-xl">{t("website.pp.cancel")}</Button>
               </div>
-              {pp && (
+            </div>
+          )}
+
+          {it.pages.length === 0 && <div className="text-xs text-slate-400">{t("website.pp.noPage")}</div>}
+
+          {it.pages.map((pp) => (
+            <div key={pp.id} className="pt-3 mt-3 border-t border-slate-100 first:border-t-0 first:pt-0 first:mt-0">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs">
+                    {pp.published
+                      ? <span className="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✓ {t("website.pp.published")}</span>
+                      : <span className="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">⚠ {t("website.pp.review")}</span>}
+                    <span className="font-semibold text-slate-600 truncate">{pp.content?.problem_headline || pp.page_slug}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">/p/{pp.page_slug}</div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <a href={`${origin}/sitio/${slug}/p/${pp.page_slug}?preview=1`} target="_blank" rel="noreferrer" className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 inline-flex items-center gap-1.5" data-testid={`pp-view-${it.service_name}`}><Eye className="w-4 h-4" /> {t("website.pp.view")}</a>
-                  <button onClick={() => openEdit(pp)} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200" data-testid={`pp-edit-${it.service_name}`}>{t("website.pp.edit")}</button>
+                  <a href={`${origin}/sitio/${slug}/p/${pp.page_slug}?preview=1`} target="_blank" rel="noreferrer" className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 inline-flex items-center gap-1.5" data-testid={`pp-view-${pp.page_slug}`}><Eye className="w-4 h-4" /> {t("website.pp.view")}</a>
+                  <button onClick={() => openEdit(pp)} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200" data-testid={`pp-edit-${pp.page_slug}`}>{t("website.pp.edit")}</button>
                   <button onClick={() => regenerate(pp.id)} disabled={busy} className="px-3 h-9 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200">{t("website.pp.regen")}</button>
-                  <div className="flex items-center gap-1.5"><span className="text-xs text-slate-500">{t("website.pp.publish")}</span><Switch checked={pp.published} onCheckedChange={(v) => publish(pp.id, v)} data-testid={`pp-publish-${it.service_name}`} /></div>
+                  <button onClick={() => del(pp.id)} className="px-2.5 h-9 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100" data-testid={`pp-delete-${pp.page_slug}`}><Trash2 className="w-4 h-4" /></button>
+                  <div className="flex items-center gap-1.5"><span className="text-xs text-slate-500">{t("website.pp.publish")}</span><Switch checked={pp.published} onCheckedChange={(v) => publish(pp.id, v)} data-testid={`pp-publish-${pp.page_slug}`} /></div>
+                </div>
+              </div>
+
+              {editing === pp.id && (
+                <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5" data-testid="pp-edit-form">
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <Label className="text-xs font-bold text-amber-800">{t("website.pp.focusLabel")}</Label>
+                    <Textarea rows={2} value={draft.problem_hint || ""} onChange={(e) => setDraft({ ...draft, problem_hint: e.target.value })} placeholder={t("website.pp.focusPh")} className="mt-1 bg-white" data-testid="pp-problem-hint" />
+                    <div className="text-[11px] text-slate-500 mt-1">{t("website.pp.focusHint")}</div>
+                    <Button onClick={() => regenWithProblem(pp.id)} disabled={busy} className="mt-2 rounded-xl bg-amber-600 hover:bg-amber-700 font-bold" data-testid="pp-regen-problem">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.pp.regenProblem")}</Button>
+                  </div>
+                  <div><Label className="text-xs">{t("website.pp.headline")}</Label><Input value={draft.problem_headline || ""} onChange={(e) => setDraft({ ...draft, problem_headline: e.target.value })} /></div>
+                  <div><Label className="text-xs">{t("website.pp.agitation")}</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
+                  <div><Label className="text-xs">{t("website.pp.solution")}</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
+                  <div><Label className="text-xs">{t("website.pp.cta")}</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
+                  <div>
+                    <Label className="text-xs">{t("website.pp.hero")}</Label>
+                    <div className="flex gap-2 flex-wrap mt-1.5">
+                      {photos.map((ph) => (
+                        <button key={ph.id} type="button" onClick={() => setDraft({ ...draft, hero_photo_id: ph.id })}
+                          className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${draft.hero_photo_id === ph.id ? "border-blue-600" : "border-transparent"}`} data-testid={`pp-hero-pick-${ph.id}`}>
+                          <img src={photoSrc(ph.id)} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                      <button type="button" onClick={() => setDraft({ ...draft, hero_photo_id: "" })}
+                        className={`w-16 h-16 rounded-lg border-2 text-[10px] font-semibold text-slate-500 flex items-center justify-center text-center px-1 ${!draft.hero_photo_id ? "border-blue-600 bg-blue-50" : "border-slate-200"}`} data-testid="pp-hero-auto">
+                        {t("website.pp.heroAuto")}
+                      </button>
+                    </div>
+                  </div>
+                  <div><Label className="text-xs">{t("website.pp.seoTitle")}</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
+                  <div><Label className="text-xs">{t("website.pp.seoMeta")}</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
+                  <div className="flex gap-2 pt-1">
+                    <Button onClick={() => saveEdit(pp.id)} disabled={busy} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.pp.save")}</Button>
+                    <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">{t("website.pp.cancel")}</Button>
+                  </div>
                 </div>
               )}
             </div>
-
-            {editing === pp?.id && (
-              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5" data-testid="pp-edit-form">
-                <div><Label className="text-xs">{t("website.pp.headline")}</Label><Input value={draft.problem_headline || ""} onChange={(e) => setDraft({ ...draft, problem_headline: e.target.value })} /></div>
-                <div><Label className="text-xs">{t("website.pp.agitation")}</Label><Textarea rows={2} value={draft.agitation || ""} onChange={(e) => setDraft({ ...draft, agitation: e.target.value })} /></div>
-                <div><Label className="text-xs">{t("website.pp.solution")}</Label><Textarea rows={2} value={draft.solution || ""} onChange={(e) => setDraft({ ...draft, solution: e.target.value })} /></div>
-                <div><Label className="text-xs">{t("website.pp.cta")}</Label><Input value={draft.cta_label || ""} onChange={(e) => setDraft({ ...draft, cta_label: e.target.value })} /></div>
-                <div>
-                  <Label className="text-xs">{t("website.pp.hero")}</Label>
-                  <div className="flex gap-2 flex-wrap mt-1.5">
-                    {photos.map((ph) => (
-                      <button key={ph.id} type="button" onClick={() => setDraft({ ...draft, hero_photo_id: ph.id })}
-                        className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${draft.hero_photo_id === ph.id ? "border-blue-600" : "border-transparent"}`} data-testid={`pp-hero-pick-${ph.id}`}>
-                        <img src={photoSrc(ph.id)} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => setDraft({ ...draft, hero_photo_id: "" })}
-                      className={`w-16 h-16 rounded-lg border-2 text-[10px] font-semibold text-slate-500 flex items-center justify-center text-center px-1 ${!draft.hero_photo_id ? "border-blue-600 bg-blue-50" : "border-slate-200"}`} data-testid="pp-hero-auto">
-                      {t("website.pp.heroAuto")}
-                    </button>
-                  </div>
-                </div>
-                <div><Label className="text-xs">{t("website.pp.seoTitle")}</Label><Input value={draft.seo_title || ""} onChange={(e) => setDraft({ ...draft, seo_title: e.target.value })} /></div>
-                <div><Label className="text-xs">{t("website.pp.seoMeta")}</Label><Textarea rows={2} value={draft.seo_meta || ""} onChange={(e) => setDraft({ ...draft, seo_meta: e.target.value })} /></div>
-                <div className="flex gap-2 pt-1">
-                  <Button onClick={() => saveEdit(pp.id)} disabled={busy} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("website.pp.save")}</Button>
-                  <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">{t("website.pp.cancel")}</Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        );
-      })}
+          ))}
+        </Card>
+      ))}
     </div>
   );
 }

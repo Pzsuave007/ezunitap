@@ -289,7 +289,13 @@
       "regenErr": "Error al regenerar",
       "regenOk": "Página regenerada",
       "hero": "Imagen de fondo del hero",
-      "heroAuto": "Auto (imagen del servicio)"
+      "heroAuto": "Auto (imagen del servicio)",
+      "focusLabel": "Enfocar esta página en otro problema (opcional)",
+      "focusPh": "ej. Agua goteando del techo",
+      "regenProblem": "Regenerar con este problema",
+      "focusHint": "Déjalo vacío para que la IA elija el problema principal del servicio.",
+      "addPage": "Agregar problema",
+      "createPage": "Crear página"
     }
   },
   "auth": {

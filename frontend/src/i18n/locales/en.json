@@ -288,7 +288,13 @@
       "regenErr": "Error regenerating",
       "regenOk": "Page regenerated",
       "hero": "Hero background image",
-      "heroAuto": "Auto (service image)"
+      "heroAuto": "Auto (service image)",
+      "focusLabel": "Focus this page on a different problem (optional)",
+      "focusPh": "e.g. Water leaking from the ceiling",
+      "regenProblem": "Regenerate with this problem",
+      "focusHint": "Leave empty to let AI pick the main problem for this service.",
+      "addPage": "Add problem",
+      "createPage": "Create page"
     }
   },
   "auth": {

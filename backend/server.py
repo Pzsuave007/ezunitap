@@ -5044,7 +5044,7 @@ async def _pp_reviews_and_rating(user_id: str):
     return reviews
 
 
-async def _generate_problem_pages_for_user(user_id: str, force: bool = False) -> list:
+async def _generate_problem_pages_for_user(user_id: str, force: bool = False, service_filter: str = None, problem_hint: str = None) -> list:
     """Generate (or refresh) one Problem/Solution page per active service.
     Idempotent: existing pages are only regenerated when force=True."""
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
@@ -5059,10 +5059,13 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False) ->
         name = (s.get("name") if isinstance(s, dict) else str(s)) or ""
         if not name.strip():
             continue
+        if service_filter and name != service_filter:
+            continue
         existing = await db.problem_pages.find_one({"user_id": user_id, "service_name": name}, {"_id": 0})
         if existing and not force:
             out.append(existing)
             continue
+        hint = problem_hint if (service_filter and problem_hint is not None) else ((existing or {}).get("problem_hint") or "")
         try:
             data = await ai_service.generate_problem_page(
                 business_name=user.get("business_name", ""),
@@ -5076,6 +5079,7 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False) ->
                 rating=float(card.get("rating") or 0.0),
                 review_count=len(reviews),
                 reviews=reviews,
+                problem_hint=hint,
             )
         except Exception as e:  # noqa: BLE001
             logger.error(f"problem page gen failed for '{name}': {e!r}")
@@ -5105,6 +5109,7 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False) ->
             "seo": seo,
             "photo_ids": (existing or {}).get("photo_ids", []),
             "hero_photo_id": (existing or {}).get("hero_photo_id") or (s.get("image_id") if isinstance(s, dict) else None),
+            "problem_hint": hint,
             "created_at": (existing or {}).get("created_at") or _now_iso(),
             "updated_at": _now_iso(),
         }
@@ -5124,6 +5129,7 @@ def _pp_owner_view(pp: dict) -> dict:
         "edited_by_owner": bool(pp.get("edited_by_owner")),
         "content": pp.get("content", {}), "seo": pp.get("seo", {}),
         "hero_photo_id": pp.get("hero_photo_id"),
+        "problem_hint": pp.get("problem_hint", ""),
         "updated_at": pp.get("updated_at"),
     }
 
@@ -5131,17 +5137,18 @@ def _pp_owner_view(pp: dict) -> dict:
 @api_router.get("/website/problem-pages")
 async def list_problem_pages(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     w = await _get_or_init_website(user_id)
-    pages = await db.problem_pages.find({"user_id": user_id}, {"_id": 0}).to_list(200)
-    by_service = {p["service_name"]: p for p in pages}
+    pages = await db.problem_pages.find({"user_id": user_id}, {"_id": 0}).to_list(500)
+    grouped = {}
+    for p in pages:
+        grouped.setdefault(p["service_name"], []).append(p)
     services = w.get("services") if w.get("services") is not None else []
     items = []
     for s in (services or []):
         name = (s.get("name") if isinstance(s, dict) else str(s)) or ""
         if not name.strip():
             continue
-        pp = by_service.get(name)
-        items.append({"service_name": name, "has_page": bool(pp),
-                      "page": _pp_owner_view(pp) if pp else None})
+        pgs = sorted(grouped.get(name, []), key=lambda x: x.get("created_at") or "")
+        items.append({"service_name": name, "pages": [_pp_owner_view(p) for p in pgs]})
     wp = await _website_payload(w)
     return {"website_slug": w["slug"], "public_path": f"/sitio/{w['slug']}",
             "photos": wp.get("photos", []), "items": items}
@@ -5155,15 +5162,68 @@ async def generate_problem_pages(body: dict = Body(default={}), user_id: str = D
 
 
 @api_router.post("/website/problem-pages/{page_id}/regenerate")
-async def regenerate_problem_page(page_id: str, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+async def regenerate_problem_page(page_id: str, body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     pp = await db.problem_pages.find_one({"id": page_id, "user_id": user_id}, {"_id": 0})
     if not pp:
         raise HTTPException(404, "Not found")
-    await db.problem_pages.delete_one({"id": page_id, "user_id": user_id})
-    # Re-create only this service's page by generating all-missing (fast: others skipped).
-    await _generate_problem_pages_for_user(user_id, force=False)
+    hint = (body or {}).get("problem_hint")  # None => keep stored hint; "" => clear
+    await _generate_problem_pages_for_user(user_id, force=True, service_filter=pp["service_name"], problem_hint=hint)
     new = await db.problem_pages.find_one({"user_id": user_id, "service_name": pp["service_name"]}, {"_id": 0})
     return {"ok": True, "page": _pp_owner_view(new) if new else None}
+
+
+async def _pp_add_one(user_id: str, service_name: str, problem_hint: str = "") -> dict:
+    """Create an ADDITIONAL problem page for a service (multiple pages per service)."""
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    if not w:
+        return None
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    services = w.get("services") if w.get("services") is not None else (card.get("services") or [])
+    s = next((x for x in (services or []) if (x.get("name") if isinstance(x, dict) else str(x)) == service_name), None)
+    if s is None:
+        return None
+    reviews = await _pp_reviews_and_rating(user_id)
+    data = await ai_service.generate_problem_page(
+        business_name=user.get("business_name", ""), business_type=card.get("business_type", ""),
+        service_name=service_name, service_description=(s.get("description") if isinstance(s, dict) else "") or "",
+        service_area=w.get("service_area") or card.get("service_area") or "",
+        years_in_business=card.get("years_in_business") or 0, is_licensed=bool(card.get("is_licensed")),
+        is_insured=bool(card.get("is_insured")), rating=float(card.get("rating") or 0.0),
+        review_count=len(reviews), reviews=reviews, problem_hint=problem_hint or "",
+    )
+    page_slug = _slugify(data.get("page_slug") or service_name) or "service"
+    base, n = page_slug, 1
+    while await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug}):
+        n += 1
+        page_slug = f"{base}-{n}"
+    doc = {
+        "id": _new_id(), "user_id": user_id, "website_slug": w["slug"], "service_name": service_name,
+        "page_slug": page_slug, "status": "needs_review", "published": False, "indexable": True,
+        "edited_by_owner": False, "content": {k: data.get(k) for k in _PP_CONTENT_KEYS},
+        "seo": {"title": (data.get("seo_title") or "")[:70], "meta_description": (data.get("meta_description") or "")[:200], "h1": data.get("h1") or data.get("problem_headline") or service_name},
+        "photo_ids": [], "hero_photo_id": (s.get("image_id") if isinstance(s, dict) else None),
+        "problem_hint": problem_hint or "", "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.problem_pages.insert_one(dict(doc))
+    return doc
+
+
+@api_router.post("/website/problem-pages/add")
+async def add_problem_page(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    service_name = (body or {}).get("service_name") or ""
+    if not service_name.strip():
+        raise HTTPException(400, "service_name required")
+    doc = await _pp_add_one(user_id, service_name, (body or {}).get("problem_hint") or "")
+    if not doc:
+        raise HTTPException(404, "Service not found")
+    return {"ok": True, "page": _pp_owner_view(doc)}
+
+
+@api_router.delete("/website/problem-pages/{page_id}")
+async def delete_problem_page(page_id: str, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    r = await db.problem_pages.delete_one({"id": page_id, "user_id": user_id})
+    return {"ok": r.deleted_count > 0}
 
 
 class ProblemPageUpdate(BaseModel):
