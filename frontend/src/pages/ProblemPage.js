@@ -108,7 +108,7 @@ export default function ProblemPage({ injected, byDomain }) {
             </div>
             <div className="mt-7 flex flex-wrap gap-3">
               {phone && <a href={`tel:${phone}`} data-testid="pp-hero-call" className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-white text-lg shadow-lg" style={{ background: accent }}><Phone className="w-5 h-5" /> Call Now</a>}
-              <a href="#lead" className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-slate-900 bg-white text-lg">{ctaLabel} <ArrowRight className="w-5 h-5" /></a>
+              <a href="#lead" className="hidden md:inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-slate-900 bg-white text-lg">{ctaLabel} <ArrowRight className="w-5 h-5" /></a>
             </div>
           </div>
           <div id="lead"><LeadForm data={data} accent={accent} ctaLabel={ctaLabel} /></div>

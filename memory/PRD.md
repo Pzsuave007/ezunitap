@@ -1,4 +1,9 @@
-## 🔗🛡️ Jun 2026 — Slug desde el TEMA DE BÚSQUEDA + no cambiar slugs publicados + anti-claims [COMPLETO; verificado curl, SIN testing_agent]
+## 📱 Jun 2026 — Quitar CTA duplicado del hero en mobile (Conversion Page) [COMPLETO; verificado, SIN testing_agent]
+- **Petición dueño**: en mobile, el botón CTA del hero (después de "Call Now") se repetía con el CTA del formulario que queda justo debajo (mismo texto), se veía dos veces seguidas.
+- **Fix** (`ProblemPage.js` línea 111): el botón `#lead {ctaLabel}` del hero ahora es `hidden md:inline-flex` → oculto en mobile (<768px), visible en desktop (donde el form va al lado, sin duplicación). En mobile quedan solo "Call Now" + el formulario. Build main.f70200ad.js + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Petición dueño** (2 ajustes finales): (1) el slug salía del headline/problema (`car-interior-needs-cleaning`); debe salir del tema de búsqueda primario (`interior-car-detailing`). Además, NO cambiar slugs ya publicados/indexados al regenerar (solo en la 1ª creación); si se cambia a propósito, redirect. (2) nunca inventar resultados/garantías (financieras, resale value, rankings, %/stats, leads/ventas/timeframes garantizados) salvo que estén en los datos del negocio: describir el beneficio, no garantizar el resultado.
 - **Prompt** (`ai_service.py`): regla `page_slug` reescrita → PRIMARY SEARCH TOPIC ('[qualifier]-[service]', 2-4 palabras), con los ejemplos del dueño (Interior Detailing→interior-car-detailing, Pre-Sale→pre-sale-car-detailing, Exterior Painting→exterior-house-painting, Graphic Design→small-business-graphic-design, SEO→local-seo); explícito "NO el headline/problema". Regla anti-claims añadida en CRITICAL RULES con rewrites seguros (car resale, Google rankings, home value) y "prefer can/helps/works to over will/guaranteed". Hero/estructura/lógica intactos.
 - **Backend** (`server.py` `_generate_problem_pages_for_user`): al regenerar (`existing` presente) se PRESERVA el `page_slug` existente → URLs publicadas/indexadas nunca se rompen. El slug del AI solo se usa en la 1ª creación (create y `_pp_add_one`).
