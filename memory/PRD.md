@@ -1,4 +1,10 @@
-## 🖼️✨ Jun 2026 — "Recent Work" clickable con detalle (imagen + descripción IA + CTA) en tarjeta y website [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+## ✍️ Jun 2026 — Descripción de "Recent Work": IA vendedora (expande, no recorta) + texto más grande [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Reporte dueño**: la IA simplificaba/recortaba demasiado la descripción; quiere que MEJORE y EXPANDA lo que escribe con enfoque de VENTA (bien descriptivo), y en la tarjeta el texto se veía muy pequeño.
+- **IA** (`ai_service.py` `WORK_CAPTION_SYSTEM` + `refine_work_caption`): reescrito para EXPANDIR/mejorar (no recortar) → 3-5 frases (~55-100 palabras), tono cálido/vendedor en 2ª persona, estructura qué se hizo → detalles/calidad → beneficio para el cliente. Mantiene guardas: sin inventar precios/tiempos/medidas/marcas/certificaciones ni garantías/resultados; sin clichés de marketing. Límite de guardado subido 400→900 (endpoint) y truncado 900 (ai). Verificado: "cambie el techo de una casa" → 82 palabras honestas y persuasivas.
+- **Frontend**: caption más grande — tarjeta (`SmartCard` WorkDetail) `text-[15px] sm:text-base leading-relaxed text-white/90`; website (`SiteWorkModal`) `text-base sm:text-lg`. Verificado screenshot: modal en la tarjeta con descripción larga legible + CTA.
+- Build main.ddc84e30.js + `git add -f frontend/build/*`. ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Petición dueño**: al tocar una foto de "Recent Work" que se abra igual que el detalle de servicio (modal), con una descripción del trabajo que él escribe (en ES o EN) y la IA refina a inglés, + botón "Pedir cotización". Aplicar en tarjeta Y website.
 - **Datos**: nuevo campo `caption` en el doc de foto. Endpoints: `POST /photos/{id}/caption` (guardar) y `POST /photos/caption-ai` (refinar texto del dueño en cualquier idioma → inglés limpio, con reglas anti-claims/anti-marketing). `caption` incluido en payload de tarjeta y website.
 - **IA** (`ai_service.refine_work_caption` + `WORK_CAPTION_SYSTEM`): 1-2 frases, solo lo que el dueño menciona, sin inventar resultados/precios/garantías ni frases de marketing.

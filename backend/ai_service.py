@@ -296,29 +296,44 @@ async def generate_quote_from_text(description_es: str, language: str = "es") ->
     return data
 
 
-WORK_CAPTION_SYSTEM = """You help a U.S. local-service business write a short, natural description of a
+WORK_CAPTION_SYSTEM = """You are a persuasive copywriter helping a U.S. local-service business describe a
 photo of a job they completed, for their "Recent Work" gallery. The owner types (in English, Spanish, or
-Spanglish) what they did in that photo; you rewrite it as clean, professional ENGLISH the customer will read.
+Spanglish) what they did; you EXPAND and IMPROVE it into polished, sales-oriented ENGLISH the customer reads.
+The goal of this section is to SELL — the description must build desire and confidence, not just label the photo.
 
-RULES:
-- Output ENGLISH only. 1-2 short sentences (max ~40 words). Natural and specific, like the owner talking.
-- Describe ONLY the work shown/that the owner mentioned. Do NOT invent details, materials, brands, prices,
-  timeframes, square footage, or results. If the owner's note is vague, keep it general and honest.
-- NO unsupported claims or guarantees (no "increased value", "best in town", ratings, percentages, savings).
-- NO marketing filler: never use Elevate, Transform, Enhance, Unlock, Stunning, Seamless, "top-notch",
-  "state-of-the-art", "attention to detail" clichés, or exclamation-mark hype.
-- Return ONLY the plain caption text — no quotes, no JSON, no labels."""
+WHAT TO DO:
+- IMPROVE and EXPAND the owner's note — never shorten it to a bare label. Take their rough idea and make it
+  richer, clearer and more compelling.
+- Length: 3-5 full sentences (roughly 55-100 words). Descriptive and confident, written to help win the sale.
+- Structure the copy so it: (1) says what the job was, (2) adds the concrete details/care/quality involved,
+  and (3) connects it to what the customer gets out of it (a clean finish, a fixed problem, peace of mind,
+  a space they'll enjoy) — framed naturally, the way a proud, trustworthy owner would explain it.
+- Write in a warm, professional, confident tone (2nd person "you/your" where it fits). Sound human, not robotic.
+
+HONESTY GUARDRAILS (still apply):
+- Base it on the owner's note. You may enrich with reasonable, generic craft details typical of that trade,
+  but do NOT invent specific facts the owner didn't imply: no made-up prices, exact timeframes, square footage,
+  brand names, certifications, or measurable results/percentages.
+- NO guarantees or unverifiable outcome claims (e.g. "increases home value by X", "guaranteed", "best in town",
+  fake ratings). You may describe likely benefits softly ("helps", "so you can", "leaves you with").
+- Avoid AI/marketing clichés: Elevate, Transform, Unlock, Stunning, Seamless, "top-notch", "state-of-the-art",
+  "attention to detail", "next level", excessive exclamation marks.
+- Output ENGLISH only. Return ONLY the caption text — no quotes, no labels, no JSON."""
 
 
 async def refine_work_caption(text: str) -> str:
-    """Refine an owner's rough note (any language) into a clean English work caption."""
+    """Expand an owner's rough note (any language) into a richer, sales-oriented English work caption."""
     raw = (text or "").strip()
     if not raw:
         return ""
     chat = _new_chat(WORK_CAPTION_SYSTEM)
-    resp = await chat.send_message(UserMessage(text=f"Owner's note about this job photo:\n{raw}\n\nWrite the caption."))
+    resp = await chat.send_message(UserMessage(text=(
+        "Owner's note about this completed job photo (may be in Spanish/Spanglish):\n"
+        f"{raw}\n\n"
+        "Expand and improve it into a compelling 3-5 sentence English description that helps sell the work."
+    )))
     out = (resp or "").strip().strip('"').strip()
-    return out[:400]
+    return out[:900]
 
 
 

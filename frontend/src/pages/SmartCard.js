@@ -1112,7 +1112,7 @@ function WorkDetail({ photo, brand, accent, t, api, onClose, onQuote }) {
         </div>
         <div className="p-5 space-y-4">
           {p.caption
-            ? <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line" data-testid="card-work-caption">{p.caption}</p>
+            ? <p className="text-[15px] sm:text-base leading-relaxed text-white/90 whitespace-pre-line" data-testid="card-work-caption">{p.caption}</p>
             : <p className="text-sm text-white/40">{t.gallery}</p>}
           <button onClick={onQuote} data-testid="card-work-quote"
                   className="w-full py-3.5 rounded-2xl text-white font-bold text-base shadow-2xl flex items-center justify-center gap-2 tap"

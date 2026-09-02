@@ -2482,11 +2482,11 @@ async def set_photo_caption(photo_id: str, payload: PhotoCaptionIn, user_id: str
     """Save the owner-written 'Recent work' caption/description for a photo."""
     res = await db.photos.update_one(
         {"id": photo_id, "user_id": user_id, "is_deleted": {"$ne": True}},
-        {"$set": {"caption": (payload.caption or "").strip()[:400]}},
+        {"$set": {"caption": (payload.caption or "").strip()[:900]}},
     )
     if res.matched_count == 0:
         raise HTTPException(404, "Foto no encontrada")
-    return {"ok": True, "caption": (payload.caption or "").strip()[:400]}
+    return {"ok": True, "caption": (payload.caption or "").strip()[:900]}
 
 
 class CaptionAiIn(BaseModel):

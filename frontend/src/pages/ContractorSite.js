@@ -257,7 +257,7 @@ function SiteWorkModal({ photo, accent, accentText, onClose, onQuote }) {
           <button onClick={onClose} className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center" data-testid="site-work-close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 sm:p-6 space-y-4">
-          {p.caption && <p className="text-base leading-relaxed text-slate-700 whitespace-pre-line" data-testid="site-work-caption">{p.caption}</p>}
+          {p.caption && <p className="text-base sm:text-lg leading-relaxed text-slate-700 whitespace-pre-line" data-testid="site-work-caption">{p.caption}</p>}
           <a href="#contact" onClick={(e) => { e.preventDefault(); onQuote(); }} data-testid="site-work-quote"
              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-base shadow-lg" style={{ background: accent, color: accentText }}>
             Get a Free Quote <ArrowRight className="w-5 h-5" />
