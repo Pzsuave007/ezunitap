@@ -61,6 +61,7 @@ export default function ContractorSite({ injected }) {
   const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
   const [lang, setLang] = useState("en");
+  const [workOpen, setWorkOpen] = useState(null);
 
   useEffect(() => {
     const l = document.createElement("link");
@@ -191,7 +192,7 @@ export default function ContractorSite({ injected }) {
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
   const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`) };
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`), openWork: setWorkOpen };
   // Central, business-aware CTA labels so every template converts whether the
   // business takes appointments (Book) or projects/estimates (Quote).
   ctx.bookingOn = !!(sec?.booking && data?.card_slug);
@@ -213,6 +214,7 @@ export default function ContractorSite({ injected }) {
         .wreveal.wshow{opacity:1;transform:none}
         @media (prefers-reduced-motion:reduce){.wreveal{opacity:1 !important;transform:none !important}}
         .wmarq{display:flex;width:max-content;animation:wmarquee 22s linear infinite}
+        #gallery img{cursor:zoom-in}
         /* On phones, lift the floating chat button above the sticky Call/Quote bar */
         @media (max-width:767px){#unitech-chat-fab{bottom:88px !important}}
       `}</style>
@@ -227,10 +229,41 @@ export default function ContractorSite({ injected }) {
           ))}
         </div>
       )}
-      <div className="ws overflow-x-clip">
+      <div className="ws overflow-x-clip" onClick={(e) => {
+        const img = e.target.closest && e.target.closest("img");
+        if (!img || !e.target.closest("#gallery")) return;
+        const m = (img.getAttribute("src") || "").match(/\/public\/card\/photo\/([^?]+)/);
+        if (!m) return;
+        const p = (data.photos || []).find((x) => x.id === m[1]);
+        if (p) setWorkOpen(p);
+      }}>
         <Layout ctx={ctx} />
       </div>
       <MobileBar ctx={ctx} />
+      {workOpen && <SiteWorkModal photo={workOpen} accent={accent} accentText={accentText} onClose={() => setWorkOpen(null)} onQuote={() => { setWorkOpen(null); goContact(); }} />}
+    </div>
+  );
+}
+
+function SiteWorkModal({ photo, accent, accentText, onClose, onQuote }) {
+  const p = photo || {};
+  const label = { before: "Before", during: "During", after: "After" }[p.label] || "";
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4" onClick={onClose} data-testid="site-work-modal">
+      <div className="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[92vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative">
+          <img src={photoUrl(p.id, 1200)} alt="" className="w-full max-h-[56vh] object-cover" />
+          {label && <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[10px] font-bold uppercase tracking-[0.15em]">{label}</span>}
+          <button onClick={onClose} className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center" data-testid="site-work-close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 sm:p-6 space-y-4">
+          {p.caption && <p className="text-base leading-relaxed text-slate-700 whitespace-pre-line" data-testid="site-work-caption">{p.caption}</p>}
+          <a href="#contact" onClick={(e) => { e.preventDefault(); onQuote(); }} data-testid="site-work-quote"
+             className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-base shadow-lg" style={{ background: accent, color: accentText }}>
+            Get a Free Quote <ArrowRight className="w-5 h-5" />
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

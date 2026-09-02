@@ -1,4 +1,14 @@
-## 🖼️ Jun 2026 — Galería "Recent Work" de la Tarjeta unificada con el editor del Website [COMPLETO; verificado curl, SIN testing_agent]
+## 🖼️✨ Jun 2026 — "Recent Work" clickable con detalle (imagen + descripción IA + CTA) en tarjeta y website [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Petición dueño**: al tocar una foto de "Recent Work" que se abra igual que el detalle de servicio (modal), con una descripción del trabajo que él escribe (en ES o EN) y la IA refina a inglés, + botón "Pedir cotización". Aplicar en tarjeta Y website.
+- **Datos**: nuevo campo `caption` en el doc de foto. Endpoints: `POST /photos/{id}/caption` (guardar) y `POST /photos/caption-ai` (refinar texto del dueño en cualquier idioma → inglés limpio, con reglas anti-claims/anti-marketing). `caption` incluido en payload de tarjeta y website.
+- **IA** (`ai_service.refine_work_caption` + `WORK_CAPTION_SYSTEM`): 1-2 frases, solo lo que el dueño menciona, sin inventar resultados/precios/garantías ni frases de marketing.
+- **Editor** (`WebsiteEditor` → pestaña Photos → galería "Recent Work"): cada foto mostrada tiene ahora un textarea de descripción (guarda onBlur) + botón "IA"/"AI" que refina el texto a inglés y lo guarda. Helpers `saveCaption/aiCaption`, estado `caps/capBusy`. i18n `workCaption*` (ES/EN). testids `website-gallery-caption-{i}`, `website-gallery-caption-ai-{i}`.
+- **Tarjeta** (`SmartCard`): las fotos de "Recent Work" ahora abren `WorkDetail` (imagen grande + caption + botón "Request a Free Estimate" que abre el QuoteForm). testids `card-work-{i}`, `card-work-detail`, `card-work-caption`, `card-work-quote`.
+- **Website** (`ContractorSite`): modal compartido `SiteWorkModal` (imagen + caption + "Get a Free Quote" → scroll a contacto) abierto por **delegación de clicks** en imágenes dentro de `#gallery` (cubre los 10 templates sin editar cada galería). CSS `#gallery img{cursor:zoom-in}`.
+- **Verificado**: curl (IA ES→EN "We painted the entire exterior... two coats..."; guardar/leer caption OK) + screenshots (modal en tarjeta y en website con caption + CTA). Datos de prueba limpiados. Build main.f61e40b4.js + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: **backend + frontend** → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Petición dueño**: quería controlar qué fotos salen en la sección "Recent Work" de la TARJETA DIGITAL (elegir/quitar) pero no sabía dónde.
 - **Causa**: el payload de la tarjeta (`/public/card/{slug}`) sacaba esa galería de `label in [before/during/after]` o `on_card=True`, una fuente distinta al editor del Website (que usa `gallery_photo_ids`), así que no había un lugar claro para gestionarla.
 - **Fix** (`server.py` handler `/public/card/{slug}`): ahora la galería de la tarjeta usa PRIMERO `website.gallery_photo_ids` (la lista curada y ordenada que ya se gestiona en el editor del Website → pestaña **Photos** → "Recent Work": subir/elegir/reordenar/quitar). Si no hay lista curada, cae al comportamiento anterior (before/during/after u `on_card`). Una sola fuente para website + tarjeta.

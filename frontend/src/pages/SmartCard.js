@@ -155,6 +155,7 @@ export default function SmartCard() {
   const [bookOpen, setBookOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(null);
+  const [workOpen, setWorkOpen] = useState(null);
   const [quoteService, setQuoteService] = useState("");
   const trackedVisit = useRef(false);
 
@@ -443,12 +444,12 @@ export default function SmartCard() {
           <Section title={t.gallery} delay={450}>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2 snap-x snap-mandatory">
               {photos.map((p, i) => (
-                <a
+                <button
                   key={p.id}
-                  href={`${API}/public/card/photo/${p.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="gallery-card snap-center"
+                  type="button"
+                  onClick={() => { track(slug, "gallery_click", { id: p.id }); setWorkOpen(p); }}
+                  className="gallery-card snap-center tap"
+                  data-testid={`card-work-${i}`}
                   style={{ animationDelay: `${500 + i * 50}ms` }}
                 >
                   <img src={`${API}/public/card/photo/${p.id}`} alt={p.label} className="w-full h-full object-contain" loading="lazy" />
@@ -458,7 +459,7 @@ export default function SmartCard() {
                     </span>
                   )}
                   <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-                </a>
+                </button>
               ))}
             </div>
           </Section>
@@ -591,6 +592,13 @@ export default function SmartCard() {
           service={serviceOpen} brand={brand} accent={accent} brandLight={brandLight} t={t} api={API}
           onClose={() => setServiceOpen(null)}
           onQuote={() => { setQuoteService(serviceOpen.name); setServiceOpen(null); setFormOpen(true); }}
+        />
+      )}
+      {workOpen && (
+        <WorkDetail
+          photo={workOpen} brand={brand} accent={accent} t={t} api={API}
+          onClose={() => setWorkOpen(null)}
+          onQuote={() => { setWorkOpen(null); setFormOpen(true); }}
         />
       )}
       {connectOpen && (
@@ -1082,6 +1090,37 @@ function ServiceDetail({ service, brand, accent, brandLight, t, api, onClose, on
           <button onClick={(e) => { e.stopPropagation(); setZoom(null); }} className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/15 text-white flex items-center justify-center"><X className="w-6 h-6" /></button>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ===================== Work Detail (Recent Work photo: big image + description + CTA) =====================
+function WorkDetail({ photo, brand, accent, t, api, onClose, onQuote }) {
+  const p = photo || {};
+  const label = { before: "Before", during: "During", after: "After" }[p.label] || "";
+  return (
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/70 backdrop-blur-md" onClick={onClose} data-testid="card-work-detail">
+      <div className="w-full lg:max-w-md rounded-t-3xl lg:rounded-3xl max-h-[92vh] overflow-y-auto text-white"
+           style={{ background: "linear-gradient(180deg, #0c1424 0%, #050810 100%)", border: "1px solid rgba(255,255,255,.08)", boxShadow: `0 30px 80px -10px ${brand}80` }}
+           onClick={(e) => e.stopPropagation()}>
+        <div className="relative">
+          <img src={`${api}/public/card/photo/${p.id}?w=1000`} alt="" className="w-full max-h-[52vh] object-cover" />
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0c1424] to-transparent" />
+          {label && <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[10px] font-bold uppercase tracking-[0.15em] border border-white/10">{label}</span>}
+          <button onClick={onClose} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/50 backdrop-blur flex items-center justify-center tap" data-testid="card-work-detail-close"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          {p.caption
+            ? <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line" data-testid="card-work-caption">{p.caption}</p>
+            : <p className="text-sm text-white/40">{t.gallery}</p>}
+          <button onClick={onQuote} data-testid="card-work-quote"
+                  className="w-full py-3.5 rounded-2xl text-white font-bold text-base shadow-2xl flex items-center justify-center gap-2 tap"
+                  style={{ background: `linear-gradient(135deg, ${brand}, ${accent})`, boxShadow: `0 14px 40px -10px ${brand}` }}>
+            <Send className="w-5 h-5" /> {t.requestQuote}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -296,6 +296,32 @@ async def generate_quote_from_text(description_es: str, language: str = "es") ->
     return data
 
 
+WORK_CAPTION_SYSTEM = """You help a U.S. local-service business write a short, natural description of a
+photo of a job they completed, for their "Recent Work" gallery. The owner types (in English, Spanish, or
+Spanglish) what they did in that photo; you rewrite it as clean, professional ENGLISH the customer will read.
+
+RULES:
+- Output ENGLISH only. 1-2 short sentences (max ~40 words). Natural and specific, like the owner talking.
+- Describe ONLY the work shown/that the owner mentioned. Do NOT invent details, materials, brands, prices,
+  timeframes, square footage, or results. If the owner's note is vague, keep it general and honest.
+- NO unsupported claims or guarantees (no "increased value", "best in town", ratings, percentages, savings).
+- NO marketing filler: never use Elevate, Transform, Enhance, Unlock, Stunning, Seamless, "top-notch",
+  "state-of-the-art", "attention to detail" clichés, or exclamation-mark hype.
+- Return ONLY the plain caption text — no quotes, no JSON, no labels."""
+
+
+async def refine_work_caption(text: str) -> str:
+    """Refine an owner's rough note (any language) into a clean English work caption."""
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    chat = _new_chat(WORK_CAPTION_SYSTEM)
+    resp = await chat.send_message(UserMessage(text=f"Owner's note about this job photo:\n{raw}\n\nWrite the caption."))
+    out = (resp or "").strip().strip('"').strip()
+    return out[:400]
+
+
+
 GUIDED_QUOTE_SYSTEM = """You help a U.S. service/home-improvement contractor turn a few
 SIMPLE answers into a clean, professional quote or invoice. Many of these contractors don't
 know how to describe the job well, so you do the professional writing for them.

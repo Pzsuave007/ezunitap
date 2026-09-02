@@ -321,6 +321,31 @@ export default function WebsiteEditor() {
     finally { setGalUploading(false); if (galFileRef.current) galFileRef.current.value = ""; }
   };
 
+  const [caps, setCaps] = useState({});
+  const [capBusy, setCapBusy] = useState({});
+  const photoCaption = (id) => (caps[id] !== undefined ? caps[id] : ((photos.find((p) => p.id === id) || {}).caption || ""));
+  const setCap = (id, v) => setCaps((c) => ({ ...c, [id]: v }));
+  const saveCaption = async (id) => {
+    try {
+      const cap = photoCaption(id);
+      await api.post(`/photos/${id}/caption`, { caption: cap });
+      setPhotos((ps) => ps.map((p) => (p.id === id ? { ...p, caption: cap } : p)));
+    } catch { toast.error(t("website.saveError")); }
+  };
+  const aiCaption = async (id) => {
+    const text = photoCaption(id);
+    if (!text.trim()) { toast.error(t("website.workCaptionEmpty")); return; }
+    setCapBusy((b) => ({ ...b, [id]: true }));
+    try {
+      const { data } = await api.post(`/photos/caption-ai`, { text });
+      setCap(id, data.caption);
+      await api.post(`/photos/${id}/caption`, { caption: data.caption });
+      setPhotos((ps) => ps.map((p) => (p.id === id ? { ...p, caption: data.caption } : p)));
+      toast.success(t("website.workCaptionRefined"));
+    } catch { toast.error(t("website.aiError")); }
+    finally { setCapBusy((b) => ({ ...b, [id]: false })); }
+  };
+
   const saveDomain = async () => {
     setDomainBusy(true); setDomainMsg("");
     try {
@@ -587,13 +612,22 @@ export default function WebsiteEditor() {
           <div className="space-y-2 mb-4">
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("website.galleryShown")}</div>
             {galIds().map((id, idx) => (
-              <div key={id} className="flex items-center gap-3 p-2 rounded-xl bg-slate-50" data-testid={`website-gallery-item-${idx}`}>
-                <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center flex-none">{idx + 1}</span>
-                <img src={photoSrc(id)} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />
-                <div className="flex-1" />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, -1)} disabled={idx === 0} data-testid={`website-gallery-up-${idx}`}><ArrowUp className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, 1)} disabled={idx === galIds().length - 1} data-testid={`website-gallery-down-${idx}`}><ArrowDown className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => toggleGallery(id)} data-testid={`website-gallery-remove-${idx}`}><Trash2 className="w-4 h-4" /></Button>
+              <div key={id} className="p-2 rounded-xl bg-slate-50 space-y-2" data-testid={`website-gallery-item-${idx}`}>
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center flex-none">{idx + 1}</span>
+                  <img src={photoSrc(id)} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />
+                  <div className="flex-1" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, -1)} disabled={idx === 0} data-testid={`website-gallery-up-${idx}`}><ArrowUp className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, 1)} disabled={idx === galIds().length - 1} data-testid={`website-gallery-down-${idx}`}><ArrowDown className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => toggleGallery(id)} data-testid={`website-gallery-remove-${idx}`}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+                <div className="flex items-start gap-2">
+                  <textarea value={photoCaption(id)} onChange={(e) => setCap(id, e.target.value)} onBlur={() => saveCaption(id)} rows={2}
+                    placeholder={t("website.workCaptionPh")} className="flex-1 text-sm rounded-lg border border-slate-200 bg-white px-3 py-2 resize-none focus:outline-none focus:border-slate-400" data-testid={`website-gallery-caption-${idx}`} />
+                  <Button variant="outline" size="sm" onClick={() => aiCaption(id)} disabled={capBusy[id]} className="rounded-lg flex-none h-9 mt-0.5" data-testid={`website-gallery-caption-ai-${idx}`}>
+                    {capBusy[id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" /> {t("website.workCaptionAi")}</>}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

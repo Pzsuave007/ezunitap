@@ -2473,6 +2473,37 @@ async def set_photo_on_card(photo_id: str, payload: OnCardIn, user_id: str = Dep
     return {"ok": True, "on_card": bool(payload.value)}
 
 
+class PhotoCaptionIn(BaseModel):
+    caption: str = ""
+
+
+@api_router.post("/photos/{photo_id}/caption")
+async def set_photo_caption(photo_id: str, payload: PhotoCaptionIn, user_id: str = Depends(get_current_user_id)):
+    """Save the owner-written 'Recent work' caption/description for a photo."""
+    res = await db.photos.update_one(
+        {"id": photo_id, "user_id": user_id, "is_deleted": {"$ne": True}},
+        {"$set": {"caption": (payload.caption or "").strip()[:400]}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Foto no encontrada")
+    return {"ok": True, "caption": (payload.caption or "").strip()[:400]}
+
+
+class CaptionAiIn(BaseModel):
+    text: str = ""
+
+
+@api_router.post("/photos/caption-ai")
+async def refine_photo_caption(payload: CaptionAiIn, user_id: str = Depends(get_current_user_id)):
+    """Refine an owner's rough note (any language) into a clean English work caption."""
+    try:
+        caption = await ai_service.refine_work_caption(payload.text or "")
+    except Exception as e:
+        logger.exception("caption refine failed")
+        raise HTTPException(500, f"AI error: {e}")
+    return {"caption": caption}
+
+
 
 @api_router.get("/photos/{photo_id}/file")
 async def get_photo_file(
@@ -4023,7 +4054,7 @@ async def public_get_card(slug: str):
         },
         "card": card,
         "reviews": reviews,
-        "photos": [{"id": p["id"], "label": p.get("label", ""), "created_at": p.get("created_at")} for p in photos],
+        "photos": [{"id": p["id"], "label": p.get("label", ""), "caption": p.get("caption", ""), "created_at": p.get("created_at")} for p in photos],
         "show_demo_promo": payments_service.demo_promo_visible(user),
     }
 
@@ -4857,7 +4888,7 @@ async def _website_payload(w):
         "business": business,
         "services": w.get("services") if w.get("services") is not None else (card.get("services") or []),
         "reviews": reviews,
-        "photos": [{"id": p["id"], "label": p.get("label", "")} for p in photos],
+        "photos": [{"id": p["id"], "label": p.get("label", ""), "caption": p.get("caption", "")} for p in photos],
         "hours": w.get("hours") or card.get("hours") or "",
         "service_area": w.get("service_area") or card.get("service_area") or "",
         "appt_enabled": bool(card.get("appt_enabled")),
