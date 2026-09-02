@@ -1079,11 +1079,12 @@
     "flow": [
       {
         "title": "Consigue nuevos clientes",
-        "lead": "Comparte tu Tarjeta Inteligente por código QR, NFC, link directo o redes sociales.",
+        "lead": "Te encuentran en Google con tu página web y una landing page que convierte para cada servicio — y compartes tu Tarjeta Inteligente por QR, NFC, link o redes.",
         "points": [
+          "Página web profesional + landing pages que convierten por servicio",
+          "Te encuentran en Google cuando buscan tu servicio",
           "Ven tus servicios y fotos de tus trabajos",
-          "Guardan tu contacto al instante",
-          "Solicitan una cotización y te contactan fácil",
+          "Solicitan una cotización o guardan tu contacto al instante",
           "Todo entra automático a tu sistema"
         ]
       },
