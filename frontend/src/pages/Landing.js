@@ -26,7 +26,7 @@ const SERVICES = [
 const FLOW_ICONS = [IdCard, Globe, Sparkles, Receipt, DollarSign, CalendarDays, Camera, Share2, Star];
 // Product modules — meta (text comes from i18n landing.products)
 const PRODUCT_META = [
-  { id: "presencia", icon: IdCard, price: "$34.99" },
+  { id: "presencia", icon: IdCard, price: "$54.99" },
   { id: "negocio", icon: LayoutDashboard, price: "$39.99" },
   { id: "marketing", icon: Sparkles, price: "$29.99" },
 ];
@@ -496,6 +496,70 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ====== WEBSITE + CONVERSION PAGES — presencia digital + salir en Google ====== */}
+      <section id="website" className="py-20 lg:py-28 bg-white" data-testid="landing-website-showcase">
+        <div className="max-w-6xl mx-auto px-5 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          {/* Visual: browser mock of the pro website + conversion pages */}
+          <div className="relative order-2 lg:order-1">
+            <div className="rounded-3xl bg-gradient-to-br from-slate-900 to-blue-950 p-4 lg:p-6 shadow-2xl">
+              <div className="rounded-2xl bg-white overflow-hidden shadow-xl">
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 border-b border-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <span className="ml-2 flex-1 h-5 rounded-full bg-white border border-slate-200 text-[9px] text-slate-400 flex items-center px-2 gap-1"><Globe className="w-2.5 h-2.5" /> tunegocio.com</span>
+                </div>
+                <div className="relative h-40 bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-700 flex flex-col items-center justify-center text-white p-4 text-center">
+                  <div className="text-lg font-extrabold leading-tight">Roof Leaking? We Fix It Fast.</div>
+                  <div className="mt-1 text-[10px] text-white/80">Licensed local roofers · Free estimate</div>
+                  <span className="mt-2 px-3 py-1 rounded-full bg-white text-slate-900 text-[10px] font-bold">FIX MY ROOF LEAK</span>
+                </div>
+                <div className="p-3">
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Problems we solve</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Roof Leaking?", "Missing Shingles?", "Storm Damage?", "Old Roof?"].map((c) => (
+                      <span key={c} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[9px] font-semibold">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-2 lg:-right-4 bg-white rounded-2xl shadow-xl border border-slate-100 px-4 py-3 flex items-center gap-2.5" data-testid="website-google-badge">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
+              <div className="leading-tight">
+                <div className="text-[10px] text-slate-500">{t("landing.websiteBadgeTop")}</div>
+                <div className="text-sm font-bold text-slate-900">{t("landing.websiteBadgeBottom")}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">
+              <Globe className="w-3.5 h-3.5" /> {t("landing.websiteEyebrow")}
+            </div>
+            <h2 className="font-heading text-4xl lg:text-5xl font-bold tracking-tight">
+              {t("landing.websiteTitle")}<span className="bg-gradient-to-br from-blue-900 to-emerald-500 bg-clip-text text-transparent">{t("landing.websiteHighlight")}</span>
+            </h2>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+              <Trans i18nKey="landing.websiteSubtitle" components={{ b: <strong className="text-slate-900" /> }} />
+            </p>
+            <ul className="mt-7 space-y-3">
+              {t("landing.websitePoints", { returnObjects: true }).map((p) => (
+                <li key={p} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={3} />
+                  <span className="text-slate-700">{p}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/register?plan=presencia&billing=month" data-testid="website-register"
+              className="mt-8 inline-flex items-center gap-2 h-13 px-7 py-3.5 rounded-2xl bg-slate-900 text-white font-bold hover:bg-black transition-colors tap shadow-lg">
+              {t("landing.websiteCta")} <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+
       {/* ====== Bilingüe (solo se muestra en español; no aplica al mercado anglo) ====== */}
       {!isEn && (
       <section id="espanol" className="py-20 lg:py-28 bg-white">
@@ -575,7 +639,7 @@ export default function Landing() {
                 </div>
                 <div className="flex flex-col items-start lg:items-end gap-3 flex-none">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-heading text-5xl font-bold">$59</span>
+                    <span className="font-heading text-5xl font-bold">{founder.display_price}</span>
                     <div className="leading-tight">
                       <div className="text-white/80 text-sm line-through">{t("landing.founderRegular")}</div>
                       <div className="text-white text-xs font-semibold">{t("landing.founderLifetime")}</div>
@@ -660,7 +724,7 @@ export default function Landing() {
             </div>
             <div className="flex flex-col items-start lg:items-end gap-3">
               <div>
-                <span className="font-heading text-4xl font-bold">$75</span>
+                <span className="font-heading text-4xl font-bold">$99.99</span>
                 <span className="text-white/70">{t("landing.perMonth")}</span>
               </div>
               <Link to="/register?plan=bundle&billing=month" data-testid="bundle-cta"

@@ -46,7 +46,7 @@ MODULES = {
     "presencia": {
         "label": "Presencia Digital",
         "features": ["card"],
-        "tagline": "Tarjeta digital NFC + mini-sitio web + Reseñas de Google",
+        "tagline": "Tarjeta NFC + página web completa + landing pages que convierten + Google",
         "ships_card": True,
     },
     "negocio": {
@@ -90,13 +90,13 @@ MODULES = {
 # Monthly price (cents) per base module. Yearly = x10 (2 months free).
 # Combos of 2 modules = 30% off the sum of their individual monthly prices.
 _MODULE_MONTHLY_CENTS = {
-    "presencia": 3499,
+    "presencia": 5499,
     "negocio": 3999,
     "marketing": 2999,
-    "presencia_negocio": 5299,    # (3499+3999) -30%
-    "presencia_marketing": 4599,  # (3499+2999) -30%
+    "presencia_negocio": 6699,    # (5499+3999) -30%
+    "presencia_marketing": 5999,  # (5499+2999) -30%
     "negocio_marketing": 4899,    # (3999+2999) -30%
-    "bundle": 7500,
+    "bundle": 9999,
 }
 
 
@@ -132,7 +132,7 @@ PLAN_FEATURES = {base: set(mod["features"]) for base, mod in MODULES.items()}
 # --- Founder offer: full Bundle at $59/mo, locked for life, first 30 only ---
 FOUNDER_PLAN_ID = "bundle_founder"
 FOUNDER_LIMIT = 30
-FOUNDER_MONTHLY_CENTS = 5900
+FOUNDER_MONTHLY_CENTS = 7500
 PLANS[FOUNDER_PLAN_ID] = {
     "id": FOUNDER_PLAN_ID,
     "base": "bundle",
