@@ -29,6 +29,7 @@ const I18N = {
     directions: "Directions", saveContact: "Save Contact", share: "Share",
     qrCode: "QR Code", getQuote: "Get Quote",
     requestQuote: "Request a Free Estimate", services: "Services",
+    serviceExamples: "Examples of this work", tapForDetails: "Tap for details",
     gallery: "Recent work", reviews: "Reviews", aboutMe: "About",
     licensed: "Licensed", insured: "Insured", verified: "Verified",
     years: "Years of Experience", yearsLong: "years experience", projects: "Projects",
@@ -68,6 +69,7 @@ const I18N = {
     directions: "Dirección", saveContact: "Guardar Contacto", share: "Compartir",
     qrCode: "Código QR", getQuote: "Cotizar",
     requestQuote: "Pedir Cotización Gratis", services: "Servicios",
+    serviceExamples: "Ejemplos de este trabajo", tapForDetails: "Toca para ver más",
     gallery: "Trabajos recientes", reviews: "Reseñas", aboutMe: "Sobre",
     licensed: "Con Licencia", insured: "Asegurado", verified: "Verificado",
     years: "Años de Experiencia", yearsLong: "años de experiencia", projects: "Proyectos",
@@ -152,6 +154,8 @@ export default function SmartCard() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [serviceOpen, setServiceOpen] = useState(null);
+  const [quoteService, setQuoteService] = useState("");
   const trackedVisit = useRef(false);
 
   useEffect(() => {
@@ -405,8 +409,9 @@ export default function SmartCard() {
               {card.services.map((s, i) => (
                 <div
                   key={i}
-                  className="service-card tap"
-                  onClick={() => track(slug, "service_click", { name: s.name })}
+                  className="service-card tap cursor-pointer relative"
+                  data-testid={`card-service-${i}`}
+                  onClick={() => { track(slug, "service_click", { name: s.name }); setServiceOpen(s); }}
                   style={{ animationDelay: `${400 + i * 60}ms` }}
                 >
                   {s.icon ? (
@@ -419,13 +424,14 @@ export default function SmartCard() {
                       <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
                     </div>
                   )}
-                  <div className="font-heading font-bold text-sm tracking-tight leading-tight">{s.name}</div>
+                  <div className="font-heading font-bold text-sm tracking-tight leading-tight pr-4">{s.name}</div>
                   {s.description && <div className="text-[11px] text-white/55 mt-1 line-clamp-2 leading-snug">{s.description}</div>}
                   {s.starting_price && (
                     <div className="text-[11px] font-bold mt-2 inline-flex items-center gap-1" style={{ color: brandLight }}>
                       {s.starting_price}
                     </div>
                   )}
+                  <ChevronRight className="w-4 h-4 absolute top-3 right-3 text-white/30" />
                 </div>
               ))}
             </div>
@@ -578,7 +584,14 @@ export default function SmartCard() {
         <ChatPanel slug={slug} brand={brand} accent={accent} businessName={business.name} lang={lang} t={t} onClose={() => setChatOpen(false)} />
       )}
       {formOpen && (
-        <QuoteForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setFormOpen(false)} />
+        <QuoteForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} initialService={quoteService} onClose={() => { setFormOpen(false); setQuoteService(""); }} />
+      )}
+      {serviceOpen && (
+        <ServiceDetail
+          service={serviceOpen} brand={brand} accent={accent} brandLight={brandLight} t={t} api={API}
+          onClose={() => setServiceOpen(null)}
+          onQuote={() => { setQuoteService(serviceOpen.name); setServiceOpen(null); setFormOpen(true); }}
+        />
       )}
       {connectOpen && (
         <ConnectForm slug={slug} brand={brand} accent={accent} card={card} lang={lang} t={t} onClose={() => setConnectOpen(false)} />
@@ -908,8 +921,8 @@ function ChatPanel({ slug, brand, accent, businessName, lang, t, onClose }) {
 }
 
 // ===================== Quote Form =====================
-function QuoteForm({ slug, brand, accent, card, lang, t, onClose }) {
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", service: "", description: "", preferred_contact: "phone" });
+function QuoteForm({ slug, brand, accent, card, lang, t, onClose, initialService }) {
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", service: initialService || "", description: "", preferred_contact: "phone" });
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1012,6 +1025,67 @@ function QuoteForm({ slug, brand, accent, card, lang, t, onClose }) {
     </div>
   );
 }
+
+// ===================== Service Detail (full description + example photos) =====================
+function ServiceDetail({ service, brand, accent, brandLight, t, api, onClose, onQuote }) {
+  const s = service || {};
+  const photoList = (s.photos || [])
+    .map((p) => (typeof p === "string" ? { id: p } : p))
+    .filter((p) => p && p.id);
+  const gallery = photoList.length ? photoList : (s.image_id ? [{ id: s.image_id }] : []);
+  const [zoom, setZoom] = useState(null);
+  const kindLabel = { before: "Before", after: "After", completed: "Completed", general: "" };
+  return (
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/70 backdrop-blur-md" onClick={onClose} data-testid="card-service-detail">
+      <div className="w-full lg:max-w-md rounded-t-3xl lg:rounded-3xl max-h-[92vh] overflow-y-auto text-white"
+           style={{ background: "linear-gradient(180deg, #0c1424 0%, #050810 100%)", border: "1px solid rgba(255,255,255,.08)", boxShadow: `0 30px 80px -10px ${brand}80` }}
+           onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 px-5 py-4 border-b border-white/8 flex items-center gap-3 bg-black/40 backdrop-blur-xl">
+          <div className="flex-1 min-w-0">
+            <div className="font-heading font-bold tracking-tight truncate">{s.name}</div>
+            {s.starting_price && <div className="text-[11px] font-bold mt-0.5" style={{ color: brandLight }}>{s.starting_price}</div>}
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center tap" data-testid="card-service-detail-close"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {s.description && <p className="text-sm leading-relaxed text-white/75 whitespace-pre-line">{s.description}</p>}
+
+          {gallery.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.15em] font-bold text-white/45 mb-2">{t.serviceExamples}</div>
+              <div className="grid grid-cols-2 gap-2" data-testid="card-service-photos">
+                {gallery.map((p, i) => (
+                  <button key={p.id} type="button" onClick={() => setZoom(`${api}/public/card/photo/${p.id}`)}
+                          className="relative aspect-square rounded-xl overflow-hidden bg-white/5 border border-white/10 tap" data-testid={`card-service-photo-${i}`}>
+                    <img src={`${api}/public/card/photo/${p.id}?w=500`} alt="" loading="lazy" className="w-full h-full object-cover" />
+                    {kindLabel[p.kind] && (
+                      <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur text-white text-[9px] font-bold uppercase tracking-[0.12em] border border-white/10">{kindLabel[p.kind]}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button onClick={onQuote} data-testid="card-service-quote"
+                  className="w-full h-13 py-3.5 rounded-2xl text-white font-bold text-base shadow-2xl flex items-center justify-center gap-2 tap"
+                  style={{ background: `linear-gradient(135deg, ${brand}, ${accent})`, boxShadow: `0 14px 40px -10px ${brand}` }}>
+            <Send className="w-5 h-5" /> {t.requestQuote}
+          </button>
+        </div>
+      </div>
+
+      {zoom && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={(e) => { e.stopPropagation(); setZoom(null); }} data-testid="card-service-zoom">
+          <img src={zoom} alt="" className="max-w-full max-h-[88vh] rounded-xl object-contain" />
+          <button onClick={(e) => { e.stopPropagation(); setZoom(null); }} className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/15 text-white flex items-center justify-center"><X className="w-6 h-6" /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // ===================== Connect Form (low-friction contact capture) =====================
 function ConnectForm({ slug, brand, accent, card, lang, t, onClose }) {

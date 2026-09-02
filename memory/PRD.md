@@ -1,4 +1,11 @@
-## 📱 Jun 2026 — Quitar CTA duplicado del hero en mobile (Conversion Page) [COMPLETO; verificado, SIN testing_agent]
+## 🪪 Jun 2026 — Servicios clickables en la Tarjeta Digital → modal con descripción + fotos de ejemplo [COMPLETO; verificado screenshot, SIN testing_agent]
+- **Petición dueño**: no encontraba dónde elegir qué ejemplos de trabajo aparecen en su tarjeta digital; quiere que al tocar un servicio en la tarjeta se abra una "página" con la descripción completa + imágenes de ejemplo de ese servicio, igual que en el website. (La tarjeta y el website ya comparten `services`.)
+- **Dónde se eligen las fotos**: en el editor del Website → pestaña **Services** → "Work photos for this service" (feature ya existente). Esas `service.photos` se sincronizan a la tarjeta vía PUT `/website` (escribe services a website y card).
+- **Fix** (`SmartCard.js`, `/c/:slug`): cada tarjeta de servicio ahora es clickable (con chevron, `data-testid=card-service-{i}`) y abre un modal-sheet `ServiceDetail` (mismo estilo dark que QuoteForm) con: nombre, precio si hay, descripción COMPLETA (whitespace-pre-line), sección "Examples of this work" con las `service.photos` (badges Before/After/Completed) — fallback al `image_id` del servicio si no hay photos; si no hay ninguna, solo descripción. Cada foto abre un zoom fullscreen. Botón "Request a Free Estimate" (`card-service-quote`) que abre el QuoteForm con el servicio **preseleccionado** (nuevo prop `initialService`). i18n `serviceExamples`/`tapForDetails` (EN/ES). testids: card-service-detail, card-service-detail-close, card-service-photos, card-service-photo-{i}, card-service-zoom.
+- **Verificado screenshot** (puse fotos de prueba en "Digital Business Cards"): modal abre con descripción + 2 fotos (AFTER/BEFORE) + CTA; datos de prueba revertidos. Build main.0adf1d96.js + `git add -f frontend/build/*`.
+- ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Petición dueño**: en mobile, el botón CTA del hero (después de "Call Now") se repetía con el CTA del formulario que queda justo debajo (mismo texto), se veía dos veces seguidas.
 - **Fix** (`ProblemPage.js` línea 111): el botón `#lead {ctaLabel}` del hero ahora es `hidden md:inline-flex` → oculto en mobile (<768px), visible en desktop (donde el form va al lado, sin duplicación). En mobile quedan solo "Call Now" + el formulario. Build main.f70200ad.js + `git add -f frontend/build/*`.
 - ⚠️ DESPLIEGUE: solo frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
