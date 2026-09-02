@@ -3985,18 +3985,32 @@ async def public_get_card(slug: str):
     # Portfolio = real job photos (before/during/after) OR photos the owner
     # explicitly added from the Marketing Studio. Never auto-pull studio assets
     # or videos.
-    photos = await db.photos.find(
-        {
-            "user_id": card["user_id"],
-            "is_deleted": False,
-            "content_type": {"$ne": "video/mp4"},
-            "$or": [
-                {"label": {"$in": ["before", "during", "after"]}},
-                {"on_card": True},
-            ],
-        },
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(30)
+    # Portfolio ("Recent work"): if the owner has curated a gallery in the Website
+    # editor (Photos tab → gallery_photo_ids), use that exact, ordered list so the
+    # card and website share ONE place to manage it. Otherwise fall back to real job
+    # photos (before/during/after) or photos explicitly flagged on_card.
+    w_doc = await db.websites.find_one({"user_id": card["user_id"]}, {"_id": 0, "gallery_photo_ids": 1})
+    gids = (w_doc or {}).get("gallery_photo_ids") or []
+    if gids:
+        gdocs = await db.photos.find(
+            {"user_id": card["user_id"], "id": {"$in": gids}, "is_deleted": False, "content_type": {"$ne": "video/mp4"}},
+            {"_id": 0},
+        ).to_list(60)
+        gmap = {d["id"]: d for d in gdocs}
+        photos = [gmap[i] for i in gids if i in gmap]
+    else:
+        photos = await db.photos.find(
+            {
+                "user_id": card["user_id"],
+                "is_deleted": False,
+                "content_type": {"$ne": "video/mp4"},
+                "$or": [
+                    {"label": {"$in": ["before", "during", "after"]}},
+                    {"on_card": True},
+                ],
+            },
+            {"_id": 0},
+        ).sort("created_at", -1).to_list(30)
     return {
         "business": {
             "name": user.get("business_name", ""),
