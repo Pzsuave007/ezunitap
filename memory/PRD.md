@@ -1,4 +1,10 @@
-## ✍️ Jun 2026 — Descripción de "Recent Work": IA vendedora (expande, no recorta) + texto más grande [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+## 📝 Jun 2026 — Descripción de "Recent Work" en 2-3 párrafos [COMPLETO; verificado curl+screenshot, SIN testing_agent]
+- **Petición dueño**: que la descripción se divida en varios párrafos (2, máx 3) para que se vea mejor.
+- **IA** (`WORK_CAPTION_SYSTEM` + hint): ahora devuelve 2-3 párrafos cortos separados por línea en blanco (`\n\n`), no un bloque. Verificado: "remodelamos un baño…" → 2 párrafos.
+- **Frontend**: tarjeta (`SmartCard` WorkDetail) y website (`SiteWorkModal`) parten el caption por `\n{2,}` y renderizan cada párrafo como `<p>` con `space-y-3`. Verificado screenshot: 2 párrafos con buen espaciado + CTA.
+- Build main.bab52f13.js + `git add -f frontend/build/*`. ⚠️ DESPLIEGUE: backend + frontend → "Save to GitHub" + `git pull && bash deploy.sh`.
+
+
 - **Reporte dueño**: la IA simplificaba/recortaba demasiado la descripción; quiere que MEJORE y EXPANDA lo que escribe con enfoque de VENTA (bien descriptivo), y en la tarjeta el texto se veía muy pequeño.
 - **IA** (`ai_service.py` `WORK_CAPTION_SYSTEM` + `refine_work_caption`): reescrito para EXPANDIR/mejorar (no recortar) → 3-5 frases (~55-100 palabras), tono cálido/vendedor en 2ª persona, estructura qué se hizo → detalles/calidad → beneficio para el cliente. Mantiene guardas: sin inventar precios/tiempos/medidas/marcas/certificaciones ni garantías/resultados; sin clichés de marketing. Límite de guardado subido 400→900 (endpoint) y truncado 900 (ai). Verificado: "cambie el techo de una casa" → 82 palabras honestas y persuasivas.
 - **Frontend**: caption más grande — tarjeta (`SmartCard` WorkDetail) `text-[15px] sm:text-base leading-relaxed text-white/90`; website (`SiteWorkModal`) `text-base sm:text-lg`. Verificado screenshot: modal en la tarjeta con descripción larga legible + CTA.

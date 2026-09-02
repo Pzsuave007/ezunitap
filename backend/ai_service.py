@@ -305,6 +305,8 @@ WHAT TO DO:
 - IMPROVE and EXPAND the owner's note — never shorten it to a bare label. Take their rough idea and make it
   richer, clearer and more compelling.
 - Length: 3-5 full sentences (roughly 55-100 words). Descriptive and confident, written to help win the sale.
+- FORMAT: break the copy into 2-3 SHORT paragraphs (2 preferred, 3 max), each paragraph 1-2 sentences.
+  Separate paragraphs with a blank line (\n\n). Do NOT return one long block of text.
 - Structure the copy so it: (1) says what the job was, (2) adds the concrete details/care/quality involved,
   and (3) connects it to what the customer gets out of it (a clean finish, a fixed problem, peace of mind,
   a space they'll enjoy) — framed naturally, the way a proud, trustworthy owner would explain it.
@@ -330,7 +332,8 @@ async def refine_work_caption(text: str) -> str:
     resp = await chat.send_message(UserMessage(text=(
         "Owner's note about this completed job photo (may be in Spanish/Spanglish):\n"
         f"{raw}\n\n"
-        "Expand and improve it into a compelling 3-5 sentence English description that helps sell the work."
+        "Expand and improve it into a compelling English description (3-5 sentences) that helps sell the work. "
+        "Break it into 2-3 short paragraphs separated by a blank line."
     )))
     out = (resp or "").strip().strip('"').strip()
     return out[:900]
