@@ -4,6 +4,7 @@
  * to save typing. The result can be copied for use in a quote or contract.
  */
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -15,6 +16,7 @@ import { Sparkles, Loader2, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientScopeDialog({ open, onClose, client }) {
+  const { t } = useTranslation();
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -35,16 +37,16 @@ export default function ClientScopeDialog({ open, onClose, client }) {
 
   const generate = async () => {
     if (!description.trim()) {
-      toast.error("Describe el trabajo");
+      toast.error(t("scope.describeShort"));
       return;
     }
     setLoading(true);
     try {
       const { data } = await api.post("/ai/scope", { description_es: description });
       setResult(data);
-      toast.success("Scope generado");
+      toast.success(t("scope.genshort"));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error al generar");
+      toast.error(err?.response?.data?.detail || t("scope.errGen"));
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,7 @@ WARRANTY: ${result.warranty_notes || ""}
 
 CHANGE ORDER: ${result.change_order_note || ""}`;
     await navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    toast.success(t("scope.copiedClip"));
   };
 
   return (
@@ -80,24 +82,23 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
         <DialogHeader>
           <DialogTitle className="font-heading flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-600" />
-            Scope of Work AI
+            {t("scope.title")}
           </DialogTitle>
           <DialogDescription>
-            Genera un scope profesional para {client?.name || "este cliente"}.
-            Luego lo puedes usar en su quote o contrato.
+            {t("scope.dialogDesc", { name: client?.name || t("scope.thisClient") })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <Label className="text-xs font-semibold">
-              Describe el trabajo (español)
+              {t("scope.describe")}
             </Label>
             <Textarea
               data-testid="client-scope-input"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Voy a hacer un techo nuevo de shingles en una casa de 1500 sqft..."
+              placeholder={t("scope.placeholder")}
               className="rounded-xl mt-1.5 min-h-[120px]"
             />
           </div>
@@ -112,7 +113,7 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-2" /> Generar Scope of Work
+                <Sparkles className="w-4 h-4 mr-2" /> {t("scope.generate")}
               </>
             )}
           </Button>
@@ -121,7 +122,7 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
             <div className="space-y-4 mt-2 p-4 rounded-xl border border-slate-200 bg-slate-50">
               <div className="flex items-center justify-between">
                 <h3 className="font-heading text-base font-bold">
-                  Scope of Work (English)
+                  {t("scope.resultTitle")}
                 </h3>
                 <Button
                   onClick={copyAll}
@@ -130,7 +131,7 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
                   className="rounded-xl"
                   data-testid="client-scope-copy"
                 >
-                  <Copy className="w-4 h-4 mr-1" /> Copiar
+                  <Copy className="w-4 h-4 mr-1" /> {t("scope.copy")}
                 </Button>
               </div>
 

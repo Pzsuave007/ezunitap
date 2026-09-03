@@ -14,6 +14,7 @@
  *   - jobTitle: string
  */
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
@@ -23,32 +24,24 @@ import { toast } from "sonner";
 
 const KIND_LABELS = {
   quote: {
-    title: "Mandar Quote",
-    description: "Envía el quote al cliente para que lo revise y lo acepte.",
     cta: "Quote",
     enShort: "your quote",
     noun: "quote",
     enAction: "Please review and let me know if you have any questions",
   },
   agreement: {
-    title: "Mandar Contrato",
-    description: "Envía el contrato al cliente para que lo firme.",
     cta: "Service Agreement",
     enShort: "your service agreement",
     noun: "service agreement",
     enAction: "Please review and sign at the link below",
   },
   invoice: {
-    title: "Mandar Invoice",
-    description: "Envía el invoice al cliente para que vea el monto a pagar.",
     cta: "Invoice",
     enShort: "your invoice",
     noun: "invoice",
     enAction: "You can review, download, or print it from the link below",
   },
   review: {
-    title: "Pedir reseña",
-    description: "Pídele al cliente que te deje una reseña. Solo le toma 30 segundos.",
     cta: "Review request",
     enShort: "",
     noun: "",
@@ -76,7 +69,10 @@ export default function SendDocumentDialog({
   jobTitle,
   getPdfBlob,
 }) {
+  const { t } = useTranslation();
   const meta = KIND_LABELS[kind] || KIND_LABELS.quote;
+  const dialogTitle = t(`sendDoc.${kind}Title`);
+  const dialogDesc = t(`sendDoc.${kind}Desc`);
   const clientName = client?.name || "";
   const phone = cleanPhone(client?.phone);
   const email = client?.email || "";
@@ -131,7 +127,7 @@ export default function SendDocumentDialog({
 
   const openSMS = () => {
     if (!phone) {
-      toast.error("Este cliente no tiene teléfono guardado");
+      toast.error(t("sendDoc.noPhone"));
       return;
     }
     const text = encodeURIComponent(messageShort);
@@ -152,15 +148,15 @@ export default function SendDocumentDialog({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    if (!email) toast.info("Abriendo tu correo — escribe el email del cliente arriba");
+    if (!email) toast.info(t("sendDoc.openingEmail"));
   };
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(publicUrl);
-      toast.success("Link copiado al portapapeles");
+      toast.success(t("sendDoc.linkCopied"));
     } catch {
-      window.prompt("Copia este link:", publicUrl);
+      window.prompt(t("sendDoc.copyPrompt"), publicUrl);
     }
   };
 
@@ -182,7 +178,7 @@ export default function SendDocumentDialog({
       const { blob, filename } = await getPdfBlob();
       const file = new File([blob], filename, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        if (copiedEmail) toast.success(`Copiamos ${email} — pégalo en "Para" si eliges Email`, { duration: 6000 });
+        if (copiedEmail) toast.success(t("sendDoc.copiedEmail", { email }), { duration: 6000 });
         await navigator.share({ files: [file], title: emailSubject, text: attachMessage });
       } else {
         // Fallback: download the PDF so they can attach it, then open email.
@@ -194,11 +190,11 @@ export default function SendDocumentDialog({
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 4000);
-        toast.success("PDF descargado — adjúntalo en el correo que se abrió");
+        toast.success(t("sendDoc.pdfDownloaded"));
         openEmail(attachMessage);
       }
     } catch (err) {
-      if (err?.name !== "AbortError") toast.error("No se pudo generar el PDF");
+      if (err?.name !== "AbortError") toast.error(t("sendDoc.pdfError"));
     } finally {
       setSharing(false);
     }
@@ -209,8 +205,8 @@ export default function SendDocumentDialog({
       <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto" data-testid="send-document-dialog">
         <div className="max-w-md mx-auto w-full">
           <SheetHeader className="text-left">
-            <SheetTitle className="font-heading">{meta.title}</SheetTitle>
-            <SheetDescription>{meta.description}</SheetDescription>
+            <SheetTitle className="font-heading">{dialogTitle}</SheetTitle>
+            <SheetDescription>{dialogDesc}</SheetDescription>
           </SheetHeader>
 
           <div className="space-y-2 mt-4">
@@ -225,9 +221,9 @@ export default function SendDocumentDialog({
                 {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm">Enviar con PDF adjunto</div>
+                <div className="font-semibold text-sm">{t("sendDoc.sendWithPdf")}</div>
                 <div className="text-xs text-white/70 truncate">
-                  Genera el PDF y lo adjunta (Email, WhatsApp, etc.)
+                  {t("sendDoc.sendWithPdfDesc")}
                 </div>
               </div>
             </button>
@@ -244,7 +240,7 @@ export default function SendDocumentDialog({
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">WhatsApp</div>
               <div className="text-xs text-slate-500 truncate">
-                {phone ? `Enviar a +${phone}` : "Abre WhatsApp Web/App"}
+                {phone ? t("sendDoc.waSendTo", { phone }) : t("sendDoc.waOpen")}
               </div>
             </div>
           </button>
@@ -259,9 +255,9 @@ export default function SendDocumentDialog({
               <Smartphone className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm">Texto (SMS)</div>
+              <div className="font-semibold text-sm">{t("sendDoc.smsLabel")}</div>
               <div className="text-xs text-slate-500 truncate">
-                {phone ? `Enviar a +${phone}` : "Sin teléfono guardado"}
+                {phone ? t("sendDoc.waSendTo", { phone }) : t("sendDoc.smsNoPhone")}
               </div>
             </div>
           </button>
@@ -277,7 +273,7 @@ export default function SendDocumentDialog({
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Email</div>
               <div className="text-xs text-slate-500 truncate">
-                {email || "Abre tu app de correo (escribe el email)"}
+                {email || t("sendDoc.emailOpen")}
               </div>
             </div>
           </button>
@@ -289,7 +285,7 @@ export default function SendDocumentDialog({
               variant="outline"
               className="h-11 rounded-xl"
             >
-              <Copy className="w-4 h-4 mr-1.5" /> Copiar link
+              <Copy className="w-4 h-4 mr-1.5" /> {t("sendDoc.copyLink")}
             </Button>
             <Button
               data-testid="send-open-public"
@@ -297,13 +293,13 @@ export default function SendDocumentDialog({
               variant="outline"
               className="h-11 rounded-xl"
             >
-              <ExternalLink className="w-4 h-4 mr-1.5" /> Ver
+              <ExternalLink className="w-4 h-4 mr-1.5" /> {t("sendDoc.view")}
             </Button>
           </div>
 
           <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
             <div className="font-semibold text-slate-600 mb-1">
-              Mensaje (en inglés, listo para mandar):
+              {t("sendDoc.previewLabel")}
             </div>
             <div className="text-slate-500 whitespace-pre-line">{message}</div>
           </div>

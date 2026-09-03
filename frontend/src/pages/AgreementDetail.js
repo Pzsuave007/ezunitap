@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 import SendDocumentDialog from "@/components/SendDocumentDialog";
 import { generateAgreementPDF } from "@/lib/pdf";
 
-const STATUS_LABEL = { draft: "Borrador", sent: "Enviado", signed: "Firmado", declined: "Rechazado" };
 const STATUS_STYLES = {
   draft: "bg-slate-100 text-slate-700",
   sent: "bg-blue-100 text-blue-800",
@@ -20,6 +20,8 @@ const STATUS_STYLES = {
 export default function AgreementDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const STATUS_LABEL = { draft: t("agDetail.statusDraft"), sent: t("agDetail.statusSent"), signed: t("agDetail.statusSigned"), declined: t("agDetail.statusDeclined") };
   const { user } = useAuth();
   const [a, setA] = useState(null);
   const [client, setClient] = useState(null);
@@ -37,7 +39,7 @@ export default function AgreementDetail() {
         } catch { /* ignore */ }
       }
     } catch {
-      toast.error("Contrato no encontrado");
+      toast.error(t("agDetail.notFound"));
       navigate("/contratos");
     }
   };
@@ -54,8 +56,8 @@ export default function AgreementDetail() {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(publicLink);
-      toast.success("Link copiado");
-    } catch { toast.error("No se pudo copiar"); }
+      toast.success(t("agDetail.linkCopied"));
+    } catch { toast.error(t("agDetail.copyError")); }
   };
 
   const markSent = async () => {
@@ -63,17 +65,17 @@ export default function AgreementDetail() {
     try {
       await api.put(`/agreements/${a.id}`, { ...a, status: "sent" });
       await load();
-      toast.success("Marcado como enviado");
-    } catch { toast.error("Error"); } finally { setBusy(false); }
+      toast.success(t("agDetail.markedSent"));
+    } catch { toast.error(t("agDetail.error")); } finally { setBusy(false); }
   };
 
   const remove = async () => {
-    if (!window.confirm(`¿Borrar el contrato ${a.number}?`)) return;
+    if (!window.confirm(t("agDetail.deleteConfirm", { number: a.number }))) return;
     try {
       await api.delete(`/agreements/${a.id}`);
-      toast.success("Contrato borrado");
+      toast.success(t("agDetail.deleted"));
       navigate("/contratos");
-    } catch { toast.error("Error al borrar"); }
+    } catch { toast.error(t("agDetail.deleteError")); }
   };
 
   return (
@@ -83,7 +85,7 @@ export default function AgreementDetail() {
         onClick={() => navigate("/contratos")}
         className="flex items-center gap-1 text-sm text-slate-600 hover:text-blue-900"
       >
-        <ArrowLeft className="w-4 h-4" /> Contratos
+        <ArrowLeft className="w-4 h-4" /> {t("agDetail.back")}
       </button>
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -95,7 +97,7 @@ export default function AgreementDetail() {
             </span>
           </div>
           <p className="text-slate-500 mt-1 text-sm">
-            {a.number} · {client?.name || "Cliente"} · ${(a.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {a.number} · {client?.name || t("agDetail.clientFallback")} · ${(a.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <button
@@ -110,7 +112,7 @@ export default function AgreementDetail() {
 
       {/* Public link / share */}
       <Card className="card-elevated p-4 border-0 shadow-none">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Mandar al cliente</div>
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t("agDetail.sendToClient")}</div>
         <div className="flex items-center gap-2 flex-wrap">
           <code data-testid="public-link" className="flex-1 min-w-0 truncate text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-mono">
             {publicLink}
@@ -123,7 +125,7 @@ export default function AgreementDetail() {
             }}
             className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            <Send className="w-4 h-4 mr-1" /> Mandar Contrato
+            <Send className="w-4 h-4 mr-1" /> {t("agDetail.sendContract")}
           </Button>
           <Button
             data-testid="agreement-download-pdf"
@@ -139,12 +141,11 @@ export default function AgreementDetail() {
             variant="outline"
             className="rounded-xl h-10"
           >
-            <Copy className="w-4 h-4 mr-1" /> Copiar
+            <Copy className="w-4 h-4 mr-1" /> {t("agDetail.copy")}
           </Button>
         </div>
         <p className="text-xs text-slate-500 mt-2">
-          Al apretar "Mandar Contrato" se abre la app de tu cliente (WhatsApp, SMS o email) con un mensaje listo.
-          Cuando lo firma, se registra con fecha y hora.
+          {t("agDetail.shareHint")}
         </p>
       </Card>
 
@@ -153,17 +154,17 @@ export default function AgreementDetail() {
         <Card data-testid="signed-block" className="card-elevated p-4 border-0 shadow-none border-l-4 border-emerald-500 bg-emerald-50/40">
           <div className="flex items-center gap-2 text-emerald-800">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-bold">Firmado</span>
+            <span className="font-bold">{t("agDetail.signed")}</span>
             <span className="text-xs text-emerald-700">
-              · {new Date(a.signed_at).toLocaleString("es-MX")} · método: {a.signed_method === "drawn" ? "firma con dedo" : "botón Acepto"}
+              · {new Date(a.signed_at).toLocaleString(i18n.language === "en" ? "en-US" : "es-MX")} · {t("agDetail.method")}: {a.signed_method === "drawn" ? t("agDetail.signedFinger") : t("agDetail.signedButton")}
             </span>
           </div>
-          {a.signer_name && <div className="text-xs text-emerald-700 mt-1">Firmado por: {a.signer_name}</div>}
+          {a.signer_name && <div className="text-xs text-emerald-700 mt-1">{t("agDetail.signedBy")} {a.signer_name}</div>}
           {a.signature_image && (
             <img
               data-testid="signature-image"
               src={a.signature_image}
-              alt="Firma del cliente"
+              alt={t("agDetail.signatureAlt")}
               className="mt-3 max-w-xs border border-emerald-200 rounded-lg bg-white"
             />
           )}
@@ -174,7 +175,7 @@ export default function AgreementDetail() {
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
         <div className="flex items-center gap-2">
           <FileSignature className="w-5 h-5 text-emerald-700" />
-          <h2 className="font-heading text-xl font-bold">Contenido del contrato (inglés)</h2>
+          <h2 className="font-heading text-xl font-bold">{t("agDetail.contentTitle")}</h2>
         </div>
 
         {sections.preamble && <p className="text-sm text-slate-700">{sections.preamble}</p>}

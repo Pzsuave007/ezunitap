@@ -8,6 +8,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
@@ -19,8 +20,9 @@ export default function RequestReviewButton({
   jobTitle,
   className = "",
   size = "default",
-  label = "Pedir reseña",
+  label,
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -31,8 +33,8 @@ export default function RequestReviewButton({
 
   const handleClick = () => {
     if (!user?.google_review_url) {
-      toast.error("Primero configura tu link de Google Reviews", {
-        action: { label: "Configurar", onClick: () => navigate("/reviews") },
+      toast.error(t("reviewBtn.needLink"), {
+        action: { label: t("reviewBtn.configure"), onClick: () => navigate("/reviews") },
       });
       return;
     }
@@ -47,7 +49,7 @@ export default function RequestReviewButton({
         size={size}
         className={`bg-yellow-500 hover:bg-yellow-600 text-white ${className}`}
       >
-        <Star className="w-4 h-4 mr-1 flex-shrink-0 fill-white" /> {label}
+        <Star className="w-4 h-4 mr-1 flex-shrink-0 fill-white" /> {label || t("reviewBtn.label")}
       </Button>
 
       <SendDocumentDialog

@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import {
@@ -21,6 +22,7 @@ const KIND_STYLES = {
 
 export default function NotificationsInbox() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +31,7 @@ export default function NotificationsInbox() {
       const { data } = await api.get("/notifications");
       setNotifs(data.notifications || []);
     } catch {
-      toast.error("Error al cargar");
+      toast.error(t("inbox.loadError"));
     } finally {
       setLoading(false);
     }
@@ -57,10 +59,10 @@ export default function NotificationsInbox() {
       <div>
         <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight flex items-center gap-3">
           <Inbox className="w-8 h-8 text-blue-900" />
-          Mensajes
+          {t("inbox.title")}
         </h1>
         <p className="text-slate-500 mt-2">
-          Anuncios y mensajes del equipo de UniTech.
+          {t("inbox.subtitle")}
         </p>
       </div>
 
@@ -71,9 +73,9 @@ export default function NotificationsInbox() {
       ) : notifs.length === 0 ? (
         <Card className="p-12 text-center">
           <Inbox className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="font-heading font-bold text-lg">Sin mensajes nuevos</h3>
+          <h3 className="font-heading font-bold text-lg">{t("inbox.empty")}</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Cuando el equipo de UniTech te envíe un anuncio, aparecerá aquí.
+            {t("inbox.emptyHint")}
           </p>
         </Card>
       ) : (
@@ -93,7 +95,7 @@ export default function NotificationsInbox() {
                     <div className="font-heading font-bold text-base">{n.title}</div>
                     <div className="text-sm text-slate-600 mt-1 leading-relaxed">{n.body}</div>
                     <div className="text-[11px] text-slate-400 mt-2">
-                      {new Date(n.created_at * 1000).toLocaleString("es-ES", { dateStyle: "long", timeStyle: "short" })}
+                      {new Date(n.created_at * 1000).toLocaleString(i18n.language === "en" ? "en-US" : "es-ES", { dateStyle: "long", timeStyle: "short" })}
                     </div>
                     {n.action_url && (
                       <button
@@ -101,7 +103,7 @@ export default function NotificationsInbox() {
                         data-testid={`inbox-action-${n.id}`}
                         className={`mt-3 inline-flex items-center gap-1 text-sm font-semibold ${s.color} hover:underline`}
                       >
-                        {n.action_label || "Ver"}
+                        {n.action_label || t("inbox.view")}
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     )}

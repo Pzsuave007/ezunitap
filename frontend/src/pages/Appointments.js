@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { CalendarCheck, Clock, Phone, MessageSquare, User, StickyNote, Loader2 } from "lucide-react";
 
-const MON = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 const fmt12 = (hhmm) => {
   const [h, m] = (hhmm || "00:00").split(":").map(Number);
   const ap = h >= 12 ? "PM" : "AM";
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ap}`;
 };
-const dayLabel = (iso) => {
-  const d = new Date(iso + "T12:00:00");
-  return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
-};
 const isUpcoming = (iso) => iso >= new Date().toISOString().slice(0, 10);
 
 export default function Appointments() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const MON = t("appointments.months", { returnObjects: true });
+  const dayLabel = (iso) => {
+    const d = new Date(iso + "T12:00:00");
+    return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
+  };
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(null);
@@ -69,7 +71,7 @@ export default function Appointments() {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4" data-testid="appointments-page">
       <div className="flex items-center gap-2">
         <CalendarCheck className="w-6 h-6 text-emerald-600" />
-        <h1 className="font-heading text-2xl font-bold tracking-tight">Citas</h1>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">{t("appointments.title")}</h1>
       </div>
 
       {loading ? (
@@ -77,21 +79,21 @@ export default function Appointments() {
       ) : items.length === 0 ? (
         <Card className="card-elevated p-8 text-center border-0 shadow-none">
           <CalendarCheck className="w-9 h-9 text-zinc-300 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">Aún no tienes citas.</p>
-          <p className="text-xs text-zinc-400 mt-1">Activa "Schedule Appointment" en tu tarjeta para recibir citas.</p>
-          <Button data-testid="appt-go-card" onClick={() => navigate("/tarjeta")} variant="outline" className="mt-4 rounded-xl">Ir a mi tarjeta</Button>
+          <p className="text-sm text-zinc-500">{t("appointments.none")}</p>
+          <p className="text-xs text-zinc-400 mt-1">{t("appointments.noneHint")}</p>
+          <Button data-testid="appt-go-card" onClick={() => navigate("/tarjeta")} variant="outline" className="mt-4 rounded-xl">{t("appointments.goCard")}</Button>
         </Card>
       ) : (
         <>
           {upcoming.length > 0 && (
             <div className="space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">Próximas</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">{t("appointments.upcoming")}</div>
               {upcoming.map(Row)}
             </div>
           )}
           {past.length > 0 && (
             <div className="space-y-2 pt-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">Pasadas</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">{t("appointments.past")}</div>
               {past.map(Row)}
             </div>
           )}
@@ -101,7 +103,7 @@ export default function Appointments() {
       <Drawer open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <DrawerContent>
           <DrawerHeader className="pb-1">
-            <DrawerTitle className="font-heading">Detalle de la cita</DrawerTitle>
+            <DrawerTitle className="font-heading">{t("appointments.detail")}</DrawerTitle>
           </DrawerHeader>
           {active && (
             <div className="px-4 pb-8 pt-1 max-w-md mx-auto w-full space-y-3">
@@ -119,16 +121,16 @@ export default function Appointments() {
               <div className="grid grid-cols-2 gap-2">
                 <a data-testid="appt-call" href={active.phone ? `tel:${active.phone}` : undefined}
                   className={`h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-white ${active.phone ? "bg-emerald-600 hover:bg-emerald-700" : "bg-zinc-300 pointer-events-none"}`}>
-                  <Phone className="w-4 h-4" /> Llamar
+                  <Phone className="w-4 h-4" /> {t("appointments.call")}
                 </a>
                 <a data-testid="appt-message" href={active.phone ? `sms:${active.phone}` : undefined}
                   className={`h-12 rounded-xl flex items-center justify-center gap-2 font-bold ${active.phone ? "bg-sky-100 text-sky-700 hover:bg-sky-200" : "bg-zinc-100 text-zinc-400 pointer-events-none"}`}>
-                  <MessageSquare className="w-4 h-4" /> Mensaje
+                  <MessageSquare className="w-4 h-4" /> {t("appointments.message")}
                 </a>
               </div>
               {active.client_id && (
                 <Button data-testid="appt-view-client" variant="outline" onClick={() => navigate(`/clientes/${active.client_id}`)}
-                  className="w-full rounded-xl">Ver cliente en CRM</Button>
+                  className="w-full rounded-xl">{t("appointments.viewClient")}</Button>
               )}
             </div>
           )}

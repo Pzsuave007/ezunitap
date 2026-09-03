@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,19 +10,20 @@ import { toast } from "sonner";
 import TourButton from "@/components/TourButton";
 
 export default function Scope() {
+  const { t } = useTranslation();
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
   const generate = async () => {
-    if (!description.trim()) return toast.error("Escribe una descripción");
+    if (!description.trim()) return toast.error(t("scope.writeDesc"));
     setLoading(true);
     try {
       const { data } = await api.post("/ai/scope", { description_es: description });
       setResult(data);
-      toast.success("Scope of Work generado");
+      toast.success(t("scope.generated"));
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Error");
+      toast.error(err?.response?.data?.detail || t("scope.error"));
     } finally { setLoading(false); }
   };
 
@@ -46,7 +48,7 @@ WARRANTY: ${result.warranty_notes || ""}
 
 CHANGE ORDER: ${result.change_order_note || ""}`;
     await navigator.clipboard.writeText(text);
-    toast.success("Copiado");
+    toast.success(t("scope.copied"));
   };
 
   return (
@@ -54,35 +56,35 @@ CHANGE ORDER: ${result.change_order_note || ""}`;
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Sparkles className="w-7 h-7 text-emerald-600" /> Scope of Work AI
+            <Sparkles className="w-7 h-7 text-emerald-600" /> {t("scope.title")}
           </h1>
-          <p className="text-slate-500 mt-1">Genera un scope profesional en inglés desde tu descripción en español.</p>
+          <p className="text-slate-500 mt-1">{t("scope.subtitle")}</p>
         </div>
         <TourButton tourKey="scope" />
       </div>
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
         <div>
-          <Label>Describe el trabajo (español)</Label>
+          <Label>{t("scope.describe")}</Label>
           <Textarea
             data-testid="scope-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ej: Voy a hacer un techo nuevo de shingles en una casa de 1500 sqft, incluye remover el viejo, papel, drip edge..."
+            placeholder={t("scope.placeholder")}
             className="rounded-xl mt-1.5 min-h-[140px]"
           />
         </div>
         <Button data-testid="scope-generate" onClick={generate} disabled={loading} className="w-full h-14 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generar Scope of Work"}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t("scope.generate")}
         </Button>
       </Card>
 
       {result && (
         <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-heading text-xl font-bold">Scope of Work (English)</h2>
+            <h2 className="font-heading text-xl font-bold">{t("scope.resultTitle")}</h2>
             <Button onClick={copyAll} variant="outline" size="sm" className="rounded-xl" data-testid="scope-copy">
-              <Copy className="w-4 h-4 mr-1" /> Copiar todo
+              <Copy className="w-4 h-4 mr-1" /> {t("scope.copyAll")}
             </Button>
           </div>
           <ScopeSection title="What is included" items={result.what_is_included} />

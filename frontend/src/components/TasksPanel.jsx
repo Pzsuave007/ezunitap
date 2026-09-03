@@ -349,7 +349,7 @@ export default function TasksPanel({ className = "" }) {
                     <DetailRow icon={<User className="w-4 h-4" />} label={t("tasks.client")} value={detailItem.clientName} />
                   )}
                   {detailItem.notes && (
-                    <DetailRow icon={<StickyNote className="w-4 h-4" />} label="Notas" value={detailItem.notes} />
+                    <DetailRow icon={<StickyNote className="w-4 h-4" />} label={t("tasks.notesLabel")} value={detailItem.notes} />
                   )}
                 </div>
 

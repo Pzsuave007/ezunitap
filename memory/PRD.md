@@ -1,3 +1,23 @@
+## 🌐 Jun 2026 — Pantallas del contratista 100% bilingües (ES/EN) [COMPLETO; verificado screenshot en modo EN, SIN testing_agent]
+- **Problema**: varias pantallas tenían texto en español "quemado" (hardcoded, fuera de i18n) que no cambiaba en modo inglés. El peor: abrir un cliente (`ClientDetail`).
+- **Alcance acordado (ask_human)**: todo lo que usa el contratista bilingüe; **Admin y demo/landing se dejan en español** a propósito.
+- **Archivos convertidos a i18n** (se agregaron ~200 claves nuevas en `i18n/locales/es.json` y `en.json`):
+  - `pages/ClientDetail.js` → namespace `clients.detail` (87 claves): toasts, lead card, drawer Crear, stats, tabs, form edición, notas, historiales, estados, drawer de nota. Fechas usan `dateLocale` según idioma.
+  - `pages/Scope.js` + `components/ClientScopeDialog.js` → namespace `scope`.
+  - `pages/Appointments.js` → namespace `appointments` (incluye `months`/`dayAbbr` como arrays vía `returnObjects`).
+  - `pages/QuoteDetail.js` → `quoteDetailPage`.
+  - `pages/NotificationsInbox.js` → `inbox`.
+  - `components/RequestReviewButton.js` → `reviewBtn`.
+  - `components/ClientFlowNotices.js` → `clientFlow` (títulos/mensajes/CTAs con interpolación).
+  - `components/SendDocumentDialog.js` → `sendDoc` (solo la UI; el mensaje AL CLIENTE sigue en inglés a propósito).
+  - `pages/AgreementBuilder.js` → `agBuilder`; `pages/AgreementDetail.js` → `agDetail`.
+  - `pages/CardAdmin.js` → sección de Botones/Citas (`cardAdmin.*` nuevas: buttonsAppts, availableDays, dayAbbr, apptDuration, etc.).
+  - `components/TasksPanel.jsx` → `tasks.notesLabel`.
+- **Ya eran bilingües (no se tocaron)**: `Onboarding.js` (usa `es` desde `localStorage i18nextLng`), `GuidedJobForm.js` (ternarios `es ?` con prop `lang`), y los `INDUSTRY_TEMPLATES` de CardAdmin (sus labels/hints del array se sobrescriben con `t()`).
+- **Verificado**: login en modo EN → `/clientes/{id}` muestra TODO en inglés (Create, tabs, Information/Edit, stats, drawer Create con AI Quote/Invoice/Contract/Message/AI Scope). 0 fugas de español (excepto datos propios del usuario). Screenshot confirmado.
+- Build `main.4c0e5bf4.js` (+ fix oxlint-disable en chunks vendor) y `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + en servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 🏢 Jun 2026 — Toggle POR CLIENTE: dirigir invoice solo al nombre de la compañía (ocultar nombre personal DEL CLIENTE) [COMPLETO; verificado curl+screenshot, SIN testing_agent]
 - **Petición dueño (aclaración)**: NO era ocultar el nombre del dueño de la cuenta (eso ya existía). Es que ALGUNOS de SUS clientes no quieren que salga su nombre personal en el invoice — quieren que vaya dirigido SOLO al nombre de su compañía. Toggle por cada cliente.
 - **Backend** (`server.py`): nuevo campo `bill_to_company_only: Optional[bool] = False` en `ClientIn`. Create/update usan `model_dump()` → persiste solo. Los payloads públicos de invoice (`/public/invoices/{id}`), quote (`/public/quotes...`) y agreement leen el client fresco de `db.clients` (proyección `_id:0` = todos los campos) → el flag fluye automáticamente.

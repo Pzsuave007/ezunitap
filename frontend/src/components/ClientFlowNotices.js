@@ -12,6 +12,7 @@
  */
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, FileSignature, Receipt, CalendarDays, Clock, X, ArrowRight } from "lucide-react";
 
 const DISMISS_KEY = "client_flow_notices_dismissed";
@@ -32,6 +33,7 @@ function saveDismissed(arr) {
 
 export default function ClientFlowNotices({ client, history }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(loadDismissed);
 
   useEffect(() => {
@@ -56,9 +58,9 @@ export default function ClientFlowNotices({ client, history }) {
           id: `quote-approved-${q.id}`,
           tone: "emerald",
           icon: CheckCircle2,
-          title: `¡${client.name?.split(" ")[0] || "El cliente"} aceptó el quote ${q.number}!`,
-          message: "Siguiente paso: genera y mándale el contrato para que lo firme.",
-          ctaLabel: "Crear contrato",
+          title: t("clientFlow.quoteApprovedTitle", { name: client.name?.split(" ")[0] || t("clientFlow.theClient"), number: q.number }),
+          message: t("clientFlow.quoteApprovedMsg"),
+          ctaLabel: t("clientFlow.createContract"),
           ctaAction: () => navigate(`/contratos/nuevo?client_id=${client.id}&quote_id=${q.id}`),
         });
       }
@@ -75,9 +77,9 @@ export default function ClientFlowNotices({ client, history }) {
           id: `agreement-signed-${a.id}`,
           tone: "blue",
           icon: FileSignature,
-          title: `Contrato firmado por ${a.signer_name || client.name?.split(" ")[0] || "el cliente"}`,
-          message: `El invoice ${linkedInv.number} ya se generó y se le muestra al cliente automáticamente para que pague. Échale un ojo aquí.`,
-          ctaLabel: "Ver invoice",
+          title: t("clientFlow.agreementSignedTitle", { name: a.signer_name || client.name?.split(" ")[0] || t("clientFlow.theClientLc") }),
+          message: t("clientFlow.agreementSignedMsg", { number: linkedInv.number }),
+          ctaLabel: t("clientFlow.viewInvoice"),
           ctaAction: () => navigate(`/invoices/${linkedInv.id}`),
         });
       }
@@ -92,9 +94,9 @@ export default function ClientFlowNotices({ client, history }) {
           id: `invoice-paid-${inv.id}`,
           tone: "amber",
           icon: Receipt,
-          title: `¡Pago recibido del invoice ${inv.number}!`,
-          message: "Agenda el trabajo en el calendario para no perderle el rastro.",
-          ctaLabel: "Agendar trabajo",
+          title: t("clientFlow.invoicePaidTitle", { number: inv.number }),
+          message: t("clientFlow.invoicePaidMsg"),
+          ctaLabel: t("clientFlow.scheduleJob"),
           ctaAction: () => navigate(`/calendario?job_id=${job.id}`),
         });
       }
@@ -112,9 +114,9 @@ export default function ClientFlowNotices({ client, history }) {
           id: `quote-followup-${q.id}`,
           tone: "slate",
           icon: Clock,
-          title: `Quote ${q.number} sin respuesta hace ${Math.floor(age / (24 * 3600 * 1000))} días`,
-          message: "Vuélvelo a mandar — un recordatorio amable suele cerrar la venta.",
-          ctaLabel: "Volver a mandar",
+          title: t("clientFlow.quoteFollowupTitle", { number: q.number, days: Math.floor(age / (24 * 3600 * 1000)) }),
+          message: t("clientFlow.quoteFollowupMsg"),
+          ctaLabel: t("clientFlow.resend"),
           ctaAction: () => navigate(`/quotes/${q.id}`),
         });
       }
@@ -132,16 +134,16 @@ export default function ClientFlowNotices({ client, history }) {
           id: `job-unscheduled-${job.id}`,
           tone: "slate",
           icon: CalendarDays,
-          title: `Trabajo ${job.title || ""} sin agendar`,
-          message: "Asígnale fecha en el calendario cuando estés listo.",
-          ctaLabel: "Ir al calendario",
+          title: t("clientFlow.jobUnscheduledTitle", { title: job.title || "" }),
+          message: t("clientFlow.jobUnscheduledMsg"),
+          ctaLabel: t("clientFlow.goCalendar"),
           ctaAction: () => navigate(`/calendario?job_id=${job.id}`),
         });
       }
     }
 
     return out.filter((n) => !dismissed.includes(n.id));
-  }, [client, history, dismissed, navigate]);
+  }, [client, history, dismissed, navigate, t]);
 
   if (notices.length === 0) return null;
 

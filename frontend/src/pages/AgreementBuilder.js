@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 
 export default function AgreementBuilder() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [clients, setClients] = useState([]);
   const [clientId, setClientId] = useState("");
@@ -51,8 +53,8 @@ export default function AgreementBuilder() {
   }, []);
 
   const generate = async () => {
-    if (!clientId) { toast.error("Selecciona un cliente"); return; }
-    if (!description.trim()) { toast.error("Describe el servicio"); return; }
+    if (!clientId) { toast.error(t("agBuilder.selectClient")); return; }
+    if (!description.trim()) { toast.error(t("agBuilder.describeService")); return; }
     setLoading(true);
     try {
       const { data } = await api.post("/ai/agreement", {
@@ -62,10 +64,10 @@ export default function AgreementBuilder() {
         deposit: parseFloat(deposit) || 0,
       });
       setSections(data);
-      toast.success("Contrato generado");
+      toast.success(t("agBuilder.generated"));
     } catch (e) {
       console.error(e);
-      toast.error("La AI no pudo generar el contrato. Intenta de nuevo.");
+      toast.error(t("agBuilder.genError"));
     } finally {
       setLoading(false);
     }
@@ -85,11 +87,11 @@ export default function AgreementBuilder() {
         deposit: parseFloat(deposit) || 0,
         status: "draft",
       });
-      toast.success("Contrato guardado");
+      toast.success(t("agBuilder.saved"));
       navigate(`/contratos/${data.id}`);
     } catch (e) {
       console.error(e);
-      toast.error("Error al guardar");
+      toast.error(t("agBuilder.saveError"));
     } finally {
       setSaving(false);
     }
@@ -102,27 +104,26 @@ export default function AgreementBuilder() {
         onClick={() => navigate("/contratos")}
         className="flex items-center gap-1 text-sm text-slate-600 hover:text-blue-900"
       >
-        <ArrowLeft className="w-4 h-4" /> Contratos
+        <ArrowLeft className="w-4 h-4" /> {t("agBuilder.back")}
       </button>
 
       <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Nuevo Contrato con AI</h1>
+        <h1 className="font-heading text-3xl font-bold tracking-tight">{t("agBuilder.title")}</h1>
         <p className="text-slate-500 mt-1 text-sm">
-          Describe el servicio en español. La AI te arma el contrato profesional en inglés con cláusulas
-          que te protegen legalmente.
+          {t("agBuilder.subtitle")}
         </p>
       </div>
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-4">
         <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Cliente *</label>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("agBuilder.clientLabel")}</label>
           <select
             data-testid="agreement-client-select"
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
             className="mt-1 w-full h-11 rounded-xl border border-slate-200 px-3 bg-white"
           >
-            <option value="">— Selecciona un cliente —</option>
+            <option value="">{t("agBuilder.selectPlaceholder")}</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -131,21 +132,21 @@ export default function AgreementBuilder() {
 
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Descripción del servicio (español) *
+            {t("agBuilder.descLabel")}
           </label>
           <textarea
             data-testid="agreement-description"
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ej: Corte de zacate semanal, edging del jardín delantero y trasero, recoger hojas. Servicio recurrente cada lunes."
+            placeholder={t("agBuilder.descPlaceholder")}
             className="mt-1 w-full rounded-xl border border-slate-200 p-3 bg-white text-sm"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Total ($)</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("agBuilder.totalLabel")}</label>
             <input
               data-testid="agreement-total"
               type="number" step="0.01"
@@ -156,7 +157,7 @@ export default function AgreementBuilder() {
             />
           </div>
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Depósito ($)</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("agBuilder.depositLabel")}</label>
             <input
               data-testid="agreement-deposit"
               type="number" step="0.01"
@@ -175,7 +176,7 @@ export default function AgreementBuilder() {
           className="w-full h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-base font-bold gap-2"
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-          {loading ? "Generando…" : "Generar contrato con AI"}
+          {loading ? t("agBuilder.generating") : t("agBuilder.generateBtn")}
         </Button>
       </Card>
 
@@ -183,7 +184,7 @@ export default function AgreementBuilder() {
         <Card data-testid="agreement-preview" className="card-elevated p-5 border-0 shadow-none space-y-4">
           <div className="flex items-center gap-2">
             <FileSignature className="w-5 h-5 text-emerald-700" />
-            <h2 className="font-heading text-xl font-bold">Vista previa (inglés)</h2>
+            <h2 className="font-heading text-xl font-bold">{t("agBuilder.previewTitle")}</h2>
           </div>
 
           <h3 className="font-bold text-lg">{sections.title}</h3>
@@ -210,7 +211,7 @@ export default function AgreementBuilder() {
             className="w-full h-12 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-base font-bold gap-2"
           >
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-            Guardar contrato
+            {t("agBuilder.saveBtn")}
           </Button>
         </Card>
       )}
