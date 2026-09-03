@@ -1397,6 +1397,9 @@ async def _recalc_invoice_payments(invoice_id: str, user_id: str) -> dict:
     total = float(inv.get("total") or 0)
     paid = round(sum(float(p.get("amount") or 0) for p in inv.get("payments", [])), 2)
     update = {"amount_paid": paid, "updated_at": _now_iso()}
+    dep_amt = float(inv.get("deposit_amount") or 0)
+    if dep_amt > 0:
+        update["deposit_paid"] = bool(paid >= dep_amt)
     auto_job_id = None
     if total > 0 and paid >= total:
         if inv.get("status") != "paid":
@@ -1506,9 +1509,15 @@ async def public_invoice(invoice_id: str):
     # render pay-by-app buttons.
     payment_methods = (user or {}).get("payment_methods") or {}
     remaining = round(max(0, float(inv.get("total") or 0) - float(inv.get("amount_paid") or 0)), 2)
+    dep_amt = float(inv.get("deposit_amount") or 0)
+    paid = float(inv.get("amount_paid") or 0)
+    # Deposit still owed = deposit not yet covered by payments, capped at remaining.
+    deposit_due = round(max(0, min(dep_amt - paid, remaining)), 2) if dep_amt > 0 else 0
     card_payment = {
         "enabled": bool(_stripe_collect_enabled_for(user) and remaining > 0 and inv.get("status") != "paid"),
         "remaining": remaining,
+        "deposit_due": deposit_due,
+        "deposit_amount": round(dep_amt, 2),
     }
     return {
         "invoice": inv,
@@ -1522,6 +1531,7 @@ async def public_invoice(invoice_id: str):
 class InvoiceCheckoutIn(BaseModel):
     origin_url: str
     plan_item_id: Optional[str] = None
+    pay_deposit: Optional[bool] = False
 
 
 @api_router.post("/public/invoices/{invoice_id}/checkout")
@@ -1537,7 +1547,12 @@ async def public_invoice_checkout(invoice_id: str, payload: InvoiceCheckoutIn):
     total = float(inv.get("total") or 0)
     paid = float(inv.get("amount_paid") or 0)
     amount = round(max(0, total - paid), 2)
-    if payload.plan_item_id:
+    if payload.pay_deposit:
+        dep_amt = float(inv.get("deposit_amount") or 0)
+        deposit_due = round(max(0, min(dep_amt - paid, amount)), 2) if dep_amt > 0 else 0
+        if deposit_due > 0:
+            amount = deposit_due
+    elif payload.plan_item_id:
         item = next((p for p in (inv.get("payment_plan") or []) if p.get("id") == payload.plan_item_id), None)
         if item:
             amount = round(float(item.get("amount") or 0), 2)

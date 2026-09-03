@@ -235,7 +235,7 @@ export default function PublicInvoice() {
         </Card>
 
         {card_payment?.enabled && (
-          <StripeCardPay invoiceId={invoice.id} remaining={card_payment.remaining} />
+          <StripeCardPay invoiceId={invoice.id} remaining={card_payment.remaining} depositDue={card_payment.deposit_due} />
         )}
 
         <InvoicePayBlock
@@ -426,15 +426,20 @@ function InvoicePayBlock({ invoice, methods, business }) {
 // StripeCardPay — prominent "Pay with card" button (owner-gated card payments).
 // Creates a Stripe Checkout Session and redirects the client to pay.
 // ============================================================================
-function StripeCardPay({ invoiceId, remaining }) {
+function StripeCardPay({ invoiceId, remaining, depositDue }) {
   const [loading, setLoading] = useState(false);
-  const amount = `$${(Number(remaining) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const dep = Number(depositDue) || 0;
+  const rem = Number(remaining) || 0;
+  const fmt = (n) => `$${(Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const depositMode = dep > 0 && dep < rem;
+  const payAmount = depositMode ? dep : rem;
 
   const pay = async () => {
     setLoading(true);
     try {
       const { data } = await axios.post(`${API}/public/invoices/${invoiceId}/checkout`, {
         origin_url: window.location.origin,
+        pay_deposit: depositMode,
       });
       if (data.url) {
         window.location.href = data.url;
@@ -451,11 +456,18 @@ function StripeCardPay({ invoiceId, remaining }) {
     <Card className="card-elevated p-5 border-0 shadow-none mt-4 print:hidden" data-testid="stripe-card-pay">
       <div className="flex items-center gap-2 mb-1">
         <CreditCard className="w-5 h-5 text-indigo-600" />
-        <h3 className="font-heading font-bold text-base">Pay securely by card</h3>
+        <h3 className="font-heading font-bold text-base">{depositMode ? "Pay your deposit by card" : "Pay securely by card"}</h3>
       </div>
-      <p className="text-xs text-slate-500 mb-4">
-        Pay {amount} with credit or debit card. Powered by Stripe — secure checkout.
+      <p className="text-xs text-slate-500 mb-1">
+        {depositMode
+          ? `This invoice requests a ${fmt(dep)} deposit up front. Pay it now to get started.`
+          : `Pay ${fmt(payAmount)} with credit or debit card. Powered by Stripe — secure checkout.`}
       </p>
+      {depositMode && (
+        <p className="text-xs text-slate-500 mb-4" data-testid="deposit-remaining-note">
+          Remaining balance of <b>{fmt(rem - dep)}</b> stays due and can be paid later from this same page.
+        </p>
+      )}
       <Button
         onClick={pay}
         disabled={loading}
@@ -463,7 +475,7 @@ function StripeCardPay({ invoiceId, remaining }) {
         data-testid="stripe-pay-btn"
       >
         {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
-        Pay {amount} now
+        {depositMode ? `Pay deposit ${fmt(payAmount)} now` : `Pay ${fmt(payAmount)} now`}
       </Button>
     </Card>
   );
