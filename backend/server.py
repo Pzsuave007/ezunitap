@@ -122,6 +122,9 @@ class ClientIn(BaseModel):
     address: Optional[str] = ""
     job_type: Optional[str] = ""
     notes: Optional[str] = ""
+    # When True (and company is set), documents are addressed to the company
+    # name only — the client's personal name is hidden from Bill To.
+    bill_to_company_only: Optional[bool] = False
 
 
 class LineItem(BaseModel):
