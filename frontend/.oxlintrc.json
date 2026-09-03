@@ -1,0 +1,24 @@
+{
+  "ignorePatterns": [
+    "build/**",
+    "**/build/**",
+    "dist/**",
+    "node_modules/**"
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "serviceworker": true,
+    "worker": true,
+    "es2022": true
+  },
+  "globals": {
+    "WorkerGlobalScope": "readonly",
+    "__REACT_DEVTOOLS_GLOBAL_HOOK__": "readonly",
+    "ActiveXObject": "readonly",
+    "RGBColor": "readonly",
+    "define": "readonly",
+    "globalThis": "readonly",
+    "self": "readonly"
+  }
+}
