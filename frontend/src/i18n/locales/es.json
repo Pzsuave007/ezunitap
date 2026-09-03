@@ -436,6 +436,8 @@
     "company": "Nombre del negocio (opcional)",
     "companyHint": "Si lo llenas, el invoice se hará a nombre del negocio.",
     "companyPlaceholder": "Ej: Construcciones López LLC",
+    "companyOnly": "Dirigir invoice solo al nombre de la compañía",
+    "companyOnlyHint": "Actívalo si este cliente no quiere que salga su nombre personal. El invoice, cotización y contrato irán dirigidos solo al nombre de la compañía.",
     "phone": "Teléfono",
     "email": "Email",
     "address": "Dirección",

@@ -435,6 +435,8 @@
     "company": "Business name (optional)",
     "companyHint": "If filled, the invoice will be in the business name.",
     "companyPlaceholder": "e.g. Lopez Construction LLC",
+    "companyOnly": "Address invoice to company name only",
+    "companyOnlyHint": "Turn on if this client doesn't want their personal name shown. Invoices, quotes and contracts will be addressed to the company name only.",
     "phone": "Phone",
     "email": "Email",
     "address": "Address",

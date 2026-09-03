@@ -404,6 +404,23 @@ export default function ClientDetail() {
                     <Input value={form[k] || ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} className="h-12 rounded-xl mt-1.5" />
                   </div>
                 ))}
+                {form.company?.trim() && (
+                  <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3" data-testid="client-company-only-setting">
+                    <div className="flex-1">
+                      <Label className="cursor-pointer">Dirigir invoice solo al nombre de la compañía</Label>
+                      <p className="text-[11px] text-zinc-500 mt-1">Actívalo si este cliente no quiere que salga su nombre personal. El invoice, cotización y contrato irán dirigidos solo al nombre de la compañía.</p>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="client-company-only-toggle"
+                      onClick={() => setForm({ ...form, bill_to_company_only: !form.bill_to_company_only })}
+                      className={`relative flex-none w-12 h-7 rounded-full transition-colors mt-1 ${form.bill_to_company_only ? "bg-emerald-500" : "bg-zinc-300"}`}
+                      aria-pressed={!!form.bill_to_company_only}
+                    >
+                      <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${form.bill_to_company_only ? "left-6" : "left-1"}`} />
+                    </button>
+                  </div>
+                )}
                 <div>
                   <Label>Notas (español)</Label>
                   <Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl mt-1.5" />

@@ -114,7 +114,7 @@ export default function PublicQuote() {
           <div className="p-6 space-y-5">
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bill To</div>
-              <div className="font-semibold">{client?.name}</div>
+              <div className="font-semibold">{client?.bill_to_company_only && client?.company ? client.company : client?.name}</div>
               {client?.address && <div className="text-sm text-slate-600">{client.address}</div>}
               {client?.email && <div className="text-sm text-slate-600">{client.email}</div>}
               {client?.phone && <div className="text-sm text-slate-600">{client.phone}</div>}

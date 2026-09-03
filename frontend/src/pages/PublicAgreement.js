@@ -113,7 +113,7 @@ export default function PublicAgreement() {
               </div>
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Client</div>
-                <div className="font-semibold">{client?.name}</div>
+                <div className="font-semibold">{client?.bill_to_company_only && client?.company ? client.company : client?.name}</div>
                 {client?.address && <div className="text-sm text-slate-600">{client.address}</div>}
               </div>
             </div>

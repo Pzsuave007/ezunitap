@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
-const EMPTY = { name: "", company: "", phone: "", email: "", address: "", job_type: "", notes: "" };
+const EMPTY = { name: "", company: "", phone: "", email: "", address: "", job_type: "", notes: "", bill_to_company_only: false };
 
 // Standalone page for creating a client (replaces the old modal that could
 // overflow small laptop screens and hide the Save button). No popups.
@@ -64,6 +64,23 @@ export default function ClientForm() {
             <Input data-testid="cli-company" value={form.company} onChange={set("company")} className="h-12 rounded-xl mt-1.5" placeholder={t("clients.companyPlaceholder")} />
             <p className="text-[11px] text-slate-500 mt-1">{t("clients.companyHint")}</p>
           </div>
+          {form.company?.trim() && (
+            <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3" data-testid="cli-company-only-setting">
+              <div className="flex-1">
+                <Label className="cursor-pointer">{t("clients.companyOnly")}</Label>
+                <p className="text-[11px] text-slate-500 mt-1">{t("clients.companyOnlyHint")}</p>
+              </div>
+              <button
+                type="button"
+                data-testid="cli-company-only-toggle"
+                onClick={() => setForm({ ...form, bill_to_company_only: !form.bill_to_company_only })}
+                className={`relative flex-none w-12 h-7 rounded-full transition-colors mt-1 ${form.bill_to_company_only ? "bg-emerald-500" : "bg-slate-300"}`}
+                aria-pressed={form.bill_to_company_only}
+              >
+                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${form.bill_to_company_only ? "left-6" : "left-1"}`} />
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>{t("clients.phone")}</Label>

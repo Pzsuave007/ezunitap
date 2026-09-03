@@ -131,7 +131,7 @@ export default function PublicInvoice() {
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Bill to</div>
               <div className="font-semibold">{client?.company || client?.name}</div>
               <div className="text-sm text-slate-600 space-y-0.5">
-                {client?.company && client?.name && <div>Attn: {client.name}</div>}
+                {client?.company && client?.name && !client?.bill_to_company_only && <div>Attn: {client.name}</div>}
                 {client?.phone && <div>{client.phone}</div>}
                 {client?.email && <div>{client.email}</div>}
                 {client?.address && <div>{client.address}</div>}

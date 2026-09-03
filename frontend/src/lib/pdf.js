@@ -86,6 +86,7 @@ function clientBlock(doc, client, y) {
   doc.text("BILL TO", 14, y);
   const company = (client?.company || "").trim();
   const person = (client?.name || "").trim();
+  const companyOnly = !!client?.bill_to_company_only && !!company;
   const primary = company || person || "—";
   // Primary line (business name when present) in bold; everything else normal.
   doc.setFont("helvetica", "bold");
@@ -93,7 +94,7 @@ function clientBlock(doc, client, y) {
   doc.text(primary, 14, y + 6);
   doc.setFont("helvetica", "normal");
   const rest = [
-    company && person ? `Attn: ${person}` : "",
+    company && person && !companyOnly ? `Attn: ${person}` : "",
     client?.address || "",
     client?.email || "",
     client?.phone || "",
