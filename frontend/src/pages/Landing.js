@@ -26,7 +26,7 @@ const SERVICES = [
 const FLOW_ICONS = [IdCard, Globe, Sparkles, Receipt, DollarSign, CalendarDays, Camera, Share2, Star];
 // Product modules — meta (text comes from i18n landing.products)
 const PRODUCT_META = [
-  { id: "presencia", icon: IdCard, price: "$54.99" },
+  { id: "presencia", icon: IdCard, price: "$75" },
   { id: "negocio", icon: LayoutDashboard, price: "$39.99" },
   { id: "marketing", icon: Sparkles, price: "$29.99" },
 ];

@@ -105,6 +105,7 @@ class BusinessUpdate(BaseModel):
     business_email: Optional[str] = None
     shipping_address: Optional[dict] = None
     agreements_enabled: Optional[bool] = None
+    hide_owner_name: Optional[bool] = None
 
 
 class CheckoutCreateIn(BaseModel):

@@ -109,7 +109,7 @@ export default function PublicInvoice() {
                   <h1 className="font-heading text-xl sm:text-2xl font-bold leading-tight break-words min-w-0">{business?.business_name || "Invoice"}</h1>
                 </div>
                 <div className="text-sm text-white/80 space-y-1">
-                  {business?.owner_name && <div className="break-words">{business.owner_name}</div>}
+                  {business?.owner_name && !business?.hide_owner_name && <div className="break-words">{business.owner_name}</div>}
                   {business?.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 flex-none" /> <span className="break-all">{business.phone}</span></div>}
                   {business?.business_email && <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 flex-none" /> <span className="break-all">{business.business_email}</span></div>}
                   {business?.business_address && <div className="flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 flex-none mt-0.5" /> <span className="break-words">{business.business_address}</span></div>}

@@ -68,6 +68,7 @@ export default function Profile() {
         profile_photo_id: user.profile_photo_id || null,
         // business preferences
         agreements_enabled: user.agreements_enabled !== false,
+        hide_owner_name: !!user.hide_owner_name,
       });
     }
   }, [user]);
@@ -85,6 +86,7 @@ export default function Profile() {
           business_email: form.business_email,
           business_address: form.business_address,
           agreements_enabled: form.agreements_enabled,
+          hide_owner_name: form.hide_owner_name,
         }),
         api.put("/card/settings", {
           role: form.role,
@@ -160,6 +162,21 @@ export default function Profile() {
             placeholder="Juan Pérez"
           />
           <p className="text-[11px] text-slate-400 mt-1">{t("profile.yourNameHint")}</p>
+        </div>
+        <div className="flex items-start justify-between gap-4 pt-1" data-testid="hide-owner-name-setting">
+          <div className="flex-1">
+            <Label className="cursor-pointer">{t("profile.showOwnerName")}</Label>
+            <p className="text-[11px] text-slate-400 mt-1">{t("profile.showOwnerNameHint")}</p>
+          </div>
+          <button
+            type="button"
+            data-testid="hide-owner-name-toggle"
+            onClick={() => update("hide_owner_name", !form.hide_owner_name)}
+            className={`relative flex-none w-12 h-7 rounded-full transition-colors mt-1 ${!form.hide_owner_name ? "bg-emerald-500" : "bg-slate-300"}`}
+            aria-pressed={!form.hide_owner_name}
+          >
+            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${!form.hide_owner_name ? "left-6" : "left-1"}`} />
+          </button>
         </div>
         <div>
           <div className="flex items-center justify-between gap-2">

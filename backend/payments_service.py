@@ -90,11 +90,11 @@ MODULES = {
 # Monthly price (cents) per base module. Yearly = x10 (2 months free).
 # Combos of 2 modules = 30% off the sum of their individual monthly prices.
 _MODULE_MONTHLY_CENTS = {
-    "presencia": 5499,
+    "presencia": 7500,
     "negocio": 3999,
     "marketing": 2999,
-    "presencia_negocio": 6699,    # (5499+3999) -30%
-    "presencia_marketing": 5999,  # (5499+2999) -30%
+    "presencia_negocio": 8099,    # (7500+3999) -30%
+    "presencia_marketing": 7399,  # (7500+2999) -30%
     "negocio_marketing": 4899,    # (3999+2999) -30%
     "bundle": 9999,
 }
