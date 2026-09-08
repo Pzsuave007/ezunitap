@@ -166,24 +166,29 @@ function ActiveJobsCard({ navigate, jobs = [], clients = [] }) {
   );
 }
 
+// ---- Start a job — horizontal 3-up quick actions ----
+function StartJobFlow({ navigate }) {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <SectionTitle action={<TourButton tourKey="dashboard" />}>{t("dashboard.startJob")}</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
+        <FlowStepMini step={1} testid="quick-new-client" icon={UserPlus} chip="bg-blue-50 text-blue-600 border border-blue-100"
+          title={t("dashboard.step1Title")} onClick={() => navigate("/clientes/nuevo")} />
+        <FlowStepMini step={2} testid="quick-ai-quote" icon={Sparkles} chip="bg-purple-50 text-purple-600 border border-purple-100"
+          title={t("dashboard.step2Title")} onClick={() => navigate("/quotes/nuevo?ai=1")} />
+        <FlowStepMini step={3} testid="quick-new-invoice" icon={Receipt} chip="bg-emerald-50 text-emerald-600 border border-emerald-100"
+          title={t("dashboard.step3Title")} onClick={() => navigate("/invoices/nuevo")} />
+      </div>
+    </div>
+  );
+}
+
 // ---- Business module block ----
 function BusinessBlock({ navigate, stats, reminders }) {
   const { t, i18n } = useTranslation();
   return (
     <>
-      {/* Guided ordered flow — horizontal 3-up to save space */}
-      <div>
-        <SectionTitle action={<TourButton tourKey="dashboard" />}>{t("dashboard.startJob")}</SectionTitle>
-        <div className="grid grid-cols-3 gap-2">
-          <FlowStepMini step={1} testid="quick-new-client" icon={UserPlus} chip="bg-blue-50 text-blue-600 border border-blue-100"
-            title={t("dashboard.step1Title")} onClick={() => navigate("/clientes/nuevo")} />
-          <FlowStepMini step={2} testid="quick-ai-quote" icon={Sparkles} chip="bg-purple-50 text-purple-600 border border-purple-100"
-            title={t("dashboard.step2Title")} onClick={() => navigate("/quotes/nuevo?ai=1")} />
-          <FlowStepMini step={3} testid="quick-new-invoice" icon={Receipt} chip="bg-emerald-50 text-emerald-600 border border-emerald-100"
-            title={t("dashboard.step3Title")} onClick={() => navigate("/invoices/nuevo")} />
-        </div>
-      </div>
-
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatChip testid="stat-clients" icon={Users} label={t("dashboard.statClients")} value={stats.total_clients} chip="bg-blue-50 text-blue-600 border border-blue-100" onClick={() => navigate("/clientes")} />
@@ -557,6 +562,7 @@ export default function Dashboard() {
       {currentTab === "main" && hasBusiness && (
         <>
           <PendingHero navigate={navigate} stats={stats} />
+          <StartJobFlow navigate={navigate} />
           <ActiveJobsCard navigate={navigate} jobs={jobs} clients={jobClients} />
           <TasksPanel />
           <BusinessBlock navigate={navigate} stats={stats} reminders={reminders} />
