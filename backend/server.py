@@ -665,16 +665,49 @@ async def list_clients(user_id: str = Depends(get_current_user_id)):
     return docs
 
 
+async def _promote_client_to_active(user_id: str, client_id: Optional[str]):
+    """Move a contact from 'prospect' to 'client' (active) the moment real work
+    starts: an invoice is created, a quote is approved, or a job is scheduled.
+    Idempotent — only touches contacts not already marked as 'client'."""
+    if not client_id:
+        return
+    try:
+        await db.clients.update_one(
+            {"id": client_id, "user_id": user_id, "stage": {"$ne": "client"}},
+            {"$set": {"stage": "client"}},
+        )
+    except Exception as e:
+        logger.error(f"promote client failed: {e!r}")
+
+
 @api_router.post("/clients")
 async def create_client(payload: ClientIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     doc = {
         "id": _new_id(),
         "user_id": user_id,
         **payload.model_dump(),
+        "stage": "prospect",
         "created_at": _now_iso(),
     }
     await db.clients.insert_one(doc)
     return _strip_id(doc)
+
+
+class ClientStageIn(BaseModel):
+    stage: str  # "prospect" | "client"
+
+
+@api_router.patch("/clients/{client_id}/stage")
+async def set_client_stage(client_id: str, payload: ClientStageIn, user_id: str = Depends(get_current_user_id)):
+    if payload.stage not in ("prospect", "client"):
+        raise HTTPException(400, "Stage inválido")
+    res = await db.clients.update_one(
+        {"id": client_id, "user_id": user_id}, {"$set": {"stage": payload.stage}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Cliente no encontrado")
+    doc = await db.clients.find_one({"id": client_id, "user_id": user_id}, {"_id": 0})
+    return doc
 
 
 @api_router.get("/clients/{client_id}")
@@ -780,6 +813,9 @@ async def set_quote_status(quote_id: str, status: str, background_tasks: Backgro
         {"$set": {"status": status, "updated_at": _now_iso()}},
     )
     doc = await db.quotes.find_one({"id": quote_id, "user_id": user_id}, {"_id": 0})
+    # Approving a quote means the client is now active — promote them.
+    if doc and status == "approved":
+        await _promote_client_to_active(user_id, doc.get("client_id"))
     # Pre-generate the Service Agreement in the background as soon as the quote is
     # sent (or approved) so it's ready instantly when the client accepts.
     if doc and status in ("sent", "approved"):
@@ -823,6 +859,7 @@ async def convert_to_invoice(quote_id: str, user_id: str = Depends(get_current_u
         {"id": quote_id, "user_id": user_id},
         {"$set": {"status": "converted", "updated_at": _now_iso()}},
     )
+    await _promote_client_to_active(user_id, q.get("client_id"))
     return _strip_id(inv)
 
 
@@ -859,6 +896,7 @@ async def public_accept_quote(quote_id: str):
             {"id": quote_id},
             {"$set": {"status": "approved", "approved_at": now_iso, "updated_at": now_iso}},
         )
+    await _promote_client_to_active(q["user_id"], q.get("client_id"))
 
     # Find or create the linked service agreement (idempotent + race-safe).
     existing = await db.agreements.find_one(
@@ -1054,6 +1092,8 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
     except Exception as e:
         logger.error(f"accept-and-sign auto-job failed: {e!r}")
 
+    await _promote_client_to_active(q["user_id"], q.get("client_id"))
+
     # Notify the contractor.
     try:
         await _create_notification(
@@ -1181,6 +1221,7 @@ async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_
         "updated_at": _now_iso(),
     }
     await db.invoices.insert_one(doc)
+    await _promote_client_to_active(user_id, doc.get("client_id"))
     return _strip_id(doc)
 
 
@@ -1324,6 +1365,7 @@ async def _ensure_job_for_invoice(inv: dict, user_id: str, default_note: str = "
         "auto_created": True,
     }
     await db.jobs.insert_one(job_doc)
+    await _promote_client_to_active(user_id, inv.get("client_id"))
     return job_doc["id"]
 
 
@@ -1384,6 +1426,7 @@ async def _ensure_job_for_signed_quote(quote: dict, invoice_id: Optional[str], u
         "auto_created": True,
     }
     await db.jobs.insert_one(job_doc)
+    await _promote_client_to_active(user_id, quote.get("client_id"))
     return job_doc["id"]
 
 
@@ -2046,6 +2089,7 @@ async def create_job(payload: JobIn, user_id: str = Depends(get_current_user_id)
         "updated_at": _now_iso(),
     }
     await db.jobs.insert_one(doc)
+    await _promote_client_to_active(user_id, doc.get("client_id"))
     return _strip_id(doc)
 
 
@@ -7197,6 +7241,7 @@ async def public_sign_agreement(agreement_id: str, payload: PublicSignRequest):
             "updated_at": signed_at_iso,
         }},
     )
+    await _promote_client_to_active(a["user_id"], a.get("client_id"))
     # Auto-create a draft invoice from the linked quote (if any) — idempotent.
     invoice_id = None
     if a.get("quote_id"):

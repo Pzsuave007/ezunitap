@@ -536,7 +536,17 @@
       "noteCreateInvoiceDesc": "Get paid for this work",
       "noteSendMessage": "Send message",
       "noteSendMessageDesc": "Text to the client"
-    }
+    },
+    "tabAll": "All",
+    "tabProspects": "Prospects",
+    "tabClients": "Clients",
+    "badgeProspect": "Prospect",
+    "badgeClient": "Client",
+    "emptyProspects": "You have no prospects right now.",
+    "emptyClients": "You don't have active clients yet.",
+    "markClient": "Mark as Client",
+    "markProspect": "Mark as Prospect",
+    "stageUpdated": "Updated"
   },
   "quotes": {
     "title": "Quotes",

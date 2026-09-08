@@ -537,7 +537,17 @@
       "noteCreateInvoiceDesc": "Cobra por este trabajo",
       "noteSendMessage": "Mandar mensaje",
       "noteSendMessageDesc": "Texto al cliente"
-    }
+    },
+    "tabAll": "Todos",
+    "tabProspects": "Prospectos",
+    "tabClients": "Clientes",
+    "badgeProspect": "Prospecto",
+    "badgeClient": "Cliente",
+    "emptyProspects": "No tienes prospectos por ahora.",
+    "emptyClients": "Aún no tienes clientes activos.",
+    "markClient": "Marcar como Cliente",
+    "markProspect": "Marcar como Prospecto",
+    "stageUpdated": "Actualizado"
   },
   "quotes": {
     "title": "Quotes",

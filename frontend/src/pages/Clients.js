@@ -13,6 +13,7 @@ export default function Clients() {
   const { t } = useTranslation();
   const [clients, setClients] = useState([]);
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState("all"); // all | prospects | clients
 
   const load = async () => {
     const { data } = await api.get("/clients");
@@ -20,11 +21,23 @@ export default function Clients() {
   };
   useEffect(() => { load(); }, []);
 
-  const filtered = clients.filter((c) =>
+  const isClient = (c) => c.stage === "client";
+  const prospectCount = clients.filter((c) => !isClient(c)).length;
+  const clientCount = clients.filter(isClient).length;
+
+  const byTab = clients.filter((c) =>
+    tab === "all" ? true : tab === "clients" ? isClient(c) : !isClient(c)
+  );
+  const filtered = byTab.filter((c) =>
     [c.name, c.company, c.phone, c.email, c.address, c.job_type].some((f) =>
       (f || "").toLowerCase().includes(filter.toLowerCase())
     )
   );
+
+  const emptyMsg =
+    tab === "clients" ? t("clients.emptyClients") :
+    tab === "prospects" ? t("clients.emptyProspects") :
+    t("clients.empty");
 
   return (
     <div className="space-y-5">
@@ -56,9 +69,28 @@ export default function Clients() {
         />
       </div>
 
+      <div className="flex gap-1.5 p-1 bg-slate-100 rounded-2xl" data-testid="clients-tabs">
+        {[
+          { k: "all", label: t("clients.tabAll"), count: clients.length },
+          { k: "prospects", label: t("clients.tabProspects"), count: prospectCount },
+          { k: "clients", label: t("clients.tabClients"), count: clientCount },
+        ].map((tb) => (
+          <button
+            key={tb.k}
+            data-testid={`clients-tab-${tb.k}`}
+            onClick={() => setTab(tb.k)}
+            className={`flex-1 h-10 rounded-xl text-sm font-semibold transition-all tap ${
+              tab === tb.k ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tb.label} <span className={`text-xs ${tab === tb.k ? "text-emerald-600" : "text-slate-400"}`}>({tb.count})</span>
+          </button>
+        ))}
+      </div>
+
       {filtered.length === 0 ? (
         <Card className="card-elevated p-10 text-center border-0 shadow-none">
-          <p className="text-slate-500">{t("clients.empty")}</p>
+          <p className="text-slate-500">{emptyMsg}</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -71,7 +103,17 @@ export default function Clients() {
             >
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate">{c.name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold truncate">{c.name}</div>
+                    <span
+                      data-testid={`client-stage-${c.id}`}
+                      className={`flex-none text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        isClient(c) ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {isClient(c) ? t("clients.badgeClient") : t("clients.badgeProspect")}
+                    </span>
+                  </div>
                   {c.company && <div className="text-xs text-slate-500 truncate flex items-center gap-1"><Building2 className="w-3 h-3" />{c.company}</div>}
                   <div className="text-xs text-slate-500 flex items-center gap-3 mt-0.5 flex-wrap">
                     {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone}</span>}

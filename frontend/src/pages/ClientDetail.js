@@ -243,6 +243,18 @@ export default function ClientDetail() {
     navigate("/clientes");
   };
 
+  const toggleStage = async () => {
+    const next = client?.stage === "client" ? "prospect" : "client";
+    try {
+      const { data } = await api.patch(`/clients/${id}/stage`, { stage: next });
+      setClient(data);
+      setForm(data);
+      toast.success(t("clients.stageUpdated"));
+    } catch {
+      toast.error(td("saveError"));
+    }
+  };
+
   if (!client) {
     return <div className="flex justify-center p-10"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
   }
@@ -273,6 +285,19 @@ export default function ClientDetail() {
             {client.job_type}
           </span>
         )}
+        <button
+          type="button"
+          data-testid="client-stage-toggle"
+          onClick={toggleStage}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors tap ${
+            client.stage === "client"
+              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+          }`}
+        >
+          {client.stage === "client" ? t("clients.badgeClient") : t("clients.badgeProspect")}
+          <span className="opacity-60 font-medium normal-case">· {client.stage === "client" ? t("clients.markProspect") : t("clients.markClient")}</span>
+        </button>
       </div>
 
       {/* ===== Quick contact ===== */}

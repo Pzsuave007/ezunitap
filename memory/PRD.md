@@ -1,3 +1,15 @@
+## 👥 Jun 2026 — Prospectos vs Clientes en la sección de Clientes [COMPLETO; verificado curl(3 flujos)+screenshot EN, SIN testing_agent]
+- **Petición**: separar en la lista los contactos que son "prospectos" (por llamar / follow-up) de los "clientes" activos (con proyecto en curso). Antes todos salían iguales.
+- **Modelo**: campo `stage` en `clients`: `"prospect"` (default) | `"client"`. NO se agregó a `ClientIn` (para que editar un cliente no lo resetee); ausencia de `stage` = prospect.
+- **Auto-promoción a "client"** (helper `_promote_client_to_active(user_id, client_id)` en server.py, idempotente) en: crear invoice (`create_invoice`), convertir quote→invoice (`convert_to_invoice`), aprobar quote (`set_quote_status` status=approved), aceptar quote público (`public_accept_quote`, `public_accept_and_sign_quote`), firmar acuerdo (`public_sign_agreement`), crear trabajo (`create_job`) y auto-jobs (`_ensure_job_for_invoice`, `_ensure_job_for_signed_quote`).
+- **Cambio manual**: endpoint `PATCH /api/clients/{id}/stage` {stage}. En `ClientDetail` hay un badge clickeable (verde Cliente / ámbar Prospecto) que alterna el stage. `create_client` guarda `stage:"prospect"`.
+- **Leads de web/tarjeta**: se crean sin `stage` → cuentan como Prospecto por defecto (correcto).
+- **Backfill 1 vez** (ejecutado sobre todos los users): 40 contactos → 12 marcados `client` (tenían invoice/job/quote aprobada/acuerdo firmado), 28 `prospect`.
+- **Frontend `Clients.js`**: pestañas **All / Prospects / Clients** con contadores (i18n `clients.tabAll/tabProspects/tabClients`), filtro por stage, y badge por tarjeta (`clients.badgeClient/badgeProspect`). `ClientDetail.js`: badge + toggle manual (`clients.markClient/markProspect`, `stageUpdated`).
+- **Verificado**: curl → nuevo cliente=prospect; PATCH→client; crear invoice a un prospect lo promueve a client. Screenshot EN: pestañas All(22)/Prospects(17)/Clients(5), badges correctos, filtro OK.
+- Build `main.3ec4c6aa.js` (+ oxlint-disable en chunks vendor) y `git add -f frontend/build`. ⚠️ DESPLIEGUE: **backend + frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 🌐 Jun 2026 — Pantallas del contratista 100% bilingües (ES/EN) [COMPLETO; verificado screenshot en modo EN, SIN testing_agent]
 - **Problema**: varias pantallas tenían texto en español "quemado" (hardcoded, fuera de i18n) que no cambiaba en modo inglés. El peor: abrir un cliente (`ClientDetail`).
 - **Alcance acordado (ask_human)**: todo lo que usa el contratista bilingüe; **Admin y demo/landing se dejan en español** a propósito.
