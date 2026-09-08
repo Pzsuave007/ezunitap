@@ -425,7 +425,10 @@
     "upsellMarketing": "Estudio de Marketing",
     "upsellMarketingDesc": "Posts y reels con IA para tus redes",
     "addModule": "Agregar",
-    "gbpConnectError": "No se pudo iniciar la conexión con Google."
+    "gbpConnectError": "No se pudo iniciar la conexión con Google.",
+    "tabMain": "Facturación y Trabajos",
+    "tabCard": "Mi Tarjeta",
+    "tabMarketing": "Marketing"
   },
   "clients": {
     "title": "Clientes",

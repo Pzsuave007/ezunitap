@@ -458,6 +458,17 @@ export default function Dashboard() {
 
   const missing = ["business", "card", "marketing"].filter((f) => !hasFeature(f));
 
+  // Tabs: only show for the modules the user owns. "main" = Invoicing & Jobs.
+  const tabs = [
+    hasBusiness && { k: "main", label: t("dashboard.tabMain"), icon: Receipt },
+    hasCard && { k: "card", label: t("dashboard.tabCard"), icon: IdCard },
+    hasMarketing && { k: "marketing", label: t("dashboard.tabMarketing"), icon: Megaphone },
+  ].filter(Boolean);
+  const [activeTab, setActiveTab] = useState(null);
+  const currentTab = activeTab && tabs.some((tb) => tb.k === activeTab)
+    ? activeTab
+    : (tabs[0]?.k || null);
+
   return (
     <div className="space-y-6 pb-6">
       <WelcomeModal />
@@ -482,16 +493,45 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Pagos pendientes — lo primero que ves (solo Negocio) */}
-      {hasBusiness && <PendingHero navigate={navigate} stats={stats} />}
+      {/* Section tabs — navigate between Invoicing/Jobs, Card and Marketing */}
+      {tabs.length > 1 && (
+        <div className="flex gap-1.5 p-1 bg-slate-100 rounded-2xl overflow-x-auto scrollbar-hide" data-testid="dashboard-tabs">
+          {tabs.map((tb) => (
+            <button
+              key={tb.k}
+              data-testid={`dashboard-tab-${tb.k}`}
+              onClick={() => setActiveTab(tb.k)}
+              className={`flex-1 min-w-[7rem] h-11 rounded-xl text-sm font-semibold transition-all tap flex items-center justify-center gap-1.5 ${
+                currentTab === tb.k ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <tb.icon className="w-4 h-4" strokeWidth={2.4} /> {tb.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Por hacer — pendientes del día (disponible para todos) */}
-      <TasksPanel />
+      {/* MAIN tab: Invoicing & Jobs */}
+      {currentTab === "main" && hasBusiness && (
+        <>
+          <PendingHero navigate={navigate} stats={stats} />
+          <TasksPanel />
+          <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />
+        </>
+      )}
 
-      {/* Module blocks — order: Negocio → Presencia → Marketing */}
-      {hasBusiness && <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />}
-      {hasCard && <CardBlock navigate={navigate} user={user} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />}
-      {hasMarketing && <MarketingBlock navigate={navigate} mkt={mkt} posts={posts} />}
+      {/* CARD tab: Digital Smart Card */}
+      {currentTab === "card" && hasCard && (
+        <CardBlock navigate={navigate} user={user} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />
+      )}
+
+      {/* MARKETING tab: Marketing Studio */}
+      {currentTab === "marketing" && hasMarketing && (
+        <MarketingBlock navigate={navigate} mkt={mkt} posts={posts} />
+      )}
+
+      {/* No paid modules at all — still show tasks so the page isn't empty */}
+      {tabs.length === 0 && <TasksPanel />}
 
       {/* Onboarding checklist (auto-hides at 100%) */}
       <SetupChecklist />

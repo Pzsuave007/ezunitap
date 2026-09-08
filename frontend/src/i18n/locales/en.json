@@ -424,7 +424,10 @@
     "upsellMarketing": "Marketing Studio",
     "upsellMarketingDesc": "AI posts and reels for your social media",
     "addModule": "Add",
-    "gbpConnectError": "Could not start the connection with Google."
+    "gbpConnectError": "Could not start the connection with Google.",
+    "tabMain": "Invoicing & Jobs",
+    "tabCard": "My Card",
+    "tabMarketing": "Marketing"
   },
   "clients": {
     "title": "Clients",

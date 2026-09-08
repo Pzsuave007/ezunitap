@@ -1,3 +1,14 @@
+## 🏠 Jun 2026 — Home (Dashboard) reorganizada en pestañas [COMPLETO; verificado screenshot EN, SIN testing_agent]
+- **Petición**: la home salía todo en una sola página larguísima. Dividir en pestañas: principal = Facturación/Trabajos, otra = Tarjeta, otra = Marketing.
+- **Solución** (`pages/Dashboard.js`): barra de pestañas (estilo segmented, con íconos) que solo muestra los módulos que el usuario tiene (feature-gated). Estado `activeTab` con fallback a la primera disponible.
+  - Pestaña **main** (`dashboard.tabMain` = "Facturación y Trabajos" / "Invoicing & Jobs"): PendingHero + TasksPanel + BusinessBlock.
+  - Pestaña **card** (`dashboard.tabCard` = "Mi Tarjeta" / "My Card"): CardBlock.
+  - Pestaña **marketing** (`dashboard.tabMarketing` = "Marketing"): MarketingBlock.
+  - La barra solo aparece si hay >1 módulo. `SetupChecklist` y `UpsellBlock` quedan siempre visibles debajo (se auto-ocultan). Si no hay módulos pagos, muestra TasksPanel.
+- **Verificado**: screenshot EN — barra Invoicing & Jobs | My Card | Marketing; cada pestaña muestra solo su contenido y la página quedó corta/navegable.
+- Build `main.d6f3b35b.js` (+ oxlint-disable en chunks vendor) y `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 👥 Jun 2026 — Prospectos vs Clientes en la sección de Clientes [COMPLETO; verificado curl(3 flujos)+screenshot EN, SIN testing_agent]
 - **Petición**: separar en la lista los contactos que son "prospectos" (por llamar / follow-up) de los "clientes" activos (con proyecto en curso). Antes todos salían iguales.
 - **Modelo**: campo `stage` en `clients`: `"prospect"` (default) | `"client"`. NO se agregó a `ClientIn` (para que editar un cliente no lo resetee); ausencia de `stage` = prospect.
