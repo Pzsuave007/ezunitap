@@ -1,3 +1,11 @@
+## 🧰 Jun 2026 — Lista de Trabajos Activos en la Home (pestaña principal) [COMPLETO; verificado screenshot EN (6 jobs reales), SIN testing_agent por instrucción del usuario]
+- **Petición**: en la home solo salía el contador de trabajos y el To-do, pero no la LISTA de trabajos activos para saber qué hay que trabajar.
+- **Solución** (`pages/Dashboard.js` → `BusinessBlock`): nueva sección "Active jobs / Trabajos activos" justo después del grid de stats, en la pestaña **main**. Muestra hasta 6 jobs no completados con título, nombre del cliente, fecha agendada (si tiene) y `StatusBadge` (kind="job"). Enlace "View all" → `/trabajos`. Empty state con CTA "Nuevo trabajo".
+- **Datos**: el fetch de negocio ahora también trae `/jobs` y `/clients` (Promise.all). El endpoint `/jobs` ya oculta "bare leads". Filtro front: `status !== "completed"`, slice(0,6). i18n `dashboard.activeJobsTitle/noActiveJobs/newJobBtn/jobClientFallback`.
+- **Verificado**: screenshot EN — se ven 6 trabajos activos con título/cliente/fecha/estado (Scheduled, New Lead, Approved) y "View all". ⚠️ NO se usó testing_agent porque el usuario lo prohibió explícitamente y en esta sesión confirmó verificar con screenshots/curl.
+- Build `main.0818e559.js` (+ oxlint-disable en chunks vendor) y `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 🏠 Jun 2026 — Home (Dashboard) reorganizada en pestañas [COMPLETO; verificado screenshot EN, SIN testing_agent]
 - **Petición**: la home salía todo en una sola página larguísima. Dividir en pestañas: principal = Facturación/Trabajos, otra = Tarjeta, otra = Marketing.
 - **Solución** (`pages/Dashboard.js`): barra de pestañas (estilo segmented, con íconos) que solo muestra los módulos que el usuario tiene (feature-gated). Estado `activeTab` con fallback a la primera disponible.

@@ -427,7 +427,11 @@
     "gbpConnectError": "Could not start the connection with Google.",
     "tabMain": "Invoicing & Jobs",
     "tabCard": "My Card",
-    "tabMarketing": "Marketing"
+    "tabMarketing": "Marketing",
+    "activeJobsTitle": "Active jobs",
+    "noActiveJobs": "You have no active jobs right now.",
+    "newJobBtn": "New job",
+    "jobClientFallback": "Client"
   },
   "clients": {
     "title": "Clients",

@@ -13,6 +13,7 @@ import {
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
 import TasksPanel from "@/components/TasksPanel";
+import StatusBadge from "@/components/StatusBadge";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
 import { toast } from "sonner";
@@ -103,8 +104,18 @@ function PendingHero({ navigate, stats }) {
 }
 
 // ---- Business module block ----
-function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
+function BusinessBlock({ navigate, stats, recentQuotes, reminders, jobs = [], clients = [] }) {
   const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language?.startsWith("es") ? "es-ES" : "en-US";
+  const activeJobs = (jobs || []).filter((j) => j.status !== "completed").slice(0, 6);
+  const clientName = (id) => (clients.find((c) => c.id === id)?.name) || t("dashboard.jobClientFallback");
+  const fmtJobDate = (j) => {
+    if (!j.scheduled_date) return null;
+    try {
+      const d = new Date(j.scheduled_date + "T00:00:00");
+      return d.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" });
+    } catch { return null; }
+  };
   return (
     <>
       {/* Guided ordered flow */}
@@ -126,6 +137,40 @@ function BusinessBlock({ navigate, stats, recentQuotes, reminders }) {
         <StatChip testid="stat-quotes" icon={FileText} label={t("dashboard.statQuotes")} value={stats.quotes_sent} chip="bg-purple-50 text-purple-600 border border-purple-100" onClick={() => navigate("/quotes")} />
         <StatChip testid="stat-invoices" icon={Receipt} label={t("dashboard.statInvoices")} value={stats.invoices_pending} chip="bg-amber-50 text-amber-600 border border-amber-100" onClick={() => navigate("/invoices")} />
         <StatChip testid="stat-jobs" icon={Briefcase} label={t("dashboard.statJobs")} value={stats.active_jobs} chip="bg-emerald-50 text-emerald-600 border border-emerald-100" onClick={() => navigate("/trabajos")} />
+      </div>
+
+      {/* Active jobs — what needs to be worked on */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
+          <h2 className="font-heading text-base font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-emerald-600" /> {t("dashboard.activeJobsTitle")}
+          </h2>
+          <button onClick={() => navigate("/trabajos")} className="text-sm text-emerald-700 font-semibold tap" data-testid="jobs-view-all">{t("common.viewAll")}</button>
+        </div>
+        {activeJobs.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <Briefcase className="w-9 h-9 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-500 text-sm mb-4">{t("dashboard.noActiveJobs")}</p>
+            <button data-testid="empty-create-job" onClick={() => navigate("/trabajos/nuevo")}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 h-11 transition-colors">
+              <Plus className="w-4 h-4" /> {t("dashboard.newJobBtn")}
+            </button>
+          </div>
+        ) : (
+          activeJobs.map((j) => (
+            <button key={j.id} onClick={() => navigate("/trabajos")} data-testid={`dashboard-job-${j.id}`}
+              className="tap w-full text-left px-5 py-4 border-b border-slate-100 last:border-0 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-slate-900 truncate">{j.title}</div>
+                <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                  <span className="truncate">{clientName(j.client_id)}</span>
+                  {fmtJobDate(j) && <span className="text-slate-400">· {fmtJobDate(j)}</span>}
+                </div>
+              </div>
+              <StatusBadge kind="job" status={j.status} />
+            </button>
+          ))
+        )}
       </div>
 
       {/* Recent quotes */}
@@ -395,6 +440,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ total_clients: 0, quotes_sent: 0, invoices_pending: 0, active_jobs: 0, pending_amount: 0 });
   const [recentQuotes, setRecentQuotes] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [jobClients, setJobClients] = useState([]);
   const [cardStats, setCardStats] = useState(null);
   const [card, setCard] = useState(null);
   const [mkt, setMkt] = useState({ posts: 0, reels: 0 });
@@ -419,8 +466,12 @@ export default function Dashboard() {
     if (hasBusiness) {
       (async () => {
         try {
-          const [s, q, r] = await Promise.all([api.get("/dashboard/stats"), api.get("/quotes"), api.get("/reminders")]);
+          const [s, q, r, j, c] = await Promise.all([
+            api.get("/dashboard/stats"), api.get("/quotes"), api.get("/reminders"),
+            api.get("/jobs"), api.get("/clients"),
+          ]);
           setStats(s.data); setRecentQuotes(q.data.slice(0, 4)); setReminders(r.data.slice(0, 4));
+          setJobs(j.data || []); setJobClients(c.data || []);
         } catch (e) { console.error(e); }
       })();
     }
@@ -516,7 +567,7 @@ export default function Dashboard() {
         <>
           <PendingHero navigate={navigate} stats={stats} />
           <TasksPanel />
-          <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} />
+          <BusinessBlock navigate={navigate} stats={stats} recentQuotes={recentQuotes} reminders={reminders} jobs={jobs} clients={jobClients} />
         </>
       )}
 
