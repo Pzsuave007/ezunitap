@@ -1,3 +1,14 @@
+## 🏠 Jun 2026 — Reorden de la pestaña principal (Home) [COMPLETO; verificado screenshot EN, SIN testing_agent por instrucción]
+- **Petición**: priorizar Trabajos en la home. Mover "Active jobs" debajo de "Pending payments" y arriba del To-do; quitar "Recent quotes"; y poner los 3 botones de "Start a job" en horizontal (no lista vertical) para no desperdiciar espacio.
+- **Cambios** (`pages/Dashboard.js`):
+  - Extraje la lista de trabajos a un componente propio `ActiveJobsCard` y lo renderizo en la pestaña main ENTRE `PendingHero` y `TasksPanel`. Orden verificado: Pending payments → Active jobs → To-do.
+  - Eliminé por completo la sección "Recent quotes" de `BusinessBlock` (el estado `recentQuotes` sigue existiendo pero ya no se muestra).
+  - "Start a job": nuevo componente compacto `FlowStepMini` (ícono + badge de número + título) en `grid grid-cols-3` (3 en horizontal) en vez del listado vertical `FlowAction`.
+  - `BusinessBlock` simplificado a props `{ navigate, stats, reminders }`.
+- **Verificado**: screenshot EN — orden correcto, "Recent quotes" ausente, "Start a job" en 3 columnas (Add client / Create quote with AI / Create invoice). SIN testing_agent (prohibido por el usuario).
+- Build `main.467a77f6.js` (+ oxlint-disable en chunks vendor) y `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 🧰 Jun 2026 — Lista de Trabajos Activos en la Home (pestaña principal) [COMPLETO; verificado screenshot EN (6 jobs reales), SIN testing_agent por instrucción del usuario]
 - **Petición**: en la home solo salía el contador de trabajos y el To-do, pero no la LISTA de trabajos activos para saber qué hay que trabajar.
 - **Solución** (`pages/Dashboard.js` → `BusinessBlock`): nueva sección "Active jobs / Trabajos activos" justo después del grid de stats, en la pestaña **main**. Muestra hasta 6 jobs no completados con título, nombre del cliente, fecha agendada (si tiene) y `StatusBadge` (kind="job"). Enlace "View all" → `/trabajos`. Empty state con CTA "Nuevo trabajo".
