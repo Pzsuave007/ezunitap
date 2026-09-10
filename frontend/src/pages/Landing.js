@@ -61,7 +61,7 @@ export default function Landing() {
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <a href="#como-funciona" className="hover:text-slate-900 tap">{t("landing.navHow")}</a>
-            <Link to="/demo-flujo" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">{t("landing.navDemo")}</Link>
+            <Link to="/probar" data-testid="nav-demo" className="text-emerald-700 font-bold hover:text-emerald-800 tap">{t("landing.navDemo")}</Link>
             <a href="#tarjeta" className="hover:text-slate-900 tap">{t("landing.navNfc")}</a>
             <a href="#productos" className="hover:text-slate-900 tap">{t("landing.navTools")}</a>
             {!isEn && <a href="#espanol" className="hover:text-slate-900 tap">{t("landing.navSpanish")}</a>}
@@ -104,18 +104,11 @@ export default function Landing() {
 
             <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 max-w-2xl">
               <Link
-                to="/demo-flujo"
+                to="/probar"
                 data-testid="hero-demo"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-gradient-to-br from-blue-900 to-emerald-600 text-white font-bold text-base shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 transition-all tap"
               >
                 <Play className="w-4 h-4" fill="currentColor" /> {t("landing.heroTryLive")}
-              </Link>
-              <Link
-                to="/probar"
-                data-testid="hero-sandbox"
-                className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-slate-900 text-white font-bold text-base hover:bg-black hover:-translate-y-0.5 transition-all tap"
-              >
-                <Sparkles className="w-4 h-4" /> {isEn ? "Try the full system" : "Probar el sistema completo"}
               </Link>
               <Link
                 to="/register"
@@ -255,7 +248,7 @@ export default function Landing() {
                 {t("landing.flywheelSubtitle")}
               </p>
               <Link
-                to="/demo-flujo"
+                to="/probar"
                 data-testid="flow-demo"
                 className="mt-7 inline-flex items-center gap-2 h-14 px-7 rounded-2xl bg-white text-slate-900 font-bold text-base hover:bg-emerald-300 transition-colors tap"
               >
