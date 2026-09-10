@@ -29,6 +29,27 @@ fi
 
 as_user() { su -s /bin/bash -l "$CPANEL_USER" -c "$1"; }
 
+# --- Force-free the backend port as ROOT before (re)deploying ---------------
+# Root can kill ANY process regardless of owner, so this guarantees the OLD
+# stale backend dies and the freshly-rsynced code always takes the port.
+# (Older restart scripts used a broken pkill pattern that left the old process
+#  alive → 404s on new routes. This makes the deploy self-healing.)
+free_port() {
+    echo ">>> Freeing port $PORT (root) before restart..."
+    pkill -9 -f "uvicorn server:app" 2>/dev/null || true
+    fuser -k "${PORT}/tcp" 2>/dev/null || true
+    PIDS=$(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+    [ -n "$PIDS" ] && kill -9 $PIDS 2>/dev/null || true
+    sleep 2
+    if ss -ltnp 2>/dev/null | grep -q ":${PORT} "; then
+        echo "  ⚠️  something is STILL on :$PORT — retrying hard kill"
+        kill -9 $(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u) 2>/dev/null || true
+        sleep 2
+    fi
+    ss -ltnp 2>/dev/null | grep -q ":${PORT} " && echo "  ⚠️  port $PORT not free yet" || echo "  ✅ port $PORT is free"
+}
+free_port
+
 # --- Uploads dir: the backend (runs as $CPANEL_USER) stores photos here. Some
 #     subfolders may have been created by root in the past → PermissionError on
 #     write. Force ownership + writable perms every deploy so stock/uploaded
