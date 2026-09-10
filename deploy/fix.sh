@@ -133,9 +133,30 @@ else
     echo "  ⚠️  frontend/build missing — skipping frontend update"
 fi
 
-# 5. Restart backend
-pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
+# 4b. (Re)generate the personal restart.sh so it always has the LATEST robust
+#     kill logic (older copies used a broken pkill pattern that left the old
+#     backend alive → stale code / 404 on new routes).
+cat > "/home/${CPANEL_USER}/restart.sh" <<EOF
+#!/bin/bash
+# Robustly free port ${PORT} then start the backend from the deployed code.
+pkill -f "uvicorn server:app" 2>/dev/null || true
 fuser -k "${PORT}/tcp" 2>/dev/null || true
+PIDS=\$(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+[ -n "\$PIDS" ] && kill -9 \$PIDS 2>/dev/null || true
+sleep 2
+cd ${PROD}
+nohup ${PROD}/venv/bin/uvicorn server:app --host 127.0.0.1 --port ${PORT} --workers 1 > ${PROD}/backend.log 2>&1 &
+sleep 3
+curl -sf http://127.0.0.1:${PORT}/api/ >/dev/null && echo "Backend OK" || echo "Backend FAIL — see ${PROD}/backend.log"
+EOF
+chmod +x "/home/${CPANEL_USER}/restart.sh"
+echo "  ✅ restart.sh regenerated with robust port-${PORT} kill logic"
+
+# 5. Restart backend — robustly free the port first so the NEW code takes over.
+pkill -f "uvicorn server:app" 2>/dev/null || true
+fuser -k "${PORT}/tcp" 2>/dev/null || true
+PIDS=$(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+[ -n "$PIDS" ] && kill -9 $PIDS 2>/dev/null || true
 sleep 2
 cd "$PROD"
 nohup "$PROD/venv/bin/uvicorn" server:app \

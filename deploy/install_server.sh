@@ -63,8 +63,10 @@ find "$PH" -type d -exec chmod 755 {} \;
 # 4. Start backend
 # -----------------------------------------------------------------------------
 echo ">>> Start backend on :$PORT"
-pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
+pkill -f "uvicorn server:app" 2>/dev/null || true
 fuser -k "${PORT}/tcp" 2>/dev/null || true
+PIDS=$(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+[ -n "$PIDS" ] && kill -9 $PIDS 2>/dev/null || true
 sleep 2
 
 cd "$PROD"
@@ -88,13 +90,16 @@ fi
 # -----------------------------------------------------------------------------
 cat > "/home/${CPANEL_USER}/restart.sh" <<EOF
 #!/bin/bash
-pkill -f "uvicorn.*:${PORT}" 2>/dev/null || true
+# Robustly free port ${PORT} then start the backend from the deployed code.
+pkill -f "uvicorn server:app" 2>/dev/null || true
 fuser -k "${PORT}/tcp" 2>/dev/null || true
+PIDS=\$(ss -ltnp "sport = :${PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+[ -n "\$PIDS" ] && kill -9 \$PIDS 2>/dev/null || true
 sleep 2
 cd ${PROD}
 nohup ${PROD}/venv/bin/uvicorn server:app --host 127.0.0.1 --port ${PORT} --workers 1 > ${PROD}/backend.log 2>&1 &
-sleep 2
-curl -sf http://127.0.0.1:${PORT}/api/ && echo "Backend OK" || echo "Backend FAIL"
+sleep 3
+curl -sf http://127.0.0.1:${PORT}/api/ >/dev/null && echo "Backend OK" || echo "Backend FAIL — see ${PROD}/backend.log"
 EOF
 chmod +x "/home/${CPANEL_USER}/restart.sh"
 
