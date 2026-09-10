@@ -1,3 +1,15 @@
+## 🎪 Jun 2026 — Demo Sandbox por visitante + Flyer imprimible del evento [COMPLETO; verificado curl+screenshot flujo /probar, SIN testing_agent por instrucción]
+- **Contexto**: el usuario tiene una mesa en un evento para promover UniTech con la promo "$75/mes de por vida". Quiere (a) un flyer imprimible y (b) que el QR lleve a un demo en vivo.
+- **Demo Sandbox** (aislado por visitante, se auto-borra a 60 min):
+  - Backend `server.py`: `POST /api/demo/start` (renombrada `demo_start_sandbox` porque ya existía un demo guiado público `/public/demo/*` distinto). Crea usuario temporal `demo+<id>@ezunitech.com` con `manual_plan:"bundle"` (desbloquea TODO), `is_demo:True`, `demo_expires_at=now+3600`, onboarding completo. Siembra: 3 clientes (1 client + 2 prospects), 1 quote (Q-1001 sent), 1 invoice (INV-2001 sent, $9,500), 1 job (scheduled mañana), y una tarjeta digital lista (`_ensure_card` + update). Devuelve `{token, user, is_demo}` para auto-login.
+  - Helper `_cleanup_expired_demos()` corre al inicio de cada `/demo/start`: borra usuarios demo expirados y sus datos en ~15 colecciones (`_DEMO_COLLECTIONS`). Constante `DEMO_TTL_SECONDS=3600`.
+  - Frontend: `pages/DemoStart.js` (ruta pública `/probar` en App.js) → llama `/demo/start`, guarda token en `sf_token`, `window.location.replace("/")` para entrar al dashboard. Botón "Probar el sistema completo" agregado en el hero de `Landing.js` (data-testid `hero-sandbox`).
+  - **Verificado**: curl `/demo/start` → features [business,card,marketing], 3 clientes, stats correctas; `/auth/me` con token demo = 200. Screenshot: `/probar` entra al dashboard como "Alex (Demo)/Demo Remodeling & Roofing" con todos los módulos.
+- **Flyer imprimible** (`frontend/public/promo.html`, se sirve en `/promo.html`): one-pager carta en español — hero + "por qué", los 5 esenciales, 3 pasos, promo "$75/mes de por vida", **QR autocontenido (base64) apuntando a https://ezunitech.com/probar**, contacto (Uni2 Marketing Agency, Paul Zacapantzi, ezunitech.com, pzsuave007@gmail.com). Compactado para caber en **1 sola hoja** (verificado generando PDF Letter real = 1 página). Falta: teléfono/WhatsApp (usuario no lo dio aún).
+- Build `main.7c561cef.js` (+ oxlint-disable en chunks vendor). ⚠️ DESPLIEGUE: **backend + frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`. El QR del flyer necesita que producción esté desplegada para funcionar.
+- ⚠️ RECORDATORIO PENDIENTE (server prod): instalar watchdog (`deploy/setup-watchdog.sh`) para el problema recurrente de backend caído (503).
+
+
 ## 🏠 Jun 2026 — Reorden de la pestaña principal (Home) [COMPLETO; verificado screenshot EN, SIN testing_agent por instrucción]
 - **Petición**: priorizar Trabajos en la home. Mover "Active jobs" debajo de "Pending payments" y arriba del To-do; quitar "Recent quotes"; y poner los 3 botones de "Start a job" en horizontal (no lista vertical) para no desperdiciar espacio.
 - **Cambios** (`pages/Dashboard.js`):

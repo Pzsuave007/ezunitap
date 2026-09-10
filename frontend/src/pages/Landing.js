@@ -111,6 +111,13 @@ export default function Landing() {
                 <Play className="w-4 h-4" fill="currentColor" /> {t("landing.heroTryLive")}
               </Link>
               <Link
+                to="/probar"
+                data-testid="hero-sandbox"
+                className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl bg-slate-900 text-white font-bold text-base hover:bg-black hover:-translate-y-0.5 transition-all tap"
+              >
+                <Sparkles className="w-4 h-4" /> {isEn ? "Try the full system" : "Probar el sistema completo"}
+              </Link>
+              <Link
                 to="/register"
                 data-testid="hero-register"
                 className="inline-flex items-center justify-center gap-2 h-14 px-7 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold text-base hover:bg-emerald-100 transition-all tap"

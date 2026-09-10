@@ -31,6 +31,7 @@ import EmbedSettings from "@/pages/EmbedSettings";
 import SocialStudio from "@/pages/SocialStudio";
 import MarketingStart from "@/pages/MarketingStart";
 import Landing from "@/pages/Landing";
+import DemoStart from "@/pages/DemoStart";
 import AdminLeads from "@/pages/AdminLeads";
 import Agreements from "@/pages/Agreements";
 import AgreementBuilder from "@/pages/AgreementBuilder";
@@ -135,6 +136,7 @@ function App() {
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/demo" element={<DemoFlow />} />
+            <Route path="/probar" element={<DemoStart />} />
             <Route path="/demo-all" element={<DemoAll />} />
             <Route path="/demo-flujo" element={<DemoFlujo />} />
             <Route path="/p/agreement/:id" element={<PublicAgreement />} />

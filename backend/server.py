@@ -626,6 +626,150 @@ async def update_me(payload: BusinessUpdate, user_id: str = Depends(get_current_
 
 
 # ============================================================================
+# DEMO SANDBOX — one isolated, pre-seeded temp account per visitor.
+# Auto-expires after 60 min; expired demos are purged on each new /demo/start.
+# ============================================================================
+DEMO_TTL_SECONDS = 60 * 60
+_DEMO_COLLECTIONS = [
+    "clients", "quotes", "invoices", "jobs", "cards", "agreements",
+    "photos", "notifications", "reminders", "messages", "client_notes",
+    "problem_pages", "appointments", "websites", "social_posts",
+]
+
+
+async def _cleanup_expired_demos():
+    """Delete demo accounts (and all their data) whose 60-min window has passed."""
+    import time as _t
+    now = int(_t.time())
+    expired = db.users.find({"is_demo": True, "demo_expires_at": {"$lt": now}}, {"id": 1})
+    ids = [u["id"] async for u in expired]
+    if not ids:
+        return
+    for coll in _DEMO_COLLECTIONS:
+        try:
+            await db[coll].delete_many({"user_id": {"$in": ids}})
+        except Exception as e:
+            logger.error(f"demo cleanup {coll}: {e!r}")
+    await db.users.delete_many({"id": {"$in": ids}})
+    logger.info(f"demo cleanup: removed {len(ids)} expired demo account(s)")
+
+
+@api_router.post("/demo/start")
+async def demo_start_sandbox():
+    """Provision a fresh, isolated, pre-seeded demo account and auto-login.
+    Everything the visitor does lives only in this account and self-destructs."""
+    import time as _t
+    await _cleanup_expired_demos()
+
+    now = int(_t.time())
+    uid = _new_id()
+    email = f"demo+{uid[:6]}@ezunitech.com"
+    user = {
+        "id": uid,
+        "email": email,
+        "password_hash": hash_password(_new_id()),  # random, unusable
+        "business_name": "Demo Remodeling & Roofing",
+        "owner_name": "Alex (Demo)",
+        "phone": "(555) 010-2030",
+        "business_address": "1200 Main St, Houston, TX",
+        "business_email": email,
+        "business_type": "General Contractor",
+        "created_at": _now_iso(),
+        "plan_type": "bundle",
+        "manual_plan": "bundle",          # unlocks ALL modules
+        "subscription_status": "active",
+        "is_demo": True,
+        "demo_expires_at": now + DEMO_TTL_SECONDS,
+        "onboarding_state": {
+            "completed": True, "dismissed": True, "celebrated": True, "welcome_seen": True,
+        },
+        "hide_owner_name": False,
+    }
+    await db.users.insert_one(user)
+
+    def iso_days(n):
+        return (datetime.now(timezone.utc) + timedelta(days=n)).date().isoformat()
+
+    # ---- Sample clients (mix of client + prospects) ----
+    c1, c2, c3 = _new_id(), _new_id(), _new_id()
+    clients = [
+        {"id": c1, "user_id": uid, "name": "Maria Gonzalez", "company": "", "phone": "(555) 111-2222",
+         "email": "maria@example.com", "address": "45 Oak Ave, Houston, TX", "job_type": "Kitchen remodel",
+         "stage": "client", "created_at": _now_iso()},
+        {"id": c2, "user_id": uid, "name": "James Carter", "company": "Carter Rentals LLC", "phone": "(555) 333-4444",
+         "email": "james@carterrentals.com", "address": "88 Pine Rd, Katy, TX", "job_type": "Roof replacement",
+         "stage": "prospect", "created_at": _now_iso()},
+        {"id": c3, "user_id": uid, "name": "Linda Tran", "company": "", "phone": "(555) 555-6677",
+         "email": "linda@example.com", "address": "12 Elm St, Sugar Land, TX", "job_type": "Bathroom remodel",
+         "stage": "prospect", "created_at": _now_iso()},
+    ]
+    await db.clients.insert_many(clients)
+
+    # ---- Sample quote (sent) ----
+    q_items = [
+        {"description": "Demo & haul away old kitchen", "quantity": 1, "unit": "job", "unit_price": 1800, "amount": 1800},
+        {"description": "Cabinets + countertop install", "quantity": 1, "unit": "job", "unit_price": 6200, "amount": 6200},
+        {"description": "Tile backsplash", "quantity": 60, "unit": "sqft", "unit_price": 18, "amount": 1080},
+    ]
+    q_sub = sum(i["amount"] for i in q_items)
+    quote = {
+        "id": _new_id(), "user_id": uid, "number": "Q-1001", "client_id": c1,
+        "job_title": "Full kitchen remodel", "description": "Complete kitchen renovation.",
+        "scope_of_work": ["Demolition", "Cabinet & countertop install", "Backsplash & finish"],
+        "line_items": q_items, "subtotal": q_sub, "tax_rate": 0, "tax_amount": 0, "total": q_sub,
+        "deposit_amount": round(q_sub * 0.3, 2), "status": "sent",
+        "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.quotes.insert_one(quote)
+
+    # ---- Sample invoice (sent) ----
+    i_items = [
+        {"description": "Roof tear-off & replacement (30 sq)", "quantity": 1, "unit": "job", "unit_price": 9500, "amount": 9500},
+    ]
+    invoice = {
+        "id": _new_id(), "user_id": uid, "number": "INV-2001", "client_id": c2,
+        "job_title": "Roof replacement", "line_items": i_items, "subtotal": 9500,
+        "tax_rate": 0, "tax_amount": 0, "total": 9500, "amount_paid": 0,
+        "deposit_amount": 3000, "deposit_paid": False, "due_date": iso_days(7),
+        "status": "sent", "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.invoices.insert_one(invoice)
+
+    # ---- Sample job (scheduled tomorrow) ----
+    job = {
+        "id": _new_id(), "user_id": uid, "client_id": c1, "title": "Full kitchen remodel",
+        "status": "scheduled", "scheduled_date": iso_days(1), "start_time": "08:00", "end_time": "16:00",
+        "address": "45 Oak Ave, Houston, TX", "recurrence": "none", "recurrence_days": [],
+        "notes": "Bring tile samples.", "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.jobs.insert_one(job)
+
+    # ---- Ready-to-show digital card ----
+    card = await _ensure_card(uid)
+    await db.cards.update_one({"id": card["id"]}, {"$set": {
+        "person_name": "Alex (Demo)",
+        "contact_phone": "(555) 010-2030",
+        "contact_email": email,
+        "tagline": "Remodeling & roofing done right — free estimates",
+        "business_type": "General Contractor",
+        "service_area": "Greater Houston, TX",
+        "years_in_business": 8,
+        "is_licensed": True,
+        "is_insured": True,
+        "rating": 4.9,
+        "lets_connect_enabled": True,
+        "request_estimate_enabled": True,
+        "appt_enabled": True,
+        "services": [
+            {"name": "Kitchen remodels"}, {"name": "Bathroom remodels"},
+            {"name": "Roof replacement"}, {"name": "Additions"},
+        ],
+    }})
+
+    return {"token": create_token(uid), "user": await _user_doc(uid), "is_demo": True}
+
+
+# ============================================================================
 # DASHBOARD
 # ============================================================================
 @api_router.get("/dashboard/stats")
