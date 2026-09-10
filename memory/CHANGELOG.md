@@ -1,5 +1,16 @@
 # UniTech — Changelog
 
+## Jun 2026 — Owner-controlled Demo (template account cloning)
+- `/api/demo/start` now CLONES a curated **demo-template account** (`demo-template@ezunitech.com`) instead of hardcoded data, so the demo shows real photos + rich data the owner controls by simply logging into that account and editing it. Falls back to the old hardcoded seed if the template is missing.
+- New backend (`server.py`): `_seed_demo_template()` (idempotent startup seed — 6 contacts incl. 3 prospects, 3 quotes, 2 invoices incl. one deposit/partial, 2 service agreements, 4 jobs across statuses, reviews, fully-configured card w/ 4 services + licensed/insured/rating, and best-effort Pexels stock photos for cover/profile/gallery). `_clone_template_account()` deep-clones all collections, remaps cross-reference IDs, keeps photo IDs stable (shared files resolve), regenerates unique card/website/problem-page slugs, drops custom domains. Demo inherits template business identity.
+- `_DEMO_COLLECTIONS` extended (reviews/tasks/scope_drafts) so expiring demos purge cleanly.
+- Verified via API: clone yields 6 clients / 3 quotes / 2 invoices / 4 jobs / 2 agreements; card cover+profile+3 gallery photos all serve HTTP 200. Template login OK (bundle plan).
+- Creds in `test_credentials.md`.
+
+## Jun 2026 — Production deploy self-heals stale backend (demo 404 fix)
+- Root cause of prod 404 on `/api/demo/start`: `restart.sh`/`fix.sh` killed with `pkill -f "uvicorn.*:PORT"` which never matched the real `--port 8007` process, so the OLD backend kept serving stale code. Fixed kill logic across `deploy.sh` (root-level `free_port()` before restart), `fix.sh`, `install_server.sh`; `restart.sh` is now regenerated each deploy with robust `pkill -f "uvicorn server:app"` + `fuser -k` + `ss`/`kill -9` fallback.
+
+
 ## Jun 2026 — Problem pages surfaced on the main website (SEO / crawlability)
 - New shared **"Problems We Solve"** section (`ProblemsSection` in `ContractorSite.js`, rendered once via `ContactBlock`, all 10 templates, theme-aware) with real `<a href>` cards linking to each published problem page — crawlers follow home → problem pages. Payload `problem_pages` now includes the `headline`. Plus existing footer links + sitemap = full internal-link + indexing coverage. Verified via preview screenshot (Luxe).
 

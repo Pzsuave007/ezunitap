@@ -634,6 +634,7 @@ _DEMO_COLLECTIONS = [
     "clients", "quotes", "invoices", "jobs", "cards", "agreements",
     "photos", "notifications", "reminders", "messages", "client_notes",
     "problem_pages", "appointments", "websites", "social_posts",
+    "reviews", "tasks", "scope_drafts",
 ]
 
 
@@ -654,10 +655,166 @@ async def _cleanup_expired_demos():
     logger.info(f"demo cleanup: removed {len(ids)} expired demo account(s)")
 
 
+# --- Demo TEMPLATE account ---------------------------------------------------
+# A real, editable account the owner curates (photos, services, clients, jobs,
+# quotes, invoices, agreements, website). Every /demo/start CLONES a fresh copy
+# of it, so the owner "manages the demo" simply by logging into this account and
+# editing it like a normal user.
+DEMO_TEMPLATE_EMAIL = (os.environ.get("DEMO_TEMPLATE_EMAIL") or "demo-template@ezunitech.com").strip().lower()
+DEMO_TEMPLATE_PASSWORD = (os.environ.get("DEMO_TEMPLATE_PASSWORD") or "DemoTemplate2026!").strip()
+
+# Collections cloned from the template into each demo account. (Notifications
+# are intentionally excluded — each demo gets its own.)
+_CLONE_COLLECTIONS = [
+    "clients", "quotes", "invoices", "jobs", "cards", "agreements",
+    "photos", "reminders", "messages", "client_notes", "problem_pages",
+    "appointments", "websites", "social_posts", "reviews", "tasks", "scope_drafts",
+]
+
+
+async def _clone_template_account(new_uid: str, email: str) -> bool:
+    """Deep-clone the curated demo-template account into a fresh demo account.
+    Returns True if a template existed and was cloned, else False (caller then
+    uses the hardcoded fallback seed).
+
+    Photo IDs are kept STABLE (not remapped) so the underlying image files —
+    shared with the template — still resolve. Public slugs (card/website/problem
+    pages) are made unique so concurrent demos never collide, and any custom
+    domain is dropped."""
+    tmpl = await db.users.find_one(
+        {"email": DEMO_TEMPLATE_EMAIL, "is_demo_template": True}, {"_id": 0}
+    )
+    if not tmpl:
+        return False
+    tmpl_uid = tmpl["id"]
+
+    # Pass 1: load docs + build an old->new id map for every collection EXCEPT
+    # photos (their ids stay stable so storage files keep resolving).
+    docs_by_coll: dict = {}
+    id_map: dict = {}
+    for coll in _CLONE_COLLECTIONS:
+        docs = await db[coll].find({"user_id": tmpl_uid}, {"_id": 0}).to_list(2000)
+        docs_by_coll[coll] = docs
+        if coll == "photos":
+            continue
+        for d in docs:
+            if d.get("id"):
+                id_map[d["id"]] = _new_id()
+
+    def _remap(value):
+        if isinstance(value, str):
+            return id_map.get(value, value)
+        if isinstance(value, list):
+            return [_remap(v) for v in value]
+        if isinstance(value, dict):
+            return {k: _remap(v) for k, v in value.items()}
+        return value
+
+    # Pass 2: remap cross-references, rebind to the new user, insert.
+    for coll in _CLONE_COLLECTIONS:
+        new_docs = []
+        for idx, d in enumerate(docs_by_coll[coll]):
+            nd = dict(d) if coll == "photos" else _remap(dict(d))
+            nd["user_id"] = new_uid
+            if coll == "cards":
+                nd["slug"] = f"demo-{new_uid[:8]}-{idx}"
+            elif coll in ("websites", "problem_pages") and nd.get("slug"):
+                nd["slug"] = f"{nd['slug']}-{new_uid[:6]}"
+            if coll == "websites":
+                nd["domain"] = None
+                nd["custom_domain"] = None
+                nd["domain_status"] = None
+            new_docs.append(nd)
+        if new_docs:
+            await db[coll].insert_many(new_docs)
+    logger.info(f"demo: cloned template into {new_uid}")
+    return True
+
+
+async def _seed_demo_fallback(uid: str, email: str):
+    """Hardcoded demo seed used only when the demo-template account is missing."""
+    def iso_days(n):
+        return (datetime.now(timezone.utc) + timedelta(days=n)).date().isoformat()
+
+    c1, c2, c3 = _new_id(), _new_id(), _new_id()
+    clients = [
+        {"id": c1, "user_id": uid, "name": "Maria Gonzalez", "company": "", "phone": "(555) 111-2222",
+         "email": "maria@example.com", "address": "45 Oak Ave, Houston, TX", "job_type": "Kitchen remodel",
+         "stage": "client", "created_at": _now_iso()},
+        {"id": c2, "user_id": uid, "name": "James Carter", "company": "Carter Rentals LLC", "phone": "(555) 333-4444",
+         "email": "james@carterrentals.com", "address": "88 Pine Rd, Katy, TX", "job_type": "Roof replacement",
+         "stage": "prospect", "created_at": _now_iso()},
+        {"id": c3, "user_id": uid, "name": "Linda Tran", "company": "", "phone": "(555) 555-6677",
+         "email": "linda@example.com", "address": "12 Elm St, Sugar Land, TX", "job_type": "Bathroom remodel",
+         "stage": "prospect", "created_at": _now_iso()},
+    ]
+    await db.clients.insert_many(clients)
+
+    q_items = [
+        {"description": "Demo & haul away old kitchen", "quantity": 1, "unit": "job", "unit_price": 1800, "amount": 1800},
+        {"description": "Cabinets + countertop install", "quantity": 1, "unit": "job", "unit_price": 6200, "amount": 6200},
+        {"description": "Tile backsplash", "quantity": 60, "unit": "sqft", "unit_price": 18, "amount": 1080},
+    ]
+    q_sub = sum(i["amount"] for i in q_items)
+    quote = {
+        "id": _new_id(), "user_id": uid, "number": "Q-1001", "client_id": c1,
+        "job_title": "Full kitchen remodel", "description": "Complete kitchen renovation.",
+        "scope_of_work": ["Demolition", "Cabinet & countertop install", "Backsplash & finish"],
+        "line_items": q_items, "subtotal": q_sub, "tax_rate": 0, "tax_amount": 0, "total": q_sub,
+        "deposit_amount": round(q_sub * 0.3, 2), "status": "sent",
+        "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.quotes.insert_one(quote)
+
+    i_items = [
+        {"description": "Roof tear-off & replacement (30 sq)", "quantity": 1, "unit": "job", "unit_price": 9500, "amount": 9500},
+    ]
+    invoice = {
+        "id": _new_id(), "user_id": uid, "number": "INV-2001", "client_id": c2,
+        "job_title": "Roof replacement", "line_items": i_items, "subtotal": 9500,
+        "tax_rate": 0, "tax_amount": 0, "total": 9500, "amount_paid": 0,
+        "deposit_amount": 3000, "deposit_paid": False, "due_date": iso_days(7),
+        "status": "sent", "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.invoices.insert_one(invoice)
+
+    job = {
+        "id": _new_id(), "user_id": uid, "client_id": c1, "title": "Full kitchen remodel",
+        "status": "scheduled", "scheduled_date": iso_days(1), "start_time": "08:00", "end_time": "16:00",
+        "address": "45 Oak Ave, Houston, TX", "recurrence": "none", "recurrence_days": [],
+        "notes": "Bring tile samples.", "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.jobs.insert_one(job)
+
+    card = await _ensure_card(uid)
+    await db.cards.update_one({"id": card["id"]}, {"$set": {
+        "person_name": "Alex (Demo)",
+        "contact_phone": "(555) 010-2030",
+        "contact_email": email,
+        "tagline": "Remodeling & roofing done right — free estimates",
+        "business_type": "General Contractor",
+        "service_area": "Greater Houston, TX",
+        "years_in_business": 8,
+        "is_licensed": True,
+        "is_insured": True,
+        "rating": 4.9,
+        "lets_connect_enabled": True,
+        "request_estimate_enabled": True,
+        "appt_enabled": True,
+        "services": [
+            {"name": "Kitchen remodels"}, {"name": "Bathroom remodels"},
+            {"name": "Roof replacement"}, {"name": "Additions"},
+        ],
+    }})
+
+
 @api_router.post("/demo/start")
 async def demo_start_sandbox():
     """Provision a fresh, isolated, pre-seeded demo account and auto-login.
-    Everything the visitor does lives only in this account and self-destructs."""
+    Clones the curated demo-template account when it exists (so the demo shows
+    real photos + data the owner controls); otherwise falls back to a hardcoded
+    seed. Everything the visitor does lives only in this account and
+    self-destructs after 60 minutes."""
     import time as _t
     await _cleanup_expired_demos()
 
@@ -685,86 +842,27 @@ async def demo_start_sandbox():
         },
         "hide_owner_name": False,
     }
+
+    # Inherit business identity from the template so the dashboard header matches
+    # the cloned card/website.
+    tmpl = await db.users.find_one(
+        {"email": DEMO_TEMPLATE_EMAIL, "is_demo_template": True}, {"_id": 0, "password_hash": 0}
+    )
+    if tmpl:
+        for f in ("business_name", "owner_name", "phone", "business_address",
+                  "business_type", "invoice_defaults", "agreements_enabled"):
+            if tmpl.get(f) not in (None, ""):
+                user[f] = tmpl[f]
+
     await db.users.insert_one(user)
 
-    def iso_days(n):
-        return (datetime.now(timezone.utc) + timedelta(days=n)).date().isoformat()
-
-    # ---- Sample clients (mix of client + prospects) ----
-    c1, c2, c3 = _new_id(), _new_id(), _new_id()
-    clients = [
-        {"id": c1, "user_id": uid, "name": "Maria Gonzalez", "company": "", "phone": "(555) 111-2222",
-         "email": "maria@example.com", "address": "45 Oak Ave, Houston, TX", "job_type": "Kitchen remodel",
-         "stage": "client", "created_at": _now_iso()},
-        {"id": c2, "user_id": uid, "name": "James Carter", "company": "Carter Rentals LLC", "phone": "(555) 333-4444",
-         "email": "james@carterrentals.com", "address": "88 Pine Rd, Katy, TX", "job_type": "Roof replacement",
-         "stage": "prospect", "created_at": _now_iso()},
-        {"id": c3, "user_id": uid, "name": "Linda Tran", "company": "", "phone": "(555) 555-6677",
-         "email": "linda@example.com", "address": "12 Elm St, Sugar Land, TX", "job_type": "Bathroom remodel",
-         "stage": "prospect", "created_at": _now_iso()},
-    ]
-    await db.clients.insert_many(clients)
-
-    # ---- Sample quote (sent) ----
-    q_items = [
-        {"description": "Demo & haul away old kitchen", "quantity": 1, "unit": "job", "unit_price": 1800, "amount": 1800},
-        {"description": "Cabinets + countertop install", "quantity": 1, "unit": "job", "unit_price": 6200, "amount": 6200},
-        {"description": "Tile backsplash", "quantity": 60, "unit": "sqft", "unit_price": 18, "amount": 1080},
-    ]
-    q_sub = sum(i["amount"] for i in q_items)
-    quote = {
-        "id": _new_id(), "user_id": uid, "number": "Q-1001", "client_id": c1,
-        "job_title": "Full kitchen remodel", "description": "Complete kitchen renovation.",
-        "scope_of_work": ["Demolition", "Cabinet & countertop install", "Backsplash & finish"],
-        "line_items": q_items, "subtotal": q_sub, "tax_rate": 0, "tax_amount": 0, "total": q_sub,
-        "deposit_amount": round(q_sub * 0.3, 2), "status": "sent",
-        "created_at": _now_iso(), "updated_at": _now_iso(),
-    }
-    await db.quotes.insert_one(quote)
-
-    # ---- Sample invoice (sent) ----
-    i_items = [
-        {"description": "Roof tear-off & replacement (30 sq)", "quantity": 1, "unit": "job", "unit_price": 9500, "amount": 9500},
-    ]
-    invoice = {
-        "id": _new_id(), "user_id": uid, "number": "INV-2001", "client_id": c2,
-        "job_title": "Roof replacement", "line_items": i_items, "subtotal": 9500,
-        "tax_rate": 0, "tax_amount": 0, "total": 9500, "amount_paid": 0,
-        "deposit_amount": 3000, "deposit_paid": False, "due_date": iso_days(7),
-        "status": "sent", "created_at": _now_iso(), "updated_at": _now_iso(),
-    }
-    await db.invoices.insert_one(invoice)
-
-    # ---- Sample job (scheduled tomorrow) ----
-    job = {
-        "id": _new_id(), "user_id": uid, "client_id": c1, "title": "Full kitchen remodel",
-        "status": "scheduled", "scheduled_date": iso_days(1), "start_time": "08:00", "end_time": "16:00",
-        "address": "45 Oak Ave, Houston, TX", "recurrence": "none", "recurrence_days": [],
-        "notes": "Bring tile samples.", "created_at": _now_iso(), "updated_at": _now_iso(),
-    }
-    await db.jobs.insert_one(job)
-
-    # ---- Ready-to-show digital card ----
-    card = await _ensure_card(uid)
-    await db.cards.update_one({"id": card["id"]}, {"$set": {
-        "person_name": "Alex (Demo)",
-        "contact_phone": "(555) 010-2030",
-        "contact_email": email,
-        "tagline": "Remodeling & roofing done right — free estimates",
-        "business_type": "General Contractor",
-        "service_area": "Greater Houston, TX",
-        "years_in_business": 8,
-        "is_licensed": True,
-        "is_insured": True,
-        "rating": 4.9,
-        "lets_connect_enabled": True,
-        "request_estimate_enabled": True,
-        "appt_enabled": True,
-        "services": [
-            {"name": "Kitchen remodels"}, {"name": "Bathroom remodels"},
-            {"name": "Roof replacement"}, {"name": "Additions"},
-        ],
-    }})
+    cloned = False
+    try:
+        cloned = await _clone_template_account(uid, email)
+    except Exception as e:
+        logger.error(f"demo clone failed, using fallback seed: {e!r}")
+    if not cloned:
+        await _seed_demo_fallback(uid, email)
 
     return {"token": create_token(uid), "user": await _user_doc(uid), "is_demo": True}
 
@@ -8998,6 +9096,272 @@ async def _seed_admin_from_env(email_key: str, pw_key: str, biz_key: str, defaul
     logger.info(f"Seeded admin user: {email}")
 
 
+async def _seed_demo_template() -> None:
+    """Idempotently create + populate the curated demo-template account. Runs at
+    startup; skips entirely once the account exists so the owner's edits persist.
+    Every /demo/start clones a fresh copy of this account."""
+    existing = await db.users.find_one({"email": DEMO_TEMPLATE_EMAIL}, {"_id": 0, "id": 1})
+    if existing:
+        return  # already seeded — owner curates it from here on
+
+    def iso_days(n):
+        return (datetime.now(timezone.utc) + timedelta(days=n)).date().isoformat()
+
+    uid = _new_id()
+    user = {
+        "id": uid,
+        "email": DEMO_TEMPLATE_EMAIL,
+        "password_hash": hash_password(DEMO_TEMPLATE_PASSWORD),
+        "business_name": "Elite Remodeling & Roofing",
+        "owner_name": "Carlos Ramirez",
+        "phone": "(713) 555-0142",
+        "business_address": "1200 Main St, Houston, TX 77002",
+        "business_email": DEMO_TEMPLATE_EMAIL,
+        "business_type": "General Contractor",
+        "created_at": _now_iso(),
+        "plan_type": "bundle",
+        "manual_plan": "bundle",
+        "subscription_status": "active",
+        "is_comp": True,
+        "comp_note": "Cuenta plantilla del Demo",
+        "is_demo_template": True,
+        "agreements_enabled": True,
+        "hide_owner_name": False,
+        "invoice_defaults": {"tax_rate": 8.25, "deposit_percent": 30, "payment_terms": "Balance due upon completion. Deposit is non-refundable once materials are ordered."},
+        "onboarding_state": {"completed": True, "dismissed": True, "celebrated": True, "welcome_seen": True},
+    }
+    await db.users.insert_one(user)
+
+    # ---- Contacts: 3 active clients + 3 prospects ----
+    c1, c2, c3, c4, c5, c6 = (_new_id() for _ in range(6))
+    clients = [
+        {"id": c1, "user_id": uid, "name": "Maria Gonzalez", "company": "", "phone": "(713) 555-1122",
+         "email": "maria.g@example.com", "address": "45 Oak Ave, Houston, TX", "job_type": "Kitchen remodel",
+         "stage": "client", "created_at": _now_iso()},
+        {"id": c2, "user_id": uid, "name": "James Carter", "company": "Carter Rentals LLC", "phone": "(281) 555-3344",
+         "email": "james@carterrentals.com", "address": "88 Pine Rd, Katy, TX", "job_type": "Roof replacement",
+         "stage": "client", "bill_to_company_only": True, "created_at": _now_iso()},
+        {"id": c3, "user_id": uid, "name": "Linda Tran", "company": "", "phone": "(832) 555-5566",
+         "email": "linda.tran@example.com", "address": "12 Elm St, Sugar Land, TX", "job_type": "Bathroom remodel",
+         "stage": "client", "created_at": _now_iso()},
+        {"id": c4, "user_id": uid, "name": "Robert Nguyen", "company": "", "phone": "(713) 555-7788",
+         "email": "robert.n@example.com", "address": "300 Cedar Ln, Pearland, TX", "job_type": "Deck & patio",
+         "stage": "prospect", "created_at": _now_iso()},
+        {"id": c5, "user_id": uid, "name": "Ashley Brooks", "company": "Brooks Property Mgmt", "phone": "(281) 555-9900",
+         "email": "ashley@brookspm.com", "address": "75 Maple Dr, Spring, TX", "job_type": "Multi-unit painting",
+         "stage": "prospect", "created_at": _now_iso()},
+        {"id": c6, "user_id": uid, "name": "David Miller", "company": "", "phone": "(832) 555-2211",
+         "email": "david.m@example.com", "address": "9 Birch Ct, Cypress, TX", "job_type": "Garage conversion",
+         "stage": "prospect", "created_at": _now_iso()},
+    ]
+    await db.clients.insert_many(clients)
+
+    # ---- Quotes (draft / sent / approved) ----
+    q1_items = [
+        {"description": "Demo & haul away old kitchen", "quantity": 1, "unit": "job", "unit_price": 1800, "amount": 1800},
+        {"description": "Custom cabinets + quartz countertop", "quantity": 1, "unit": "job", "unit_price": 8200, "amount": 8200},
+        {"description": "Tile backsplash", "quantity": 60, "unit": "sqft", "unit_price": 18, "amount": 1080},
+        {"description": "Under-cabinet LED lighting", "quantity": 1, "unit": "job", "unit_price": 650, "amount": 650},
+    ]
+    q1_sub = sum(i["amount"] for i in q1_items)
+    q2_items = [
+        {"description": "Full bathroom demo & rebuild", "quantity": 1, "unit": "job", "unit_price": 5400, "amount": 5400},
+        {"description": "Walk-in shower + glass enclosure", "quantity": 1, "unit": "job", "unit_price": 3200, "amount": 3200},
+    ]
+    q2_sub = sum(i["amount"] for i in q2_items)
+    q3_items = [
+        {"description": "Composite deck 16x20", "quantity": 320, "unit": "sqft", "unit_price": 32, "amount": 10240},
+    ]
+    q3_sub = sum(i["amount"] for i in q3_items)
+    qid1, qid2, qid3 = _new_id(), _new_id(), _new_id()
+    quotes = [
+        {"id": qid1, "user_id": uid, "number": "Q-1001", "client_id": c1, "job_title": "Full kitchen remodel",
+         "description": "Complete kitchen renovation with custom cabinets and quartz countertops.",
+         "scope_of_work": ["Demolition", "Cabinet & countertop install", "Backsplash", "Lighting"],
+         "line_items": q1_items, "subtotal": q1_sub, "tax_rate": 8.25, "tax_amount": round(q1_sub*0.0825,2),
+         "total": round(q1_sub*1.0825,2), "deposit_amount": round(q1_sub*1.0825*0.3,2), "status": "approved",
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": qid2, "user_id": uid, "number": "Q-1002", "client_id": c3, "job_title": "Master bathroom remodel",
+         "description": "Master bath renovation with walk-in shower.",
+         "scope_of_work": ["Demolition", "Plumbing rough-in", "Tile & shower", "Vanity install"],
+         "line_items": q2_items, "subtotal": q2_sub, "tax_rate": 8.25, "tax_amount": round(q2_sub*0.0825,2),
+         "total": round(q2_sub*1.0825,2), "deposit_amount": round(q2_sub*1.0825*0.3,2), "status": "sent",
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": qid3, "user_id": uid, "number": "Q-1003", "client_id": c4, "job_title": "Backyard composite deck",
+         "description": "New composite deck with railing.",
+         "scope_of_work": ["Footings", "Framing", "Composite decking", "Railing"],
+         "line_items": q3_items, "subtotal": q3_sub, "tax_rate": 8.25, "tax_amount": round(q3_sub*0.0825,2),
+         "total": round(q3_sub*1.0825,2), "deposit_amount": round(q3_sub*1.0825*0.3,2), "status": "draft",
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+    ]
+    await db.quotes.insert_many(quotes)
+
+    # ---- Invoices (one PARTIAL/deposit-paid, one roof job sent) ----
+    inv1_total = round(q1_sub*1.0825, 2)
+    inv1_dep = round(inv1_total*0.3, 2)
+    r_items = [{"description": "Roof tear-off & full replacement (30 sq architectural shingles)", "quantity": 1, "unit": "job", "unit_price": 12500, "amount": 12500}]
+    r_sub = 12500
+    iid1, iid2 = _new_id(), _new_id()
+    invoices = [
+        {"id": iid1, "user_id": uid, "number": "INV-2001", "client_id": c1, "quote_id": qid1,
+         "job_title": "Full kitchen remodel", "line_items": q1_items, "subtotal": q1_sub,
+         "tax_rate": 8.25, "tax_amount": round(q1_sub*0.0825,2), "total": inv1_total,
+         "deposit_amount": inv1_dep, "deposit_paid": True, "amount_paid": inv1_dep,
+         "payments": [{"id": _new_id(), "amount": inv1_dep, "method": "card", "date": iso_days(-5), "note": "Deposit"}],
+         "due_date": iso_days(20), "status": "partial", "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": iid2, "user_id": uid, "number": "INV-2002", "client_id": c2,
+         "job_title": "Roof replacement", "line_items": r_items, "subtotal": r_sub,
+         "tax_rate": 8.25, "tax_amount": round(r_sub*0.0825,2), "total": round(r_sub*1.0825,2),
+         "deposit_amount": round(r_sub*1.0825*0.3,2), "deposit_paid": False, "amount_paid": 0,
+         "due_date": iso_days(7), "status": "sent", "created_at": _now_iso(), "updated_at": _now_iso()},
+    ]
+    await db.invoices.insert_many(invoices)
+
+    # ---- Signed service agreements ----
+    agreements = [
+        {"id": _new_id(), "user_id": uid, "client_id": c1, "quote_id": qid1,
+         "title": "Service Agreement — Full kitchen remodel", "total": inv1_total, "deposit": inv1_dep,
+         "deposit_amount": inv1_dep, "status": "signed", "signer_name": "Maria Gonzalez",
+         "signed_at": _now_iso(), "signed_at_iso": _now_iso(),
+         "sections": {
+             "what_is_included": "Demolition, custom cabinets, quartz countertops, tile backsplash, and under-cabinet lighting as specified.",
+             "what_is_not_included": "Appliances, permits beyond standard, and any structural changes not listed.",
+             "payment_terms": "30% deposit to start, balance due upon completion.",
+             "warranty": "1-year workmanship warranty on all labor.",
+             "change_order_note": "Any changes require a written change order signed by both parties.",
+         },
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": _new_id(), "user_id": uid, "client_id": c2, "quote_id": None,
+         "title": "Service Agreement — Roof replacement", "total": round(r_sub*1.0825,2),
+         "deposit": round(r_sub*1.0825*0.3,2), "deposit_amount": round(r_sub*1.0825*0.3,2),
+         "status": "sent", "signer_name": "", 
+         "sections": {
+             "what_is_included": "Complete tear-off and replacement with 30-year architectural shingles, new underlayment, and cleanup.",
+             "what_is_not_included": "Decking replacement (billed separately if rotted wood is found).",
+             "payment_terms": "30% deposit, balance on completion.",
+             "warranty": "10-year workmanship warranty; manufacturer warranty on materials.",
+             "change_order_note": "Rotted decking replaced at $X per sheet with prior approval.",
+         },
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+    ]
+    await db.agreements.insert_many(agreements)
+
+    # ---- Jobs in various stages ----
+    jobs = [
+        {"id": _new_id(), "user_id": uid, "client_id": c1, "title": "Full kitchen remodel", "quote_id": qid1,
+         "invoice_id": iid1, "status": "in_progress", "scheduled_date": iso_days(-2), "end_date": iso_days(5),
+         "start_time": "08:00", "end_time": "16:00", "address": "45 Oak Ave, Houston, TX",
+         "recurrence": "none", "recurrence_days": [], "notes": "Cabinets delivered. Countertop template Fri.",
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": _new_id(), "user_id": uid, "client_id": c2, "title": "Roof replacement", "invoice_id": iid2,
+         "status": "scheduled", "scheduled_date": iso_days(3), "start_time": "07:00", "end_time": "17:00",
+         "address": "88 Pine Rd, Katy, TX", "recurrence": "none", "recurrence_days": [],
+         "notes": "Crew of 5. Dumpster ordered.", "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": _new_id(), "user_id": uid, "client_id": c3, "title": "Master bathroom remodel", "quote_id": qid2,
+         "status": "approved", "scheduled_date": None, "address": "12 Elm St, Sugar Land, TX",
+         "recurrence": "none", "recurrence_days": [], "notes": "Awaiting client tile selection.",
+         "created_at": _now_iso(), "updated_at": _now_iso()},
+        {"id": _new_id(), "user_id": uid, "client_id": c2, "title": "Gutter guard install", "status": "completed",
+         "scheduled_date": iso_days(-14), "address": "88 Pine Rd, Katy, TX", "recurrence": "none",
+         "recurrence_days": [], "notes": "Completed. Client very happy.", "created_at": _now_iso(), "updated_at": _now_iso()},
+    ]
+    await db.jobs.insert_many(jobs)
+
+    # ---- Reviews ----
+    reviews = [
+        {"id": _new_id(), "user_id": uid, "customer_name": "Maria G.", "rating": 5,
+         "text": "Carlos and his team transformed our kitchen. Professional, on time, and spotless.",
+         "job_title": "Kitchen remodel", "created_at": _now_iso()},
+        {"id": _new_id(), "user_id": uid, "customer_name": "James C.", "rating": 5,
+         "text": "Best roofing crew in Houston. Fair price and finished in one day.",
+         "job_title": "Roof replacement", "created_at": _now_iso()},
+    ]
+    await db.reviews.insert_many(reviews)
+
+    # ---- Fully configured digital card ----
+    card = await _ensure_card(uid)
+    await db.cards.update_one({"id": card["id"]}, {"$set": {
+        "person_name": "Carlos Ramirez",
+        "role": "Owner & Lead Contractor",
+        "contact_phone": "(713) 555-0142",
+        "contact_email": DEMO_TEMPLATE_EMAIL,
+        "whatsapp": "17135550142",
+        "tagline": "Houston's trusted remodeling & roofing experts — free estimates",
+        "about_me": "With 12 years serving the Greater Houston area, we deliver quality kitchens, bathrooms, and roofs on time and on budget. Licensed, insured, and family-owned.",
+        "business_type": "General Contractor",
+        "service_area": "Greater Houston, TX and surrounding areas",
+        "years_in_business": 12,
+        "is_licensed": True,
+        "is_insured": True,
+        "license_number": "TX-GC-448120",
+        "rating": 4.9,
+        "hours": "Mon-Sat 7am-6pm",
+        "brand_color": "#1E3A8A",
+        "accent_color": "#F97316",
+        "lets_connect_enabled": True,
+        "request_estimate_enabled": True,
+        "appt_enabled": True,
+        "services": [
+            {"name": "Kitchen Remodels", "description": "Custom cabinets, countertops, full renovations", "starting_price": "Starting at $12,000"},
+            {"name": "Bathroom Remodels", "description": "Walk-in showers, vanities, tile work", "starting_price": "Starting at $8,000"},
+            {"name": "Roof Replacement", "description": "Architectural shingles, tear-off & install", "starting_price": "Starting at $9,500"},
+            {"name": "Decks & Patios", "description": "Composite decks, pergolas, outdoor living", "starting_price": "Free estimate"},
+        ],
+    }})
+
+    # ---- Stock photos (best-effort; seed still works if Pexels is unavailable) ----
+    try:
+        async def _store_gallery(url, client_id=None, job_id=None, label="after"):
+            data, ct = await pexels_service.download_image(url)
+            data, ct, ext = await asyncio.to_thread(_compress_image, data, ct, "jpg")
+            asset_id = _new_id()
+            path = f"{app_name}/cards/gallery/{uid}/{asset_id}.{ext}"
+            backend = storage_service.get_storage()
+            result = await asyncio.to_thread(backend.put, path, data, ct)
+            await db.photos.insert_one({
+                "id": asset_id, "user_id": uid, "client_id": client_id, "job_id": job_id,
+                "label": label, "on_card": True, "caption": "",
+                "storage_path": result.get("path", path), "content_type": ct,
+                "size": result.get("size", len(data)), "storage_backend": getattr(backend, "name", "emergent"),
+                "is_deleted": False, "created_at": _now_iso(),
+            })
+            return asset_id
+
+        async def _first(query, orientation="landscape"):
+            urls = await pexels_service.search_photos(query, per_page=3, orientation=orientation)
+            return urls[0] if urls else None
+
+        cover = await _first("modern home exterior renovation")
+        portrait = await _first("construction contractor portrait", orientation="portrait")
+        kitchen = await _first("modern kitchen remodel interior")
+        bath = await _first("modern bathroom remodel")
+        roof = await _first("new roof shingles house")
+
+        card_updates = {}
+        if cover:
+            data, ct = await pexels_service.download_image(cover)
+            card_updates["cover_photo_id"] = await _store_card_photo(uid, data, ct, "cover", "jpg")
+        if portrait:
+            data, ct = await pexels_service.download_image(portrait)
+            card_updates["profile_photo_id"] = await _store_card_photo(uid, data, ct, "profile_photo", "jpg")
+        if card_updates:
+            await db.cards.update_one({"id": card["id"]}, {"$set": card_updates})
+
+        job_docs = await db.jobs.find({"user_id": uid}, {"_id": 0, "id": 1, "client_id": 1, "title": 1}).to_list(10)
+        by_title = {j["title"]: j for j in job_docs}
+        if kitchen and "Full kitchen remodel" in by_title:
+            j = by_title["Full kitchen remodel"]; await _store_gallery(kitchen, j["client_id"], j["id"])
+        if bath and "Master bathroom remodel" in by_title:
+            j = by_title["Master bathroom remodel"]; await _store_gallery(bath, j["client_id"], j["id"])
+        if roof and "Roof replacement" in by_title:
+            j = by_title["Roof replacement"]; await _store_gallery(roof, j["client_id"], j["id"])
+    except Exception as e:
+        logger.error(f"demo template photo seed (non-fatal): {e!r}")
+
+    logger.info(f"Seeded demo-template account: {DEMO_TEMPLATE_EMAIL}")
+
+
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -9015,6 +9379,12 @@ async def startup():
         )
     except Exception as e:
         logger.error(f"Admin seed at startup failed: {e}")
+    # Seed the curated demo-template account (idempotent) so /demo/start can
+    # clone a rich, photo-filled demo the owner controls.
+    try:
+        await _seed_demo_template()
+    except Exception as e:
+        logger.error(f"Demo template seed at startup failed: {e}")
     # Backfill: existing users (pre-Stripe rollout) get a fresh 14-day local
     # trial so they can keep exploring before being asked to subscribe.
     try:
