@@ -8,7 +8,7 @@ import {
   UserPlus, Sparkles, ArrowRight, Wallet,
   Settings as SettingsIcon, Megaphone, Bell, ChevronRight,
   IdCard, Star, Eye, UserCheck, Image as ImageIcon, Video, Lock, Plus,
-  Building2, BarChart3, MapPin, CheckCircle2,
+  Building2, BarChart3, MapPin, CheckCircle2, MonitorSmartphone, ExternalLink, Pencil, Copy,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
@@ -179,6 +179,116 @@ function StartJobFlow({ navigate }) {
           title={t("dashboard.step2Title")} onClick={() => navigate("/quotes/nuevo?ai=1")} />
         <FlowStepMini step={3} testid="quick-new-invoice" icon={Receipt} chip="bg-emerald-50 text-emerald-600 border border-emerald-100"
           title={t("dashboard.step3Title")} onClick={() => navigate("/invoices/nuevo")} />
+      </div>
+    </div>
+  );
+}
+
+// ---- Website tab: live preview + quick actions ----
+function WebsiteBlock({ navigate, website, setWebsite }) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const slug = website?.slug;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const publicUrl = slug ? `${origin}/sitio/${slug}` : "";
+  const previewUrl = slug ? `${publicUrl}${website?.published ? "" : "?preview=1"}` : "";
+
+  const togglePublish = async () => {
+    if (!website) return;
+    setBusy(true);
+    try {
+      const next = !website.published;
+      const { data } = await api.put("/website", { ...website, published: next });
+      setWebsite(data);
+      toast.success(next ? t("dashboard.webPublished") : t("dashboard.webDraft"));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error");
+    } finally { setBusy(false); }
+  };
+
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(publicUrl); toast.success(t("dashboard.webLinkCopied")); } catch { /* ignore */ }
+  };
+
+  if (!slug) {
+    return (
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center shadow-sm">
+        <MonitorSmartphone className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500 text-sm mb-4">{t("dashboard.webNotPublishedHint")}</p>
+        <button data-testid="website-edit-empty" onClick={() => navigate("/pagina-web")}
+          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 h-11 transition-colors">
+          <Pencil className="w-4 h-4" /> {t("dashboard.webEdit")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50/60">
+          <h2 className="font-heading text-base font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <MonitorSmartphone className="w-4 h-4 text-blue-700" /> {t("dashboard.webPreviewTitle")}
+          </h2>
+          <span data-testid="website-status" className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+            website.published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+          }`}>
+            {website.published ? t("dashboard.webPublished") : t("dashboard.webDraft")}
+          </span>
+        </div>
+
+        {/* Live preview (non-interactive) */}
+        <button
+          type="button"
+          data-testid="website-preview"
+          onClick={() => window.open(previewUrl, "_blank")}
+          className="relative block w-full overflow-hidden bg-white group"
+          style={{ height: 460 }}
+          title={t("dashboard.webOpenNew")}
+        >
+          <iframe
+            src={previewUrl}
+            title="Website preview"
+            scrolling="no"
+            loading="lazy"
+            style={{ width: "166.66%", height: "766px", border: 0, transform: "scale(0.6)", transformOrigin: "top left", pointerEvents: "none" }}
+          />
+          <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 transition-colors flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-2 bg-white/95 text-slate-900 text-sm font-semibold px-4 h-10 rounded-full shadow-lg">
+              <ExternalLink className="w-4 h-4" /> {t("dashboard.webOpenNew")}
+            </span>
+          </span>
+        </button>
+      </div>
+
+      {/* Public link */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">{t("dashboard.webYourLink")}</div>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0 text-sm text-slate-700 truncate bg-slate-50 border border-slate-200 rounded-xl px-3 h-11 flex items-center">{publicUrl.replace(/^https?:\/\//, "")}</div>
+          <button data-testid="website-copy" onClick={copyLink} className="flex-none h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors" title={t("dashboard.webLinkCopied")}>
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+        {!website.published && <p className="text-[11px] text-amber-600 mt-2">{t("dashboard.webNotPublishedHint")}</p>}
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <button data-testid="website-edit" onClick={() => navigate("/pagina-web")}
+          className="h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors">
+          <Pencil className="w-4 h-4" /> {t("dashboard.webEdit")}
+        </button>
+        <button data-testid="website-open" onClick={() => window.open(previewUrl, "_blank")}
+          className="h-12 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors">
+          <ExternalLink className="w-4 h-4" /> {t("dashboard.webOpen")}
+        </button>
+        <button data-testid="website-publish" onClick={togglePublish} disabled={busy}
+          className={`h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 ${
+            website.published ? "border border-slate-200 bg-white hover:bg-slate-50 text-slate-800" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+          }`}>
+          <CheckCircle2 className="w-4 h-4" /> {website.published ? t("dashboard.webUnpublish") : t("dashboard.webPublish")}
+        </button>
       </div>
     </div>
   );
@@ -443,10 +553,12 @@ export default function Dashboard() {
   const [mkt, setMkt] = useState({ posts: 0, reels: 0 });
   const [posts, setPosts] = useState([]);
   const [gbp, setGbp] = useState(null);
+  const [website, setWebsite] = useState(null);
 
   const hasBusiness = hasFeature("business");
   const hasCard = hasFeature("card");
   const hasMarketing = hasFeature("marketing");
+  const hasWebsite = hasBusiness || hasCard;
 
   useEffect(() => {
     // Mandatory onboarding: send new accounts to the guided wizard first.
@@ -485,6 +597,9 @@ export default function Dashboard() {
         } catch (e) { /* ignore */ }
       })();
     }
+    if (hasWebsite) {
+      (async () => { try { const { data } = await api.get("/website"); setWebsite(data); } catch (e) { /* ignore */ } })();
+    }
   }, [user, hasBusiness, hasCard, hasMarketing]);
 
   const connectGbp = async () => {
@@ -508,6 +623,7 @@ export default function Dashboard() {
   // Tabs: only show for the modules the user owns. "main" = Invoicing & Jobs.
   const tabs = [
     hasBusiness && { k: "main", label: t("dashboard.tabMain"), icon: Receipt },
+    hasWebsite && { k: "website", label: t("dashboard.tabWebsite"), icon: MonitorSmartphone },
     hasCard && { k: "card", label: t("dashboard.tabCard"), icon: IdCard },
     hasMarketing && { k: "marketing", label: t("dashboard.tabMarketing"), icon: Megaphone },
   ].filter(Boolean);
@@ -572,6 +688,11 @@ export default function Dashboard() {
       {/* CARD tab: Digital Smart Card */}
       {currentTab === "card" && hasCard && (
         <CardBlock navigate={navigate} user={user} cardStats={cardStats} card={card} gbp={gbp} onConnectGbp={connectGbp} />
+      )}
+
+      {/* WEBSITE tab: live preview + quick actions */}
+      {currentTab === "website" && hasWebsite && (
+        <WebsiteBlock navigate={navigate} website={website} setWebsite={setWebsite} />
       )}
 
       {/* MARKETING tab: Marketing Studio */}

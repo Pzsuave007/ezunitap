@@ -432,7 +432,19 @@
     "activeJobsTitle": "Trabajos activos",
     "noActiveJobs": "No tienes trabajos activos ahora.",
     "newJobBtn": "Nuevo trabajo",
-    "jobClientFallback": "Cliente"
+    "jobClientFallback": "Cliente",
+    "tabWebsite": "Sitio Web",
+    "webPublished": "Publicado",
+    "webDraft": "Borrador",
+    "webPreviewTitle": "Vista previa de tu sitio",
+    "webEdit": "Editar sitio",
+    "webOpen": "Abrir sitio",
+    "webPublish": "Publicar",
+    "webUnpublish": "Despublicar",
+    "webLinkCopied": "Link copiado",
+    "webYourLink": "Tu link público",
+    "webNotPublishedHint": "Tu sitio está en borrador — publícalo para que tus clientes lo vean en Google.",
+    "webOpenNew": "Abrir en nueva pestaña"
   },
   "clients": {
     "title": "Clientes",

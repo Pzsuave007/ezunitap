@@ -1,3 +1,12 @@
+## 🌐 Jun 2026 — Tab "Website" en la Home con preview en vivo [COMPLETO; verificado screenshot EN, SIN testing_agent por instrucción]
+- **Petición**: agregar un tab "Website" en las pestañas del dashboard con un preview de cómo se ve el sitio + cosas pertinentes.
+- **Solución** (`pages/Dashboard.js`): nuevo tab `website` (ícono MonitorSmartphone) entre "Invoicing & Jobs" y "My Card". Gated por `hasWebsite = hasBusiness || hasCard`.
+  - Nuevo componente `WebsiteBlock`: **preview en vivo** vía `<iframe>` del sitio (`/sitio/{slug}` + `?preview=1` si borrador), escalado (transform scale .6, no interactivo, clic abre en nueva pestaña). Badge de estado Publicado/Borrador. Bloque "Tu link público" con copiar. 3 acciones: Editar sitio (→/pagina-web) · Abrir sitio · Publicar/Despublicar (PUT /website con `{...website, published:next}`). Empty state si no hay slug.
+  - Fetch `GET /website` en el efecto del dashboard cuando `hasWebsite`. i18n `dashboard.tabWebsite` + `web*` (ES/EN).
+- **Verificado**: screenshot EN con cuenta admin — tab Website muestra el sitio real (Uni2 Marketing Agency) con badge DRAFT, link público, y botones Edit/Open/Publish.
+- Build `main.7e5dba10.js` (+ oxlint-disable en chunks vendor). ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + servidor `git clean -fd frontend/build/ && git pull && bash deploy.sh`.
+
+
 ## 🎪 Jun 2026 — Demo Sandbox por visitante + Flyer imprimible del evento [COMPLETO; verificado curl+screenshot flujo /probar, SIN testing_agent por instrucción]
 - **Contexto**: el usuario tiene una mesa en un evento para promover UniTech con la promo "$75/mes de por vida". Quiere (a) un flyer imprimible y (b) que el QR lleve a un demo en vivo.
 - **Demo Sandbox** (aislado por visitante, se auto-borra a 60 min):

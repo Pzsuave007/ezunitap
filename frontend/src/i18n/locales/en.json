@@ -431,7 +431,19 @@
     "activeJobsTitle": "Active jobs",
     "noActiveJobs": "You have no active jobs right now.",
     "newJobBtn": "New job",
-    "jobClientFallback": "Client"
+    "jobClientFallback": "Client",
+    "tabWebsite": "Website",
+    "webPublished": "Published",
+    "webDraft": "Draft",
+    "webPreviewTitle": "Your website preview",
+    "webEdit": "Edit website",
+    "webOpen": "Open website",
+    "webPublish": "Publish",
+    "webUnpublish": "Unpublish",
+    "webLinkCopied": "Link copied",
+    "webYourLink": "Your public link",
+    "webNotPublishedHint": "Your site is a draft — publish it so your clients can find it on Google.",
+    "webOpenNew": "Open in new tab"
   },
   "clients": {
     "title": "Clients",
