@@ -9,12 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram } from "lucide-react";
 import { toast } from "sonner";
+import { VersionHistory } from "@/components/VersionHistory";
 
 const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "about", "feature", "gallery", "reviews", "how", "why", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
-const TABS = ["publish", "design", "content", "services", "problem", "media", "forms", "sections"];
+const TABS = ["publish", "design", "content", "services", "problem", "media", "forms", "sections", "history"];
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
   cinematic: ["#F5B301", "#22D3EE", "#EF4444", "#A855F7"],
@@ -679,6 +680,8 @@ export default function WebsiteEditor() {
       </>)}
 
       {tab === "problem" && <ProblemPagesPanel slug={w.slug} />}
+
+      {tab === "history" && <VersionHistory />}
 
       {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
       {tab === "forms" && (

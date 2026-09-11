@@ -241,7 +241,8 @@
       "media": "Fotos",
       "forms": "Formularios",
       "sections": "Secciones",
-      "problem": "Páginas Cliente"
+      "problem": "Páginas Cliente",
+      "history": "Historial"
     },
     "transDesc": "Agrega una versión en español para que los visitantes cambien el idioma del sitio.",
     "transBtn": "Crear versión en Español",
@@ -308,6 +309,27 @@
       "focusHint": "Déjalo vacío para que la IA elija el problema principal del servicio.",
       "addPage": "Agregar problema",
       "createPage": "Crear página"
+    },
+    "history": {
+      "title": "Historial de versiones",
+      "subtitle": "Cada cambio se guarda solo. Si algo se pierde, regresa a una versión anterior con un clic.",
+      "saveNow": "Guardar versión ahora",
+      "saved": "Versión guardada",
+      "restore": "Restaurar",
+      "restored": "Versión restaurada. Recargando…",
+      "confirm": "¿Restaurar esta versión? Se guardará tu estado actual antes, por si acaso.",
+      "empty": "Aún no hay versiones guardadas. Se crearán automáticamente al editar tu tarjeta o sitio.",
+      "svc": "servicios",
+      "gal": "fotos en galería",
+      "caps": "descripciones",
+      "reasonNow": "Copia de seguridad",
+      "reason": {
+        "manual": "Guardado manual",
+        "guardar sitio": "Guardaste el sitio",
+        "guardar servicios": "Guardaste servicios",
+        "generar sitio": "Generaste el sitio",
+        "antes de restaurar": "Antes de restaurar"
+      }
     }
   },
   "auth": {

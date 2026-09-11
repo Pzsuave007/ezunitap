@@ -240,7 +240,8 @@
       "media": "Photos",
       "forms": "Forms",
       "sections": "Sections",
-      "problem": "Customer Pages"
+      "problem": "Customer Pages",
+      "history": "History"
     },
     "transDesc": "Add a Spanish version so visitors can switch the site to Spanish.",
     "transBtn": "Create Spanish version",
@@ -307,6 +308,27 @@
       "focusHint": "Leave empty to let AI pick the main problem for this service.",
       "addPage": "Add problem",
       "createPage": "Create page"
+    },
+    "history": {
+      "title": "Version history",
+      "subtitle": "Every change is saved automatically. If something is lost, roll back to a previous version in one click.",
+      "saveNow": "Save version now",
+      "saved": "Version saved",
+      "restore": "Restore",
+      "restored": "Version restored. Reloading…",
+      "confirm": "Restore this version? Your current state is saved first, just in case.",
+      "empty": "No saved versions yet. They are created automatically when you edit your card or website.",
+      "svc": "services",
+      "gal": "gallery photos",
+      "caps": "captions",
+      "reasonNow": "Backup",
+      "reason": {
+        "manual": "Manual save",
+        "guardar sitio": "Saved website",
+        "guardar servicios": "Saved services",
+        "generar sitio": "Generated website",
+        "antes de restaurar": "Before restore"
+      }
     }
   },
   "auth": {

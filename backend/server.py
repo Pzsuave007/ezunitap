@@ -3073,6 +3073,9 @@ async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] =
     # This prevents Pydantic defaults ("", [], False, 0) from wiping out saved data
     # when the frontend omits a field from the payload.
     update = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    # Snapshot before any change that could touch services so it's always undoable.
+    if "services" in update:
+        await _snapshot_content(user_id, "guardar servicios")
     # If slug is provided, ensure unique
     if "slug" in update and update["slug"] and update["slug"] != card["slug"]:
         new_slug = _slugify(update["slug"])
@@ -4460,6 +4463,7 @@ async def get_website(user_id: str = Depends(get_current_user_id)):
 @api_router.put("/website")
 async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     await _get_or_init_website(user_id)
+    await _snapshot_content(user_id, "guardar sitio")
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
     if "slug" in update:
         s = _slugify(update["slug"])
@@ -4480,6 +4484,113 @@ async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     w["public_path"] = f"/sitio/{w['slug']}"
     return w
+
+
+# ============================================================================
+# CONTENT VERSION HISTORY — automatic snapshots + one-click restore.
+# Protects the owner's curated card/website/gallery + Recent-Work captions from
+# ever being lost to a regeneration, an old-build save, or a mistake.
+# ============================================================================
+_MAX_SNAPSHOTS = 40
+
+
+async def _snapshot_content(user_id: str, reason: str) -> Optional[str]:
+    """Save a point-in-time copy of the account's card(s), website and every
+    photo's caption/on-card flag. Best-effort — never blocks the caller."""
+    try:
+        cards = await db.cards.find({"user_id": user_id}, {"_id": 0}).to_list(50)
+        website = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+        photos = await db.photos.find(
+            {"user_id": user_id, "is_deleted": {"$ne": True}},
+            {"_id": 0, "id": 1, "caption": 1, "on_card": 1, "label": 1},
+        ).to_list(2000)
+        # Skip if nothing to protect yet.
+        if not cards and not website:
+            return None
+        snap = {
+            "id": _new_id(),
+            "user_id": user_id,
+            "reason": reason,
+            "created_at": _now_iso(),
+            "cards": cards,
+            "website": website,
+            "photos": photos,
+        }
+        await db.content_snapshots.insert_one(dict(snap))
+        # Trim: keep only the newest _MAX_SNAPSHOTS per user.
+        old = await db.content_snapshots.find(
+            {"user_id": user_id}, {"_id": 0, "id": 1}
+        ).sort("created_at", -1).skip(_MAX_SNAPSHOTS).to_list(500)
+        if old:
+            await db.content_snapshots.delete_many(
+                {"user_id": user_id, "id": {"$in": [o["id"] for o in old]}}
+            )
+        return snap["id"]
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"snapshot failed ({reason}): {e!r}")
+        return None
+
+
+def _snap_summary(snap: dict) -> dict:
+    cards = snap.get("cards") or []
+    primary = next((c for c in cards if c.get("is_primary")), cards[0] if cards else {})
+    w = snap.get("website") or {}
+    photos = snap.get("photos") or []
+    return {
+        "services": len(primary.get("services") or []),
+        "gallery": len(w.get("gallery_photo_ids") or []),
+        "captions": len([p for p in photos if (p.get("caption") or "").strip()]),
+    }
+
+
+@api_router.get("/content/versions")
+async def list_content_versions(user_id: str = Depends(get_current_user_id)):
+    snaps = await db.content_snapshots.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(_MAX_SNAPSHOTS)
+    return [
+        {"id": s["id"], "created_at": s["created_at"], "reason": s.get("reason", ""),
+         "summary": _snap_summary(s)}
+        for s in snaps
+    ]
+
+
+@api_router.post("/content/versions")
+async def save_content_version(user_id: str = Depends(get_current_user_id)):
+    sid = await _snapshot_content(user_id, "manual")
+    if not sid:
+        raise HTTPException(400, "No hay contenido para guardar todavía.")
+    return {"ok": True, "id": sid}
+
+
+@api_router.post("/content/versions/{snapshot_id}/restore")
+async def restore_content_version(snapshot_id: str, user_id: str = Depends(get_current_user_id)):
+    snap = await db.content_snapshots.find_one(
+        {"id": snapshot_id, "user_id": user_id}, {"_id": 0}
+    )
+    if not snap:
+        raise HTTPException(404, "Versión no encontrada")
+    # Safety net: snapshot the CURRENT state before restoring so restore is undoable.
+    await _snapshot_content(user_id, "antes de restaurar")
+    # Restore cards (full docs) and website (full doc).
+    for c in (snap.get("cards") or []):
+        if c.get("id"):
+            await db.cards.replace_one({"id": c["id"], "user_id": user_id}, c, upsert=True)
+    w = snap.get("website")
+    if w and w.get("id"):
+        await db.websites.replace_one({"id": w["id"], "user_id": user_id}, w, upsert=True)
+    # Restore each photo's caption + on-card flag (only for photos that still exist).
+    restored_caps = 0
+    for p in (snap.get("photos") or []):
+        if not p.get("id"):
+            continue
+        res = await db.photos.update_one(
+            {"id": p["id"], "user_id": user_id},
+            {"$set": {"caption": p.get("caption", ""), "on_card": bool(p.get("on_card"))}},
+        )
+        if res.matched_count:
+            restored_caps += 1
+    return {"ok": True, "summary": _snap_summary(snap), "captions_restored": restored_caps}
 
 
 async def _fetch_instagram_context(url: str) -> str:
@@ -4651,6 +4762,8 @@ async def _build_full_website(user_id: str, publish: bool = True) -> dict:
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
     business_name = user.get("business_name") or card.get("business_name") or ""
     business_type = card.get("business_type") or ""
+    # Protect the owner's curated content: snapshot before the full rebuild.
+    await _snapshot_content(user_id, "generar sitio")
     services = w.get("services") if w.get("services") else (card.get("services") or [])
     service_area = w.get("service_area") or card.get("service_area") or ""
     update: dict = {}

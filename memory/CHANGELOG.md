@@ -1,5 +1,16 @@
 # UniTech — Changelog
 
+## Jun 2026 — Historial de versiones + blindaje anti-sobreescritura (protección de contenido)
+- Problema: el usuario perdió descripciones (captions) de "Trabajos recientes" y descripciones de servicios (servicios pasaron 7→6→5) porque la regeneración del sitio / guardados desde build viejo sobrescribieron su contenido curado.
+- Backend (`server.py`): sistema de snapshots automáticos de contenido. `_snapshot_content(user_id, reason)` guarda card(s) completas + doc del website + caption/on_card de todas las fotos en `content_snapshots` (máx 40 por usuario). Se dispara ANTES de cada escritura destructiva: PUT /api/website ("guardar sitio"), PUT /api/card/settings cuando toca services ("guardar servicios"), y `_build_full_website` ("generar sitio"). Endpoints nuevos: `GET /api/content/versions`, `POST /api/content/versions` (guardar ahora), `POST /api/content/versions/{id}/restore` (restaura cards+website completos y re-aplica captions/on_card; hace un snapshot "antes de restaurar" para que sea reversible).
+- Frontend: nueva pestaña "Historial" en el editor de Página Web (`WebsiteEditor.js` TABS += 'history'). Componente `components/VersionHistory.js`: lista de versiones con resumen (servicios/fotos/descripciones), botón "Guardar versión ahora" y "Restaurar" (con confirmación + recarga). i18n ES/EN agregado (`website.tab.history`, `website.history.*`).
+- Verificado: backend por curl (list/save/auto-snapshot/restore; restore devolvió 6 servicios + 113 captions). Frontend por testing_agent end-to-end (login, pestaña Historial, guardar crea versión, restaurar con confirm + reload, sin pantalla blanca). Build compilado y `frontend/build/` staged.
+- NOTA producción: aún NO desplegado. Requiere Save to GitHub + `bash /home/ezunitap/repo/deploy.sh`.
+
+## Jun 2026 — Recuperación de datos de producción (evento en vivo)
+- La tarjeta/sitio de `pzsuave007` (uni2) en producción tenía servicios reducidos y galería con stock. Se restauró del backup 20260831 (7 servicios). Las descripciones por foto (captions) NO estaban en ningún backup de 14 días. Se re-vincularon temporalmente 43 fotos de trabajo a la galería vía API y luego se revirtió a las 6 originales a petición del usuario.
+
+
 ## Jun 2026 — Owner-controlled Demo (template account cloning)
 - `/api/demo/start` now CLONES a curated **demo-template account** (`demo-template@ezunitech.com`) instead of hardcoded data, so the demo shows real photos + rich data the owner controls by simply logging into that account and editing it. Falls back to the old hardcoded seed if the template is missing.
 - New backend (`server.py`): `_seed_demo_template()` (idempotent startup seed — 6 contacts incl. 3 prospects, 3 quotes, 2 invoices incl. one deposit/partial, 2 service agreements, 4 jobs across statuses, reviews, fully-configured card w/ 4 services + licensed/insured/rating, and best-effort Pexels stock photos for cover/profile/gallery). `_clone_template_account()` deep-clones all collections, remaps cross-reference IDs, keeps photo IDs stable (shared files resolve), regenerates unique card/website/problem-page slugs, drops custom domains. Demo inherits template business identity.
