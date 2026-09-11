@@ -158,7 +158,10 @@ export default function WebsiteEditor() {
     fd.append("file", file);
     try {
       const { data } = await api.post("/photos?label=service", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      listSet("services", i, "image_id", data.id);
+      const arr = [...(w.services || [])];
+      arr[i] = { ...arr[i], image_id: data.id };
+      setW((prev) => ({ ...prev, services: arr }));
+      await api.put("/website", { services: arr });  // persist immediately so it survives reloads/deploys
       toast.success(t("website.serviceImgAdded"));
     } catch {
       toast.error(t("website.aiError"));
@@ -182,20 +185,29 @@ export default function WebsiteEditor() {
         uploaded.push({ id: data.id, kind: "general" });
       }
       const cur = (w.services[i] && w.services[i].photos) || [];
-      svcPatch(i, { photos: [...cur, ...uploaded] });
+      const arr = [...(w.services || [])];
+      arr[i] = { ...arr[i], photos: [...cur, ...uploaded] };
+      setW((prev) => ({ ...prev, services: arr }));
+      await api.put("/website", { services: arr });  // persist immediately so it survives reloads/deploys
       toast.success(t("website.serviceImgAdded"));
     } catch {
       toast.error(t("website.aiError"));
     }
   };
-  const setServicePhotoKind = (i, pi, kind) => {
+  const setServicePhotoKind = async (i, pi, kind) => {
     const photos = [...((w.services[i] && w.services[i].photos) || [])];
     photos[pi] = { ...photos[pi], kind };
-    svcPatch(i, { photos });
+    const arr = [...(w.services || [])];
+    arr[i] = { ...arr[i], photos };
+    setW((prev) => ({ ...prev, services: arr }));
+    await api.put("/website", { services: arr });
   };
-  const delServicePhoto = (i, pi) => {
+  const delServicePhoto = async (i, pi) => {
     const photos = ((w.services[i] && w.services[i].photos) || []).filter((_, j) => j !== pi);
-    svcPatch(i, { photos });
+    const arr = [...(w.services || [])];
+    arr[i] = { ...arr[i], photos };
+    setW((prev) => ({ ...prev, services: arr }));
+    await api.put("/website", { services: arr });
   };
 
   // ---- AI content helpers (services suggestions + per-field "write for me") ----
@@ -918,7 +930,7 @@ export default function WebsiteEditor() {
                 <ImagePlus className="w-4 h-4" /> {s.image_id ? t("website.changePhoto") : t("website.addPhoto")}
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadServiceImg(i, e.target.files?.[0])} />
               </label>
-              {s.image_id && <button onClick={() => listSet("services", i, "image_id", "")} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
+              {s.image_id && <button onClick={async () => { const arr=[...(w.services||[])]; arr[i]={...arr[i], image_id:""}; setW((prev)=>({...prev, services:arr})); await api.put("/website", { services: arr }); }} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
             </div>
             {/* Work photos for THIS service (used on its Conversion Page proof section) */}
             <div className="pt-2 border-t border-slate-200/70">

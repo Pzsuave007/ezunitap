@@ -3066,6 +3066,35 @@ async def get_card_settings(card_id: Optional[str] = None, user_id: str = Depend
     return await _resolve_card(user_id, card_id)
 
 
+def _merge_service_media(incoming, existing):
+    """Carry over per-service media (image_id / photos / hero_photo_id) from the
+    website's EXISTING services onto INCOMING (card) services — matched by name,
+    then by index — so syncing the card's service list never wipes the site's
+    service photos."""
+    if not isinstance(incoming, list):
+        return incoming
+    ex = existing or []
+    by_name = {}
+    for s in ex:
+        if isinstance(s, dict) and (s.get("name") or "").strip():
+            by_name.setdefault(s["name"].strip().lower(), s)
+    merged = []
+    for idx, s in enumerate(incoming):
+        if not isinstance(s, dict):
+            merged.append(s)
+            continue
+        s = dict(s)
+        src = by_name.get((s.get("name") or "").strip().lower())
+        if src is None and idx < len(ex) and isinstance(ex[idx], dict):
+            src = ex[idx]
+        if src:
+            for f in ("image_id", "photos", "hero_photo_id"):
+                if not s.get(f) and src.get(f):
+                    s[f] = src[f]
+        merged.append(s)
+    return merged
+
+
 @api_router.put("/card/settings")
 async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] = None, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("card"))):
     card = await _resolve_card(user_id, card_id)
@@ -3086,10 +3115,14 @@ async def update_card_settings(payload: CardSettingsIn, card_id: Optional[str] =
     update["updated_at"] = _now_iso()
     await db.cards.update_one({"id": card["id"]}, {"$set": update})
     # Keep services in sync with the public Website (same company, one service list).
+    # BUT card services carry NO photos (image_id/photos), so we MERGE — preserving
+    # the website's existing per-service images so a card save never wipes them.
     if "services" in update and card.get("is_primary"):
+        w_ex = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "services": 1})
+        merged = _merge_service_media(update["services"], (w_ex or {}).get("services"))
         await db.websites.update_one(
             {"user_id": user_id},
-            {"$set": {"services": update["services"], "updated_at": update["updated_at"]}},
+            {"$set": {"services": merged, "updated_at": update["updated_at"]}},
         )
     return await db.cards.find_one({"id": card["id"]}, {"_id": 0})
 

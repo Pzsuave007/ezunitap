@@ -1,5 +1,12 @@
 # UniTech — Changelog
 
+## Jun 2026 — BUG FIX raíz: sync tarjeta→sitio borraba fotos de servicios
+- Causa real (confirmada, NO era "memoria del browser"): al guardar los servicios de la TARJETA, `update_card_settings` sobrescribía `websites.services` con los servicios de la tarjeta, que NO llevan `image_id`/`photos`/`hero_photo_id` → borraba TODAS las fotos de servicios del sitio (hero + galería por servicio). Se disparaba al guardar la tarjeta o al regenerar.
+- Fix (`server.py`): nuevo `_merge_service_media(incoming, existing)` que preserva `image_id`/`photos`/`hero_photo_id` de los servicios existentes del sitio (match por nombre, luego índice) al sincronizar desde la tarjeta. Aplicado en el sync de `update_card_settings`.
+- Fix frontend (`WebsiteEditor.js`): `uploadServiceImg`, `addServicePhotos`, `setServicePhotoKind`, `delServicePhoto` y el botón de quitar imagen ahora **persisten al instante** (`PUT /api/website`) — ya no dependen de un "Guardar" manual, así que sobreviven recargas/deploys.
+- Verificado por curl: tras guardar servicios de tarjeta (sin fotos), el sitio CONSERVA hero + 2 fotos por servicio en los 6 servicios. Requiere Save to GitHub + deploy.
+
+
 ## Jun 2026 — Historial de versiones + blindaje anti-sobreescritura (protección de contenido)
 - Problema: el usuario perdió descripciones (captions) de "Trabajos recientes" y descripciones de servicios (servicios pasaron 7→6→5) porque la regeneración del sitio / guardados desde build viejo sobrescribieron su contenido curado.
 - Backend (`server.py`): sistema de snapshots automáticos de contenido. `_snapshot_content(user_id, reason)` guarda card(s) completas + doc del website + caption/on_card de todas las fotos en `content_snapshots` (máx 40 por usuario). Se dispara ANTES de cada escritura destructiva: PUT /api/website ("guardar sitio"), PUT /api/card/settings cuando toca services ("guardar servicios"), y `_build_full_website` ("generar sitio"). Endpoints nuevos: `GET /api/content/versions`, `POST /api/content/versions` (guardar ahora), `POST /api/content/versions/{id}/restore` (restaura cards+website completos y re-aplica captions/on_card; hace un snapshot "antes de restaurar" para que sea reversible).
