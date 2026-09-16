@@ -1055,6 +1055,16 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - **i18n**: `?lang=es` / `?lang=en` fuerzan idioma desde el link (útil para ads) — `i18n/index.js` con `querystring` en detección.
 - Verificado por testing_agent (frontend 100%, 7/7 items) + curl (analytics corto separado, path de pago Stripe). Datos de prueba limpiados.
 
+## ✅ Jun 2026 — Sistema de Notificaciones por Email (Resend) [LISTO; endpoint + templates + UI verificados; envío real pendiente de API key]
+- **Backend** (`email_service.py`): extendido el módulo existente (SaaS-owner) con `send_to(to, subject, html)` genérico (no bloqueante vía `asyncio.to_thread`, jamás lanza excepción), `is_configured()` (respeta `NOTIFY_ENABLED` + presencia de key), y plantillas bilingües (es/en) inline-CSS: `build_lead_email`, `build_payment_email`, `build_review_email`, `build_test_email`. Backend selecciona SMTP→Resend automáticamente.
+- **Backend** (`server.py`): helper `_notify_owner_email(user_id, event, ctx)` + `_fire_owner_email` (fire-and-forget con `asyncio.create_task`). Cada dueño recibe avisos de SU cuenta, en su idioma (`_owner_lang`: notify_lang/ui_lang/language, default es). Salta cuentas demo. Soporta opt-out por cuenta (`notify_prefs`).
+- **Eventos conectados**: (1) Nuevo lead → `public_website_lead`, `public_problem_page_lead`, `public_card_lead`; (2) Pago recibido → `add_invoice_payment` (manual) y `_record_card_payment_from_tx` (Stripe tarjeta); (3) Reseña/feedback → `public_review_feedback` (todos los sentimientos).
+- **Endpoint de prueba**: `POST /api/admin/notify/test` (super-admin) — envía correo de prueba a `email` dado o a `NOTIFY_EMAIL`.
+- **Frontend**: nueva página `AdminEmails.js` (ruta `/admin/emails`, pestaña "Emails" en `AdminTabs`) con explicación de eventos + botón "Enviar correo de prueba" (idioma es/en).
+- **Env** (`backend/.env`): `RESEND_API_KEY` (VACÍO — el usuario la pega al final), `NOTIFY_ENABLED=true`, `NOTIFY_FROM=UniTech <onboarding@resend.dev>`, `NOTIFY_EMAIL=pzsuave007@gmail.com`.
+- ⚠️ **Limitación Resend**: con `onboarding@resend.dev` en modo prueba, Resend SOLO entrega al email verificado de la cuenta Resend. Para enviar a cada contratista se debe verificar un dominio propio y cambiar `NOTIFY_FROM`.
+- Verificado: `POST /admin/notify/test` responde correctamente "no configurado" sin key; plantillas es/en generan HTML válido; página admin renderiza bien (screenshot). Envío real pendiente de que el usuario pegue la key.
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.

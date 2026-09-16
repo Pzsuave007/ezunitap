@@ -34,6 +34,7 @@ import video_service  # noqa: E402
 import tts_service  # noqa: E402
 import payments_service  # noqa: E402
 import connect_service  # noqa: E402
+import email_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
@@ -1726,7 +1727,14 @@ async def add_invoice_payment(invoice_id: str, payload: PaymentIn, user_id: str 
         {"id": invoice_id, "user_id": user_id},
         {"$push": {"payments": payment}},
     )
-    return await _recalc_invoice_payments(invoice_id, user_id)
+    doc = await _recalc_invoice_payments(invoice_id, user_id)
+    try:
+        u = await db.users.find_one({"id": user_id}, {"_id": 0, "notify_lang": 1, "ui_lang": 1, "language": 1}) or {}
+        ctx = await _payment_email_ctx(doc, user_id, payment["amount"], payment["method"], _owner_lang(u))
+        _fire_owner_email(user_id, "payment", ctx)
+    except Exception as e:
+        logger.error(f"payment email schedule failed: {e!r}")
+    return doc
 
 
 @api_router.delete("/invoices/{invoice_id}/payments/{payment_id}")
@@ -1871,6 +1879,13 @@ async def _record_card_payment_from_tx(tx: dict) -> None:
     }
     await db.invoices.update_one({"id": tx["invoice_id"]}, {"$push": {"payments": payment}})
     await _recalc_invoice_payments(tx["invoice_id"], tx["user_id"])
+    try:
+        inv = await db.invoices.find_one({"id": tx["invoice_id"]}, {"_id": 0}) or {}
+        u = await db.users.find_one({"id": tx["user_id"]}, {"_id": 0, "notify_lang": 1, "ui_lang": 1, "language": 1}) or {}
+        ctx = await _payment_email_ctx(inv, tx["user_id"], amount, "card", _owner_lang(u))
+        _fire_owner_email(tx["user_id"], "payment", ctx)
+    except Exception as e:
+        logger.error(f"card payment email schedule failed: {e!r}")
     if tx.get("request_id"):
         await db.payment_requests.update_one(
             {"id": tx["request_id"]},
@@ -2280,6 +2295,11 @@ async def public_review_feedback(slug: str, payload: PublicReviewFeedbackIn):
             )
         except Exception as e:
             logger.error(f"feedback notif failed: {e!r}")
+    _fire_owner_email(user["id"], "review", {
+        "sentiment": payload.sentiment, "rating": doc.get("rating"),
+        "name": doc.get("name", ""), "feedback": doc.get("feedback", ""),
+        "contact": doc.get("contact", ""),
+    })
     return {"ok": True}
 
 
@@ -5516,6 +5536,11 @@ async def public_website_lead(slug: str, payload: CardLeadIn):
         )
     except Exception as e:
         logger.error(f"website lead notif failed: {e!r}")
+    _fire_owner_email(user_id, "lead", {
+        "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+        "service": service_label, "description": (payload.description or "").strip(),
+        "source_label": via_site or ("Website" ),
+    })
     return {"ok": True}
 
 
@@ -5935,6 +5960,11 @@ async def public_problem_page_lead(slug: str, page_slug: str, payload: CardLeadI
         )
     except Exception as e:
         logger.error(f"problem page lead notif failed: {e!r}")
+    _fire_owner_email(user_id, "lead", {
+        "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+        "service": problem_label or service_label, "description": (payload.description or "").strip(),
+        "source_label": via_site or "Página de Problema",
+    })
     return {"ok": True}
 
 
@@ -6350,6 +6380,11 @@ async def public_card_lead(slug: str, payload: CardLeadIn):
         "event": "connect_request" if is_connect else "quote_request",
         "meta": {"service": service_label, "interests": payload.interests or []},
         "created_at": _now_iso(),
+    })
+    _fire_owner_email(card["user_id"], "lead", {
+        "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+        "service": service_label, "description": (payload.description or "").strip(),
+        "source_label": via_site or ("Tarjeta digital" if not is_connect else "Tarjeta digital"),
     })
     return {"ok": True, "lead_id": lead["id"]}
 
@@ -8463,6 +8498,134 @@ async def _create_notification(
     await db.notifications.insert_one(doc)
     doc.pop("_id", None)
     return doc
+
+
+# ============================================================================
+# EMAIL NOTIFICATIONS (Resend) — alert account owners of key account events.
+# Non-blocking: every send is fire-and-forget and swallows its own errors so a
+# mail problem can never break the request that triggered it.
+# ============================================================================
+APP_BASE_URL = (os.environ.get("APP_BASE_URL") or "https://ezunitech.com").rstrip("/")
+
+_METHOD_LABELS = {
+    "es": {"cash": "Efectivo", "check": "Cheque", "zelle": "Zelle",
+           "transfer": "Transferencia", "card": "Tarjeta", "other": "Otro"},
+    "en": {"cash": "Cash", "check": "Check", "zelle": "Zelle",
+           "transfer": "Transfer", "card": "Card", "other": "Other"},
+}
+
+
+def _owner_lang(user: dict) -> str:
+    lang = (user.get("notify_lang") or user.get("ui_lang") or user.get("language") or "es")
+    return "en" if str(lang).lower().startswith("en") else "es"
+
+
+def _fmt_money(v) -> str:
+    try:
+        return f"${float(v):,.2f}"
+    except Exception:
+        return "$0.00"
+
+
+async def _notify_owner_email(user_id: str, event: str, ctx: dict) -> None:
+    """Build + send an account-owner alert email (never raises)."""
+    try:
+        if not email_service.is_configured():
+            return
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user or user.get("is_demo") or user.get("is_demo_template"):
+            return
+        to_email = (
+            user.get("notify_email") or user.get("business_email") or user.get("email") or ""
+        ).strip()
+        if not to_email:
+            return
+        prefs = user.get("notify_prefs") or {}
+        if prefs.get(event) is False:  # per-account opt-out
+            return
+        lang = _owner_lang(user)
+        biz = user.get("business_name") or ("your business" if lang == "en" else "tu negocio")
+
+        if event == "lead":
+            subject, html = email_service.build_lead_email(
+                lang=lang, business_name=biz, lead=ctx,
+                cta_url=f"{APP_BASE_URL}/clientes",
+            )
+        elif event == "payment":
+            subject, html = email_service.build_payment_email(
+                lang=lang, business_name=biz,
+                cta_url=f"{APP_BASE_URL}/invoices/{ctx.get('invoice_id','')}",
+                amount=ctx.get("amount", ""), method=ctx.get("method", ""),
+                client_name=ctx.get("client_name", ""),
+                invoice_number=ctx.get("invoice_number", ""),
+                remaining=ctx.get("remaining", ""),
+            )
+        elif event == "review":
+            subject, html = email_service.build_review_email(
+                lang=lang, business_name=biz, cta_url=f"{APP_BASE_URL}/feedback",
+                sentiment=ctx.get("sentiment", "happy"), rating=ctx.get("rating"),
+                name=ctx.get("name", ""), feedback=ctx.get("feedback", ""),
+                contact=ctx.get("contact", ""),
+            )
+        else:
+            return
+        await email_service.send_to(to_email, subject, html)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"_notify_owner_email({event}) failed: {e!r}")
+
+
+def _fire_owner_email(user_id: str, event: str, ctx: dict) -> None:
+    """Schedule an owner alert email without blocking the request."""
+    try:
+        asyncio.create_task(_notify_owner_email(user_id, event, ctx))
+    except RuntimeError:
+        pass
+
+
+async def _payment_email_ctx(inv: dict, user_id: str, amount: float, method: str, lang: str) -> dict:
+    client_name = inv.get("client_name") or ""
+    if not client_name and inv.get("client_id"):
+        c = await db.clients.find_one({"id": inv["client_id"], "user_id": user_id}, {"_id": 0, "name": 1})
+        client_name = (c or {}).get("name", "")
+    remaining = round(max(0, float(inv.get("total") or 0) - float(inv.get("amount_paid") or 0)), 2)
+    return {
+        "invoice_id": inv.get("id", ""),
+        "invoice_number": inv.get("number", ""),
+        "amount": _fmt_money(amount),
+        "method": _METHOD_LABELS.get(lang, _METHOD_LABELS["es"]).get(method, method.title() if method else ""),
+        "client_name": client_name,
+        "remaining": _fmt_money(remaining),
+    }
+
+
+class NotifyTestIn(BaseModel):
+    email: Optional[str] = None  # override recipient; defaults to NOTIFY_EMAIL then admin email
+    lang: Optional[str] = None   # "es" | "en"
+
+
+@api_router.post("/admin/notify/test")
+async def admin_notify_test(payload: NotifyTestIn, admin: dict = Depends(_require_super_admin)):
+    """Send a test notification email so the admin can verify Resend is wired up."""
+    if not email_service.is_configured():
+        return {
+            "ok": False,
+            "configured": False,
+            "detail": "El envío de emails está desactivado o falta RESEND_API_KEY en el backend.",
+        }
+    to_email = (
+        (payload.email or "").strip()
+        or (os.environ.get("NOTIFY_EMAIL") or "").strip()
+        or (admin.get("business_email") or admin.get("email") or "").strip()
+    )
+    if not to_email:
+        raise HTTPException(400, "No hay un correo destino. Especifica 'email' o configura NOTIFY_EMAIL.")
+    lang = "en" if (payload.lang or "").lower().startswith("en") else "es"
+    biz = admin.get("business_name") or "UniTech"
+    subject, html = email_service.build_test_email(lang=lang, business_name=biz)
+    result = await email_service.send_to(to_email, subject, html)
+    return {"configured": True, "to": to_email, **result}
+
+
 
 
 @api_router.get("/notifications")
