@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   User as UserIcon, Building2, Image as ImageIcon, Camera,
-  Loader2, Upload, X as XIcon, LogOut, IdCard, Sparkles, FileSignature,
+  Loader2, Upload, X as XIcon, LogOut, IdCard, Sparkles, FileSignature, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import SubscriptionSection from "@/components/SubscriptionSection";
@@ -59,6 +59,7 @@ export default function Profile() {
         owner_name: user.owner_name || "",
         phone: user.phone || "",
         business_email: user.business_email || user.email || "",
+        notify_email: user.notify_email || "",
         business_address: user.business_address || "",
         // card fields (PUT /card/settings)
         role: user.role || "",
@@ -84,6 +85,7 @@ export default function Profile() {
           owner_name: form.owner_name,
           phone: form.phone,
           business_email: form.business_email,
+          notify_email: form.notify_email,
           business_address: form.business_address,
           agreements_enabled: form.agreements_enabled,
           hide_owner_name: form.hide_owner_name,
@@ -244,6 +246,21 @@ export default function Profile() {
               className="h-12 rounded-xl mt-1.5"
               placeholder="123 Main St, Houston TX"
             />
+          </div>
+          <div>
+            <Label className="flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-emerald-600" />
+              {t("profile.notifyEmail")}
+            </Label>
+            <Input
+              type="email"
+              data-testid="profile-notify-email"
+              value={form.notify_email}
+              onChange={(e) => update("notify_email", e.target.value)}
+              className="h-12 rounded-xl mt-1.5"
+              placeholder={form.business_email || "avisos@tucorreo.com"}
+            />
+            <p className="text-[11px] text-slate-400 mt-1">{t("profile.notifyEmailHint")}</p>
           </div>
         </div>
         <div className="p-3 rounded-xl bg-blue-50 text-xs text-blue-900">

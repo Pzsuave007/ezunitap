@@ -104,6 +104,7 @@ class BusinessUpdate(BaseModel):
     phone: Optional[str] = None
     business_address: Optional[str] = None
     business_email: Optional[str] = None
+    notify_email: Optional[str] = None
     shipping_address: Optional[dict] = None
     agreements_enabled: Optional[bool] = None
     hide_owner_name: Optional[bool] = None

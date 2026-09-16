@@ -1101,6 +1101,8 @@
     "businessName": "Nombre del negocio",
     "phone": "Teléfono",
     "businessEmail": "Email de negocio",
+    "notifyEmail": "Correo para notificaciones",
+    "notifyEmailHint": "Aquí llegan los avisos de nuevos leads, pagos y reseñas. Si lo dejas vacío, usamos tu email de negocio.",
     "businessAddress": "Dirección de negocio",
     "businessNote": "Estos datos aparecen automáticamente en cada quote e invoice que generes.",
     "aboutYou": "Sobre ti",

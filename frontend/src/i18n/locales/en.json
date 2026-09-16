@@ -1100,6 +1100,8 @@
     "businessName": "Business name",
     "phone": "Phone",
     "businessEmail": "Business email",
+    "notifyEmail": "Notifications email",
+    "notifyEmailHint": "This is where alerts for new leads, payments and reviews go. Leave blank to use your business email.",
     "businessAddress": "Business address",
     "businessNote": "This info appears automatically on every quote and invoice you generate.",
     "aboutYou": "About you",
