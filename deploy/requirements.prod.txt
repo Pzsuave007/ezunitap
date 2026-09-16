@@ -16,3 +16,4 @@ python-jose
 pillow
 emergentintegrations==0.1.0
 elevenlabs==2.53.0
+resend==2.30.1

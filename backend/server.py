@@ -8624,6 +8624,13 @@ async def admin_notify_test(payload: NotifyTestIn, admin: dict = Depends(_requir
     biz = admin.get("business_name") or "UniTech"
     subject, html = email_service.build_test_email(lang=lang, business_name=biz)
     result = await email_service.send_to(to_email, subject, html)
+    if not result.get("ok") and not result.get("error"):
+        _skip_msgs = {
+            "no_backend": "El paquete 'resend' no está instalado en el servidor. Vuelve a desplegar para instalarlo.",
+            "no_recipient": "No hay un correo destino configurado.",
+            "disabled": "Las notificaciones están desactivadas (NOTIFY_ENABLED=false).",
+        }
+        result["detail"] = _skip_msgs.get(result.get("skipped"), "No se pudo enviar el correo.")
     return {"configured": True, "to": to_email, **result}
 
 

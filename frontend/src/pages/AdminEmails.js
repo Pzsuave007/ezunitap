@@ -123,7 +123,7 @@ export default function AdminEmails() {
                 ? `Correo enviado a ${result.to} (${result.backend || "resend"}).`
                 : result.configured === false
                 ? result.detail || "Resend no está configurado. Agrega RESEND_API_KEY en el backend."
-                : result.error || "No se pudo enviar el correo."}
+                : result.detail || result.error || "No se pudo enviar el correo."}
             </div>
           </div>
         )}
