@@ -1065,6 +1065,13 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - ⚠️ **Limitación Resend**: con `onboarding@resend.dev` en modo prueba, Resend SOLO entrega al email verificado de la cuenta Resend. Para enviar a cada contratista se debe verificar un dominio propio y cambiar `NOTIFY_FROM`.
 - Verificado: `POST /admin/notify/test` responde correctamente "no configurado" sin key; plantillas es/en generan HTML válido; página admin renderiza bien (screenshot). Envío real pendiente de que el usuario pegue la key.
 
+## ✅ Jun 2026 — SEO: Sitemap por dominio (host-aware) [LISTO; curl verificado ambos modos]
+- **Backend** (`server.py`, `GET /api/sitemap.xml`): ahora es host-aware. Si el `Host` de la petición coincide con el `custom_domain` VERIFICADO de un website, devuelve SOLO las URLs de ese sitio (inicio + sus problem pages publicadas/indexables) bajo ese dominio. Cualquier otro host (dominios primarios, preview, localhost) cae al sitemap global (todos los sitios publicados) como antes.
+- Cada dominio de cliente tiene su propio sitemap en `https://sudominio.com/api/sitemap.xml` (sin cambios en Caddy).
+- Verificado con curl: global devuelve 9 URLs; por-dominio (growthally.uni2mkt.com) devuelve solo su home + 6 problem pages; sitio en borrador devuelve urlset vacío.
+- **Verificación de Search Console**: se decidió usar método **DNS TXT** (fuera de la app, sin código). Guía entregada al usuario. NO se implementó campo de verificación in-app (meta/HTML) — queda como posible mejora futura para que clientes se auto-verifiquen.
+- Nota: cambio solo backend; requiere `deploy.sh` en prod para que aplique. El aclarar al usuario: el sitemap NO afecta qué dominio muestra Google en resultados (cada URL conserva su propio dominio).
+
 ## 🔜 Backlog
 
 - 🟡 P1: Programa de referidos ("Invita un compa → ambos 1 mes gratis"); recordatorios al cliente (SMS/Email) 1 día antes; exportar Agenda `.ics`.
