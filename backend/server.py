@@ -5416,28 +5416,23 @@ async def public_website_by_domain(domain: str, background_tasks: BackgroundTask
 
 @api_router.get("/sitemap.xml")
 async def website_sitemap(request: Request):
-    base = str(request.base_url).rstrip("/")
-    host = (request.headers.get("host") or request.url.hostname or "").split(":")[0].lower()
+    # Behind the proxy the Host header is rewritten to the internal address, so
+    # prefer X-Forwarded-Host (the real external domain) for detection.
+    xfh = request.headers.get("x-forwarded-host") or ""
+    host = (xfh.split(",")[0] or request.headers.get("host") or "").split(":")[0].strip().lower()
     if host.startswith("www."):
         host = host[4:]
-    # Force https for real domains (behind Caddy the proxied scheme can look
-    # like http); keep http only for local/dev hosts.
-    if host and host not in ("localhost", "127.0.0.1") and base.startswith("http://"):
-        base = "https://" + base[len("http://"):]
 
     urls = []
 
-    # Per-domain sitemap: if the request host matches a website's VERIFIED custom
-    # domain, return only that site's URLs (so it can be submitted to that
-    # domain's own Search Console property). Any other host (primary UniTech
-    # domains, preview, localhost) falls through to the global sitemap below.
+    # --- Per-domain sitemap: host matches a website's VERIFIED custom domain.
+    # Return ONLY that site's URLs (submittable to that domain's own property).
     site = None
-    if host:
+    if host and host not in ("localhost", "127.0.0.1"):
         site = await db.websites.find_one(
             {"custom_domain": host, "custom_domain_verified": True},
             {"_id": 0, "slug": 1, "published": 1},
         )
-
     if site:
         if site.get("published"):
             root = f"https://{host}"
@@ -5453,37 +5448,41 @@ async def website_sitemap(request: Request):
         xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
         return Response(content=xml, media_type="application/xml")
 
-    # --- Global sitemap (primary UniTech hosts) ---
-    sites = await db.websites.find({"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000)
+    # --- Primary/global sitemap (ezunitech.com). A sitemap may ONLY list URLs
+    # on its own host, so we include only sites WITHOUT their own verified custom
+    # domain (served under /sitio/<slug>) — custom-domain sites live in their own
+    # per-domain sitemap above. Base URL is fixed (never the internal address).
+    if host in ("ezunitech.com", "ezunitap.com"):
+        base = f"https://{host}"
+    else:
+        base = (os.environ.get("PUBLIC_BASE_URL") or "https://ezunitech.com").rstrip("/")
+
+    urls.append(f"<url><loc>{base}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
+
+    sites = await db.websites.find(
+        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}
+    ).to_list(2000)
+    # Slugs of sites that stay on the primary host (no verified custom domain).
+    onsite_slugs = set()
     for s in sites:
-        dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
+        has_domain = bool(s.get("custom_domain") and s.get("custom_domain_verified"))
         slug = s.get("slug")
-        if dom:
-            root = f"https://{dom}"
-        elif slug:
-            root = f"{base}/sitio/{slug}"
-        else:
+        if has_domain or not slug:
             continue
-        urls.append(f"<url><loc>{root}</loc><changefreq>weekly</changefreq></url>")
-    # Problem/Solution pages: published + indexable, listed under their site's host
+        onsite_slugs.add(slug)
+        urls.append(f"<url><loc>{base}/sitio/{slug}</loc><changefreq>weekly</changefreq></url>")
+
+    # Problem/Solution pages of on-site (non-custom-domain) sites only.
     pps = await db.problem_pages.find(
         {"published": True, "indexable": True},
         {"_id": 0, "website_slug": 1, "page_slug": 1},
     ).to_list(4000)
-    if pps:
-        wmap = {s.get("slug"): s for s in sites}
-        # include sites that host a published page even if the site itself is a draft
-        missing = list({p["website_slug"] for p in pps} - set(wmap.keys()))
-        if missing:
-            for s in await db.websites.find({"slug": {"$in": missing}}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000):
-                wmap[s["slug"]] = s
-        for pp in pps:
-            s = wmap.get(pp["website_slug"])
-            if not s:
-                continue
-            dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
-            loc = f"https://{dom}/p/{pp['page_slug']}" if dom else f"{base}/sitio/{s['slug']}/p/{pp['page_slug']}"
-            urls.append(f"<url><loc>{loc}</loc><changefreq>weekly</changefreq></url>")
+    for pp in pps:
+        wslug = pp.get("website_slug")
+        if wslug in onsite_slugs:
+            urls.append(
+                f"<url><loc>{base}/sitio/{wslug}/p/{pp['page_slug']}</loc><changefreq>weekly</changefreq></url>"
+            )
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     return Response(content=xml, media_type="application/xml")
 
