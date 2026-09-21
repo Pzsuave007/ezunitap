@@ -1065,12 +1065,14 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - ⚠️ **Limitación Resend**: con `onboarding@resend.dev` en modo prueba, Resend SOLO entrega al email verificado de la cuenta Resend. Para enviar a cada contratista se debe verificar un dominio propio y cambiar `NOTIFY_FROM`.
 - Verificado: `POST /admin/notify/test` responde correctamente "no configurado" sin key; plantillas es/en generan HTML válido; página admin renderiza bien (screenshot). Envío real pendiente de que el usuario pegue la key.
 
-## ✅ Jun 2026 — SEO: Sitemap por dominio (host-aware) [LISTO; curl verificado ambos modos]
-- **Backend** (`server.py`, `GET /api/sitemap.xml`): ahora es host-aware. Si el `Host` de la petición coincide con el `custom_domain` VERIFICADO de un website, devuelve SOLO las URLs de ese sitio (inicio + sus problem pages publicadas/indexables) bajo ese dominio. Cualquier otro host (dominios primarios, preview, localhost) cae al sitemap global (todos los sitios publicados) como antes.
-- Cada dominio de cliente tiene su propio sitemap en `https://sudominio.com/api/sitemap.xml` (sin cambios en Caddy).
-- Verificado con curl: global devuelve 9 URLs; por-dominio (growthally.uni2mkt.com) devuelve solo su home + 6 problem pages; sitio en borrador devuelve urlset vacío.
-- **Verificación de Search Console**: se decidió usar método **DNS TXT** (fuera de la app, sin código). Guía entregada al usuario. NO se implementó campo de verificación in-app (meta/HTML) — queda como posible mejora futura para que clientes se auto-verifiquen.
-- Nota: cambio solo backend; requiere `deploy.sh` en prod para que aplique. El aclarar al usuario: el sitemap NO afecta qué dominio muestra Google en resultados (cada URL conserva su propio dominio).
+## ✅ Jun 2026 — SEO: Sitemap por dominio (host-aware) [LISTO; verificado en Google Search Console]
+- **Backend** (`server.py`, `GET /api/sitemap.xml`): host-aware.
+  - Detección del host real vía `X-Forwarded-Host` (el proxy reescribe `Host` a la dirección interna 127.0.0.1:8007, por eso NO se puede confiar en `request.base_url`).
+  - Si el host = `custom_domain` VERIFICADO de un website → devuelve SOLO las URLs de ese sitio (home + problem pages) bajo ese dominio.
+  - Primario/global (ezunitech.com): base FIJA `https://ezunitech.com` (o `PUBLIC_BASE_URL`), incluye SOLO sitios SIN dominio propio (como `/sitio/<slug>`) + sus problem pages. Excluye sitios con dominio propio (esos tienen su propio sitemap) → evita el error de Google "URL not allowed" (cross-domain) y las URLs `127.0.0.1`.
+- **Verificado en producción**: Google Search Console procesó `https://ezunitech.com/api/sitemap.xml` con éxito ("Sitemap processed successfully", 13 páginas descubiertas). Pruebas curl: global solo URLs de ezunitech.com; por-dominio (growthally) solo sus URLs.
+- **Search Console verification**: método DNS TXT (fuera de la app, sin código). Guía entregada. Campo in-app (meta/HTML) queda como mejora futura.
+- Opcional futuro: `PUBLIC_BASE_URL` env (default `https://ezunitech.com`).
 
 ## 🔜 Backlog
 
