@@ -5420,6 +5420,10 @@ async def website_sitemap(request: Request):
     host = (request.headers.get("host") or request.url.hostname or "").split(":")[0].lower()
     if host.startswith("www."):
         host = host[4:]
+    # Force https for real domains (behind Caddy the proxied scheme can look
+    # like http); keep http only for local/dev hosts.
+    if host and host not in ("localhost", "127.0.0.1") and base.startswith("http://"):
+        base = "https://" + base[len("http://"):]
 
     urls = []
 
