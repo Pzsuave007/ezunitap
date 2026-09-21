@@ -5417,8 +5417,40 @@ async def public_website_by_domain(domain: str, background_tasks: BackgroundTask
 @api_router.get("/sitemap.xml")
 async def website_sitemap(request: Request):
     base = str(request.base_url).rstrip("/")
-    sites = await db.websites.find({"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000)
+    host = (request.headers.get("host") or request.url.hostname or "").split(":")[0].lower()
+    if host.startswith("www."):
+        host = host[4:]
+
     urls = []
+
+    # Per-domain sitemap: if the request host matches a website's VERIFIED custom
+    # domain, return only that site's URLs (so it can be submitted to that
+    # domain's own Search Console property). Any other host (primary UniTech
+    # domains, preview, localhost) falls through to the global sitemap below.
+    site = None
+    if host:
+        site = await db.websites.find_one(
+            {"custom_domain": host, "custom_domain_verified": True},
+            {"_id": 0, "slug": 1, "published": 1},
+        )
+
+    if site:
+        if site.get("published"):
+            root = f"https://{host}"
+            urls.append(f"<url><loc>{root}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
+            pps = await db.problem_pages.find(
+                {"website_slug": site["slug"], "published": True, "indexable": True},
+                {"_id": 0, "page_slug": 1},
+            ).to_list(2000)
+            for pp in pps:
+                urls.append(
+                    f"<url><loc>{root}/p/{pp['page_slug']}</loc><changefreq>weekly</changefreq></url>"
+                )
+        xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
+        return Response(content=xml, media_type="application/xml")
+
+    # --- Global sitemap (primary UniTech hosts) ---
+    sites = await db.websites.find({"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}).to_list(2000)
     for s in sites:
         dom = s.get("custom_domain") if s.get("custom_domain_verified") else None
         slug = s.get("slug")
