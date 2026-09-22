@@ -905,6 +905,38 @@ async def translate_website_content(content: dict) -> dict:
     return data
 
 
+WEBSITE_TRANSLATE_EN_SYSTEM = """You are a professional bilingual (Spanish↔English) marketing translator
+for U.S. Latino home-service and marketing-agency businesses. You translate a website's content JSON from
+Spanish to natural, warm, professional AMERICAN ENGLISH (the kind a U.S. customer expects — clear,
+persuasive, not robotic). Keep it locally focused and conversion-oriented.
+
+You receive a JSON object of website content (it may contain nested arrays like samples, case_studies,
+team, milestones, about_values). Translate ONLY the human-readable TEXT values to English.
+Strict rules:
+- Keep the EXACT same JSON structure and keys. Do not add or remove keys or array items.
+- Translate text such as: headline, subheadline, about, about_title, about_story, solutions_intro,
+  each how_it_works/why_us/about_values title+desc, each faq q+a, each service name+description,
+  each sample title+subtitle, each case category/summary/body, each case services item,
+  each milestone label, each team role, seo_title, seo_description.
+- In "about_story" keep any "### " heading markers exactly (translate only the heading text after them).
+- NEVER change or translate: any URL or image path (fields img, cover, photo, photos, link, logo),
+  any slug (fields slug, caseSlug), phone numbers, email addresses, numeric values (e.g. results "value",
+  milestone "value"), proper place names (areas, map pin labels), and brand/business/person names
+  (team "name", sample/case client names may stay if they are proper brand names).
+- Return ONLY the translated JSON (no markdown, no commentary)."""
+
+
+async def translate_website_content_to_en(content: dict) -> dict:
+    """Translate a website content dict Spanish -> English, preserving structure."""
+    import json as _json
+    chat = _new_chat(WEBSITE_TRANSLATE_EN_SYSTEM)
+    response = await chat.send_message(UserMessage(text=_json.dumps(content, ensure_ascii=False)))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not translate the content. Try again.")
+    return data
+
+
 WEBSITE_DESIGN_SYSTEM = """You are a brand & web-design consultant for U.S. home-service contractors.
 Given a contractor's trade, pick the single best website TEMPLATE and a brand ACCENT color.
 

@@ -149,6 +149,19 @@ export default function WebsiteEditor() {
     } finally { setTranslating(false); }
   };
 
+  const [translatingEn, setTranslatingEn] = useState(false);
+  const translateEn = async () => {
+    if (!window.confirm(t("website.transEnConfirm"))) return;
+    setTranslatingEn(true);
+    try {
+      const { data } = await api.post("/website/translate-en");
+      if (data.website) setW((prev) => ({ ...prev, ...data.website }));
+      toast.success(t("website.transEnDone"));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setTranslatingEn(false); }
+  };
+
   const uploadServiceImg = async (i, file) => {
     if (!file) return;
     const fd = new FormData();
@@ -457,6 +470,10 @@ export default function WebsiteEditor() {
               <Button onClick={translateEs} disabled={translating} variant="outline" data-testid="website-translate-es"
                 className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
                 {translating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🌐 {t("website.transBtn")}{w?.content_es ? " ✓" : ""}</>}
+              </Button>
+              <Button onClick={translateEn} disabled={translatingEn} variant="outline" data-testid="website-translate-en"
+                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0">
+                {translatingEn ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🇺🇸 {t("website.transEnBtn")}</>}
               </Button>
             </div>
           </div>
@@ -1213,7 +1230,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     about: "Página Nosotros (About)", aboutDesc: "Historia, logros, valores y equipo.",
     solutions: "Página Soluciones", solutionsDesc: "Intro de la página de servicios (los servicios se editan en la pestaña Servicios).",
     client: "Cliente", category: "Categoría", summary: "Resumen", body: "Contenido (usa ### para subtítulos)", cslug: "Slug (url)", servicesUsed: "Servicios (separa con comas)", results: "Resultados (Valor | Etiqueta por línea)",
-    aboutTitle: "Título", story: "Historia (usa ### para subtítulos)", milestones: "Logros en números", values: "Valores / Por qué nosotros", team: "Equipo", value: "Valor", name: "Nombre", role: "Puesto", desc: "Descripción", photo: "Foto (URL)", solPh: "Introducción de la página de servicios",
+    aboutTitle: "Título", story: "Historia (usa ### para subtítulos)", milestones: "Logros en números", values: "Valores / Por qué nosotros", team: "Equipo", value: "Valor", name: "Nombre", role: "Puesto", desc: "Descripción", photo: "Foto (URL)", solPh: "Introducción de la página de servicios", gallery: "Galería (fotos del trabajo)",
   } : {
     intro: "Manage the Agency template's exclusive sections: client showcase, logo strip and map. Remember to hit Save at the top.",
     importBtn: "Import content from my site (uni2mkt.com)",
@@ -1227,7 +1244,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     about: "About page", aboutDesc: "Story, milestones, values and team.",
     solutions: "Solutions page", solutionsDesc: "Intro for the services page (edit services in the Services tab).",
     client: "Client", category: "Category", summary: "Summary", body: "Body (use ### for headings)", cslug: "Slug (url)", servicesUsed: "Services (comma separated)", results: "Results (Value | Label per line)",
-    aboutTitle: "Title", story: "Story (use ### for headings)", milestones: "Milestones (numbers)", values: "Values / Why us", team: "Team", value: "Value", name: "Name", role: "Role", desc: "Description", photo: "Photo (URL)", solPh: "Services page intro",
+    aboutTitle: "Title", story: "Story (use ### for headings)", milestones: "Milestones (numbers)", values: "Values / Why us", team: "Team", value: "Value", name: "Name", role: "Role", desc: "Description", photo: "Photo (URL)", solPh: "Services page intro", gallery: "Gallery (work photos)",
   };
   const samples = Array.isArray(w.samples) ? w.samples : [];
   const logos = Array.isArray(w.client_logos) ? w.client_logos : [];
@@ -1351,6 +1368,19 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
               <Input value={Array.isArray(c.services) ? c.services.join(", ") : ""} onChange={(e) => updCase(i, "services", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder={L.servicesUsed} className="h-9 rounded-lg" />
               <Textarea value={resToText(c.results)} onChange={(e) => updCase(i, "results", textToRes(e.target.value))} placeholder={L.results} className="rounded-lg min-h-[50px] font-mono text-xs" />
               <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[80px]" />
+              <div>
+                <div className="text-xs font-semibold text-slate-500 mb-1">{L.gallery}</div>
+                <div className="space-y-1">
+                  {(Array.isArray(c.photos) ? c.photos : []).map((ph, pi) => (
+                    <div key={pi} className="flex items-center gap-2" data-testid={`agency-case-${i}-photo-${pi}`}>
+                      <div className="w-10 h-10 rounded overflow-hidden bg-slate-100 border border-slate-200 flex-none">{ph && <img src={/^https?:\/\//.test(ph) ? ph : photoSrc(ph)} alt="" className="w-full h-full object-cover" />}</div>
+                      <Input value={ph} onChange={(e) => { const ph2 = [...(c.photos || [])]; ph2[pi] = e.target.value; updCase(i, "photos", ph2); }} placeholder={L.img} className="h-8 rounded-lg text-xs" />
+                      <Button variant="ghost" size="sm" className="rounded-lg h-8 flex-none text-red-500" onClick={() => updCase(i, "photos", (c.photos || []).filter((_, x) => x !== pi))}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" className="rounded-lg h-7 mt-1 text-xs" onClick={() => updCase(i, "photos", [...(c.photos || []), ""])} data-testid={`agency-case-${i}-photo-add`}><Plus className="w-3 h-3 mr-1" /> {L.add}</Button>
+              </div>
             </div>
           ))}
         </div>

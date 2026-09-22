@@ -5050,6 +5050,72 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
     return {"ok": True, "content_es": content_es}
 
 
+_PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
+
+
+def _restore_protected(translated, original):
+    """After AI translation, put back URLs/slugs/ids/numbers that must not change,
+    matching items by index so images and links never break."""
+    if isinstance(original, list) and isinstance(translated, list):
+        out = []
+        for i, orig in enumerate(original):
+            tr = translated[i] if i < len(translated) else orig
+            if isinstance(orig, dict) and isinstance(tr, dict):
+                merged = dict(tr)
+                for k, v in orig.items():
+                    if k in _PROTECTED_ITEM_KEYS:
+                        merged[k] = v
+                    if k == "results" and isinstance(v, list):
+                        trr = tr.get("results") if isinstance(tr.get("results"), list) else []
+                        merged["results"] = [
+                            {"value": (v[j].get("value") if j < len(v) else ""), "label": (trr[j].get("label") if j < len(trr) and isinstance(trr[j], dict) else v[j].get("label", ""))}
+                            for j in range(len(v))
+                        ]
+                out.append(merged)
+            else:
+                out.append(tr)
+        return out
+    return translated
+
+
+@api_router.post("/website/translate-en")
+async def website_translate_en(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Flip the website so ENGLISH becomes the base language (for the English
+    domain) and the current Spanish content is saved as the `content_es` overlay
+    (for the Spanish domain). Translates ALL text with AI, preserving images,
+    links, slugs and numbers."""
+    w = await _get_or_init_website(user_id)
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    services = w.get("services") if w.get("services") else (card.get("services") or [])
+    es_snapshot = {
+        "headline": w.get("headline") or "", "subheadline": w.get("subheadline") or "",
+        "about": w.get("about") or "", "seo_title": w.get("seo_title") or "",
+        "seo_description": w.get("seo_description") or "", "solutions_intro": w.get("solutions_intro") or "",
+        "about_title": w.get("about_title") or "", "about_story": w.get("about_story") or "",
+        "how_it_works": w.get("how_it_works") or [], "why_us": w.get("why_us") or [],
+        "faqs": w.get("faqs") or [], "services": services, "samples": w.get("samples") or [],
+        "case_studies": w.get("case_studies") or [], "team": w.get("team") or [],
+        "milestones": w.get("milestones") or [], "about_values": w.get("about_values") or [],
+    }
+    content = dict(es_snapshot)
+    try:
+        en = await ai_service.translate_website_content_to_en(content)
+    except Exception as e:
+        logger.error(f"website translate-en failed: {e!r}")
+        raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
+    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values"):
+        if key in en:
+            en[key] = _restore_protected(en.get(key), es_snapshot.get(key) or [])
+    en_base = {k: v for k, v in en.items() if v not in (None, "")}
+    await db.websites.update_one(
+        {"user_id": user_id},
+        {"$set": {**en_base, "content_es": es_snapshot, "lang_toggle": True}},
+    )
+    updated = await _get_or_init_website(user_id)
+    return {"ok": True, "website": updated}
+
+
+
 @api_router.post("/website/stock-photos")
 async def website_stock_photos(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Fetch fresh trade-relevant Pexels stock photos and apply them to the
@@ -5505,7 +5571,8 @@ async def website_sitemap(request: Request):
     if host and host not in ("localhost", "127.0.0.1"):
         proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1,
                 "custom_domain_verified": 1, "custom_domain_lang": 1,
-                "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1}
+                "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1,
+                "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1}
         site = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True}, proj)
         if not site:
             site = await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True}, proj)
@@ -5529,6 +5596,17 @@ async def website_sitemap(request: Request):
 
         if site.get("published"):
             urls.append(_url(""))
+            if site.get("services") or (site.get("solutions_intro") or "").strip():
+                urls.append(_url("/soluciones"))
+            if (site.get("about_story") or "").strip():
+                urls.append(_url("/nosotros"))
+            _cs = site.get("case_studies") or []
+            if _cs:
+                urls.append(_url("/casos"))
+                for _c in _cs:
+                    _sl = (_c.get("slug") or "").strip()
+                    if _sl:
+                        urls.append(_url(f"/caso/{_sl}"))
             pps = await db.problem_pages.find(
                 {"website_slug": site["slug"], "published": True, "indexable": True},
                 {"_id": 0, "page_slug": 1},
@@ -5552,7 +5630,7 @@ async def website_sitemap(request: Request):
     urls.append(f"<url><loc>{base}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
 
     sites = await db.websites.find(
-        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1}
+        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1}
     ).to_list(2000)
     # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
@@ -5564,6 +5642,17 @@ async def website_sitemap(request: Request):
             continue
         onsite_slugs.add(slug)
         urls.append(f"<url><loc>{base}/sitio/{slug}</loc><changefreq>weekly</changefreq></url>")
+        if s.get("services") or (s.get("solutions_intro") or "").strip():
+            urls.append(f"<url><loc>{base}/sitio/{slug}/soluciones</loc><changefreq>weekly</changefreq></url>")
+        if (s.get("about_story") or "").strip():
+            urls.append(f"<url><loc>{base}/sitio/{slug}/nosotros</loc><changefreq>weekly</changefreq></url>")
+        _cs = s.get("case_studies") or []
+        if _cs:
+            urls.append(f"<url><loc>{base}/sitio/{slug}/casos</loc><changefreq>weekly</changefreq></url>")
+            for _c in _cs:
+                _sl = (_c.get("slug") or "").strip()
+                if _sl:
+                    urls.append(f"<url><loc>{base}/sitio/{slug}/caso/{_sl}</loc><changefreq>weekly</changefreq></url>")
 
     # Problem/Solution pages of on-site (non-custom-domain) sites only.
     pps = await db.problem_pages.find(
