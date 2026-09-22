@@ -1519,7 +1519,6 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <Textarea value={c.result_after || ""} onChange={(e) => updCase(i, "result_after", e.target.value)} placeholder={L.resAfter} className="rounded-lg min-h-[60px]" />
               </div>
               <Textarea value={resToText(c.results)} onChange={(e) => updCase(i, "results", textToRes(e.target.value))} placeholder={L.results} className="rounded-lg min-h-[50px] font-mono text-xs" />
-              <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[70px]" />
               <div>
                 <div className="text-xs font-semibold text-slate-500 mb-1">{L.gallery}</div>
                 {(Array.isArray(c.photos) ? c.photos : []).length > 0 && (

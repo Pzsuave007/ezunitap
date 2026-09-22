@@ -1917,25 +1917,39 @@ function SharedExtras({ ctx }) {
 function RichText({ text, th }) {
   const blocks = (text || "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const isBullet = (l) => /^\s*([-*•✅✔️➤])\s+/.test(l);
+  const renderBody = (body, key) => {
+    const lines = body.split(/\n/).filter((l) => l.trim());
+    if (lines.length && lines.every(isBullet)) {
+      return (
+        <ul key={key} className="space-y-2">
+          {lines.map((l, j) => (
+            <li key={j} className="flex gap-2.5 leading-relaxed" style={{ color: th.muted }}>
+              <span className="mt-1 flex-none" style={{ color: th.ink === "#ffffff" ? "#22c55e" : "#16a34a" }}>•</span>
+              <span>{l.replace(/^\s*([-*•✅✔️➤])\s+/, "")}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return <p key={key} className="leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{body}</p>;
+  };
   return (
     <div className="space-y-4">
       {blocks.map((t, i) => {
-        if (t.startsWith("### ")) return <h3 key={i} className="wh text-xl md:text-2xl font-bold" style={{ color: th.ink }}>{t.slice(4)}</h3>;
-        if (t.startsWith("## ")) return <h2 key={i} className="wh text-2xl md:text-3xl font-bold" style={{ color: th.ink }}>{t.slice(3)}</h2>;
-        const lines = t.split(/\n/);
-        if (lines.length && lines.every((l) => !l.trim() || isBullet(l))) {
+        if (t.startsWith("### ") || t.startsWith("## ")) {
+          const nl = t.indexOf("\n");
+          const headLine = nl === -1 ? t : t.slice(0, nl);
+          const rest = nl === -1 ? "" : t.slice(nl + 1).trim();
+          const h3 = headLine.startsWith("### ");
+          const htxt = headLine.replace(/^#{2,3}\s+/, "");
           return (
-            <ul key={i} className="space-y-2">
-              {lines.filter((l) => l.trim()).map((l, j) => (
-                <li key={j} className="flex gap-2.5 leading-relaxed" style={{ color: th.muted }}>
-                  <span className="mt-1 flex-none" style={{ color: th.ink === "#ffffff" ? "#22c55e" : "#16a34a" }}>•</span>
-                  <span>{l.replace(/^\s*([-*•✅✔️➤])\s+/, "")}</span>
-                </li>
-              ))}
-            </ul>
+            <div key={i} className="space-y-3">
+              {h3 ? <h3 className="wh text-xl md:text-2xl font-bold" style={{ color: th.ink }}>{htxt}</h3> : <h2 className="wh text-2xl md:text-3xl font-bold" style={{ color: th.ink }}>{htxt}</h2>}
+              {rest && renderBody(rest, `${i}-r`)}
+            </div>
           );
         }
-        return <p key={i} className="leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{t}</p>;
+        return renderBody(t, i);
       })}
     </div>
   );
@@ -2050,9 +2064,9 @@ function CaseList({ ctx }) {
   );
 }
 
-function CaseSection({ id, kicker, title, th, accent, children, alt }) {
+function CaseSection({ id, kicker, title, th, accent, children }) {
   return (
-    <section id={id} className="py-14 md:py-20" style={alt ? { background: th.dark ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.02)" } : {}} data-testid={id ? `case-sec-${id}` : undefined}>
+    <section id={id} className="py-14 md:py-20" data-testid={id ? `case-sec-${id}` : undefined}>
       <div className="max-w-5xl mx-auto px-5">
         {kicker && <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{kicker}</p>}
         {title && <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{title}</h2>}
@@ -2076,7 +2090,6 @@ function CaseDetail({ ctx }) {
   const solStrategies = (c.solution_strategies || "").trim();
   const before = (c.result_before || "").trim();
   const after = (c.result_after || "").trim();
-  const body = (c.body || "").trim();
   const info = [
     c.location && ["📍", agT(lang, "Location", "Ubicación"), c.location],
     c.industry && ["🍽️", agT(lang, "Industry", "Industria"), c.industry],
@@ -2099,7 +2112,7 @@ function CaseDetail({ ctx }) {
 
       {/* CLIENT INFO */}
       {info.length > 0 && (
-        <CaseSection id="info" title={agT(lang, "Client information", "Información del cliente")} th={th} accent={accent} alt>
+        <CaseSection id="info" title={agT(lang, "Client information", "Información del cliente")} th={th} accent={accent}>
           <div className="grid sm:grid-cols-2 gap-4">
             {info.map(([icon, label, val], i) => (
               <div key={i} className="rounded-2xl border p-5 flex gap-4" style={{ borderColor: th.border, background: th.surface }}>
@@ -2122,7 +2135,7 @@ function CaseDetail({ ctx }) {
 
       {/* LA SOLUCIÓN */}
       {hasSolution && (
-        <CaseSection id="solution" kicker={agT(lang, "What we did", "Lo que hicimos")} title={agT(lang, "The solution", "La solución")} th={th} accent={accent} alt>
+        <CaseSection id="solution" kicker={agT(lang, "What we did", "Lo que hicimos")} title={agT(lang, "The solution", "La solución")} th={th} accent={accent}>
           {services.length > 0 && <div className="flex flex-wrap gap-2 mb-8">{services.map((s, i) => <span key={i} className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: `${accent}18`, color: accent }}>{s}</span>)}</div>}
           <div className="grid md:grid-cols-2 gap-8">
             {solServices && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: th.ink }}>{agT(lang, "Services provided", "Servicios proporcionados")}</h3><RichText text={solServices} th={th} /></div>}
@@ -2147,7 +2160,7 @@ function CaseDetail({ ctx }) {
 
       {/* RESULTADOS IMPACTANTES */}
       {(before || after || results.length > 0) && (
-        <CaseSection id="results" kicker={agT(lang, "The outcome", "El resultado")} title={agT(lang, "Impactful results", "Resultados impactantes")} th={th} accent={accent} alt>
+        <CaseSection id="results" kicker={agT(lang, "The outcome", "El resultado")} title={agT(lang, "Impactful results", "Resultados impactantes")} th={th} accent={accent}>
           {(before || after) && (
             <div className="grid md:grid-cols-2 gap-5 mb-10">
               {before && <div className="rounded-2xl border p-6" style={{ borderColor: "#ef444455", background: `${th.dark ? "rgba(239,68,68,.08)" : "rgba(239,68,68,.05)"}` }}><div className="font-bold mb-2" style={{ color: "#ef4444" }}>🔴 {agT(lang, "Before", "Antes")}</div><p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{before}</p></div>}
@@ -2170,9 +2183,6 @@ function CaseDetail({ ctx }) {
           </div>
         </CaseSection>
       )}
-
-      {/* Optional extra body */}
-      {body && <CaseSection th={th} accent={accent}><RichText text={body} th={th} /></CaseSection>}
 
       <CaseCTA ctx={ctx} />
     </>
