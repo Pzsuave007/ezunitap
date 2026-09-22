@@ -31,6 +31,7 @@ import EmbedSettings from "@/pages/EmbedSettings";
 import SocialStudio from "@/pages/SocialStudio";
 import MarketingStart from "@/pages/MarketingStart";
 import Landing from "@/pages/Landing";
+import AgencyHome from "@/pages/AgencyHome";
 import DemoStart from "@/pages/DemoStart";
 import AdminLeads from "@/pages/AdminLeads";
 import Agreements from "@/pages/Agreements";
@@ -146,6 +147,7 @@ function App() {
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/sitio/:slug" element={<ContractorSite />} />
+            <Route path="/agency" element={<AgencyHome />} />
             <Route path="/sitio/:slug/p/:pageSlug" element={<ProblemPage />} />
             <Route path="/p/:pageSlug" element={<ProblemPage byDomain />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />

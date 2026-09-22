@@ -5487,6 +5487,49 @@ async def website_sitemap(request: Request):
     return Response(content=xml, media_type="application/xml")
 
 
+class AgencyLeadIn(BaseModel):
+    name: str
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    business_name: Optional[str] = ""
+    message: Optional[str] = ""
+    lang: Optional[str] = "en"
+    source_site: Optional[str] = ""  # growthally.agency | uni2mkt.com
+
+
+@api_router.post("/agency/lead")
+async def agency_lead(payload: AgencyLeadIn):
+    """Public lead capture for the Growth Ally / Uni2 agency site (bilingual).
+    Stores the lead and emails the agency owner (non-blocking)."""
+    admin_email = (os.environ.get("SUPER_ADMIN_EMAIL") or "").strip().lower()
+    owner = await db.users.find_one({"email": admin_email}, {"_id": 0, "id": 1}) if admin_email else None
+    owner_id = owner["id"] if owner else None
+    lead = {
+        "id": _new_id(),
+        "user_id": owner_id,
+        "name": payload.name,
+        "email": payload.email or "",
+        "phone": payload.phone or "",
+        "company": payload.business_name or "",
+        "description": (payload.message or "").strip(),
+        "lead_type": "agency",
+        "source": "agency_site",
+        "source_site": payload.source_site or "",
+        "lang": payload.lang or "en",
+        "status": "new",
+        "created_at": _now_iso(),
+    }
+    await db.agency_leads.insert_one(dict(lead))
+    if owner_id:
+        _fire_owner_email(owner_id, "lead", {
+            "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+            "service": payload.business_name or "", "description": (payload.message or "").strip(),
+            "source_label": payload.source_site or "Agency site",
+        })
+    return {"ok": True}
+
+
+
 @api_router.post("/public/website/{slug}/lead")
 async def public_website_lead(slug: str, payload: CardLeadIn):
     w = await db.websites.find_one({"slug": slug}, {"_id": 0})
