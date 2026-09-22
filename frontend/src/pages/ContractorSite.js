@@ -29,6 +29,8 @@ const THEME = {
     bg: "#FFF8F0", surface: "#FFFFFF", ink: "#33302E", muted: "#7A736A", border: "transparent", radius: "rounded-[2rem]", btn: "rounded-full font-extrabold" },
   luxe: { dark: true, h: "'Cormorant Garamond',serif", b: "'Jost',sans-serif", hc: "font-semibold tracking-tight",
     bg: "#141414", surface: "#1C1C1C", ink: "#F5F5F0", muted: "#A8A29A", border: "rgba(212,175,55,.28)", radius: "rounded-none", btn: "rounded-none uppercase tracking-[0.15em] font-medium" },
+  agency: { dark: true, h: "'Plus Jakarta Sans',sans-serif", b: "'Inter',sans-serif", hc: "font-black tracking-tight",
+    bg: "#0a1130", surface: "#111a3a", ink: "#FFFFFF", muted: "#94A3B8", border: "rgba(255,255,255,.1)", radius: "rounded-2xl", btn: "rounded-full font-bold" },
 };
 const LEGACY = { clean: "bento", bold: "cinematic", warm: "craftsman" };
 const resolveTpl = (v) => (THEME[v] ? v : (LEGACY[v] || "trust"));
@@ -224,13 +226,13 @@ export default function ContractorSite({ injected }) {
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
   const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`), openWork: setWorkOpen };
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, lang, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`), openWork: setWorkOpen };
   // Central, business-aware CTA labels so every template converts whether the
   // business takes appointments (Book) or projects/estimates (Quote).
   ctx.bookingOn = !!(sec?.booking && data?.card_slug);
-  ctx.cta = ctx.bookingOn ? "Book Now" : "Get a Free Quote";
-  ctx.ctaShort = ctx.bookingOn ? "Book Now" : "Free Quote";
-  const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe }[key];
+  ctx.cta = lang === "es" ? (ctx.bookingOn ? "Agenda ahora" : "Cotiza gratis") : (ctx.bookingOn ? "Book Now" : "Get a Free Quote");
+  ctx.ctaShort = lang === "es" ? (ctx.bookingOn ? "Agendar" : "Cotizar") : (ctx.bookingOn ? "Book Now" : "Free Quote");
+  const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe, agency: Agency }[key];
 
   return (
     <div style={{ background: th.bg, color: th.ink, fontFamily: th.b }} className="min-h-screen antialiased" data-testid={`site-tpl-${key}`}>
@@ -1744,8 +1746,146 @@ function AreasBlock({ ctx, bg, dark }) {
   );
 }
 
+// ---- AGENCY: premium bilingual template (exclusive) ------------------------
+function Agency({ ctx }) {
+  const { w, b, accent, accentText, heroImg, services, goContact } = ctx;
+  const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
+  const why = Array.isArray(w.why_us) ? w.why_us : [];
+  const faqs = Array.isArray(w.faqs) ? w.faqs : [];
+  const areas = Array.isArray(w.areas) ? w.areas : [];
+  const phone = w.cta_phone || b?.phone;
+  const aboutText = (w.subheadline || w.about || "").trim();
+  return (
+    <div>
+      {/* NAV */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl border-b" style={{ background: "rgba(10,17,48,.82)", borderColor: "rgba(255,255,255,.1)" }}>
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+          <span className="wh text-lg font-black">{b?.name || w.headline}</span>
+          <div className="flex items-center gap-3">
+            {phone && <a href={`tel:${phone}`} className="hidden sm:inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            <button onClick={goContact} className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      </header>
+
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        {heroImg && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${heroImg})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(10,17,48,.72),rgba(10,17,48,.94) 70%,#0a1130)" }} />
+        <div className="relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="wreveal wshow">
+            {aboutText && <p className="font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: accent }}>{b?.name || "Marketing"}</p>}
+            <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.05]">{w.headline || b?.name}</h1>
+            {aboutText && <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed line-clamp-5">{aboutText}</p>}
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-7 py-3.5 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
+              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-6 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-colors" style={{ borderColor: "rgba(255,255,255,.25)" }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            </div>
+          </div>
+          <div className="w-full lg:justify-self-end max-w-md"><HeroForm ctx={ctx} dark /></div>
+        </div>
+      </section>
+
+      {/* SERVICES */}
+      {services.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
+          <h2 className="wh text-3xl md:text-4xl text-center max-w-3xl mx-auto">{w.services_title || (b?.name ? `${b.name}` : "What we do")}</h2>
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {services.map((s, i) => (
+              <div key={i} data-testid={`agency-svc-${i}`} className="group rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
+                <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}26`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>
+                <h3 className="font-bold text-lg">{s.name || s.title}</h3>
+                {s.description && <p className="mt-2.5 text-sm text-slate-400 leading-relaxed">{s.description}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* PROCESS */}
+      {steps.length > 0 && (
+        <section className="border-y py-16 md:py-24" style={{ background: "rgba(255,255,255,.03)", borderColor: "rgba(255,255,255,.08)" }}>
+          <div className="max-w-6xl mx-auto px-5">
+            <h2 className="wh text-3xl md:text-4xl text-center">{w.how_it_works_title || "How it works"}</h2>
+            <div className="mt-12 grid md:grid-cols-3 lg:grid-cols-5 gap-5">
+              {steps.slice(0, 5).map((s, i) => (
+                <div key={i} className="relative rounded-2xl border p-6" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
+                  <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}22` }}>{i + 1}</span>
+                  <h3 className="font-bold text-base relative mt-2">{s.title}</h3>
+                  {s.desc && <p className="mt-2 text-xs text-slate-400 leading-relaxed relative">{s.desc}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* WHY US */}
+      {why.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
+          <h2 className="wh text-3xl md:text-4xl text-center">{w.why_us_title || "Why us"}</h2>
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {why.map((s, i) => (
+              <div key={i} className="rounded-2xl border p-6 flex items-start gap-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
+                <CheckCircle2 className="w-5 h-5 mt-0.5 flex-none" style={{ color: accent }} />
+                <div><h3 className="font-bold text-base">{s.title}</h3>{s.desc && <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">{s.desc}</p>}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* FAQ */}
+      {faqs.length > 0 && (
+        <section className="max-w-3xl mx-auto px-5 py-16 md:py-20">
+          <h2 className="wh text-3xl md:text-4xl text-center mb-8">FAQ</h2>
+          <div className="space-y-3">
+            {faqs.map((f, i) => (
+              <details key={i} className="group rounded-xl border p-4" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
+                <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none">{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
+                {f.a && <p className="mt-3 text-sm text-slate-400 leading-relaxed">{f.a}</p>}
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* CONTACT */}
+      <section id="contact" className="py-16 md:py-24">
+        <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-start">
+          <div>
+            <h2 className="wh text-3xl md:text-4xl">{ctx.bookingOn ? "Book your appointment" : "Ready to grow?"}</h2>
+            <p className="mt-4 text-slate-400 leading-relaxed max-w-md">{ctx.bookingOn ? "Pick a time that works — we'll confirm right away." : "Tell us about your goals and we'll show you how we can help. No obligation."}</p>
+            {phone && <a href={`tel:${phone}`} className="mt-6 inline-flex items-center gap-2 text-sm text-slate-300"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            {areas.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {areas.map((a, i) => <span key={i} className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,.06)", color: "#cbd5e1" }}><MapPin className="w-3 h-3 inline mr-1" style={{ color: accent }} />{a}</span>)}
+              </div>
+            )}
+          </div>
+          <div className="w-full max-w-md"><HeroForm ctx={ctx} dark /></div>
+        </div>
+      </section>
+
+      <footer className="border-t py-8 text-center text-xs text-slate-500" style={{ borderColor: "rgba(255,255,255,.1)" }}>
+        © {new Date().getFullYear()} {b?.name || w.headline}{phone ? ` · ${phone}` : ""}
+      </footer>
+    </div>
+  );
+}
+
 function HeroForm({ ctx, dark }) {
   const { w, data, th, accent, accentText, slug } = ctx;
+  const es = ctx.lang === "es";
+  const L = es ? {
+    quote: "Cotiza gratis", book: "Agenda tu cita",
+    name: "Tu nombre", phone: "Teléfono", svc: "¿Qué necesitas? (opcional)", svcBook: "Servicio (opcional)",
+    submit: "Quiero mi cotización", submitBook: "Solicitar cita", thanks: "¡Gracias! Te contactaremos muy pronto.",
+  } : {
+    quote: "Get your free quote", book: "Book your appointment",
+    name: "Your name", phone: "Phone number", svc: "What do you need? (optional)", svcBook: "Service (optional)",
+    submit: "Get My Free Quote", submitBook: "Request Appointment", thanks: "Thanks! We'll reach out shortly.",
+  };
   const sec = w.sections || {};
   const bookingOn = sec.booking && data.card_slug;
   const [form, setForm] = useState({ name: "", phone: "", service: "" });
@@ -1768,17 +1908,17 @@ function HeroForm({ ctx, dark }) {
   if (ok) return (
     <div className={`${wrap} text-center`} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form-success">
       <CheckCircle2 className="w-10 h-10 mx-auto" style={{ color: accent }} />
-      <p className="mt-2 font-bold" style={{ color: txt }}>Thanks! We'll reach out shortly.</p>
+      <p className="mt-2 font-bold" style={{ color: txt }}>{L.thanks}</p>
     </div>
   );
   const inp = `w-full h-11 px-3.5 rounded-xl border outline-none mb-2.5 text-sm font-medium ${phClass}`;
   return (
     <form onSubmit={submit} className={wrap} style={{ background: cardBg, border: `1px solid ${cardBorder}` }} data-testid="site-hero-form">
-      <div className="wh font-bold text-lg mb-3" style={{ color: txt }}>{bookingOn ? "Book your appointment" : "Get your free quote"}</div>
-      <input required placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="site-hero-form-name" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
-      <input required placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} data-testid="site-hero-form-phone" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
-      <input placeholder={bookingOn ? "Service (optional)" : "What do you need? (optional)"} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} data-testid="site-hero-form-service" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
-      <button type="submit" disabled={sending} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2 font-bold mt-1`} style={{ background: accent, color: accentText }}>{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{bookingOn ? "Request Appointment" : "Get My Free Quote"} <ArrowRight className="w-4 h-4" /></>}</button>
+      <div className="wh font-bold text-lg mb-3" style={{ color: txt }}>{bookingOn ? L.book : L.quote}</div>
+      <input required placeholder={L.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="site-hero-form-name" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <input required placeholder={L.phone} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} data-testid="site-hero-form-phone" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <input placeholder={bookingOn ? L.svcBook : L.svc} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} data-testid="site-hero-form-service" className={inp} style={{ background: inpBg, borderColor: inpBorder, color: txt }} />
+      <button type="submit" disabled={sending} className={`w-full h-12 ${th.btn} inline-flex items-center justify-center gap-2 font-bold mt-1`} style={{ background: accent, color: accentText }}>{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{bookingOn ? L.submitBook : L.submit} <ArrowRight className="w-4 h-4" /></>}</button>
     </form>
   );
 }

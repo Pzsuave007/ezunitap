@@ -1065,6 +1065,14 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - ⚠️ **Limitación Resend**: con `onboarding@resend.dev` en modo prueba, Resend SOLO entrega al email verificado de la cuenta Resend. Para enviar a cada contratista se debe verificar un dominio propio y cambiar `NOTIFY_FROM`.
 - Verificado: `POST /admin/notify/test` responde correctamente "no configurado" sin key; plantillas es/en generan HTML válido; página admin renderiza bien (screenshot). Envío real pendiente de que el usuario pegue la key.
 
+## ✅ Jun 2026 — Template premium "agency" exclusivo [LISTO; EN/ES verificado por screenshot]
+- Nuevo layout `Agency` en `ContractorSite.js` (navy #0a1130 + acento verde, réplica del estilo de growthally.agency/uni2mkt.com): nav, hero + form, servicios numerados, proceso, why-us, FAQs, contacto, footer. NO afecta los templates de contratistas (solo se activa con `template==="agency"`).
+- `THEME.agency` agregado + registrado en el mapa de Layouts + `resolveTpl` lo reconoce.
+- Activado en la cuenta del admin: website `template='agency'`, `accent_color='#10B981'` (slug uni2-marketing-agency).
+- Localización del formulario/CTA por idioma: `ctx.lang` agregado; `HeroForm` y `ctx.cta/ctaShort` ahora traducen es/en (beneficia a TODOS los templates). Verificado: ES muestra "Cotiza gratis / Tu nombre / Teléfono / Quiero mi cotización".
+- Preview: `/sitio/uni2-marketing-agency?preview=1&lang=en|es` (soporte `?lang=` agregado en ContractorSite).
+- PENDIENTE de contenido (no bug): la traducción ES de los SERVICIOS quedó incompleta (títulos/desc salen en inglés) → el usuario debe re-generar con "Traducir a Español" en el editor.
+
 ## ✅ Jun 2026 — Sitio bilingüe con DOS dominios (1 update → 2 sitios) [LISTO; UI + endpoints verificados]
 - Decisión del usuario: NO crear un sistema/página aparte para la agencia (Growth Ally / Uni2). Usar el creador de sitios existente. Se descartó la página custom `/agency` (eliminada de App.js; queda `AgencyHome.js` y endpoint `/api/agency/lead` como código muerto no ruteado).
 - **Backend** (`server.py`): sistema de dominios generalizado a 2 slots. `_DOMAIN_SLOTS` (slot1=primary/EN default, slot2=secondary/ES default). Endpoints con `?slot=1|2`: GET/POST/DELETE `/website/domain`, POST `/website/domain/verify`, `/website/domain/verify-a`. Nuevo GET `/website/domains` (ambos slots). Campos nuevos: `custom_domain_2*`, `custom_domain_lang`, `custom_domain_2_lang`.
