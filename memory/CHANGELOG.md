@@ -1,5 +1,10 @@
 # UniTech — Changelog
 
+## Jun 2026 — Editor Agencia con sub-tabs + IA para escribir contenido
+- `AgencyPanel` reorganizado con **sub-tabs** (Importar / Samples / Logos / Mapa / Casos / Soluciones / Nosotros): solo se muestra la sección activa, sin scroll infinito (`agency-subtab-*`).
+- **IA para contenido**: `POST /website/ai-agency` (kind `case`/`about`) + `ai_service.generate_case_study()` y `generate_about_content()`. Botón ✨ por caso (`agency-case-ai-{i}`) llena resumen/cuerpo/servicios/resultados; botón ✨ en Nosotros (`agency-about-ai`) llena título/historia/logros/valores. Español o inglés según el idioma del editor.
+- Testing agent (iteration_59): 100%, sin bugs (case body ~977 chars, about ~1665 chars, persistencia OK). Build main.1ae53688.js trackeado.
+
 ## Jun 2026 — Mapa Google My Maps embebido + logos del strip más grandes
 - `ClientMap` ahora usa un **iframe de Google My Maps** cuando existe `map_embed` (como el sitio real del cliente); los pines quedan como fallback. Nuevo campo `map_embed` en `WebsiteIn` y editor (`agency-map-embed`) con normalizador que acepta URL embed/viewer/edit o `<iframe>` pegado. `UNI2_DEFAULTS.map_embed` = My Map real (mid 152Uf65...).
 - **Logos del strip** agrandados: chips h-24 (antes h-16), imágenes h-14/md:h-16 (antes h-8/9), max-w-220px.

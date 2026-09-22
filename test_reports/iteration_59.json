@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only testing of AgencyPanel sub-tabs and AI buttons in WebsiteEditor. All flows validated end-to-end including persistence via GET /api/website.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_results": {
+    "sub_tabs_present": "All 7 sub-tabs present (import, samples, logos, map, cases, solutions, about)",
+    "default_view": "agency-import-btn visible by default (import section)",
+    "cases_subtab": "agency-case-add and agency-case-0 visible; import section hidden when switching",
+    "about_subtab": "agency-about-title, agency-about-story, agency-about-ai visible",
+    "map_subtab": "agency-map-embed input visible and editable",
+    "ai_case_button": "agency-case-ai-0 filled summary+body (977 chars body) after ~7s",
+    "ai_about_button": "agency-about-ai filled title + story (1665 chars) after ~8s",
+    "persistence": "After website-save-top, GET /api/website (Bearer sf_token) returned 200 with case_studies[0].body/summary, about_title, about_story, and map_embed='https://www.google.com/maps/d/embed?mid=TESTMAP123' all persisted correctly"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "demo-template@ezunitech.com / DemoTemplate2026!",
+  "seed_data_creation": "None (used existing demo template account)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "AgencyPanel sub-tab navigation and AI content generation (case + about) work correctly. IA endpoints /website/ai-agency respond within 7-10s. Save persists via PUT /api/website. Public endpoint /api/public/website/{slug} appears to return draft/empty content until publish; authenticated GET /api/website with sf_token from localStorage returns the saved data."
+}
