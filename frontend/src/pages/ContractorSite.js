@@ -59,7 +59,7 @@ function useReveal() {
 
 // ===========================================================================
 export default function ContractorSite({ injected, page, byDomain }) {
-  const { slug, caseSlug } = useParams();
+  const { slug, caseSlug, serviceSlug } = useParams();
   const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
   const [lang, setLang] = useState("en");
@@ -240,6 +240,7 @@ export default function ContractorSite({ injected, page, byDomain }) {
   ctx.homeHref = byDomain ? "/" : `/sitio/${w.slug}`;
   ctx.page = page || null;
   ctx.caseSlug = caseSlug || null;
+  ctx.serviceSlug = serviceSlug || null;
   if (page) ctx.goContact = () => { window.location.href = `${ctx.homeHref}#contact`; };
 
   return (
@@ -1782,6 +1783,13 @@ const mapEmbedSrc = (v) => {
 // or one of the owner's uploaded photo ids.
 const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, w)));
 
+// URL-safe slug for a service. Mirrors the backend _slugify (used in sitemap.xml)
+// so the link generated here and the sitemap entry always resolve to the same page.
+const slugify = (t) => ((t || "").toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""));
+const svcSlug = (s, i) => ((s && s.slug) ? s.slug : (slugify(s && s.name) || `servicio-${i}`));
+// Match a service to an existing Problem/Solution conversion page by name.
+const ppForService = (data, name) => (data?.problem_pages || []).find((p) => (p.service_name || "").toLowerCase().trim() === (name || "").toLowerCase().trim());
+
 // Resolve a section's colors: either from a per-section override {bg} or the template theme.
 const secTheme = (th, sty) => {
   if (sty && sty.bg) {
@@ -2141,12 +2149,74 @@ function AboutPage({ ctx }) {
   );
 }
 
+function ServiceDetail({ ctx }) {
+  const { th, accent, accentText, lang, services, serviceSlug, pageHref, homeHref, w, b } = ctx;
+  let s = null;
+  services.forEach((x, i) => { if (svcSlug(x, i) === serviceSlug) s = x; });
+  if (!s) return <SubHero ctx={ctx} title={agT(lang, "Service not found", "Servicio no encontrado")} sub={<a href={pageHref("soluciones")} style={{ color: accent }}>{agT(lang, "Back to solutions", "Volver a soluciones")}</a>} />;
+  const photos = (Array.isArray(s.photos) ? s.photos : []).filter((p) => p && p.id);
+  const beforeP = photos.filter((p) => p.kind === "before");
+  const afterP = photos.filter((p) => p.kind === "after");
+  const gallery = photos.filter((p) => !["before", "after"].includes(p.kind));
+  const others = services.filter((x, i) => svcSlug(x, i) !== serviceSlug).slice(0, 3);
+  return (
+    <>
+      <section className="relative" data-testid="service-detail">
+        {s.img && <div className="absolute inset-0"><img src={s.img} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.82))" }} /></div>}
+        <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
+          <a href={pageHref("soluciones")} className={`text-sm ${s.img ? "text-white/80 hover:text-white" : ""}`} style={s.img ? {} : { color: th.muted }} data-testid="service-back">← {agT(lang, "All services", "Todos los servicios")}</a>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>{agT(lang, "Service", "Servicio")}</p>
+          <h1 className="wh text-4xl md:text-6xl mt-2" style={{ color: s.img ? "#fff" : th.ink }}>{s.name || s.title}</h1>
+          {s.starting_price && <p className="mt-4 text-lg font-semibold" style={{ color: s.img ? "rgba(255,255,255,.9)" : accent }}>{agT(lang, "From", "Desde")} {s.starting_price}</p>}
+        </div>
+      </section>
+      <section className="max-w-3xl mx-auto px-5 py-16">
+        {(s.description || "").trim() ? <RichText text={s.description} th={th} /> : <p className="leading-relaxed" style={{ color: th.muted }}>{agT(lang, "Contact us to learn more about this service.", "Contáctanos para conocer más sobre este servicio.")}</p>}
+        <a href={`${homeHref}#contact`} data-testid="service-cta" className="mt-8 inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta}<ArrowRight className="w-5 h-5" /></a>
+      </section>
+      {(beforeP.length > 0 && afterP.length > 0) && (
+        <section className="max-w-5xl mx-auto px-5 pb-8" data-testid="service-beforeafter">
+          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Before & after", "Antes y después")}</h2>
+          <BeforeAfter before={photoUrl(beforeP[0].id, 900)} after={photoUrl(afterP[0].id, 900)} accent={accent} />
+        </section>
+      )}
+      {gallery.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-gallery">
+          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Our work", "Nuestro trabajo")}</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {gallery.map((p, i) => <div key={i} className="rounded-xl overflow-hidden border" style={{ borderColor: th.border }}><img src={photoUrl(p.id, 800)} loading="lazy" alt="" className="w-full object-cover aspect-[4/3]" /></div>)}
+          </div>
+        </section>
+      )}
+      {others.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-more">
+          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Other services", "Otros servicios")}</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {others.map((x) => {
+              const i = services.indexOf(x);
+              const pp = ppForService(ctx.data, x.name);
+              const href = pp ? ctx.ppHref(pp.page_slug) : pageHref(`servicio/${svcSlug(x, i)}`);
+              return (
+                <a key={i} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: th.surface, borderColor: th.border }}>
+                  {x.img && <div className="aspect-[16/10] overflow-hidden"><img src={x.img} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>}
+                  <div className="p-5"><h3 className="font-bold" style={{ color: th.ink }}>{x.name}</h3><span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span></div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      <CaseCTA ctx={ctx} />
+    </>
+  );
+}
+
 function SubPageRouter({ ctx }) {
   const { th } = ctx;
-  const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage }[ctx.page];
+  const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage, servicio: ServiceDetail }[ctx.page];
   return (
     <div style={{ background: th.bg, color: th.ink }} data-testid={`site-subpage-${ctx.page}`}>
-      <SubNav ctx={ctx} active={ctx.page === "caso" ? "casos" : ctx.page} />
+      <SubNav ctx={ctx} active={ctx.page === "caso" ? "casos" : (ctx.page === "servicio" ? "soluciones" : ctx.page)} />
       {Page ? <Page ctx={ctx} /> : null}
       <SubFooter ctx={ctx} />
     </div>
@@ -2220,13 +2290,21 @@ function Agency({ ctx }) {
               <h2 className="wh text-3xl md:text-4xl" style={{ color: SV.ink }}>{w.services_title || agT(lang, "Smart tools to grow your business", "Herramientas inteligentes para crecer tu negocio")}</h2>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {services.map((s, i) => (
-                <div key={i} data-testid={`agency-svc-${i}`} className="group rounded-2xl border p-7 transition-all hover:-translate-y-1 hover:shadow-lg" style={{ background: SV.card, borderColor: SV.cardBorder }}>
-                  <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>
-                  <h3 className="font-bold text-lg" style={{ color: SV.ink }}>{s.name || s.title}</h3>
-                  {s.description && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: SV.muted }}>{s.description}</p>}
-                </div>
-              ))}
+              {services.map((s, i) => {
+                const pp = ppForService(ctx.data, s.name);
+                const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`);
+                return (
+                  <a key={i} href={href} data-testid={`agency-svc-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: SV.card, borderColor: SV.cardBorder }}>
+                    {s.img && <div className="aspect-[16/10] overflow-hidden"><img src={s.img} alt={s.name || ""} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>}
+                    <div className="p-7 flex-1 flex flex-col">
+                      {!s.img && <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
+                      <h3 className="font-bold text-lg" style={{ color: SV.ink }}>{s.name || s.title}</h3>
+                      {s.description && <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: SV.muted }}>{s.description}</p>}
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
         </section>

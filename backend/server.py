@@ -2916,6 +2916,18 @@ def _slugify(text: str) -> str:
     return s or "card"
 
 
+def _svc_slug(svc: dict, i: int) -> str:
+    """URL slug for a service — mirrors svcSlug() in ContractorSite.js."""
+    existing = (svc.get("slug") or "").strip()
+    if existing:
+        return existing
+    name = (svc.get("name") or "").strip()
+    if not name:
+        return f"servicio-{i}"
+    s = _slugify(name)
+    return s if s != "card" else f"servicio-{i}"
+
+
 async def _ensure_card(user_id: str) -> dict:
     """Return the user's PRIMARY card settings, creating defaults if absent."""
     card = await db.cards.find_one({"user_id": user_id, "is_primary": True}, {"_id": 0})
@@ -5704,10 +5716,16 @@ async def website_sitemap(request: Request):
                         urls.append(_url(f"/caso/{_sl}"))
             pps = await db.problem_pages.find(
                 {"website_slug": site["slug"], "published": True, "indexable": True},
-                {"_id": 0, "page_slug": 1},
+                {"_id": 0, "page_slug": 1, "service_name": 1},
             ).to_list(2000)
+            pp_names = set()
             for pp in pps:
                 urls.append(_url(f"/p/{pp['page_slug']}"))
+                pp_names.add((pp.get("service_name") or "").lower().strip())
+            for i, svc in enumerate(site.get("services") or []):
+                if (svc.get("name") or "").lower().strip() in pp_names:
+                    continue
+                urls.append(_url(f"/servicio/{_svc_slug(svc, i)}"))
         xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
                'xmlns:xhtml="http://www.w3.org/1999/xhtml">' + "".join(urls) + "</urlset>")
@@ -5729,6 +5747,15 @@ async def website_sitemap(request: Request):
     ).to_list(2000)
     # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
+    # Problem/Solution page service names per site (to avoid emitting a duplicate
+    # /servicio/ URL when a service already has its own /p/ conversion page).
+    _all_pps = await db.problem_pages.find(
+        {"published": True, "indexable": True},
+        {"_id": 0, "website_slug": 1, "page_slug": 1, "service_name": 1},
+    ).to_list(4000)
+    pp_names_by_slug = {}
+    for pp in _all_pps:
+        pp_names_by_slug.setdefault(pp.get("website_slug"), set()).add((pp.get("service_name") or "").lower().strip())
     for s in sites:
         has_domain = bool((s.get("custom_domain") and s.get("custom_domain_verified"))
                           or (s.get("custom_domain_2") and s.get("custom_domain_2_verified")))
@@ -5739,6 +5766,11 @@ async def website_sitemap(request: Request):
         urls.append(f"<url><loc>{base}/sitio/{slug}</loc><changefreq>weekly</changefreq></url>")
         if s.get("services") or (s.get("solutions_intro") or "").strip():
             urls.append(f"<url><loc>{base}/sitio/{slug}/soluciones</loc><changefreq>weekly</changefreq></url>")
+        _pp_names = pp_names_by_slug.get(slug, set())
+        for i, svc in enumerate(s.get("services") or []):
+            if (svc.get("name") or "").lower().strip() in _pp_names:
+                continue
+            urls.append(f"<url><loc>{base}/sitio/{slug}/servicio/{_svc_slug(svc, i)}</loc><changefreq>weekly</changefreq></url>")
         if (s.get("about_story") or "").strip():
             urls.append(f"<url><loc>{base}/sitio/{slug}/nosotros</loc><changefreq>weekly</changefreq></url>")
         _cs = s.get("case_studies") or []
@@ -5750,11 +5782,7 @@ async def website_sitemap(request: Request):
                     urls.append(f"<url><loc>{base}/sitio/{slug}/caso/{_sl}</loc><changefreq>weekly</changefreq></url>")
 
     # Problem/Solution pages of on-site (non-custom-domain) sites only.
-    pps = await db.problem_pages.find(
-        {"published": True, "indexable": True},
-        {"_id": 0, "website_slug": 1, "page_slug": 1},
-    ).to_list(4000)
-    for pp in pps:
+    for pp in _all_pps:
         wslug = pp.get("website_slug")
         if wslug in onsite_slugs:
             urls.append(

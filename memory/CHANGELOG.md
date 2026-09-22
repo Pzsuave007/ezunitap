@@ -102,3 +102,11 @@ Every active service can now become a dedicated customer-problem landing page (B
 
 ## Jun 2026 — Cinematic ContactBlock + hero pulido (verificado)
 - ContactBlock alineado + párrafo invitador; heroes a 75%; Responder form band oscuro + marquee negro loop continuo.
+
+## Jun 2026 — Agency: imágenes en servicios + página por servicio (verificado)
+- Plantilla Agency: las tarjetas de servicio ahora muestran su imagen (`s.img` de `image_id`) y son enlaces (antes eran solo tarjetas numeradas sin foto).
+- Cada servicio abre su propia página: si existe una Problem/Solution page con el mismo `service_name` enlaza a `/p/{slug}`; si no, a una página dedicada `/servicio/{slug}` (nuevo `ServiceDetail` en `ContractorSite.js`).
+- `ServiceDetail`: hero con imagen, descripción, precio "Desde", Antes/Después (BeforeAfter con fotos before/after del servicio), galería de trabajo y "Otros servicios" + CTA.
+- Rutas nuevas en `App.js`: `/sitio/:slug/servicio/:serviceSlug` y `/servicio/:serviceSlug` (byDomain).
+- Helpers `slugify`/`svcSlug`/`ppForService` en `ContractorSite.js`; backend `_svc_slug` + URLs `/servicio/...` añadidas a ambos bloques de `sitemap.xml` (solo servicios sin problem_page, para evitar contenido duplicado).
+- Verificado con screenshots (grid con imágenes + fallback numerado, página de detalle con antes/después y galería) y `sitemap.xml` HTTP 200 con URLs de servicio.
