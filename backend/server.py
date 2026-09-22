@@ -5045,23 +5045,26 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
     w = await _get_or_init_website(user_id)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
     services = w.get("services") if w.get("services") else (card.get("services") or [])
-    content = {
-        "headline": w.get("headline") or "",
-        "subheadline": w.get("subheadline") or "",
-        "about": w.get("about") or "",
-        "how_it_works": w.get("how_it_works") or [],
-        "why_us": w.get("why_us") or [],
-        "faqs": w.get("faqs") or [],
-        "services": services,
-        "areas": w.get("areas") or [],
-        "seo_title": w.get("seo_title") or "",
-        "seo_description": w.get("seo_description") or "",
+    en_snapshot = {
+        "headline": w.get("headline") or "", "subheadline": w.get("subheadline") or "",
+        "about": w.get("about") or "", "seo_title": w.get("seo_title") or "",
+        "seo_description": w.get("seo_description") or "", "solutions_intro": w.get("solutions_intro") or "",
+        "about_title": w.get("about_title") or "", "about_story": w.get("about_story") or "",
+        "how_it_works": w.get("how_it_works") or [], "why_us": w.get("why_us") or [],
+        "faqs": w.get("faqs") or [], "services": services, "samples": w.get("samples") or [],
+        "case_studies": w.get("case_studies") or [], "team": w.get("team") or [],
+        "milestones": w.get("milestones") or [], "about_values": w.get("about_values") or [],
+        "about_sections": w.get("about_sections") or [], "areas": w.get("areas") or [],
     }
+    content = dict(en_snapshot)
     try:
         content_es = await ai_service.translate_website_content(content)
     except Exception as e:
         logger.error(f"website translate-es failed: {e!r}")
         raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
+    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections"):
+        if key in content_es:
+            content_es[key] = _restore_protected(content_es.get(key), en_snapshot.get(key) or [], unprotect=({"name"} if key == "services" else ()))
     await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "lang_toggle": True}})
     return {"ok": True, "content_es": content_es}
 
