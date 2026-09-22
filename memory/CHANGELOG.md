@@ -1,5 +1,14 @@
 # UniTech — Changelog
 
+## Jun 2026 — FASE 2 Agency: Case Studies + Solutions + About (multi-página, todos los templates)
+- Backend `WebsiteIn`: nuevos campos `case_studies`, `about_title`, `about_story`, `milestones`, `about_values`, `team`, `solutions_intro`.
+- Rutas nuevas (App.js) en TODOS los templates: `/sitio/:slug/casos`, `/caso/:caseSlug`, `/soluciones`, `/nosotros` (+ versiones byDomain `/casos` etc). `ContractorSite` acepta props `page` y `byDomain`; fetch usa `website-by-domain` cuando byDomain.
+- `ContractorSite.js`: componentes `SubPageRouter`, `SubNav`, `SubFooter`, `SubHero`, `CaseList`, `CaseDetail`, `SolutionsPage`, `AboutPage`, `RichText` (### → h3), `PageLinks`. Todo theme-aware (funciona en cualquier template). CTA de subpáginas navega a home#contact.
+- Samples del Home ahora enlazan al detalle interno del caso vía `s.caseSlug` + `ctx.pageHref`. Nav de Agency incluye enlaces a Casos y Nosotros. `SharedExtras` (templates no-agency) añade `PageLinks`.
+- Editor `AgencyPanel`: editores de Case Studies (cover/cliente/categoría/slug/resumen/servicios/resultados/body), Solutions intro, y About (título/historia/milestones/valores/equipo). `UNI2_DEFAULTS` extendido con casos, about (historia 25+ años), 4 milestones, 3 valores, 7 miembros de equipo (contenido real de uni2mkt.com). `pick()` incluye los campos nuevos.
+- Testing agent (iteration_57): 8/8 features PASS, 100% frontend, sin bugs. Build regenerado y trackeado.
+- Nota (deuda técnica): ContractorSite.js ~2670 líneas — candidato a dividir por template/subpágina.
+
 ## Jun 2026 — Template "Agency" seleccionable + rediseño HOME (réplica uni2mkt.com)
 - FIX: el template `agency` existía en `ContractorSite.js` pero NO estaba en `TEMPLATES` de `WebsiteEditor.js`, por eso no aparecía como opción. Agregado a TEMPLATES, TPL_SWATCH, PALETTES, thumbnail y i18n (agencyName/agencyDesc).
 - Rediseño completo de la función `Agency()` en `ContractorSite.js` replicando uni2mkt.com: nav sticky, hero+formulario, servicios numerados, Samples, franja de logos, mapa de clientes, proceso, banner CTA, contacto, footer. Textos bilingües (helper `agT`).
