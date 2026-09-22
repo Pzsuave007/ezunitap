@@ -5465,6 +5465,13 @@ async def public_website_by_domain(domain: str, background_tasks: BackgroundTask
     _schedule_gbp_review_refresh(w["user_id"], background_tasks)
     payload = await _website_payload(w)
     payload["default_lang"] = default_lang or "en"
+    # hreflang alternates so the frontend can advertise EN/ES versions in <head>.
+    alts = []
+    if w.get("custom_domain") and w.get("custom_domain_verified"):
+        alts.append({"lang": w.get("custom_domain_lang") or "en", "domain": w["custom_domain"]})
+    if w.get("custom_domain_2") and w.get("custom_domain_2_verified"):
+        alts.append({"lang": w.get("custom_domain_2_lang") or "es", "domain": w["custom_domain_2"]})
+    payload["hreflang_alts"] = alts
     return payload
 
 
@@ -5481,30 +5488,45 @@ async def website_sitemap(request: Request):
 
     # --- Per-domain sitemap: host matches a website's VERIFIED custom domain.
     # Return ONLY that site's URLs (submittable to that domain's own property).
+    # Includes hreflang alternates so Google links the EN (growthally) and ES
+    # (uni2mkt) versions of the SAME site instead of treating them as duplicates.
     site = None
     if host and host not in ("localhost", "127.0.0.1"):
-        site = await db.websites.find_one(
-            {"custom_domain": host, "custom_domain_verified": True},
-            {"_id": 0, "slug": 1, "published": 1},
-        )
+        proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1,
+                "custom_domain_verified": 1, "custom_domain_lang": 1,
+                "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1}
+        site = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True}, proj)
         if not site:
-            site = await db.websites.find_one(
-                {"custom_domain_2": host, "custom_domain_2_verified": True},
-                {"_id": 0, "slug": 1, "published": 1},
-            )
+            site = await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True}, proj)
     if site:
+        # Language → domain map for the verified slots (for hreflang alternates).
+        alts = {}
+        if site.get("custom_domain") and site.get("custom_domain_verified"):
+            alts[(site.get("custom_domain_lang") or "en")] = site["custom_domain"]
+        if site.get("custom_domain_2") and site.get("custom_domain_2_verified"):
+            alts[(site.get("custom_domain_2_lang") or "es")] = site["custom_domain_2"]
+
+        def _url(path):
+            loc = f"https://{host}{path}"
+            xhtml = ""
+            for lang, dom in alts.items():
+                xhtml += f'<xhtml:link rel="alternate" hreflang="{lang}" href="https://{dom}{path}"/>'
+            if alts:
+                xdef = alts.get("en") or next(iter(alts.values()))
+                xhtml += f'<xhtml:link rel="alternate" hreflang="x-default" href="https://{xdef}{path}"/>'
+            return f"<url><loc>{loc}</loc>{xhtml}<changefreq>weekly</changefreq></url>"
+
         if site.get("published"):
-            root = f"https://{host}"
-            urls.append(f"<url><loc>{root}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
+            urls.append(_url(""))
             pps = await db.problem_pages.find(
                 {"website_slug": site["slug"], "published": True, "indexable": True},
                 {"_id": 0, "page_slug": 1},
             ).to_list(2000)
             for pp in pps:
-                urls.append(
-                    f"<url><loc>{root}/p/{pp['page_slug']}</loc><changefreq>weekly</changefreq></url>"
-                )
-        xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
+                urls.append(_url(f"/p/{pp['page_slug']}"))
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+               'xmlns:xhtml="http://www.w3.org/1999/xhtml">' + "".join(urls) + "</urlset>")
         return Response(content=xml, media_type="application/xml")
 
     # --- Primary/global sitemap (ezunitech.com). A sitemap may ONLY list URLs

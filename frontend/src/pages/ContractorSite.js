@@ -96,6 +96,29 @@ export default function ContractorSite({ injected }) {
     if (dl === "es" || dl === "en") setLang(dl);
   }, [data, injected]);
 
+  // Inject <link rel="alternate" hreflang> tags so Google links the EN/ES
+  // versions of the same site (bilingual SEO, avoids duplicate-content issues).
+  useEffect(() => {
+    const alts = (data && data.hreflang_alts) || (injected && injected.hreflang_alts) || [];
+    const path = window.location.pathname || "/";
+    const created = [];
+    const add = (hreflang, domain) => {
+      const el = document.createElement("link");
+      el.setAttribute("rel", "alternate");
+      el.setAttribute("hreflang", hreflang);
+      el.setAttribute("href", `https://${domain}${path}`);
+      el.setAttribute("data-hreflang", "1");
+      document.head.appendChild(el);
+      created.push(el);
+    };
+    alts.forEach((a) => a.domain && add(a.lang, a.domain));
+    if (alts.length) {
+      const def = (alts.find((a) => a.lang === "en") || alts[0]).domain;
+      add("x-default", def);
+    }
+    return () => created.forEach((el) => el.remove());
+  }, [data, injected]);
+
   // Optional UniTech AI chat widget on the public site
   useEffect(() => {
     if (!data) return;
