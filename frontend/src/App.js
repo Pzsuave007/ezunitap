@@ -146,6 +146,14 @@ function App() {
             <Route path="/c/:slug" element={<SmartCard />} />
             <Route path="/r/:slug" element={<PublicReviewPage />} />
             <Route path="/sitio/:slug" element={<ContractorSite />} />
+            <Route path="/sitio/:slug/casos" element={<ContractorSite page="casos" />} />
+            <Route path="/sitio/:slug/caso/:caseSlug" element={<ContractorSite page="caso" />} />
+            <Route path="/sitio/:slug/soluciones" element={<ContractorSite page="soluciones" />} />
+            <Route path="/sitio/:slug/nosotros" element={<ContractorSite page="nosotros" />} />
+            <Route path="/casos" element={<ContractorSite page="casos" byDomain />} />
+            <Route path="/caso/:caseSlug" element={<ContractorSite page="caso" byDomain />} />
+            <Route path="/soluciones" element={<ContractorSite page="soluciones" byDomain />} />
+            <Route path="/nosotros" element={<ContractorSite page="nosotros" byDomain />} />
             <Route path="/sitio/:slug/p/:pageSlug" element={<ProblemPage />} />
             <Route path="/p/:pageSlug" element={<ProblemPage byDomain />} />
             <Route path="/pago/exito" element={<PaymentSuccess />} />

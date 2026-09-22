@@ -4458,6 +4458,13 @@ class WebsiteIn(BaseModel):
     samples: Optional[list] = None               # [{img, title, subtitle, link}] client showcase cards
     client_logos: Optional[list] = None          # [url or photo_id] logo strip / marquee
     client_pins: Optional[list] = None           # [{label, lat, lng}] client map pins
+    case_studies: Optional[list] = None          # [{slug, client, category, cover, summary, body, photos, services, results}]
+    about_title: Optional[str] = None            # About page heading
+    about_story: Optional[str] = None            # About page story (### for headings, blank line = new paragraph)
+    milestones: Optional[list] = None            # [{value, label}] achievements in numbers
+    about_values: Optional[list] = None          # [{title, desc}] why-us / values on About page
+    team: Optional[list] = None                  # [{name, role, photo}] team members
+    solutions_intro: Optional[str] = None        # Solutions page intro paragraph
 
 
 _WEBSITE_DEFAULT_SECTIONS = {

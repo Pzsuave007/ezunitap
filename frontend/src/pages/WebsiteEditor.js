@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
@@ -1069,8 +1069,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1118,18 +1118,23 @@ function TemplateThumb({ kind, accent }) {
 // Starter content imported from the agency's live site (uni2mkt.com). Gives the
 // Agency template a fully-populated, on-brand starting point the owner can edit.
 const CDN = "https://uni2mkt.com/wp-content/uploads/2025";
+const _case = (slug, client, category, cover, summary, services, results, body) => ({ slug, client, category, cover, summary, services, results, body, photos: [cover] });
 const UNI2_DEFAULTS = {
   headline: "Impulsando Negocios Latinos",
   subheadline: "En Uni2 Marketing Group ayudamos a emprendedores latinos a destacar y crecer en el mercado estadounidense con estrategias digitales que combinan creatividad, automatización e inteligencia artificial. No solo diseñamos sitios web: creamos sistemas digitales que generan clientes reales.",
   cta_phone: "(888) 689-4979",
   services: [
-    { name: "Websites Inteligentes", description: "Sitios con inteligencia artificial, diseño profesional y automatizaciones que convierten visitantes en ventas las 24 horas." },
-    { name: "Chatbots con IA", description: "Asistentes virtuales que conversan con tus clientes, agendan citas y califican prospectos en segundos." },
-    { name: "Google Business Optimization", description: "Optimizamos tu perfil de Google para que destaques en los mapas y recibas más llamadas y visitas." },
-    { name: "Gestión de Reputación Online", description: "Monitoreamos y mejoramos tus reseñas para construir confianza y atraer más clientes." },
-    { name: "Automatización de Marketing", description: "Sistemas automáticos que envían correos, mensajes y recordatorios personalizados por ti." },
-    { name: "Estrategias Digitales Personalizadas", description: "Analizamos tu industria, público y objetivos para diseñar una estrategia que conecte y haga crecer tu marca." },
+    { name: "Diseño Web y Gráfico", description: "Eleva tu marca con diseños web y gráficos impactantes que cautivan y convierten a tu audiencia." },
+    { name: "Optimización de Google My Business", description: "Mejora tu presencia local y atrae más clientes con nuestra optimización de Google My Business." },
+    { name: "Gestión de Reputación Online", description: "Protege la imagen de tu marca y genera confianza con gestión profesional de reseñas." },
+    { name: "Gestión de Redes Sociales", description: "Conecta con tu audiencia mediante contenido personalizado y campañas estratégicas." },
+    { name: "Optimización SEO", description: "Aumenta tu visibilidad y genera más tráfico con SEO adaptado a tu mercado." },
+    { name: "Creación de Contenido", description: "Contenido atractivo que conecta con tu audiencia y refuerza la voz de tu marca." },
+    { name: "Email y SMS Marketing", description: "Mantén a tu audiencia comprometida con campañas de correo y mensajes personalizados." },
+    { name: "Generación de Prospectos (Leads)", description: "Consigue más clientes potenciales con estrategias enfocadas en visibilidad y conversión." },
+    { name: "Menú Digital (Digital Signage)", description: "Contenido visual llamativo para pantallas digitales que captura la atención." },
   ],
+  solutions_intro: "Marketing personalizado y accesible para impulsar tu crecimiento. Estrategias que se ajustan a tu presupuesto y a tu público objetivo, con un profundo entendimiento del mercado latino e hispano.",
   how_it_works: [
     { title: "Descubrimiento y Estrategia", desc: "Analizamos tu negocio, tu audiencia y tus metas para definir una estrategia personalizada." },
     { title: "Diseño y Configuración", desc: "Creamos tu Website Inteligente y optimizamos tu presencia en Google." },
@@ -1138,12 +1143,12 @@ const UNI2_DEFAULTS = {
     { title: "Crecimiento y Seguimiento", desc: "Reportes claros, soporte continuo y nuevas ideas para seguir escalando." },
   ],
   samples: [
-    { img: `${CDN}/02/Qdoba_Mexican_Eats_in_Gillette_Wyoming.jpg`, title: "Qdoba Mexican Eats", subtitle: "Franquicia · Oregon", link: "https://uni2mkt.com/qdoba-13-oregon-store-franchise/" },
-    { img: `${CDN}/02/CasaLola-18-1.jpg`, title: "Casa Lola Kitchen", subtitle: "Restaurante mexicano", link: "https://uni2mkt.com/casa-lola-kitchen-de-mexico/" },
-    { img: `${CDN}/02/Red-Tomato.png`, title: "Red Tomato Catering", subtitle: "Servicios de catering", link: "https://uni2mkt.com/red-tomato-catering-services/" },
-    { img: `${CDN}/02/IMG_6268-scaled.jpg`, title: "Press Café", subtitle: "Cafetería", link: "https://uni2mkt.com/press-cafe/" },
-    { img: `${CDN}/02/firstcallroofing.png`, title: "First Call Roofing", subtitle: "Techado", link: "https://uni2mkt.com/first-call-roofing/" },
-    { img: `${CDN}/02/Fujiyama-sushi-portland-82ndlocation.jpg`, title: "Fujiyama Sushi", subtitle: "Restaurante japonés", link: "https://uni2mkt.com/fujiyama-sushi/" },
+    { img: `${CDN}/02/QdobaPDX.webp`, title: "Qdoba Mexican Eats", subtitle: "Franquicia · Oregon", caseSlug: "qdoba" },
+    { img: `${CDN}/02/CasaLola-18-1.jpg`, title: "Casa Lola Kitchen", subtitle: "Restaurante", caseSlug: "casa-lola" },
+    { img: `${CDN}/02/IMG_6268-scaled.jpg`, title: "Press Café", subtitle: "Cafetería", caseSlug: "press-cafe" },
+    { img: `${CDN}/02/Fujiyama-sushi-portland-82ndlocation.jpg`, title: "Fujiyama Sushi", subtitle: "Restaurante japonés", caseSlug: "fujiyama-sushi" },
+    { img: `${CDN}/02/firstcallroofing.png`, title: "First Call Roofing", subtitle: "Techado", caseSlug: "first-call-roofing" },
+    { img: `${CDN}/02/Red-Tomato.png`, title: "Red Tomato Catering", subtitle: "Catering", caseSlug: "red-tomato" },
   ],
   client_logos: [
     `${CDN}/02/GA-Client-Showcase-fristcall.png`,
@@ -1161,6 +1166,36 @@ const UNI2_DEFAULTS = {
     { label: "Loreto, MX", lat: 26.0115, lng: -111.343 },
     { label: "Ciudad de México", lat: 19.4326, lng: -99.1332 },
   ],
+  case_studies: [
+    _case("qdoba", "Qdoba Mexican Eats", "Franquicia", `${CDN}/02/QdobaPDX.webp`, "Lanzamiento digital de una franquicia Qdoba en Oregon con presencia local optimizada y captación de clientes.", ["Diseño Web", "Google My Business", "SEO Local"], [{ value: "+45%", label: "Visibilidad local" }, { value: "5★", label: "Reputación" }, { value: "24/7", label: "Presencia digital" }], "### El reto\nUna nueva ubicación de franquicia necesitaba destacar en un mercado competitivo y atraer clientes locales desde el día uno.\n\n### La solución\nDiseñamos su presencia digital, optimizamos su perfil de Google My Business y activamos estrategias de SEO local para aparecer en las búsquedas de la zona.\n\n### El resultado\nMayor visibilidad en Google Maps, más reseñas positivas y un flujo constante de nuevos clientes."),
+    _case("casa-lola", "Casa Lola Kitchen", "Restaurante", `${CDN}/02/CasaLola-18-1.jpg`, "Cocina mexicana auténtica que necesitaba conectar con su comunidad y aumentar reservas.", ["Diseño Web", "Redes Sociales", "Contenido"], [{ value: "+60%", label: "Alcance social" }, { value: "+30%", label: "Reservas" }, { value: "100%", label: "Bilingüe" }], "### El reto\nCasa Lola quería llevar el sabor de su cocina a más familias y destacar su identidad mexicana.\n\n### La solución\nCreamos contenido visual atractivo, gestionamos sus redes sociales y diseñamos un sitio bilingüe que refleja su esencia.\n\n### El resultado\nMayor alcance en redes, más reservas y una comunidad fiel alrededor de la marca."),
+    _case("press-cafe", "Press Café", "Cafetería", `${CDN}/02/IMG_6268-scaled.jpg`, "Una cafetería local que buscaba fortalecer su marca y presencia en internet.", ["Diseño Web", "Fotografía", "Google My Business"], [{ value: "+50%", label: "Tráfico web" }, { value: "5★", label: "Reseñas" }, { value: "Local", label: "Posicionamiento" }], "### El reto\nDestacar entre las cafeterías de la zona y transmitir la experiencia acogedora de Press Café.\n\n### La solución\nProducción fotográfica profesional, un sitio web moderno y optimización de su ficha de Google.\n\n### El resultado\nMás visitas, mejores reseñas y una marca que enamora a primera vista."),
+    _case("fujiyama-sushi", "Fujiyama Sushi", "Restaurante japonés", `${CDN}/02/Fujiyama-sushi-portland-82ndlocation.jpg`, "Restaurante de sushi en Portland que amplió su alcance a nuevas ubicaciones.", ["Diseño Web", "SEO", "Menú Digital"], [{ value: "2", label: "Ubicaciones" }, { value: "+40%", label: "Pedidos online" }, { value: "5★", label: "Reputación" }], "### El reto\nUnificar la marca en múltiples ubicaciones y facilitar los pedidos en línea.\n\n### La solución\nSitio web con menú digital, SEO por ubicación y una experiencia de pedido sencilla.\n\n### El resultado\nCrecimiento en pedidos online y una marca sólida en cada sucursal."),
+    _case("first-call-roofing", "First Call Roofing", "Construcción / Techado", `${CDN}/02/firstcallroofing.png`, "Empresa de techado que necesitaba generar prospectos calificados de forma constante.", ["Generación de Leads", "Google My Business", "Diseño Web"], [{ value: "+70%", label: "Leads" }, { value: "#1", label: "Google local" }, { value: "24/7", label: "Captación" }], "### El reto\nGenerar un flujo constante de clientes potenciales en un mercado muy competitivo.\n\n### La solución\nUn sitio orientado a conversión, campañas de generación de leads y optimización de Google My Business.\n\n### El resultado\nMás solicitudes de presupuesto y una agenda llena de proyectos."),
+    _case("red-tomato", "Red Tomato Catering", "Catering", `${CDN}/02/Red-Tomato.png`, "Servicio de catering que buscaba profesionalizar su imagen y captar eventos.", ["Diseño Web", "Branding", "Redes Sociales"], [{ value: "+35%", label: "Cotizaciones" }, { value: "Nueva", label: "Imagen de marca" }, { value: "5★", label: "Reputación" }], "### El reto\nTransmitir profesionalismo y captar más eventos corporativos y sociales.\n\n### La solución\nRediseño de marca, sitio web elegante y presencia activa en redes sociales.\n\n### El resultado\nMás cotizaciones y una imagen que inspira confianza."),
+  ],
+  about_title: "De orígenes humildes a empoderar emprendedores latinos por más de 25 años",
+  about_story: "### Dónde comenzó todo\nNací en Tlaxcala, México, donde mis padres me enseñaron que todo en la vida se gana con trabajo duro. Desde pequeño los ayudaba en su negocio de maquila y confección, y a los 14 años ya había iniciado mi primer negocio: un taller de serigrafía. Ahí nació mi pasión por la publicidad y el diseño.\n\n### Un evento que cambió mi vida\nTodo cambió cuando mi familia se vio obligada a emigrar a Estados Unidos por motivos de salud de mi madre. Llegamos a un país donde no hablaba el idioma y tuvimos que empezar desde cero. Pero me negué a rendirme: aprendí inglés, terminé la preparatoria y empecé a trabajar.\n\n### El espíritu emprendedor nunca muere\nVolví a la escuela para estudiar Marketing, Diseño Gráfico y Diseño Web. Lancé Mirada Latina, una revista y directorio para conectar negocios latinos con la comunidad, y después MX Media, mi primera agencia de publicidad integral.\n\n### Conectando comunidades y mercados\nMe di cuenta de un nuevo reto: muchos negocios latinos no saben cómo llegar al mercado americano, y muchos negocios americanos quieren conectar con los latinos pero no saben cómo. Así transformé MX Media en Growth Ally Agency: un aliado para el crecimiento.\n\n### Nuestra misión\nUsamos nuestro profundo conocimiento cultural y técnicas de marketing innovadoras para crear estrategias personalizadas que resalten tu marca y generen conexiones genuinas con tu audiencia. Transformemos juntos tus sueños en éxito real.",
+  milestones: [
+    { value: "25+", label: "Años de experiencia" },
+    { value: "150+", label: "Negocios impulsados" },
+    { value: "2 países", label: "EE.UU. y México" },
+    { value: "Bilingüe", label: "Español e inglés" },
+  ],
+  about_values: [
+    { title: "Porque somos latinos", desc: "Conocemos las luchas, los desafíos y los sueños de nuestra comunidad." },
+    { title: "Porque lo hemos vivido", desc: "Empezamos desde cero, enfrentamos obstáculos y salimos adelante." },
+    { title: "Porque creemos en ti", desc: "Cada emprendedor latino tiene el potencial de triunfar, y estamos aquí para ayudarte." },
+  ],
+  team: [
+    { name: "Paul Zacapantzi", role: "Founder & CEO", photo: `${CDN}/02/Paul1.jpeg` },
+    { name: "Lucero Zacapantzi", role: "Marketing Strategist", photo: `${CDN}/02/Team-Pic-Lucy.png` },
+    { name: "Edson Saavedra", role: "Creative Director", photo: `${CDN}/02/Team-Pic-Edson.png` },
+    { name: "Ayesh", role: "Coding & Developer", photo: `${CDN}/02/Team-Pic-Ayesh.png` },
+    { name: "Jose Gonzalez", role: "Photo & Video", photo: `${CDN}/02/Team-Pic-Jose.png` },
+    { name: "Henry Cualio", role: "Sales Manager", photo: `${CDN}/02/Team-Pic-Henry.png` },
+    { name: "Ada Diaz", role: "Customer Service", photo: `${CDN}/02/ada.png` },
+  ],
 };
 
 function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
@@ -1174,6 +1209,11 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     pins: "Pines del mapa", pinsDesc: "Ubicaciones de clientes. Usa latitud/longitud (busca 'ciudad lat long' en Google).",
     add: "Agregar", remove: "Quitar", img: "URL de imagen", title: "Título", subtitle: "Subtítulo", link: "Enlace (opcional)",
     logoUrl: "URL del logo", label: "Etiqueta (ciudad)", lat: "Latitud", lng: "Longitud", upload: "Subir",
+    cases: "Casos de éxito (Case Studies)", casesDesc: "Cada caso tiene su página de detalle. Los Samples del Home enlazan aquí por su 'slug'.",
+    about: "Página Nosotros (About)", aboutDesc: "Historia, logros, valores y equipo.",
+    solutions: "Página Soluciones", solutionsDesc: "Intro de la página de servicios (los servicios se editan en la pestaña Servicios).",
+    client: "Cliente", category: "Categoría", summary: "Resumen", body: "Contenido (usa ### para subtítulos)", cslug: "Slug (url)", servicesUsed: "Servicios (separa con comas)", results: "Resultados (Valor | Etiqueta por línea)",
+    aboutTitle: "Título", story: "Historia (usa ### para subtítulos)", milestones: "Logros en números", values: "Valores / Por qué nosotros", team: "Equipo", value: "Valor", name: "Nombre", role: "Puesto", desc: "Descripción", photo: "Foto (URL)", solPh: "Introducción de la página de servicios",
   } : {
     intro: "Manage the Agency template's exclusive sections: client showcase, logo strip and map. Remember to hit Save at the top.",
     importBtn: "Import content from my site (uni2mkt.com)",
@@ -1183,6 +1223,11 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     pins: "Map pins", pinsDesc: "Client locations. Use latitude/longitude (search 'city lat long' on Google).",
     add: "Add", remove: "Remove", img: "Image URL", title: "Title", subtitle: "Subtitle", link: "Link (optional)",
     logoUrl: "Logo URL", label: "Label (city)", lat: "Latitude", lng: "Longitude", upload: "Upload",
+    cases: "Case studies", casesDesc: "Each case gets its own detail page. Home 'Samples' link here by 'slug'.",
+    about: "About page", aboutDesc: "Story, milestones, values and team.",
+    solutions: "Solutions page", solutionsDesc: "Intro for the services page (edit services in the Services tab).",
+    client: "Client", category: "Category", summary: "Summary", body: "Body (use ### for headings)", cslug: "Slug (url)", servicesUsed: "Services (comma separated)", results: "Results (Value | Label per line)",
+    aboutTitle: "Title", story: "Story (use ### for headings)", milestones: "Milestones (numbers)", values: "Values / Why us", team: "Team", value: "Value", name: "Name", role: "Role", desc: "Description", photo: "Photo (URL)", solPh: "Services page intro",
   };
   const samples = Array.isArray(w.samples) ? w.samples : [];
   const logos = Array.isArray(w.client_logos) ? w.client_logos : [];
@@ -1193,6 +1238,17 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const setSamples = (arr) => patch({ samples: arr });
   const setLogos = (arr) => patch({ client_logos: arr });
   const setPins = (arr) => patch({ client_pins: arr });
+  const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
+  const miles = Array.isArray(w.milestones) ? w.milestones : [];
+  const values = Array.isArray(w.about_values) ? w.about_values : [];
+  const team = Array.isArray(w.team) ? w.team : [];
+  const setCases = (arr) => patch({ case_studies: arr });
+  const setMiles = (arr) => patch({ milestones: arr });
+  const setValues = (arr) => patch({ about_values: arr });
+  const setTeam = (arr) => patch({ team: arr });
+  const updCase = (i, k, v) => { const n = [...cases]; n[i] = { ...n[i], [k]: v }; setCases(n); };
+  const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
+  const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
   const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
   const uploadFor = async (file) => {
     if (!file || upIdx == null) return;
@@ -1270,6 +1326,92 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
           ))}
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setPins([...pins, { label: "", lat: "", lng: "" }])} data-testid="agency-pin-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+      </Card>
+
+      {/* CASE STUDIES */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Star className="w-4 h-4" /> {L.cases}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.casesDesc}</p>
+        <div className="space-y-3">
+          {cases.map((c, i) => (
+            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`agency-case-${i}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
+                  {c.cover && <img src={/^https?:\/\//.test(c.cover) ? c.cover : photoSrc(c.cover)} alt="" className="w-full h-full object-cover" />}
+                </div>
+                <Input value={c.cover || ""} onChange={(e) => updCase(i, "cover", e.target.value)} placeholder={L.img} className="h-9 rounded-lg" data-testid={`agency-case-cover-${i}`} />
+                <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setCases(cases.filter((_, x) => x !== i))} data-testid={`agency-case-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Input value={c.client || ""} onChange={(e) => updCase(i, "client", e.target.value)} placeholder={L.client} className="h-9 rounded-lg" data-testid={`agency-case-client-${i}`} />
+                <Input value={c.category || ""} onChange={(e) => updCase(i, "category", e.target.value)} placeholder={L.category} className="h-9 rounded-lg" />
+                <Input value={c.slug || ""} onChange={(e) => updCase(i, "slug", e.target.value)} placeholder={L.cslug} className="h-9 rounded-lg" data-testid={`agency-case-slug-${i}`} />
+              </div>
+              <Textarea value={c.summary || ""} onChange={(e) => updCase(i, "summary", e.target.value)} placeholder={L.summary} className="rounded-lg min-h-[50px]" />
+              <Input value={Array.isArray(c.services) ? c.services.join(", ") : ""} onChange={(e) => updCase(i, "services", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder={L.servicesUsed} className="h-9 rounded-lg" />
+              <Textarea value={resToText(c.results)} onChange={(e) => updCase(i, "results", textToRes(e.target.value))} placeholder={L.results} className="rounded-lg min-h-[50px] font-mono text-xs" />
+              <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[80px]" />
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", services: [], results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+      </Card>
+
+      {/* SOLUTIONS INTRO */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Briefcase className="w-4 h-4" /> {L.solutions}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.solutionsDesc}</p>
+        <Textarea value={w.solutions_intro || ""} onChange={(e) => patch({ solutions_intro: e.target.value })} placeholder={L.solPh} className="rounded-lg min-h-[70px]" data-testid="agency-solutions-intro" />
+      </Card>
+
+      {/* ABOUT */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> {L.about}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.aboutDesc}</p>
+        <Input value={w.about_title || ""} onChange={(e) => patch({ about_title: e.target.value })} placeholder={L.aboutTitle} className="h-9 rounded-lg mb-2" data-testid="agency-about-title" />
+        <Textarea value={w.about_story || ""} onChange={(e) => patch({ about_story: e.target.value })} placeholder={L.story} className="rounded-lg min-h-[120px]" data-testid="agency-about-story" />
+
+        <div className="text-sm font-semibold mt-4 mb-2">{L.milestones}</div>
+        <div className="space-y-2">
+          {miles.map((m, i) => (
+            <div key={i} className="flex items-center gap-2" data-testid={`agency-milestone-${i}`}>
+              <Input value={m.value || ""} onChange={(e) => { const n = [...miles]; n[i] = { ...m, value: e.target.value }; setMiles(n); }} placeholder={L.value} className="h-9 rounded-lg w-28" />
+              <Input value={m.label || ""} onChange={(e) => { const n = [...miles]; n[i] = { ...m, label: e.target.value }; setMiles(n); }} placeholder={L.label} className="h-9 rounded-lg flex-1" />
+              <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setMiles(miles.filter((_, x) => x !== i))}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-8 mt-2" onClick={() => setMiles([...miles, { value: "", label: "" }])} data-testid="agency-milestone-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+
+        <div className="text-sm font-semibold mt-4 mb-2">{L.values}</div>
+        <div className="space-y-2">
+          {values.map((v, i) => (
+            <div key={i} className="flex items-start gap-2" data-testid={`agency-value-${i}`}>
+              <div className="flex-1 space-y-1">
+                <Input value={v.title || ""} onChange={(e) => { const n = [...values]; n[i] = { ...v, title: e.target.value }; setValues(n); }} placeholder={L.title} className="h-9 rounded-lg" />
+                <Input value={v.desc || ""} onChange={(e) => { const n = [...values]; n[i] = { ...v, desc: e.target.value }; setValues(n); }} placeholder={L.desc} className="h-9 rounded-lg" />
+              </div>
+              <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setValues(values.filter((_, x) => x !== i))}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-8 mt-2" onClick={() => setValues([...values, { title: "", desc: "" }])} data-testid="agency-value-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+
+        <div className="text-sm font-semibold mt-4 mb-2">{L.team}</div>
+        <div className="space-y-2">
+          {team.map((m, i) => (
+            <div key={i} className="flex items-center gap-2" data-testid={`agency-team-${i}`}>
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex-none border border-slate-200">
+                {m.photo && <img src={/^https?:\/\//.test(m.photo) ? m.photo : photoSrc(m.photo)} alt="" className="w-full h-full object-cover" />}
+              </div>
+              <Input value={m.name || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, name: e.target.value }; setTeam(n); }} placeholder={L.name} className="h-9 rounded-lg w-32" />
+              <Input value={m.role || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, role: e.target.value }; setTeam(n); }} placeholder={L.role} className="h-9 rounded-lg w-32" />
+              <Input value={m.photo || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, photo: e.target.value }; setTeam(n); }} placeholder={L.photo} className="h-9 rounded-lg flex-1" />
+              <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setTeam(team.filter((_, x) => x !== i))}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-8 mt-2" onClick={() => setTeam([...team, { name: "", role: "", photo: "" }])} data-testid="agency-team-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
     </div>
   );

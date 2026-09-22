@@ -58,8 +58,8 @@ function useReveal() {
 }
 
 // ===========================================================================
-export default function ContractorSite({ injected }) {
-  const { slug } = useParams();
+export default function ContractorSite({ injected, page, byDomain }) {
+  const { slug, caseSlug } = useParams();
   const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
   const [lang, setLang] = useState("en");
@@ -88,8 +88,11 @@ export default function ContractorSite({ injected }) {
   useEffect(() => {
     if (injected) { setData(injected); return; }
     const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
-    axios.get(`${API}/public/website/${slug}${preview}`).then((r) => setData(r.data)).catch(() => setErr(true));
-  }, [slug, injected]);
+    const url = byDomain
+      ? `${API}/public/website-by-domain/${window.location.hostname}${preview}`
+      : `${API}/public/website/${slug}${preview}`;
+    axios.get(url).then((r) => setData(r.data)).catch(() => setErr(true));
+  }, [slug, injected, byDomain]);
 
   // Open in the default language: ?lang= query param wins, then the domain's
   // configured default (growthally.agency -> EN, uni2mkt.com -> ES), else EN.
@@ -233,6 +236,11 @@ export default function ContractorSite({ injected }) {
   ctx.cta = lang === "es" ? (ctx.bookingOn ? "Agenda ahora" : "Cotiza gratis") : (ctx.bookingOn ? "Book Now" : "Get a Free Quote");
   ctx.ctaShort = lang === "es" ? (ctx.bookingOn ? "Agendar" : "Cotizar") : (ctx.bookingOn ? "Book Now" : "Free Quote");
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe, agency: Agency }[key];
+  ctx.pageHref = (p) => (byDomain ? `/${p}` : `/sitio/${w.slug}/${p}`);
+  ctx.homeHref = byDomain ? "/" : `/sitio/${w.slug}`;
+  ctx.page = page || null;
+  ctx.caseSlug = caseSlug || null;
+  if (page) ctx.goContact = () => { window.location.href = `${ctx.homeHref}#contact`; };
 
   return (
     <div style={{ background: th.bg, color: th.ink, fontFamily: th.b }} className="min-h-screen antialiased" data-testid={`site-tpl-${key}`}>
@@ -271,8 +279,9 @@ export default function ContractorSite({ injected }) {
         const p = (data.photos || []).find((x) => x.id === m[1]);
         if (p) setWorkOpen(p);
       }}>
-        <Layout ctx={ctx} />
-        {key !== "agency" && <SharedExtras ctx={ctx} />}
+        {page
+          ? <SubPageRouter ctx={ctx} />
+          : <><Layout ctx={ctx} />{key !== "agency" && <SharedExtras ctx={ctx} />}</>}
       </div>
       <MobileBar ctx={ctx} />
       {workOpen && <SiteWorkModal photo={workOpen} accent={accent} accentText={accentText} onClose={() => setWorkOpen(null)} onQuote={() => { setWorkOpen(null); goContact(); }} />}
@@ -1809,9 +1818,10 @@ function SamplesSection({ ctx }) {
             );
             const cls = "group block rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl";
             const stl = { borderColor: th.border, background: th.surface };
-            return s.link
-              ? <a key={i} href={s.link} target="_blank" rel="noreferrer" data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</a>
-              : <div key={i} data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</div>;
+            const internal = s.caseSlug && ctx.pageHref;
+            const href = internal ? ctx.pageHref(`caso/${s.caseSlug}`) : s.link;
+            if (!href) return <div key={i} data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</div>;
+            return <a key={i} href={href} {...(internal ? {} : { target: "_blank", rel: "noreferrer" })} data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</a>;
           })}
         </div>
       </div>
@@ -1859,7 +1869,256 @@ function SharedExtras({ ctx }) {
       {sec.samples !== false && <SamplesSection ctx={ctx} />}
       {sec.logos !== false && <LogosStrip ctx={ctx} />}
       {sec.map !== false && <ClientMap ctx={ctx} />}
+      <PageLinks ctx={ctx} />
     </>
+  );
+}
+
+// ---- MULTI-PAGE: Case Studies / Solutions / About (all templates) ----------
+function RichText({ text, th }) {
+  const blocks = (text || "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  return (
+    <div className="space-y-4">
+      {blocks.map((t, i) => {
+        if (t.startsWith("### ")) return <h3 key={i} className="wh text-xl md:text-2xl font-bold" style={{ color: th.ink }}>{t.slice(4)}</h3>;
+        if (t.startsWith("## ")) return <h2 key={i} className="wh text-2xl md:text-3xl font-bold" style={{ color: th.ink }}>{t.slice(3)}</h2>;
+        return <p key={i} className="leading-relaxed" style={{ color: th.muted }}>{t}</p>;
+      })}
+    </div>
+  );
+}
+
+function PageLinks({ ctx }) {
+  const { th, accent, lang, w, pageHref } = ctx;
+  const items = [
+    (w.solutions_intro || (ctx.services && ctx.services.length > 2)) && [pageHref("soluciones"), agT(lang, "Solutions", "Soluciones")],
+    (Array.isArray(w.case_studies) && w.case_studies.length) && [pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
+    (w.about_story || "").trim() && [pageHref("nosotros"), agT(lang, "About us", "Nosotros")],
+  ].filter(Boolean);
+  if (!items.length) return null;
+  return (
+    <section className="py-8 border-t" style={{ borderColor: th.border }} data-testid="site-page-links">
+      <div className="max-w-6xl mx-auto px-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-semibold">
+        {items.map(([href, label], i) => <a key={i} href={href} className="inline-flex items-center gap-1.5 hover:opacity-80" style={{ color: th.ink }}><ArrowRight className="w-4 h-4" style={{ color: accent }} />{label}</a>)}
+      </div>
+    </section>
+  );
+}
+
+function SubNav({ ctx, active }) {
+  const { th, accent, accentText, b, w, lang, pageHref, homeHref } = ctx;
+  const links = [
+    [homeHref, agT(lang, "Home", "Inicio"), "home"],
+    (ctx.services && ctx.services.length) && [pageHref("soluciones"), agT(lang, "Solutions", "Soluciones"), "soluciones"],
+    (Array.isArray(w.case_studies) && w.case_studies.length) && [pageHref("casos"), agT(lang, "Case studies", "Casos"), "casos"],
+    (w.about_story || "").trim() && [pageHref("nosotros"), agT(lang, "About", "Nosotros"), "nosotros"],
+  ].filter(Boolean);
+  return (
+    <header className="sticky top-0 z-40 backdrop-blur-xl border-b" style={{ background: th.dark ? "rgba(10,10,15,.85)" : `${th.surface}f2`, borderColor: th.border }}>
+      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+        <a href={homeHref} className="wh text-lg font-black truncate" style={{ color: th.ink }} data-testid="subnav-brand">{b?.name || w.headline}</a>
+        <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
+          {links.map(([href, label, k], i) => <a key={i} href={href} data-testid={`subnav-${k}`} className="transition-colors hover:opacity-80" style={{ color: active === k ? accent : th.muted }}>{label}</a>)}
+        </nav>
+        <a href={`${homeHref}#contact`} className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full" style={{ background: accent, color: accentText }}>{ctx.ctaShort}<ArrowRight className="w-4 h-4" /></a>
+      </div>
+    </header>
+  );
+}
+
+function SubFooter({ ctx }) {
+  const { th, w, b, lang, pageHref, homeHref } = ctx;
+  const phone = w.cta_phone || b?.phone;
+  return (
+    <footer className="border-t py-10" style={{ borderColor: th.border }}>
+      <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: th.muted }}>
+        <span className="wh font-black" style={{ color: th.ink }}>© {new Date().getFullYear()} {b?.name || w.headline}</span>
+        <div className="flex items-center gap-5">
+          <a href={homeHref} className="hover:opacity-80">{agT(lang, "Home", "Inicio")}</a>
+          {Array.isArray(w.case_studies) && w.case_studies.length > 0 && <a href={pageHref("casos")} className="hover:opacity-80">{agT(lang, "Cases", "Casos")}</a>}
+          {(w.about_story || "").trim() && <a href={pageHref("nosotros")} className="hover:opacity-80">{agT(lang, "About", "Nosotros")}</a>}
+          {phone && <a href={`tel:${phone}`} className="hover:opacity-80">{phone}</a>}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function SubHero({ ctx, kicker, title, sub }) {
+  const { th, accent } = ctx;
+  return (
+    <section className="border-b" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }}>
+      <div className="max-w-5xl mx-auto px-5 py-16 md:py-20 text-center">
+        {kicker && <p className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>{kicker}</p>}
+        <h1 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>{title}</h1>
+        {sub && <p className="mt-4 max-w-2xl mx-auto leading-relaxed" style={{ color: th.muted }}>{sub}</p>}
+      </div>
+    </section>
+  );
+}
+
+function CaseCTA({ ctx }) {
+  const { th, accent, accentText, lang } = ctx;
+  return (
+    <section className="py-16 md:py-20 border-t text-center" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }}>
+      <div className="max-w-2xl mx-auto px-5">
+        <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Ready to be our next success story?", "¿Listo para ser nuestro próximo caso de éxito?")}</h2>
+        <button onClick={ctx.goContact} data-testid="case-cta-btn" className="mt-6 inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta}<ArrowRight className="w-5 h-5" /></button>
+      </div>
+    </section>
+  );
+}
+
+function CaseList({ ctx }) {
+  const { th, accent, accentText, lang, pageHref, w } = ctx;
+  const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
+  return (
+    <>
+      <SubHero ctx={ctx} kicker={agT(lang, "Case studies", "Casos de éxito")} title={agT(lang, "Results that speak for themselves", "Resultados que hablan por sí mismos")} sub={agT(lang, "Explore how we've helped businesses like yours grow.", "Descubre cómo hemos ayudado a negocios como el tuyo a crecer.")} />
+      <section className="max-w-6xl mx-auto px-5 py-16" data-testid="case-list">
+        {cases.length === 0 ? <p className="text-center" style={{ color: th.muted }}>{agT(lang, "No case studies yet.", "Aún no hay casos.")}</p> : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cases.map((c, i) => (
+              <a key={i} href={pageHref(`caso/${c.slug || i}`)} data-testid={`case-card-${i}`} className="group rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: th.border, background: th.surface }}>
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {imgSrc(c.cover, 800) && <img src={imgSrc(c.cover, 800)} alt={c.client || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,.72),transparent 60%)" }} />
+                  {c.category && <span className="absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: accent, color: accentText }}>{c.category}</span>}
+                  <div className="absolute bottom-0 inset-x-0 p-4"><h3 className="text-white font-bold text-lg">{c.client}</h3></div>
+                </div>
+                {c.summary && <p className="p-4 text-sm leading-relaxed line-clamp-3" style={{ color: th.muted }}>{c.summary}</p>}
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+      <CaseCTA ctx={ctx} />
+    </>
+  );
+}
+
+function CaseDetail({ ctx }) {
+  const { th, accent, lang, w, caseSlug, pageHref } = ctx;
+  const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
+  const c = cases.find((x) => (x.slug || "") === caseSlug);
+  if (!c) return <SubHero ctx={ctx} title={agT(lang, "Case not found", "Caso no encontrado")} sub={<a href={pageHref("casos")} style={{ color: accent }}>{agT(lang, "Back to cases", "Volver a casos")}</a>} />;
+  const photos = (Array.isArray(c.photos) ? c.photos : []).filter(Boolean);
+  const services = Array.isArray(c.services) ? c.services : [];
+  const results = Array.isArray(c.results) ? c.results : [];
+  const body = (c.body || "").trim();
+  return (
+    <>
+      <section className="relative" data-testid="case-detail">
+        {imgSrc(c.cover, 1600) && <div className="absolute inset-0"><img src={imgSrc(c.cover, 1600)} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))" }} /></div>}
+        <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
+          <a href={pageHref("casos")} className="text-sm text-white/80 hover:text-white" data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
+          {c.category && <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>{c.category}</p>}
+          <h1 className="wh text-4xl md:text-6xl text-white mt-2">{c.client}</h1>
+          {c.summary && <p className="mt-4 text-lg text-white/85 max-w-2xl leading-relaxed">{c.summary}</p>}
+        </div>
+      </section>
+      {results.length > 0 && (
+        <section className="border-b" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }}>
+          <div className="max-w-5xl mx-auto px-5 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {results.map((r, i) => <div key={i}><div className="wh text-3xl md:text-4xl font-black" style={{ color: accent }}>{r.value}</div><div className="text-sm mt-1" style={{ color: th.muted }}>{r.label}</div></div>)}
+          </div>
+        </section>
+      )}
+      <section className="max-w-3xl mx-auto px-5 py-16">
+        {services.length > 0 && <div className="flex flex-wrap gap-2 mb-8">{services.map((s, i) => <span key={i} className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: `${accent}18`, color: accent }}>{s}</span>)}</div>}
+        {body ? <RichText text={body} th={th} /> : (c.summary && <p className="leading-relaxed" style={{ color: th.muted }}>{c.summary}</p>)}
+      </section>
+      {photos.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 pb-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {photos.map((p, i) => <div key={i} className="rounded-xl overflow-hidden border" style={{ borderColor: th.border }}><img src={imgSrc(p, 800)} alt="" className="w-full object-cover aspect-[4/3]" /></div>)}
+          </div>
+        </section>
+      )}
+      <CaseCTA ctx={ctx} />
+    </>
+  );
+}
+
+function SolutionsPage({ ctx }) {
+  const { th, accent, lang, services, w, sec } = ctx;
+  return (
+    <>
+      <SubHero ctx={ctx} kicker={agT(lang, "Our solutions", "Nuestras soluciones")} title={agT(lang, "Marketing to grow your business", "Marketing para impulsar tu crecimiento")} sub={(w.solutions_intro || "").trim() || agT(lang, "Custom strategies that fit your budget and audience.", "Estrategias personalizadas que se ajustan a tu presupuesto y público.")} />
+      <section className="max-w-6xl mx-auto px-5 py-16" data-testid="solutions-list">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {services.map((s, i) => (
+            <div key={i} data-testid={`solution-${i}`} className="rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ borderColor: th.border, background: th.surface }}>
+              {s.img ? <div className="w-14 h-14 rounded-xl overflow-hidden mb-5"><img src={s.img} alt="" className="w-full h-full object-contain" /></div> : <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
+              <h3 className="font-bold text-lg" style={{ color: th.ink }}>{s.name || s.title}</h3>
+              {s.description && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: th.muted }}>{s.description}</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+      {sec.map !== false && <ClientMap ctx={ctx} />}
+      <CaseCTA ctx={ctx} />
+    </>
+  );
+}
+
+function AboutPage({ ctx }) {
+  const { th, accent, lang, w, aboutImgs } = ctx;
+  const milestones = Array.isArray(w.milestones) ? w.milestones : [];
+  const values = Array.isArray(w.about_values) ? w.about_values : [];
+  const team = Array.isArray(w.team) ? w.team : [];
+  const story = (w.about_story || "").trim();
+  return (
+    <>
+      <SubHero ctx={ctx} kicker={agT(lang, "About us", "Sobre nosotros")} title={w.about_title || agT(lang, "Our story", "Nuestra historia")} />
+      {milestones.length > 0 && (
+        <section className="border-b" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="about-milestones">
+          <div className="max-w-5xl mx-auto px-5 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {milestones.map((m, i) => <div key={i} data-testid={`milestone-${i}`}><div className="wh text-3xl md:text-4xl font-black" style={{ color: accent }}>{m.value}</div><div className="text-sm mt-1" style={{ color: th.muted }}>{m.label}</div></div>)}
+          </div>
+        </section>
+      )}
+      {story && (
+        <section className="max-w-3xl mx-auto px-5 py-16" data-testid="about-story">
+          {aboutImgs && aboutImgs.length > 0 && <img src={aboutImgs[0]} alt="" className="w-full rounded-2xl mb-8 object-cover max-h-96" />}
+          <RichText text={story} th={th} />
+        </section>
+      )}
+      {values.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 pb-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {values.map((v, i) => <div key={i} className="rounded-2xl border p-6 flex items-start gap-3" style={{ borderColor: th.border, background: th.surface }}><CheckCircle2 className="w-5 h-5 mt-0.5 flex-none" style={{ color: accent }} /><div><h3 className="font-bold" style={{ color: th.ink }}>{v.title}</h3>{v.desc && <p className="mt-1.5 text-sm leading-relaxed" style={{ color: th.muted }}>{v.desc}</p>}</div></div>)}
+          </div>
+        </section>
+      )}
+      {team.length > 0 && (
+        <section className="max-w-6xl mx-auto px-5 py-16" data-testid="about-team">
+          <h2 className="wh text-3xl md:text-4xl text-center mb-10" style={{ color: th.ink }}>{agT(lang, "Meet the team", "Conoce al equipo")}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {team.map((m, i) => (
+              <div key={i} data-testid={`team-${i}`} className="text-center">
+                <div className="w-28 h-28 mx-auto rounded-full overflow-hidden border-2" style={{ borderColor: `${accent}55` }}>{imgSrc(m.photo, 300) && <img src={imgSrc(m.photo, 300)} alt={m.name || ""} className="w-full h-full object-cover" />}</div>
+                <h3 className="mt-3 font-bold" style={{ color: th.ink }}>{m.name}</h3>
+                {m.role && <p className="text-sm" style={{ color: accent }}>{m.role}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <CaseCTA ctx={ctx} />
+    </>
+  );
+}
+
+function SubPageRouter({ ctx }) {
+  const { th } = ctx;
+  const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage }[ctx.page];
+  return (
+    <div style={{ background: th.bg, color: th.ink }} data-testid={`site-subpage-${ctx.page}`}>
+      <SubNav ctx={ctx} active={ctx.page === "caso" ? "casos" : ctx.page} />
+      {Page ? <Page ctx={ctx} /> : null}
+      <SubFooter ctx={ctx} />
+    </div>
   );
 }
 
@@ -1877,7 +2136,9 @@ function Agency({ ctx }) {
   const navLinks = [
     services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
     (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
+    (Array.isArray(w.case_studies) && w.case_studies.length) && [ctx.pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
     (steps.length > 0 && sec.how !== false) && ["#how", agT(lang, "Process", "Proceso")],
+    (w.about_story || "").trim() && [ctx.pageHref("nosotros"), agT(lang, "About", "Nosotros")],
     ["#contact", agT(lang, "Contact", "Contacto")],
   ].filter(Boolean);
   return (
