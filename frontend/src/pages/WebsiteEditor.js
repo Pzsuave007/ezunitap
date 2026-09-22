@@ -1121,8 +1121,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1334,6 +1334,16 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const removeCaseCover = async (i) => { const n = [...cases]; n[i] = { ...n[i], cover: "" }; setCases(n); await save({ case_studies: n }); };
   const updSolCard = (i, ci, k, v) => { const cards = [...(cases[i].solution_cards || [])]; while (cards.length < 3) cards.push({ title: "", desc: "" }); cards[ci] = { ...cards[ci], [k]: v }; updCase(i, "solution_cards", cards); };
   const setCaseColor = (key, val) => patch({ case_colors: { ...(w?.case_colors || {}), [key]: val } });
+  const aboutSecs = Array.isArray(w.about_sections) ? w.about_sections : [];
+  const setAboutSecs = (n) => patch({ about_sections: n });
+  const updAboutSec = (i, k, v) => { const n = [...aboutSecs]; n[i] = { ...n[i], [k]: v }; setAboutSecs(n); };
+  const uploadAboutSecImg = async (i, files) => {
+    const list = Array.from(files || []).slice(0, 2);
+    if (!list.length) return;
+    try { const ids = []; for (const f of list) { const id = await onUpload(f); if (id) ids.push(id); } const n = [...aboutSecs]; n[i] = { ...n[i], images: [...(n[i].images || []), ...ids].slice(0, 2) }; setAboutSecs(n); await save({ about_sections: n }); }
+    catch { toast.error(t("website.saveError")); }
+  };
+  const removeAboutSecImg = async (i, pi) => { const n = [...aboutSecs]; n[i] = { ...n[i], images: (n[i].images || []).filter((_, x) => x !== pi) }; setAboutSecs(n); await save({ about_sections: n }); };
   const [openCase, setOpenCase] = useState(0);
   const moveCase = (i, dir) => { const j = i + dir; if (j < 0 || j >= cases.length) return; const n = [...cases]; [n[i], n[j]] = [n[j], n[i]]; setCases(n); setOpenCase(j); };
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
@@ -1589,6 +1599,36 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         <Button variant="outline" className="rounded-xl h-9 mb-3" disabled={aiBusy === "about"} onClick={aiAbout} data-testid="agency-about-ai">{aiBusy === "about" ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {L.aiWorking}</> : <><Sparkles className="w-4 h-4 mr-2" /> {L.aiWrite}</>}</Button>
         <Input value={w.about_title || ""} onChange={(e) => patch({ about_title: e.target.value })} placeholder={L.aboutTitle} className="h-9 rounded-lg mb-2" data-testid="agency-about-title" />
         <RichEditor value={w.about_story || ""} onChange={(v) => patch({ about_story: v })} placeholder={L.story} minHeight={140} testid="agency-about-story" />
+
+        <div className="text-sm font-semibold mt-4 mb-1">{isEs ? "Secciones de historia (con imágenes)" : "Story sections (with images)"}</div>
+        <p className="text-xs text-slate-500 mb-2">{isEs ? "Cada sección muestra su texto con 1-2 imágenes al lado (se alternan izquierda/derecha)." : "Each section shows its text with 1-2 images alongside (alternating left/right)."}</p>
+        <div className="space-y-3">
+          {aboutSecs.map((s, i) => (
+            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`about-sec-${i}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 flex-none">#{i + 1}</span>
+                <Input value={s.title || ""} onChange={(e) => updAboutSec(i, "title", e.target.value)} placeholder={isEs ? "Título de la sección" : "Section title"} className="h-9 rounded-lg flex-1" />
+                <button type="button" onClick={() => setAboutSecs(aboutSecs.filter((_, x) => x !== i))} className="w-8 h-8 rounded-md text-red-500 hover:bg-red-50 flex items-center justify-center flex-none" data-testid={`about-sec-remove-${i}`}><Trash2 className="w-4 h-4" /></button>
+              </div>
+              <RichEditor value={s.body || ""} onChange={(v) => updAboutSec(i, "body", v)} placeholder={isEs ? "Escribe el texto de esta sección…" : "Write this section's text…"} minHeight={90} testid={`about-sec-body-${i}`} />
+              <div className="flex items-center gap-2 flex-wrap">
+                {(Array.isArray(s.images) ? s.images : []).map((ph, pi) => (
+                  <div key={pi} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex-none" data-testid={`about-sec-${i}-img-${pi}`}>
+                    {ph && <img src={/^https?:\/\//.test(ph) ? ph : photoSrc(ph)} alt="" className="w-full h-full object-cover" />}
+                    <button onClick={() => removeAboutSecImg(i, pi)} className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                ))}
+                {(s.images || []).length < 2 && (
+                  <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 cursor-pointer" data-testid={`about-sec-${i}-img-add`}>
+                    <ImagePlus className="w-3.5 h-3.5" /> {isEs ? "Agregar imagen" : "Add image"}
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => uploadAboutSecImg(i, e.target.files)} />
+                  </label>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-8 mt-2" onClick={() => setAboutSecs([...aboutSecs, { title: "", body: "", images: [] }])} data-testid="about-sec-add"><Plus className="w-4 h-4 mr-1" /> {isEs ? "Agregar sección" : "Add section"}</Button>
 
         <div className="text-sm font-semibold mt-4 mb-2">{L.milestones}</div>
         <div className="space-y-2">

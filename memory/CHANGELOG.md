@@ -117,3 +117,10 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Render del sitio: `RichText` ahora detecta HTML y lo muestra sanitizado (`sanitizeHtml`); helper `Prose` para campos que pueden ser HTML o texto. CSS `.rte-content` compartido en index.css. Fuente Playfair Display añadida al import.
 - NOTA: la descripción de servicios se dejó como texto plano a propósito (se renderiza en 12+ plantillas y HTML rompería las demás).
 - Verificado por screenshots: colores por sección (solución oscura, tailored ámbar), formato (negrita/cursiva/viñetas) y editor con barras de herramientas + card de colores.
+
+## Jun 2026 — Nosotros: hero + secciones de historia con imágenes; hero de Caso split; formulario en CTA; lightbox; fixes
+- Caso: hero rediseñado a layout de 2 columnas (imagen en tarjeta + título/descripción sobre color sólido `case_colors.hero`), en lugar de foto de fondo. Colores por sección (`case_colors`) con card arriba del tab Casos; casos colapsables (acordeón) con reordenar/eliminar.
+- Caso CTA "Ready to be our next success story?": ahora incluye el `LeadForm` embebido (envía lead sin salir de la página). También en ServiceDetail.
+- Galería/portafolio: nuevo componente `PhotoGallery` con lightbox (fondo oscuro, prev/next, teclado, contador) en Caso y Servicio (antes abría en pestaña aparte).
+- Fix: descripciones de tarjetas en lista de Casos mostraban HTML → `stripHtml` para teasers.
+- Nosotros (`about_sections`): nuevo modelo [{title, body(HTML), images[]}]. Render alterna texto/imágenes (1-2 por sección) izquierda/derecha como uni2mkt.com. Editor en tab About con RichEditor + subida de imágenes al servidor. Reemplaza la imagen automática superior (venía de `about_photo_ids[0]` importado).

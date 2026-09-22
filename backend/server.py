@@ -4480,6 +4480,7 @@ class WebsiteIn(BaseModel):
     solutions_intro: Optional[str] = None        # Solutions page intro paragraph
     section_colors: Optional[dict] = None         # {hero, services, samples, logos, map, process, reviews, cta, contact, footer} bg hex
     case_colors: Optional[dict] = None            # {hero, info, challenge, solution, tailored, results, portfolio} bg hex for case detail pages
+    about_sections: Optional[list] = None          # [{title, body(html), images:[photo_id]}] story sections with side images
 
 
 _WEBSITE_DEFAULT_SECTIONS = {

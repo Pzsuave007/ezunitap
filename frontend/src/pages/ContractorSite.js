@@ -2296,6 +2296,7 @@ function AboutPage({ ctx }) {
   const values = Array.isArray(w.about_values) ? w.about_values : [];
   const team = Array.isArray(w.team) ? w.team : [];
   const story = (w.about_story || "").trim();
+  const aboutSecs = (Array.isArray(w.about_sections) ? w.about_sections : []).filter((s) => s && ((s.body || "").trim() || (s.title || "").trim() || (s.images || []).length));
   return (
     <>
       <SubHero ctx={ctx} kicker={agT(lang, "About us", "Sobre nosotros")} title={w.about_title || agT(lang, "Our story", "Nuestra historia")} />
@@ -2306,12 +2307,33 @@ function AboutPage({ ctx }) {
           </div>
         </section>
       )}
-      {story && (
+      {aboutSecs.length > 0 ? (
+        aboutSecs.map((s, i) => {
+          const imgs = (Array.isArray(s.images) ? s.images : []).filter(Boolean).map((id) => imgSrc(id, 1000));
+          const reverse = i % 2 === 1;
+          const alt = i % 2 === 1;
+          return (
+            <section key={i} className="py-12 md:py-16" style={alt ? { background: th.dark ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.02)" } : {}} data-testid={`about-section-${i}`}>
+              <div className={`max-w-6xl mx-auto px-5 grid ${imgs.length > 0 ? "md:grid-cols-2" : ""} gap-8 md:gap-12 items-center`}>
+                <div className={reverse && imgs.length > 0 ? "md:order-2" : ""}>
+                  {s.title && <h2 className="wh text-2xl md:text-4xl mb-4" style={{ color: th.ink }}>{s.title}</h2>}
+                  <RichText text={s.body} th={th} />
+                </div>
+                {imgs.length > 0 && (
+                  <div className={`grid ${imgs.length > 1 ? "grid-cols-2" : "grid-cols-1"} gap-4 ${reverse ? "md:order-1" : ""}`}>
+                    {imgs.map((src, k) => <div key={k} className="rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border }}><img src={src} loading="lazy" alt="" className="w-full h-full object-cover aspect-[4/5]" /></div>)}
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })
+      ) : (story && (
         <section className="max-w-3xl mx-auto px-5 py-16" data-testid="about-story">
           {aboutImgs && aboutImgs.length > 0 && <img src={aboutImgs[0]} alt="" className="w-full rounded-2xl mb-8 object-cover max-h-96" />}
           <RichText text={story} th={th} />
         </section>
-      )}
+      ))}
       {values.length > 0 && (
         <section className="max-w-6xl mx-auto px-5 pb-8">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
