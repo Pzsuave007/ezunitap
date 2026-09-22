@@ -110,3 +110,10 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Rutas nuevas en `App.js`: `/sitio/:slug/servicio/:serviceSlug` y `/servicio/:serviceSlug` (byDomain).
 - Helpers `slugify`/`svcSlug`/`ppForService` en `ContractorSite.js`; backend `_svc_slug` + URLs `/servicio/...` añadidas a ambos bloques de `sitemap.xml` (solo servicios sin problem_page, para evitar contenido duplicado).
 - Verificado con screenshots (grid con imágenes + fallback numerado, página de detalle con antes/después y galería) y `sitemap.xml` HTTP 200 con URLs de servicio.
+
+## Jun 2026 — Casos: colores por sección + editor de texto enriquecido (verificado)
+- **Colores por sección (Casos)**: nuevo card en el tab Agency→Casos con 7 selectores (Hero, Info del cliente, El reto, La solución, Soluciones a la medida, Resultados, Portafolio). Se guardan en `case_colors` (modelo backend + `pick()`). Cada sección del detalle del caso aplica su color y el texto se adapta claro/oscuro automáticamente (`caseSecTheme`).
+- **Editor de texto enriquecido (WYSIWYG sin dependencias)**: nuevo `components/RichEditor.jsx` (contentEditable + execCommand) con negrita, cursiva, subrayado, listas, enlaces, fuente (DM Sans/Outfit/Playfair/Georgia/Mono), tamaño y color. Convierte markdown antiguo (### / -) a HTML al cargar. Aplicado a los campos del caso (resumen, reto, servicios/estrategias, descripciones de tarjetas, antes/después) y a Nosotros (about_story).
+- Render del sitio: `RichText` ahora detecta HTML y lo muestra sanitizado (`sanitizeHtml`); helper `Prose` para campos que pueden ser HTML o texto. CSS `.rte-content` compartido en index.css. Fuente Playfair Display añadida al import.
+- NOTA: la descripción de servicios se dejó como texto plano a propósito (se renderiza en 12+ plantillas y HTML rompería las demás).
+- Verificado por screenshots: colores por sección (solución oscura, tailored ámbar), formato (negrita/cursiva/viñetas) y editor con barras de herramientas + card de colores.

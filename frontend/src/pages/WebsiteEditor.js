@@ -11,6 +11,7 @@ import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Spark
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
+import RichEditor from "@/components/RichEditor";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
@@ -1120,8 +1121,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1332,6 +1333,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const removeCasePhoto = async (i, pi) => { const n = [...cases]; n[i] = { ...n[i], photos: (n[i].photos || []).filter((_, x) => x !== pi) }; setCases(n); await save({ case_studies: n }); };
   const removeCaseCover = async (i) => { const n = [...cases]; n[i] = { ...n[i], cover: "" }; setCases(n); await save({ case_studies: n }); };
   const updSolCard = (i, ci, k, v) => { const cards = [...(cases[i].solution_cards || [])]; while (cards.length < 3) cards.push({ title: "", desc: "" }); cards[ci] = { ...cards[ci], [k]: v }; updCase(i, "solution_cards", cards); };
+  const setCaseColor = (key, val) => patch({ case_colors: { ...(w?.case_colors || {}), [key]: val } });
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
   const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
   const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
@@ -1459,6 +1461,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
 
       {/* CASE STUDIES */}
       {sub === "cases" && (
+      <>
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Star className="w-4 h-4" /> {L.cases}</div>
         <p className="text-sm text-slate-500 mb-3">{L.casesDesc}</p>
@@ -1482,7 +1485,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <Input value={c.category || ""} onChange={(e) => updCase(i, "category", e.target.value)} placeholder={L.category} className="h-9 rounded-lg" />
                 <Input value={c.slug || ""} onChange={(e) => updCase(i, "slug", e.target.value)} placeholder={L.cslug} className="h-9 rounded-lg" data-testid={`agency-case-slug-${i}`} />
               </div>
-              <Textarea value={c.summary || ""} onChange={(e) => updCase(i, "summary", e.target.value)} placeholder={L.summary} className="rounded-lg min-h-[50px]" />
+              <RichEditor value={c.summary || ""} onChange={(v) => updCase(i, "summary", v)} placeholder={L.summary} minHeight={56} testid={`agency-case-summary-${i}`} />
               {/* Client info */}
               <div className="pt-1 border-t border-slate-200/70">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-2 mb-1.5">{L.clientInfo}</div>
@@ -1494,12 +1497,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 </div>
               </div>
               {/* El Reto */}
-              <Textarea value={c.challenge || ""} onChange={(e) => updCase(i, "challenge", e.target.value)} placeholder={L.challenge} className="rounded-lg min-h-[80px]" data-testid={`agency-case-challenge-${i}`} />
+              <RichEditor value={c.challenge || ""} onChange={(v) => updCase(i, "challenge", v)} placeholder={L.challenge} minHeight={90} testid={`agency-case-challenge-${i}`} />
               {/* La Solución */}
               <Input value={Array.isArray(c.services) ? c.services.join(", ") : ""} onChange={(e) => updCase(i, "services", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder={L.servicesUsed} className="h-9 rounded-lg" />
               <div className="grid sm:grid-cols-2 gap-2">
-                <Textarea value={c.solution_services || ""} onChange={(e) => updCase(i, "solution_services", e.target.value)} placeholder={L.solServices} className="rounded-lg min-h-[70px]" data-testid={`agency-case-solservices-${i}`} />
-                <Textarea value={c.solution_strategies || ""} onChange={(e) => updCase(i, "solution_strategies", e.target.value)} placeholder={L.solStrategies} className="rounded-lg min-h-[70px]" />
+                <RichEditor value={c.solution_services || ""} onChange={(v) => updCase(i, "solution_services", v)} placeholder={L.solServices} minHeight={80} testid={`agency-case-solservices-${i}`} />
+                <RichEditor value={c.solution_strategies || ""} onChange={(v) => updCase(i, "solution_strategies", v)} placeholder={L.solStrategies} minHeight={80} />
               </div>
               {/* Soluciones a la medida (3 cards) */}
               <div className="pt-1 border-t border-slate-200/70">
@@ -1508,15 +1511,15 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                   {[0, 1, 2].map((ci) => (
                     <div key={ci} className="space-y-1.5" data-testid={`agency-case-${i}-solcard-${ci}`}>
                       <Input value={(c.solution_cards && c.solution_cards[ci]?.title) || ""} onChange={(e) => updSolCard(i, ci, "title", e.target.value)} placeholder={`${L.cardTitle} ${ci + 1}`} className="h-9 rounded-lg" />
-                      <Textarea value={(c.solution_cards && c.solution_cards[ci]?.desc) || ""} onChange={(e) => updSolCard(i, ci, "desc", e.target.value)} placeholder={L.cardDesc} className="rounded-lg min-h-[56px] text-xs" />
+                      <RichEditor value={(c.solution_cards && c.solution_cards[ci]?.desc) || ""} onChange={(v) => updSolCard(i, ci, "desc", v)} placeholder={L.cardDesc} minHeight={56} />
                     </div>
                   ))}
                 </div>
               </div>
               {/* Resultados */}
               <div className="grid sm:grid-cols-2 gap-2">
-                <Textarea value={c.result_before || ""} onChange={(e) => updCase(i, "result_before", e.target.value)} placeholder={L.resBefore} className="rounded-lg min-h-[60px]" data-testid={`agency-case-before-${i}`} />
-                <Textarea value={c.result_after || ""} onChange={(e) => updCase(i, "result_after", e.target.value)} placeholder={L.resAfter} className="rounded-lg min-h-[60px]" />
+                <RichEditor value={c.result_before || ""} onChange={(v) => updCase(i, "result_before", v)} placeholder={L.resBefore} minHeight={64} testid={`agency-case-before-${i}`} />
+                <RichEditor value={c.result_after || ""} onChange={(v) => updCase(i, "result_after", v)} placeholder={L.resAfter} minHeight={64} />
               </div>
               <Textarea value={resToText(c.results)} onChange={(e) => updCase(i, "results", textToRes(e.target.value))} placeholder={L.results} className="rounded-lg min-h-[50px] font-mono text-xs" />
               <div>
@@ -1541,9 +1544,20 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", location: "", industry: "", ideal_clients: "", website_url: "", challenge: "", services: [], solution_services: "", solution_strategies: "", solution_cards: [{ title: isEs ? "Diseño Gráfico Personalizado" : "Custom Graphic Design", desc: "" }, { title: isEs ? "Consultoría Estratégica" : "Strategic Consulting", desc: "" }, { title: isEs ? "Producción y Entrega Puntual" : "On-Time Production & Delivery", desc: "" }], result_before: "", result_after: "", results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      <Card className="card-elevated border-0 shadow-none p-5" data-testid="case-colors-card">
+        <div className="font-semibold mb-1">{isEs ? "Colores por sección (Casos)" : "Section colors (Cases)"}</div>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Asigna el color de fondo de cada sección de la página de detalle del caso." : "Set the background color of each case detail section."}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[["hero", "#0a1130", isEs ? "Portada" : "Hero"], ["info", "#f8fafc", isEs ? "Info del cliente" : "Client info"], ["challenge", "#ffffff", isEs ? "El reto" : "Challenge"], ["solution", "#f8fafc", isEs ? "La solución" : "Solution"], ["tailored", "#ffffff", isEs ? "Soluciones a la medida" : "Tailored"], ["results", "#0a1130", isEs ? "Resultados" : "Results"], ["portfolio", "#ffffff", isEs ? "Portafolio" : "Portfolio"]].map(([key, def, label]) => (
+            <div key={key} className="flex items-center gap-2">
+              <input type="color" value={(w.case_colors && w.case_colors[key]) || def} onChange={(e) => setCaseColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`casecolor-${key}`} />
+              <span className="text-sm">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      </>
       )}
-
-      {/* SOLUTIONS INTRO */}
       {sub === "solutions" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Briefcase className="w-4 h-4" /> {L.solutions}</div>
@@ -1559,7 +1573,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         <p className="text-sm text-slate-500 mb-3">{L.aboutDesc}</p>
         <Button variant="outline" className="rounded-xl h-9 mb-3" disabled={aiBusy === "about"} onClick={aiAbout} data-testid="agency-about-ai">{aiBusy === "about" ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {L.aiWorking}</> : <><Sparkles className="w-4 h-4 mr-2" /> {L.aiWrite}</>}</Button>
         <Input value={w.about_title || ""} onChange={(e) => patch({ about_title: e.target.value })} placeholder={L.aboutTitle} className="h-9 rounded-lg mb-2" data-testid="agency-about-title" />
-        <Textarea value={w.about_story || ""} onChange={(e) => patch({ about_story: e.target.value })} placeholder={L.story} className="rounded-lg min-h-[120px]" data-testid="agency-about-story" />
+        <RichEditor value={w.about_story || ""} onChange={(v) => patch({ about_story: v })} placeholder={L.story} minHeight={140} testid="agency-about-story" />
 
         <div className="text-sm font-semibold mt-4 mb-2">{L.milestones}</div>
         <div className="space-y-2">

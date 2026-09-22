@@ -1790,6 +1790,26 @@ const svcSlug = (s, i) => ((s && s.slug) ? s.slug : (slugify(s && s.name) || `se
 // Match a service to an existing Problem/Solution conversion page by name.
 const ppForService = (data, name) => (data?.problem_pages || []).find((p) => (p.service_name || "").toLowerCase().trim() === (name || "").toLowerCase().trim());
 
+// ---- Rich text (WYSIWYG HTML) rendering ----
+const isHtml = (t) => /<\/?(p|div|span|b|strong|i|em|u|a|ul|ol|li|br|h[1-6]|font)\b/i.test(t || "");
+const sanitizeHtml = (html) => String(html || "")
+  .replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+  .replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*\/?>/gi, "")
+  .replace(/ on\w+\s*=\s*"[^"]*"/gi, "")
+  .replace(/ on\w+\s*=\s*'[^']*'/gi, "")
+  .replace(/\s(href|src)\s*=\s*"(\s*javascript:[^"]*)"/gi, "")
+  .replace(/javascript:/gi, "");
+function RichHTML({ html, th, className = "" }) {
+  return <div className={`rte-content ${className}`} style={{ color: th?.muted }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />;
+}
+// Renders a field that may contain WYSIWYG HTML or plain text.
+function Prose({ text, th, className = "" }) {
+  const t = (text || "").trim();
+  if (!t) return null;
+  if (isHtml(t)) return <RichHTML html={t} th={th} className={className} />;
+  return <p className={`leading-relaxed whitespace-pre-line ${className}`} style={{ color: th?.muted }}>{t}</p>;
+}
+
 // Resolve a section's colors: either from a per-section override {bg} or the template theme.
 const secTheme = (th, sty) => {
   if (sty && sty.bg) {
@@ -1915,6 +1935,7 @@ function SharedExtras({ ctx }) {
 
 // ---- MULTI-PAGE: Case Studies / Solutions / About (all templates) ----------
 function RichText({ text, th }) {
+  if (isHtml(text)) return <RichHTML html={text} th={th} />;
   const blocks = (text || "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const isBullet = (l) => /^\s*([-*•✅✔️➤])\s+/.test(l);
   const renderBody = (body, key) => {
@@ -2064,9 +2085,14 @@ function CaseList({ ctx }) {
   );
 }
 
+const caseSecTheme = (bg) => {
+  const light = isLight(bg);
+  return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.75)", card: light ? "#ffffff" : "rgba(255,255,255,.06)", surface: light ? "#ffffff" : "rgba(255,255,255,.06)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)", border: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)" };
+};
+
 function CaseSection({ id, kicker, title, th, accent, children }) {
   return (
-    <section id={id} className="py-14 md:py-20" data-testid={id ? `case-sec-${id}` : undefined}>
+    <section id={id} className="py-14 md:py-20" style={{ background: th.bg }} data-testid={id ? `case-sec-${id}` : undefined}>
       <div className="max-w-5xl mx-auto px-5">
         {kicker && <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{kicker}</p>}
         {title && <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{title}</h2>}
@@ -2077,10 +2103,14 @@ function CaseSection({ id, kicker, title, th, accent, children }) {
 }
 
 function CaseDetail({ ctx }) {
-  const { th, accent, lang, w, caseSlug, pageHref } = ctx;
+  const { accent, lang, w, caseSlug, pageHref } = ctx;
   const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
   const c = cases.find((x) => (x.slug || "") === caseSlug);
   if (!c) return <SubHero ctx={ctx} title={agT(lang, "Case not found", "Caso no encontrado")} sub={<a href={pageHref("casos")} style={{ color: accent }}>{agT(lang, "Back to cases", "Volver a casos")}</a>} />;
+  const cc = w.case_colors || {};
+  const CDEF = { hero: "#0a1130", info: "#f8fafc", challenge: "#ffffff", solution: "#f8fafc", tailored: "#ffffff", results: "#0a1130", portfolio: "#ffffff" };
+  const CS = (k) => caseSecTheme(cc[k] || CDEF[k]);
+  const tHero = CS("hero"), tInfo = CS("info"), tChal = CS("challenge"), tSol = CS("solution"), tTail = CS("tailored"), tRes = CS("results"), tPort = CS("portfolio");
   const photos = (Array.isArray(c.photos) ? c.photos : []).filter(Boolean);
   const services = Array.isArray(c.services) ? c.services : [];
   const results = Array.isArray(c.results) ? c.results.filter((r) => r && (r.value || r.label)) : [];
@@ -2097,28 +2127,33 @@ function CaseDetail({ ctx }) {
     c.website_url && ["🔗", "Website", c.website_url],
   ].filter(Boolean);
   const hasSolution = solServices || solStrategies || services.length > 0;
+  const heroImg = imgSrc(c.cover, 1600);
+  const heroInk = heroImg ? "#ffffff" : tHero.ink;
+  const heroSub = heroImg ? "rgba(255,255,255,.85)" : tHero.muted;
   return (
     <>
       {/* HERO */}
-      <section className="relative" data-testid="case-detail">
-        {imgSrc(c.cover, 1600) && <div className="absolute inset-0"><img src={imgSrc(c.cover, 1600)} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))" }} /></div>}
+      <section className="relative" style={{ background: tHero.bg }} data-testid="case-detail">
+        {heroImg && <div className="absolute inset-0"><img src={heroImg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))" }} /></div>}
         <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
-          <a href={pageHref("casos")} className="text-sm text-white/80 hover:text-white" data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
+          <a href={pageHref("casos")} className="text-sm hover:opacity-80" style={{ color: heroSub }} data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
           {c.category && <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>{c.category}</p>}
-          <h1 className="wh text-4xl md:text-6xl text-white mt-2">{c.client}</h1>
-          {c.summary && <p className="mt-4 text-lg text-white/85 max-w-2xl leading-relaxed">{c.summary}</p>}
+          <h1 className="wh text-4xl md:text-6xl mt-2" style={{ color: heroInk }}>{c.client}</h1>
+          {c.summary && (isHtml(c.summary)
+            ? <div className="mt-4 text-lg max-w-2xl rte-content" style={{ color: heroSub }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.summary) }} />
+            : <p className="mt-4 text-lg max-w-2xl leading-relaxed" style={{ color: heroSub }}>{c.summary}</p>)}
         </div>
       </section>
 
       {/* CLIENT INFO */}
       {info.length > 0 && (
-        <CaseSection id="info" title={agT(lang, "Client information", "Información del cliente")} th={th} accent={accent}>
+        <CaseSection id="info" title={agT(lang, "Client information", "Información del cliente")} th={tInfo} accent={accent}>
           <div className="grid sm:grid-cols-2 gap-4">
             {info.map(([icon, label, val], i) => (
-              <div key={i} className="rounded-2xl border p-5 flex gap-4" style={{ borderColor: th.border, background: th.surface }}>
+              <div key={i} className="rounded-2xl border p-5 flex gap-4" style={{ borderColor: tInfo.border, background: tInfo.surface }}>
                 <span className="text-2xl flex-none">{icon}</span>
                 <div><div className="text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>{label}</div>
-                  {label === "Website" ? <a href={/^https?:\/\//.test(val) ? val : `https://${val}`} target="_blank" rel="noreferrer" className="font-semibold break-all hover:underline" style={{ color: th.ink }}>{val}</a> : <div className="font-semibold mt-0.5" style={{ color: th.ink }}>{val}</div>}
+                  {label === "Website" ? <a href={/^https?:\/\//.test(val) ? val : `https://${val}`} target="_blank" rel="noreferrer" className="font-semibold break-all hover:underline" style={{ color: tInfo.ink }}>{val}</a> : <div className="font-semibold mt-0.5" style={{ color: tInfo.ink }}>{val}</div>}
                 </div>
               </div>
             ))}
@@ -2128,30 +2163,30 @@ function CaseDetail({ ctx }) {
 
       {/* EL RETO */}
       {challenge && (
-        <CaseSection id="challenge" kicker={agT(lang, "Challenges faced", "Los desafíos")} title={agT(lang, "The challenge", "El reto")} th={th} accent={accent}>
-          <RichText text={challenge} th={th} />
+        <CaseSection id="challenge" kicker={agT(lang, "Challenges faced", "Los desafíos")} title={agT(lang, "The challenge", "El reto")} th={tChal} accent={accent}>
+          <RichText text={challenge} th={tChal} />
         </CaseSection>
       )}
 
       {/* LA SOLUCIÓN */}
       {hasSolution && (
-        <CaseSection id="solution" kicker={agT(lang, "What we did", "Lo que hicimos")} title={agT(lang, "The solution", "La solución")} th={th} accent={accent}>
+        <CaseSection id="solution" kicker={agT(lang, "What we did", "Lo que hicimos")} title={agT(lang, "The solution", "La solución")} th={tSol} accent={accent}>
           {services.length > 0 && <div className="flex flex-wrap gap-2 mb-8">{services.map((s, i) => <span key={i} className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: `${accent}18`, color: accent }}>{s}</span>)}</div>}
           <div className="grid md:grid-cols-2 gap-8">
-            {solServices && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: th.ink }}>{agT(lang, "Services provided", "Servicios proporcionados")}</h3><RichText text={solServices} th={th} /></div>}
-            {solStrategies && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: th.ink }}>{agT(lang, "Strategies implemented", "Estrategias implementadas")}</h3><RichText text={solStrategies} th={th} /></div>}
+            {solServices && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: tSol.ink }}>{agT(lang, "Services provided", "Servicios proporcionados")}</h3><RichText text={solServices} th={tSol} /></div>}
+            {solStrategies && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: tSol.ink }}>{agT(lang, "Strategies implemented", "Estrategias implementadas")}</h3><RichText text={solStrategies} th={tSol} /></div>}
           </div>
         </CaseSection>
       )}
 
       {/* SOLUCIONES A LA MEDIDA (3 cards) */}
       {solCards.length > 0 && (
-        <CaseSection id="tailored" title={agT(lang, "Tailored solutions", "Soluciones a la medida")} th={th} accent={accent}>
+        <CaseSection id="tailored" title={agT(lang, "Tailored solutions", "Soluciones a la medida")} th={tTail} accent={accent}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {solCards.map((card, i) => (
-              <div key={i} data-testid={`case-solcard-${i}`} className="rounded-2xl border p-6" style={{ borderColor: th.border, background: th.surface }}>
-                <h3 className="wh font-bold text-lg" style={{ color: th.ink }}>{card.title}</h3>
-                {card.desc && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: th.muted }}>{card.desc}</p>}
+              <div key={i} data-testid={`case-solcard-${i}`} className="rounded-2xl border p-6" style={{ borderColor: tTail.border, background: tTail.surface }}>
+                <h3 className="wh font-bold text-lg" style={{ color: tTail.ink }}>{card.title}</h3>
+                {card.desc && <Prose text={card.desc} th={tTail} className="mt-2.5 text-sm" />}
               </div>
             ))}
           </div>
@@ -2160,16 +2195,16 @@ function CaseDetail({ ctx }) {
 
       {/* RESULTADOS IMPACTANTES */}
       {(before || after || results.length > 0) && (
-        <CaseSection id="results" kicker={agT(lang, "The outcome", "El resultado")} title={agT(lang, "Impactful results", "Resultados impactantes")} th={th} accent={accent}>
+        <CaseSection id="results" kicker={agT(lang, "The outcome", "El resultado")} title={agT(lang, "Impactful results", "Resultados impactantes")} th={tRes} accent={accent}>
           {(before || after) && (
             <div className="grid md:grid-cols-2 gap-5 mb-10">
-              {before && <div className="rounded-2xl border p-6" style={{ borderColor: "#ef444455", background: `${th.dark ? "rgba(239,68,68,.08)" : "rgba(239,68,68,.05)"}` }}><div className="font-bold mb-2" style={{ color: "#ef4444" }}>🔴 {agT(lang, "Before", "Antes")}</div><p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{before}</p></div>}
-              {after && <div className="rounded-2xl border p-6" style={{ borderColor: "#22c55e55", background: `${th.dark ? "rgba(34,197,94,.08)" : "rgba(34,197,94,.05)"}` }}><div className="font-bold mb-2" style={{ color: "#16a34a" }}>🟢 {agT(lang, "After", "Después")}</div><p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{after}</p></div>}
+              {before && <div className="rounded-2xl border p-6" style={{ borderColor: "#ef444455", background: tRes.dark ? "rgba(239,68,68,.14)" : "rgba(239,68,68,.05)" }}><div className="font-bold mb-2" style={{ color: "#ef4444" }}>🔴 {agT(lang, "Before", "Antes")}</div><Prose text={before} th={tRes} className="text-sm" /></div>}
+              {after && <div className="rounded-2xl border p-6" style={{ borderColor: "#22c55e55", background: tRes.dark ? "rgba(34,197,94,.14)" : "rgba(34,197,94,.05)" }}><div className="font-bold mb-2" style={{ color: "#22c55e" }}>🟢 {agT(lang, "After", "Después")}</div><Prose text={after} th={tRes} className="text-sm" /></div>}
             </div>
           )}
           {results.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-center">
-              {results.map((r, i) => <div key={i} className="rounded-2xl border py-8 px-4" style={{ borderColor: th.border, background: th.surface }}><div className="wh text-4xl md:text-5xl font-black" style={{ color: accent }}>{r.value}</div><div className="text-sm mt-2" style={{ color: th.muted }}>{r.label}</div></div>)}
+              {results.map((r, i) => <div key={i} className="rounded-2xl border py-8 px-4" style={{ borderColor: tRes.border, background: tRes.surface }}><div className="wh text-4xl md:text-5xl font-black" style={{ color: accent }}>{r.value}</div><div className="text-sm mt-2" style={{ color: tRes.muted }}>{r.label}</div></div>)}
             </div>
           )}
         </CaseSection>
@@ -2177,9 +2212,9 @@ function CaseDetail({ ctx }) {
 
       {/* PORTAFOLIO VISUAL */}
       {photos.length > 0 && (
-        <CaseSection id="portfolio" kicker={agT(lang, "Explore our creative showcase", "Explora nuestro trabajo")} title={agT(lang, "Captivating visual portfolio", "Portafolio visual")} th={th} accent={accent}>
+        <CaseSection id="portfolio" kicker={agT(lang, "Explore our creative showcase", "Explora nuestro trabajo")} title={agT(lang, "Captivating visual portfolio", "Portafolio visual")} th={tPort} accent={accent}>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {photos.map((p, i) => <a key={i} href={imgSrc(p, 1400)} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border group" style={{ borderColor: th.border }} data-testid={`case-portfolio-${i}`}><img src={imgSrc(p, 700)} loading="lazy" alt="" className="w-full object-cover aspect-square transition-transform duration-500 group-hover:scale-105" /></a>)}
+            {photos.map((p, i) => <a key={i} href={imgSrc(p, 1400)} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border group" style={{ borderColor: tPort.border }} data-testid={`case-portfolio-${i}`}><img src={imgSrc(p, 700)} loading="lazy" alt="" className="w-full object-cover aspect-square transition-transform duration-500 group-hover:scale-105" /></a>)}
           </div>
         </CaseSection>
       )}
