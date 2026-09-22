@@ -937,6 +937,56 @@ async def translate_website_content_to_en(content: dict) -> dict:
     return data
 
 
+AGENCY_CASE_SYSTEM = """You write concise, persuasive marketing CASE-STUDY copy for a Latino marketing
+agency that helps small U.S. businesses grow. You receive a client's name, category and some notes.
+Output ONLY valid JSON with EXACTLY these keys:
+{
+  "summary": "one punchy sentence (max 22 words) describing the client and win",
+  "body": "3 short paragraphs separated by a blank line, each starting with a '### ' heading: the reto (challenge), the solución (solution), and the resultado (result)",
+  "services": ["3 to 5 short service names used"],
+  "results": [{"value":"e.g. +45%","label":"short metric label"}, ... 3 items]
+}
+Write everything in {LANG_NAME}. Keep it real and specific to the category; never invent fake exact
+numbers that sound implausible — use realistic ranges (+30%, 2x, 5★). Return ONLY the JSON."""
+
+
+async def generate_case_study(client: str, category: str = "", notes: str = "", lang: str = "es") -> dict:
+    import json as _json
+    lang_name = "Spanish (Latin-American, warm and professional)" if lang != "en" else "American English"
+    system = AGENCY_CASE_SYSTEM.replace("{LANG_NAME}", lang_name)
+    chat = _new_chat(system)
+    brief = f"Client: {client or 'a local business'}\nCategory/industry: {category or 'general'}\nNotes from the owner (may be empty): {notes or '(none)'}\nWrite the case-study JSON now."
+    response = await chat.send_message(UserMessage(text=brief))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not write the case study. Try again.")
+    return data
+
+
+AGENCY_ABOUT_SYSTEM = """You write warm, authentic ABOUT-US copy for a Latino marketing agency that helps
+small U.S. businesses grow. You receive the business name and a brief/notes. Output ONLY valid JSON with
+EXACTLY these keys:
+{
+  "about_title": "an inspiring one-line headline",
+  "about_story": "3 to 5 short paragraphs separated by a blank line, each starting with a '### ' heading (e.g. history, mission)",
+  "milestones": [{"value":"e.g. 25+","label":"short label"}, ... 4 items],
+  "about_values": [{"title":"short","desc":"one sentence"}, ... 3 items]
+}
+Write everything in {LANG_NAME}. Warm, human, community-focused. Return ONLY the JSON."""
+
+
+async def generate_about_content(business_name: str = "", notes: str = "", lang: str = "es") -> dict:
+    lang_name = "Spanish (Latin-American, warm and professional)" if lang != "en" else "American English"
+    system = AGENCY_ABOUT_SYSTEM.replace("{LANG_NAME}", lang_name)
+    chat = _new_chat(system)
+    brief = f"Business name: {business_name or 'a marketing agency'}\nBrief / notes from the owner (may be empty): {notes or '(none)'}\nWrite the About JSON now."
+    response = await chat.send_message(UserMessage(text=brief))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not write the About content. Try again.")
+    return data
+
+
 WEBSITE_DESIGN_SYSTEM = """You are a brand & web-design consultant for U.S. home-service contractors.
 Given a contractor's trade, pick the single best website TEMPLATE and a brand ACCENT color.
 

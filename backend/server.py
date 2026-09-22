@@ -5117,6 +5117,34 @@ async def website_translate_en(user_id: str = Depends(get_current_user_id), _fea
 
 
 
+@api_router.post("/website/ai-agency")
+async def website_ai_agency(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """AI helper to write Agency-page content (case studies / about) so the owner
+    doesn't start from a blank page."""
+    kind = (body.get("kind") or "").strip()
+    lang = "en" if (body.get("lang") == "en") else "es"
+    try:
+        if kind == "case":
+            data = await ai_service.generate_case_study(
+                client=body.get("client") or "", category=body.get("category") or "",
+                notes=body.get("notes") or "", lang=lang,
+            )
+        elif kind == "about":
+            card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+            name = body.get("business_name") or card.get("business_name") or card.get("name") or ""
+            data = await ai_service.generate_about_content(
+                business_name=name, notes=body.get("notes") or "", lang=lang,
+            )
+        else:
+            raise HTTPException(400, "Unknown kind")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ai-agency failed: {e!r}")
+        raise HTTPException(502, "AI could not generate the content. Try again in a moment.")
+    return {"ok": True, "data": data}
+
+
 @api_router.post("/website/stock-photos")
 async def website_stock_photos(body: dict = Body(default={}), user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     """Fetch fresh trade-relevant Pexels stock photos and apply them to the

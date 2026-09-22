@@ -1233,6 +1233,8 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     solutions: "Página Soluciones", solutionsDesc: "Intro de la página de servicios (los servicios se editan en la pestaña Servicios).",
     client: "Cliente", category: "Categoría", summary: "Resumen", body: "Contenido (usa ### para subtítulos)", cslug: "Slug (url)", servicesUsed: "Servicios (separa con comas)", results: "Resultados (Valor | Etiqueta por línea)",
     aboutTitle: "Título", story: "Historia (usa ### para subtítulos)", milestones: "Logros en números", values: "Valores / Por qué nosotros", team: "Equipo", value: "Valor", name: "Nombre", role: "Puesto", desc: "Descripción", photo: "Foto (URL)", solPh: "Introducción de la página de servicios", gallery: "Galería (fotos del trabajo)",
+    tImport: "Importar", tSamples: "Samples", tLogos: "Logos", tMap: "Mapa", tCases: "Casos", tSol: "Soluciones", tAbout: "Nosotros",
+    aiWrite: "Escribir con IA", aiWorking: "Escribiendo…", aiDone: "¡Contenido generado con IA! Revisa y Guarda.", aiErr: "La IA no pudo generar el contenido. Intenta de nuevo.",
   } : {
     intro: "Manage the Agency template's exclusive sections: client showcase, logo strip and map. Remember to hit Save at the top.",
     importBtn: "Import content from my site (uni2mkt.com)",
@@ -1248,6 +1250,8 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     solutions: "Solutions page", solutionsDesc: "Intro for the services page (edit services in the Services tab).",
     client: "Client", category: "Category", summary: "Summary", body: "Body (use ### for headings)", cslug: "Slug (url)", servicesUsed: "Services (comma separated)", results: "Results (Value | Label per line)",
     aboutTitle: "Title", story: "Story (use ### for headings)", milestones: "Milestones (numbers)", values: "Values / Why us", team: "Team", value: "Value", name: "Name", role: "Role", desc: "Description", photo: "Photo (URL)", solPh: "Services page intro", gallery: "Gallery (work photos)",
+    tImport: "Import", tSamples: "Samples", tLogos: "Logos", tMap: "Map", tCases: "Cases", tSol: "Solutions", tAbout: "About",
+    aiWrite: "Write with AI", aiWorking: "Writing…", aiDone: "Content generated with AI! Review and Save.", aiErr: "AI could not generate the content. Try again.",
   };
   const samples = Array.isArray(w.samples) ? w.samples : [];
   const logos = Array.isArray(w.client_logos) ? w.client_logos : [];
@@ -1276,18 +1280,52 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     catch { toast.error(t("website.saveError")); }
     finally { setUpIdx(null); if (upRef.current) upRef.current.value = ""; }
   };
+  const [sub, setSub] = useState("import");
+  const [aiBusy, setAiBusy] = useState(null);
+  const aiCase = async (i) => {
+    setAiBusy(`case-${i}`);
+    try {
+      const c = cases[i] || {};
+      const { data } = await api.post("/website/ai-agency", { kind: "case", client: c.client, category: c.category, notes: c.summary || c.body || "", lang: isEs ? "es" : "en" });
+      const g = data.data || {};
+      const n = [...cases]; n[i] = { ...c, summary: g.summary || c.summary, body: g.body || c.body, services: (g.services && g.services.length ? g.services : c.services), results: (g.results && g.results.length ? g.results : c.results) }; setCases(n);
+      toast.success(L.aiDone);
+    } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
+    finally { setAiBusy(null); }
+  };
+  const aiAbout = async () => {
+    setAiBusy("about");
+    try {
+      const { data } = await api.post("/website/ai-agency", { kind: "about", notes: w.about_story || w.about_title || "", lang: isEs ? "es" : "en" });
+      const g = data.data || {};
+      patch({ about_title: g.about_title || w.about_title, about_story: g.about_story || w.about_story, milestones: (g.milestones && g.milestones.length ? g.milestones : miles), about_values: (g.about_values && g.about_values.length ? g.about_values : values) });
+      toast.success(L.aiDone);
+    } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
+    finally { setAiBusy(null); }
+  };
+  const SUBTABS = [["import", L.tImport], ["samples", L.tSamples], ["logos", L.tLogos], ["map", L.tMap], ["cases", L.tCases], ["solutions", L.tSol], ["about", L.tAbout]];
 
   return (
     <div className="space-y-4" data-testid="agency-panel">
       <input ref={upRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadFor(e.target.files?.[0])} />
+      <div className="flex flex-wrap gap-2 sticky top-0 z-10 bg-white/90 backdrop-blur py-2 -mx-1 px-1 border-b border-slate-200">
+        {SUBTABS.map(([k, label]) => (
+          <button key={k} onClick={() => setSub(k)} data-testid={`agency-subtab-${k}`}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors ${sub === k ? "text-white" : "text-slate-600 bg-slate-100 hover:bg-slate-200"}`}
+            style={sub === k ? { background: "#0a1130" } : {}}>{label}</button>
+        ))}
+      </div>
+      {sub === "import" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <p className="text-sm text-slate-500 mb-3">{L.intro}</p>
         <Button onClick={doImport} variant="outline" className="rounded-xl h-10 font-bold" data-testid="agency-import-btn">
           <Wand2 className="w-4 h-4 mr-2" /> {L.importBtn}
         </Button>
       </Card>
+      )}
 
       {/* SAMPLES */}
+      {sub === "samples" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Images className="w-4 h-4" /> {L.samples}</div>
         <p className="text-sm text-slate-500 mb-3">{L.samplesDesc}</p>
@@ -1312,8 +1350,10 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setSamples([...samples, { img: "", title: "", subtitle: "", link: "" }])} data-testid="agency-sample-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      )}
 
       {/* LOGOS */}
+      {sub === "logos" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Briefcase className="w-4 h-4" /> {L.logos}</div>
         <p className="text-sm text-slate-500 mb-3">{L.logosDesc}</p>
@@ -1330,8 +1370,10 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setLogos([...logos, ""])} data-testid="agency-logo-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      )}
 
       {/* PINS */}
+      {sub === "map" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><MapPin className="w-4 h-4" /> {L.pins}</div>
         <p className="text-sm text-slate-500 mb-3">{L.pinsDesc}</p>
@@ -1352,8 +1394,10 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setPins([...pins, { label: "", lat: "", lng: "" }])} data-testid="agency-pin-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      )}
 
       {/* CASE STUDIES */}
+      {sub === "cases" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Star className="w-4 h-4" /> {L.cases}</div>
         <p className="text-sm text-slate-500 mb-3">{L.casesDesc}</p>
@@ -1365,6 +1409,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                   {c.cover && <img src={/^https?:\/\//.test(c.cover) ? c.cover : photoSrc(c.cover)} alt="" className="w-full h-full object-cover" />}
                 </div>
                 <Input value={c.cover || ""} onChange={(e) => updCase(i, "cover", e.target.value)} placeholder={L.img} className="h-9 rounded-lg" data-testid={`agency-case-cover-${i}`} />
+                <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" disabled={aiBusy === `case-${i}`} onClick={() => aiCase(i)} data-testid={`agency-case-ai-${i}`} title={L.aiWrite}>{aiBusy === `case-${i}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}</Button>
                 <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setCases(cases.filter((_, x) => x !== i))} data-testid={`agency-case-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -1394,18 +1439,23 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", services: [], results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      )}
 
       {/* SOLUTIONS INTRO */}
+      {sub === "solutions" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Briefcase className="w-4 h-4" /> {L.solutions}</div>
         <p className="text-sm text-slate-500 mb-3">{L.solutionsDesc}</p>
         <Textarea value={w.solutions_intro || ""} onChange={(e) => patch({ solutions_intro: e.target.value })} placeholder={L.solPh} className="rounded-lg min-h-[70px]" data-testid="agency-solutions-intro" />
       </Card>
+      )}
 
       {/* ABOUT */}
+      {sub === "about" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> {L.about}</div>
         <p className="text-sm text-slate-500 mb-3">{L.aboutDesc}</p>
+        <Button variant="outline" className="rounded-xl h-9 mb-3" disabled={aiBusy === "about"} onClick={aiAbout} data-testid="agency-about-ai">{aiBusy === "about" ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {L.aiWorking}</> : <><Sparkles className="w-4 h-4 mr-2" /> {L.aiWrite}</>}</Button>
         <Input value={w.about_title || ""} onChange={(e) => patch({ about_title: e.target.value })} placeholder={L.aboutTitle} className="h-9 rounded-lg mb-2" data-testid="agency-about-title" />
         <Textarea value={w.about_story || ""} onChange={(e) => patch({ about_story: e.target.value })} placeholder={L.story} className="rounded-lg min-h-[120px]" data-testid="agency-about-story" />
 
@@ -1451,6 +1501,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         </div>
         <Button variant="outline" className="rounded-xl h-8 mt-2" onClick={() => setTeam([...team, { name: "", role: "", photo: "" }])} data-testid="agency-team-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
+      )}
     </div>
   );
 }
