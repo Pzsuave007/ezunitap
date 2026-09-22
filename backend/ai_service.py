@@ -879,6 +879,86 @@ async def generate_problem_page(
 
 
 
+# ---- Robust chunked website translation ------------------------------------
+# Large agency sites (long story + many case studies/services) break a single
+# giant translation call, so we translate in small pieces IN PARALLEL with a
+# couple of retries, and keep the original text for any piece that still fails.
+_TR_SHORT_SCALARS = ["headline", "subheadline", "about", "seo_title",
+                     "seo_description", "solutions_intro", "about_title"]
+_TR_LONG_SCALARS = ["about_story"]
+_TR_BATCH_LISTS = ["how_it_works", "why_us", "faqs", "services", "samples",
+                   "team", "milestones", "about_values"]
+_TR_PERITEM_LISTS = ["case_studies", "about_sections"]
+
+
+async def _translate_chunk(system: str, payload, retries: int = 2):
+    """Translate one small JSON payload; retry a few times; raise if all fail."""
+    import json as _json
+    last = None
+    for _ in range(retries + 1):
+        try:
+            chat = _new_chat(system)
+            resp = await chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False)))
+            data = _extract_json(resp)
+            if data is not None and data != {}:
+                return data
+        except Exception as e:  # noqa: BLE001
+            last = e
+    raise ValueError(f"chunk translate failed: {last!r}")
+
+
+async def _translate_website_generic(content: dict, system: str) -> dict:
+    """Translate a website content dict in small parallel chunks. Any chunk that
+    fails after retries keeps its original text (partial > total failure)."""
+    import asyncio
+    result = dict(content)
+    for k in _TR_BATCH_LISTS + _TR_PERITEM_LISTS:
+        if isinstance(content.get(k), list):
+            result[k] = [dict(x) if isinstance(x, dict) else x for x in content[k]]
+
+    jobs = []   # (kind, key, payload)
+    short = {k: content[k] for k in _TR_SHORT_SCALARS if content.get(k)}
+    if short:
+        jobs.append(("scalars", None, short))
+    for k in _TR_LONG_SCALARS:
+        if content.get(k):
+            jobs.append(("scalar", k, {k: content[k]}))
+    for k in _TR_BATCH_LISTS:
+        if content.get(k):
+            jobs.append(("list", k, {k: content[k]}))
+    for k in _TR_PERITEM_LISTS:
+        items = content.get(k) or []
+        for i, item in enumerate(items):
+            jobs.append(("item", (k, i), {k: [item]}))
+
+    results = await asyncio.gather(
+        *[_translate_chunk(system, payload) for (_, _, payload) in jobs],
+        return_exceptions=True,
+    )
+
+    for (kind, key, payload), out in zip(jobs, results):
+        if isinstance(out, Exception) or not isinstance(out, dict):
+            logger.warning(f"translate chunk kept original ({kind} {key}): {out!r}")
+            continue
+        if kind == "scalars":
+            for kk in payload:
+                if out.get(kk):
+                    result[kk] = out[kk]
+        elif kind == "scalar":
+            if out.get(key):
+                result[key] = out[key]
+        elif kind == "list":
+            new_list = out.get(key)
+            if isinstance(new_list, list) and len(new_list) == len(payload[key]):
+                result[key] = new_list
+        elif kind == "item":
+            k, i = key
+            new_list = out.get(k)
+            if isinstance(new_list, list) and new_list:
+                result[k][i] = new_list[0]
+    return result
+
+
 WEBSITE_TRANSLATE_SYSTEM = """You are a professional bilingual (English↔Spanish) marketing translator
 for U.S. Latino home-service contractors. You translate a website's content JSON from English to natural,
 warm, professional LATIN-AMERICAN SPANISH (the kind a U.S. Hispanic customer expects — friendly, clear,
@@ -896,13 +976,7 @@ Rules:
 
 async def translate_website_content(content: dict) -> dict:
     """Translate a website content dict to Spanish, preserving structure."""
-    import json as _json
-    chat = _new_chat(WEBSITE_TRANSLATE_SYSTEM)
-    response = await chat.send_message(UserMessage(text=_json.dumps(content, ensure_ascii=False)))
-    data = _extract_json(response)
-    if not data:
-        raise ValueError("AI could not translate the content. Try again.")
-    return data
+    return await _translate_website_generic(content, WEBSITE_TRANSLATE_SYSTEM)
 
 
 WEBSITE_TRANSLATE_EN_SYSTEM = """You are a professional bilingual (Spanish↔English) marketing translator
@@ -931,13 +1005,7 @@ Strict rules:
 
 async def translate_website_content_to_en(content: dict) -> dict:
     """Translate a website content dict Spanish -> English, preserving structure."""
-    import json as _json
-    chat = _new_chat(WEBSITE_TRANSLATE_EN_SYSTEM)
-    response = await chat.send_message(UserMessage(text=_json.dumps(content, ensure_ascii=False)))
-    data = _extract_json(response)
-    if not data:
-        raise ValueError("AI could not translate the content. Try again.")
-    return data
+    return await _translate_website_generic(content, WEBSITE_TRANSLATE_EN_SYSTEM)
 
 
 AGENCY_CASE_SYSTEM = """You write concise, persuasive marketing CASE-STUDY copy for a Latino marketing
