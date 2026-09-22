@@ -2165,20 +2165,28 @@ function CaseDetail({ ctx }) {
   ].filter(Boolean);
   const hasSolution = solServices || solStrategies || services.length > 0;
   const heroImg = imgSrc(c.cover, 1600);
-  const heroInk = heroImg ? "#ffffff" : tHero.ink;
-  const heroSub = heroImg ? "rgba(255,255,255,.85)" : tHero.muted;
+  const heroInk = tHero.ink;
+  const heroSub = tHero.muted;
   return (
     <>
-      {/* HERO */}
-      <section className="relative" style={{ background: tHero.bg }} data-testid="case-detail">
-        {heroImg && <div className="absolute inset-0"><img src={heroImg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))" }} /></div>}
-        <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
-          <a href={pageHref("casos")} className="text-sm hover:opacity-80" style={{ color: heroSub }} data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
-          {c.category && <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>{c.category}</p>}
-          <h1 className="wh text-4xl md:text-6xl mt-2" style={{ color: heroInk }}>{c.client}</h1>
-          {c.summary && (isHtml(c.summary)
-            ? <div className="mt-4 text-lg max-w-2xl rte-content" style={{ color: heroSub }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.summary) }} />
-            : <p className="mt-4 text-lg max-w-2xl leading-relaxed" style={{ color: heroSub }}>{c.summary}</p>)}
+      {/* HERO — split layout: image card + text on a solid background */}
+      <section className="border-b" style={{ background: tHero.bg, borderColor: tHero.border }} data-testid="case-detail">
+        <div className="max-w-6xl mx-auto px-5 py-12 md:py-20">
+          <a href={pageHref("casos")} className="text-sm hover:opacity-80 inline-block mb-8" style={{ color: heroSub }} data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
+          <div className={`grid ${heroImg ? "md:grid-cols-2" : ""} gap-8 md:gap-14 items-center`}>
+            {heroImg && (
+              <div className="rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: tHero.border }}>
+                <img src={heroImg} alt={c.client || ""} className="w-full h-full object-cover aspect-[4/3]" />
+              </div>
+            )}
+            <div>
+              {c.category && <p className="text-sm font-bold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>{c.category}</p>}
+              <h1 className="wh text-4xl md:text-5xl lg:text-6xl leading-[1.05]" style={{ color: heroInk }}>{c.client}</h1>
+              {c.summary && (isHtml(c.summary)
+                ? <div className="mt-5 text-lg rte-content" style={{ color: heroSub }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.summary) }} />
+                : <p className="mt-5 text-lg leading-relaxed" style={{ color: heroSub }}>{c.summary}</p>)}
+            </div>
+          </div>
         </div>
       </section>
 
