@@ -1792,6 +1792,7 @@ const ppForService = (data, name) => (data?.problem_pages || []).find((p) => (p.
 
 // ---- Rich text (WYSIWYG HTML) rendering ----
 const isHtml = (t) => /<\/?(p|div|span|b|strong|i|em|u|a|ul|ol|li|br|h[1-6]|font)\b/i.test(t || "");
+const stripHtml = (t) => String(t || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/\s+/g, " ").trim();
 const sanitizeHtml = (html) => String(html || "")
   .replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
   .replace(/<\s*(script|style|iframe|object|embed|link|meta)[^>]*\/?>/gi, "")
@@ -2077,7 +2078,7 @@ function CaseList({ ctx }) {
                   {c.category && <span className="absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: accent, color: accentText }}>{c.category}</span>}
                   <div className="absolute bottom-0 inset-x-0 p-4"><h3 className="text-white font-bold text-lg">{c.client}</h3></div>
                 </div>
-                {c.summary && <p className="p-4 text-sm leading-relaxed line-clamp-3" style={{ color: th.muted }}>{c.summary}</p>}
+                {c.summary && <p className="p-4 text-sm leading-relaxed line-clamp-3" style={{ color: th.muted }}>{stripHtml(c.summary)}</p>}
               </a>
             ))}
           </div>
