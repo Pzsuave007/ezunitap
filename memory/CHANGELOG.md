@@ -1,5 +1,11 @@
 # UniTech — Changelog
 
+## Jun 2026 — Galería por caso + Traducción EN (base flip) + Sitemap ampliado
+- **Galería por caso**: editor `AgencyPanel` permite agregar/editar/quitar varias fotos por Case Study (`agency-case-{i}-photo-{pi}`); se muestran en la página de detalle (`CaseDetail` ya renderiza `c.photos`).
+- **Traducción a Inglés (base flip)**: nuevo `POST /website/translate-en` — traduce TODO el contenido (incl. casos, about, equipo, servicios, milestones, valores) al inglés con IA, deja **inglés como idioma base** y guarda el español en `content_es` (capa). Así growthally.agency (EN) muestra base y uni2mkt.com (ES) muestra la capa. `_restore_protected()` conserva URLs/slugs/ids y los `value` numéricos de resultados. `ai_service.translate_website_content_to_en()` + `WEBSITE_TRANSLATE_EN_SYSTEM`. Botón `website-translate-en` en el editor (con confirm). i18n transEnBtn/transEnDone/transEnConfirm.
+- **Sitemap**: `GET /api/sitemap.xml` (per-domain y global) ahora incluye `/soluciones`, `/nosotros`, `/casos` y `/caso/{slug}` por cada caso, con hreflang en la versión per-domain.
+- Testing agent (iteration_58): 5/5 PASS, 100% frontend, sin bugs. Sitemap verificado por curl. Build regenerado y trackeado.
+
 ## Jun 2026 — FASE 2 Agency: Case Studies + Solutions + About (multi-página, todos los templates)
 - Backend `WebsiteIn`: nuevos campos `case_studies`, `about_title`, `about_story`, `milestones`, `about_values`, `team`, `solutions_intro`.
 - Rutas nuevas (App.js) en TODOS los templates: `/sitio/:slug/casos`, `/caso/:caseSlug`, `/soluciones`, `/nosotros` (+ versiones byDomain `/casos` etc). `ContractorSite` acepta props `page` y `byDomain`; fetch usa `website-by-domain` cuando byDomain.

@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend-only testing of Fase 2 Ronda 3 on the Agency template site elite-remodeling-roofing. Tested (1) case-study photo gallery add + save + persistence, (2) public case-detail gallery rendering multiple photos, (3) website-translate-en button availability and confirm dialog, (4) public site EN base + ES toggle + image preservation, (5) About page EN default + ES toggle. All 5 requested scenarios PASS functionally. One minor UX/spec-alignment note: the translate-en / translate-es buttons live under the CONTENT tab (inside the 'Generate with AI' card), not the PUBLISH tab as the request text describes — but they are present, discoverable, and functional.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "WebsiteEditor /pagina-web", "issues": ["Spec says 'Crear versión en Inglés' button should be in the Publish tab; it is actually rendered inside the Content tab's 'Generate with AI' card next to the ES version button. Consider moving to Publish tab or clarifying spec."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: move website-translate-en / website-translate-es buttons to the Publish tab (as described in the review request) or update the request text to reflect Content-tab placement.",
+    "No code changes required to pass the requested functionality."
+  ],
+  "critical_code_review_comments": [
+    "WebsiteEditor.js is 1612 lines — should be split into smaller modules (AgencyPanel, publish/content/design panels) for maintainability.",
+    "translate-en/es confirm() uses browser-native confirm dialog — consider replacing with a shadcn AlertDialog for better UX/consistency."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100% (5/5 scenarios pass)"},
+  "test_credentials": "demo-template@ezunitech.com / DemoTemplate2026!",
+  "seed_data_creation": "Added a second photo (Red-Tomato.png) to case_studies[0] (qdoba) via the editor for test #2. This persists in the demo tenant; can be removed via the editor if needed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Public API GET /api/public/website/{slug} returns {website: {...}}. Base language is EN (headline: 'Powering Latino Businesses'); content_es contains ES translation (headline: 'Impulsando Negocios Latinos', about_title: 'De orígenes humildes...'). Case qdoba now has 2 photos: QdobaPDX.webp + Red-Tomato.png. Login redirects to '/' not '/dashboard'. Translate-en button lives under the Content tab, not Publish — the previous testing agent already confirmed this. Public pages open connections (chat/pixel), use wait_until='domcontentloaded' + wait_for_selector, never 'networkidle'.",
+  "rca_of_the_issue": "N/A — no bugs found. Minor observation: buttons placed under Content tab instead of Publish tab per review text."
+}
