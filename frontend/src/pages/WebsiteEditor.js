@@ -1086,8 +1086,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1183,6 +1183,7 @@ const UNI2_DEFAULTS = {
     { label: "Loreto, MX", lat: 26.0115, lng: -111.343 },
     { label: "Ciudad de México", lat: 19.4326, lng: -99.1332 },
   ],
+  map_embed: "https://www.google.com/maps/d/embed?mid=152Uf65tJu-fxUF7h5ZXHVerKrxspBb0&ehbc=2E312F",
   case_studies: [
     _case("qdoba", "Qdoba Mexican Eats", "Franquicia", `${CDN}/02/QdobaPDX.webp`, "Lanzamiento digital de una franquicia Qdoba en Oregon con presencia local optimizada y captación de clientes.", ["Diseño Web", "Google My Business", "SEO Local"], [{ value: "+45%", label: "Visibilidad local" }, { value: "5★", label: "Reputación" }, { value: "24/7", label: "Presencia digital" }], "### El reto\nUna nueva ubicación de franquicia necesitaba destacar en un mercado competitivo y atraer clientes locales desde el día uno.\n\n### La solución\nDiseñamos su presencia digital, optimizamos su perfil de Google My Business y activamos estrategias de SEO local para aparecer en las búsquedas de la zona.\n\n### El resultado\nMayor visibilidad en Google Maps, más reseñas positivas y un flujo constante de nuevos clientes."),
     _case("casa-lola", "Casa Lola Kitchen", "Restaurante", `${CDN}/02/CasaLola-18-1.jpg`, "Cocina mexicana auténtica que necesitaba conectar con su comunidad y aumentar reservas.", ["Diseño Web", "Redes Sociales", "Contenido"], [{ value: "+60%", label: "Alcance social" }, { value: "+30%", label: "Reservas" }, { value: "100%", label: "Bilingüe" }], "### El reto\nCasa Lola quería llevar el sabor de su cocina a más familias y destacar su identidad mexicana.\n\n### La solución\nCreamos contenido visual atractivo, gestionamos sus redes sociales y diseñamos un sitio bilingüe que refleja su esencia.\n\n### El resultado\nMayor alcance en redes, más reservas y una comunidad fiel alrededor de la marca."),
@@ -1224,6 +1225,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     samples: "Casos de clientes (Samples)", samplesDesc: "Tarjetas con foto que enlazan al caso del cliente.",
     logos: "Franja de logos", logosDesc: "Logos de clientes que se muestran en un carrusel.",
     pins: "Pines del mapa", pinsDesc: "Ubicaciones de clientes. Usa latitud/longitud (busca 'ciudad lat long' en Google).",
+    mapEmbed: "Mapa de Google (My Maps) — recomendado", mapEmbedHint: "Pega el enlace o el iframe de tu Google My Maps. Si lo llenas, se usa en vez de los pines.", mapEmbedPh: "https://www.google.com/maps/d/embed?mid=...",
     add: "Agregar", remove: "Quitar", img: "URL de imagen", title: "Título", subtitle: "Subtítulo", link: "Enlace (opcional)",
     logoUrl: "URL del logo", label: "Etiqueta (ciudad)", lat: "Latitud", lng: "Longitud", upload: "Subir",
     cases: "Casos de éxito (Case Studies)", casesDesc: "Cada caso tiene su página de detalle. Los Samples del Home enlazan aquí por su 'slug'.",
@@ -1238,6 +1240,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     samples: "Client showcase (Samples)", samplesDesc: "Photo cards that link to the client's case.",
     logos: "Client logo strip", logosDesc: "Client logos shown in a marquee.",
     pins: "Map pins", pinsDesc: "Client locations. Use latitude/longitude (search 'city lat long' on Google).",
+    mapEmbed: "Google map (My Maps) — recommended", mapEmbedHint: "Paste your Google My Maps link or iframe. If set, it's used instead of the pins.", mapEmbedPh: "https://www.google.com/maps/d/embed?mid=...",
     add: "Add", remove: "Remove", img: "Image URL", title: "Title", subtitle: "Subtitle", link: "Link (optional)",
     logoUrl: "Logo URL", label: "Label (city)", lat: "Latitude", lng: "Longitude", upload: "Upload",
     cases: "Case studies", casesDesc: "Each case gets its own detail page. Home 'Samples' link here by 'slug'.",
@@ -1332,6 +1335,11 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><MapPin className="w-4 h-4" /> {L.pins}</div>
         <p className="text-sm text-slate-500 mb-3">{L.pinsDesc}</p>
+        <div className="mb-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
+          <div className="text-sm font-semibold mb-1">{L.mapEmbed}</div>
+          <p className="text-xs text-slate-500 mb-2">{L.mapEmbedHint}</p>
+          <Input value={w.map_embed || ""} onChange={(e) => patch({ map_embed: e.target.value })} placeholder={L.mapEmbedPh} className="h-9 rounded-lg" data-testid="agency-map-embed" />
+        </div>
         <div className="space-y-2">
           {pins.map((p, i) => (
             <div key={i} className="flex items-center gap-2" data-testid={`agency-pin-${i}`}>

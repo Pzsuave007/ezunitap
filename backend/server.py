@@ -4458,6 +4458,7 @@ class WebsiteIn(BaseModel):
     samples: Optional[list] = None               # [{img, title, subtitle, link}] client showcase cards
     client_logos: Optional[list] = None          # [url or photo_id] logo strip / marquee
     client_pins: Optional[list] = None           # [{label, lat, lng}] client map pins
+    map_embed: Optional[str] = None              # Google My Maps embed URL/iframe (preferred over pins)
     case_studies: Optional[list] = None          # [{slug, client, category, cover, summary, body, photos, services, results}]
     about_title: Optional[str] = None            # About page heading
     about_story: Optional[str] = None            # About page story (### for headings, blank line = new paragraph)

@@ -1,5 +1,10 @@
 # UniTech — Changelog
 
+## Jun 2026 — Mapa Google My Maps embebido + logos del strip más grandes
+- `ClientMap` ahora usa un **iframe de Google My Maps** cuando existe `map_embed` (como el sitio real del cliente); los pines quedan como fallback. Nuevo campo `map_embed` en `WebsiteIn` y editor (`agency-map-embed`) con normalizador que acepta URL embed/viewer/edit o `<iframe>` pegado. `UNI2_DEFAULTS.map_embed` = My Map real (mid 152Uf65...).
+- **Logos del strip** agrandados: chips h-24 (antes h-16), imágenes h-14/md:h-16 (antes h-8/9), max-w-220px.
+- Build regenerado (main.a680a1fe.js) y trackeado. Verificado: compila, map_embed persiste, sitio renderiza.
+
 ## Jun 2026 — Galería por caso + Traducción EN (base flip) + Sitemap ampliado
 - **Galería por caso**: editor `AgencyPanel` permite agregar/editar/quitar varias fotos por Case Study (`agency-case-{i}-photo-{pi}`); se muestran en la página de detalle (`CaseDetail` ya renderiza `c.photos`).
 - **Traducción a Inglés (base flip)**: nuevo `POST /website/translate-en` — traduce TODO el contenido (incl. casos, about, equipo, servicios, milestones, valores) al inglés con IA, deja **inglés como idioma base** y guarda el español en `content_es` (capa). Así growthally.agency (EN) muestra base y uni2mkt.com (ES) muestra la capa. `_restore_protected()` conserva URLs/slugs/ids y los `value` numéricos de resultados. `ai_service.translate_website_content_to_en()` + `WEBSITE_TRANSLATE_EN_SYSTEM`. Botón `website-translate-en` en el editor (con confirm). i18n transEnBtn/transEnDone/transEnConfirm.

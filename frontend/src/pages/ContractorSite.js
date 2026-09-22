@@ -1767,6 +1767,17 @@ const _mapXY = (lat, lng) => ({
   y: Math.max(4, Math.min(96, ((50 - lat) / 36) * 100)),
 });
 const agT = (lang, en, es) => (lang === "es" ? es : en);
+// Normalize a Google My Maps value (embed URL, viewer/edit URL, or a pasted
+// <iframe>) into a clean embeddable src.
+const mapEmbedSrc = (v) => {
+  if (!v || typeof v !== "string") return null;
+  const iframe = v.match(/src="([^"]+)"/);
+  if (iframe) v = iframe[1];
+  const mid = v.match(/[?&]mid=([^&"'\s]+)/);
+  if (mid) return `https://www.google.com/maps/d/embed?mid=${mid[1]}`;
+  if (/^https?:\/\//.test(v) && v.includes("google.com/maps")) return v;
+  return null;
+};
 // A sample/logo image value may be an absolute URL (imported from another site)
 // or one of the owner's uploaded photo ids.
 const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, w)));
@@ -1780,10 +1791,10 @@ function LogosStrip({ ctx }) {
     <section className="py-10 md:py-14 border-y overflow-hidden" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-logos">
       <p className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-6" style={{ color: th.muted }}>{agT(lang, "Trusted by 150+ businesses", "Más de 150 negocios confían en nosotros")}</p>
       <div className="relative">
-        <div className="wmarq gap-6 md:gap-8 items-center px-6">
+        <div className="wmarq gap-8 md:gap-12 items-center px-6">
           {row.map((l, i) => (
-            <div key={i} className="flex-none h-16 px-6 rounded-xl bg-white flex items-center shadow-sm">
-              <img src={imgSrc(l, 320)} alt="" className="h-8 md:h-9 w-auto max-w-[140px] object-contain" />
+            <div key={i} className="flex-none h-24 px-8 rounded-2xl bg-white flex items-center shadow-sm">
+              <img src={imgSrc(l, 400)} alt="" className="h-14 md:h-16 w-auto max-w-[220px] object-contain" />
             </div>
           ))}
         </div>
@@ -1830,8 +1841,9 @@ function SamplesSection({ ctx }) {
 }
 
 function ClientMap({ ctx }) {
+  const embed = mapEmbedSrc(ctx.w.map_embed);
   const pins = (Array.isArray(ctx.w.client_pins) ? ctx.w.client_pins : []).filter((p) => p && p.lat != null && p.lng != null && p.lat !== "" && p.lng !== "");
-  if (!pins.length) return null;
+  if (!embed && !pins.length) return null;
   const { th, accent, lang } = ctx;
   return (
     <section id="map" className="py-16 md:py-24" style={{ background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-map">
@@ -1839,22 +1851,29 @@ function ClientMap({ ctx }) {
         <div className="text-center max-w-2xl mx-auto mb-10">
           <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Where we work", "Dónde trabajamos")}</p>
           <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Clients across North America", "Clientes en toda Norteamérica")}</h2>
+          <p className="mt-3" style={{ color: th.muted }}>{agT(lang, "Thank you for trusting us!", "¡Gracias por confiar en nosotros!")}</p>
         </div>
-        <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: th.border, background: "#0a1130" }}>
-          <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
-          {pins.map((p, i) => {
-            const { x, y } = _mapXY(Number(p.lat), Number(p.lng));
-            return (
-              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2 group" style={{ left: `${x}%`, top: `${y}%` }} data-testid={`site-pin-${i}`}>
-                <span className="relative flex w-3 h-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: accent }} />
-                  <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
-                </span>
-                {p.label && <span className="absolute left-1/2 -translate-x-1/2 top-5 whitespace-nowrap text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">{p.label}</span>}
-              </div>
-            );
-          })}
-        </div>
+        {embed ? (
+          <div className="relative w-full rounded-3xl overflow-hidden border shadow-xl" style={{ borderColor: th.border }} data-testid="site-map-embed">
+            <iframe title="client-map" src={embed} className="w-full block" style={{ height: "520px", border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+          </div>
+        ) : (
+          <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: th.border, background: "#0a1130" }}>
+            <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
+            {pins.map((p, i) => {
+              const { x, y } = _mapXY(Number(p.lat), Number(p.lng));
+              return (
+                <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2 group" style={{ left: `${x}%`, top: `${y}%` }} data-testid={`site-pin-${i}`}>
+                  <span className="relative flex w-3 h-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: accent }} />
+                    <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
+                  </span>
+                  {p.label && <span className="absolute left-1/2 -translate-x-1/2 top-5 whitespace-nowrap text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">{p.label}</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
