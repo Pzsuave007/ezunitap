@@ -5186,18 +5186,35 @@ def _domain_dns_host(domain: str):
     return a_host, is_sub
 
 
-def _domain_status(w):
-    domain = w.get("custom_domain") or ""
+_DOMAIN_SLOTS = {
+    1: {"domain": "custom_domain", "token": "custom_domain_token",
+        "verified": "custom_domain_verified", "a_ok": "custom_domain_a_ok",
+        "lang": "custom_domain_lang", "default_lang": "en"},
+    2: {"domain": "custom_domain_2", "token": "custom_domain_2_token",
+        "verified": "custom_domain_2_verified", "a_ok": "custom_domain_2_a_ok",
+        "lang": "custom_domain_2_lang", "default_lang": "es"},
+}
+
+
+def _slot(slot):
+    return _DOMAIN_SLOTS.get(int(slot or 1), _DOMAIN_SLOTS[1])
+
+
+def _domain_status(w, slot=1):
+    f = _slot(slot)
+    domain = w.get(f["domain"]) or ""
     a_host, is_sub = _domain_dns_host(domain)
-    verified = bool(w.get("custom_domain_verified"))
-    a_ok = bool(w.get("custom_domain_a_ok"))
+    verified = bool(w.get(f["verified"]))
+    a_ok = bool(w.get(f["a_ok"]))
     return {
+        "slot": int(slot),
         "domain": domain,
+        "lang": w.get(f["lang"]) or f["default_lang"],
         "verified": verified,
         "a_ok": a_ok,
         "connected": bool(domain) and verified and a_ok,
         "txt_host": f"_unitech-verify.{domain}" if domain else "",
-        "txt_value": w.get("custom_domain_token") or "",
+        "txt_value": w.get(f["token"]) or "",
         "a_target": os.environ.get("WEBSITE_DOMAIN_TARGET", ""),
         "a_host": a_host,
         "is_subdomain": is_sub,
@@ -5205,12 +5222,20 @@ def _domain_status(w):
 
 
 @api_router.get("/website/domain")
-async def get_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
-    return _domain_status(await _get_or_init_website(user_id))
+async def get_website_domain(slot: int = 1, user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    return _domain_status(await _get_or_init_website(user_id), slot)
+
+
+@api_router.get("/website/domains")
+async def get_website_domains(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    """Both domain slots at once (slot 1 = primary/EN, slot 2 = secondary/ES)."""
+    w = await _get_or_init_website(user_id)
+    return {"slots": [_domain_status(w, 1), _domain_status(w, 2)]}
 
 
 @api_router.post("/website/domain")
-async def set_website_domain(payload: dict = Body(...), user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+async def set_website_domain(payload: dict = Body(...), slot: int = 1, user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    f = _slot(slot)
     raw = (payload.get("domain") or "").strip().lower()
     for pre in ("https://", "http://"):
         if raw.startswith(pre):
@@ -5220,28 +5245,45 @@ async def set_website_domain(payload: dict = Body(...), user_id: str = Depends(g
         raw = raw[4:]
     if not raw or "." not in raw or " " in raw:
         raise HTTPException(400, "Enter a valid domain, e.g. mybusiness.com")
-    dup = await db.websites.find_one({"custom_domain": raw, "user_id": {"$ne": user_id}})
+    # Not already used by another account (either slot), nor this account's other slot.
+    dup = await db.websites.find_one({
+        "user_id": {"$ne": user_id},
+        "$or": [{"custom_domain": raw}, {"custom_domain_2": raw}],
+    })
     if dup:
         raise HTTPException(409, "That domain is already connected to another account.")
     w = await _get_or_init_website(user_id)
+    other = _slot(2 if int(slot) == 1 else 1)
+    if raw == (w.get(other["domain"]) or ""):
+        raise HTTPException(409, "You already added that domain in the other language slot.")
+    # Optional default language for this domain.
+    lang = (payload.get("lang") or "").strip().lower()
+    set_lang = "es" if lang == "es" else ("en" if lang == "en" else f["default_lang"])
     # Re-saving the SAME domain must NOT reset progress (keep token + verified flags).
-    if raw == (w.get("custom_domain") or "") and w.get("custom_domain_token"):
-        return _domain_status(w)
+    if raw == (w.get(f["domain"]) or "") and w.get(f["token"]):
+        await db.websites.update_one({"user_id": user_id}, {"$set": {f["lang"]: set_lang}})
+        return _domain_status(await db.websites.find_one({"user_id": user_id}, {"_id": 0}), slot)
     token = _new_id().replace("-", "")[:20]
-    await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain": raw, "custom_domain_token": token, "custom_domain_verified": False, "custom_domain_a_ok": False}})
-    return _domain_status(await db.websites.find_one({"user_id": user_id}, {"_id": 0}))
+    await db.websites.update_one({"user_id": user_id}, {"$set": {
+        f["domain"]: raw, f["token"]: token, f["verified"]: False, f["a_ok"]: False, f["lang"]: set_lang,
+    }})
+    return _domain_status(await db.websites.find_one({"user_id": user_id}, {"_id": 0}), slot)
 
 
 @api_router.delete("/website/domain")
-async def delete_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
-    await db.websites.update_one({"user_id": user_id}, {"$unset": {"custom_domain": "", "custom_domain_token": "", "custom_domain_verified": "", "custom_domain_a_ok": ""}})
+async def delete_website_domain(slot: int = 1, user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    f = _slot(slot)
+    await db.websites.update_one({"user_id": user_id}, {"$unset": {
+        f["domain"]: "", f["token"]: "", f["verified"]: "", f["a_ok"]: "", f["lang"]: "",
+    }})
     return {"ok": True}
 
 
 @api_router.post("/website/domain/verify")
-async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+async def verify_website_domain(slot: int = 1, user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+    f = _slot(slot)
     w = await _get_or_init_website(user_id)
-    domain, token = w.get("custom_domain"), w.get("custom_domain_token")
+    domain, token = w.get(f["domain"]), w.get(f["token"])
     if not domain or not token:
         raise HTTPException(400, "Add a domain first.")
     host = f"_unitech-verify.{domain}"
@@ -5249,12 +5291,12 @@ async def verify_website_domain(user_id: str = Depends(get_current_user_id), _f:
         records = _dns_txt_records(host)
     except Exception as e:
         logger.info(f"domain verify lookup failed {host}: {e!r}")
-        return {**_domain_status(w), "checked": True, "message": "We couldn't find the TXT record yet — DNS can take up to 30 min to update. Try again shortly."}
+        return {**_domain_status(w, slot), "checked": True, "message": "We couldn't find the TXT record yet — DNS can take up to 30 min to update. Try again shortly."}
     if any(token in r for r in records):
-        await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_verified": True}})
+        await db.websites.update_one({"user_id": user_id}, {"$set": {f["verified"]: True}})
         w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
-        return {**_domain_status(w), "checked": True, "message": "Ownership verified! 🎉 Now confirm your A record (Step 2)."}
-    return {**_domain_status(w), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
+        return {**_domain_status(w, slot), "checked": True, "message": "Ownership verified! 🎉 Now confirm your A record (Step 2)."}
+    return {**_domain_status(w, slot), "checked": True, "message": "TXT record not found yet. Double-check it and try again in a few minutes."}
 
 
 async def _prewarm_domain_cert(domain: str):
@@ -5271,10 +5313,11 @@ async def _prewarm_domain_cert(domain: str):
 
 
 @api_router.post("/website/domain/verify-a")
-async def verify_website_domain_a(user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
+async def verify_website_domain_a(slot: int = 1, user_id: str = Depends(get_current_user_id), _f: dict = Depends(require_any_feature("card", "business"))):
     """Confirm the A record for the domain points to this server's IP (Step 2)."""
+    f = _slot(slot)
     w = await _get_or_init_website(user_id)
-    domain = w.get("custom_domain")
+    domain = w.get(f["domain"])
     target = os.environ.get("WEBSITE_DOMAIN_TARGET", "")
     if not domain:
         raise HTTPException(400, "Add a domain first.")
@@ -5284,18 +5327,16 @@ async def verify_website_domain_a(user_id: str = Depends(get_current_user_id), _
         records = _dns_a_records(domain)
     except Exception as e:
         logger.info(f"domain A verify lookup failed {domain}: {e!r}")
-        return {**_domain_status(w), "checked": True, "message": "We couldn't find the A record yet — DNS can take up to 30 min to update. Try again shortly."}
+        return {**_domain_status(w, slot), "checked": True, "message": "We couldn't find the A record yet — DNS can take up to 30 min to update. Try again shortly."}
     if target in records:
-        await db.websites.update_one({"user_id": user_id}, {"$set": {"custom_domain_a_ok": True}})
+        await db.websites.update_one({"user_id": user_id}, {"$set": {f["a_ok"]: True}})
         w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
-        st = _domain_status(w)
-        # Pre-warm: trigger the edge (Caddy on-demand TLS) to issue the SSL cert
-        # NOW, in the background, so the first real visit is instant.
+        st = _domain_status(w, slot)
         asyncio.create_task(_prewarm_domain_cert(domain))
         msg = "All set — your domain is connected! 🎉" if st["connected"] else "A record confirmed! Now verify ownership (Step 1) to finish."
         return {**st, "checked": True, "message": msg}
     found = ", ".join(records) if records else "none"
-    return {**_domain_status(w), "checked": True, "message": f"Your A record points to {found}, not {target} yet. Update it and try again (DNS can take up to 30 min)."}
+    return {**_domain_status(w, slot), "checked": True, "message": f"Your A record points to {found}, not {target} yet. Update it and try again (DNS can take up to 30 min)."}
 
 
 def _schedule_gbp_review_refresh(user_id: str, background_tasks: BackgroundTasks):
@@ -5396,7 +5437,13 @@ async def public_domain_allowed(domain: str = ""):
         d = d[4:]
     if not d:
         raise HTTPException(400, "domain required")
-    w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True}, {"_id": 0, "id": 1})
+    w = await db.websites.find_one({
+        "custom_domain_verified": True,
+        "$or": [{"custom_domain": d}, {"custom_domain_2": d}],
+    }, {"_id": 0, "id": 1})
+    # slot 2 uses its own verified flag
+    if not w:
+        w = await db.websites.find_one({"custom_domain_2": d, "custom_domain_2_verified": True}, {"_id": 0, "id": 1})
     if not w:
         raise HTTPException(404, "unknown domain")
     return {"ok": True}
@@ -5407,11 +5454,18 @@ async def public_website_by_domain(domain: str, background_tasks: BackgroundTask
     d = (domain or "").strip().lower()
     if d.startswith("www."):
         d = d[4:]
+    # Match either domain slot; each slot carries its own default language.
     w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True, "published": True}, {"_id": 0})
+    default_lang = (w or {}).get("custom_domain_lang") or "en" if w else None
+    if not w:
+        w = await db.websites.find_one({"custom_domain_2": d, "custom_domain_2_verified": True, "published": True}, {"_id": 0})
+        default_lang = (w or {}).get("custom_domain_2_lang") or "es" if w else None
     if not w:
         raise HTTPException(404, "Not found")
     _schedule_gbp_review_refresh(w["user_id"], background_tasks)
-    return await _website_payload(w)
+    payload = await _website_payload(w)
+    payload["default_lang"] = default_lang or "en"
+    return payload
 
 
 @api_router.get("/sitemap.xml")
@@ -5433,6 +5487,11 @@ async def website_sitemap(request: Request):
             {"custom_domain": host, "custom_domain_verified": True},
             {"_id": 0, "slug": 1, "published": 1},
         )
+        if not site:
+            site = await db.websites.find_one(
+                {"custom_domain_2": host, "custom_domain_2_verified": True},
+                {"_id": 0, "slug": 1, "published": 1},
+            )
     if site:
         if site.get("published"):
             root = f"https://{host}"
@@ -5460,12 +5519,13 @@ async def website_sitemap(request: Request):
     urls.append(f"<url><loc>{base}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
 
     sites = await db.websites.find(
-        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1}
+        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1}
     ).to_list(2000)
-    # Slugs of sites that stay on the primary host (no verified custom domain).
+    # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
     for s in sites:
-        has_domain = bool(s.get("custom_domain") and s.get("custom_domain_verified"))
+        has_domain = bool((s.get("custom_domain") and s.get("custom_domain_verified"))
+                          or (s.get("custom_domain_2") and s.get("custom_domain_2_verified")))
         slug = s.get("slug")
         if has_domain or not slug:
             continue

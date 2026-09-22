@@ -1065,6 +1065,15 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - ⚠️ **Limitación Resend**: con `onboarding@resend.dev` en modo prueba, Resend SOLO entrega al email verificado de la cuenta Resend. Para enviar a cada contratista se debe verificar un dominio propio y cambiar `NOTIFY_FROM`.
 - Verificado: `POST /admin/notify/test` responde correctamente "no configurado" sin key; plantillas es/en generan HTML válido; página admin renderiza bien (screenshot). Envío real pendiente de que el usuario pegue la key.
 
+## ✅ Jun 2026 — Sitio bilingüe con DOS dominios (1 update → 2 sitios) [LISTO; UI + endpoints verificados]
+- Decisión del usuario: NO crear un sistema/página aparte para la agencia (Growth Ally / Uni2). Usar el creador de sitios existente. Se descartó la página custom `/agency` (eliminada de App.js; queda `AgencyHome.js` y endpoint `/api/agency/lead` como código muerto no ruteado).
+- **Backend** (`server.py`): sistema de dominios generalizado a 2 slots. `_DOMAIN_SLOTS` (slot1=primary/EN default, slot2=secondary/ES default). Endpoints con `?slot=1|2`: GET/POST/DELETE `/website/domain`, POST `/website/domain/verify`, `/website/domain/verify-a`. Nuevo GET `/website/domains` (ambos slots). Campos nuevos: `custom_domain_2*`, `custom_domain_lang`, `custom_domain_2_lang`.
+  - `public_domain_allowed` (Caddy TLS ask) y `public_website_by_domain` reconocen ambos slots; el segundo devuelve `default_lang`.
+  - Sitemap host-aware reconoce ambos slots; exclusión global excluye sitios con dominio en cualquier slot.
+- **Frontend**: nuevo componente `components/DomainConnect.js` (por slot, auto-contenido). `WebsiteEditor.js` renderiza 2 slots (EN + ES) con nota bilingüe. `ContractorSite.js` abre en el idioma por defecto del dominio (`default_lang`). i18n keys nuevas (domainsBilingualNote, domainBadgeEn/Es).
+- Verificado: GET /website/domains devuelve slot1 (growthally.uni2mkt.com, EN, connected) + slot2 vacío (ES). UI renderiza ambos slots (screenshot). Sitemap sigue OK.
+- Flujo para el usuario: en el sitio, botón "Traducir a Español" genera `content_es`; conectar `growthally.agency` (slot EN) y `uni2mkt.com` (slot ES). Editar una vez actualiza ambos dominios.
+
 ## ✅ Jun 2026 — SEO: Sitemap por dominio (host-aware) [LISTO; verificado en Google Search Console]
 - **Backend** (`server.py`, `GET /api/sitemap.xml`): host-aware.
   - Detección del host real vía `X-Forwarded-Host` (el proxy reescribe `Host` a la dirección interna 127.0.0.1:8007, por eso NO se puede confiar en `request.base_url`).
