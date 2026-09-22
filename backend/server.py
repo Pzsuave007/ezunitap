@@ -5069,9 +5069,11 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
 _PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
 
 
-def _restore_protected(translated, original):
+def _restore_protected(translated, original, unprotect=()):
     """After AI translation, put back URLs/slugs/ids/numbers that must not change,
-    matching items by index so images and links never break."""
+    matching items by index so images and links never break. `unprotect` lists keys
+    that SHOULD keep their translated value even though they're normally protected
+    (e.g. a service "name" is a title to translate, not a proper name)."""
     if isinstance(original, list) and isinstance(translated, list):
         out = []
         for i, orig in enumerate(original):
@@ -5079,7 +5081,7 @@ def _restore_protected(translated, original):
             if isinstance(orig, dict) and isinstance(tr, dict):
                 merged = dict(tr)
                 for k, v in orig.items():
-                    if k in _PROTECTED_ITEM_KEYS:
+                    if k in _PROTECTED_ITEM_KEYS and k not in unprotect:
                         merged[k] = v
                     if k == "results" and isinstance(v, list):
                         trr = tr.get("results") if isinstance(tr.get("results"), list) else []
@@ -5122,7 +5124,7 @@ async def website_translate_en(user_id: str = Depends(get_current_user_id), _fea
         raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
     for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections"):
         if key in en:
-            en[key] = _restore_protected(en.get(key), es_snapshot.get(key) or [])
+            en[key] = _restore_protected(en.get(key), es_snapshot.get(key) or [], unprotect=({"name"} if key == "services" else ()))
     en_base = {k: v for k, v in en.items() if v not in (None, "")}
     await db.websites.update_one(
         {"user_id": user_id},
