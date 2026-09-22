@@ -1811,8 +1811,8 @@ function LogosStrip({ ctx, sty }) {
       <div className="relative">
         <div className="wmarq gap-8 md:gap-12 items-center px-6">
           {row.map((l, i) => (
-            <div key={i} className="flex-none h-24 px-8 rounded-2xl bg-white flex items-center shadow-sm">
-              <img src={imgSrc(l, 400)} alt="" className="h-14 md:h-16 w-auto max-w-[220px] object-contain" />
+            <div key={i} className="flex-none h-28 md:h-32 px-8 rounded-2xl bg-white flex items-center shadow-sm">
+              <img src={imgSrc(l, 520)} alt="" className="h-20 md:h-24 w-auto max-w-[300px] object-contain" />
             </div>
           ))}
         </div>
@@ -1878,7 +1878,7 @@ function ClientMap({ ctx, sty }) {
         </div>
       ) : (
         <div className="max-w-5xl mx-auto px-5">
-          <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: th.border, background: "#0a1130" }}>
+          <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: T.border, background: "#0a1130" }}>
             <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
             {pins.map((p, i) => {
               const { x, y } = _mapXY(Number(p.lat), Number(p.lng));
