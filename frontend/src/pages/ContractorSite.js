@@ -89,9 +89,11 @@ export default function ContractorSite({ injected }) {
     axios.get(`${API}/public/website/${slug}${preview}`).then((r) => setData(r.data)).catch(() => setErr(true));
   }, [slug, injected]);
 
-  // Open in the default language configured for the domain that served the site
-  // (e.g. growthally.agency -> EN, uni2mkt.com -> ES). Falls back to EN.
+  // Open in the default language: ?lang= query param wins, then the domain's
+  // configured default (growthally.agency -> EN, uni2mkt.com -> ES), else EN.
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("lang");
+    if (q === "es" || q === "en") { setLang(q); return; }
     const dl = (data && data.default_lang) || (injected && injected.default_lang);
     if (dl === "es" || dl === "en") setLang(dl);
   }, [data, injected]);
