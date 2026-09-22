@@ -1,5 +1,14 @@
 # UniTech — Changelog
 
+## Jun 2026 — Template "Agency" seleccionable + rediseño HOME (réplica uni2mkt.com)
+- FIX: el template `agency` existía en `ContractorSite.js` pero NO estaba en `TEMPLATES` de `WebsiteEditor.js`, por eso no aparecía como opción. Agregado a TEMPLATES, TPL_SWATCH, PALETTES, thumbnail y i18n (agencyName/agencyDesc).
+- Rediseño completo de la función `Agency()` en `ContractorSite.js` replicando uni2mkt.com: nav sticky, hero+formulario, servicios numerados, Samples, franja de logos, mapa de clientes, proceso, banner CTA, contacto, footer. Textos bilingües (helper `agT`).
+- NUEVAS SECCIONES REUTILIZABLES (theme-aware, toggleables): `SamplesSection`, `LogosStrip`, `ClientMap` + `SharedExtras` (se inyectan en templates no-agency tras el Layout). Mapa usa imagen NA generada (AGENCY_MAP_BG) + proyección equirectangular `_mapXY` (bbox lng −125..−78, lat 14..50).
+- Backend `WebsiteIn`: campos `samples`, `client_logos`, `client_pins`; `_WEBSITE_DEFAULT_SECTIONS` + `samples/logos/map`.
+- Editor: nueva pestaña "Agency" (visible solo si template=agency) → `AgencyPanel` con editores de Samples/Logos/Pines + botón "Importar contenido de mi sitio" (`UNI2_DEFAULTS` con contenido real de uni2mkt.com). Toggles nuevos en Sections: samples/logos/map. `pick()` incluye los 3 campos nuevos.
+- Testing agent (iteration_56): 7/7 features PASS, 100% frontend, sin bugs. Build regenerado y trackeado (`git add -f`).
+- PENDIENTE FASE 2 (acordado con usuario): páginas dedicadas Case Studies (con detalle por proyecto), Solutions y About Us; y cablear las 3 secciones reutilizables en la posición ideal de cada template no-agency.
+
 ## Jun 2026 — BUG FIX raíz: sync tarjeta→sitio borraba fotos de servicios
 - Causa real (confirmada, NO era "memoria del browser"): al guardar los servicios de la TARJETA, `update_card_settings` sobrescribía `websites.services` con los servicios de la tarjeta, que NO llevan `image_id`/`photos`/`hero_photo_id` → borraba TODAS las fotos de servicios del sitio (hero + galería por servicio). Se disparaba al guardar la tarjeta o al regenerar.
 - Fix (`server.py`): nuevo `_merge_service_media(incoming, existing)` que preserva `image_id`/`photos`/`hero_photo_id` de los servicios existentes del sitio (match por nombre, luego índice) al sincronizar desde la tarjeta. Aplicado en el sync de `update_card_settings`.
