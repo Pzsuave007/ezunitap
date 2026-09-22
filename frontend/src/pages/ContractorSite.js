@@ -2392,10 +2392,9 @@ function AgencyFooter({ ctx }) {
 function SubPageRouter({ ctx }) {
   let th = ctx.th;
   if (ctx.key === "agency") {
-    const sc = ctx.w.section_colors || {};
-    const base = sc.services || "#ffffff";
-    const light = isLight(base);
-    th = { ...ctx.th, bg: base, surface: light ? "#ffffff" : "rgba(255,255,255,.05)", ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", border: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", dark: !light };
+    // Agency sub-pages (casos/soluciones/nosotros/servicio) keep a clean WHITE
+    // content area — color lives only in the hero and the footer.
+    th = { ...ctx.th, bg: "#ffffff", surface: "#ffffff", ink: "#0f172a", muted: "#64748b", border: "rgba(0,0,0,.08)", dark: false };
     ctx = { ...ctx, th };
   }
   const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage, servicio: ServiceDetail }[ctx.page];
