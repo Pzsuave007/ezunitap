@@ -3003,7 +3003,7 @@ function Stars({ n = 5 }) {
 }
 
 function LeadForm({ ctx, inline }) {
-  const { slug, th, accent, accentText, data } = ctx;
+  const { slug, th, accent, accentText, data, lang } = ctx;
   const services = data.services;
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: "", description: "" });
   const [sending, setSending] = useState(false);
@@ -3019,24 +3019,24 @@ function LeadForm({ ctx, inline }) {
   if (done) return (
     <div className={`p-8 text-center ${th.radius}`} style={{ background: inline ? "transparent" : th.surface, border: inline ? "none" : `1px solid ${th.border}` }} data-testid="site-lead-success">
       <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: accent }} />
-      <h3 className="wh font-bold text-2xl mt-3" style={{ color: th.ink }}>Thank you!</h3>
-      <p className="mt-2 text-sm" style={{ color: th.muted }}>We received your request and will contact you shortly.</p>
+      <h3 className="wh font-bold text-2xl mt-3" style={{ color: th.ink }}>{agT(lang, "Thank you!", "¡Gracias!")}</h3>
+      <p className="mt-2 text-sm" style={{ color: th.muted }}>{agT(lang, "We received your request and will contact you shortly.", "Recibimos tu solicitud y te contactaremos muy pronto.")}</p>
     </div>
   );
   const body = (
     <form onSubmit={submit} className={inline ? "grid sm:grid-cols-2 gap-3" : `p-6 space-y-3 ${th.radius}`} style={inline ? undefined : { background: th.surface, border: `1px solid ${th.border}` }} data-testid="site-lead-form">
-      <input required data-testid="site-lead-name" placeholder="Your name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inp} style={inpStyle} />
-      <input required data-testid="site-lead-phone" placeholder="Phone *" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inp} style={inpStyle} />
-      <input type="email" data-testid="site-lead-email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`${inp} ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
+      <input required data-testid="site-lead-name" placeholder={agT(lang, "Your name *", "Tu nombre *")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inp} style={inpStyle} />
+      <input required data-testid="site-lead-phone" placeholder={agT(lang, "Phone *", "Teléfono *")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inp} style={inpStyle} />
+      <input type="email" data-testid="site-lead-email" placeholder={agT(lang, "Email", "Correo electrónico")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`${inp} ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
       {services?.length > 0 && (
         <select data-testid="site-lead-service" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} className={`${inp} ${inline ? "sm:col-span-2" : ""}`} style={inpStyle}>
-          <option value="">What do you need?</option>
+          <option value="">{agT(lang, "What do you need?", "¿Qué necesitas?")}</option>
           {services.map((s, i) => <option key={i} value={s.name}>{s.name}</option>)}
         </select>
       )}
-      <textarea placeholder="Tell us what you need (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`w-full min-h-[84px] p-4 rounded-xl border outline-none focus-visible:ring-2 ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
+      <textarea placeholder={agT(lang, "Tell us what you need (optional)", "Cuéntanos qué necesitas (opcional)")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`w-full min-h-[84px] p-4 rounded-xl border outline-none focus-visible:ring-2 ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
       <button type="submit" disabled={sending} data-testid="site-lead-submit" className={`h-13 py-3.5 font-bold flex items-center justify-center gap-2 ${th.btn} ${inline ? "sm:col-span-2" : "w-full"}`} style={{ background: accent, color: accentText }}>
-        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Send Request</>}
+        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> {agT(lang, "Send Request", "Enviar solicitud")}</>}
       </button>
     </form>
   );

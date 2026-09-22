@@ -917,9 +917,12 @@ Strict rules:
 - Translate text such as: headline, subheadline, about, about_title, about_story, solutions_intro,
   each how_it_works/why_us/about_values title+desc, each faq q+a, each service name+description,
   each sample title+subtitle, each case category/summary/body, each case services item,
-  each milestone label, each team role, seo_title, seo_description.
-- In "about_story" keep any "### " heading markers exactly (translate only the heading text after them).
-- NEVER change or translate: any URL or image path (fields img, cover, photo, photos, link, logo),
+  each case challenge/solution_services/solution_strategies/result_before/result_after/location/industry/ideal_clients,
+  each case solution_cards title+desc, each about_sections title+body, each milestone label, each team role, seo_title, seo_description.
+- Some fields (about_story, challenge, solution_services, solution_strategies, about_sections body, case
+  summary/desc) may contain simple HTML (<p>, <strong>, <em>, <u>, <ul>, <li>, <a>) or "### " headings —
+  KEEP all tags and markers exactly, translate ONLY the human-readable text between them.
+- NEVER change or translate: any URL or image path (fields img, cover, photo, photos, images, image_id, link, logo),
   any slug (fields slug, caseSlug), phone numbers, email addresses, numeric values (e.g. results "value",
   milestone "value"), proper place names (areas, map pin labels), and brand/business/person names
   (team "name", sample/case client names may stay if they are proper brand names).

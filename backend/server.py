@@ -5066,7 +5066,7 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
     return {"ok": True, "content_es": content_es}
 
 
-_PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
+_PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
 
 
 def _restore_protected(translated, original):
@@ -5112,6 +5112,7 @@ async def website_translate_en(user_id: str = Depends(get_current_user_id), _fea
         "faqs": w.get("faqs") or [], "services": services, "samples": w.get("samples") or [],
         "case_studies": w.get("case_studies") or [], "team": w.get("team") or [],
         "milestones": w.get("milestones") or [], "about_values": w.get("about_values") or [],
+        "about_sections": w.get("about_sections") or [],
     }
     content = dict(es_snapshot)
     try:
@@ -5119,7 +5120,7 @@ async def website_translate_en(user_id: str = Depends(get_current_user_id), _fea
     except Exception as e:
         logger.error(f"website translate-en failed: {e!r}")
         raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
-    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values"):
+    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections"):
         if key in en:
             en[key] = _restore_protected(en.get(key), es_snapshot.get(key) or [])
     en_base = {k: v for k, v in en.items() if v not in (None, "")}

@@ -124,3 +124,8 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Galería/portafolio: nuevo componente `PhotoGallery` con lightbox (fondo oscuro, prev/next, teclado, contador) en Caso y Servicio (antes abría en pestaña aparte).
 - Fix: descripciones de tarjetas en lista de Casos mostraban HTML → `stripHtml` para teasers.
 - Nosotros (`about_sections`): nuevo modelo [{title, body(HTML), images[]}]. Render alterna texto/imágenes (1-2 por sección) izquierda/derecha como uni2mkt.com. Editor en tab About con RichEditor + subida de imágenes al servidor. Reemplaza la imagen automática superior (venía de `about_photo_ids[0]` importado).
+
+## Jun 2026 — Fix bilingüe: LeadForm + traducción de campos nuevos
+- LeadForm (formulario de contacto) ahora es bilingüe con agT/ctx.lang (era inglés fijo → mostraba inglés en el sitio español). Verificado: con toggle ES muestra "Tu nombre", "Teléfono", "¿Qué necesitas?", "Enviar solicitud".
+- translate-en ahora incluye `about_sections` en el snapshot `content_es` y en `_restore_protected`; prompt de traducción actualizado para traducir los campos nuevos del caso (challenge, solution_services/strategies, solution_cards, result_before/after, location/industry/ideal_clients) y about_sections (title+body), preservando HTML/markers e imágenes (images/image_id añadidos a claves protegidas).
+- Recordatorio para el usuario: tras agregar contenido nuevo en español, correr "Traducir a inglés" para regenerar la base en inglés y guardar el overlay español.
