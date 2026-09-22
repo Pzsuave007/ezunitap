@@ -1916,12 +1916,26 @@ function SharedExtras({ ctx }) {
 // ---- MULTI-PAGE: Case Studies / Solutions / About (all templates) ----------
 function RichText({ text, th }) {
   const blocks = (text || "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  const isBullet = (l) => /^\s*([-*•✅✔️➤])\s+/.test(l);
   return (
     <div className="space-y-4">
       {blocks.map((t, i) => {
         if (t.startsWith("### ")) return <h3 key={i} className="wh text-xl md:text-2xl font-bold" style={{ color: th.ink }}>{t.slice(4)}</h3>;
         if (t.startsWith("## ")) return <h2 key={i} className="wh text-2xl md:text-3xl font-bold" style={{ color: th.ink }}>{t.slice(3)}</h2>;
-        return <p key={i} className="leading-relaxed" style={{ color: th.muted }}>{t}</p>;
+        const lines = t.split(/\n/);
+        if (lines.length && lines.every((l) => !l.trim() || isBullet(l))) {
+          return (
+            <ul key={i} className="space-y-2">
+              {lines.filter((l) => l.trim()).map((l, j) => (
+                <li key={j} className="flex gap-2.5 leading-relaxed" style={{ color: th.muted }}>
+                  <span className="mt-1 flex-none" style={{ color: th.ink === "#ffffff" ? "#22c55e" : "#16a34a" }}>•</span>
+                  <span>{l.replace(/^\s*([-*•✅✔️➤])\s+/, "")}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        return <p key={i} className="leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{t}</p>;
       })}
     </div>
   );
@@ -2036,6 +2050,18 @@ function CaseList({ ctx }) {
   );
 }
 
+function CaseSection({ id, kicker, title, th, accent, children, alt }) {
+  return (
+    <section id={id} className="py-14 md:py-20" style={alt ? { background: th.dark ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.02)" } : {}} data-testid={id ? `case-sec-${id}` : undefined}>
+      <div className="max-w-5xl mx-auto px-5">
+        {kicker && <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{kicker}</p>}
+        {title && <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{title}</h2>}
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function CaseDetail({ ctx }) {
   const { th, accent, lang, w, caseSlug, pageHref } = ctx;
   const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
@@ -2043,10 +2069,24 @@ function CaseDetail({ ctx }) {
   if (!c) return <SubHero ctx={ctx} title={agT(lang, "Case not found", "Caso no encontrado")} sub={<a href={pageHref("casos")} style={{ color: accent }}>{agT(lang, "Back to cases", "Volver a casos")}</a>} />;
   const photos = (Array.isArray(c.photos) ? c.photos : []).filter(Boolean);
   const services = Array.isArray(c.services) ? c.services : [];
-  const results = Array.isArray(c.results) ? c.results : [];
+  const results = Array.isArray(c.results) ? c.results.filter((r) => r && (r.value || r.label)) : [];
+  const solCards = (Array.isArray(c.solution_cards) ? c.solution_cards : []).filter((x) => x && (x.title || x.desc));
+  const challenge = (c.challenge || "").trim();
+  const solServices = (c.solution_services || "").trim();
+  const solStrategies = (c.solution_strategies || "").trim();
+  const before = (c.result_before || "").trim();
+  const after = (c.result_after || "").trim();
   const body = (c.body || "").trim();
+  const info = [
+    c.location && ["📍", agT(lang, "Location", "Ubicación"), c.location],
+    c.industry && ["🍽️", agT(lang, "Industry", "Industria"), c.industry],
+    c.ideal_clients && ["📈", agT(lang, "Ideal clients", "Clientes ideales"), c.ideal_clients],
+    c.website_url && ["🔗", "Website", c.website_url],
+  ].filter(Boolean);
+  const hasSolution = solServices || solStrategies || services.length > 0;
   return (
     <>
+      {/* HERO */}
       <section className="relative" data-testid="case-detail">
         {imgSrc(c.cover, 1600) && <div className="absolute inset-0"><img src={imgSrc(c.cover, 1600)} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))" }} /></div>}
         <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
@@ -2056,24 +2096,84 @@ function CaseDetail({ ctx }) {
           {c.summary && <p className="mt-4 text-lg text-white/85 max-w-2xl leading-relaxed">{c.summary}</p>}
         </div>
       </section>
-      {results.length > 0 && (
-        <section className="border-b" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }}>
-          <div className="max-w-5xl mx-auto px-5 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {results.map((r, i) => <div key={i}><div className="wh text-3xl md:text-4xl font-black" style={{ color: accent }}>{r.value}</div><div className="text-sm mt-1" style={{ color: th.muted }}>{r.label}</div></div>)}
+
+      {/* CLIENT INFO */}
+      {info.length > 0 && (
+        <CaseSection id="info" title={agT(lang, "Client information", "Información del cliente")} th={th} accent={accent} alt>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {info.map(([icon, label, val], i) => (
+              <div key={i} className="rounded-2xl border p-5 flex gap-4" style={{ borderColor: th.border, background: th.surface }}>
+                <span className="text-2xl flex-none">{icon}</span>
+                <div><div className="text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>{label}</div>
+                  {label === "Website" ? <a href={/^https?:\/\//.test(val) ? val : `https://${val}`} target="_blank" rel="noreferrer" className="font-semibold break-all hover:underline" style={{ color: th.ink }}>{val}</a> : <div className="font-semibold mt-0.5" style={{ color: th.ink }}>{val}</div>}
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
+        </CaseSection>
       )}
-      <section className="max-w-3xl mx-auto px-5 py-16">
-        {services.length > 0 && <div className="flex flex-wrap gap-2 mb-8">{services.map((s, i) => <span key={i} className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: `${accent}18`, color: accent }}>{s}</span>)}</div>}
-        {body ? <RichText text={body} th={th} /> : (c.summary && <p className="leading-relaxed" style={{ color: th.muted }}>{c.summary}</p>)}
-      </section>
+
+      {/* EL RETO */}
+      {challenge && (
+        <CaseSection id="challenge" kicker={agT(lang, "Challenges faced", "Los desafíos")} title={agT(lang, "The challenge", "El reto")} th={th} accent={accent}>
+          <RichText text={challenge} th={th} />
+        </CaseSection>
+      )}
+
+      {/* LA SOLUCIÓN */}
+      {hasSolution && (
+        <CaseSection id="solution" kicker={agT(lang, "What we did", "Lo que hicimos")} title={agT(lang, "The solution", "La solución")} th={th} accent={accent} alt>
+          {services.length > 0 && <div className="flex flex-wrap gap-2 mb-8">{services.map((s, i) => <span key={i} className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: `${accent}18`, color: accent }}>{s}</span>)}</div>}
+          <div className="grid md:grid-cols-2 gap-8">
+            {solServices && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: th.ink }}>{agT(lang, "Services provided", "Servicios proporcionados")}</h3><RichText text={solServices} th={th} /></div>}
+            {solStrategies && <div><h3 className="wh text-lg md:text-xl font-bold mb-3" style={{ color: th.ink }}>{agT(lang, "Strategies implemented", "Estrategias implementadas")}</h3><RichText text={solStrategies} th={th} /></div>}
+          </div>
+        </CaseSection>
+      )}
+
+      {/* SOLUCIONES A LA MEDIDA (3 cards) */}
+      {solCards.length > 0 && (
+        <CaseSection id="tailored" title={agT(lang, "Tailored solutions", "Soluciones a la medida")} th={th} accent={accent}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {solCards.map((card, i) => (
+              <div key={i} data-testid={`case-solcard-${i}`} className="rounded-2xl border p-6" style={{ borderColor: th.border, background: th.surface }}>
+                <h3 className="wh font-bold text-lg" style={{ color: th.ink }}>{card.title}</h3>
+                {card.desc && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: th.muted }}>{card.desc}</p>}
+              </div>
+            ))}
+          </div>
+        </CaseSection>
+      )}
+
+      {/* RESULTADOS IMPACTANTES */}
+      {(before || after || results.length > 0) && (
+        <CaseSection id="results" kicker={agT(lang, "The outcome", "El resultado")} title={agT(lang, "Impactful results", "Resultados impactantes")} th={th} accent={accent} alt>
+          {(before || after) && (
+            <div className="grid md:grid-cols-2 gap-5 mb-10">
+              {before && <div className="rounded-2xl border p-6" style={{ borderColor: "#ef444455", background: `${th.dark ? "rgba(239,68,68,.08)" : "rgba(239,68,68,.05)"}` }}><div className="font-bold mb-2" style={{ color: "#ef4444" }}>🔴 {agT(lang, "Before", "Antes")}</div><p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{before}</p></div>}
+              {after && <div className="rounded-2xl border p-6" style={{ borderColor: "#22c55e55", background: `${th.dark ? "rgba(34,197,94,.08)" : "rgba(34,197,94,.05)"}` }}><div className="font-bold mb-2" style={{ color: "#16a34a" }}>🟢 {agT(lang, "After", "Después")}</div><p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: th.muted }}>{after}</p></div>}
+            </div>
+          )}
+          {results.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-center">
+              {results.map((r, i) => <div key={i} className="rounded-2xl border py-8 px-4" style={{ borderColor: th.border, background: th.surface }}><div className="wh text-4xl md:text-5xl font-black" style={{ color: accent }}>{r.value}</div><div className="text-sm mt-2" style={{ color: th.muted }}>{r.label}</div></div>)}
+            </div>
+          )}
+        </CaseSection>
+      )}
+
+      {/* PORTAFOLIO VISUAL */}
       {photos.length > 0 && (
-        <section className="max-w-6xl mx-auto px-5 pb-16">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {photos.map((p, i) => <div key={i} className="rounded-xl overflow-hidden border" style={{ borderColor: th.border }}><img src={imgSrc(p, 800)} alt="" className="w-full object-cover aspect-[4/3]" /></div>)}
+        <CaseSection id="portfolio" kicker={agT(lang, "Explore our creative showcase", "Explora nuestro trabajo")} title={agT(lang, "Captivating visual portfolio", "Portafolio visual")} th={th} accent={accent}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {photos.map((p, i) => <a key={i} href={imgSrc(p, 1400)} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border group" style={{ borderColor: th.border }} data-testid={`case-portfolio-${i}`}><img src={imgSrc(p, 700)} loading="lazy" alt="" className="w-full object-cover aspect-square transition-transform duration-500 group-hover:scale-105" /></a>)}
           </div>
-        </section>
+        </CaseSection>
       )}
+
+      {/* Optional extra body */}
+      {body && <CaseSection th={th} accent={accent}><RichText text={body} th={th} /></CaseSection>}
+
       <CaseCTA ctx={ctx} />
     </>
   );
@@ -2211,14 +2311,89 @@ function ServiceDetail({ ctx }) {
   );
 }
 
+function AgencyFooter({ ctx }) {
+  const { w, b, accent, lang } = ctx;
+  const sc = w.section_colors || {};
+  const bg = sc.footer || "#0a1130";
+  const light = isLight(bg);
+  const ink = light ? "#0f172a" : "#ffffff";
+  const muted = light ? "#64748b" : "rgba(255,255,255,.72)";
+  const cardBorder = light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)";
+  const phone = w.cta_phone || b?.phone;
+  const areas = Array.isArray(w.areas) ? w.areas : [];
+  const aboutText = (w.subheadline || w.about || "").trim();
+  const logo = photoUrl(b?.logo_photo_id, 220);
+  const socials = [b?.facebook && [Facebook, b.facebook], b?.instagram && [Instagram, b.instagram]].filter(Boolean);
+  const hours = w.hours || ctx.data?.hours || "";
+  const home = ctx.homeHref;
+  const sec = w.sections || {};
+  const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
+  const services = ctx.services || [];
+  const fnav = [
+    (services.length && sec.services !== false) && [`${home}#services`, agT(lang, "Services", "Servicios")],
+    (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && [`${home}#samples`, agT(lang, "Work", "Casos")],
+    (Array.isArray(w.case_studies) && w.case_studies.length) && [ctx.pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
+    (steps.length && sec.how !== false) && [`${home}#how`, agT(lang, "Process", "Proceso")],
+    (w.about_story || "").trim() && [ctx.pageHref("nosotros"), agT(lang, "About us", "Nosotros")],
+    [`${home}#contact`, agT(lang, "Contact", "Contacto")],
+  ].filter(Boolean);
+  return (
+    <footer className="relative overflow-hidden border-t" style={{ background: bg, color: ink, borderColor: cardBorder }} data-testid="agency-footer">
+      <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ background: accent }} />
+      <div className="max-w-6xl mx-auto px-5 pt-14 pb-10 relative grid md:grid-cols-3 gap-10 md:gap-12">
+        <div>
+          {logo ? <img src={logo} alt={b?.name || ""} className="h-16 md:h-20 w-auto object-contain" /> : <div className="wh font-black text-2xl md:text-3xl" style={{ color: ink }}>{b?.name || w.headline}</div>}
+          {aboutText && <p className="mt-5 text-sm leading-relaxed max-w-sm line-clamp-3" style={{ color: muted }}>{aboutText}</p>}
+          {socials.length > 0 && (
+            <div className="mt-5 flex gap-3">
+              {socials.map(([Icon, href], i) => (
+                <a key={i} href={href} target="_blank" rel="noreferrer" data-testid={`agency-footer-social-${i}`} className="w-9 h-9 rounded-full flex items-center justify-center border transition hover:opacity-80" style={{ borderColor: cardBorder, color: muted }}><Icon className="w-4 h-4" /></a>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Contact", "Contacto")}</div>
+          <ul className="space-y-3.5 text-sm" style={{ color: muted }}>
+            {b?.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
+            {phone && <li><a href={`tel:${phone}`} data-testid="agency-footer-phone" className="flex gap-3 hover:opacity-80"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{phone}</span></a></li>}
+            {b?.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:opacity-80 break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
+            {hours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{hours}</span></li>}
+          </ul>
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Navigate", "Navegación")}</div>
+          <ul className="space-y-3">
+            {fnav.map(([href, label], i) => <li key={i}><a href={href} data-testid={`agency-footer-link-${i}`} className="text-sm font-semibold hover:opacity-80" style={{ color: muted }}>{label}</a></li>)}
+          </ul>
+        </div>
+      </div>
+      <div className="border-t relative" style={{ borderColor: cardBorder }}>
+        <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap justify-between items-center gap-3 text-xs" style={{ color: muted }}>
+          <span>© {new Date().getFullYear()} {b?.name || w.headline}. {agT(lang, "All rights reserved.", "Todos los derechos reservados.")}</span>
+          {areas.length > 0 && <span className="uppercase tracking-widest" style={{ opacity: 0.7 }}>{areas.slice(0, 3).join(" • ")}</span>}
+          <span style={{ opacity: 0.7 }}>{agT(lang, "Powered by UniTech", "Hecho con UniTech")}</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 function SubPageRouter({ ctx }) {
-  const { th } = ctx;
+  let th = ctx.th;
+  if (ctx.key === "agency") {
+    const sc = ctx.w.section_colors || {};
+    const base = sc.services || "#ffffff";
+    const light = isLight(base);
+    th = { ...ctx.th, bg: base, surface: light ? "#ffffff" : "rgba(255,255,255,.05)", ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", border: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", dark: !light };
+    ctx = { ...ctx, th };
+  }
   const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage, servicio: ServiceDetail }[ctx.page];
   return (
     <div style={{ background: th.bg, color: th.ink }} data-testid={`site-subpage-${ctx.page}`}>
       <SubNav ctx={ctx} active={ctx.page === "caso" ? "casos" : (ctx.page === "servicio" ? "soluciones" : ctx.page)} />
       {Page ? <Page ctx={ctx} /> : null}
-      <SubFooter ctx={ctx} />
+      {ctx.key === "agency" ? <AgencyFooter ctx={ctx} /> : <SubFooter ctx={ctx} />}
     </div>
   );
 }
@@ -2232,15 +2407,12 @@ function Agency({ ctx }) {
   const reviews = (Array.isArray(ctx.data?.reviews) ? ctx.data.reviews : []).filter((r) => (r.text || "").trim());
   const phone = w.cta_phone || b?.phone;
   const aboutText = (w.subheadline || w.about || "").trim();
-  const footerLogo = photoUrl(b?.logo_photo_id, 220);
-  const footerSocials = [b?.facebook && [Facebook, b.facebook], b?.instagram && [Instagram, b.instagram]].filter(Boolean);
-  const footerHours = w.hours || ctx.data?.hours || "";
   const [scr, setScr] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 30); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
   const sc = w.section_colors || {};
   const DEF = { hero: "#0a1130", services: "#ffffff", samples: "#f8fafc", logos: "#ffffff", map: "#f8fafc", process: "#0a1130", reviews: "#f8fafc", cta: accent, faq: "#f8fafc", contact: "#ffffff", footer: "#0a1130" };
   const S = (k) => { const bg = sc[k] || DEF[k]; const light = isLight(bg); return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", pill: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.08)" }; };
-  const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), FO = S("footer"), RV = S("reviews"), FQ = S("faq");
+  const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), RV = S("reviews"), FQ = S("faq");
   const navLinks = [
     services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
     (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
@@ -2409,45 +2581,7 @@ function Agency({ ctx }) {
         </div>
       </section>
 
-      <footer className="relative overflow-hidden border-t" style={{ background: FO.bg, color: FO.ink, borderColor: FO.cardBorder }} data-testid="agency-footer">
-        <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ background: accent }} />
-        <div className="max-w-6xl mx-auto px-5 pt-14 pb-10 relative grid md:grid-cols-3 gap-10 md:gap-12">
-          <div>
-            {footerLogo ? <img src={footerLogo} alt={b?.name || ""} className="h-16 md:h-20 w-auto object-contain" /> : <div className="wh font-black text-2xl md:text-3xl" style={{ color: FO.ink }}>{b?.name || w.headline}</div>}
-            {aboutText && <p className="mt-5 text-sm leading-relaxed max-w-sm line-clamp-3" style={{ color: FO.muted }}>{aboutText}</p>}
-            {footerSocials.length > 0 && (
-              <div className="mt-5 flex gap-3">
-                {footerSocials.map(([Icon, href], i) => (
-                  <a key={i} href={href} target="_blank" rel="noreferrer" data-testid={`agency-footer-social-${i}`} className="w-9 h-9 rounded-full flex items-center justify-center border transition hover:opacity-80" style={{ borderColor: FO.cardBorder, color: FO.muted }}><Icon className="w-4 h-4" /></a>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Contact", "Contacto")}</div>
-            <ul className="space-y-3.5 text-sm" style={{ color: FO.muted }}>
-              {b?.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
-              {phone && <li><a href={`tel:${phone}`} data-testid="agency-footer-phone" className="flex gap-3 hover:opacity-80"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{phone}</span></a></li>}
-              {b?.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:opacity-80 break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
-              {footerHours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{footerHours}</span></li>}
-            </ul>
-          </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Navigate", "Navegación")}</div>
-            <ul className="space-y-3">
-              {navLinks.map(([href, label], i) => <li key={i}><a href={href} data-testid={`agency-footer-link-${i}`} className="text-sm font-semibold hover:opacity-80" style={{ color: FO.muted }}>{label}</a></li>)}
-              {(w.about_story || "").trim() && <li><a href={ctx.pageHref("nosotros")} className="text-sm font-semibold hover:opacity-80" style={{ color: FO.muted }}>{agT(lang, "About us", "Nosotros")}</a></li>}
-            </ul>
-          </div>
-        </div>
-        <div className="border-t relative" style={{ borderColor: FO.cardBorder }}>
-          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap justify-between items-center gap-3 text-xs" style={{ color: FO.muted }}>
-            <span>© {new Date().getFullYear()} {b?.name || w.headline}. {agT(lang, "All rights reserved.", "Todos los derechos reservados.")}</span>
-            {areas.length > 0 && <span className="uppercase tracking-widest" style={{ opacity: 0.7 }}>{areas.slice(0, 3).join(" • ")}</span>}
-            <span style={{ opacity: 0.7 }}>{agT(lang, "Powered by UniTech", "Hecho con UniTech")}</span>
-          </div>
-        </div>
-      </footer>
+      <AgencyFooter ctx={ctx} />
     </div>
   );
 }

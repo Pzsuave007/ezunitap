@@ -1265,7 +1265,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     cases: "Casos de éxito (Case Studies)", casesDesc: "Cada caso tiene su página de detalle. Los Samples del Home enlazan aquí por su 'slug'.",
     about: "Página Nosotros (About)", aboutDesc: "Historia, logros, valores y equipo.",
     solutions: "Página Soluciones", solutionsDesc: "Intro de la página de servicios (los servicios se editan en la pestaña Servicios).",
-    client: "Cliente", category: "Categoría", summary: "Resumen", body: "Contenido (usa ### para subtítulos)", cslug: "Slug (url)", servicesUsed: "Servicios (separa con comas)", results: "Resultados (Valor | Etiqueta por línea)",
+    client: "Cliente", category: "Categoría", summary: "Resumen", body: "Contenido adicional (usa ### para subtítulos, - para viñetas)", cslug: "Slug (url)", servicesUsed: "Servicios (separa con comas)", results: "Métricas de resultado (Valor | Etiqueta por línea, ej: 30% | Más ventas)",
+    cLocation: "Ubicación", cIndustry: "Industria", cIdealClients: "Clientes ideales", cWebsite: "Sitio web / redes", clientInfo: "Información del cliente",
+    challenge: "El Reto: ¿qué desafíos enfrentaban y cómo afectaba a su negocio? (usa ### y viñetas -)",
+    solServices: "Servicios proporcionados (una viñeta - por línea)", solStrategies: "Estrategias implementadas (una viñeta - por línea)",
+    tailored: "Soluciones a la Medida (3 tarjetas)", cardTitle: "Título de la tarjeta", cardDesc: "Descripción",
+    resBefore: "Antes 🔴 (situación previa)", resAfter: "Después 🟢 (el resultado)", sectionsHint: "Estas secciones arman la página de detalle del caso, igual que tu sitio actual.",
     aboutTitle: "Título", story: "Historia (usa ### para subtítulos)", milestones: "Logros en números", values: "Valores / Por qué nosotros", team: "Equipo", value: "Valor", name: "Nombre", role: "Puesto", desc: "Descripción", photo: "Foto (URL)", solPh: "Introducción de la página de servicios", gallery: "Galería (fotos del trabajo)",
     tImport: "Importar", tSamples: "Samples", tLogos: "Logos", tMap: "Mapa", tCases: "Casos", tSol: "Soluciones", tAbout: "Nosotros",
     aiWrite: "Escribir con IA", aiWorking: "Escribiendo…", aiDone: "¡Contenido generado con IA! Revisa y Guarda.", aiErr: "La IA no pudo generar el contenido. Intenta de nuevo.",
@@ -1282,7 +1287,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     cases: "Case studies", casesDesc: "Each case gets its own detail page. Home 'Samples' link here by 'slug'.",
     about: "About page", aboutDesc: "Story, milestones, values and team.",
     solutions: "Solutions page", solutionsDesc: "Intro for the services page (edit services in the Services tab).",
-    client: "Client", category: "Category", summary: "Summary", body: "Body (use ### for headings)", cslug: "Slug (url)", servicesUsed: "Services (comma separated)", results: "Results (Value | Label per line)",
+    client: "Client", category: "Category", summary: "Summary", body: "Extra content (use ### for headings, - for bullets)", cslug: "Slug (url)", servicesUsed: "Services (comma separated)", results: "Result metrics (Value | Label per line, e.g. 30% | More sales)",
+    cLocation: "Location", cIndustry: "Industry", cIdealClients: "Ideal clients", cWebsite: "Website / social", clientInfo: "Client information",
+    challenge: "The Challenge: what problems did they face and how did it hurt their business? (use ### and - bullets)",
+    solServices: "Services provided (one - bullet per line)", solStrategies: "Strategies implemented (one - bullet per line)",
+    tailored: "Tailored solutions (3 cards)", cardTitle: "Card title", cardDesc: "Description",
+    resBefore: "Before 🔴 (previous situation)", resAfter: "After 🟢 (the outcome)", sectionsHint: "These sections build the case detail page, just like your current site.",
     aboutTitle: "Title", story: "Story (use ### for headings)", milestones: "Milestones (numbers)", values: "Values / Why us", team: "Team", value: "Value", name: "Name", role: "Role", desc: "Description", photo: "Photo (URL)", solPh: "Services page intro", gallery: "Gallery (work photos)",
     tImport: "Import", tSamples: "Samples", tLogos: "Logos", tMap: "Map", tCases: "Cases", tSol: "Solutions", tAbout: "About",
     aiWrite: "Write with AI", aiWorking: "Writing…", aiDone: "Content generated with AI! Review and Save.", aiErr: "AI could not generate the content. Try again.",
@@ -1321,6 +1331,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   };
   const removeCasePhoto = async (i, pi) => { const n = [...cases]; n[i] = { ...n[i], photos: (n[i].photos || []).filter((_, x) => x !== pi) }; setCases(n); await save({ case_studies: n }); };
   const removeCaseCover = async (i) => { const n = [...cases]; n[i] = { ...n[i], cover: "" }; setCases(n); await save({ case_studies: n }); };
+  const updSolCard = (i, ci, k, v) => { const cards = [...(cases[i].solution_cards || [])]; while (cards.length < 3) cards.push({ title: "", desc: "" }); cards[ci] = { ...cards[ci], [k]: v }; updCase(i, "solution_cards", cards); };
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
   const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
   const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
@@ -1472,9 +1483,43 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <Input value={c.slug || ""} onChange={(e) => updCase(i, "slug", e.target.value)} placeholder={L.cslug} className="h-9 rounded-lg" data-testid={`agency-case-slug-${i}`} />
               </div>
               <Textarea value={c.summary || ""} onChange={(e) => updCase(i, "summary", e.target.value)} placeholder={L.summary} className="rounded-lg min-h-[50px]" />
+              {/* Client info */}
+              <div className="pt-1 border-t border-slate-200/70">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-2 mb-1.5">{L.clientInfo}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={c.location || ""} onChange={(e) => updCase(i, "location", e.target.value)} placeholder={L.cLocation} className="h-9 rounded-lg" data-testid={`agency-case-location-${i}`} />
+                  <Input value={c.industry || ""} onChange={(e) => updCase(i, "industry", e.target.value)} placeholder={L.cIndustry} className="h-9 rounded-lg" />
+                  <Input value={c.ideal_clients || ""} onChange={(e) => updCase(i, "ideal_clients", e.target.value)} placeholder={L.cIdealClients} className="h-9 rounded-lg" />
+                  <Input value={c.website_url || ""} onChange={(e) => updCase(i, "website_url", e.target.value)} placeholder={L.cWebsite} className="h-9 rounded-lg" />
+                </div>
+              </div>
+              {/* El Reto */}
+              <Textarea value={c.challenge || ""} onChange={(e) => updCase(i, "challenge", e.target.value)} placeholder={L.challenge} className="rounded-lg min-h-[80px]" data-testid={`agency-case-challenge-${i}`} />
+              {/* La Solución */}
               <Input value={Array.isArray(c.services) ? c.services.join(", ") : ""} onChange={(e) => updCase(i, "services", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder={L.servicesUsed} className="h-9 rounded-lg" />
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Textarea value={c.solution_services || ""} onChange={(e) => updCase(i, "solution_services", e.target.value)} placeholder={L.solServices} className="rounded-lg min-h-[70px]" data-testid={`agency-case-solservices-${i}`} />
+                <Textarea value={c.solution_strategies || ""} onChange={(e) => updCase(i, "solution_strategies", e.target.value)} placeholder={L.solStrategies} className="rounded-lg min-h-[70px]" />
+              </div>
+              {/* Soluciones a la medida (3 cards) */}
+              <div className="pt-1 border-t border-slate-200/70">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-2 mb-1.5">{L.tailored}</div>
+                <div className="grid sm:grid-cols-3 gap-2">
+                  {[0, 1, 2].map((ci) => (
+                    <div key={ci} className="space-y-1.5" data-testid={`agency-case-${i}-solcard-${ci}`}>
+                      <Input value={(c.solution_cards && c.solution_cards[ci]?.title) || ""} onChange={(e) => updSolCard(i, ci, "title", e.target.value)} placeholder={`${L.cardTitle} ${ci + 1}`} className="h-9 rounded-lg" />
+                      <Textarea value={(c.solution_cards && c.solution_cards[ci]?.desc) || ""} onChange={(e) => updSolCard(i, ci, "desc", e.target.value)} placeholder={L.cardDesc} className="rounded-lg min-h-[56px] text-xs" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Resultados */}
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Textarea value={c.result_before || ""} onChange={(e) => updCase(i, "result_before", e.target.value)} placeholder={L.resBefore} className="rounded-lg min-h-[60px]" data-testid={`agency-case-before-${i}`} />
+                <Textarea value={c.result_after || ""} onChange={(e) => updCase(i, "result_after", e.target.value)} placeholder={L.resAfter} className="rounded-lg min-h-[60px]" />
+              </div>
               <Textarea value={resToText(c.results)} onChange={(e) => updCase(i, "results", textToRes(e.target.value))} placeholder={L.results} className="rounded-lg min-h-[50px] font-mono text-xs" />
-              <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[80px]" />
+              <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[70px]" />
               <div>
                 <div className="text-xs font-semibold text-slate-500 mb-1">{L.gallery}</div>
                 {(Array.isArray(c.photos) ? c.photos : []).length > 0 && (
@@ -1495,7 +1540,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
             </div>
           ))}
         </div>
-        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", services: [], results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", location: "", industry: "", ideal_clients: "", website_url: "", challenge: "", services: [], solution_services: "", solution_strategies: "", solution_cards: [{ title: isEs ? "Diseño Gráfico Personalizado" : "Custom Graphic Design", desc: "" }, { title: isEs ? "Consultoría Estratégica" : "Strategic Consulting", desc: "" }, { title: isEs ? "Producción y Entrega Puntual" : "On-Time Production & Delivery", desc: "" }], result_before: "", result_after: "", results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
       </Card>
       )}
 
