@@ -150,6 +150,19 @@ export default function WebsiteEditor() {
   };
 
   const [translatingEn, setTranslatingEn] = useState(false);
+  const [importingMedia, setImportingMedia] = useState(false);
+  const importMedia = async () => {
+    setImportingMedia(true);
+    try {
+      const { data } = await api.post("/website/import-media");
+      const r = await api.get("/website");
+      setW((prev) => ({ ...prev, ...r.data }));
+      toast.success(t("website.mediaCopied", { count: data.copied }));
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setImportingMedia(false); }
+  };
+  const setSecColor = (key, val) => patch({ section_colors: { ...(w?.section_colors || {}), [key]: val } });
   const translateEn = async () => {
     if (!window.confirm(t("website.transEnConfirm"))) return;
     setTranslatingEn(true);
@@ -514,6 +527,27 @@ export default function WebsiteEditor() {
 
       {/* Templates */}
       {tab === "design" && (<>
+      {w.template === "agency" && (
+      <Card className="card-elevated border-0 shadow-none p-5" data-testid="agency-colors-card">
+        <div className="font-semibold mb-1">{t("website.secColors")}</div>
+        <p className="text-sm text-slate-500 mb-3">{t("website.secColorsDesc")}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["logos","#ffffff"],["map","#f8fafc"],["process","#0a1130"],["reviews","#f8fafc"],["cta",(w.accent_color||"#22D3EE")],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => (
+            <div key={key} className="flex items-center gap-2">
+              <input type="color" value={(w.section_colors && w.section_colors[key]) || def} onChange={(e) => setSecColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`seccolor-${key}`} />
+              <span className="text-sm capitalize">{t(`website.sec.${key === "process" ? "how" : key}`) || key}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      )}
+      <Card className="card-elevated border-0 shadow-none p-5" data-testid="import-media-card">
+        <div className="font-semibold mb-1">{t("website.copyImages")}</div>
+        <p className="text-sm text-slate-500 mb-3">{t("website.copyImagesDesc")}</p>
+        <Button onClick={importMedia} disabled={importingMedia} variant="outline" className="rounded-xl h-10 font-bold" data-testid="import-media-btn">
+          {importingMedia ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.copyingImages")}</> : <><Images className="w-4 h-4 mr-2" /> {t("website.copyImages")}</>}
+        </Button>
+      </Card>
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <div className="font-semibold">{t("website.template")}</div>
@@ -1086,8 +1120,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors };
 }
 
 function BaSlot({ label, id, onClick, testid }) {

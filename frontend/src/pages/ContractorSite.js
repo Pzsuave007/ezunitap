@@ -1782,14 +1782,24 @@ const mapEmbedSrc = (v) => {
 // or one of the owner's uploaded photo ids.
 const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, w)));
 
-function LogosStrip({ ctx }) {
+// Resolve a section's colors: either from a per-section override {bg} or the template theme.
+const secTheme = (th, sty) => {
+  if (sty && sty.bg) {
+    const light = isLight(sty.bg);
+    return { dark: !light, bg: sty.bg, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", border: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)", surface: light ? "#ffffff" : "rgba(255,255,255,.06)" };
+  }
+  return { dark: th.dark, bg: th.dark ? "rgba(255,255,255,.02)" : th.surface, ink: th.ink, muted: th.muted, border: th.border, surface: th.surface };
+};
+
+function LogosStrip({ ctx, sty }) {
   const logos = (Array.isArray(ctx.w.client_logos) ? ctx.w.client_logos : []).filter(Boolean);
   if (!logos.length) return null;
-  const { th, lang } = ctx;
+  const { lang } = ctx;
+  const T = secTheme(ctx.th, sty);
   const row = [...logos, ...logos];
   return (
-    <section className="py-10 md:py-14 border-y overflow-hidden" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-logos">
-      <p className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-6" style={{ color: th.muted }}>{agT(lang, "Trusted by 150+ businesses", "Más de 150 negocios confían en nosotros")}</p>
+    <section className="py-10 md:py-14 border-y overflow-hidden" style={{ borderColor: T.border, background: T.bg }} data-testid="site-logos">
+      <p className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-6" style={{ color: T.muted }}>{agT(lang, "Trusted by 150+ businesses", "Más de 150 negocios confían en nosotros")}</p>
       <div className="relative">
         <div className="wmarq gap-8 md:gap-12 items-center px-6">
           {row.map((l, i) => (
@@ -1803,17 +1813,18 @@ function LogosStrip({ ctx }) {
   );
 }
 
-function SamplesSection({ ctx }) {
+function SamplesSection({ ctx, sty }) {
   const r = useReveal();
   const items = (Array.isArray(ctx.w.samples) ? ctx.w.samples : []).filter((s) => s && (s.img || s.title));
-  const { th, accent, lang } = ctx;
+  const { accent, lang } = ctx;
+  const T = secTheme(ctx.th, sty);
   if (!items.length) return null;
   return (
-    <section id="samples" className="py-16 md:py-24" data-testid="site-samples">
+    <section id="samples" className="py-16 md:py-24" style={{ background: T.bg }} data-testid="site-samples">
       <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Client showcase", "Casos reales")}</p>
-          <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Results that speak for themselves", "Resultados que hablan por sí mismos")}</h2>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{agT(lang, "Results that speak for themselves", "Resultados que hablan por sí mismos")}</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((s, i) => {
@@ -1828,7 +1839,7 @@ function SamplesSection({ ctx }) {
               </div>
             );
             const cls = "group block rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl";
-            const stl = { borderColor: th.border, background: th.surface };
+            const stl = { borderColor: T.border, background: T.surface };
             const internal = s.caseSlug && ctx.pageHref;
             const href = internal ? ctx.pageHref(`caso/${s.caseSlug}`) : s.link;
             if (!href) return <div key={i} data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</div>;
@@ -1840,24 +1851,25 @@ function SamplesSection({ ctx }) {
   );
 }
 
-function ClientMap({ ctx }) {
+function ClientMap({ ctx, sty }) {
   const embed = mapEmbedSrc(ctx.w.map_embed);
   const pins = (Array.isArray(ctx.w.client_pins) ? ctx.w.client_pins : []).filter((p) => p && p.lat != null && p.lng != null && p.lat !== "" && p.lng !== "");
   if (!embed && !pins.length) return null;
-  const { th, accent, lang } = ctx;
+  const { accent, lang } = ctx;
+  const T = secTheme(ctx.th, sty);
   return (
-    <section id="map" className="py-16 md:py-24" style={{ background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-map">
-      <div className="max-w-5xl mx-auto px-5">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Where we work", "Dónde trabajamos")}</p>
-          <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Clients across North America", "Clientes en toda Norteamérica")}</h2>
-          <p className="mt-3" style={{ color: th.muted }}>{agT(lang, "Thank you for trusting us!", "¡Gracias por confiar en nosotros!")}</p>
+    <section id="map" className="py-16 md:py-24" style={{ background: T.bg }} data-testid="site-map">
+      <div className="max-w-5xl mx-auto px-5 text-center mb-10">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Where we work", "Dónde trabajamos")}</p>
+        <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{agT(lang, "Clients across North America", "Clientes en toda Norteamérica")}</h2>
+        <p className="mt-3" style={{ color: T.muted }}>{agT(lang, "Thank you for trusting us!", "¡Gracias por confiar en nosotros!")}</p>
+      </div>
+      {embed ? (
+        <div className="w-full" data-testid="site-map-embed">
+          <iframe title="client-map" src={embed} className="w-full block" style={{ height: "600px", border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
         </div>
-        {embed ? (
-          <div className="relative w-full rounded-3xl overflow-hidden border shadow-xl" style={{ borderColor: th.border }} data-testid="site-map-embed">
-            <iframe title="client-map" src={embed} className="w-full block" style={{ height: "520px", border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
-          </div>
-        ) : (
+      ) : (
+        <div className="max-w-5xl mx-auto px-5">
           <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: th.border, background: "#0a1130" }}>
             <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
             {pins.map((p, i) => {
@@ -1873,8 +1885,8 @@ function ClientMap({ ctx }) {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -2143,15 +2155,19 @@ function SubPageRouter({ ctx }) {
 
 // ---- AGENCY: premium bilingual template (exclusive) ------------------------
 function Agency({ ctx }) {
-  const { w, b, th, accent, accentText, heroImg, bandImg, services, goContact, lang, sec } = ctx;
+  const { w, b, accent, accentText, heroImg, bandImg, services, goContact, lang, sec } = ctx;
   const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
-  const why = Array.isArray(w.why_us) ? w.why_us : [];
   const faqs = Array.isArray(w.faqs) ? w.faqs : [];
   const areas = Array.isArray(w.areas) ? w.areas : [];
+  const reviews = (Array.isArray(ctx.data?.reviews) ? ctx.data.reviews : []).filter((r) => (r.text || "").trim());
   const phone = w.cta_phone || b?.phone;
   const aboutText = (w.subheadline || w.about || "").trim();
   const [scr, setScr] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 30); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
+  const sc = w.section_colors || {};
+  const DEF = { hero: "#0a1130", services: "#ffffff", samples: "#f8fafc", logos: "#ffffff", map: "#f8fafc", process: "#0a1130", reviews: "#f8fafc", cta: accent, contact: "#ffffff", footer: "#0a1130" };
+  const S = (k) => { const bg = sc[k] || DEF[k]; const light = isLight(bg); return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", pill: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.08)" }; };
+  const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), FO = S("footer"), RV = S("reviews");
   const navLinks = [
     services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
     (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
@@ -2161,82 +2177,54 @@ function Agency({ ctx }) {
     ["#contact", agT(lang, "Contact", "Contacto")],
   ].filter(Boolean);
   return (
-    <div>
+    <div style={{ background: CO.bg }}>
       {/* NAV */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl border-b transition-colors" style={{ background: scr ? "rgba(10,17,48,.92)" : "rgba(10,17,48,.55)", borderColor: scr ? "rgba(255,255,255,.1)" : "transparent" }}>
+      <header className="sticky top-0 z-40 backdrop-blur-xl border-b transition-colors" style={{ background: H.dark ? (scr ? "rgba(10,10,20,.92)" : "rgba(10,10,20,.5)") : (scr ? "rgba(255,255,255,.95)" : "rgba(255,255,255,.7)"), borderColor: scr ? H.cardBorder : "transparent" }}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
-          <span className="wh text-lg font-black truncate">{b?.name || w.headline}</span>
-          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-300">
-            {navLinks.map(([href, label], i) => <a key={i} href={href} className="hover:text-white transition-colors">{label}</a>)}
+          <span className="wh text-lg font-black truncate" style={{ color: H.ink }}>{b?.name || w.headline}</span>
+          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold">
+            {navLinks.map(([href, label], i) => <a key={i} href={href} className="hover:opacity-70 transition-opacity" style={{ color: H.muted }}>{label}</a>)}
           </nav>
           <div className="flex items-center gap-3">
-            {phone && <a href={`tel:${phone}`} className="hidden lg:inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            {phone && <a href={`tel:${phone}`} className="hidden lg:inline-flex items-center gap-1.5 text-sm hover:opacity-70" style={{ color: H.muted }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             <button onClick={goContact} data-testid="agency-nav-cta" className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.ctaShort} <ArrowRight className="w-4 h-4" /></button>
           </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden" style={{ background: H.bg }}>
         {heroImg && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${heroImg})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(10,17,48,.72),rgba(10,17,48,.94) 70%,#0a1130)" }} />
+        {heroImg && <div className="absolute inset-0" style={{ background: H.dark ? "linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.75))" : "linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.85))" }} />}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: accent }} />
         <div className="relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
           <div className="wreveal wshow">
             <p className="font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: accent }}>{agT(lang, "Empowering Latino businesses", "Impulsando negocios latinos")}</p>
-            <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.05]">{w.headline || b?.name}</h1>
-            {aboutText && <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed line-clamp-5">{aboutText}</p>}
+            <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.05]" style={{ color: H.ink }}>{w.headline || b?.name}</h1>
+            {aboutText && <p className="mt-6 text-base sm:text-lg max-w-xl leading-relaxed line-clamp-5" style={{ color: H.muted }}>{aboutText}</p>}
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button onClick={goContact} data-testid="agency-hero-cta" className="inline-flex items-center gap-2 font-bold px-7 py-3.5 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
-              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-6 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-colors" style={{ borderColor: "rgba(255,255,255,.25)" }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-6 py-3.5 rounded-full font-semibold hover:opacity-80 transition-opacity" style={{ borderColor: H.cardBorder, color: H.ink }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             </div>
           </div>
-          <div className="w-full lg:justify-self-end max-w-md"><HeroForm ctx={ctx} dark /></div>
+          <div className="w-full lg:justify-self-end max-w-md"><HeroForm ctx={ctx} dark={H.dark} /></div>
         </div>
       </section>
 
       {/* SERVICES */}
       {services.length > 0 && sec.services !== false && (
-        <section id="services" className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "What we do", "Qué hacemos")}</p>
-            <h2 className="wh text-3xl md:text-4xl">{w.services_title || agT(lang, "Smart tools to grow your business", "Herramientas inteligentes para crecer tu negocio")}</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s, i) => (
-              <div key={i} data-testid={`agency-svc-${i}`} className="group rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
-                <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}26`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>
-                <h3 className="font-bold text-lg">{s.name || s.title}</h3>
-                {s.description && <p className="mt-2.5 text-sm text-slate-400 leading-relaxed">{s.description}</p>}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* SAMPLES (client showcase) */}
-      {sec.samples !== false && <SamplesSection ctx={ctx} />}
-
-      {/* CLIENT LOGOS strip */}
-      {sec.logos !== false && <LogosStrip ctx={ctx} />}
-
-      {/* CLIENT MAP */}
-      {sec.map !== false && <ClientMap ctx={ctx} />}
-
-      {/* PROCESS */}
-      {steps.length > 0 && sec.how !== false && (
-        <section id="how" className="border-y py-16 md:py-24" style={{ background: "rgba(255,255,255,.03)", borderColor: "rgba(255,255,255,.08)" }}>
+        <section id="services" className="py-16 md:py-24" style={{ background: SV.bg }}>
           <div className="max-w-6xl mx-auto px-5">
             <div className="text-center max-w-2xl mx-auto mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "How it works", "Cómo funciona")}</p>
-              <h2 className="wh text-3xl md:text-4xl">{w.how_it_works_title || agT(lang, "We transform your digital presence step by step", "Transformamos tu presencia digital paso a paso")}</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "What we do", "Qué hacemos")}</p>
+              <h2 className="wh text-3xl md:text-4xl" style={{ color: SV.ink }}>{w.services_title || agT(lang, "Smart tools to grow your business", "Herramientas inteligentes para crecer tu negocio")}</h2>
             </div>
-            <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5">
-              {steps.slice(0, 5).map((s, i) => (
-                <div key={i} className="relative rounded-2xl border p-6" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
-                  <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}22` }}>{i + 1}</span>
-                  <h3 className="font-bold text-base relative mt-2">{s.title}</h3>
-                  {s.desc && <p className="mt-2 text-xs text-slate-400 leading-relaxed relative">{s.desc}</p>}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {services.map((s, i) => (
+                <div key={i} data-testid={`agency-svc-${i}`} className="group rounded-2xl border p-7 transition-all hover:-translate-y-1 hover:shadow-lg" style={{ background: SV.card, borderColor: SV.cardBorder }}>
+                  <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>
+                  <h3 className="font-bold text-lg" style={{ color: SV.ink }}>{s.name || s.title}</h3>
+                  {s.description && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: SV.muted }}>{s.description}</p>}
                 </div>
               ))}
             </div>
@@ -2244,32 +2232,63 @@ function Agency({ ctx }) {
         </section>
       )}
 
-      {/* WHY US */}
-      {why.length > 0 && sec.why !== false && (
-        <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-          <h2 className="wh text-3xl md:text-4xl text-center">{w.why_us_title || agT(lang, "Why us", "Por qué nosotros")}</h2>
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {why.map((s, i) => (
-              <div key={i} className="rounded-2xl border p-6 flex items-start gap-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
-                <CheckCircle2 className="w-5 h-5 mt-0.5 flex-none" style={{ color: accent }} />
-                <div><h3 className="font-bold text-base">{s.title}</h3>{s.desc && <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">{s.desc}</p>}</div>
-              </div>
-            ))}
+      {sec.samples !== false && <SamplesSection ctx={ctx} sty={{ bg: sc.samples || DEF.samples }} />}
+      {sec.logos !== false && <LogosStrip ctx={ctx} sty={{ bg: sc.logos || DEF.logos }} />}
+      {sec.map !== false && <ClientMap ctx={ctx} sty={{ bg: sc.map || DEF.map }} />}
+
+      {/* PROCESS */}
+      {steps.length > 0 && sec.how !== false && (
+        <section id="how" className="border-y py-16 md:py-24" style={{ background: PR.bg, borderColor: PR.cardBorder }}>
+          <div className="max-w-6xl mx-auto px-5">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "How it works", "Cómo funciona")}</p>
+              <h2 className="wh text-3xl md:text-4xl" style={{ color: PR.ink }}>{w.how_it_works_title || agT(lang, "We transform your digital presence step by step", "Transformamos tu presencia digital paso a paso")}</h2>
+            </div>
+            <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5">
+              {steps.slice(0, 5).map((s, i) => (
+                <div key={i} className="relative rounded-2xl border p-6" style={{ background: PR.card, borderColor: PR.cardBorder }}>
+                  <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}33` }}>{i + 1}</span>
+                  <h3 className="font-bold text-base relative mt-2" style={{ color: PR.ink }}>{s.title}</h3>
+                  {s.desc && <p className="mt-2 text-xs leading-relaxed relative" style={{ color: PR.muted }}>{s.desc}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* REVIEWS */}
+      {sec.reviews !== false && reviews.length > 0 && (
+        <section id="reviews" className="py-16 md:py-24" style={{ background: RV.bg }} data-testid="site-reviews">
+          <div className="max-w-6xl mx-auto px-5">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Reviews", "Reseñas")}</p>
+              <h2 className="wh text-3xl md:text-4xl" style={{ color: RV.ink }}>{agT(lang, "What our clients say", "Lo que dicen nuestros clientes")}</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {reviews.slice(0, 6).map((r, i) => (
+                <div key={i} data-testid={`agency-review-${i}`} className="rounded-2xl border p-6" style={{ background: RV.card, borderColor: RV.cardBorder }}>
+                  <Stars n={r.rating || 5} />
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: RV.muted }}>"{r.text}"</p>
+                  {r.customer_name && <div className="mt-4 font-bold text-sm" style={{ color: RV.ink }}>{r.customer_name}</div>}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
       {/* CTA BAND */}
       {sec.band !== false && (
-        <section className="relative py-20 md:py-28 overflow-hidden">
+        <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: CT.bg }}>
           {bandImg && <img src={bandImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-          <div className="absolute inset-0" style={{ background: bandImg ? "linear-gradient(180deg,rgba(10,17,48,.88),rgba(10,17,48,.94))" : "rgba(255,255,255,.03)" }} />
+          {bandImg && <div className="absolute inset-0" style={{ background: CT.dark ? "linear-gradient(180deg,rgba(0,0,0,.7),rgba(0,0,0,.82))" : "linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.85))" }} />}
           <div className="relative max-w-3xl mx-auto px-5 text-center">
-            <h2 className="wh text-3xl md:text-5xl">{agT(lang, "Ready to elevate your business?", "¿Listo para elevar tu negocio?")}</h2>
-            <p className="mt-5 text-slate-300 leading-relaxed">{agT(lang, "Book a free demo and see how a smart digital system can bring you more clients.", "Agenda una demostración gratuita y descubre cómo un sistema digital inteligente puede traerte más clientes.")}</p>
+            <h2 className="wh text-3xl md:text-5xl" style={{ color: CT.ink }}>{agT(lang, "Ready to elevate your business?", "¿Listo para elevar tu negocio?")}</h2>
+            <p className="mt-5 leading-relaxed" style={{ color: CT.muted }}>{agT(lang, "Book a free demo and see how a smart digital system can bring you more clients.", "Agenda una demostración gratuita y descubre cómo un sistema digital inteligente puede traerte más clientes.")}</p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
-              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-7 py-4 rounded-full font-semibold hover:bg-white/10 transition-colors" style={{ borderColor: "rgba(255,255,255,.25)" }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: CT.dark ? accent : "#0a1130", color: CT.dark ? accentText : "#ffffff" }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
+              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-7 py-4 rounded-full font-semibold hover:opacity-80" style={{ borderColor: CT.cardBorder, color: CT.ink }}><Phone className="w-4 h-4" /> {phone}</a>}
             </div>
           </div>
         </section>
@@ -2277,37 +2296,39 @@ function Agency({ ctx }) {
 
       {/* FAQ */}
       {faqs.length > 0 && sec.faq !== false && (
-        <section className="max-w-3xl mx-auto px-5 py-16 md:py-20">
-          <h2 className="wh text-3xl md:text-4xl text-center mb-8">{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
-          <div className="space-y-3">
-            {faqs.map((f, i) => (
-              <details key={i} className="group rounded-xl border p-4" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
-                <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none">{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
-                {f.a && <p className="mt-3 text-sm text-slate-400 leading-relaxed">{f.a}</p>}
-              </details>
-            ))}
+        <section className="py-16 md:py-20" style={{ background: CO.bg }}>
+          <div className="max-w-3xl mx-auto px-5">
+            <h2 className="wh text-3xl md:text-4xl text-center mb-8" style={{ color: CO.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
+            <div className="space-y-3">
+              {faqs.map((f, i) => (
+                <details key={i} className="group rounded-xl border p-4" style={{ background: CO.card, borderColor: CO.cardBorder }}>
+                  <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none" style={{ color: CO.ink }}>{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
+                  {f.a && <p className="mt-3 text-sm leading-relaxed" style={{ color: CO.muted }}>{f.a}</p>}
+                </details>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
       {/* CONTACT */}
-      <section id="contact" className="py-16 md:py-24">
+      <section id="contact" className="py-16 md:py-24" style={{ background: CO.bg }}>
         <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-start">
           <div>
-            <h2 className="wh text-3xl md:text-4xl">{ctx.bookingOn ? agT(lang, "Book your appointment", "Agenda tu cita") : agT(lang, "Ready to grow?", "¿Listo para crecer?")}</h2>
-            <p className="mt-4 text-slate-400 leading-relaxed max-w-md">{ctx.bookingOn ? agT(lang, "Pick a time that works — we'll confirm right away.", "Elige un horario — te confirmamos de inmediato.") : agT(lang, "Tell us about your goals and we'll show you how we can help. No obligation.", "Cuéntanos tus metas y te mostramos cómo ayudarte. Sin compromiso.")}</p>
-            {phone && <a href={`tel:${phone}`} className="mt-6 inline-flex items-center gap-2 text-sm text-slate-300"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            <h2 className="wh text-3xl md:text-4xl" style={{ color: CO.ink }}>{ctx.bookingOn ? agT(lang, "Book your appointment", "Agenda tu cita") : agT(lang, "Ready to grow?", "¿Listo para crecer?")}</h2>
+            <p className="mt-4 leading-relaxed max-w-md" style={{ color: CO.muted }}>{ctx.bookingOn ? agT(lang, "Pick a time that works — we'll confirm right away.", "Elige un horario — te confirmamos de inmediato.") : agT(lang, "Tell us about your goals and we'll show you how we can help. No obligation.", "Cuéntanos tus metas y te mostramos cómo ayudarte. Sin compromiso.")}</p>
+            {phone && <a href={`tel:${phone}`} className="mt-6 inline-flex items-center gap-2 text-sm" style={{ color: CO.muted }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             {areas.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
-                {areas.map((a, i) => <span key={i} className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,.06)", color: "#cbd5e1" }}><MapPin className="w-3 h-3 inline mr-1" style={{ color: accent }} />{a}</span>)}
+                {areas.map((a, i) => <span key={i} className="text-xs px-3 py-1 rounded-full" style={{ background: CO.pill, color: CO.muted }}><MapPin className="w-3 h-3 inline mr-1" style={{ color: accent }} />{a}</span>)}
               </div>
             )}
           </div>
-          <div className="w-full max-w-md"><HeroForm ctx={ctx} dark /></div>
+          <div className="w-full max-w-md"><HeroForm ctx={ctx} dark={CO.dark} /></div>
         </div>
       </section>
 
-      <footer className="border-t py-8 text-center text-xs text-slate-500" style={{ borderColor: "rgba(255,255,255,.1)" }}>
+      <footer className="border-t py-8 text-center text-xs" style={{ background: FO.bg, color: FO.muted, borderColor: FO.cardBorder }}>
         © {new Date().getFullYear()} {b?.name || w.headline}{phone ? ` · ${phone}` : ""}
       </footer>
     </div>

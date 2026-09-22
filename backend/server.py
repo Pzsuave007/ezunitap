@@ -4466,6 +4466,7 @@ class WebsiteIn(BaseModel):
     about_values: Optional[list] = None          # [{title, desc}] why-us / values on About page
     team: Optional[list] = None                  # [{name, role, photo}] team members
     solutions_intro: Optional[str] = None        # Solutions page intro paragraph
+    section_colors: Optional[dict] = None         # {hero, services, samples, logos, map, process, reviews, cta, contact, footer} bg hex
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -5115,6 +5116,71 @@ async def website_translate_en(user_id: str = Depends(get_current_user_id), _fea
     updated = await _get_or_init_website(user_id)
     return {"ok": True, "website": updated}
 
+
+
+@api_router.post("/website/import-media")
+async def website_import_media(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Download every external image referenced by the website (samples, logos,
+    case covers/galleries, team photos) into our own storage so the images never
+    break when the client moves their old domain away. Replaces each external URL
+    with a permanent photo id served from /api/public/card/photo/{id}."""
+    import httpx
+    w = await _get_or_init_website(user_id)
+    cache = {}
+
+    async def store(url):
+        if not url or not isinstance(url, str) or not url.startswith("http"):
+            return url  # already a local id or empty
+        if url in cache:
+            return cache[url]
+        try:
+            async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+                r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            data = r.content
+            ct = (r.headers.get("content-type") or "image/jpeg").split(";")[0].lower()
+            if ct not in ALLOWED_IMAGE_TYPES:
+                ct = "image/jpeg"
+            ext = {"image/png": "png", "image/webp": "webp"}.get(ct, "jpg")
+            if len(data) > MAX_IMAGE_BYTES:
+                return url
+            data, ct, ext = await asyncio.to_thread(_compress_image, data, ct, ext)
+            pid = _new_id()
+            path = f"{app_name}/photos/{user_id}/{pid}.{ext}"
+            backend = storage_service.get_storage()
+            result = await asyncio.to_thread(backend.put, path, data, ct)
+            await db.photos.insert_one({
+                "id": pid, "user_id": user_id, "label": "website", "storage_path": result.get("path", path),
+                "content_type": ct, "size": result.get("size", len(data)),
+                "storage_backend": getattr(backend, "name", "emergent"), "is_deleted": False, "created_at": _now_iso(),
+            })
+            cache[url] = pid
+            return pid
+        except Exception as e:
+            logger.warning(f"import-media: failed {url}: {e!r}")
+            return url  # keep original on failure
+
+    count = 0
+    samples = w.get("samples") or []
+    for s in samples:
+        if s.get("img", "").startswith("http"):
+            s["img"] = await store(s["img"]); count += 1
+    logos = [await store(l) for l in (w.get("client_logos") or [])]
+    count += sum(1 for l in logos if not l.startswith("http"))
+    cases = w.get("case_studies") or []
+    for c in cases:
+        if (c.get("cover") or "").startswith("http"):
+            c["cover"] = await store(c["cover"]); count += 1
+        if isinstance(c.get("photos"), list):
+            c["photos"] = [await store(p) for p in c["photos"]]
+    team = w.get("team") or []
+    for m in team:
+        if (m.get("photo") or "").startswith("http"):
+            m["photo"] = await store(m["photo"]); count += 1
+    await db.websites.update_one({"user_id": user_id}, {"$set": {
+        "samples": samples, "client_logos": logos, "case_studies": cases, "team": team,
+    }})
+    return {"ok": True, "copied": count}
 
 
 @api_router.post("/website/ai-agency")

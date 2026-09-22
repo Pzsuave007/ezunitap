@@ -1,5 +1,12 @@
 # UniTech — Changelog
 
+## Jun 2026 — Colores por sección (Agency) + Mapa full-width + Reviews + copiar imágenes
+- **Colores por sección**: nuevo `section_colors` (WebsiteIn) — el usuario elige el color de fondo de cada sección del template Agency (hero, services, samples, logos, map, process, reviews, cta, contact, footer) desde la pestaña **Diseño** (`seccolor-*`). El texto/tarjetas se auto-ajustan por contraste vía `isLight`. Componente `Agency` reescrito para usar `S(key)` por sección; `SamplesSection/LogosStrip/ClientMap` aceptan prop `sty` (helper `secTheme`).
+- **Mapa full-width**: el embed de Google My Maps ahora ocupa todo el ancho (600px alto), como el sitio original.
+- **Sección Reviews** agregada al template Agency (usa `data.reviews`, `Stars`).
+- **Copiar imágenes al servidor**: `POST /website/import-media` descarga todas las imágenes externas (samples/logos/covers/galerías/equipo) a storage propio y reemplaza URLs por photo ids permanentes (verificado: 24 imágenes copiadas, sirven 200 webp). Botón en pestaña Diseño (`import-media-btn`).
+- Verificado por curl: import-media, section_colors persisten, fotos sirven 200, sin errores JS. Build main.be6ab572.js trackeado.
+
 ## Jun 2026 — Editor Agencia con sub-tabs + IA para escribir contenido
 - `AgencyPanel` reorganizado con **sub-tabs** (Importar / Samples / Logos / Mapa / Casos / Soluciones / Nosotros): solo se muestra la sección activa, sin scroll infinito (`agency-subtab-*`).
 - **IA para contenido**: `POST /website/ai-agency` (kind `case`/`about`) + `ai_service.generate_case_study()` y `generate_about_content()`. Botón ✨ por caso (`agency-case-ai-{i}`) llena resumen/cuerpo/servicios/resultados; botón ✨ en Nosotros (`agency-about-ai`) llena título/historia/logros/valores. Español o inglés según el idioma del editor.
