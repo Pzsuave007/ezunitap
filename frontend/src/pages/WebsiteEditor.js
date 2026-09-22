@@ -12,13 +12,14 @@ import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
 
-const TEMPLATES = ["cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
-const TPL_SWATCH = { cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "about", "feature", "gallery", "reviews", "how", "why", "band", "faq", "areas"];
+const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
+const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
+const SECTION_KEYS = ["services", "about", "feature", "gallery", "samples", "logos", "map", "reviews", "how", "why", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
-const TABS = ["publish", "design", "content", "services", "problem", "media", "forms", "sections", "history"];
+const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "history"];
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
+  agency: ["#22D3EE", "#10B981", "#6366F1", "#F5B301"],
   cinematic: ["#F5B301", "#22D3EE", "#EF4444", "#A855F7"],
   responder: ["#DC2626", "#EA580C", "#2563EB", "#111827"],
   bento: ["#2563EB", "#0EA5E9", "#10B981", "#6366F1"],
@@ -403,7 +404,7 @@ export default function WebsiteEditor() {
         </div>
         <div className="pb-2 overflow-x-auto no-scrollbar">
           <div className="flex gap-1.5 min-w-max">
-            {TABS.map((tb) => (
+            {TABS.filter((tb) => tb !== "agency" || w.template === "agency").map((tb) => (
               <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
                 className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                 {t(`website.tab.${tb}`)}
@@ -654,6 +655,8 @@ export default function WebsiteEditor() {
       </>)}
 
       {tab === "problem" && <ProblemPagesPanel slug={w.slug} />}
+
+      {tab === "agency" && <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />}
 
       {tab === "history" && <VersionHistory />}
 
@@ -1066,8 +1069,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1085,6 +1088,8 @@ function TemplateThumb({ kind, accent }) {
   const bar = (bg, w = "60%") => <div style={{ background: bg, width: w }} className="h-1.5 rounded-full" />;
   const wrap = (bg, children) => <div className="h-24 w-full p-2 overflow-hidden" style={{ background: bg }}>{children}</div>;
   switch (kind) {
+    case "agency":
+      return wrap("#0a1130", <div className="h-full flex flex-col justify-center gap-1.5"><div className="h-2 rounded" style={{ background: A, width: "60%", boxShadow: `0 0 8px ${A}` }} />{bar("#334155", "80%")}<div className="grid grid-cols-4 gap-1 mt-1">{[0, 1, 2, 3].map((i) => <div key={i} className="h-4 rounded" style={{ background: "rgba(255,255,255,.06)", border: `1px solid ${A}33` }} />)}</div></div>);
     case "cinematic":
       return wrap("#0A0A0F", <div className="h-full flex flex-col justify-end gap-1.5">{bar(A, "45%")}{bar("#3f3f46", "70%")}<div className="grid grid-cols-3 gap-1 mt-1">{[0, 1, 2].map((i) => <div key={i} className="h-6 rounded" style={{ background: "#1f1f23" }} />)}</div></div>);
     case "responder":
@@ -1109,6 +1114,167 @@ function TemplateThumb({ kind, accent }) {
       return wrap(TPL_SWATCH[kind] || "#e5e7eb", null);
   }
 }
+
+// Starter content imported from the agency's live site (uni2mkt.com). Gives the
+// Agency template a fully-populated, on-brand starting point the owner can edit.
+const CDN = "https://uni2mkt.com/wp-content/uploads/2025";
+const UNI2_DEFAULTS = {
+  headline: "Impulsando Negocios Latinos",
+  subheadline: "En Uni2 Marketing Group ayudamos a emprendedores latinos a destacar y crecer en el mercado estadounidense con estrategias digitales que combinan creatividad, automatización e inteligencia artificial. No solo diseñamos sitios web: creamos sistemas digitales que generan clientes reales.",
+  cta_phone: "(888) 689-4979",
+  services: [
+    { name: "Websites Inteligentes", description: "Sitios con inteligencia artificial, diseño profesional y automatizaciones que convierten visitantes en ventas las 24 horas." },
+    { name: "Chatbots con IA", description: "Asistentes virtuales que conversan con tus clientes, agendan citas y califican prospectos en segundos." },
+    { name: "Google Business Optimization", description: "Optimizamos tu perfil de Google para que destaques en los mapas y recibas más llamadas y visitas." },
+    { name: "Gestión de Reputación Online", description: "Monitoreamos y mejoramos tus reseñas para construir confianza y atraer más clientes." },
+    { name: "Automatización de Marketing", description: "Sistemas automáticos que envían correos, mensajes y recordatorios personalizados por ti." },
+    { name: "Estrategias Digitales Personalizadas", description: "Analizamos tu industria, público y objetivos para diseñar una estrategia que conecte y haga crecer tu marca." },
+  ],
+  how_it_works: [
+    { title: "Descubrimiento y Estrategia", desc: "Analizamos tu negocio, tu audiencia y tus metas para definir una estrategia personalizada." },
+    { title: "Diseño y Configuración", desc: "Creamos tu Website Inteligente y optimizamos tu presencia en Google." },
+    { title: "Integración y Automatización", desc: "Activamos chatbots, formularios y automatizaciones para convertir cada contacto." },
+    { title: "Lanzamiento y Optimización", desc: "Lanzamos tu sistema y medimos resultados para maximizar el rendimiento." },
+    { title: "Crecimiento y Seguimiento", desc: "Reportes claros, soporte continuo y nuevas ideas para seguir escalando." },
+  ],
+  samples: [
+    { img: `${CDN}/02/Qdoba_Mexican_Eats_in_Gillette_Wyoming.jpg`, title: "Qdoba Mexican Eats", subtitle: "Franquicia · Oregon", link: "https://uni2mkt.com/qdoba-13-oregon-store-franchise/" },
+    { img: `${CDN}/02/CasaLola-18-1.jpg`, title: "Casa Lola Kitchen", subtitle: "Restaurante mexicano", link: "https://uni2mkt.com/casa-lola-kitchen-de-mexico/" },
+    { img: `${CDN}/02/Red-Tomato.png`, title: "Red Tomato Catering", subtitle: "Servicios de catering", link: "https://uni2mkt.com/red-tomato-catering-services/" },
+    { img: `${CDN}/02/IMG_6268-scaled.jpg`, title: "Press Café", subtitle: "Cafetería", link: "https://uni2mkt.com/press-cafe/" },
+    { img: `${CDN}/02/firstcallroofing.png`, title: "First Call Roofing", subtitle: "Techado", link: "https://uni2mkt.com/first-call-roofing/" },
+    { img: `${CDN}/02/Fujiyama-sushi-portland-82ndlocation.jpg`, title: "Fujiyama Sushi", subtitle: "Restaurante japonés", link: "https://uni2mkt.com/fujiyama-sushi/" },
+  ],
+  client_logos: [
+    `${CDN}/02/GA-Client-Showcase-fristcall.png`,
+    `${CDN}/02/GA-Client-Showcase-BAJALTO.png`,
+    `${CDN}/02/GA-Client-Showcase-CASALOLA.png`,
+    `${CDN}/02/GA-Client-Showcase-GRILL68.png`,
+    `${CDN}/02/GA-Client-Showcase-MARZ.png`,
+  ],
+  client_pins: [
+    { label: "Spokane, WA", lat: 47.6588, lng: -117.426 },
+    { label: "Oregon City, OR", lat: 45.3573, lng: -122.6068 },
+    { label: "Boise, ID", lat: 43.615, lng: -116.2023 },
+    { label: "Dallas, TX", lat: 32.7767, lng: -96.797 },
+    { label: "Miami, FL", lat: 25.7617, lng: -80.1918 },
+    { label: "Loreto, MX", lat: 26.0115, lng: -111.343 },
+    { label: "Ciudad de México", lat: 19.4326, lng: -99.1332 },
+  ],
+};
+
+function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
+  const isEs = (t("website.tab.agency") === "Agencia");
+  const L = isEs ? {
+    intro: "Gestiona las secciones exclusivas del template Agencia: casos de clientes, franja de logos y mapa. Recuerda pulsar Guardar arriba.",
+    importBtn: "Importar contenido de mi sitio (uni2mkt.com)",
+    importDone: "Contenido importado. Revisa y pulsa Guardar.",
+    samples: "Casos de clientes (Samples)", samplesDesc: "Tarjetas con foto que enlazan al caso del cliente.",
+    logos: "Franja de logos", logosDesc: "Logos de clientes que se muestran en un carrusel.",
+    pins: "Pines del mapa", pinsDesc: "Ubicaciones de clientes. Usa latitud/longitud (busca 'ciudad lat long' en Google).",
+    add: "Agregar", remove: "Quitar", img: "URL de imagen", title: "Título", subtitle: "Subtítulo", link: "Enlace (opcional)",
+    logoUrl: "URL del logo", label: "Etiqueta (ciudad)", lat: "Latitud", lng: "Longitud", upload: "Subir",
+  } : {
+    intro: "Manage the Agency template's exclusive sections: client showcase, logo strip and map. Remember to hit Save at the top.",
+    importBtn: "Import content from my site (uni2mkt.com)",
+    importDone: "Content imported. Review and hit Save.",
+    samples: "Client showcase (Samples)", samplesDesc: "Photo cards that link to the client's case.",
+    logos: "Client logo strip", logosDesc: "Client logos shown in a marquee.",
+    pins: "Map pins", pinsDesc: "Client locations. Use latitude/longitude (search 'city lat long' on Google).",
+    add: "Add", remove: "Remove", img: "Image URL", title: "Title", subtitle: "Subtitle", link: "Link (optional)",
+    logoUrl: "Logo URL", label: "Label (city)", lat: "Latitude", lng: "Longitude", upload: "Upload",
+  };
+  const samples = Array.isArray(w.samples) ? w.samples : [];
+  const logos = Array.isArray(w.client_logos) ? w.client_logos : [];
+  const pins = Array.isArray(w.client_pins) ? w.client_pins : [];
+  const upRef = useRef(null);
+  const [upIdx, setUpIdx] = useState(null);
+
+  const setSamples = (arr) => patch({ samples: arr });
+  const setLogos = (arr) => patch({ client_logos: arr });
+  const setPins = (arr) => patch({ client_pins: arr });
+  const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
+  const uploadFor = async (file) => {
+    if (!file || upIdx == null) return;
+    try { const id = await onUpload(file); const next = [...samples]; next[upIdx] = { ...next[upIdx], img: id }; setSamples(next); }
+    catch { toast.error(t("website.saveError")); }
+    finally { setUpIdx(null); if (upRef.current) upRef.current.value = ""; }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="agency-panel">
+      <input ref={upRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadFor(e.target.files?.[0])} />
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <p className="text-sm text-slate-500 mb-3">{L.intro}</p>
+        <Button onClick={doImport} variant="outline" className="rounded-xl h-10 font-bold" data-testid="agency-import-btn">
+          <Wand2 className="w-4 h-4 mr-2" /> {L.importBtn}
+        </Button>
+      </Card>
+
+      {/* SAMPLES */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Images className="w-4 h-4" /> {L.samples}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.samplesDesc}</p>
+        <div className="space-y-3">
+          {samples.map((s, i) => (
+            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`agency-sample-${i}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
+                  {s.img && <img src={/^https?:\/\//.test(s.img) ? s.img : photoSrc(s.img)} alt="" className="w-full h-full object-cover" />}
+                </div>
+                <Input value={s.img || ""} onChange={(e) => { const n = [...samples]; n[i] = { ...s, img: e.target.value }; setSamples(n); }} placeholder={L.img} className="h-9 rounded-lg" data-testid={`agency-sample-img-${i}`} />
+                <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" onClick={() => { setUpIdx(i); upRef.current?.click(); }} data-testid={`agency-sample-upload-${i}`}><ImagePlus className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setSamples(samples.filter((_, x) => x !== i))} data-testid={`agency-sample-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={s.title || ""} onChange={(e) => { const n = [...samples]; n[i] = { ...s, title: e.target.value }; setSamples(n); }} placeholder={L.title} className="h-9 rounded-lg" data-testid={`agency-sample-title-${i}`} />
+                <Input value={s.subtitle || ""} onChange={(e) => { const n = [...samples]; n[i] = { ...s, subtitle: e.target.value }; setSamples(n); }} placeholder={L.subtitle} className="h-9 rounded-lg" />
+              </div>
+              <Input value={s.link || ""} onChange={(e) => { const n = [...samples]; n[i] = { ...s, link: e.target.value }; setSamples(n); }} placeholder={L.link} className="h-9 rounded-lg" data-testid={`agency-sample-link-${i}`} />
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setSamples([...samples, { img: "", title: "", subtitle: "", link: "" }])} data-testid="agency-sample-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+      </Card>
+
+      {/* LOGOS */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Briefcase className="w-4 h-4" /> {L.logos}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.logosDesc}</p>
+        <div className="space-y-2">
+          {logos.map((l, i) => (
+            <div key={i} className="flex items-center gap-2" data-testid={`agency-logo-${i}`}>
+              <div className="w-12 h-10 rounded-lg overflow-hidden bg-white flex-none border border-slate-200 flex items-center justify-center">
+                {l && <img src={/^https?:\/\//.test(l) ? l : photoSrc(l)} alt="" className="max-w-full max-h-full object-contain" />}
+              </div>
+              <Input value={l || ""} onChange={(e) => { const n = [...logos]; n[i] = e.target.value; setLogos(n); }} placeholder={L.logoUrl} className="h-9 rounded-lg" data-testid={`agency-logo-url-${i}`} />
+              <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setLogos(logos.filter((_, x) => x !== i))} data-testid={`agency-logo-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setLogos([...logos, ""])} data-testid="agency-logo-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+      </Card>
+
+      {/* PINS */}
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="font-semibold mb-1 flex items-center gap-2"><MapPin className="w-4 h-4" /> {L.pins}</div>
+        <p className="text-sm text-slate-500 mb-3">{L.pinsDesc}</p>
+        <div className="space-y-2">
+          {pins.map((p, i) => (
+            <div key={i} className="flex items-center gap-2" data-testid={`agency-pin-${i}`}>
+              <Input value={p.label || ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, label: e.target.value }; setPins(n); }} placeholder={L.label} className="h-9 rounded-lg flex-1" data-testid={`agency-pin-label-${i}`} />
+              <Input value={p.lat ?? ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, lat: e.target.value }; setPins(n); }} placeholder={L.lat} className="h-9 rounded-lg w-24" data-testid={`agency-pin-lat-${i}`} />
+              <Input value={p.lng ?? ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, lng: e.target.value }; setPins(n); }} placeholder={L.lng} className="h-9 rounded-lg w-24" data-testid={`agency-pin-lng-${i}`} />
+              <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setPins(pins.filter((_, x) => x !== i))} data-testid={`agency-pin-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setPins([...pins, { label: "", lat: "", lng: "" }])} data-testid="agency-pin-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+      </Card>
+    </div>
+  );
+}
+
 
 
 

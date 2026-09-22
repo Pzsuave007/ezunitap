@@ -272,6 +272,7 @@ export default function ContractorSite({ injected }) {
         if (p) setWorkOpen(p);
       }}>
         <Layout ctx={ctx} />
+        {key !== "agency" && <SharedExtras ctx={ctx} />}
       </div>
       <MobileBar ctx={ctx} />
       {workOpen && <SiteWorkModal photo={workOpen} accent={accent} accentText={accentText} onClose={() => setWorkOpen(null)} onQuote={() => { setWorkOpen(null); goContact(); }} />}
@@ -1746,24 +1747,151 @@ function AreasBlock({ ctx, bg, dark }) {
   );
 }
 
+// ---- SHARED, THEME-AWARE, TOGGLEABLE SECTIONS ------------------------------
+// These three sections (Samples / Client logos / Client map) read their content
+// from the website record and adapt to the active template's theme, so they can
+// be reused across templates — not just Agency.
+const AGENCY_MAP_BG = "https://static.prod-images.emergentagent.com/jobs/64839280-8aef-47d9-a8ba-849b3a374595/images/0442e9106c53a96e2ee8f6221eed60095621df3b34fc90cd3d75120c21ae53e4.jpeg";
+// Equirectangular projection over a North-America bounding box (lng −125..−78, lat 14..50).
+const _mapXY = (lat, lng) => ({
+  x: Math.max(2, Math.min(98, ((lng - (-125)) / 47) * 100)),
+  y: Math.max(4, Math.min(96, ((50 - lat) / 36) * 100)),
+});
+const agT = (lang, en, es) => (lang === "es" ? es : en);
+// A sample/logo image value may be an absolute URL (imported from another site)
+// or one of the owner's uploaded photo ids.
+const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, w)));
+
+function LogosStrip({ ctx }) {
+  const logos = (Array.isArray(ctx.w.client_logos) ? ctx.w.client_logos : []).filter(Boolean);
+  if (!logos.length) return null;
+  const { th, lang } = ctx;
+  const row = [...logos, ...logos];
+  return (
+    <section className="py-10 md:py-14 border-y overflow-hidden" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-logos">
+      <p className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-6" style={{ color: th.muted }}>{agT(lang, "Trusted by 150+ businesses", "Más de 150 negocios confían en nosotros")}</p>
+      <div className="relative">
+        <div className="wmarq gap-6 md:gap-8 items-center px-6">
+          {row.map((l, i) => (
+            <div key={i} className="flex-none h-16 px-6 rounded-xl bg-white flex items-center shadow-sm">
+              <img src={imgSrc(l, 320)} alt="" className="h-8 md:h-9 w-auto max-w-[140px] object-contain" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SamplesSection({ ctx }) {
+  const r = useReveal();
+  const items = (Array.isArray(ctx.w.samples) ? ctx.w.samples : []).filter((s) => s && (s.img || s.title));
+  const { th, accent, lang } = ctx;
+  if (!items.length) return null;
+  return (
+    <section id="samples" className="py-16 md:py-24" data-testid="site-samples">
+      <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Client showcase", "Casos reales")}</p>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Results that speak for themselves", "Resultados que hablan por sí mismos")}</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {items.map((s, i) => {
+            const inner = (
+              <div className="relative aspect-[4/3] overflow-hidden">
+                {imgSrc(s.img, 800) && <img src={imgSrc(s.img, 800)} alt={s.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,.78),transparent 62%)" }} />
+                <div className="absolute bottom-0 inset-x-0 p-5">
+                  {s.title && <h3 className="text-white font-bold text-lg leading-tight">{s.title}</h3>}
+                  {s.subtitle && <p className="text-white/75 text-sm mt-0.5">{s.subtitle}</p>}
+                </div>
+              </div>
+            );
+            const cls = "group block rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl";
+            const stl = { borderColor: th.border, background: th.surface };
+            return s.link
+              ? <a key={i} href={s.link} target="_blank" rel="noreferrer" data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</a>
+              : <div key={i} data-testid={`site-sample-${i}`} className={cls} style={stl}>{inner}</div>;
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ClientMap({ ctx }) {
+  const pins = (Array.isArray(ctx.w.client_pins) ? ctx.w.client_pins : []).filter((p) => p && p.lat != null && p.lng != null && p.lat !== "" && p.lng !== "");
+  if (!pins.length) return null;
+  const { th, accent, lang } = ctx;
+  return (
+    <section id="map" className="py-16 md:py-24" style={{ background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="site-map">
+      <div className="max-w-5xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Where we work", "Dónde trabajamos")}</p>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Clients across North America", "Clientes en toda Norteamérica")}</h2>
+        </div>
+        <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: th.border, background: "#0a1130" }}>
+          <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
+          {pins.map((p, i) => {
+            const { x, y } = _mapXY(Number(p.lat), Number(p.lng));
+            return (
+              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2 group" style={{ left: `${x}%`, top: `${y}%` }} data-testid={`site-pin-${i}`}>
+                <span className="relative flex w-3 h-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: accent }} />
+                  <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
+                </span>
+                {p.label && <span className="absolute left-1/2 -translate-x-1/2 top-5 whitespace-nowrap text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">{p.label}</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Renders the shared toggleable sections for NON-agency templates (Agency lays
+// them out inline in its own order).
+function SharedExtras({ ctx }) {
+  const sec = ctx.sec || {};
+  return (
+    <>
+      {sec.samples !== false && <SamplesSection ctx={ctx} />}
+      {sec.logos !== false && <LogosStrip ctx={ctx} />}
+      {sec.map !== false && <ClientMap ctx={ctx} />}
+    </>
+  );
+}
+
 // ---- AGENCY: premium bilingual template (exclusive) ------------------------
 function Agency({ ctx }) {
-  const { w, b, accent, accentText, heroImg, services, goContact } = ctx;
+  const { w, b, th, accent, accentText, heroImg, bandImg, services, goContact, lang, sec } = ctx;
   const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
   const why = Array.isArray(w.why_us) ? w.why_us : [];
   const faqs = Array.isArray(w.faqs) ? w.faqs : [];
   const areas = Array.isArray(w.areas) ? w.areas : [];
   const phone = w.cta_phone || b?.phone;
   const aboutText = (w.subheadline || w.about || "").trim();
+  const [scr, setScr] = useState(false);
+  useEffect(() => { const f = () => setScr(window.scrollY > 30); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
+  const navLinks = [
+    services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
+    (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
+    (steps.length > 0 && sec.how !== false) && ["#how", agT(lang, "Process", "Proceso")],
+    ["#contact", agT(lang, "Contact", "Contacto")],
+  ].filter(Boolean);
   return (
     <div>
       {/* NAV */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl border-b" style={{ background: "rgba(10,17,48,.82)", borderColor: "rgba(255,255,255,.1)" }}>
-        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-          <span className="wh text-lg font-black">{b?.name || w.headline}</span>
+      <header className="sticky top-0 z-40 backdrop-blur-xl border-b transition-colors" style={{ background: scr ? "rgba(10,17,48,.92)" : "rgba(10,17,48,.55)", borderColor: scr ? "rgba(255,255,255,.1)" : "transparent" }}>
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+          <span className="wh text-lg font-black truncate">{b?.name || w.headline}</span>
+          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-300">
+            {navLinks.map(([href, label], i) => <a key={i} href={href} className="hover:text-white transition-colors">{label}</a>)}
+          </nav>
           <div className="flex items-center gap-3">
-            {phone && <a href={`tel:${phone}`} className="hidden sm:inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
-            <button onClick={goContact} className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-4 h-4" /></button>
+            {phone && <a href={`tel:${phone}`} className="hidden lg:inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            <button onClick={goContact} data-testid="agency-nav-cta" className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.ctaShort} <ArrowRight className="w-4 h-4" /></button>
           </div>
         </div>
       </header>
@@ -1772,13 +1900,14 @@ function Agency({ ctx }) {
       <section className="relative overflow-hidden">
         {heroImg && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${heroImg})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(10,17,48,.72),rgba(10,17,48,.94) 70%,#0a1130)" }} />
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: accent }} />
         <div className="relative max-w-6xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
           <div className="wreveal wshow">
-            {aboutText && <p className="font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: accent }}>{b?.name || "Marketing"}</p>}
+            <p className="font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: accent }}>{agT(lang, "Empowering Latino businesses", "Impulsando negocios latinos")}</p>
             <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.05]">{w.headline || b?.name}</h1>
             {aboutText && <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed line-clamp-5">{aboutText}</p>}
             <div className="mt-9 flex flex-wrap items-center gap-4">
-              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-7 py-3.5 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
+              <button onClick={goContact} data-testid="agency-hero-cta" className="inline-flex items-center gap-2 font-bold px-7 py-3.5 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
               {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-6 py-3.5 rounded-full font-semibold hover:bg-white/10 transition-colors" style={{ borderColor: "rgba(255,255,255,.25)" }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             </div>
           </div>
@@ -1787,10 +1916,13 @@ function Agency({ ctx }) {
       </section>
 
       {/* SERVICES */}
-      {services.length > 0 && (
-        <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-          <h2 className="wh text-3xl md:text-4xl text-center max-w-3xl mx-auto">{w.services_title || (b?.name ? `${b.name}` : "What we do")}</h2>
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {services.length > 0 && sec.services !== false && (
+        <section id="services" className="max-w-6xl mx-auto px-5 py-16 md:py-24">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "What we do", "Qué hacemos")}</p>
+            <h2 className="wh text-3xl md:text-4xl">{w.services_title || agT(lang, "Smart tools to grow your business", "Herramientas inteligentes para crecer tu negocio")}</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((s, i) => (
               <div key={i} data-testid={`agency-svc-${i}`} className="group rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
                 <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}26`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>
@@ -1802,12 +1934,24 @@ function Agency({ ctx }) {
         </section>
       )}
 
+      {/* SAMPLES (client showcase) */}
+      {sec.samples !== false && <SamplesSection ctx={ctx} />}
+
+      {/* CLIENT LOGOS strip */}
+      {sec.logos !== false && <LogosStrip ctx={ctx} />}
+
+      {/* CLIENT MAP */}
+      {sec.map !== false && <ClientMap ctx={ctx} />}
+
       {/* PROCESS */}
-      {steps.length > 0 && (
-        <section className="border-y py-16 md:py-24" style={{ background: "rgba(255,255,255,.03)", borderColor: "rgba(255,255,255,.08)" }}>
+      {steps.length > 0 && sec.how !== false && (
+        <section id="how" className="border-y py-16 md:py-24" style={{ background: "rgba(255,255,255,.03)", borderColor: "rgba(255,255,255,.08)" }}>
           <div className="max-w-6xl mx-auto px-5">
-            <h2 className="wh text-3xl md:text-4xl text-center">{w.how_it_works_title || "How it works"}</h2>
-            <div className="mt-12 grid md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "How it works", "Cómo funciona")}</p>
+              <h2 className="wh text-3xl md:text-4xl">{w.how_it_works_title || agT(lang, "We transform your digital presence step by step", "Transformamos tu presencia digital paso a paso")}</h2>
+            </div>
+            <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5">
               {steps.slice(0, 5).map((s, i) => (
                 <div key={i} className="relative rounded-2xl border p-6" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
                   <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}22` }}>{i + 1}</span>
@@ -1821,9 +1965,9 @@ function Agency({ ctx }) {
       )}
 
       {/* WHY US */}
-      {why.length > 0 && (
+      {why.length > 0 && sec.why !== false && (
         <section className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-          <h2 className="wh text-3xl md:text-4xl text-center">{w.why_us_title || "Why us"}</h2>
+          <h2 className="wh text-3xl md:text-4xl text-center">{w.why_us_title || agT(lang, "Why us", "Por qué nosotros")}</h2>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {why.map((s, i) => (
               <div key={i} className="rounded-2xl border p-6 flex items-start gap-3" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
@@ -1835,10 +1979,26 @@ function Agency({ ctx }) {
         </section>
       )}
 
+      {/* CTA BAND */}
+      {sec.band !== false && (
+        <section className="relative py-20 md:py-28 overflow-hidden">
+          {bandImg && <img src={bandImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+          <div className="absolute inset-0" style={{ background: bandImg ? "linear-gradient(180deg,rgba(10,17,48,.88),rgba(10,17,48,.94))" : "rgba(255,255,255,.03)" }} />
+          <div className="relative max-w-3xl mx-auto px-5 text-center">
+            <h2 className="wh text-3xl md:text-5xl">{agT(lang, "Ready to elevate your business?", "¿Listo para elevar tu negocio?")}</h2>
+            <p className="mt-5 text-slate-300 leading-relaxed">{agT(lang, "Book a free demo and see how a smart digital system can bring you more clients.", "Agenda una demostración gratuita y descubre cómo un sistema digital inteligente puede traerte más clientes.")}</p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
+              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-7 py-4 rounded-full font-semibold hover:bg-white/10 transition-colors" style={{ borderColor: "rgba(255,255,255,.25)" }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FAQ */}
-      {faqs.length > 0 && (
+      {faqs.length > 0 && sec.faq !== false && (
         <section className="max-w-3xl mx-auto px-5 py-16 md:py-20">
-          <h2 className="wh text-3xl md:text-4xl text-center mb-8">FAQ</h2>
+          <h2 className="wh text-3xl md:text-4xl text-center mb-8">{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
           <div className="space-y-3">
             {faqs.map((f, i) => (
               <details key={i} className="group rounded-xl border p-4" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.1)" }}>
@@ -1854,8 +2014,8 @@ function Agency({ ctx }) {
       <section id="contact" className="py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-start">
           <div>
-            <h2 className="wh text-3xl md:text-4xl">{ctx.bookingOn ? "Book your appointment" : "Ready to grow?"}</h2>
-            <p className="mt-4 text-slate-400 leading-relaxed max-w-md">{ctx.bookingOn ? "Pick a time that works — we'll confirm right away." : "Tell us about your goals and we'll show you how we can help. No obligation."}</p>
+            <h2 className="wh text-3xl md:text-4xl">{ctx.bookingOn ? agT(lang, "Book your appointment", "Agenda tu cita") : agT(lang, "Ready to grow?", "¿Listo para crecer?")}</h2>
+            <p className="mt-4 text-slate-400 leading-relaxed max-w-md">{ctx.bookingOn ? agT(lang, "Pick a time that works — we'll confirm right away.", "Elige un horario — te confirmamos de inmediato.") : agT(lang, "Tell us about your goals and we'll show you how we can help. No obligation.", "Cuéntanos tus metas y te mostramos cómo ayudarte. Sin compromiso.")}</p>
             {phone && <a href={`tel:${phone}`} className="mt-6 inline-flex items-center gap-2 text-sm text-slate-300"><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             {areas.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">

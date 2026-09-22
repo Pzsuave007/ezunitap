@@ -194,6 +194,8 @@
     "seoMetaDesc": "Descripción meta",
     "seoMetaDescPh": "Una frase que describa tu negocio para Google.",
     "tpl": {
+      "agencyName": "Agencia de Marketing",
+      "agencyDesc": "Agencia bilingüe premium: samples, logos, mapa",
       "cinematicName": "Cine Oscuro",
       "cinematicDesc": "Premium, foto a pantalla completa",
       "responderName": "Respuesta Urgente",
@@ -218,6 +220,9 @@
     "sec": {
       "services": "Servicios",
       "gallery": "Galería (fotos de trabajos)",
+      "samples": "Samples (casos de clientes)",
+      "logos": "Franja de logos de clientes",
+      "map": "Mapa de clientes (pines)",
       "reviews": "Reseñas",
       "how": "Cómo funciona",
       "why": "Por qué elegirnos",
@@ -241,6 +246,7 @@
       "design": "Diseño",
       "content": "Contenido",
       "services": "Servicios",
+      "agency": "Agencia",
       "media": "Fotos",
       "forms": "Formularios",
       "sections": "Secciones",

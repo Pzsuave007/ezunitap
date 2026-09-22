@@ -4455,6 +4455,9 @@ class WebsiteIn(BaseModel):
     band_photo_id: Optional[str] = None         # background image for the mid-page CTA band
     instagram_url: Optional[str] = None          # public Instagram link (shown on site + used for AI content)
     ai_brief: Optional[str] = None               # free-text description of the business/job → feeds AI content
+    samples: Optional[list] = None               # [{img, title, subtitle, link}] client showcase cards
+    client_logos: Optional[list] = None          # [url or photo_id] logo strip / marquee
+    client_pins: Optional[list] = None           # [{label, lat, lng}] client map pins
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -4462,6 +4465,7 @@ _WEBSITE_DEFAULT_SECTIONS = {
     "contact": True, "booking": False, "about": True,
     "how": True, "why": True, "faq": True, "areas": True,
     "feature": True, "band": True,
+    "samples": True, "logos": True, "map": True,
 }
 
 
