@@ -2321,7 +2321,7 @@ function AboutPage({ ctx }) {
                 </div>
                 {imgs.length > 0 && (
                   <div className={`grid grid-cols-1 gap-4 ${reverse ? "md:order-1" : ""}`}>
-                    {imgs.map((src, k) => <div key={k} className="rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border }}><img src={src} loading="lazy" alt="" className="w-full h-full object-cover aspect-[4/3]" /></div>)}
+                    {imgs.map((src, k) => <div key={k} className="rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border }}><img src={src} loading="lazy" alt="" className="w-full h-auto block" /></div>)}
                   </div>
                 )}
               </div>
