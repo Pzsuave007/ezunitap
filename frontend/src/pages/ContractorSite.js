@@ -2314,14 +2314,14 @@ function AboutPage({ ctx }) {
           const alt = i % 2 === 1;
           return (
             <section key={i} className="py-12 md:py-16" style={alt ? { background: th.dark ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.02)" } : {}} data-testid={`about-section-${i}`}>
-              <div className={`max-w-6xl mx-auto px-5 grid ${imgs.length > 0 ? "md:grid-cols-2" : ""} gap-8 md:gap-12 items-center`}>
+              <div className={`max-w-6xl mx-auto px-5 grid ${imgs.length > 0 ? (reverse ? "md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : "md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]") : ""} gap-8 md:gap-12 items-center`}>
                 <div className={reverse && imgs.length > 0 ? "md:order-2" : ""}>
                   {s.title && <h2 className="wh text-2xl md:text-4xl mb-4" style={{ color: th.ink }}>{s.title}</h2>}
                   <RichText text={s.body} th={th} />
                 </div>
                 {imgs.length > 0 && (
-                  <div className={`grid ${imgs.length > 1 ? "grid-cols-2" : "grid-cols-1"} gap-4 ${reverse ? "md:order-1" : ""}`}>
-                    {imgs.map((src, k) => <div key={k} className="rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border }}><img src={src} loading="lazy" alt="" className="w-full h-full object-cover aspect-[4/5]" /></div>)}
+                  <div className={`grid grid-cols-1 gap-4 ${reverse ? "md:order-1" : ""}`}>
+                    {imgs.map((src, k) => <div key={k} className="rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border }}><img src={src} loading="lazy" alt="" className="w-full h-full object-cover aspect-[4/3]" /></div>)}
                   </div>
                 )}
               </div>
