@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, Quote, Plus, Mail, Facebook, Instagram } from "lucide-react";
+import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Quote, Plus, Mail, Facebook, Instagram } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
@@ -2090,6 +2090,40 @@ const caseSecTheme = (bg) => {
   return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.75)", card: light ? "#ffffff" : "rgba(255,255,255,.06)", surface: light ? "#ffffff" : "rgba(255,255,255,.06)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)", border: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.14)" };
 };
 
+function PhotoGallery({ items, th, cols = "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", square = true, testidPrefix = "gallery" }) {
+  const [open, setOpen] = useState(null);
+  const close = () => setOpen(null);
+  const go = (d) => setOpen((i) => (i === null ? null : (i + d + items.length) % items.length));
+  useEffect(() => {
+    if (open === null) return;
+    const onKey = (e) => { if (e.key === "Escape") close(); else if (e.key === "ArrowRight") go(1); else if (e.key === "ArrowLeft") go(-1); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, items.length]);
+  return (
+    <>
+      <div className={`grid ${cols} gap-4`}>
+        {items.map((p, i) => (
+          <button key={i} type="button" onClick={() => setOpen(i)} className="block w-full rounded-xl overflow-hidden border group cursor-zoom-in" style={{ borderColor: th.border }} data-testid={`${testidPrefix}-${i}`}>
+            <img src={p.thumb} loading="lazy" alt="" className={`w-full object-cover ${square ? "aspect-square" : "aspect-[4/3]"} transition-transform duration-500 group-hover:scale-105`} />
+          </button>
+        ))}
+      </div>
+      {open !== null && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8 bg-black/85 backdrop-blur-sm" onClick={close} data-testid={`${testidPrefix}-lightbox`}>
+          <button type="button" onClick={close} className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition" data-testid={`${testidPrefix}-close`} aria-label="Close"><X className="w-6 h-6" /></button>
+          {items.length > 1 && <button type="button" onClick={(e) => { e.stopPropagation(); go(-1); }} className="absolute left-3 sm:left-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition" aria-label="Previous"><ChevronLeft className="w-6 h-6" /></button>}
+          {items.length > 1 && <button type="button" onClick={(e) => { e.stopPropagation(); go(1); }} className="absolute right-3 sm:right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition" aria-label="Next"><ChevronRight className="w-6 h-6" /></button>}
+          <img src={items[open].full} alt="" className="max-w-full max-h-[86vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          {items.length > 1 && <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium">{open + 1} / {items.length}</div>}
+        </div>
+      )}
+    </>
+  );
+}
+
 function CaseSection({ id, kicker, title, th, accent, children }) {
   return (
     <section id={id} className="py-14 md:py-20" style={{ background: th.bg }} data-testid={id ? `case-sec-${id}` : undefined}>
@@ -2213,9 +2247,7 @@ function CaseDetail({ ctx }) {
       {/* PORTAFOLIO VISUAL */}
       {photos.length > 0 && (
         <CaseSection id="portfolio" kicker={agT(lang, "Explore our creative showcase", "Explora nuestro trabajo")} title={agT(lang, "Captivating visual portfolio", "Portafolio visual")} th={tPort} accent={accent}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {photos.map((p, i) => <a key={i} href={imgSrc(p, 1400)} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border group" style={{ borderColor: tPort.border }} data-testid={`case-portfolio-${i}`}><img src={imgSrc(p, 700)} loading="lazy" alt="" className="w-full object-cover aspect-square transition-transform duration-500 group-hover:scale-105" /></a>)}
-          </div>
+          <PhotoGallery items={photos.map((p) => ({ thumb: imgSrc(p, 700), full: imgSrc(p, 1600) }))} th={tPort} testidPrefix="case-portfolio" />
         </CaseSection>
       )}
 
@@ -2328,9 +2360,7 @@ function ServiceDetail({ ctx }) {
       {gallery.length > 0 && (
         <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-gallery">
           <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Our work", "Nuestro trabajo")}</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {gallery.map((p, i) => <div key={i} className="rounded-xl overflow-hidden border" style={{ borderColor: th.border }}><img src={photoUrl(p.id, 800)} loading="lazy" alt="" className="w-full object-cover aspect-[4/3]" /></div>)}
-          </div>
+          <PhotoGallery items={gallery.map((p) => ({ thumb: photoUrl(p.id, 800), full: photoUrl(p.id, 1600) }))} th={th} cols="grid-cols-2 sm:grid-cols-3" square={false} testidPrefix="service-gallery-img" />
         </section>
       )}
       {others.length > 0 && (

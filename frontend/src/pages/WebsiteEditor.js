@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, Bot, FileText, CalendarClock, Instagram, Star, Users } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
@@ -1334,6 +1334,8 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const removeCaseCover = async (i) => { const n = [...cases]; n[i] = { ...n[i], cover: "" }; setCases(n); await save({ case_studies: n }); };
   const updSolCard = (i, ci, k, v) => { const cards = [...(cases[i].solution_cards || [])]; while (cards.length < 3) cards.push({ title: "", desc: "" }); cards[ci] = { ...cards[ci], [k]: v }; updCase(i, "solution_cards", cards); };
   const setCaseColor = (key, val) => patch({ case_colors: { ...(w?.case_colors || {}), [key]: val } });
+  const [openCase, setOpenCase] = useState(0);
+  const moveCase = (i, dir) => { const j = i + dir; if (j < 0 || j >= cases.length) return; const n = [...cases]; [n[i], n[j]] = [n[j], n[i]]; setCases(n); setOpenCase(j); };
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
   const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
   const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
@@ -1462,23 +1464,46 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       {/* CASE STUDIES */}
       {sub === "cases" && (
       <>
+      <Card className="card-elevated border-0 shadow-none p-5" data-testid="case-colors-card">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores por sección (Casos)" : "Section colors (Cases)"}</div>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Asigna el color de fondo de cada sección de la página de detalle del caso." : "Set the background color of each case detail section."}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {[["hero", "#0a1130", isEs ? "Portada" : "Hero"], ["info", "#f8fafc", isEs ? "Info del cliente" : "Client info"], ["challenge", "#ffffff", isEs ? "El reto" : "Challenge"], ["solution", "#f8fafc", isEs ? "La solución" : "Solution"], ["tailored", "#ffffff", isEs ? "Soluciones a la medida" : "Tailored"], ["results", "#0a1130", isEs ? "Resultados" : "Results"], ["portfolio", "#ffffff", isEs ? "Portafolio" : "Portfolio"]].map(([key, def, label]) => (
+            <div key={key} className="flex items-center gap-2">
+              <input type="color" value={(w.case_colors && w.case_colors[key]) || def} onChange={(e) => setCaseColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`casecolor-${key}`} />
+              <span className="text-sm">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Star className="w-4 h-4" /> {L.cases}</div>
         <p className="text-sm text-slate-500 mb-3">{L.casesDesc}</p>
         <div className="space-y-3">
           {cases.map((c, i) => (
-            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`agency-case-${i}`}>
-              <div className="flex items-center gap-2">
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
+            <div key={i} className="rounded-xl border border-slate-200 overflow-hidden" data-testid={`agency-case-${i}`}>
+              <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition" onClick={() => setOpenCase(openCase === i ? -1 : i)} data-testid={`agency-case-toggle-${i}`}>
+                <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
                   {c.cover && <img src={/^https?:\/\//.test(c.cover) ? c.cover : photoSrc(c.cover)} alt="" className="w-full h-full object-cover" />}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate">{c.client || (isEs ? "Caso sin título" : "Untitled case")}</div>
+                  {c.category && <div className="text-xs text-slate-400 truncate">{c.category}</div>}
+                </div>
+                <button type="button" onClick={(e) => { e.stopPropagation(); moveCase(i, -1); }} disabled={i === 0} className="w-7 h-7 rounded-md text-slate-400 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center flex-none" title={isEs ? "Subir" : "Move up"} data-testid={`agency-case-up-${i}`}><ArrowUp className="w-4 h-4" /></button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); moveCase(i, 1); }} disabled={i === cases.length - 1} className="w-7 h-7 rounded-md text-slate-400 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center flex-none" title={isEs ? "Bajar" : "Move down"} data-testid={`agency-case-down-${i}`}><ArrowDown className="w-4 h-4" /></button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); setCases(cases.filter((_, x) => x !== i)); }} className="w-7 h-7 rounded-md text-red-500 hover:bg-red-50 flex items-center justify-center flex-none" title={isEs ? "Eliminar" : "Delete"} data-testid={`agency-case-remove-${i}`}><Trash2 className="w-4 h-4" /></button>
+                <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${openCase === i ? "rotate-180" : ""}`} />
+              </div>
+              {openCase === i && (
+              <div className="p-3 pt-0 space-y-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 pt-2">
                 <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer flex-1" data-testid={`agency-case-cover-${i}`}>
                   <ImagePlus className="w-4 h-4" /> {c.cover ? t("website.changePhoto") : t("website.uploadPhoto")}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadCaseCover(i, e.target.files?.[0])} />
                 </label>
                 {c.cover && <button onClick={() => removeCaseCover(i)} className="text-xs text-slate-400 hover:text-red-500 flex-none" data-testid={`agency-case-cover-del-${i}`}>{t("website.removePhoto")}</button>}
                 <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" disabled={aiBusy === `case-${i}`} onClick={() => aiCase(i)} data-testid={`agency-case-ai-${i}`} title={L.aiWrite}>{aiBusy === `case-${i}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}</Button>
-                <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setCases(cases.filter((_, x) => x !== i))} data-testid={`agency-case-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <Input value={c.client || ""} onChange={(e) => updCase(i, "client", e.target.value)} placeholder={L.client} className="h-9 rounded-lg" data-testid={`agency-case-client-${i}`} />
@@ -1539,22 +1564,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                   <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => uploadCasePhotos(i, e.target.files)} />
                 </label>
               </div>
+              </div>
+              )}
             </div>
           ))}
         </div>
         <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setCases([...cases, { slug: `caso-${cases.length + 1}`, client: "", category: "", cover: "", summary: "", location: "", industry: "", ideal_clients: "", website_url: "", challenge: "", services: [], solution_services: "", solution_strategies: "", solution_cards: [{ title: isEs ? "Diseño Gráfico Personalizado" : "Custom Graphic Design", desc: "" }, { title: isEs ? "Consultoría Estratégica" : "Strategic Consulting", desc: "" }, { title: isEs ? "Producción y Entrega Puntual" : "On-Time Production & Delivery", desc: "" }], result_before: "", result_after: "", results: [], body: "", photos: [] }])} data-testid="agency-case-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
-      </Card>
-      <Card className="card-elevated border-0 shadow-none p-5" data-testid="case-colors-card">
-        <div className="font-semibold mb-1">{isEs ? "Colores por sección (Casos)" : "Section colors (Cases)"}</div>
-        <p className="text-sm text-slate-500 mb-3">{isEs ? "Asigna el color de fondo de cada sección de la página de detalle del caso." : "Set the background color of each case detail section."}</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[["hero", "#0a1130", isEs ? "Portada" : "Hero"], ["info", "#f8fafc", isEs ? "Info del cliente" : "Client info"], ["challenge", "#ffffff", isEs ? "El reto" : "Challenge"], ["solution", "#f8fafc", isEs ? "La solución" : "Solution"], ["tailored", "#ffffff", isEs ? "Soluciones a la medida" : "Tailored"], ["results", "#0a1130", isEs ? "Resultados" : "Results"], ["portfolio", "#ffffff", isEs ? "Portafolio" : "Portfolio"]].map(([key, def, label]) => (
-            <div key={key} className="flex items-center gap-2">
-              <input type="color" value={(w.case_colors && w.case_colors[key]) || def} onChange={(e) => setCaseColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`casecolor-${key}`} />
-              <span className="text-sm">{label}</span>
-            </div>
-          ))}
-        </div>
       </Card>
       </>
       )}
