@@ -532,7 +532,7 @@ export default function WebsiteEditor() {
         <div className="font-semibold mb-1">{t("website.secColors")}</div>
         <p className="text-sm text-slate-500 mb-3">{t("website.secColorsDesc")}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["logos","#ffffff"],["map","#f8fafc"],["process","#0a1130"],["reviews","#f8fafc"],["cta",(w.accent_color||"#22D3EE")],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => (
+          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["logos","#ffffff"],["map","#f8fafc"],["process","#0a1130"],["reviews","#f8fafc"],["cta",(w.accent_color||"#22D3EE")],["faq","#f8fafc"],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => (
             <div key={key} className="flex items-center gap-2">
               <input type="color" value={(w.section_colors && w.section_colors[key]) || def} onChange={(e) => setSecColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`seccolor-${key}`} />
               <span className="text-sm capitalize">{t(`website.sec.${key === "process" ? "how" : key}`) || key}</span>

@@ -2232,12 +2232,15 @@ function Agency({ ctx }) {
   const reviews = (Array.isArray(ctx.data?.reviews) ? ctx.data.reviews : []).filter((r) => (r.text || "").trim());
   const phone = w.cta_phone || b?.phone;
   const aboutText = (w.subheadline || w.about || "").trim();
+  const footerLogo = photoUrl(b?.logo_photo_id, 220);
+  const footerSocials = [b?.facebook && [Facebook, b.facebook], b?.instagram && [Instagram, b.instagram]].filter(Boolean);
+  const footerHours = w.hours || ctx.data?.hours || "";
   const [scr, setScr] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 30); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
   const sc = w.section_colors || {};
-  const DEF = { hero: "#0a1130", services: "#ffffff", samples: "#f8fafc", logos: "#ffffff", map: "#f8fafc", process: "#0a1130", reviews: "#f8fafc", cta: accent, contact: "#ffffff", footer: "#0a1130" };
+  const DEF = { hero: "#0a1130", services: "#ffffff", samples: "#f8fafc", logos: "#ffffff", map: "#f8fafc", process: "#0a1130", reviews: "#f8fafc", cta: accent, faq: "#f8fafc", contact: "#ffffff", footer: "#0a1130" };
   const S = (k) => { const bg = sc[k] || DEF[k]; const light = isLight(bg); return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", pill: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.08)" }; };
-  const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), FO = S("footer"), RV = S("reviews");
+  const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), FO = S("footer"), RV = S("reviews"), FQ = S("faq");
   const navLinks = [
     services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
     (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
@@ -2374,14 +2377,14 @@ function Agency({ ctx }) {
 
       {/* FAQ */}
       {faqs.length > 0 && sec.faq !== false && (
-        <section className="py-16 md:py-20" style={{ background: CO.bg }}>
+        <section className="py-16 md:py-20" style={{ background: FQ.bg }}>
           <div className="max-w-3xl mx-auto px-5">
-            <h2 className="wh text-3xl md:text-4xl text-center mb-8" style={{ color: CO.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
+            <h2 className="wh text-3xl md:text-4xl text-center mb-8" style={{ color: FQ.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
             <div className="space-y-3">
               {faqs.map((f, i) => (
-                <details key={i} className="group rounded-xl border p-4" style={{ background: CO.card, borderColor: CO.cardBorder }}>
-                  <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none" style={{ color: CO.ink }}>{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
-                  {f.a && <p className="mt-3 text-sm leading-relaxed" style={{ color: CO.muted }}>{f.a}</p>}
+                <details key={i} className="group rounded-xl border p-4" style={{ background: FQ.card, borderColor: FQ.cardBorder }}>
+                  <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none" style={{ color: FQ.ink }}>{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
+                  {f.a && <p className="mt-3 text-sm leading-relaxed" style={{ color: FQ.muted }}>{f.a}</p>}
                 </details>
               ))}
             </div>
@@ -2406,8 +2409,44 @@ function Agency({ ctx }) {
         </div>
       </section>
 
-      <footer className="border-t py-8 text-center text-xs" style={{ background: FO.bg, color: FO.muted, borderColor: FO.cardBorder }}>
-        © {new Date().getFullYear()} {b?.name || w.headline}{phone ? ` · ${phone}` : ""}
+      <footer className="relative overflow-hidden border-t" style={{ background: FO.bg, color: FO.ink, borderColor: FO.cardBorder }} data-testid="agency-footer">
+        <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ background: accent }} />
+        <div className="max-w-6xl mx-auto px-5 pt-14 pb-10 relative grid md:grid-cols-3 gap-10 md:gap-12">
+          <div>
+            {footerLogo ? <img src={footerLogo} alt={b?.name || ""} className="h-16 md:h-20 w-auto object-contain" /> : <div className="wh font-black text-2xl md:text-3xl" style={{ color: FO.ink }}>{b?.name || w.headline}</div>}
+            {aboutText && <p className="mt-5 text-sm leading-relaxed max-w-sm line-clamp-3" style={{ color: FO.muted }}>{aboutText}</p>}
+            {footerSocials.length > 0 && (
+              <div className="mt-5 flex gap-3">
+                {footerSocials.map(([Icon, href], i) => (
+                  <a key={i} href={href} target="_blank" rel="noreferrer" data-testid={`agency-footer-social-${i}`} className="w-9 h-9 rounded-full flex items-center justify-center border transition hover:opacity-80" style={{ borderColor: FO.cardBorder, color: FO.muted }}><Icon className="w-4 h-4" /></a>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Contact", "Contacto")}</div>
+            <ul className="space-y-3.5 text-sm" style={{ color: FO.muted }}>
+              {b?.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
+              {phone && <li><a href={`tel:${phone}`} data-testid="agency-footer-phone" className="flex gap-3 hover:opacity-80"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{phone}</span></a></li>}
+              {b?.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:opacity-80 break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
+              {footerHours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{footerHours}</span></li>}
+            </ul>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.25em] mb-5" style={{ color: accent }}>{agT(lang, "Navigate", "Navegación")}</div>
+            <ul className="space-y-3">
+              {navLinks.map(([href, label], i) => <li key={i}><a href={href} data-testid={`agency-footer-link-${i}`} className="text-sm font-semibold hover:opacity-80" style={{ color: FO.muted }}>{label}</a></li>)}
+              {(w.about_story || "").trim() && <li><a href={ctx.pageHref("nosotros")} className="text-sm font-semibold hover:opacity-80" style={{ color: FO.muted }}>{agT(lang, "About us", "Nosotros")}</a></li>}
+            </ul>
+          </div>
+        </div>
+        <div className="border-t relative" style={{ borderColor: FO.cardBorder }}>
+          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-wrap justify-between items-center gap-3 text-xs" style={{ color: FO.muted }}>
+            <span>© {new Date().getFullYear()} {b?.name || w.headline}. {agT(lang, "All rights reserved.", "Todos los derechos reservados.")}</span>
+            {areas.length > 0 && <span className="uppercase tracking-widest" style={{ opacity: 0.7 }}>{areas.slice(0, 3).join(" • ")}</span>}
+            <span style={{ opacity: 0.7 }}>{agT(lang, "Powered by UniTech", "Hecho con UniTech")}</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
