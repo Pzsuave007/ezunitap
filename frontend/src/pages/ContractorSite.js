@@ -2046,12 +2046,15 @@ function SubHero({ ctx, kicker, title, sub }) {
 }
 
 function CaseCTA({ ctx }) {
-  const { th, accent, accentText, lang } = ctx;
+  const { th, lang } = ctx;
   return (
-    <section className="py-16 md:py-20 border-t text-center" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }}>
-      <div className="max-w-2xl mx-auto px-5">
+    <section id="contact" className="py-16 md:py-20 border-t" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="case-cta">
+      <div className="max-w-2xl mx-auto px-5 text-center">
         <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Ready to be our next success story?", "¿Listo para ser nuestro próximo caso de éxito?")}</h2>
-        <button onClick={ctx.goContact} data-testid="case-cta-btn" className="mt-6 inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta}<ArrowRight className="w-5 h-5" /></button>
+        <p className="mt-3" style={{ color: th.muted }}>{agT(lang, "Tell us about your project and we'll get back to you shortly.", "Cuéntanos sobre tu proyecto y te contactaremos muy pronto.")}</p>
+      </div>
+      <div className="max-w-xl mx-auto px-5 mt-8">
+        <LeadForm ctx={ctx} />
       </div>
     </section>
   );
