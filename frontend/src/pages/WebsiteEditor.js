@@ -1305,6 +1305,22 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const setValues = (arr) => patch({ about_values: arr });
   const setTeam = (arr) => patch({ team: arr });
   const updCase = (i, k, v) => { const n = [...cases]; n[i] = { ...n[i], [k]: v }; setCases(n); };
+  const uploadCaseCover = async (i, file) => {
+    if (!file) return;
+    try { const id = await onUpload(file); const n = [...cases]; n[i] = { ...n[i], cover: id }; setCases(n); await save({ case_studies: n }); }
+    catch { toast.error(t("website.saveError")); }
+  };
+  const uploadCasePhotos = async (i, files) => {
+    const list = Array.from(files || []).slice(0, 12);
+    if (!list.length) return;
+    try {
+      const ids = [];
+      for (const f of list) { const id = await onUpload(f); if (id) ids.push(id); }
+      const n = [...cases]; n[i] = { ...n[i], photos: [...(n[i].photos || []), ...ids] }; setCases(n); await save({ case_studies: n });
+    } catch { toast.error(t("website.saveError")); }
+  };
+  const removeCasePhoto = async (i, pi) => { const n = [...cases]; n[i] = { ...n[i], photos: (n[i].photos || []).filter((_, x) => x !== pi) }; setCases(n); await save({ case_studies: n }); };
+  const removeCaseCover = async (i) => { const n = [...cases]; n[i] = { ...n[i], cover: "" }; setCases(n); await save({ case_studies: n }); };
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
   const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
   const doImport = async () => { await save({ ...UNI2_DEFAULTS }); toast.success(L.importDone); };
@@ -1442,7 +1458,11 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
                   {c.cover && <img src={/^https?:\/\//.test(c.cover) ? c.cover : photoSrc(c.cover)} alt="" className="w-full h-full object-cover" />}
                 </div>
-                <Input value={c.cover || ""} onChange={(e) => updCase(i, "cover", e.target.value)} placeholder={L.img} className="h-9 rounded-lg" data-testid={`agency-case-cover-${i}`} />
+                <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer flex-1" data-testid={`agency-case-cover-${i}`}>
+                  <ImagePlus className="w-4 h-4" /> {c.cover ? t("website.changePhoto") : t("website.uploadPhoto")}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadCaseCover(i, e.target.files?.[0])} />
+                </label>
+                {c.cover && <button onClick={() => removeCaseCover(i)} className="text-xs text-slate-400 hover:text-red-500 flex-none" data-testid={`agency-case-cover-del-${i}`}>{t("website.removePhoto")}</button>}
                 <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" disabled={aiBusy === `case-${i}`} onClick={() => aiCase(i)} data-testid={`agency-case-ai-${i}`} title={L.aiWrite}>{aiBusy === `case-${i}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}</Button>
                 <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setCases(cases.filter((_, x) => x !== i))} data-testid={`agency-case-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
               </div>
@@ -1457,16 +1477,20 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
               <Textarea value={c.body || ""} onChange={(e) => updCase(i, "body", e.target.value)} placeholder={L.body} className="rounded-lg min-h-[80px]" />
               <div>
                 <div className="text-xs font-semibold text-slate-500 mb-1">{L.gallery}</div>
-                <div className="space-y-1">
-                  {(Array.isArray(c.photos) ? c.photos : []).map((ph, pi) => (
-                    <div key={pi} className="flex items-center gap-2" data-testid={`agency-case-${i}-photo-${pi}`}>
-                      <div className="w-10 h-10 rounded overflow-hidden bg-slate-100 border border-slate-200 flex-none">{ph && <img src={/^https?:\/\//.test(ph) ? ph : photoSrc(ph)} alt="" className="w-full h-full object-cover" />}</div>
-                      <Input value={ph} onChange={(e) => { const ph2 = [...(c.photos || [])]; ph2[pi] = e.target.value; updCase(i, "photos", ph2); }} placeholder={L.img} className="h-8 rounded-lg text-xs" />
-                      <Button variant="ghost" size="sm" className="rounded-lg h-8 flex-none text-red-500" onClick={() => updCase(i, "photos", (c.photos || []).filter((_, x) => x !== pi))}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" size="sm" className="rounded-lg h-7 mt-1 text-xs" onClick={() => updCase(i, "photos", [...(c.photos || []), ""])} data-testid={`agency-case-${i}-photo-add`}><Plus className="w-3 h-3 mr-1" /> {L.add}</Button>
+                {(Array.isArray(c.photos) ? c.photos : []).length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {c.photos.map((ph, pi) => (
+                      <div key={pi} className="relative group rounded-lg overflow-hidden border border-slate-200 aspect-square bg-slate-100" data-testid={`agency-case-${i}-photo-${pi}`}>
+                        {ph && <img src={/^https?:\/\//.test(ph) ? ph : photoSrc(ph)} alt="" className="w-full h-full object-cover" />}
+                        <button onClick={() => removeCasePhoto(i, pi)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition" data-testid={`agency-case-${i}-photo-del-${pi}`}><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 cursor-pointer mt-2" data-testid={`agency-case-${i}-photo-add`}>
+                  <ImagePlus className="w-3.5 h-3.5" /> {t("website.addWorkPhotos")}
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => uploadCasePhotos(i, e.target.files)} />
+                </label>
               </div>
             </div>
           ))}
