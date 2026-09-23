@@ -537,6 +537,23 @@
     fab.id = "unitech-chat-fab";
     document.body.appendChild(fab);
 
+    // On phones the bottom-corner launcher tends to sit on top of the site's
+    // bottom CTA buttons. Dock it to the vertical middle of the screen edge so
+    // it "peeks" from the side without covering anything important.
+    if (!document.getElementById("unitech-chat-fab-mq")) {
+      var mq = document.createElement("style");
+      mq.id = "unitech-chat-fab-mq";
+      var edge = side; // "right" | "left"
+      mq.textContent =
+        "@media (max-width:640px){#unitech-chat-fab{bottom:auto!important;top:50%!important;" +
+        "transform:translateY(-50%)!important;" + edge + ":0!important;" +
+        (edge === "left"
+          ? "border-top-left-radius:0!important;border-bottom-left-radius:0!important;"
+          : "border-top-right-radius:0!important;border-bottom-right-radius:0!important;") +
+        "box-shadow:0 6px 22px rgba(0,0,0,0.30)!important;}}";
+      document.head.appendChild(mq);
+    }
+
     var panelCss = {
       position: "fixed", bottom: "20px", zIndex: "2147483001",
       width: "360px", maxWidth: "calc(100vw - 32px)", height: "520px",
