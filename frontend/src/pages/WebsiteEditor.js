@@ -800,6 +800,16 @@ export default function WebsiteEditor() {
                 <Label>{isEs ? "Nombre del asistente" : "Assistant name"}</Label>
                 <Input value={w.chat_bot_name || ""} onChange={(e) => patch({ chat_bot_name: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder={isEs ? "Ej: Jorge Bot" : "e.g. Jorge Bot"} data-testid="website-chat-botname" />
               </div>
+              <div className="sm:col-span-2">
+                <Label>{isEs ? "Mensaje de bienvenida (Español)" : "Welcome message (Spanish)"}</Label>
+                <textarea value={w.chat_greeting_es || ""} onChange={(e) => patch({ chat_greeting_es: e.target.value })} onBlur={saveAndToast} rows={2} className="w-full rounded-xl mt-1.5 border border-slate-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={isEs ? "¡Hola! 👋 ¿En qué puedo ayudarte hoy?" : "¡Hola! 👋 ¿En qué puedo ayudarte hoy?"} data-testid="website-chat-greeting-es" />
+                <p className="text-xs text-slate-400 mt-1">{isEs ? "Primer mensaje que ven los visitantes en el sitio en español. Déjalo vacío para usar el predeterminado." : "First message visitors see on the Spanish site. Leave empty to use the default."}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <Label>{isEs ? "Mensaje de bienvenida (Inglés)" : "Welcome message (English)"}</Label>
+                <textarea value={w.chat_greeting_en || ""} onChange={(e) => patch({ chat_greeting_en: e.target.value })} onBlur={saveAndToast} rows={2} className="w-full rounded-xl mt-1.5 border border-slate-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={"Hi! 👋 How can I help you today?"} data-testid="website-chat-greeting-en" />
+                <p className="text-xs text-slate-400 mt-1">{isEs ? "Primer mensaje que ven los visitantes en el sitio en inglés. Déjalo vacío para usar el predeterminado." : "First message visitors see on the English site. Leave empty to use the default."}</p>
+              </div>
               <div>
                 <Label>{isEs ? "Foto del asistente" : "Assistant photo"}</Label>
                 <div className="flex items-center gap-3 mt-1.5">
@@ -1155,8 +1165,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections };
 }
 
 function BaSlot({ label, id, onClick, testid }) {

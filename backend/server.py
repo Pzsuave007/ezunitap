@@ -4464,6 +4464,8 @@ class WebsiteIn(BaseModel):
     chat_position: Optional[str] = None        # "right" | "left"
     chat_bot_name: Optional[str] = None        # personalized chat bot name (e.g. "Jorge Bot")
     chat_bot_avatar: Optional[str] = None       # photo id for the chat bot avatar
+    chat_greeting_es: Optional[str] = None      # custom first (welcome) message shown in Spanish
+    chat_greeting_en: Optional[str] = None      # custom first (welcome) message shown in English
     before_after: Optional[list] = None        # [{before: photo_id, after: photo_id}] for the slider template
     team_photo_id: Optional[str] = None         # (legacy) main About photo
     about_photo_ids: Optional[list] = None       # up to 4 photos for the About collage
@@ -6367,6 +6369,8 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
             "position": w.get("chat_position") or "right",
             "bot_name": w.get("chat_bot_name") or "",
             "bot_avatar_id": w.get("chat_bot_avatar") or "",
+            "greeting_es": w.get("chat_greeting_es") or "",
+            "greeting_en": w.get("chat_greeting_en") or "",
         },
     }
 

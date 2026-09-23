@@ -142,6 +142,8 @@ export default function ContractorSite({ injected, page, byDomain }) {
     if (ww.chat_launcher) s.setAttribute("data-launcher", ww.chat_launcher);
     if (ww.chat_bot_name) s.setAttribute("data-bot-name", ww.chat_bot_name);
     if (ww.chat_bot_avatar) s.setAttribute("data-bot-avatar", `${API}/public/card/photo/${ww.chat_bot_avatar}`);
+    const chatGreeting = lang === "es" ? ww.chat_greeting_es : ww.chat_greeting_en;
+    if (chatGreeting) s.setAttribute("data-greeting", chatGreeting);
     document.body.appendChild(s);
     return () => {
       document.body.removeChild(s);

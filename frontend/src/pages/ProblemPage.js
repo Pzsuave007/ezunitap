@@ -119,6 +119,8 @@ export default function ProblemPage({ injected, byDomain }) {
     if (chat.launcher) sc.setAttribute("data-launcher", chat.launcher);
     if (chat.bot_name) sc.setAttribute("data-bot-name", chat.bot_name);
     if (chat.bot_avatar_id) sc.setAttribute("data-bot-avatar", `${API}/public/card/photo/${chat.bot_avatar_id}`);
+    const chatGreeting = lang === "es" ? chat.greeting_es : chat.greeting_en;
+    if (chatGreeting) sc.setAttribute("data-greeting", chatGreeting);
     document.body.appendChild(sc);
     return () => {
       try { document.body.removeChild(sc); } catch (e) { /* noop */ }

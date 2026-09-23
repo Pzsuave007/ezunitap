@@ -174,3 +174,11 @@ Every active service can now become a dedicated customer-problem landing page (B
 - server.py: WebsiteIn admite chat_bot_name y chat_bot_avatar. _problem_page_payload devuelve objeto "chat" {enabled, launcher, position, bot_name, bot_avatar_id}.
 - WebsiteEditor.js: en la sección de chat IA se agregaron campos "Nombre del asistente" y "Foto del asistente" (con subida y quitar). isEs definido en el scope principal.
 - Verificado en preview: Página Cliente en español muestra el FAB con foto y el panel con "Jorge Bot" + avatar.
+
+## 2026-06-23 — Mensaje de bienvenida del chatbot personalizable (bilingüe)
+- Antes el primer mensaje del widget estaba fijo en embed.js (t.chatGreeting). Ahora es editable por idioma.
+- server.py: WebsiteUpdate admite chat_greeting_es y chat_greeting_en. _problem_page_payload (chat config) devuelve greeting_es y greeting_en. _website_payload ya devolvía el doc completo.
+- embed.js: nueva opción data-greeting; la burbuja inicial usa o.greeting || t.chatGreeting.
+- ContractorSite.js y ProblemPage.js: pasan data-greeting según el idioma actual (ES→chat_greeting_es, EN→chat_greeting_en).
+- WebsiteEditor.js: sección chat IA con dos textareas "Mensaje de bienvenida (Español/Inglés)" + agregados a la lista de campos guardados (pickWebsite).
+- Verificado en preview: sitio ES muestra el saludo en español, sitio EN el saludo en inglés; backend guarda y sirve OK. Build regenerado y trackeado.

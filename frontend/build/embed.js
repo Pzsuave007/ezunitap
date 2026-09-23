@@ -140,6 +140,7 @@
       launcher: a("data-launcher", ""),
       botName: a("data-bot-name", ""),
       botAvatar: a("data-bot-avatar", ""),
+      greeting: a("data-greeting", ""),
     };
   }
 
@@ -595,7 +596,7 @@
     inputBar.appendChild(input); inputBar.appendChild(sendB);
     panel.appendChild(inputBar);
 
-    bubble(t.chatGreeting, "bot");
+    bubble(o.greeting || t.chatGreeting, "bot");
 
     var busy = false;
     function send() {
