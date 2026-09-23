@@ -4462,6 +4462,8 @@ class WebsiteIn(BaseModel):
     chat_enabled: Optional[bool] = None       # show UniTech AI chat widget on the site
     chat_launcher: Optional[str] = None        # optional chat button text
     chat_position: Optional[str] = None        # "right" | "left"
+    chat_bot_name: Optional[str] = None        # personalized chat bot name (e.g. "Jorge Bot")
+    chat_bot_avatar: Optional[str] = None       # photo id for the chat bot avatar
     before_after: Optional[list] = None        # [{before: photo_id, after: photo_id}] for the slider template
     team_photo_id: Optional[str] = None         # (legacy) main About photo
     about_photo_ids: Optional[list] = None       # up to 4 photos for the About collage
@@ -6359,6 +6361,13 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
         "trust_badges": badges,
         "website_slug": w["slug"],
         "website_path": f"/sitio/{w['slug']}",
+        "chat": {
+            "enabled": bool(w.get("chat_enabled")),
+            "launcher": w.get("chat_launcher") or "",
+            "position": w.get("chat_position") or "right",
+            "bot_name": w.get("chat_bot_name") or "",
+            "bot_avatar_id": w.get("chat_bot_avatar") or "",
+        },
     }
 
 

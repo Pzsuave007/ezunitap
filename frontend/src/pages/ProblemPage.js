@@ -104,6 +104,28 @@ export default function ProblemPage({ injected, byDomain }) {
     s.textContent = JSON.stringify(ld);
   }, [data, lang]); // eslint-disable-line
 
+  // AI chat widget — same as the main site, so it shows on every Client Page too.
+  useEffect(() => {
+    const chat = data?.chat;
+    if (!chat?.enabled || !data?.card_slug) return;
+    const sc = document.createElement("script");
+    sc.src = `${window.location.origin}/embed.js`;
+    sc.async = true;
+    sc.setAttribute("data-unitech-chat", "");
+    sc.setAttribute("data-slug", data.card_slug);
+    sc.setAttribute("data-lang", lang === "es" ? "es" : "en");
+    sc.setAttribute("data-accent", data.theme?.accent || "#2563EB");
+    if (chat.position === "left") sc.setAttribute("data-position", "left");
+    if (chat.launcher) sc.setAttribute("data-launcher", chat.launcher);
+    if (chat.bot_name) sc.setAttribute("data-bot-name", chat.bot_name);
+    if (chat.bot_avatar_id) sc.setAttribute("data-bot-avatar", `${API}/public/card/photo/${chat.bot_avatar_id}`);
+    document.body.appendChild(sc);
+    return () => {
+      try { document.body.removeChild(sc); } catch (e) { /* noop */ }
+      document.querySelectorAll("[data-unitech-widget],#unitech-chat-root,.unitech-chat-launcher,#unitech-chat-fab").forEach((n) => n.remove());
+    };
+  }, [data, lang]);
+
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">{tt("Page not available.", "Página no disponible.")}</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 

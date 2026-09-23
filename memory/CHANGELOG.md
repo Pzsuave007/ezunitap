@@ -166,3 +166,11 @@ Every active service can now become a dedicated customer-problem landing page (B
 
 ## Jun 2026 — Uploaders en TODOS los campos de foto del editor Agency
 - Auditoría completa del AgencyPanel. Faltaba botón de subir en: (1) Logos de clientes (client_logos) y (2) Fotos del equipo (team[].photo) — solo tenían input de URL. Se agregó botón ImagePlus con <input type=file> que sube vía onUpload y guarda inmediatamente (client_logos / team). Los demás ya tenían upload: hero/about/why/band (PhotoField), servicios, cover de casos, galería de casos, imágenes de about_sections, samples/showcase, before/after (picker).
+
+## Jun 2026 — Chat en todas las páginas + personalización (nombre + foto del bot)
+- ProblemPage.js: ahora inyecta el widget de chat (mismo /embed.js) usando data.chat del payload → el chat aparece también en las Páginas Cliente, no solo en el sitio principal. Usa el idioma actual.
+- ContractorSite.js: pasa data-bot-name y data-bot-avatar; data-lang ahora usa el idioma actual (antes hardcode "en"); dep [data, lang].
+- embed.js: nuevas opciones data-bot-name y data-bot-avatar. El lanzador (FAB) usa la foto del bot; el header muestra avatar + nombre; las burbujas del bot muestran el avatar.
+- server.py: WebsiteIn admite chat_bot_name y chat_bot_avatar. _problem_page_payload devuelve objeto "chat" {enabled, launcher, position, bot_name, bot_avatar_id}.
+- WebsiteEditor.js: en la sección de chat IA se agregaron campos "Nombre del asistente" y "Foto del asistente" (con subida y quitar). isEs definido en el scope principal.
+- Verificado en preview: Página Cliente en español muestra el FAB con foto y el panel con "Jorge Bot" + avatar.

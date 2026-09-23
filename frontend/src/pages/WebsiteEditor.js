@@ -36,6 +36,7 @@ const photoSrc = (id) => `${process.env.REACT_APP_BACKEND_URL}/api/public/card/p
 
 export default function WebsiteEditor() {
   const { t } = useTranslation();
+  const isEs = t("website.tab.agency") === "Agencia";
   const [w, setW] = useState(null);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -795,6 +796,24 @@ export default function WebsiteEditor() {
                   ))}
                 </div>
               </div>
+              <div>
+                <Label>{isEs ? "Nombre del asistente" : "Assistant name"}</Label>
+                <Input value={w.chat_bot_name || ""} onChange={(e) => patch({ chat_bot_name: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder={isEs ? "Ej: Jorge Bot" : "e.g. Jorge Bot"} data-testid="website-chat-botname" />
+              </div>
+              <div>
+                <Label>{isEs ? "Foto del asistente" : "Assistant photo"}</Label>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-none flex items-center justify-center">
+                    {w.chat_bot_avatar ? <img src={photoSrc(w.chat_bot_avatar)} alt="" className="w-full h-full object-cover" /> : <Bot className="w-5 h-5 text-slate-400" />}
+                  </div>
+                  <label className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 text-sm font-semibold" data-testid="website-chat-avatar-upload">
+                    <ImagePlus className="w-4 h-4" /> {isEs ? "Subir foto" : "Upload photo"}
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const id = await uploadPhoto(f); save({ chat_bot_avatar: id }); } catch { toast.error(t("website.saveError")); } e.target.value = ""; }} />
+                  </label>
+                  {w.chat_bot_avatar && <button onClick={() => save({ chat_bot_avatar: "" })} className="text-red-500 text-sm font-semibold" data-testid="website-chat-avatar-remove">{isEs ? "Quitar" : "Remove"}</button>}
+                </div>
+              </div>
+
             </div>
           )}
         </div>

@@ -136,16 +136,18 @@ export default function ContractorSite({ injected, page, byDomain }) {
     s.async = true;
     s.setAttribute("data-unitech-chat", "");
     s.setAttribute("data-slug", data.card_slug);
-    s.setAttribute("data-lang", "en");
+    s.setAttribute("data-lang", lang === "es" ? "es" : "en");
     s.setAttribute("data-accent", ww.accent_color || "#2563EB");
     if (ww.chat_position === "left") s.setAttribute("data-position", "left");
     if (ww.chat_launcher) s.setAttribute("data-launcher", ww.chat_launcher);
+    if (ww.chat_bot_name) s.setAttribute("data-bot-name", ww.chat_bot_name);
+    if (ww.chat_bot_avatar) s.setAttribute("data-bot-avatar", `${API}/public/card/photo/${ww.chat_bot_avatar}`);
     document.body.appendChild(s);
     return () => {
       document.body.removeChild(s);
-      document.querySelectorAll("[data-unitech-widget],#unitech-chat-root,.unitech-chat-launcher").forEach((n) => n.remove());
+      document.querySelectorAll("[data-unitech-widget],#unitech-chat-root,.unitech-chat-launcher,#unitech-chat-fab").forEach((n) => n.remove());
     };
-  }, [data]);
+  }, [data, lang]);
 
   useEffect(() => {
     if (!data) return;

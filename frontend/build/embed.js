@@ -138,6 +138,8 @@
       branding: (a("data-branding", "on") || "on").toLowerCase() !== "off",
       position: (a("data-position", "right") || "right").toLowerCase() === "left" ? "left" : "right",
       launcher: a("data-launcher", ""),
+      botName: a("data-bot-name", ""),
+      botAvatar: a("data-bot-avatar", ""),
     };
   }
 
@@ -513,9 +515,19 @@
     if (o.launcher) {
       fab = mk("button", fabBase);
       st(fab, { height: "54px", borderRadius: "27px", padding: "0 20px 0 16px", fontSize: "15px", gap: "8px" });
-      var ic = mk("span", { fontSize: "20px" }); ic.innerHTML = "&#128172;";
+      if (o.botAvatar) {
+        var av0 = mk("img", { width: "34px", height: "34px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.85)" }, { src: o.botAvatar, alt: "" });
+        fab.appendChild(av0);
+      } else {
+        var ic = mk("span", { fontSize: "20px" }); ic.innerHTML = "&#128172;"; fab.appendChild(ic);
+      }
       var lb = mk("span", {}); lb.textContent = o.launcher;
-      fab.appendChild(ic); fab.appendChild(lb);
+      fab.appendChild(lb);
+    } else if (o.botAvatar) {
+      fab = mk("button", fabBase);
+      st(fab, { width: "62px", height: "62px", borderRadius: "50%", padding: "0", overflow: "hidden" });
+      var av1 = mk("img", { width: "100%", height: "100%", objectFit: "cover" }, { src: o.botAvatar, alt: "" });
+      fab.appendChild(av1);
     } else {
       fab = mk("button", fabBase);
       st(fab, { width: "60px", height: "60px", borderRadius: "50%", fontSize: "26px" });
@@ -536,11 +548,17 @@
     document.body.appendChild(panel);
 
     var head = mk("div", { background: accent, color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" });
-    var headTitle = mk("div", { fontWeight: "800", fontSize: "15px" });
-    headTitle.textContent = o.title || t.chatTitle;
-    var closeBtn = mk("button", { background: "transparent", border: "none", color: "#fff", fontSize: "22px", cursor: "pointer", lineHeight: "1" });
+    var headLeft = mk("div", { display: "flex", alignItems: "center", gap: "9px", minWidth: "0" });
+    if (o.botAvatar) {
+      var hav = mk("img", { width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.7)", flex: "none" }, { src: o.botAvatar, alt: "" });
+      headLeft.appendChild(hav);
+    }
+    var headTitle = mk("div", { fontWeight: "800", fontSize: "15px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" });
+    headTitle.textContent = o.botName || o.title || t.chatTitle;
+    headLeft.appendChild(headTitle);
+    var closeBtn = mk("button", { background: "transparent", border: "none", color: "#fff", fontSize: "22px", cursor: "pointer", lineHeight: "1", flex: "none" });
     closeBtn.innerHTML = "&times;";
-    head.appendChild(headTitle); head.appendChild(closeBtn);
+    head.appendChild(headLeft); head.appendChild(closeBtn);
     panel.appendChild(head);
 
     var msgs = mk("div", { flex: "1", overflowY: "auto", padding: "14px", background: pal.msgsBg, display: "flex", flexDirection: "column", gap: "8px" });
@@ -556,6 +574,15 @@
         border: who === "user" ? "none" : "1px solid " + pal.botBorder,
       });
       b.textContent = text;
+      if (who === "bot" && o.botAvatar) {
+        var row = mk("div", { display: "flex", alignItems: "flex-end", gap: "6px", alignSelf: "flex-start", maxWidth: "90%" });
+        var av = mk("img", { width: "26px", height: "26px", borderRadius: "50%", objectFit: "cover", flex: "none" }, { src: o.botAvatar, alt: "" });
+        st(b, { maxWidth: "100%" });
+        row.appendChild(av); row.appendChild(b);
+        msgs.appendChild(row);
+        msgs.scrollTop = msgs.scrollHeight;
+        return b;
+      }
       msgs.appendChild(b);
       msgs.scrollTop = msgs.scrollHeight;
       return b;
