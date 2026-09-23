@@ -151,6 +151,17 @@ export default function WebsiteEditor() {
   };
 
   const [translatingEn, setTranslatingEn] = useState(false);
+  const [localizing, setLocalizing] = useState(false);
+  const localizeImages = async () => {
+    setLocalizing(true);
+    try {
+      const { data } = await api.post("/website/localize-images");
+      if (data.failed_count > 0) toast.warning(`Guardadas ${data.migrated}. No se pudieron descargar ${data.failed_count} (la fuente ya no existe).`);
+      else toast.success(`Listo: ${data.migrated} imágenes guardadas localmente.`);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setLocalizing(false); }
+  };
   const [importingMedia, setImportingMedia] = useState(false);
   const importMedia = async () => {
     setImportingMedia(true);
@@ -488,6 +499,10 @@ export default function WebsiteEditor() {
               <Button onClick={translateEn} disabled={translatingEn} variant="outline" data-testid="website-translate-en"
                 className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0">
                 {translatingEn ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🇺🇸 {t("website.transEnBtn")}</>}
+              </Button>
+              <Button onClick={localizeImages} disabled={localizing} variant="outline" data-testid="website-localize-images"
+                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0">
+                {localizing ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Guardando imágenes…</> : <>💾 Guardar imágenes localmente</>}
               </Button>
             </div>
           </div>

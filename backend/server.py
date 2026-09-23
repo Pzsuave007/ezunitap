@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import re
+import httpx
 import json
 import logging
 import os
@@ -5070,6 +5072,94 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
     return {"ok": True, "content_es": content_es}
 
 
+_IMG_URL_RE = re.compile(r'^https?://', re.I)
+
+
+async def _download_image(url: str):
+    """Fetch a remote image. Returns (bytes, content_type, ext) or None if it is
+    not a real image (e.g. an SPA HTML page returned by a moved domain)."""
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=25) as client:
+            r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            return None
+        ct = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
+        if not ct.startswith("image/"):
+            return None
+        data = r.content
+        if not data or len(data) > MAX_IMAGE_BYTES:
+            return None
+        ext = {"image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
+               "image/webp": "webp", "image/gif": "gif"}.get(ct, "png")
+        return data, ct, ext
+    except Exception:
+        return None
+
+
+async def _localize_images_in_obj(obj, user_id: str, cache: dict, stats: dict):
+    """Recursively walk a dict/list; for every http(s) image URL string, download
+    it, store it locally and replace the URL with the new local photo id."""
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            if isinstance(v, str) and _IMG_URL_RE.match(v) and re.search(r'\.(jpe?g|png|webp|gif)(\?|$)', v, re.I) and "/api/public/card/photo/" not in v:
+                obj[k] = await _swap_url(v, user_id, cache, stats)
+            else:
+                await _localize_images_in_obj(v, user_id, cache, stats)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            if isinstance(v, str) and _IMG_URL_RE.match(v) and re.search(r'\.(jpe?g|png|webp|gif)(\?|$)', v, re.I) and "/api/public/card/photo/" not in v:
+                obj[i] = await _swap_url(v, user_id, cache, stats)
+            else:
+                await _localize_images_in_obj(v, user_id, cache, stats)
+
+
+async def _swap_url(url: str, user_id: str, cache: dict, stats: dict):
+    if url in cache:
+        return cache[url]
+    dl = await _download_image(url)
+    if not dl:
+        stats["failed"].append(url)
+        return url  # keep original if unreachable / not an image
+    data, ct, ext = dl
+    try:
+        asset_id = await _store_card_photo(user_id, data, ct, "website", ext)
+        cache[url] = asset_id
+        stats["migrated"] += 1
+        return asset_id
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"localize image store failed for {url}: {e!r}")
+        stats["failed"].append(url)
+        return url
+
+
+@api_router.post("/website/localize-images")
+async def website_localize_images(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Download every external image URL used on the site (and its Spanish copy)
+    and store it locally, so the site no longer depends on outside hosts."""
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "No website")
+    cache, stats = {}, {"migrated": 0, "failed": []}
+    fields = ["case_studies", "about_sections", "samples", "team", "services",
+              "showcase", "logos", "content_es", "hero_photo_id", "gallery"]
+    subset = {k: w.get(k) for k in fields if k in w}
+    await _localize_images_in_obj(subset, user_id, cache, stats)
+    # also translate copies inside problem pages
+    await _localize_images_in_obj(subset.get("content_es") or {}, user_id, cache, stats)
+    if stats["migrated"]:
+        await db.websites.update_one({"user_id": user_id}, {"$set": subset})
+    # problem pages photos
+    pps = await db.problem_pages.find({"user_id": user_id}, {"_id": 0, "id": 1, "content": 1, "content_es": 1}).to_list(500)
+    for pp in pps:
+        pc = {"content": pp.get("content") or {}, "content_es": pp.get("content_es") or {}}
+        before = stats["migrated"]
+        await _localize_images_in_obj(pc, user_id, cache, stats)
+        if stats["migrated"] > before:
+            await db.problem_pages.update_one({"id": pp["id"]}, {"$set": pc})
+    return {"ok": True, "migrated": stats["migrated"], "failed": stats["failed"], "failed_count": len(stats["failed"])}
+
+
+
 _PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
 
 
@@ -6288,13 +6378,23 @@ async def public_problem_page_by_domain(domain: str, page_slug: str, preview: in
     d = (domain or "").strip().lower()
     if d.startswith("www."):
         d = d[4:]
-    w = await db.websites.find_one({"custom_domain": d, "custom_domain_verified": True}, {"_id": 0})
+    w = await db.websites.find_one({
+        "$or": [
+            {"custom_domain": d, "custom_domain_verified": True},
+            {"custom_domain_2": d, "custom_domain_2_verified": True},
+        ]
+    }, {"_id": 0})
     if not w:
         raise HTTPException(404, "Not found")
     pp = await db.problem_pages.find_one({"website_slug": w["slug"], "page_slug": page_slug}, {"_id": 0})
     if not pp or (not pp.get("published") and not preview):
         raise HTTPException(404, "Not found")
-    return await _problem_page_payload(w, pp)
+    payload = await _problem_page_payload(w, pp)
+    if w.get("custom_domain_2") == d:
+        payload["default_lang"] = w.get("custom_domain_2_lang") or "es"
+    else:
+        payload["default_lang"] = w.get("custom_domain_lang") or "en"
+    return payload
 
 
 @api_router.post("/public/problem-page/{slug}/{page_slug}/lead")
