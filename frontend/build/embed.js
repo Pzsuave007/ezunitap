@@ -522,7 +522,7 @@
       } else {
         var ic = mk("span", { fontSize: "20px" }); ic.innerHTML = "&#128172;"; fab.appendChild(ic);
       }
-      var lb = mk("span", {}); lb.textContent = o.launcher;
+      var lb = mk("span", {}); lb.className = "unitech-fab-label"; lb.textContent = o.launcher;
       fab.appendChild(lb);
     } else if (o.botAvatar) {
       fab = mk("button", fabBase);
@@ -537,20 +537,24 @@
     fab.id = "unitech-chat-fab";
     document.body.appendChild(fab);
 
-    // On phones the bottom-corner launcher tends to sit on top of the site's
-    // bottom CTA buttons. Dock it to the vertical middle of the screen edge so
-    // it "peeks" from the side without covering anything important.
+    // On phones the bottom-corner launcher (especially the wide "text pill")
+    // sits on top of the site's bottom CTA buttons and sticks out too much.
+    // On mobile we collapse it into a compact circle docked to the vertical
+    // middle of the screen edge so it just "peeks" from the side.
     if (!document.getElementById("unitech-chat-fab-mq")) {
       var mq = document.createElement("style");
       mq.id = "unitech-chat-fab-mq";
       var edge = side; // "right" | "left"
+      var rad = edge === "left" ? "0 27px 27px 0" : "27px 0 0 27px";
       mq.textContent =
-        "@media (max-width:640px){#unitech-chat-fab{bottom:auto!important;top:50%!important;" +
-        "transform:translateY(-50%)!important;" + edge + ":0!important;" +
-        (edge === "left"
-          ? "border-top-left-radius:0!important;border-bottom-left-radius:0!important;"
-          : "border-top-right-radius:0!important;border-bottom-right-radius:0!important;") +
-        "box-shadow:0 6px 22px rgba(0,0,0,0.30)!important;}}";
+        "@media (max-width:640px){" +
+        "#unitech-chat-fab{bottom:auto!important;top:50%!important;" +
+        "transform:translateY(-50%);" + edge + ":0!important;" +
+        "width:54px!important;height:54px!important;min-width:0!important;" +
+        "padding:0!important;gap:0!important;overflow:hidden!important;" +
+        "border-radius:" + rad + "!important;" +
+        "box-shadow:0 6px 22px rgba(0,0,0,0.30)!important;}" +
+        "#unitech-chat-fab .unitech-fab-label{display:none!important;}}";
       document.head.appendChild(mq);
     }
 
@@ -639,8 +643,26 @@
     sendB.addEventListener("click", send);
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
 
-    function open() { panel.style.display = "flex"; fab.style.display = "none"; setTimeout(function () { input.focus(); }, 100); }
-    function close() { panel.style.display = "none"; fab.style.display = "flex"; }
+    function isPhone() { return window.matchMedia("(max-width:640px)").matches; }
+    function showPanel() { panel.style.display = "flex"; fab.style.display = "none"; setTimeout(function () { input.focus(); }, 100); }
+    function open() {
+      if (isPhone()) {
+        // Slide the peeking bubble to the left, then reveal the chat.
+        fab.style.transition = "transform .3s cubic-bezier(.34,1.1,.64,1), opacity .25s ease";
+        fab.style.transform = "translateY(-50%) translateX(-52px)";
+        fab.style.opacity = "0";
+        setTimeout(showPanel, 280);
+      } else {
+        showPanel();
+      }
+    }
+    function close() {
+      panel.style.display = "none";
+      fab.style.display = "flex";
+      // reset the slide so the bubble peeks in again from the edge
+      fab.style.opacity = "1";
+      fab.style.transform = isPhone() ? "translateY(-50%)" : "";
+    }
     fab.addEventListener("click", open);
     closeBtn.addEventListener("click", close);
   }
