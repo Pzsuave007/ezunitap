@@ -2154,7 +2154,12 @@ function CaseSection({ id, kicker, title, th, accent, children }) {
 function CaseDetail({ ctx }) {
   const { accent, lang, w, caseSlug, pageHref } = ctx;
   const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
-  const c = cases.find((x) => (x.slug || "") === caseSlug);
+  const want = decodeURIComponent(caseSlug || "");
+  const wantS = slugify(want);
+  const c = cases.find((x) => (x.slug || "") === want)
+    || cases.find((x, i) => slugify(x.slug || `caso-${i}`) === wantS)
+    || cases.find((x) => slugify(x.client || "") === wantS)
+    || cases.find((x) => slugify(x.title || "") === wantS);
   if (!c) return <SubHero ctx={ctx} title={agT(lang, "Case not found", "Caso no encontrado")} sub={<a href={pageHref("casos")} style={{ color: accent }}>{agT(lang, "Back to cases", "Volver a casos")}</a>} />;
   const cc = w.case_colors || {};
   const CDEF = { hero: "#0a1130", info: "#f8fafc", challenge: "#ffffff", solution: "#f8fafc", tailored: "#ffffff", results: "#0a1130", portfolio: "#ffffff" };
