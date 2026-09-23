@@ -2486,7 +2486,6 @@ function AgencyFooter({ ctx }) {
           <ul className="space-y-3.5 text-sm" style={{ color: muted }}>
             {b?.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
             {phone && <li><a href={`tel:${phone}`} data-testid="agency-footer-phone" className="flex gap-3 hover:opacity-80"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{phone}</span></a></li>}
-            {b?.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:opacity-80 break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
             {hours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{hours}</span></li>}
           </ul>
         </div>
@@ -2984,7 +2983,6 @@ function FooterBlock({ ctx }) {
           <ul className="space-y-3.5 text-sm text-white/75">
             {b.address && <li className="flex gap-3"><MapPin className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.address}</span></li>}
             {b.phone && <li><a href={`tel:${b.phone}`} data-testid="site-footer-phone" className="flex gap-3 hover:text-white"><Phone className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.phone}</span></a></li>}
-            {b.email && <li><a href={`mailto:${b.email}`} className="flex gap-3 hover:text-white break-all"><Mail className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{b.email}</span></a></li>}
             {hours && <li className="flex gap-3"><Clock className="w-4 h-4 flex-none mt-0.5" style={{ color: accent }} /><span>{hours}</span></li>}
           </ul>
         </div>
