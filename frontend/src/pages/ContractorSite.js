@@ -229,15 +229,20 @@ export default function ContractorSite({ injected, page, byDomain }) {
   const _aboutIds = (Array.isArray(w.about_photo_ids) && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : []);
   const aboutImgs = _aboutIds.length ? _aboutIds.map((id) => photoUrl(id, 700)) : [];
 
-  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, lang, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}` : `/sitio/${w.slug}/p/${ps}`), openWork: setWorkOpen };
+  // Keep the chosen language across full-page navigations to sub-pages (service,
+  // case, about). Without this the sub-page reloads in the default language and a
+  // Spanish slug can't be matched against English content -> "Service not found".
+  const siteDefault = (data && data.default_lang) || (injected && injected.default_lang) || "en";
+  const langQ = (wl.content_es && lang !== siteDefault) ? `?lang=${lang}` : "";
+  const ctx = { w: wl, b, data, sec, accent, accentText, th, heroImg, heroImgOn, poolAt, services, goContact, slug, key, lang, teamImg, whyImg, bandImg, whyImgOn, bandImgOn, aboutImgs, onDomain: !!injected, ppHref: (ps) => (injected ? `/p/${ps}${langQ}` : `/sitio/${w.slug}/p/${ps}${langQ}`), openWork: setWorkOpen };
   // Central, business-aware CTA labels so every template converts whether the
   // business takes appointments (Book) or projects/estimates (Quote).
   ctx.bookingOn = !!(sec?.booking && data?.card_slug);
   ctx.cta = lang === "es" ? (ctx.bookingOn ? "Agenda ahora" : "Cotiza gratis") : (ctx.bookingOn ? "Book Now" : "Get a Free Quote");
   ctx.ctaShort = lang === "es" ? (ctx.bookingOn ? "Agendar" : "Cotizar") : (ctx.bookingOn ? "Book Now" : "Free Quote");
   const Layout = { cinematic: Cinematic, responder: Responder, bento: Bento, craftsman: Craftsman, trust: Trust, slider: Slider, onepage: OnePage, neon: Neon, playful: Playful, luxe: Luxe, agency: Agency }[key];
-  ctx.pageHref = (p) => (byDomain ? `/${p}` : `/sitio/${w.slug}/${p}`);
-  ctx.homeHref = byDomain ? "/" : `/sitio/${w.slug}`;
+  ctx.pageHref = (p) => (byDomain ? `/${p}${langQ}` : `/sitio/${w.slug}/${p}${langQ}`);
+  ctx.homeHref = (byDomain ? "/" : `/sitio/${w.slug}`) + langQ;
   ctx.page = page || null;
   ctx.caseSlug = caseSlug || null;
   ctx.serviceSlug = serviceSlug || null;
