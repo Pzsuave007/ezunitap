@@ -5066,6 +5066,7 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
         if key in content_es:
             content_es[key] = _restore_protected(content_es.get(key), en_snapshot.get(key) or [], unprotect=({"name"} if key == "services" else ()))
     await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "lang_toggle": True}})
+    await _translate_all_pp_es(user_id)
     return {"ok": True, "content_es": content_es}
 
 
@@ -6013,6 +6014,7 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False, se
             "meta_description": (data.get("meta_description") or "")[:200],
             "h1": data.get("h1") or data.get("problem_headline") or name,
         }
+        es = await _translate_pp_es(content, seo)
         doc = {
             "id": (existing or {}).get("id") or _new_id(),
             "user_id": user_id,
@@ -6025,6 +6027,8 @@ async def _generate_problem_pages_for_user(user_id: str, force: bool = False, se
             "edited_by_owner": False,
             "content": content,
             "seo": seo,
+            "content_es": es.get("content_es", {}),
+            "seo_es": es.get("seo_es", {}),
             "photo_ids": (existing or {}).get("photo_ids", []),
             "hero_photo_id": (existing or {}).get("hero_photo_id") or (s.get("image_id") if isinstance(s, dict) else None),
             "problem_hint": hint,
@@ -6050,6 +6054,33 @@ def _pp_owner_view(pp: dict) -> dict:
         "problem_hint": pp.get("problem_hint", ""),
         "updated_at": pp.get("updated_at"),
     }
+
+
+async def _translate_pp_es(content: dict, seo: dict) -> dict:
+    """Translate one problem page's content + seo to Spanish. Returns
+    {"content_es": {...}, "seo_es": {...}} or {} on failure (non-fatal)."""
+    try:
+        out = await ai_service.translate_problem_page({"content": content or {}, "seo": seo or {}})
+        if isinstance(out, dict) and out.get("content"):
+            return {"content_es": out.get("content") or {}, "seo_es": out.get("seo") or {}}
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"problem page ES translate failed: {e!r}")
+    return {}
+
+
+async def _translate_all_pp_es(user_id: str):
+    """Translate every problem page of a user to Spanish, in parallel. Non-fatal."""
+    pages = await db.problem_pages.find({"user_id": user_id}, {"_id": 0}).to_list(500)
+    if not pages:
+        return
+    results = await asyncio.gather(
+        *[_translate_pp_es(p.get("content", {}), p.get("seo", {})) for p in pages],
+        return_exceptions=True,
+    )
+    for p, es in zip(pages, results):
+        if isinstance(es, dict) and es.get("content_es"):
+            await db.problem_pages.update_one({"id": p["id"]}, {"$set": es})
+
 
 
 @api_router.get("/website/problem-pages")
@@ -6224,6 +6255,7 @@ async def _problem_page_payload(w: dict, pp: dict) -> dict:
             "status": pp.get("status"), "published": bool(pp.get("published")),
             "indexable": bool(pp.get("indexable", True)),
             "content": pp.get("content", {}), "seo": pp.get("seo", {}),
+            "content_es": pp.get("content_es", {}), "seo_es": pp.get("seo_es", {}),
         },
         "business": biz,
         "theme": {"accent": w.get("accent_color") or "#2563EB", "template": w.get("template") or "clean",

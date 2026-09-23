@@ -145,3 +145,10 @@ Every active service can now become a dedicated customer-problem landing page (B
 ## Jun 2026 — Fix "Service not found" en versión español (idioma no se conservaba al navegar)
 - ContractorSite.js: los enlaces internos (pageHref, homeHref, ppHref y tarjetas de servicio) ahora conservan `?lang=` cuando el idioma activo difiere del default del sitio. Antes, al hacer clic en un servicio en español, la subpágina recargaba en inglés (default) y el slug en español ("dise-o-web-y-gr-fico") no coincidía con la lista de servicios en inglés → "Service not found". Reproducido en producción y verificado el fix en preview.
 - Nota: las "Páginas Cliente" (problem pages / ProblemPage.js) siguen siendo SOLO en inglés (textos de sección hardcodeados en inglés y contenido generado solo en inglés). En ES, los servicios ahora caen correctamente en la página de servicio en español (ServiceDetail). Hacer las Páginas Cliente bilingües es una mejora mayor pendiente (backlog).
+
+## Jun 2026 — Páginas Cliente (problem pages) BILINGÜES
+- ai_service.py: nuevo translate_problem_page (EN->ES) usando _translate_chunk + PROBLEM_PAGE_ES_SYSTEM.
+- server.py: cada problem page ahora guarda content_es + seo_es. Se traduce automáticamente al generar/regenerar, y en lote al pulsar "Crear versión en Español" (_translate_all_pp_es, en paralelo). _problem_page_payload y _pp doc devuelven content_es/seo_es.
+- ProblemPage.js: idioma (?lang / default_lang), switch EN/ES flotante, usa content_es/seo_es en ES, TODOS los textos hardcodeados localizados (secciones, CTAs, form, badges via localizeBadge). SEO effect ahora depende de [data, lang].
+- ContractorSite.js: ppForService(data, name, i) ahora también empata por el nombre EN del servicio en el mismo índice, para que en ES las tarjetas de servicio lleguen a la Página Cliente bilingüe (antes caían en ServiceDetail). Enlaces internos conservan ?lang.
+- Verificado en preview: página bilingüe completa (headline, agitación, solución, secciones, formulario, badges) con toggle EN/ES.

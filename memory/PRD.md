@@ -1098,3 +1098,10 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - 🟢 P3/Tech-debt: refactor `server.py` (6100+ líneas) en routers; script dedupe clientes/usuarios.
 - 🔵 Bloqueado: GMB Legacy API 403 (whitelisting Google, proyecto scenic-healer-468818-h5).
 - Futuro: Stripe webhook para marcar facturas pagadas de forma robusta.
+
+---
+## Update (Jun 23, 2026)
+- Sitio bilingüe COMPLETO: además del sitio principal (ES/EN via ?lang y dominios), ahora las "Páginas Cliente" (problem/solution landing pages) también son bilingües con switch EN/ES y traducción ES persistida (content_es/seo_es). Se traducen al pulsar "Crear versión en Español" o al generar/regenerar.
+- Fix crítico: los enlaces internos del sitio conservan ?lang al navegar (antes daba "Service not found" en ES).
+- Traducción de sitio ahora es robusta por partes en paralelo (evita fallos "AI could not translate" en sitios grandes) y translate-es incluye todos los campos (FAQ, casos, historia, milestones).
+- Acción del usuario tras deploy: pulsar 1 vez "Crear versión en Español" para generar la versión ES de las Páginas Cliente existentes.

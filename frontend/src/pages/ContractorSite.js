@@ -1793,7 +1793,12 @@ const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, 
 const slugify = (t) => ((t || "").toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""));
 const svcSlug = (s, i) => ((s && s.slug) ? s.slug : (slugify(s && s.name) || `servicio-${i}`));
 // Match a service to an existing Problem/Solution conversion page by name.
-const ppForService = (data, name) => (data?.problem_pages || []).find((p) => (p.service_name || "").toLowerCase().trim() === (name || "").toLowerCase().trim());
+const ppForService = (data, name, i) => {
+  const norm = (x) => (x || "").toLowerCase().trim();
+  const pages = data?.problem_pages || [];
+  const enName = (typeof i === "number" && data?.services?.[i]?.name) || "";
+  return pages.find((p) => norm(p.service_name) === norm(name) || (enName && norm(p.service_name) === norm(enName)));
+};
 
 // ---- Rich text (WYSIWYG HTML) rendering ----
 const isHtml = (t) => /<\/?(p|div|span|b|strong|i|em|u|a|ul|ol|li|br|h[1-6]|font)\b/i.test(t || "");
@@ -2408,7 +2413,7 @@ function ServiceDetail({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {others.map((x) => {
               const i = services.indexOf(x);
-              const pp = ppForService(ctx.data, x.name);
+              const pp = ppForService(ctx.data, x.name, i);
               const href = pp ? ctx.ppHref(pp.page_slug) : pageHref(`servicio/${svcSlug(x, i)}`);
               return (
                 <a key={i} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: th.surface, borderColor: th.border }}>
@@ -2579,7 +2584,7 @@ function Agency({ ctx }) {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {services.map((s, i) => {
-                const pp = ppForService(ctx.data, s.name);
+                const pp = ppForService(ctx.data, s.name, i);
                 const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`);
                 return (
                   <a key={i} href={href} data-testid={`agency-svc-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: SV.card, borderColor: SV.cardBorder }}>

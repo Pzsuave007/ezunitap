@@ -1017,6 +1017,25 @@ async def translate_website_content_to_en(content: dict) -> dict:
     return await _translate_website_generic(content, WEBSITE_TRANSLATE_EN_SYSTEM)
 
 
+PROBLEM_PAGE_ES_SYSTEM = """You are a professional bilingual (English↔Spanish) marketing translator for
+U.S. Latino businesses. You translate a landing-page ("problem page") content JSON from English to natural,
+warm, professional LATIN-AMERICAN SPANISH (the kind a U.S. Hispanic customer expects — friendly, persuasive,
+clear). You receive a JSON object like {"content": {...}, "seo": {...}}.
+Strict rules:
+- Keep the EXACT same JSON structure and keys. Do not add or remove keys or array items.
+- Translate all human-readable text: problem_headline, agitation, solution, cta_label, s_problem_title,
+  s_problem, s_why_matters_title, s_why_matters, s_how_title, s_how, final_cta_headline, each why_choose
+  title+desc, each faq q+a, each how_steps title+desc, and seo title / meta_description / h1.
+- NEVER translate or change: cta_type, any URL, phone number, email, or numeric value.
+- Return ONLY the translated JSON (no markdown, no commentary)."""
+
+
+async def translate_problem_page(payload: dict) -> dict:
+    """Translate one problem-page {"content":..., "seo":...} object to Spanish."""
+    return await _translate_chunk(PROBLEM_PAGE_ES_SYSTEM, payload)
+
+
+
 AGENCY_CASE_SYSTEM = """You write concise, persuasive marketing CASE-STUDY copy for a Latino marketing
 agency that helps small U.S. businesses grow. You receive a client's name, category and some notes.
 Output ONLY valid JSON with EXACTLY these keys:

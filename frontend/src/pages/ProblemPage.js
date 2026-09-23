@@ -11,6 +11,19 @@ function readUtm() {
   return { utm_source: p.get("utm_source") || "", utm_medium: p.get("utm_medium") || "", utm_campaign: p.get("utm_campaign") || "" };
 }
 
+// Localize the (English) trust badges the backend sends, for the ES version.
+function localizeBadge(b) {
+  const s = String(b || "");
+  if (s === "Licensed") return "Con licencia";
+  if (s === "Insured") return "Asegurado";
+  if (s === "Locally Owned") return "Negocio local";
+  let m = s.match(/^(\d+)\+ Years in Business$/);
+  if (m) return `${m[1]}+ años en el negocio`;
+  m = s.match(/^(.+?)★ \((\d+) reviews\)$/);
+  if (m) return `${m[1]}★ (${m[2]} reseñas)`;
+  return s;
+}
+
 function Stars({ n = 5, color = "#F5B301" }) {
   return <div className="flex gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4" fill={i < n ? color : "none"} style={{ color }} />)}</div>;
 }
@@ -20,8 +33,17 @@ export default function ProblemPage({ injected, byDomain }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(false);
   const [lbIdx, setLbIdx] = useState(null);
+  const [lang, setLang] = useState("en");
   const preview = new URLSearchParams(window.location.search).get("preview") ? "?preview=1" : "";
   const slug = injected?.website_slug || routeSlug;
+
+  // Language: ?lang= wins, then the domain's configured default, else EN.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("lang");
+    if (q === "es" || q === "en") { setLang(q); return; }
+    const dl = data?.default_lang || injected?.default_lang;
+    if (dl === "es" || dl === "en") setLang(dl);
+  }, [data, injected]);
 
   useEffect(() => {
     if (injected) { setData(injected); return; }
@@ -33,8 +55,11 @@ export default function ProblemPage({ injected, byDomain }) {
   }, [slug, pageSlug]); // eslint-disable-line
 
   const accent = data?.theme?.accent || "#2563EB";
-  const page = data?.page?.content || {};
-  const seo = data?.page?.seo || {};
+  const hasEs = !!(data?.page?.content_es && Object.keys(data.page.content_es).length);
+  const esOn = lang === "es" && hasEs;
+  const page = (esOn ? data?.page?.content_es : data?.page?.content) || {};
+  const seo = (esOn ? (data?.page?.seo_es || data?.page?.seo) : data?.page?.seo) || {};
+  const tt = (en, es) => (lang === "es" ? es : en);
   const biz = data?.business || {};
   const phone = biz.phone || "";
 
@@ -70,19 +95,31 @@ export default function ProblemPage({ injected, byDomain }) {
     let s = document.getElementById("pp-jsonld");
     if (!s) { s = document.createElement("script"); s.type = "application/ld+json"; s.id = "pp-jsonld"; document.head.appendChild(s); }
     s.textContent = JSON.stringify(ld);
-  }, [data]); // eslint-disable-line
+  }, [data, lang]); // eslint-disable-line
 
-  if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">Page not available.</div>;
+  if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500">{tt("Page not available.", "Página no disponible.")}</div>;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
+  const langSuffix = esOn ? "?lang=es" : "";
   const logo = photoUrl(biz.logo_photo_id, 200);
-  const backHref = byDomain ? "/" : data.website_path;
+  const backHref = (byDomain ? "/" : data.website_path) + langSuffix;
   const hero = photoUrl(data.hero_photo_id, 1600);
   const badges = data.trust_badges || [];
-  const ctaLabel = page.cta_label || (page.cta_type === "call" ? "Call Now" : "Get a Free Estimate");
+  const ctaLabel = page.cta_label || (page.cta_type === "call" ? tt("Call Now", "Llama ahora") : tt("Get a Free Estimate", "Cotiza gratis"));
 
   return (
     <div className="min-h-screen bg-white text-slate-900" data-testid="problem-page" style={{ ["--accent"]: accent }}>
+      {hasEs && (
+        <div className="fixed left-3 bottom-24 md:bottom-6 md:left-6 z-[55] flex rounded-full overflow-hidden shadow-lg border border-black/10 bg-white/95 backdrop-blur text-xs font-bold" data-testid="pp-lang-switch">
+          {["en", "es"].map((lg) => (
+            <button key={lg} onClick={() => setLang(lg)} data-testid={`pp-lang-${lg}`}
+              className={`px-3 py-1.5 ${lang === lg ? "text-white" : "text-slate-600"}`}
+              style={lang === lg ? { background: accent } : {}}>
+              {lg.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
       {/* Sticky header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
@@ -90,7 +127,7 @@ export default function ProblemPage({ injected, byDomain }) {
             {logo ? <img src={logo} alt="" className="w-9 h-9 rounded-lg object-cover" /> : <div className="w-9 h-9 rounded-lg" style={{ background: accent }} />}
             <span className="font-bold truncate">{biz.name}</span>
           </a>
-          {phone && <a href={`tel:${phone}`} data-testid="pp-header-call" className="inline-flex items-center gap-2 px-4 h-10 rounded-full font-bold text-white text-sm" style={{ background: accent }}><Phone className="w-4 h-4" /> Call</a>}
+          {phone && <a href={`tel:${phone}`} data-testid="pp-header-call" className="inline-flex items-center gap-2 px-4 h-10 rounded-full font-bold text-white text-sm" style={{ background: accent }}><Phone className="w-4 h-4" /> {tt("Call", "Llama")}</a>}
         </div>
       </header>
 
@@ -104,20 +141,20 @@ export default function ProblemPage({ injected, byDomain }) {
             {page.agitation && <p className="mt-4 text-lg text-white/85">{page.agitation}</p>}
             {page.solution && <p className="mt-3 text-xl font-bold" style={{ color: "#fff" }}>{page.solution}</p>}
             <div className="mt-5 flex flex-wrap gap-2">
-              {badges.map((b, i) => <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: accent }} /> {b}</span>)}
+              {badges.map((b, i) => <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: accent }} /> {esOn ? localizeBadge(b) : b}</span>)}
             </div>
             <div className="mt-7 flex flex-wrap gap-3">
-              {phone && <a href={`tel:${phone}`} data-testid="pp-hero-call" className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-white text-lg shadow-lg" style={{ background: accent }}><Phone className="w-5 h-5" /> Call Now</a>}
+              {phone && <a href={`tel:${phone}`} data-testid="pp-hero-call" className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-white text-lg shadow-lg" style={{ background: accent }}><Phone className="w-5 h-5" /> {tt("Call Now", "Llama ahora")}</a>}
               <a href="#lead" className="hidden md:inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-slate-900 bg-white text-lg">{ctaLabel} <ArrowRight className="w-5 h-5" /></a>
             </div>
           </div>
-          <div id="lead"><LeadForm data={data} accent={accent} ctaLabel={ctaLabel} /></div>
+          <div id="lead"><LeadForm data={data} accent={accent} ctaLabel={ctaLabel} lang={lang} /></div>
         </div>
       </section>
 
       {/* 2. THE PROBLEM (problem + why it matters, one clean section) */}
       {(page.s_problem || page.s_why_matters) && (
-        <Sec title={page.s_problem_title || "The problem"} accent={accent}>
+        <Sec title={page.s_problem_title || tt("The problem", "El problema")} accent={accent}>
           {page.s_problem && <p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_problem}</p>}
           {page.s_why_matters && (
             <div className="mt-6 max-w-3xl flex gap-3 p-5 rounded-2xl bg-slate-50 border-l-4" style={{ borderColor: accent }}>
@@ -129,14 +166,14 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* 3. THE SOLUTION */}
       {page.s_how && (
-        <Sec title={page.s_how_title || "The solution"} accent={accent} alt>
+        <Sec title={page.s_how_title || tt("The solution", "La solución")} accent={accent} alt>
           <p className="text-lg leading-relaxed text-slate-600 max-w-3xl">{page.s_how}</p>
         </Sec>
       )}
 
       {/* 4. PROOF / RECENT WORK */}
       {(data.photos || []).length > 0 && (
-        <Sec title="Recent work" accent={accent}>
+        <Sec title={tt("Recent work", "Trabajos recientes")} accent={accent}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.photos.slice(0, 8).map((p, i) => (
               <button key={p.id} type="button" onClick={() => setLbIdx(i)} data-testid={`pp-gallery-photo-${i}`}
@@ -151,7 +188,7 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* 5. WHY CHOOSE US */}
       {(page.why_choose || []).length > 0 && (
-        <Sec title="Why choose us" accent={accent} alt>
+        <Sec title={tt("Why choose us", "Por qué elegirnos")} accent={accent} alt>
           <div className="grid sm:grid-cols-2 gap-4">
             {page.why_choose.map((x, i) => (
               <div key={i} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
@@ -165,7 +202,7 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* 6. CUSTOMER REVIEWS */}
       {(data.reviews || []).length > 0 && (
-        <Sec title="What customers say" accent={accent}>
+        <Sec title={tt("What customers say", "Lo que dicen los clientes")} accent={accent}>
           <div className="grid md:grid-cols-3 gap-4">
             {data.reviews.slice(0, 3).map((r, i) => (
               <div key={i} className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
@@ -180,7 +217,7 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* 7. HOW IT WORKS */}
       {(page.how_steps || []).length > 0 && (
-        <Sec title="How it works" accent={accent} alt>
+        <Sec title={tt("How it works", "Cómo funciona")} accent={accent} alt>
           <div className="grid sm:grid-cols-3 gap-4 md:gap-6" data-testid="pp-how-steps">
             {page.how_steps.map((s, i) => (
               <div key={i} className="relative p-6 rounded-2xl bg-white border border-slate-100 shadow-sm" data-testid={`pp-how-step-${i}`}>
@@ -195,7 +232,7 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* 8. FAQ */}
       {(page.faqs || []).length > 0 && (
-        <Sec title="Frequently asked questions" accent={accent}>
+        <Sec title={tt("Frequently asked questions", "Preguntas frecuentes")} accent={accent}>
           <div className="max-w-3xl space-y-3">
             {page.faqs.map((f, i) => <Faq key={i} q={f.q} a={f.a} accent={accent} />)}
           </div>
@@ -205,9 +242,9 @@ export default function ProblemPage({ injected, byDomain }) {
       {/* Final CTA */}
       <section className="py-16 text-center text-white" style={{ background: "#0f172a" }}>
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-2xl md:text-4xl font-extrabold">{page.final_cta_headline || "Ready to get it fixed?"}</h2>
+          <h2 className="text-2xl md:text-4xl font-extrabold">{page.final_cta_headline || tt("Ready to get it fixed?", "¿Listo para resolverlo?")}</h2>
           <div className="mt-6 flex flex-wrap gap-3 justify-center">
-            {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-white text-lg" style={{ background: accent }}><Phone className="w-5 h-5" /> Call Now</a>}
+            {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-white text-lg" style={{ background: accent }}><Phone className="w-5 h-5" /> {tt("Call Now", "Llama ahora")}</a>}
             <a href="#lead" className="inline-flex items-center gap-2 px-7 h-14 rounded-full font-bold text-slate-900 bg-white text-lg">{ctaLabel}</a>
           </div>
         </div>
@@ -215,7 +252,7 @@ export default function ProblemPage({ injected, byDomain }) {
 
       {/* Footer */}
       <footer className="py-8 text-center text-sm text-slate-400">
-        <a href={backHref} className="font-semibold" style={{ color: accent }}>← Back to {biz.name}</a>
+        <a href={backHref} className="font-semibold" style={{ color: accent }}>← {tt("Back to", "Volver a")} {biz.name}</a>
         <div className="mt-2">{data.service_area}</div>
       </footer>
 
@@ -236,8 +273,8 @@ export default function ProblemPage({ injected, byDomain }) {
       {/* Sticky mobile CTA */}
       <div className="fixed bottom-0 inset-x-0 z-50 md:hidden grid grid-cols-2 gap-px bg-slate-200 border-t border-slate-200">
         {phone
-          ? <a href={`tel:${phone}`} data-testid="pp-sticky-call" className="py-3.5 text-center font-bold text-white flex items-center justify-center gap-2" style={{ background: accent }}><Phone className="w-4 h-4" /> Call Now</a>
-          : <a href="#lead" className="py-3.5 text-center font-bold text-white" style={{ background: accent }}>Contact</a>}
+          ? <a href={`tel:${phone}`} data-testid="pp-sticky-call" className="py-3.5 text-center font-bold text-white flex items-center justify-center gap-2" style={{ background: accent }}><Phone className="w-4 h-4" /> {tt("Call Now", "Llama ahora")}</a>
+          : <a href="#lead" className="py-3.5 text-center font-bold text-white" style={{ background: accent }}>{tt("Contact", "Contacto")}</a>}
         <a href="#lead" className="py-3.5 text-center font-bold bg-slate-900 text-white">{ctaLabel}</a>
       </div>
       <div className="h-16 md:hidden" />
@@ -269,8 +306,9 @@ function Faq({ q, a, accent }) {
   );
 }
 
-function LeadForm({ data, accent, ctaLabel }) {
+function LeadForm({ data, accent, ctaLabel, lang }) {
   const utm = useMemo(readUtm, []);
+  const tt = (en, es) => (lang === "es" ? es : en);
   const [form, setForm] = useState({ name: "", phone: "", description: "" });
   const [photos, setPhotos] = useState([]);
   const [sending, setSending] = useState(false);
@@ -303,21 +341,21 @@ function LeadForm({ data, accent, ctaLabel }) {
   if (done) return (
     <div className="bg-white rounded-2xl p-6 shadow-xl text-center" data-testid="pp-lead-done">
       <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: accent }} />
-      <h3 className="mt-3 font-extrabold text-xl">Thank you!</h3>
-      <p className="text-slate-500 mt-1">We got your request and will reach out shortly.</p>
+      <h3 className="mt-3 font-extrabold text-xl">{tt("Thank you!", "¡Gracias!")}</h3>
+      <p className="text-slate-500 mt-1">{tt("We got your request and will reach out shortly.", "Recibimos tu solicitud y te contactaremos muy pronto.")}</p>
     </div>
   );
 
   return (
     <form onSubmit={submit} className="bg-white rounded-2xl p-5 shadow-xl" data-testid="pp-lead-form">
-      <h3 className="font-extrabold text-lg" style={{ color: "#0f172a" }}>Get help now</h3>
-      <p className="text-sm text-slate-500 mb-3">Tell us what's happening — we'll respond fast.</p>
+      <h3 className="font-extrabold text-lg" style={{ color: "#0f172a" }}>{tt("Get help now", "Recibe ayuda ahora")}</h3>
+      <p className="text-sm text-slate-500 mb-3">{tt("Tell us what's happening — we'll respond fast.", "Cuéntanos qué está pasando — te respondemos rápido.")}</p>
       <div className="space-y-2.5">
-        <input required value={form.name} onChange={set("name")} placeholder="Your name" data-testid="pp-input-name" className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" style={{ ["--tw-ring-color"]: accent }} />
-        <input required value={form.phone} onChange={set("phone")} placeholder="Phone number" data-testid="pp-input-phone" className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" />
-        <textarea value={form.description} onChange={set("description")} placeholder="Describe the problem (optional)" data-testid="pp-input-desc" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" rows={3} />
+        <input required value={form.name} onChange={set("name")} placeholder={tt("Your name", "Tu nombre")} data-testid="pp-input-name" className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" style={{ ["--tw-ring-color"]: accent }} />
+        <input required value={form.phone} onChange={set("phone")} placeholder={tt("Phone number", "Número de teléfono")} data-testid="pp-input-phone" className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" />
+        <textarea value={form.description} onChange={set("description")} placeholder={tt("Describe the problem (optional)", "Describe el problema (opcional)")} data-testid="pp-input-desc" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2" rows={3} />
         <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer">
-          <Camera className="w-4 h-4" style={{ color: accent }} /> Show us what's happening
+          <Camera className="w-4 h-4" style={{ color: accent }} /> {tt("Show us what's happening", "Muéstranos qué está pasando")}
           <input type="file" accept="image/*" multiple onChange={onFiles} className="hidden" data-testid="pp-input-photos" />
         </label>
         {photos.length > 0 && <div className="flex gap-2">{photos.map((p, i) => <img key={i} src={p} alt="" className="w-12 h-12 rounded-lg object-cover" />)}</div>}
