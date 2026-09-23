@@ -82,6 +82,13 @@ export default function ProblemPage({ injected, byDomain }) {
     if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
     link.setAttribute("href", canonical);
     if (data.page.indexable === false) meta("robots", "noindex,nofollow");
+    // Favicon = the business logo (not the platform's default UniTech icon).
+    const logoIcon = photoUrl(biz.logo_photo_id || data?.theme?.logo_photo_id, 128);
+    if (logoIcon) {
+      const icons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]');
+      if (icons.length) icons.forEach((el) => el.setAttribute("href", logoIcon));
+      else { const el = document.createElement("link"); el.setAttribute("rel", "icon"); el.setAttribute("href", logoIcon); document.head.appendChild(el); }
+    }
     meta("og:title", title, true); meta("og:description", desc, true); meta("og:type", "website", true);
     meta("og:url", canonical, true);
     const og = photoUrl(data.photos?.[0]?.id, 1200) || photoUrl(biz.logo_photo_id, 600);

@@ -152,3 +152,6 @@ Every active service can now become a dedicated customer-problem landing page (B
 - ProblemPage.js: idioma (?lang / default_lang), switch EN/ES flotante, usa content_es/seo_es en ES, TODOS los textos hardcodeados localizados (secciones, CTAs, form, badges via localizeBadge). SEO effect ahora depende de [data, lang].
 - ContractorSite.js: ppForService(data, name, i) ahora también empata por el nombre EN del servicio en el mismo índice, para que en ES las tarjetas de servicio lleguen a la Página Cliente bilingüe (antes caían en ServiceDetail). Enlaces internos conservan ?lang.
 - Verificado en preview: página bilingüe completa (headline, agitación, solución, secciones, formulario, badges) con toggle EN/ES.
+
+## Jun 2026 — Favicon de Páginas Cliente = logo del negocio
+- ProblemPage.js: el SEO effect ahora fija el favicon (link rel icon / apple-touch-icon / shortcut icon) al logo del negocio (biz.logo_photo_id) en vez del favicon por defecto de la plataforma (UniTech). Verificado en preview (href apunta a /api/public/card/photo/{logo_id}).
