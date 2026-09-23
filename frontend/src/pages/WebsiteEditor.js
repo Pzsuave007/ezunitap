@@ -1370,6 +1370,16 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     catch { toast.error(t("website.saveError")); }
     finally { setUpIdx(null); if (upRef.current) upRef.current.value = ""; }
   };
+  const uploadLogo = async (i, file) => {
+    if (!file) return;
+    try { const id = await onUpload(file); const n = [...logos]; n[i] = id; setLogos(n); await save({ client_logos: n }); }
+    catch { toast.error(t("website.saveError")); }
+  };
+  const uploadTeamPhoto = async (i, file) => {
+    if (!file) return;
+    try { const id = await onUpload(file); const n = [...team]; n[i] = { ...n[i], photo: id }; setTeam(n); await save({ team: n }); }
+    catch { toast.error(t("website.saveError")); }
+  };
   const [sub, setSub] = useState("import");
   const [aiBusy, setAiBusy] = useState(null);
   const aiCase = async (i) => {
@@ -1454,6 +1464,10 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 {l && <img src={/^https?:\/\//.test(l) ? l : photoSrc(l)} alt="" className="max-w-full max-h-full object-contain" />}
               </div>
               <Input value={l || ""} onChange={(e) => { const n = [...logos]; n[i] = e.target.value; setLogos(n); }} placeholder={L.logoUrl} className="h-9 rounded-lg" data-testid={`agency-logo-url-${i}`} />
+              <label className="rounded-lg h-9 px-2.5 flex-none border border-slate-200 flex items-center cursor-pointer hover:bg-slate-50" title={L.upload} data-testid={`agency-logo-upload-${i}`}>
+                <ImagePlus className="w-4 h-4" />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(i, f); e.target.value = ""; }} />
+              </label>
               <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setLogos(logos.filter((_, x) => x !== i))} data-testid={`agency-logo-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
           ))}
@@ -1681,6 +1695,10 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
               <Input value={m.name || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, name: e.target.value }; setTeam(n); }} placeholder={L.name} className="h-9 rounded-lg w-32" />
               <Input value={m.role || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, role: e.target.value }; setTeam(n); }} placeholder={L.role} className="h-9 rounded-lg w-32" />
               <Input value={m.photo || ""} onChange={(e) => { const n = [...team]; n[i] = { ...m, photo: e.target.value }; setTeam(n); }} placeholder={L.photo} className="h-9 rounded-lg flex-1" />
+              <label className="rounded-lg h-9 px-2.5 flex-none border border-slate-200 flex items-center cursor-pointer hover:bg-slate-50" title={L.upload} data-testid={`agency-team-upload-${i}`}>
+                <ImagePlus className="w-4 h-4" />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTeamPhoto(i, f); e.target.value = ""; }} />
+              </label>
               <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setTeam(team.filter((_, x) => x !== i))}><Trash2 className="w-4 h-4" /></Button>
             </div>
           ))}

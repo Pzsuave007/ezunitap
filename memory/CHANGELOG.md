@@ -163,3 +163,6 @@ Every active service can now become a dedicated customer-problem landing page (B
 
 ## Jun 2026 — Fix enlace de casos inconsistente (home vs página de casos)
 - CaseDetail: la búsqueda del caso era por slug EXACTO. Los samples del home usan samples[].caseSlug (slugificado, ej. "casa-lola") mientras que el caso tiene slug con espacios/mayúsculas (ej. "Casa Lola") → el enlace del home daba "Caso no encontrado". Ahora el match es tolerante: slug exacto → slugify(slug) → slugify(client) → slugify(title), con decodeURIComponent. Verificado en preview: /caso/Casa%20Lola y /caso/casa-lola abren el mismo caso en español.
+
+## Jun 2026 — Uploaders en TODOS los campos de foto del editor Agency
+- Auditoría completa del AgencyPanel. Faltaba botón de subir en: (1) Logos de clientes (client_logos) y (2) Fotos del equipo (team[].photo) — solo tenían input de URL. Se agregó botón ImagePlus con <input type=file> que sube vía onUpload y guarda inmediatamente (client_logos / team). Los demás ya tenían upload: hero/about/why/band (PhotoField), servicios, cover de casos, galería de casos, imágenes de about_sections, samples/showcase, before/after (picker).
