@@ -182,3 +182,13 @@ Every active service can now become a dedicated customer-problem landing page (B
 - ContractorSite.js y ProblemPage.js: pasan data-greeting según el idioma actual (ES→chat_greeting_es, EN→chat_greeting_en).
 - WebsiteEditor.js: sección chat IA con dos textareas "Mensaje de bienvenida (Español/Inglés)" + agregados a la lista de campos guardados (pickWebsite).
 - Verificado en preview: sitio ES muestra el saludo en español, sitio EN el saludo en inglés; backend guarda y sirve OK. Build regenerado y trackeado.
+
+## 2026-09-24 — Traducción incremental + automática + modelo más barato
+- Modelo: TODAS las traducciones (sitio ES/EN + Páginas Cliente) ahora usan CHAT_MODEL (gpt-4o-mini) en vez de gpt-4o. ai_service._translate_chunk pasa model=CHAT_MODEL. ~15-25× más barato.
+- Traducir solo lo que cambió: _translate_website_generic acepta old_src/old_tr y reutiliza los chunks cuyo texto fuente no cambió (compara por campo e ítem, con fallback por igualdad). Log "translate incremental: reused X/Y chunks, translated Z".
+- Snapshot fuente: translate-es guarda content_es_src (el snapshot EN que produjo content_es) para poder diffear la próxima vez. translate_website_content / _to_en aceptan old_src/old_tr.
+- Páginas Cliente: _translate_all_pp_es salta las páginas cuyo (content+seo) no cambió usando hash pp_src_sig.
+- AUTO-traducción: PUT /website (guardar) dispara _auto_translate_es_task en segundo plano SOLO si (a) ya existe versión ES (lang_toggle/content_es) y (b) cambió algún campo traducible (_TRANSLATABLE_FIELDS). El usuario ya NO necesita apretar "Traducir": se sincroniza solo y solo gasta tokens en lo nuevo.
+- Refactor: extraídos _build_en_snapshot y _translate_site_es (usados por el endpoint y por la tarea automática).
+- Verificado por curl: cambiar 1 campo => "reused 13/14, translated 1"; cambiar solo color => no dispara traducción; content_es se actualiza solo.
+- Nota: la PRIMERA creación de la versión ES aún requiere apretar "Traducir al Español" una vez (para activar lang_toggle); a partir de ahí es automático.

@@ -4548,9 +4548,10 @@ async def get_website(user_id: str = Depends(get_current_user_id)):
 
 
 @api_router.put("/website")
-async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+async def update_website(payload: WebsiteIn, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     await _get_or_init_website(user_id)
     await _snapshot_content(user_id, "guardar sitio")
+    prev = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
     if "slug" in update:
         s = _slugify(update["slug"])
@@ -4568,6 +4569,15 @@ async def update_website(payload: WebsiteIn, user_id: str = Depends(get_current_
             {"user_id": user_id, "is_primary": True},
             {"$set": {"services": update["services"], "updated_at": update["updated_at"]}},
         )
+    # Auto-sync the Spanish version in the background whenever translatable text
+    # actually changed — so the owner never has to press "Translate". The
+    # incremental translator only spends tokens on the new/changed pieces. Only
+    # runs once a Spanish version exists (lang_toggle enabled at least once).
+    es_enabled = bool((prev or {}).get("lang_toggle") or (prev or {}).get("content_es"))
+    touched = {k for k in update if k in _TRANSLATABLE_FIELDS}
+    changed = any((prev or {}).get(k) != update[k] for k in touched)
+    if es_enabled and changed:
+        background_tasks.add_task(_auto_translate_es_task, user_id)
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     w["public_path"] = f"/sitio/{w['slug']}"
     return w
@@ -5043,11 +5053,16 @@ async def website_ai_generate(body: dict = Body(default={}), user_id: str = Depe
     return result
 
 
-@api_router.post("/website/translate-es")
-async def website_translate_es(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
-    """Create a Spanish version of the current website content so visitors can
-    switch the public site to Spanish. Saves it as `content_es` and enables the
-    language switch."""
+_TRANSLATABLE_FIELDS = {
+    "headline", "subheadline", "about", "seo_title", "seo_description",
+    "solutions_intro", "about_title", "about_story", "how_it_works", "why_us",
+    "faqs", "services", "samples", "case_studies", "team", "milestones",
+    "about_values", "about_sections", "areas",
+}
+
+
+async def _build_en_snapshot(user_id: str) -> tuple[dict, dict]:
+    """Return (website_doc, en_snapshot) — the translatable English source."""
     w = await _get_or_init_website(user_id)
     card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
     services = w.get("services") if w.get("services") else (card.get("services") or [])
@@ -5062,17 +5077,45 @@ async def website_translate_es(user_id: str = Depends(get_current_user_id), _fea
         "milestones": w.get("milestones") or [], "about_values": w.get("about_values") or [],
         "about_sections": w.get("about_sections") or [], "areas": w.get("areas") or [],
     }
-    content = dict(en_snapshot)
-    try:
-        content_es = await ai_service.translate_website_content(content)
-    except Exception as e:
-        logger.error(f"website translate-es failed: {e!r}")
-        raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
+    return w, en_snapshot
+
+
+async def _translate_site_es(user_id: str) -> dict:
+    """Sync the Spanish version (content_es) from the English base — incrementally.
+    Only text that changed since the last run is sent to the AI; everything else
+    reuses the previous translation. Also refreshes the problem pages (skipping
+    any that are unchanged). Returns the resulting content_es."""
+    w, en_snapshot = await _build_en_snapshot(user_id)
+    content_es = await ai_service.translate_website_content(
+        dict(en_snapshot), old_src=w.get("content_es_src"), old_tr=w.get("content_es"))
     for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections"):
         if key in content_es:
             content_es[key] = _restore_protected(content_es.get(key), en_snapshot.get(key) or [], unprotect=({"name"} if key == "services" else ()))
-    await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "lang_toggle": True}})
+    await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "content_es_src": en_snapshot, "lang_toggle": True}})
     await _translate_all_pp_es(user_id)
+    return content_es
+
+
+async def _auto_translate_es_task(user_id: str):
+    """Background task: keep the Spanish version in sync automatically after a
+    save, so the owner never has to press "Translate". Non-fatal + cheap: the
+    incremental translator only spends tokens on genuinely new/changed text."""
+    try:
+        await _translate_site_es(user_id)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"auto translate-es skipped: {e!r}")
+
+
+@api_router.post("/website/translate-es")
+async def website_translate_es(user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """Create/refresh the Spanish version of the website content so visitors can
+    switch the public site to Spanish. Saves it as `content_es` and enables the
+    language switch. Only changed text is re-translated (incremental)."""
+    try:
+        content_es = await _translate_site_es(user_id)
+    except Exception as e:
+        logger.error(f"website translate-es failed: {e!r}")
+        raise HTTPException(502, "AI could not translate the content. Try again in a moment.")
     return {"ok": True, "content_es": content_es}
 
 
@@ -6163,17 +6206,34 @@ async def _translate_pp_es(content: dict, seo: dict) -> dict:
 
 
 async def _translate_all_pp_es(user_id: str):
-    """Translate every problem page of a user to Spanish, in parallel. Non-fatal."""
+    """Translate every problem page of a user to Spanish, in parallel. Non-fatal.
+    Skips any page whose source (content+seo) is unchanged since its last
+    translation, so re-running only spends tokens on new/edited pages."""
+    import hashlib
     pages = await db.problem_pages.find({"user_id": user_id}, {"_id": 0}).to_list(500)
     if not pages:
         return
+
+    def _sig(p):
+        raw = json.dumps({"c": p.get("content", {}), "s": p.get("seo", {})}, sort_keys=True, ensure_ascii=False)
+        return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+    todo = []
+    for p in pages:
+        sig = _sig(p)
+        if p.get("pp_src_sig") == sig and p.get("content_es"):
+            continue  # unchanged since last translation
+        todo.append((p, sig))
+    if not todo:
+        logger.info("problem pages ES: all up to date, nothing to translate")
+        return
     results = await asyncio.gather(
-        *[_translate_pp_es(p.get("content", {}), p.get("seo", {})) for p in pages],
+        *[_translate_pp_es(p.get("content", {}), p.get("seo", {})) for (p, _) in todo],
         return_exceptions=True,
     )
-    for p, es in zip(pages, results):
+    for (p, sig), es in zip(todo, results):
         if isinstance(es, dict) and es.get("content_es"):
-            await db.problem_pages.update_one({"id": p["id"]}, {"$set": es})
+            await db.problem_pages.update_one({"id": p["id"]}, {"$set": {**es, "pp_src_sig": sig}})
 
 
 

@@ -892,12 +892,14 @@ _TR_PERITEM_LISTS = ["case_studies", "about_sections"]
 
 
 async def _translate_chunk(system: str, payload, retries: int = 2):
-    """Translate one small JSON payload; retry a few times; raise if all fail."""
+    """Translate one small JSON payload; retry a few times; raise if all fail.
+    Uses the cheaper CHAT_MODEL (gpt-4o-mini): translation is a simple task that
+    the mini model handles just as well for a fraction of the cost."""
     import json as _json
     last = None
     for _ in range(retries + 1):
         try:
-            chat = _new_chat(system)
+            chat = _new_chat(system, model=CHAT_MODEL)
             resp = await chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False)))
             data = _extract_json(resp)
             if data is not None and data != {}:
@@ -907,9 +909,14 @@ async def _translate_chunk(system: str, payload, retries: int = 2):
     raise ValueError(f"chunk translate failed: {last!r}")
 
 
-async def _translate_website_generic(content: dict, system: str) -> dict:
+async def _translate_website_generic(content: dict, system: str, old_src: dict = None, old_tr: dict = None) -> dict:
     """Translate a website content dict in small parallel chunks. Any chunk that
-    fails after retries keeps its original text (partial > total failure)."""
+    fails after retries keeps its original text (partial > total failure).
+
+    Incremental mode: when `old_src` (the source snapshot from the previous
+    translation) and `old_tr` (its translated result) are given, any chunk whose
+    source text is unchanged reuses the previous translation instead of calling
+    the AI again — so re-translating only spends tokens on what actually changed."""
     import asyncio
     result = dict(content)
     for k in _TR_BATCH_LISTS + _TR_PERITEM_LISTS:
@@ -931,10 +938,63 @@ async def _translate_website_generic(content: dict, system: str) -> dict:
         for i, item in enumerate(items):
             jobs.append(("item", (k, i), {k: [item]}))
 
-    results = await asyncio.gather(
-        *[_translate_chunk(system, payload) for (_, _, payload) in jobs],
+    def _reuse(kind, key, payload):
+        """Return a cached translated payload for this chunk if its source text
+        is identical to the last time we translated it; else None (=> translate)."""
+        if not old_src or not old_tr:
+            return None
+        if kind == "scalars":
+            out = {}
+            for kk in payload:
+                if content.get(kk) != old_src.get(kk) or not old_tr.get(kk):
+                    return None
+                out[kk] = old_tr.get(kk)
+            return out
+        if kind == "scalar":
+            k = key
+            if content.get(k) == old_src.get(k) and old_tr.get(k):
+                return {k: old_tr.get(k)}
+            return None
+        if kind == "list":
+            k = key
+            ot = old_tr.get(k)
+            if content.get(k) == old_src.get(k) and isinstance(ot, list) and len(ot) == len(content.get(k) or []):
+                return {k: ot}
+            return None
+        if kind == "item":
+            k, i = key
+            src_list, tr_list = (old_src.get(k) or []), (old_tr.get(k) or [])
+            cur = (content.get(k) or [])
+            if i < len(cur):
+                if i < len(src_list) and cur[i] == src_list[i] and i < len(tr_list):
+                    return {k: [tr_list[i]]}
+                for j, os in enumerate(src_list):
+                    if cur[i] == os and j < len(tr_list):
+                        return {k: [tr_list[j]]}
+            return None
+
+    reuse_out = {}
+    pending = []  # (job_index, payload)
+    reused = 0
+    for idx, (kind, key, payload) in enumerate(jobs):
+        cached = _reuse(kind, key, payload)
+        if cached is not None:
+            reuse_out[idx] = cached
+            reused += 1
+        else:
+            pending.append((idx, payload))
+
+    pend_results = await asyncio.gather(
+        *[_translate_chunk(system, payload) for (_, payload) in pending],
         return_exceptions=True,
     )
+    results = [None] * len(jobs)
+    for idx, out in reuse_out.items():
+        results[idx] = out
+    for (idx, _), out in zip(pending, pend_results):
+        results[idx] = out
+    if old_src and old_tr:
+        logger.info("translate incremental: reused %d/%d chunks, translated %d", reused, len(jobs), len(pending))
 
     for (kind, key, payload), out in zip(jobs, results):
         if isinstance(out, Exception) or not isinstance(out, dict):
@@ -983,9 +1043,10 @@ Strict rules:
 - Return ONLY the translated JSON (no markdown, no commentary)."""
 
 
-async def translate_website_content(content: dict) -> dict:
-    """Translate a website content dict to Spanish, preserving structure."""
-    return await _translate_website_generic(content, WEBSITE_TRANSLATE_SYSTEM)
+async def translate_website_content(content: dict, old_src: dict = None, old_tr: dict = None) -> dict:
+    """Translate a website content dict to Spanish, preserving structure.
+    Reuses unchanged pieces when old_src/old_tr from the last run are given."""
+    return await _translate_website_generic(content, WEBSITE_TRANSLATE_SYSTEM, old_src, old_tr)
 
 
 WEBSITE_TRANSLATE_EN_SYSTEM = """You are a professional bilingual (Spanish↔English) marketing translator
@@ -1012,9 +1073,10 @@ Strict rules:
 - Return ONLY the translated JSON (no markdown, no commentary)."""
 
 
-async def translate_website_content_to_en(content: dict) -> dict:
-    """Translate a website content dict Spanish -> English, preserving structure."""
-    return await _translate_website_generic(content, WEBSITE_TRANSLATE_EN_SYSTEM)
+async def translate_website_content_to_en(content: dict, old_src: dict = None, old_tr: dict = None) -> dict:
+    """Translate a website content dict Spanish -> English, preserving structure.
+    Reuses unchanged pieces when old_src/old_tr from the last run are given."""
+    return await _translate_website_generic(content, WEBSITE_TRANSLATE_EN_SYSTEM, old_src, old_tr)
 
 
 PROBLEM_PAGE_ES_SYSTEM = """You are a professional bilingual (English↔Spanish) marketing translator for
