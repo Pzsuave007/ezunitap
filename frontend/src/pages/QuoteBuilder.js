@@ -50,6 +50,7 @@ export default function QuoteBuilder() {
     tax_amount: 0, total: 0, deposit_amount: 0, payment_terms: "", notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [quoteType, setQuoteType] = useState("final"); // "final" | "soft" (preliminary estimate)
   const [phase, setPhase] = useState("input"); // input (questions) -> draft (review & edit)
   const goDraft = () => { setPhase("draft"); window.scrollTo(0, 0); };
 
@@ -197,7 +198,7 @@ export default function QuoteBuilder() {
     if (!draft.job_title.trim()) return toast.error(t("quoteBuilder.errMissingTitle"));
     setSaving(true);
     try {
-      const { data } = await api.post("/quotes", { ...draft, client_id: clientId, status: "draft" });
+      const { data } = await api.post("/quotes", { ...draft, client_id: clientId, status: "draft", quote_type: quoteType });
       toast.success(t("quoteBuilder.created"));
       navigate(`/quotes/${data.id}`);
     } catch (err) {
@@ -331,6 +332,29 @@ export default function QuoteBuilder() {
           <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{lang === "es" ? "Borrador" : "Draft"}</span>
         </div>
         <h2 className="font-heading text-xl font-bold">{t("quoteBuilder.detailsTitle")}</h2>
+
+        <div>
+          <Label>{lang === "es" ? "Tipo de cotización" : "Quote type"}</Label>
+          <div className="grid grid-cols-2 gap-2 mt-1.5">
+            <button type="button" data-testid="qb-type-final" onClick={() => setQuoteType("final")}
+              className={`p-3 rounded-xl border-2 text-left transition ${quoteType === "final" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}>
+              <div className={`text-sm font-bold ${quoteType === "final" ? "text-blue-700" : "text-slate-700"}`}>{lang === "es" ? "Cotización Final" : "Final Quote"}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{lang === "es" ? "Revisada, lista para firmar y pagar" : "Reviewed, ready to sign & pay"}</div>
+            </button>
+            <button type="button" data-testid="qb-type-soft" onClick={() => setQuoteType("soft")}
+              className={`p-3 rounded-xl border-2 text-left transition ${quoteType === "soft" ? "border-amber-500 bg-amber-50" : "border-slate-200 hover:border-slate-300"}`}>
+              <div className={`text-sm font-bold ${quoteType === "soft" ? "text-amber-700" : "text-slate-700"}`}>{lang === "es" ? "Estimado" : "Estimate"}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{lang === "es" ? "Precio aproximado, sujeto a revisión en persona" : "Ballpark price, subject to in-person review"}</div>
+            </button>
+          </div>
+          {quoteType === "soft" && (
+            <p data-testid="qb-soft-note" className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-2">
+              {lang === "es"
+                ? "El cliente verá un aviso de que el precio puede cambiar y NO podrá aceptar, firmar ni pagar hasta que lo conviertas en Cotización Final."
+                : "The client will see a notice that the price may change and will NOT be able to accept, sign or pay until you convert it to a Final Quote."}
+            </p>
+          )}
+        </div>
 
         <div>
           <Label>{t("quoteBuilder.jobTitle")}</Label>

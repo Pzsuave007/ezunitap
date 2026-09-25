@@ -18,7 +18,7 @@ import SendDocumentDialog from "@/components/SendDocumentDialog";
 export default function QuoteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [quote, setQuote] = useState(null);
   const [client, setClient] = useState(null);
@@ -184,6 +184,28 @@ export default function QuoteDetail() {
       </Card>
 
       <Card className="card-elevated p-5 border-0 shadow-none space-y-3">
+        <div>
+          <Label>{i18n.language === "es" ? "Tipo de cotización" : "Quote type"}</Label>
+          <div className="grid grid-cols-2 gap-2 mt-1.5">
+            <button type="button" data-testid="qd-type-final" onClick={() => setQuote({ ...quote, quote_type: "final" })}
+              className={`p-3 rounded-xl border-2 text-left transition ${(quote.quote_type || "final") === "final" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}>
+              <div className={`text-sm font-bold ${(quote.quote_type || "final") === "final" ? "text-blue-700" : "text-slate-700"}`}>{i18n.language === "es" ? "Cotización Final" : "Final Quote"}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{i18n.language === "es" ? "Lista para firmar y pagar" : "Ready to sign & pay"}</div>
+            </button>
+            <button type="button" data-testid="qd-type-soft" onClick={() => setQuote({ ...quote, quote_type: "soft" })}
+              className={`p-3 rounded-xl border-2 text-left transition ${quote.quote_type === "soft" ? "border-amber-500 bg-amber-50" : "border-slate-200 hover:border-slate-300"}`}>
+              <div className={`text-sm font-bold ${quote.quote_type === "soft" ? "text-amber-700" : "text-slate-700"}`}>{i18n.language === "es" ? "Estimado" : "Estimate"}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{i18n.language === "es" ? "Sujeto a revisión en persona" : "Subject to in-person review"}</div>
+            </button>
+          </div>
+          {quote.quote_type === "soft" && (
+            <p data-testid="qd-soft-note" className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-2">
+              {i18n.language === "es"
+                ? "El cliente NO puede aceptar, firmar ni pagar este estimado. Cámbialo a Cotización Final y guarda para que pueda firmarlo."
+                : "The client cannot accept, sign or pay this estimate. Switch it to Final Quote and save so they can sign it."}
+            </p>
+          )}
+        </div>
         <div>
           <Label>Description</Label>
           <Textarea value={quote.description || ""} onChange={(e) => setQuote({ ...quote, description: e.target.value })} className="rounded-xl mt-1.5" />

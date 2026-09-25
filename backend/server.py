@@ -163,6 +163,7 @@ class QuoteIn(BaseModel):
     payment_terms: Optional[str] = ""
     notes: Optional[str] = ""
     status: str = "draft"  # draft, sent, approved, declined, converted
+    quote_type: str = "final"  # "final" (ready to sign/pay) | "soft" (preliminary estimate, view-only)
     # Embedded short agreement (5 clauses) so clients can accept+sign in one
     # step. Optional — when present, the public quote page asks for signature
     # and the accept flow auto-generates an Agreement + Invoice.
@@ -1133,6 +1134,8 @@ async def public_accept_quote(quote_id: str):
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
         raise HTTPException(404, "Not found")
+    if q.get("quote_type") == "soft":
+        raise HTTPException(400, "This is a preliminary estimate. Your contractor will review the work in person and send a final quote you can accept.")
     if q.get("status") in ("declined",):
         raise HTTPException(400, "This quote can't be accepted in its current state")
 
@@ -1233,6 +1236,8 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
     q = await db.quotes.find_one({"id": quote_id}, {"_id": 0})
     if not q:
         raise HTTPException(404, "Quote not found")
+    if q.get("quote_type") == "soft":
+        raise HTTPException(400, "This is a preliminary estimate. Your contractor will review the work in person and send a final quote you can sign.")
     if q.get("status") in ("declined",):
         raise HTTPException(400, "Quote declined")
     signer = (payload.signer_name or "").strip()
@@ -1366,6 +1371,8 @@ async def public_accept_and_sign_quote(quote_id: str, payload: PublicAcceptSignI
 async def _auto_create_agreement_from_quote(quote: dict):
     """Background task: builds the AI agreement for a quote (idempotent + race-safe)."""
     try:
+        if quote.get("quote_type") == "soft":
+            return  # preliminary estimate — no agreement until converted to a final quote
         owner = await db.users.find_one({"id": quote["user_id"]}, {"_id": 0, "agreements_enabled": 1})
         if owner and owner.get("agreements_enabled") is False:
             return  # owner turned service agreements off (quote -> invoice directly)

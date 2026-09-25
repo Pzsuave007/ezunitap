@@ -192,3 +192,11 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Refactor: extraídos _build_en_snapshot y _translate_site_es (usados por el endpoint y por la tarea automática).
 - Verificado por curl: cambiar 1 campo => "reused 13/14, translated 1"; cambiar solo color => no dispara traducción; content_es se actualiza solo.
 - Nota: la PRIMERA creación de la versión ES aún requiere apretar "Traducir al Español" una vez (para activar lang_toggle); a partir de ahí es automático.
+
+## 2026-09-25 — Cotizaciones: Final vs Estimado (soft quote) + disclaimer
+- QuoteIn: nuevo campo quote_type ("final" | "soft"), default "final" (no afecta cotizaciones existentes).
+- Soft quote = view-only: el cliente NO puede aceptar/firmar/pagar. Guardas en public_accept_quote y public_accept_and_sign_quote (HTTP 400 con mensaje). _auto_create_agreement_from_quote retorna temprano si quote_type=="soft" (no genera acuerdo).
+- Convertir a final: editar en QuoteDetail, cambiar el toggle a "Cotización Final" y guardar (PUT /quotes/{id}) => ya se puede aceptar/firmar/pagar.
+- Frontend: QuoteBuilder.js (selector Final/Estimado en fase draft, envía quote_type), QuoteDetail.js (toggle de tipo + nota), PublicQuote.js (disclaimer bilingüe amarillo cuando soft + bloque "No action needed yet / Aún no hay que hacer nada" en vez de aceptar).
+- Disclaimer (solo en la cotización que ve el cliente, bilingüe EN+ES): "This is a preliminary estimate... / Este es un estimado preliminar...".
+- Verificado: curl (crear soft -> accept 400 -> convertir final -> accept OK), screenshot público muestra disclaimer y oculta aceptar. Build trackeado.

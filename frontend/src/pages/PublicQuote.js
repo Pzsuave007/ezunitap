@@ -53,6 +53,7 @@ export default function PublicQuote() {
   if (!data) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
   const { quote, business, client } = data;
+  const isSoft = quote.quote_type === "soft";
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 lg:p-10 print:p-0 print:bg-white">
@@ -168,6 +169,17 @@ export default function PublicQuote() {
               {quote.deposit_amount > 0 && <div className="flex justify-between text-emerald-700"><span>Deposit</span><span>{fmtMoney(quote.deposit_amount)}</span></div>}
             </div>
 
+            {isSoft && (
+              <div data-testid="quote-soft-disclaimer" className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+                  <Sparkles className="w-4 h-4" />
+                  {"Estimate / Estimado — subject to review"}
+                </div>
+                <p className="text-sm text-amber-800">This is a preliminary estimate based on the information provided. The final price may be adjusted once we review the work in person and confirm all details.</p>
+                <p className="text-sm text-amber-800">Este es un estimado preliminar basado en la información proporcionada. El precio final puede ajustarse una vez que revisemos el trabajo en persona y confirmemos todos los detalles.</p>
+              </div>
+            )}
+
             {quote.payment_terms && (
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Terms</div>
@@ -181,8 +193,15 @@ export default function PublicQuote() {
               </div>
             )}
 
-            {/* Accept block — clean. Accepting takes the client to the agreement to sign, then pay. */}
-            {accepted ? (
+            {/* Accept block — clean. Accepting takes the client to the agreement to sign, then pay.
+                Soft quotes (preliminary estimates) are view-only: no accept/sign/pay. */}
+            {isSoft ? (
+              <div data-testid="quote-soft-noaccept" className="rounded-xl border-2 border-slate-200 bg-slate-50 p-5 text-center space-y-1">
+                <h3 className="font-heading text-base font-bold text-slate-800">No action needed yet · Aún no hay que hacer nada</h3>
+                <p className="text-xs text-slate-600">Your contractor will review the work in person and send you a final quote you can accept, sign and pay.</p>
+                <p className="text-xs text-slate-600">Tu contratista revisará el trabajo en persona y te enviará una cotización final que podrás aceptar, firmar y pagar.</p>
+              </div>
+            ) : accepted ? (
               <div data-testid="quote-accepted-block" className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-5 text-center space-y-3">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
                 <div className="font-heading text-xl font-bold text-emerald-800">Quote Accepted</div>
