@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UniTech — Flyer promocional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #0f172a; --slate: #475569; --line: #e2e8f0;
+    --emerald: #059669; --emerald-soft: #ecfdf5; --amber: #d97706;
+  }
+  html, body { background: #eef2f6; color: var(--ink); font-family: "Manrope", system-ui, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .head-font { font-family: "Poppins", "Manrope", sans-serif; }
+
+  .toolbar { text-align: center; padding: 18px; }
+  .toolbar button { background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 13px 26px; font: 700 15px "Manrope", sans-serif; cursor: pointer; }
+  .toolbar button:hover { background: #1e293b; }
+  .toolbar p { color: var(--slate); font-size: 13px; margin-top: 8px; }
+
+  .page {
+    width: 8.5in; min-height: 11in; margin: 0 auto 40px; background: #fff;
+    box-shadow: 0 10px 40px rgba(15,23,42,.15); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* Hero */
+  .hero { background: var(--ink); color: #fff; padding: 24px 44px 20px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -70px; top: -70px; width: 220px; height: 220px; border-radius: 50%; background: rgba(5,150,105,.18); filter: blur(10px); }
+  .brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+  .brand .logo { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg,#10b981,#059669); display: flex; align-items: center; justify-content: center; font: 800 20px "Poppins"; }
+  .brand .name { font: 800 24px "Poppins"; letter-spacing: -.5px; }
+  .brand .sub { font-size: 11px; color: #94a3b8; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .hero h1 { font: 800 25px/1.15 "Poppins"; margin-top: 15px; position: relative; z-index: 1; max-width: 92%; }
+  .hero h1 em { color: #34d399; font-style: normal; }
+  .hero .why { margin-top: 10px; color: #cbd5e1; font-size: 13px; line-height: 1.5; max-width: 94%; position: relative; z-index: 1; }
+
+  .body { padding: 20px 44px 6px; flex: 1; }
+  .section-label { font: 700 11.5px "Manrope"; letter-spacing: .14em; text-transform: uppercase; color: var(--emerald); margin-bottom: 12px; }
+
+  /* 5 esenciales */
+  .ess { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 22px; }
+  .ess .item { display: flex; gap: 11px; align-items: flex-start; }
+  .ess .num { flex: none; width: 28px; height: 28px; border-radius: 9px; background: var(--emerald-soft); color: var(--emerald); font: 800 14px "Poppins"; display: flex; align-items: center; justify-content: center; border: 1px solid #a7f3d0; }
+  .ess .t { font: 700 14px "Manrope"; color: var(--ink); }
+  .ess .d { font-size: 11.5px; color: var(--slate); line-height: 1.4; margin-top: 2px; }
+  .ess .item:last-child { grid-column: 1 / -1; }
+
+  .divider { height: 1px; background: var(--line); margin: 18px 0; }
+
+  /* 3 pasos */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .step { border: 1px solid var(--line); border-radius: 15px; padding: 14px 12px; text-align: center; background: #fff; }
+  .step .badge { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; font: 800 14px "Poppins"; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+  .step .t { font: 700 13.5px "Manrope"; }
+  .step .d { font-size: 11px; color: var(--slate); line-height: 1.38; margin-top: 4px; }
+
+  /* Promo + QR */
+  .promo { margin: 18px 44px 0; background: linear-gradient(120deg,#065f46 0%, #0f172a 100%); color: #fff; border-radius: 18px; padding: 18px 24px; display: flex; align-items: center; gap: 22px; }
+  .promo .left { flex: 1; }
+  .promo .tag { display: inline-block; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); padding: 4px 11px; border-radius: 999px; font: 700 10.5px "Manrope"; letter-spacing: .08em; text-transform: uppercase; }
+  .promo .price { font: 800 36px "Poppins"; margin-top: 8px; line-height: 1; }
+  .promo .price span { font-size: 17px; font-weight: 700; color: #a7f3d0; }
+  .promo .price small { display: block; font: 700 12px "Manrope"; color: #6ee7b7; letter-spacing: .06em; text-transform: uppercase; margin-top: 5px; }
+  .promo .pitch { font-size: 12px; color: #d1fae5; margin-top: 8px; line-height: 1.45; }
+  .qr { flex: none; text-align: center; background: #fff; border-radius: 14px; padding: 10px; }
+  .qr img { width: 112px; height: 112px; display: block; }
+  .qr .cap { font: 700 10.5px "Manrope"; color: var(--ink); margin-top: 5px; }
+
+  /* Footer contact */
+  .foot { padding: 14px 44px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .foot .biz { font: 700 14px "Poppins"; color: var(--ink); }
+  .foot .owner { font-size: 11.5px; color: var(--slate); }
+  .foot .contact { text-align: right; font-size: 12.5px; color: var(--ink); line-height: 1.65; }
+  .foot .contact b { color: var(--emerald); }
+
+  @media print {
+    html, body { background: #fff; }
+    .toolbar { display: none !important; }
+    .page { box-shadow: none; margin: 0; width: 100%; min-height: auto; }
+    @page { size: Letter; margin: 0.25in; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+    <p>Consejo: en el diálogo de impresión elige "Guardar como PDF" o imprime en hoja carta.</p>
+  </div>
+
+  <div class="page">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="brand">
+        <div class="logo">U</div>
+        <div>
+          <div class="name">UniTech</div>
+          <div class="sub">Tecnología para tu negocio</div>
+        </div>
+      </div>
+      <h1>Todo lo que tu negocio necesita para <em>tener más clientes</em> — en una sola plataforma.</h1>
+      <p class="why">Creé UniTech porque vi a demasiados dueños de negocio perder clientes por andar con papeles, WhatsApp y mil apps sueltas. Junté las <b>5 herramientas esenciales</b> en un solo lugar — tú lo manejas en español, tus clientes lo reciben profesional en inglés.</p>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+      <div class="section-label">Las 5 cosas esenciales para tu negocio</div>
+      <div class="ess">
+        <div class="item">
+          <div class="num">1</div>
+          <div><div class="t">Página Web</div><div class="d">Home + páginas para cada servicio y para los problemas que resuelves. Te encuentran en Google.</div></div>
+        </div>
+        <div class="item">
+          <div class="num">2</div>
+          <div><div class="t">Google My Business</div><div class="d">De aquí viene el tráfico serio. Reseñas, posts de trabajos y fotos antes/después que dan confianza.</div></div>
+        </div>
+        <div class="item">
+          <div class="num">3</div>
+          <div><div class="t">Cotizaciones, Contratos e Invoices</div><div class="d">Quotes con IA, service agreements para firmar y cobros — todo profesional y en minutos.</div></div>
+        </div>
+        <div class="item">
+          <div class="num">4</div>
+          <div><div class="t">Marketing en Redes Sociales</div><div class="d">Crea posts y reels y publícalos directo en tu Google Business. Sin diseñador.</div></div>
+        </div>
+        <div class="item">
+          <div class="num">5</div>
+          <div><div class="t">Tarjeta Digital (NFC)</div><div class="d">Adiós a las tarjetas de papel. Comparte tu tarjeta con un toque y pide reseñas de Google al instante.</div></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-label">Cómo funciona — así de fácil</div>
+      <div class="steps">
+        <div class="step">
+          <div class="badge">1</div>
+          <div class="t">Agrega tu cliente</div>
+          <div class="d">Guarda sus datos una vez. Todo queda organizado en tu CRM.</div>
+        </div>
+        <div class="step">
+          <div class="badge">2</div>
+          <div class="t">Cotiza con IA</div>
+          <div class="d">Describe el trabajo en español y la IA arma un quote profesional en inglés.</div>
+        </div>
+        <div class="step">
+          <div class="badge">3</div>
+          <div class="t">Cobra y agenda</div>
+          <div class="d">Manda el invoice, firma el contrato y agenda el trabajo. Listo para cobrar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMO + QR -->
+    <div class="promo">
+      <div class="left">
+        <span class="tag">★ Oferta de lanzamiento</span>
+        <div class="price">$75<span>/mes</span><small>Precio congelado de por vida</small></div>
+        <p class="pitch">Regístrate hoy y conserva este precio para siempre. Todas las herramientas, sin contratos, sin sorpresas. Escanea el código y prueba el sistema completo en vivo — sin registro.</p>
+      </div>
+      <div class="qr">
+        <img src="data:image/png;base64,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" alt="Escanea para registrarte en UniTech" />
+        <div class="cap">Escanéame → prueba el sistema</div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="foot">
+      <div>
+        <div class="biz">Uni2 Marketing Agency</div>
+        <div class="owner">Paul Zacapantzi · Creador de UniTech</div>
+      </div>
+      <div class="contact">
+        🌐 <b>ezunitech.com</b><br />
+        📱 (971) 227-0595<br />
+        ✉️ pzsuave007@gmail.com
+      </div>
+    </div>
+  </div>
+</body>
+</html>
