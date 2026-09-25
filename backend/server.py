@@ -6697,7 +6697,11 @@ async def public_photo(photo_id: str, request: Request, w: int = 0, q: int = 82)
 @api_router.get("/public/gmb-media/{photo_id}")
 async def public_gmb_media(photo_id: str):
     """Public image URL used as the sourceUrl when publishing a Google Business
-    post. The photo_id is an unguessable UUID; serves only non-deleted photos."""
+    post. The photo_id is an unguessable UUID; serves only non-deleted photos.
+
+    Google Business Profile posts only accept JPG/PNG images. We store images as
+    WEBP by default, which Google rejects with a 500 INTERNAL error, so we convert
+    to JPEG on the fly here and guarantee Google's minimum size (250x250)."""
     doc = await db.photos.find_one({"id": photo_id, "is_deleted": False}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Not found")
@@ -6706,7 +6710,21 @@ async def public_gmb_media(photo_id: str):
         data, ct = backend.get(doc["storage_path"])
     except Exception:
         raise HTTPException(500, "Storage error")
-    return Response(content=data, media_type=doc.get("content_type", ct))
+    ct = (doc.get("content_type") or ct or "image/jpeg").lower()
+    if ct not in ("image/jpeg", "image/jpg", "image/png"):
+        try:
+            img = _PILImage.open(_io.BytesIO(data)).convert("RGB")
+            w, h = img.size
+            if min(w, h) < 250:  # Google requires at least 250x250
+                scale = 250 / min(w, h)
+                img = img.resize((max(250, int(w * scale)), max(250, int(h * scale))), _PILImage.LANCZOS)
+            buf = _io.BytesIO()
+            img.save(buf, format="JPEG", quality=90)
+            data, ct = buf.getvalue(), "image/jpeg"
+        except Exception as e:
+            logger.warning(f"gmb-media JPEG conversion failed for {photo_id}: {e!r}")
+            ct = doc.get("content_type", "image/jpeg")
+    return Response(content=data, media_type=ct)
 
 
 def _public_base_from_request(request: Request) -> str:

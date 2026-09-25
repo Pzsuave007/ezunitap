@@ -200,3 +200,8 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Frontend: QuoteBuilder.js (selector Final/Estimado en fase draft, envía quote_type), QuoteDetail.js (toggle de tipo + nota), PublicQuote.js (disclaimer bilingüe amarillo cuando soft + bloque "No action needed yet / Aún no hay que hacer nada" en vez de aceptar).
 - Disclaimer (solo en la cotización que ve el cliente, bilingüe EN+ES): "This is a preliminary estimate... / Este es un estimado preliminar...".
 - Verificado: curl (crear soft -> accept 400 -> convertir final -> accept OK), screenshot público muestra disclaimer y oculta aceptar. Build trackeado.
+
+## 2026-09-25 — Fix: posts de GMB con imagen fallaban (500 INTERNAL)
+- Causa raíz: las imágenes se guardan como WEBP (_compress_image) pero Google Business Profile localPosts SOLO acepta JPG/PNG -> Google devolvía {code:500, status:INTERNAL}. Post de solo texto funcionaba; con imagen (Studio WEBP) fallaba.
+- Fix: /api/public/gmb-media/{photo_id} ahora convierte a JPEG al vuelo cualquier formato no-JPG/PNG (WEBP) con PIL, y sube a mínimo 250x250 (requisito de Google). Verificado: sirve image/jpeg válido 1880x1253.
+- Solo backend (server.py). En prod: git pull + restart backend.
