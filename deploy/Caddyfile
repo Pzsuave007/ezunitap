@@ -16,39 +16,88 @@
 # ============================================================================
 
 {
-	email admin@ezunitap.com
-	on_demand_tls {
-		# Caddy calls this before issuing a cert: 200 = allow, 404 = reject.
-		ask http://127.0.0.1:8007/api/public/domain-allowed
-		interval 2m
-		burst 5
-	}
+        email admin@ezunitap.com
+        on_demand_tls {
+                # Caddy calls this before issuing a cert: 200 = allow, 404 = reject.
+                ask http://127.0.0.1:8007/api/public/domain-allowed
+                interval 2m
+                burst 5
+        }
+}
+
+# ----------------------------------------------------------------------------
+# AI Search / GEO snippets. These route KNOWN crawler User-Agents to the backend
+# server-rendered HTML (so ChatGPT/Perplexity/Bing etc. that don't run JS still
+# read the business content + JSON-LD). Real browsers NEVER match the bot regex,
+# so humans always get the normal React app — this cannot affect real visitors.
+# robots.txt / llms.txt / sitemap.xml are served by the backend for everyone
+# (host-aware, with absolute URLs).
+# ----------------------------------------------------------------------------
+
+# Applies to the PRIMARY UniTech domains (tenant sites live under /sitio/<slug>).
+(ssr_primary) {
+        rewrite /robots.txt /api/robots.txt
+        rewrite /llms.txt /api/llms.txt
+        rewrite /sitemap.xml /api/sitemap.xml
+
+        @bot_sitepp {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path_regexp sitepp ^/sitio/([^/]+)/p/([^/]+)/?$
+        }
+        rewrite @bot_sitepp /api/ssr/pp/{http.regexp.sitepp.1}/{http.regexp.sitepp.2}
+
+        @bot_site {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path_regexp site ^/sitio/([^/]+)/?$
+        }
+        rewrite @bot_site /api/ssr/site/{http.regexp.site.1}
+}
+
+# Applies to CUSTOM customer domains (the site lives at the domain root).
+(ssr_custom) {
+        rewrite /robots.txt /api/robots.txt
+        rewrite /llms.txt /api/llms.txt
+        rewrite /sitemap.xml /api/sitemap.xml
+
+        @bot_pp {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path_regexp cpp ^/p/([^/]+)/?$
+        }
+        rewrite @bot_pp /api/ssr/p/{http.regexp.cpp.1}
+
+        @bot_root {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path /
+        }
+        rewrite @bot_root /api/ssr/home
 }
 
 # --- Primary UniTech domains (normal automatic HTTPS) ----------------------
 ezunitap.com, www.ezunitap.com, ezunitech.com, www.ezunitech.com {
-	root * /home/ezunitap/public_html
-	encode zstd gzip
-	@api path /api/*
-	reverse_proxy @api 127.0.0.1:8007
-	try_files {path} /index.html
-	file_server
+        root * /home/ezunitap/public_html
+        encode zstd gzip
+        import ssr_primary
+        @api path /api/*
+        reverse_proxy @api 127.0.0.1:8007
+        try_files {path} /index.html
+        file_server
 }
 
 # --- ANY customer custom domain (On-Demand TLS, same app) ------------------
 https:// {
-	tls {
-		on_demand
-	}
-	root * /home/ezunitap/public_html
-	encode zstd gzip
-	@api path /api/*
-	reverse_proxy @api 127.0.0.1:8007
-	try_files {path} /index.html
-	file_server
+        tls {
+                on_demand
+        }
+        root * /home/ezunitap/public_html
+        encode zstd gzip
+        import ssr_custom
+        @api path /api/*
+        reverse_proxy @api 127.0.0.1:8007
+        try_files {path} /index.html
+        file_server
 }
 
 # HTTP -> HTTPS for everything
 http:// {
-	redir https://{host}{uri} permanent
+        redir https://{host}{uri} permanent
 }
