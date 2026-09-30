@@ -19,6 +19,34 @@ RewriteRule ^c/([^/]+)/?$ http://127.0.0.1:8007/api/public/card/$1/og [P,L]
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview|Embedly|Iframely|flipboard|tumblr|bitlybot|Snapchat|Google-InspectionTool) [NC]
 RewriteRule ^r/([^/]+)/?$ http://127.0.0.1:8007/api/public/reviews/$1/og [P,L]
 
+# --- AI Search / SEO -------------------------------------------------------
+# robots.txt, llms.txt and sitemap.xml are served by the backend (host-aware,
+# with absolute URLs) for EVERYONE. These win over any static file.
+RewriteRule ^robots\.txt$  http://127.0.0.1:8007/api/robots.txt  [P,L]
+RewriteRule ^llms\.txt$    http://127.0.0.1:8007/api/llms.txt     [P,L]
+RewriteRule ^sitemap\.xml$ http://127.0.0.1:8007/api/sitemap.xml  [P,L]
+
+# AI/search crawlers (which don't run JavaScript) get server-rendered HTML with
+# the real business content + JSON-LD. Real users fall through to the SPA below,
+# so this CANNOT affect normal visitors.
+# Conversion (Problem) page on a customer's own domain: /p/<slug>
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^p/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/p/$1 [P,L]
+
+# Tenant conversion page under the platform: /sitio/<slug>/p/<pageslug>
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^sitio/([^/]+)/p/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/pp/$1/$2 [P,L]
+
+# Tenant site home under the platform: /sitio/<slug>
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^sitio/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/site/$1 [P,L]
+
+# Customer's own-domain site HOME: / (but NOT the UniTech marketing domains)
+RewriteCond %{HTTP_HOST} !^(www\.)?ezunitech\.com$ [NC]
+RewriteCond %{HTTP_HOST} !^(www\.)?ezunitap\.com$ [NC]
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^$ http://127.0.0.1:8007/api/ssr/home [P,L]
+
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
