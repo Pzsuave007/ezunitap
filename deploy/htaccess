@@ -45,7 +45,8 @@ RewriteRule ^sitio/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/site/$1 [P,L]
 RewriteCond %{HTTP_HOST} !^(www\.)?ezunitech\.com$ [NC]
 RewriteCond %{HTTP_HOST} !^(www\.)?ezunitap\.com$ [NC]
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
-RewriteRule ^$ http://127.0.0.1:8007/api/ssr/home [P,L]
+RewriteCond %{REQUEST_URI} ^/?(index\.html)?$
+RewriteRule ^ http://127.0.0.1:8007/api/ssr/home [P,L]
 
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
