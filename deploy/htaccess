@@ -42,11 +42,15 @@ RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|
 RewriteRule ^sitio/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/site/$1 [P,L]
 
 # Customer's own-domain site HOME: / (but NOT the UniTech marketing domains)
+# NOTE: proxying the bare document root ("/") with [P] fails in per-dir .htaccess
+# because the matched path is empty and mod_proxy gets no path. So we do an
+# INTERNAL rewrite of "/" (and /index.html) to "/api/ssr/home" and let the /api
+# proxy rule above (non-empty match) perform the actual proxy to port 8007.
 RewriteCond %{HTTP_HOST} !^(www\.)?ezunitech\.com$ [NC]
 RewriteCond %{HTTP_HOST} !^(www\.)?ezunitap\.com$ [NC]
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
 RewriteCond %{REQUEST_URI} ^/?(index\.html)?$
-RewriteRule ^ http://127.0.0.1:8007/api/ssr/home [P,L]
+RewriteRule ^ /api/ssr/home [L]
 
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
