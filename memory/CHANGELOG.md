@@ -205,3 +205,16 @@ Every active service can now become a dedicated customer-problem landing page (B
 - Causa raíz: las imágenes se guardan como WEBP (_compress_image) pero Google Business Profile localPosts SOLO acepta JPG/PNG -> Google devolvía {code:500, status:INTERNAL}. Post de solo texto funcionaba; con imagen (Studio WEBP) fallaba.
 - Fix: /api/public/gmb-media/{photo_id} ahora convierte a JPEG al vuelo cualquier formato no-JPG/PNG (WEBP) con PIL, y sube a mínimo 250x250 (requisito de Google). Verificado: sirve image/jpeg válido 1880x1253.
 - Solo backend (server.py). En prod: git pull + restart backend.
+
+## 2026-09-25 — AI Search / GEO (P1+P2+P3)
+- SSR bot-aware (server.py): endpoints que renderizan HTML real (contenido + meta + OG + JSON-LD) para crawlers sin JS.
+  - /api/ssr/site/{slug} y /api/ssr/home (dominio) -> home del sitio.
+  - /api/ssr/pp/{slug}/{page_slug} y /api/ssr/p/{page_slug} (dominio) -> Página Cliente.
+  - Resolución por X-Forwarded-Host (dominio propio) o slug; PP se busca por user_id (tolerante a website_slug viejo).
+  - Bilingüe (lang o default del dominio). JSON-LD: LocalBusiness(+address,areaServed,aggregateRating,makesOffer,sameAs), WebSite, BreadcrumbList; en PP: Service+BreadcrumbList+FAQPage. Frase entidad BUSINESS->SERVICE->LOCATION.
+- /api/robots.txt dinámico host-aware: Allow explícito a GPTBot/OAI-SearchBot/PerplexityBot/ClaudeBot/Google-Extended/CCBot/Bingbot/etc, Disallow rutas privadas, Sitemap absoluto. Static public/robots.txt actualizado igual.
+- /api/llms.txt dinámico: perfil del negocio (servicios, contacto, páginas) por dominio; overview de plataforma en ezunitech. Static public/llms.txt para plataforma.
+- sitemap.xml: agregado <lastmod> desde updated_at (per-domain + global).
+- Frontend: ContractorSite JSON-LD ahora array con LocalBusiness(+sameAs)+WebSite+BreadcrumbList; ProblemPage añade BreadcrumbList.
+- PENDIENTE (producción): el usuario debe agregar reglas Apache para enrutar User-Agents de bots a /api/ssr/... y /robots.txt,/llms.txt,/sitemap.xml -> /api/... (espejo de la regla OG existente). Sin eso, los bots siguen viendo el shell React.
+- Verificado por curl: SSR site EN/ES, SSR PP (Service+FAQ+Breadcrumb), robots, llms, lastmod. Build trackeado.

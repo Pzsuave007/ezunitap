@@ -99,6 +99,10 @@ export default function ProblemPage({ injected, byDomain }) {
       { "@context": "https://schema.org", "@type": "Service", name: `${data.page.service_name} — ${biz.name}`, areaServed: data.service_area || undefined, provider: { "@type": "LocalBusiness", name: biz.name, telephone: phone || undefined } },
     ];
     if (faqs.length) ld.push({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+    ld.push({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+      { "@type": "ListItem", position: 1, name: biz.name, item: byDomain ? `${window.location.origin}/` : `${window.location.origin}/sitio/${slug}` },
+      { "@type": "ListItem", position: 2, name: data.page.service_name, item: canonical },
+    ] });
     let s = document.getElementById("pp-jsonld");
     if (!s) { s = document.createElement("script"); s.type = "application/ld+json"; s.id = "pp-jsonld"; document.head.appendChild(s); }
     s.textContent = JSON.stringify(ld);

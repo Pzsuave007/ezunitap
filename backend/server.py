@@ -39,7 +39,7 @@ import connect_service  # noqa: E402
 import email_service  # noqa: E402
 from auth_utils import create_token, get_current_user_id, hash_password, verify_password, decode_token  # noqa: E402
 from fastapi import Request  # noqa: E402
-from fastapi.responses import HTMLResponse  # noqa: E402
+from fastapi.responses import HTMLResponse, PlainTextResponse  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -5832,7 +5832,7 @@ async def website_sitemap(request: Request):
         proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1,
                 "custom_domain_verified": 1, "custom_domain_lang": 1,
                 "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1,
-                "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1}
+                "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "updated_at": 1}
         site = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True}, proj)
         if not site:
             site = await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True}, proj)
@@ -5844,7 +5844,7 @@ async def website_sitemap(request: Request):
         if site.get("custom_domain_2") and site.get("custom_domain_2_verified"):
             alts[(site.get("custom_domain_2_lang") or "es")] = site["custom_domain_2"]
 
-        def _url(path):
+        def _url(path, lm=None):
             loc = f"https://{host}{path}"
             xhtml = ""
             for lang, dom in alts.items():
@@ -5852,10 +5852,11 @@ async def website_sitemap(request: Request):
             if alts:
                 xdef = alts.get("en") or next(iter(alts.values()))
                 xhtml += f'<xhtml:link rel="alternate" hreflang="x-default" href="https://{xdef}{path}"/>'
-            return f"<url><loc>{loc}</loc>{xhtml}<changefreq>weekly</changefreq></url>"
+            lastmod = f"<lastmod>{lm}</lastmod>" if lm else ""
+            return f"<url><loc>{loc}</loc>{xhtml}{lastmod}<changefreq>weekly</changefreq></url>"
 
         if site.get("published"):
-            urls.append(_url(""))
+            urls.append(_url("", lm=((site.get("updated_at") or "")[:10] or None)))
             if site.get("services") or (site.get("solutions_intro") or "").strip():
                 urls.append(_url("/soluciones"))
             if (site.get("about_story") or "").strip():
@@ -5896,7 +5897,7 @@ async def website_sitemap(request: Request):
     urls.append(f"<url><loc>{base}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
 
     sites = await db.websites.find(
-        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1}
+        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "updated_at": 1}
     ).to_list(2000)
     # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
@@ -5916,7 +5917,8 @@ async def website_sitemap(request: Request):
         if has_domain or not slug:
             continue
         onsite_slugs.add(slug)
-        urls.append(f"<url><loc>{base}/sitio/{slug}</loc><changefreq>weekly</changefreq></url>")
+        _lm = f"<lastmod>{s['updated_at'][:10]}</lastmod>" if s.get("updated_at") else ""
+        urls.append(f"<url><loc>{base}/sitio/{slug}</loc>{_lm}<changefreq>weekly</changefreq></url>")
         if s.get("services") or (s.get("solutions_intro") or "").strip():
             urls.append(f"<url><loc>{base}/sitio/{slug}/soluciones</loc><changefreq>weekly</changefreq></url>")
         _pp_names = pp_names_by_slug.get(slug, set())
@@ -5943,6 +5945,380 @@ async def website_sitemap(request: Request):
             )
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     return Response(content=xml, media_type="application/xml")
+
+
+# ---------------------------------------------------------------------------
+# AI Search / GEO (Generative Engine Optimization)
+# Bot-aware server-side rendering + llms.txt + robots. These make the React
+# sites discoverable by crawlers that DON'T run JavaScript (ChatGPT/OAI-SearchBot,
+# GPTBot, PerplexityBot, ClaudeBot, Bing/Copilot) — they get real HTML with the
+# business content, meta and JSON-LD. Humans keep seeing the identical React app;
+# the production proxy only routes known bot User-Agents to these endpoints.
+# ---------------------------------------------------------------------------
+
+_AI_BOTS = [
+    "Googlebot", "Bingbot", "GPTBot", "OAI-SearchBot", "ChatGPT-User",
+    "PerplexityBot", "Perplexity-User", "ClaudeBot", "Claude-User",
+    "Anthropic-AI", "Google-Extended", "CCBot", "Applebot", "Applebot-Extended",
+    "Amazonbot", "DuckDuckBot", "YandexBot", "meta-externalagent", "FacebookBot",
+]
+
+
+def _site_view(w: dict, lang: str) -> dict:
+    """Merged content view for a language: English base fields, overlaid with the
+    Spanish translation (content_es) when lang == 'es'."""
+    keys = ["headline", "subheadline", "about", "seo_title", "seo_description",
+            "solutions_intro", "about_title", "about_story", "how_it_works",
+            "why_us", "faqs", "services", "areas", "case_studies"]
+    view = {k: w.get(k) for k in keys}
+    if lang == "es" and isinstance(w.get("content_es"), dict):
+        for k, v in w["content_es"].items():
+            if v:
+                view[k] = v
+    return view
+
+
+def _clause(items, render):
+    return "".join(render(x) for x in (items or []) if x)
+
+
+def _entity_sentence(name, services, area, lang):
+    """A clear BUSINESS -> SERVICE -> LOCATION sentence for AI/entity clarity."""
+    svc = ", ".join([s.get("name") for s in (services or [])[:4] if isinstance(s, dict) and s.get("name")])
+    if not name:
+        return ""
+    if lang == "es":
+        s = f"{name} ofrece {svc or 'servicios profesionales'}"
+        if area:
+            s += f" en {area}"
+        return s + "."
+    s = f"{name} provides {svc or 'professional services'}"
+    if area:
+        s += f" in {area}"
+    return s + "."
+
+
+def _photo_abs(base, pid, w=1200):
+    return f"{base}/api/public/card/photo/{pid}?w={w}" if pid else ""
+
+
+async def _build_site_html(w: dict, request: Request, lang: str = "en"):
+    """Server-rendered HTML of a website home for crawlers (no JS needed)."""
+    slug = w["slug"]
+    data = await _website_payload(w)
+    biz = data["business"]
+    lang = "es" if str(lang).lower().startswith("es") else "en"
+    v = _site_view(w, lang)
+    base = _public_base_from_request(request)
+    # Canonical: on a custom domain use "/", otherwise /sitio/<slug>.
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].lower()
+    on_domain = host and (host == (w.get("custom_domain") or "") or host == (w.get("custom_domain_2") or ""))
+    canonical = f"{base}/" if on_domain else f"{base}/sitio/{slug}"
+    name = biz.get("name") or v.get("headline") or slug
+    area = data.get("service_area") or (v.get("areas") or [""])[0] if v.get("areas") else data.get("service_area")
+    services = v.get("services") or []
+    entity = _entity_sentence(name, services, area, lang)
+    title = v.get("seo_title") or f"{name} — {v.get('headline') or ''}".strip(" —") or name
+    desc = (v.get("seo_description") or v.get("subheadline") or entity or v.get("about") or "")[:300]
+    og = _photo_abs(base, w.get("hero_photo_id") or biz.get("logo_photo_id"))
+
+    # hreflang alternates for dual-domain sites.
+    alts = ""
+    pairs = []
+    if w.get("custom_domain") and w.get("custom_domain_verified"):
+        pairs.append((w.get("custom_domain_lang") or "en", w["custom_domain"]))
+    if w.get("custom_domain_2") and w.get("custom_domain_2_verified"):
+        pairs.append((w.get("custom_domain_2_lang") or "es", w["custom_domain_2"]))
+    for lg, dom in pairs:
+        alts += f'<link rel="alternate" hreflang="{lg}" href="https://{dom}/"/>'
+
+    # Deeper links so crawlers discover services / conversion pages.
+    links = ""
+    pp_names = set()
+    for pp in data.get("problem_pages", []):
+        pslug = pp.get("page_slug")
+        if not pslug:
+            continue
+        href = f"{base}/p/{pslug}" if on_domain else f"{base}/sitio/{slug}/p/{pslug}"
+        links += f'<li><a href="{_esc(href)}">{_esc(pp.get("headline") or pp.get("service_name") or pslug)}</a></li>'
+        pp_names.add((pp.get("service_name") or "").lower().strip())
+    for i, s in enumerate(services):
+        if not isinstance(s, dict) or (s.get("name") or "").lower().strip() in pp_names:
+            continue
+        sslug = _svc_slug(s, i)
+        href = f"{base}/servicio/{sslug}" if on_domain else f"{base}/sitio/{slug}/servicio/{sslug}"
+        links += f'<li><a href="{_esc(href)}">{_esc(s.get("name"))}</a></li>'
+
+    services_html = _clause(services, lambda s: (
+        f"<li><strong>{_esc(s.get('name'))}</strong>"
+        + (f" — {_esc(s.get('description') or s.get('desc') or s.get('blurb') or '')}" if isinstance(s, dict) else "")
+        + "</li>") if isinstance(s, dict) and s.get("name") else "")
+    faqs = v.get("faqs") or []
+    faq_html = _clause(faqs, lambda f: f"<div><h3>{_esc(f.get('q'))}</h3><p>{_esc(f.get('a'))}</p></div>" if isinstance(f, dict) and f.get("q") else "")
+    reviews_html = _clause(data.get("reviews", [])[:5], lambda r: f"<blockquote>“{_esc(r.get('text'))}” — {_esc(r.get('customer_name') or 'Customer')} ({r.get('rating', 5)}★)</blockquote>" if r.get("text") else "")
+
+    # JSON-LD: LocalBusiness + WebSite + BreadcrumbList.
+    ratings = [r for r in data.get("reviews", []) if r.get("rating")]
+    ld_business = {
+        "@context": "https://schema.org", "@type": "HomeAndConstructionBusiness",
+        "@id": canonical + "#business", "name": name, "url": canonical,
+        "description": desc or entity, "telephone": biz.get("phone") or None,
+        "email": biz.get("email") or None, "image": og or None, "priceRange": "$$",
+        "address": {"@type": "PostalAddress", "streetAddress": biz.get("address")} if biz.get("address") else None,
+        "areaServed": (v.get("areas") or ([area] if area else None)),
+        "sameAs": [x for x in [biz.get("facebook"), biz.get("instagram"), biz.get("whatsapp")] if x] or None,
+        "aggregateRating": ({"@type": "AggregateRating",
+                             "ratingValue": round(sum(r["rating"] for r in ratings) / len(ratings), 1),
+                             "reviewCount": len(ratings)} if ratings else None),
+        "makesOffer": [{"@type": "Offer", "itemOffered": {"@type": "Service", "name": s.get("name"),
+                        "areaServed": area or None}} for s in services if isinstance(s, dict) and s.get("name")] or None,
+    }
+    ld_business = {k: val for k, val in ld_business.items() if val is not None}
+    ld_website = {"@context": "https://schema.org", "@type": "WebSite", "name": name, "url": canonical,
+                  "inLanguage": "es" if lang == "es" else "en"}
+    ld_bc = {"@context": "https://schema.org", "@type": "BreadcrumbList",
+             "itemListElement": [{"@type": "ListItem", "position": 1, "name": name, "item": canonical}]}
+    ld = json.dumps([ld_business, ld_website, ld_bc], ensure_ascii=False)
+
+    html = f"""<!doctype html>
+<html lang="{'es' if lang=='es' else 'en'}"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_esc(title)}</title>
+<meta name="description" content="{_esc(desc)}"/>
+<link rel="canonical" href="{_esc(canonical)}"/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+{alts}
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="{_esc(name)}"/>
+<meta property="og:title" content="{_esc(title)}"/>
+<meta property="og:description" content="{_esc(desc)}"/>
+<meta property="og:url" content="{_esc(canonical)}"/>
+{f'<meta property="og:image" content="{_esc(og)}"/>' if og else ''}
+<meta name="twitter:card" content="{'summary_large_image' if og else 'summary'}"/>
+<script type="application/ld+json">{ld}</script>
+</head><body>
+<header><h1>{_esc(name)}</h1><p>{_esc(v.get('headline') or v.get('subheadline') or '')}</p></header>
+<main>
+<p>{_esc(entity)}</p>
+{f'<section><h2>{"Acerca de" if lang=="es" else "About"}</h2><p>{_esc(v.get("about") or v.get("about_story") or "")}</p></section>' if (v.get('about') or v.get('about_story')) else ''}
+{f'<section><h2>{"Servicios" if lang=="es" else "Services"}</h2><ul>{services_html}</ul></section>' if services_html else ''}
+{f'<section><h2>{"Zonas de servicio" if lang=="es" else "Service Area"}</h2><p>{_esc(area)}</p></section>' if area else ''}
+{f'<section><h2>{"Preguntas frecuentes" if lang=="es" else "FAQ"}</h2>{faq_html}</section>' if faq_html else ''}
+{f'<section><h2>{"Reseñas" if lang=="es" else "Reviews"}</h2>{reviews_html}</section>' if reviews_html else ''}
+{f'<nav><h2>{"Más" if lang=="es" else "More"}</h2><ul>{links}</ul></nav>' if links else ''}
+{f'<p>{"Teléfono" if lang=="es" else "Phone"}: <a href="tel:{_esc(biz.get("phone"))}">{_esc(biz.get("phone"))}</a></p>' if biz.get('phone') else ''}
+</main>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+async def _build_pp_html(w: dict, pp: dict, request: Request, lang: str = "en"):
+    """Server-rendered HTML of a Conversion (Problem) Page for crawlers."""
+    slug = w["slug"]
+    page_slug = pp["page_slug"]
+    data = await _problem_page_payload(w, pp)
+    biz = data["business"]
+    lang = "es" if str(lang).lower().startswith("es") else "en"
+    page = (pp.get("content_es") if (lang == "es" and pp.get("content_es")) else pp.get("content")) or {}
+    seo = (pp.get("seo_es") if (lang == "es" and pp.get("seo_es")) else pp.get("seo")) or {}
+    base = _public_base_from_request(request)
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].lower()
+    on_domain = host and (host == (w.get("custom_domain") or "") or host == (w.get("custom_domain_2") or ""))
+    canonical = f"{base}/p/{page_slug}" if on_domain else f"{base}/sitio/{slug}/p/{page_slug}"
+    name = biz.get("name") or ""
+    area = data.get("service_area") or ""
+    h1 = page.get("problem_headline") or pp.get("service_name") or name
+    title = seo.get("title") or f"{pp.get('service_name')} — {name}"
+    desc = (seo.get("meta_description") or page.get("solution") or page.get("agitation") or "")[:300]
+    indexable = bool(pp.get("indexable", True))
+    og = _photo_abs(base, data.get("hero_photo_id") or biz.get("logo_photo_id"))
+
+    def _sec(t, body):
+        return f"<section><h2>{_esc(t)}</h2>{body}</section>" if body else ""
+
+    steps = _clause(page.get("how_steps"), lambda s: f"<li>{_esc(s.get('title') if isinstance(s, dict) else s)}: {_esc(s.get('desc') if isinstance(s, dict) else '')}</li>" if s else "")
+    why = _clause(page.get("why_choose"), lambda x: f"<li>{_esc(x.get('title') if isinstance(x, dict) else x)}{(' — ' + _esc(x.get('desc'))) if isinstance(x, dict) and x.get('desc') else ''}</li>" if x else "")
+    faqs = [f for f in (page.get("faqs") or []) if isinstance(f, dict) and f.get("q")]
+    faq_html = _clause(faqs, lambda f: f"<div><h3>{_esc(f.get('q'))}</h3><p>{_esc(f.get('a'))}</p></div>")
+
+    ld = [
+        {"@context": "https://schema.org", "@type": "Service",
+         "name": f"{pp.get('service_name')} — {name}", "serviceType": pp.get("service_name"),
+         "areaServed": area or None, "description": desc or None,
+         "provider": {"@type": "LocalBusiness", "name": name, "telephone": biz.get("phone") or None,
+                      "url": (f"{base}/" if on_domain else f"{base}/sitio/{slug}")}},
+        {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": name, "item": (f"{base}/" if on_domain else f"{base}/sitio/{slug}")},
+            {"@type": "ListItem", "position": 2, "name": pp.get("service_name"), "item": canonical}]},
+    ]
+    if faqs:
+        ld.append({"@context": "https://schema.org", "@type": "FAQPage",
+                   "mainEntity": [{"@type": "Question", "name": f.get("q"),
+                                   "acceptedAnswer": {"@type": "Answer", "text": f.get("a")}} for f in faqs]})
+    ld_json = json.dumps([{k: v for k, v in d.items() if v is not None} for d in ld], ensure_ascii=False)
+
+    html = f"""<!doctype html>
+<html lang="{'es' if lang=='es' else 'en'}"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_esc(title)}</title>
+<meta name="description" content="{_esc(desc)}"/>
+<link rel="canonical" href="{_esc(canonical)}"/>
+<meta name="robots" content="{'index,follow,max-image-preview:large' if indexable else 'noindex,nofollow'}"/>
+<meta property="og:type" content="article"/>
+<meta property="og:site_name" content="{_esc(name)}"/>
+<meta property="og:title" content="{_esc(title)}"/>
+<meta property="og:description" content="{_esc(desc)}"/>
+<meta property="og:url" content="{_esc(canonical)}"/>
+{f'<meta property="og:image" content="{_esc(og)}"/>' if og else ''}
+<script type="application/ld+json">{ld_json}</script>
+</head><body>
+<header><h1>{_esc(h1)}</h1></header>
+<main>
+<p>{_esc(_entity_sentence(name, [{'name': pp.get('service_name')}], area, lang))}</p>
+{_sec(page.get('s_problem_title') or ('El problema' if lang=='es' else 'The problem'), f"<p>{_esc(page.get('s_problem') or page.get('agitation'))}</p>") if (page.get('s_problem') or page.get('agitation')) else ''}
+{_sec(page.get('s_how_title') or ('La solución' if lang=='es' else 'How we solve it'), f"<p>{_esc(page.get('s_how') or page.get('solution'))}</p>" + (f"<ul>{steps}</ul>" if steps else "")) if (page.get('s_how') or page.get('solution') or steps) else ''}
+{_sec(('Por qué elegirnos' if lang=='es' else 'Why choose us'), f"<ul>{why}</ul>") if why else ''}
+{_sec(page.get('s_why_matters') and ('Por qué importa' if lang=='es' else 'Why it matters') or '', f"<p>{_esc(page.get('s_why_matters'))}</p>") if page.get('s_why_matters') else ''}
+{_sec('FAQ', faq_html) if faq_html else ''}
+{f'<p>{_esc(page.get("final_cta_headline"))}</p>' if page.get('final_cta_headline') else ''}
+{f'<p>{"Teléfono" if lang=="es" else "Phone"}: <a href="tel:{_esc(biz.get("phone"))}">{_esc(biz.get("phone"))}</a></p>' if biz.get('phone') else ''}
+</main>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+async def _ssr_resolve_by_host(request: Request):
+    """Resolve the website + default language from the request host (used when a
+    crawler hits a connected custom domain at '/' or '/p/...')."""
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if not host or host in ("localhost", "127.0.0.1"):
+        return None, None
+    w = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True, "published": True}, {"_id": 0})
+    if w:
+        return w, (w.get("custom_domain_lang") or "en")
+    w = await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True, "published": True}, {"_id": 0})
+    if w:
+        return w, (w.get("custom_domain_2_lang") or "es")
+    return None, None
+
+
+@api_router.get("/ssr/site/{slug}", response_class=HTMLResponse)
+async def ssr_site(slug: str, request: Request, lang: str = "en"):
+    w = await db.websites.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    return await _build_site_html(w, request, lang)
+
+
+@api_router.get("/ssr/home", response_class=HTMLResponse)
+async def ssr_home(request: Request, lang: str = ""):
+    """Custom-domain root: resolve the site from the host, then render."""
+    w, dlang = await _ssr_resolve_by_host(request)
+    if not w:
+        raise HTTPException(404, "Not found")
+    return await _build_site_html(w, request, lang or dlang or "en")
+
+
+@api_router.get("/ssr/pp/{slug}/{page_slug}", response_class=HTMLResponse)
+async def ssr_problem_page(slug: str, page_slug: str, request: Request, lang: str = "en"):
+    w = await db.websites.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    pp = await db.problem_pages.find_one({"user_id": w["user_id"], "page_slug": page_slug, "published": True}, {"_id": 0})
+    if not pp:
+        raise HTTPException(404, "Not found")
+    return await _build_pp_html(w, pp, request, lang)
+
+
+@api_router.get("/ssr/p/{page_slug}", response_class=HTMLResponse)
+async def ssr_problem_page_by_host(page_slug: str, request: Request, lang: str = ""):
+    """Custom-domain conversion page: resolve the site from the host, then render."""
+    w, dlang = await _ssr_resolve_by_host(request)
+    if not w:
+        raise HTTPException(404, "Not found")
+    pp = await db.problem_pages.find_one({"user_id": w["user_id"], "page_slug": page_slug, "published": True}, {"_id": 0})
+    if not pp:
+        raise HTTPException(404, "Not found")
+    return await _build_pp_html(w, pp, request, lang or dlang or "en")
+
+
+@api_router.get("/robots.txt", response_class=PlainTextResponse)
+async def dynamic_robots(request: Request):
+    """Host-aware robots.txt: welcomes AI/search crawlers explicitly, advertises
+    the sitemap with an ABSOLUTE URL, and keeps private app routes out of the index."""
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "ezunitech.com").split(",")[0].split(":")[0].strip().lower()
+    if host in ("localhost", "127.0.0.1", ""):
+        host = "ezunitech.com"
+    scheme = request.headers.get("x-forwarded-proto", "https")
+    lines = []
+    for bot in _AI_BOTS:
+        lines.append(f"User-agent: {bot}\nAllow: /")
+    lines.append("User-agent: *\nAllow: /")
+    disallow = "\n".join(f"Disallow: {p}" for p in
+                         ["/dashboard", "/login", "/signup", "/admin", "/api/", "/settings", "/crm", "/onboarding"])
+    body = "\n\n".join(lines) + f"\n{disallow}\n\nSitemap: {scheme}://{host}/sitemap.xml\n"
+    return PlainTextResponse(content=body)
+
+
+@api_router.get("/llms.txt", response_class=PlainTextResponse)
+async def dynamic_llms(request: Request):
+    """llms.txt — a concise Markdown map of the site for LLM/AI answer engines.
+    Host-aware: a connected custom domain gets that business's profile; the
+    platform host gets the UniTech overview."""
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    base = f"https://{host}" if host and host not in ("localhost", "127.0.0.1") else (os.environ.get("PUBLIC_BASE_URL") or "https://ezunitech.com")
+    w = None
+    if host and host not in ("localhost", "127.0.0.1", "ezunitech.com", "ezunitap.com"):
+        w = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True, "published": True}, {"_id": 0}) \
+            or await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True, "published": True}, {"_id": 0})
+    if w:
+        lang = "es" if host == (w.get("custom_domain_2") or "") and (w.get("custom_domain_2_lang") == "es") else (w.get("custom_domain_lang") or "en")
+        data = await _website_payload(w)
+        biz = data["business"]
+        v = _site_view(w, "es" if lang == "es" else "en")
+        area = data.get("service_area") or ""
+        name = biz.get("name") or w.get("slug")
+        out = [f"# {name}", ""]
+        out.append(f"> {_entity_sentence(name, v.get('services') or [], area, lang)}")
+        if v.get("about") or v.get("about_story"):
+            out += ["", (v.get("about") or v.get("about_story"))[:600]]
+        out += ["", "## Services"]
+        for s in (v.get("services") or []):
+            if isinstance(s, dict) and s.get("name"):
+                out.append(f"- {s.get('name')}" + (f": {s.get('description') or s.get('desc') or ''}" if (s.get('description') or s.get('desc')) else ""))
+        pps = data.get("problem_pages", [])
+        if pps:
+            out += ["", "## Key Pages"]
+            for pp in pps:
+                if pp.get("page_slug"):
+                    out.append(f"- [{pp.get('headline') or pp.get('service_name')}]({base}/p/{pp['page_slug']})")
+        out += ["", "## Contact"]
+        if biz.get("phone"):
+            out.append(f"- Phone: {biz['phone']}")
+        if area:
+            out.append(f"- Service area: {area}")
+        out += ["", f"## Sitemap", f"- {base}/sitemap.xml", ""]
+        return PlainTextResponse(content="\n".join(out))
+    # Platform default
+    out = [
+        "# UniTech (ezunitech.com)",
+        "",
+        "> All-in-one platform for Latino contractors & agencies: AI quotes & invoices,"
+        " scheduling, CRM, digital business cards (QR/NFC), done-for-you bilingual websites"
+        " and SEO conversion pages.",
+        "",
+        "## Key Pages",
+        f"- Sitemap: {base}/sitemap.xml",
+        "",
+    ]
+    return PlainTextResponse(content="\n".join(out))
+
 
 
 class AgencyLeadIn(BaseModel):

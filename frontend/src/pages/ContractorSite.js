@@ -197,10 +197,16 @@ export default function ContractorSite({ injected, page, byDomain }) {
         reviewCount: ratings.length,
       } : undefined,
       makesOffer: (data.services || []).length ? data.services.map((s) => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: s.name } })) : undefined,
+      sameAs: [bb.facebook, bb.instagram, bb.whatsapp].filter(Boolean).length ? [bb.facebook, bb.instagram, bb.whatsapp].filter(Boolean) : undefined,
     };
+    const jsonldGraph = [
+      jsonld,
+      { "@context": "https://schema.org", "@type": "WebSite", name: bb.name, url: canonical },
+      { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: bb.name, item: canonical }] },
+    ];
     let ld = document.getElementById("unitech-jsonld");
     if (!ld) { ld = document.createElement("script"); ld.type = "application/ld+json"; ld.id = "unitech-jsonld"; document.head.appendChild(ld); }
-    ld.textContent = JSON.stringify(jsonld);
+    ld.textContent = JSON.stringify(jsonldGraph);
   }, [data]);
 
   if (err) return <div className="min-h-screen flex items-center justify-center text-slate-500 p-8 text-center">This website is not available.</div>;
