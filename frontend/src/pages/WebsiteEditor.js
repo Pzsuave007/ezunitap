@@ -1218,7 +1218,7 @@ const _case = (slug, client, category, cover, summary, services, results, body) 
 const UNI2_DEFAULTS = {
   headline: "Impulsando Negocios Latinos",
   subheadline: "En Uni2 Marketing Group ayudamos a emprendedores latinos a destacar y crecer en el mercado estadounidense con estrategias digitales que combinan creatividad, automatización e inteligencia artificial. No solo diseñamos sitios web: creamos sistemas digitales que generan clientes reales.",
-  cta_phone: "(888) 689-4979",
+  cta_phone: "(503) 985-6472",
   services: [
     { name: "Diseño Web y Gráfico", description: "Eleva tu marca con diseños web y gráficos impactantes que cautivan y convierten a tu audiencia." },
     { name: "Optimización de Google My Business", description: "Mejora tu presencia local y atrae más clientes con nuestra optimización de Google My Business." },

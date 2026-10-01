@@ -5732,6 +5732,17 @@ async def _website_payload(w):
         "whatsapp": card.get("whatsapp") or "",
         "facebook": card.get("facebook") or "",
         "instagram": w.get("instagram_url") or card.get("instagram") or "",
+        # Structured NAP + entity fields for richer JSON-LD (optional; set on the user doc).
+        "city": user.get("business_city", ""),
+        "state": user.get("business_state", ""),
+        "postal_code": user.get("business_zip", ""),
+        "country": user.get("business_country", "") or "US",
+        "legal_name": user.get("legal_name", ""),
+        "alternate_name": user.get("alternate_name", ""),
+        "schema_type": user.get("schema_type", ""),
+        "linkedin": card.get("linkedin") or "",
+        "youtube": card.get("youtube") or "",
+        "website": user.get("website_url", "") or "",
     }
     return {
         "website": w,
@@ -6059,14 +6070,34 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
 
     # JSON-LD: LocalBusiness + WebSite + BreadcrumbList.
     ratings = [r for r in data.get("reviews", []) if r.get("rating")]
+    # Structured postal address (city/state/zip/country) when available; falls back
+    # to the free-text street line only.
+    _addr = None
+    if biz.get("address") or biz.get("city") or biz.get("state"):
+        _addr = {"@type": "PostalAddress", "addressCountry": biz.get("country") or "US"}
+        if biz.get("address"): _addr["streetAddress"] = biz.get("address")
+        if biz.get("city"): _addr["addressLocality"] = biz.get("city")
+        if biz.get("state"): _addr["addressRegion"] = biz.get("state")
+        if biz.get("postal_code") or biz.get("zip"): _addr["postalCode"] = biz.get("postal_code") or biz.get("zip")
+    # sameAs: social profiles + the SISTER brand domain(s) so AI/search understand a
+    # bilingual business served on two domains (e.g. uni2mkt.com <-> growthally.agency)
+    # is ONE entity, not two separate brands.
+    _same = [biz.get("facebook"), biz.get("instagram"), biz.get("whatsapp"), biz.get("website"),
+             biz.get("linkedin"), biz.get("youtube"), biz.get("tiktok")]
+    for _dom in (w.get("custom_domain"), w.get("custom_domain_2")):
+        if _dom and _dom.strip().lower() != host:
+            _same.append(f"https://{_dom.strip().lower()}")
+    _same = list(dict.fromkeys([s for s in _same if s])) or None
     ld_business = {
-        "@context": "https://schema.org", "@type": "HomeAndConstructionBusiness",
+        "@context": "https://schema.org", "@type": biz.get("schema_type") or "HomeAndConstructionBusiness",
         "@id": canonical + "#business", "name": name, "url": canonical,
+        "legalName": biz.get("legal_name") or None,
+        "alternateName": biz.get("alternate_name") or None,
         "description": desc or entity, "telephone": biz.get("phone") or None,
         "email": biz.get("email") or None, "image": og or None, "priceRange": "$$",
-        "address": {"@type": "PostalAddress", "streetAddress": biz.get("address")} if biz.get("address") else None,
+        "address": _addr,
         "areaServed": (v.get("areas") or ([area] if area else None)),
-        "sameAs": [x for x in [biz.get("facebook"), biz.get("instagram"), biz.get("whatsapp")] if x] or None,
+        "sameAs": _same,
         "aggregateRating": ({"@type": "AggregateRating",
                              "ratingValue": round(sum(r["rating"] for r in ratings) / len(ratings), 1),
                              "reviewCount": len(ratings)} if ratings else None),

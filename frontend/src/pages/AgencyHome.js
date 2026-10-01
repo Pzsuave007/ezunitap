@@ -11,7 +11,7 @@ import {
   Search, PenTool, Workflow, Rocket, TrendingUp, Menu, X,
 } from "lucide-react";
 
-const PHONE = "888-689-4979";
+const PHONE = "503-985-6472";
 const HERO_EN = "https://growthally.agency/wp-content/uploads/2025/11/growthally1.jpg";
 const HERO_ES = "https://uni2mkt.com/wp-content/uploads/2025/10/en-directo-clases-1.png";
 const CTA_IMG = "https://growthally.agency/wp-content/uploads/2025/02/Lucy-and-paul-scaled.jpg";
