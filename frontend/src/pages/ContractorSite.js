@@ -1,3 +1,4 @@
+import { PinMap } from "../components/PinMap";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -1777,12 +1778,6 @@ function AreasBlock({ ctx, bg, dark }) {
 // These three sections (Samples / Client logos / Client map) read their content
 // from the website record and adapt to the active template's theme, so they can
 // be reused across templates — not just Agency.
-const AGENCY_MAP_BG = "https://static.prod-images.emergentagent.com/jobs/64839280-8aef-47d9-a8ba-849b3a374595/images/0442e9106c53a96e2ee8f6221eed60095621df3b34fc90cd3d75120c21ae53e4.jpeg";
-// Equirectangular projection over a North-America bounding box (lng −125..−78, lat 14..50).
-const _mapXY = (lat, lng) => ({
-  x: Math.max(2, Math.min(98, ((lng - (-125)) / 47) * 100)),
-  y: Math.max(4, Math.min(96, ((50 - lat) / 36) * 100)),
-});
 const agT = (lang, en, es) => (lang === "es" ? es : en);
 // Normalize a Google My Maps value (embed URL, viewer/edit URL, or a pasted
 // <iframe>) into a clean embeddable src.
@@ -1914,27 +1909,15 @@ function ClientMap({ ctx, sty }) {
         <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{agT(lang, "Clients across North America", "Clientes en toda Norteamérica")}</h2>
         <p className="mt-3" style={{ color: T.muted }}>{agT(lang, "Thank you for trusting us!", "¡Gracias por confiar en nosotros!")}</p>
       </div>
-      {embed ? (
-        <div className="w-full" data-testid="site-map-embed">
-          <iframe title="client-map" src={embed} className="w-full block" style={{ height: "600px", border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+      {pins.length ? (
+        <div className="max-w-5xl mx-auto px-5">
+          <div className="rounded-3xl overflow-hidden border shadow-lg" style={{ borderColor: T.border }} data-testid="site-map-pins">
+            <PinMap pins={pins} accent={accent} height={520} />
+          </div>
         </div>
       ) : (
-        <div className="max-w-5xl mx-auto px-5">
-          <div className="relative w-full rounded-3xl overflow-hidden border" style={{ borderColor: T.border, background: "#0a1130" }}>
-            <img src={AGENCY_MAP_BG} alt="" className="w-full h-auto block opacity-90" />
-            {pins.map((p, i) => {
-              const { x, y } = _mapXY(Number(p.lat), Number(p.lng));
-              return (
-                <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2 group" style={{ left: `${x}%`, top: `${y}%` }} data-testid={`site-pin-${i}`}>
-                  <span className="relative flex w-3 h-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: accent }} />
-                    <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
-                  </span>
-                  {p.label && <span className="absolute left-1/2 -translate-x-1/2 top-5 whitespace-nowrap text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">{p.label}</span>}
-                </div>
-              );
-            })}
-          </div>
+        <div className="w-full" data-testid="site-map-embed">
+          <iframe title="client-map" src={embed} className="w-full block" style={{ height: "600px", border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
         </div>
       )}
     </section>

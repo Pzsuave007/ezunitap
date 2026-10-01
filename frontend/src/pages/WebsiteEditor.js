@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users } from "lucide-react";
+import { PinMap, geocode } from "../components/PinMap";
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
@@ -1351,6 +1352,19 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const setSamples = (arr) => patch({ samples: arr });
   const setLogos = (arr) => patch({ client_logos: arr });
   const setPins = (arr) => patch({ client_pins: arr });
+  const [geoQ, setGeoQ] = useState("");
+  const [geoBusy, setGeoBusy] = useState(false);
+  const addPinByAddress = async () => {
+    if (!geoQ.trim()) return;
+    setGeoBusy(true);
+    try {
+      const r = await geocode(geoQ);
+      if (!r) { alert(isEs ? "No encontré esa dirección." : "Address not found."); return; }
+      setPins([...(Array.isArray(w.client_pins) ? w.client_pins : []), { label: geoQ.trim(), lat: r.lat, lng: r.lng }]);
+      setGeoQ("");
+    } catch (e) { alert(isEs ? "Error buscando la dirección." : "Error searching the address."); }
+    finally { setGeoBusy(false); }
+  };
   const cases = Array.isArray(w.case_studies) ? w.case_studies : [];
   const miles = Array.isArray(w.milestones) ? w.milestones : [];
   const values = Array.isArray(w.about_values) ? w.about_values : [];
@@ -1509,23 +1523,30 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       {sub === "map" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><MapPin className="w-4 h-4" /> {L.pins}</div>
-        <p className="text-sm text-slate-500 mb-3">{L.pinsDesc}</p>
-        <div className="mb-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
-          <div className="text-sm font-semibold mb-1">{L.mapEmbed}</div>
-          <p className="text-xs text-slate-500 mb-2">{L.mapEmbedHint}</p>
-          <Input value={w.map_embed || ""} onChange={(e) => patch({ map_embed: e.target.value })} placeholder={L.mapEmbedPh} className="h-9 rounded-lg" data-testid="agency-map-embed" />
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Busca una ciudad/dirección o haz clic en el mapa para agregar un pin. Arrastra un pin para reubicarlo." : "Search a city/address or click the map to drop a pin. Drag a pin to move it."}</p>
+        <div className="flex gap-2 mb-3">
+          <Input value={geoQ} onChange={(e) => setGeoQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPinByAddress(); } }} placeholder={isEs ? "Ej: Spokane, WA" : "e.g. Spokane, WA"} className="h-9 rounded-lg flex-1" data-testid="agency-pin-search" />
+          <Button onClick={addPinByAddress} disabled={geoBusy} className="rounded-lg h-9" data-testid="agency-pin-search-btn">{geoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Search className="w-4 h-4 mr-1" /> {isEs ? "Agregar" : "Add"}</>}</Button>
+        </div>
+        <div className="rounded-2xl overflow-hidden border border-slate-200 mb-3">
+          <PinMap pins={pins} onChange={setPins} editable accent={w.accent_color || "#F5A623"} height={360} />
         </div>
         <div className="space-y-2">
           {pins.map((p, i) => (
             <div key={i} className="flex items-center gap-2" data-testid={`agency-pin-${i}`}>
-              <Input value={p.label || ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, label: e.target.value }; setPins(n); }} placeholder={L.label} className="h-9 rounded-lg flex-1" data-testid={`agency-pin-label-${i}`} />
-              <Input value={p.lat ?? ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, lat: e.target.value }; setPins(n); }} placeholder={L.lat} className="h-9 rounded-lg w-24" data-testid={`agency-pin-lat-${i}`} />
-              <Input value={p.lng ?? ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, lng: e.target.value }; setPins(n); }} placeholder={L.lng} className="h-9 rounded-lg w-24" data-testid={`agency-pin-lng-${i}`} />
+              <MapPin className="w-4 h-4 flex-none text-slate-400" />
+              <Input value={p.label || ""} onChange={(e) => { const n = [...pins]; n[i] = { ...p, label: e.target.value }; setPins(n); }} placeholder={isEs ? "Nombre del cliente / ciudad" : "Client / city name"} className="h-9 rounded-lg flex-1" data-testid={`agency-pin-label-${i}`} />
+              <span className="text-[11px] text-slate-400 w-24 flex-none tabular-nums text-right">{(p.lat !== "" && p.lat != null && p.lng !== "" && p.lng != null) ? `${(+p.lat).toFixed(2)}, ${(+p.lng).toFixed(2)}` : "—"}</span>
               <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setPins(pins.filter((_, x) => x !== i))} data-testid={`agency-pin-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
             </div>
           ))}
+          {!pins.length && <p className="text-xs text-slate-400 text-center py-2">{isEs ? "Aún no hay pines. Busca una ciudad o haz clic en el mapa." : "No pins yet. Search a city or click the map."}</p>}
         </div>
-        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setPins([...pins, { label: "", lat: "", lng: "" }])} data-testid="agency-pin-add"><Plus className="w-4 h-4 mr-1" /> {L.add}</Button>
+        <details className="mt-4">
+          <summary className="text-sm font-semibold cursor-pointer text-slate-600">{isEs ? "Avanzado: usar un Google My Maps en vez de los pines" : "Advanced: use a Google My Maps instead of pins"}</summary>
+          <p className="text-xs text-slate-500 mt-2 mb-2">{isEs ? "Si tienes pines, los pines mandan. Este mapa de Google solo se muestra si NO tienes pines." : "If you have pins, the pins win. This Google map only shows when you have NO pins."}</p>
+          <Input value={w.map_embed || ""} onChange={(e) => patch({ map_embed: e.target.value })} placeholder={L.mapEmbedPh} className="h-9 rounded-lg" data-testid="agency-map-embed" />
+        </details>
       </Card>
       )}
 

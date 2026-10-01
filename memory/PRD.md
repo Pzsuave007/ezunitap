@@ -1,3 +1,14 @@
+## 🗺️ Jun 2026 — Mapa de clientes REAL e interactivo (Leaflet/OSM, sin API key) [CÓDIGO LISTO; build OK; falta verificación en vivo del usuario]
+- **Problema**: el mapa estilizado (imagen de puntos + proyección `_mapXY`) colocaba los pines fuera de lugar (en el océano). El usuario no tiene acceso al Google My Maps que estaba por defecto. Eligió opción B: mapa real interactivo.
+- **Solución**: reemplazado por **Leaflet + tiles oscuros de CARTO/OpenStreetMap** (gratis, sin API key). Nuevo componente `frontend/src/components/PinMap.jsx` (modo readonly para el sitio y editable para el editor) + `geocode()` con Nominatim (búsqueda por dirección gratis).
+  - `WebsiteEditor.js` (sección Mapa): caja de **búsqueda por ciudad/dirección** (agrega pin automáticamente), **mapa interactivo** (clic para soltar pin, arrastrar para mover), lista de pines con nombre + borrar, y el campo Google My Maps movido a "Avanzado". Import de PinMap/geocode. Estado `geoQ/geoBusy` + `addPinByAddress()`.
+  - `ContractorSite.js` `ClientMap`: ahora **los pines (mapa real) tienen PRIORIDAD sobre `map_embed`**; el iframe de Google solo se usa si NO hay pines. Eliminados `_mapXY` y `AGENCY_MAP_BG` (ya no se usan).
+  - Dep nueva: `leaflet@1.9.4` (yarn add). Marker = `L.divIcon` con dot del color de acento (evita el bug de íconos rotos de Leaflet en bundlers).
+- **Pendiente de verificar por el usuario** (requiere su sesión/datos): que la búsqueda coloque pines correctos y el sitio público muestre el mapa real. Los `client_pins` guardados con lat/lng reales ahora aparecerán en su ubicación verdadera.
+- ⚠️ DESPLIEGUE: Save to GitHub → `cd /home/ezunitap/repo && git pull && bash deploy.sh`. Si deploy.sh RE-compila el frontend, antes correr `cd frontend && yarn install` (se agregó leaflet). Si deploy.sh copia el `build/` ya commiteado, leaflet ya va empacado dentro.
+
+
+
 ## 🔎 Jun 2026 — Auditoría AI/SEO + entidad Uni2/Growth Ally [COMPLETO; verificado en PRODUCCIÓN por JSON-LD curl]
 - **Origen**: tras activar el SSR, ChatGPT y Gemini ya leían uni2mkt.com. El usuario pidió auditoría AI/SEO (prompt de ChatGPT) y corregir: teléfono muerto, ubicación poco clara, confusión de marca Uni2↔Growth Ally, claim "25 años".
 - **Hallazgo clave de arquitectura de datos**: el `biz` que alimenta el SSR/JSON-LD en `_build_site_html` se arma en `_website_payload` desde el **doc de `users`** (`business_name`, `business_address`, `phone`) + `cards` + `websites.cta_phone`, NO desde un sub-objeto del website. El sitio de Uni2 es UN registro `websites` (slug `uni2-marketing-agency`) con `custom_domain=growthally.agency` (EN) + `custom_domain_2=uni2mkt.com` (ES). Dueño: `users` id `c1d34964-...` (pzsuave007@gmail.com).
