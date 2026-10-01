@@ -6206,6 +6206,25 @@ async def _ssr_resolve_by_host(request: Request):
     return None, None
 
 
+def _ssr_spa_fallback() -> HTMLResponse:
+    """When a crawler hits a host/domain that has no site configured (e.g. the
+    account's technical primary domain like ezunitap.com, which shares the vhost
+    with a customer's addon domain and is indistinguishable at the Apache level),
+    return the normal React SPA shell with HTTP 200 instead of a JSON 404. This
+    mirrors exactly what a real visitor sees and keeps crawlers happy."""
+    try:
+        shell = (ROOT_DIR.parent / "frontend" / "build" / "index.html").read_text(encoding="utf-8")
+        return HTMLResponse(content=shell, status_code=200)
+    except Exception:
+        return HTMLResponse(
+            content='<!doctype html><html lang="es"><head><meta charset="utf-8"/>'
+                    '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+                    '<title>UniTech</title><meta name="robots" content="noindex"/>'
+                    '</head><body><div id="root"></div></body></html>',
+            status_code=200,
+        )
+
+
 @api_router.get("/ssr/site/{slug}", response_class=HTMLResponse)
 async def ssr_site(slug: str, request: Request, lang: str = "en"):
     w = await db.websites.find_one({"slug": slug, "published": True}, {"_id": 0})
@@ -6219,7 +6238,7 @@ async def ssr_home(request: Request, lang: str = ""):
     """Custom-domain root: resolve the site from the host, then render."""
     w, dlang = await _ssr_resolve_by_host(request)
     if not w:
-        raise HTTPException(404, "Not found")
+        return _ssr_spa_fallback()
     return await _build_site_html(w, request, lang or dlang or "en")
 
 
@@ -6239,10 +6258,10 @@ async def ssr_problem_page_by_host(page_slug: str, request: Request, lang: str =
     """Custom-domain conversion page: resolve the site from the host, then render."""
     w, dlang = await _ssr_resolve_by_host(request)
     if not w:
-        raise HTTPException(404, "Not found")
+        return _ssr_spa_fallback()
     pp = await db.problem_pages.find_one({"user_id": w["user_id"], "page_slug": page_slug, "published": True}, {"_id": 0})
     if not pp:
-        raise HTTPException(404, "Not found")
+        return _ssr_spa_fallback()
     return await _build_pp_html(w, pp, request, lang or dlang or "en")
 
 

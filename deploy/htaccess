@@ -41,16 +41,16 @@ RewriteRule ^sitio/([^/]+)/p/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/pp/$1/$2 [
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
 RewriteRule ^sitio/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/site/$1 [P,L]
 
-# Customer's own-domain site HOME: / (but NOT the UniTech marketing domains)
-# NOTE: proxying the bare document root ("/") with [P] fails in per-dir .htaccess
-# because the matched path is empty and mod_proxy gets no path. So we do an
-# INTERNAL rewrite of "/" (and /index.html) to "/api/ssr/home" and let the /api
-# proxy rule above (non-empty match) perform the actual proxy to port 8007.
-RewriteCond %{HTTP_HOST} !^(www\.)?ezunitech\.com$ [NC]
-RewriteCond %{HTTP_HOST} !^(www\.)?ezunitap\.com$ [NC]
+# Site HOME: / (and /index.html) for AI/search crawlers.
+# NOTE: we do NOT filter by %{HTTP_HOST} here. On cPanel, addon domains share the
+# account's vhost and Apache canonicalizes %{HTTP_HOST} (and even %{HTTP:Host}) to
+# the account's PRIMARY domain, so a customer addon domain (e.g. uni2mkt.com) is
+# indistinguishable from the account domain (e.g. ezunitap.com) at the .htaccess
+# level. Instead we proxy ALL bot home hits to the backend, which resolves the
+# real site from the forwarded Host header. Hosts with no configured site get the
+# normal React SPA shell (HTTP 200) back from the backend — never a 404.
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
-RewriteCond %{REQUEST_URI} ^/?(index\.html)?$
-RewriteRule ^ /api/ssr/home [L]
+RewriteRule ^(index\.html)?$ http://127.0.0.1:8007/api/ssr/home [P,L]
 
 # SPA fallback — everything else falls back to index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
