@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Free dark basemap — OpenStreetMap data via CARTO, no API key required.
-const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+// Free OpenStreetMap tiles (no API key). A CSS filter on the tile pane
+// (.pinmap-dark-tiles, see index.css) gives it a dark look to match the site.
+const DARK_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 const dotIcon = (accent) =>
   L.divIcon({
@@ -41,7 +42,7 @@ export function PinMap({ pins = [], onChange, editable = false, accent = "#F5A62
       worldCopyJump: true,
       attributionControl: true,
     }).setView([39.5, -98.35], 3);
-    L.tileLayer(DARK_TILES, { attribution: ATTR, maxZoom: 19, subdomains: "abcd" }).addTo(map);
+    L.tileLayer(DARK_TILES, { attribution: ATTR, maxZoom: 19, subdomains: "abc", className: "pinmap-dark-tiles" }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     if (editable) {

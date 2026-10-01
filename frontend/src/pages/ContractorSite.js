@@ -1910,10 +1910,8 @@ function ClientMap({ ctx, sty }) {
         <p className="mt-3" style={{ color: T.muted }}>{agT(lang, "Thank you for trusting us!", "¡Gracias por confiar en nosotros!")}</p>
       </div>
       {pins.length ? (
-        <div className="max-w-5xl mx-auto px-5">
-          <div className="rounded-3xl overflow-hidden border shadow-lg" style={{ borderColor: T.border }} data-testid="site-map-pins">
-            <PinMap pins={pins} accent={accent} height={520} />
-          </div>
+        <div className="w-full overflow-hidden border-y shadow-lg" style={{ borderColor: T.border }} data-testid="site-map-pins">
+          <PinMap pins={pins} accent={accent} height={520} />
         </div>
       ) : (
         <div className="w-full" data-testid="site-map-embed">

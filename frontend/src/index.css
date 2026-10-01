@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark map theme — invert OSM tiles so they match the dark site (no API key). */
+.pinmap-dark-tiles{filter:invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.8)}
+
+
 /* Rich text (WYSIWYG) — shared styles for the editor and the rendered site */
 .rte-content{line-height:1.7}
 .rte-content p{margin:0 0 .75em}
