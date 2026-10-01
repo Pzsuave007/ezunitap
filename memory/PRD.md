@@ -1,3 +1,19 @@
+## 🔎 Jun 2026 — Auditoría AI/SEO + entidad Uni2/Growth Ally [COMPLETO; verificado en PRODUCCIÓN por JSON-LD curl]
+- **Origen**: tras activar el SSR, ChatGPT y Gemini ya leían uni2mkt.com. El usuario pidió auditoría AI/SEO (prompt de ChatGPT) y corregir: teléfono muerto, ubicación poco clara, confusión de marca Uni2↔Growth Ally, claim "25 años".
+- **Hallazgo clave de arquitectura de datos**: el `biz` que alimenta el SSR/JSON-LD en `_build_site_html` se arma en `_website_payload` desde el **doc de `users`** (`business_name`, `business_address`, `phone`) + `cards` + `websites.cta_phone`, NO desde un sub-objeto del website. El sitio de Uni2 es UN registro `websites` (slug `uni2-marketing-agency`) con `custom_domain=growthally.agency` (EN) + `custom_domain_2=uni2mkt.com` (ES). Dueño: `users` id `c1d34964-...` (pzsuave007@gmail.com).
+- **Cambios de CÓDIGO** (`backend/server.py` `_build_site_html` + `_website_payload`):
+  - JSON-LD enriquecido: `@type` configurable vía `biz.schema_type` (Uni2 = `ProfessionalService`), `legalName`, `alternateName`, `PostalAddress` estructurada (city/state/zip/country), y `sameAs` que **auto-enlaza el dominio hermano** (uni2mkt.com ↔ growthally.agency) + redes. `sameAs` ahora filtra SOLO URLs http(s) (antes se colaba el teléfono de WhatsApp); WhatsApp se convierte a `https://wa.me/<digits>`.
+  - `_website_payload.business` ahora expone campos nuevos leídos del user: `city, state, postal_code, country, legal_name, alternate_name, schema_type, linkedin, youtube, website`.
+  - Frontend: teléfono muerto **(888) 689-4979 → (503) 985-6472** en `AgencyHome.js` (PHONE), `WebsiteEditor.js` (UNI2_DEFAULTS.cta_phone), `promo.html` (+ nombre → "Uni2 Marketing Group").
+- **Cambios de DATOS en PRODUCCIÓN** vía script `deploy/fix_uni2_seo.py --apply` (reemplazo quirúrgico por dominio, no toca otros inquilinos):
+  - `users.business_name` → "Uni2 Marketing Group"; `legal_name`="Growth Ally LLC"; `alternate_name`="Growth Ally Agency"; `business_city`="Spokane"; `business_state`="WA"; `business_country`="US"; `schema_type`="ProfessionalService"; `phone`→(503) 985-6472; `cards.contact_phone`→503.
+  - `websites`: `cta_phone`→503; "Founded over 25 years ago"→"with more than 25 years of experience"; "Agencia/Uni2 Marketing Agency"→"Uni2 Marketing Group" en seo_title/about/faqs (recursivo en todos los idiomas).
+- **Verificado en PRODUCCIÓN (curl JSON-LD)**: `@type ProfessionalService`, name "Uni2 Marketing Group", legalName "Growth Ally LLC", alternateName "Growth Ally Agency", address Spokane/WA/US, telephone (503) 985-6472, sameAs→growthally.agency. ✅
+- **Pendiente menor (no bloqueante)**: (1) el fix de `sameAs` http-only está en código, aplica en el próximo deploy; (2) `areaServed` aún trae placeholder "Your local area" → el usuario lo quita en el editor del sitio (Zonas de servicio), dejando "Estados Unidos / All USA".
+- ⚠️ DESPLIEGUE: el backend prod corre desde `/opt/ezunitap/backend/` → `git pull` NO basta, hay que `bash deploy.sh`. El script de datos se corre con `/opt/ezunitap/backend/venv/bin/python /home/ezunitap/repo/deploy/fix_uni2_seo.py [--apply]`.
+
+
+
 ## 🤖 Jun 2026 — Fix definitivo: Home SSR para bots IA en dominios addon de cPanel [COMPLETO; verificado en PRODUCCIÓN por curl]
 - **Problema**: la raíz `/` de dominios cliente (uni2mkt.com) devolvía el cascarón React a bots IA (GPTBot) en vez del SSR, aunque `/p/`, sitemap y llms.txt ya funcionaban. La regla de la home en `.htaccess` no se activaba.
 - **Causa raíz (diagnosticada en vivo con el usuario)**: en cPanel, los dominios **addon comparten el vhost de la cuenta** y Apache **canoniza `%{HTTP_HOST}` Y `%{HTTP:Host}` al dominio PRIMARIO de la cuenta** (uni2mkt.com → `ezunitap.com`). Por eso la exclusión `RewriteCond %{HTTP_HOST} !ezunitap` bloqueaba también a uni2mkt.com. Descartado: no era match vacío + `[P]`, ni caché/Cloudflare (server: Apache directo).

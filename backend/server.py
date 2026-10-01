@@ -6082,12 +6082,17 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
     # sameAs: social profiles + the SISTER brand domain(s) so AI/search understand a
     # bilingual business served on two domains (e.g. uni2mkt.com <-> growthally.agency)
     # is ONE entity, not two separate brands.
-    _same = [biz.get("facebook"), biz.get("instagram"), biz.get("whatsapp"), biz.get("website"),
+    _wa = (biz.get("whatsapp") or "").strip()
+    if _wa and not _wa.lower().startswith("http"):
+        _digits = "".join(c for c in _wa if c.isdigit())
+        _wa = f"https://wa.me/{_digits}" if _digits else ""
+    _same = [biz.get("facebook"), biz.get("instagram"), _wa, biz.get("website"),
              biz.get("linkedin"), biz.get("youtube"), biz.get("tiktok")]
     for _dom in (w.get("custom_domain"), w.get("custom_domain_2")):
         if _dom and _dom.strip().lower() != host:
             _same.append(f"https://{_dom.strip().lower()}")
-    _same = list(dict.fromkeys([s for s in _same if s])) or None
+    # Only real URLs belong in sameAs (never bare phone numbers).
+    _same = list(dict.fromkeys([s for s in _same if s and str(s).lower().startswith("http")])) or None
     ld_business = {
         "@context": "https://schema.org", "@type": biz.get("schema_type") or "HomeAndConstructionBusiness",
         "@id": canonical + "#business", "name": name, "url": canonical,
