@@ -1,3 +1,19 @@
+## 🤖 Jun 2026 — Fix definitivo: Home SSR para bots IA en dominios addon de cPanel [COMPLETO; verificado en PRODUCCIÓN por curl]
+- **Problema**: la raíz `/` de dominios cliente (uni2mkt.com) devolvía el cascarón React a bots IA (GPTBot) en vez del SSR, aunque `/p/`, sitemap y llms.txt ya funcionaban. La regla de la home en `.htaccess` no se activaba.
+- **Causa raíz (diagnosticada en vivo con el usuario)**: en cPanel, los dominios **addon comparten el vhost de la cuenta** y Apache **canoniza `%{HTTP_HOST}` Y `%{HTTP:Host}` al dominio PRIMARIO de la cuenta** (uni2mkt.com → `ezunitap.com`). Por eso la exclusión `RewriteCond %{HTTP_HOST} !ezunitap` bloqueaba también a uni2mkt.com. Descartado: no era match vacío + `[P]`, ni caché/Cloudflare (server: Apache directo).
+- **Solución (2 cambios)**:
+  1. **`deploy/htaccess`** (regla home): se QUITARON las condiciones `%{HTTP_HOST}` (inútiles por la canonización). Ahora TODOS los hits de bot a la home se proxean al backend, que resuelve el sitio por el Host reenviado. Regla final: `RewriteCond %{HTTP_USER_AGENT} (...bots...) [NC]` + `RewriteRule ^(index\.html)?$ http://127.0.0.1:8007/api/ssr/home [P,L]`.
+  2. **`backend/server.py`**: nuevo helper `_ssr_spa_fallback()` — cuando un host NO tiene sitio configurado (p.ej. ezunitap.com / ezunitech.com), `ssr_home` y `ssr/p` devuelven el **shell React (HTTP 200)** en vez de `404 {"detail":"Not found"}`. Lee `ROOT_DIR.parent/frontend/build/index.html`, con fallback a un shell mínimo con `noindex`.
+- **Arquitectura del server (IMPORTANTE para el próximo agente)**:
+  - El backend del puerto **8007 corre desde `/opt/ezunitap/backend/`** (venv propio), NO desde `/home/ezunitap/repo/backend/`. El `git pull` actualiza el repo; **`bash deploy.sh` sincroniza `/opt` + reinicia** el servicio. Un `git pull` SIN `deploy.sh` NO actualiza el backend en ejecución.
+  - **Solo 2 `.htaccess` tienen el proxy 8007**: `/home/ezunitap/public_html/.htaccess` y `/home/ezunitech/public_html/.htaccess`. Ambos ya tienen la plantilla final. Cualquier dominio cliente agregado como **addon bajo ezunitap o ezunitech** hereda las reglas automáticamente (home SSR, `/p/`, sitemap, llms.txt).
+  - Los ~30 dominios restantes del servidor están en cuentas cPanel separadas / otras apps (puertos 8001/8002/8008/8010/8012/8013) — NO tocar.
+- **Verificado en PRODUCCIÓN (curl)**: uni2mkt.com `/` → SSR real (Uni2 Marketing). ezunitap.com `/` → HTTP 200 (shell). ezunitech.com `/` → HTTP 200. Usuario normal (Mozilla UA) → React sin cambios.
+- **Decisión del usuario**: todos los clientes futuros se conectan "a la manera normal" (addon bajo ezunitap/ezunitech), así que el fix cubre automáticamente a los nuevos dominios. Requisito en la app: sitio con `custom_domain` **verificado + publicado**.
+- ⚠️ DESPLIEGUE: **backend + plantilla .htaccess** → "Save to GitHub" + servidor `cd /home/ezunitap/repo && git pull && bash deploy.sh`, luego `cp -a /home/ezunitap/repo/deploy/htaccess` a los 2 `public_html/.htaccess` (con respaldo `.bak`).
+
+
+
 ## 🌐 Jun 2026 — Tab "Website" en la Home con preview en vivo [COMPLETO; verificado screenshot EN, SIN testing_agent por instrucción]
 - **Petición**: agregar un tab "Website" en las pestañas del dashboard con un preview de cómo se ve el sitio + cosas pertinentes.
 - **Solución** (`pages/Dashboard.js`): nuevo tab `website` (ícono MonitorSmartphone) entre "Invoicing & Jobs" y "My Card". Gated por `hasWebsite = hasBusiness || hasCard`.
