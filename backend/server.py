@@ -5740,6 +5740,8 @@ async def _website_payload(w):
         "legal_name": user.get("legal_name", ""),
         "alternate_name": user.get("alternate_name", ""),
         "schema_type": user.get("schema_type", ""),
+        "geo_lat": user.get("business_geo_lat"),
+        "geo_lng": user.get("business_geo_lng"),
         "linkedin": card.get("linkedin") or "",
         "youtube": card.get("youtube") or "",
         "website": user.get("website_url", "") or "",
@@ -6093,6 +6095,48 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
             _same.append(f"https://{_dom.strip().lower()}")
     # Only real URLs belong in sameAs (never bare phone numbers).
     _same = list(dict.fromkeys([s for s in _same if s and str(s).lower().startswith("http")])) or None
+    # areaServed: a nationwide service-area business. Emit a Country node (so search
+    # engines know we serve the whole U.S.) plus a typed node per state/city listed,
+    # giving per-state "local" relevance in every market we name.
+    _US_STATES = {"alabama","alaska","arizona","arkansas","california","colorado","connecticut",
+        "delaware","florida","georgia","hawaii","idaho","illinois","indiana","iowa","kansas",
+        "kentucky","louisiana","maine","maryland","massachusetts","michigan","minnesota",
+        "mississippi","missouri","montana","nebraska","nevada","new hampshire","new jersey",
+        "new mexico","new york","north carolina","north dakota","ohio","oklahoma","oregon",
+        "pennsylvania","rhode island","south carolina","south dakota","tennessee","texas","utah",
+        "vermont","virginia","washington","west virginia","wisconsin","wyoming"}
+    def _area_node(s):
+        s2 = (s or "").strip()
+        if not s2:
+            return None
+        low = s2.lower()
+        if low in ("united states", "usa", "u.s.", "u.s.a.", "us", "nationwide",
+                   "all 50 states", "united states (all 50 states)", "estados unidos",
+                   "nacional", "todo ee.uu.", "todo estados unidos"):
+            return {"@type": "Country", "name": "United States"}
+        if low in _US_STATES:
+            return {"@type": "State", "name": s2}
+        return {"@type": "City", "name": s2}
+    _areas_raw = v.get("areas") or ([area] if area else [])
+    _seen_area = set()
+    _area_served = []
+    for _a in _areas_raw:
+        _n = _area_node(_a)
+        if _n and _n["name"].lower() not in _seen_area:
+            _seen_area.add(_n["name"].lower())
+            _area_served.append(_n)
+    if _area_served and not any(n.get("@type") == "Country" for n in _area_served):
+        _area_served = [{"@type": "Country", "name": "United States"}] + _area_served
+    _area_served = _area_served or None
+    # Geo coordinates (optional, set on the user doc) help local/map relevance.
+    _geo = None
+    if biz.get("geo_lat") is not None and biz.get("geo_lng") is not None:
+        try:
+            _geo = {"@type": "GeoCoordinates",
+                    "latitude": float(biz.get("geo_lat")),
+                    "longitude": float(biz.get("geo_lng"))}
+        except (TypeError, ValueError):
+            _geo = None
     ld_business = {
         "@context": "https://schema.org", "@type": biz.get("schema_type") or "HomeAndConstructionBusiness",
         "@id": canonical + "#business", "name": name, "url": canonical,
@@ -6101,20 +6145,29 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
         "description": desc or entity, "telephone": biz.get("phone") or None,
         "email": biz.get("email") or None, "image": og or None, "priceRange": "$$",
         "address": _addr,
-        "areaServed": (v.get("areas") or ([area] if area else None)),
+        "geo": _geo,
+        "knowsLanguage": ["en", "es"],
+        "areaServed": _area_served,
         "sameAs": _same,
         "aggregateRating": ({"@type": "AggregateRating",
                              "ratingValue": round(sum(r["rating"] for r in ratings) / len(ratings), 1),
                              "reviewCount": len(ratings)} if ratings else None),
         "makesOffer": [{"@type": "Offer", "itemOffered": {"@type": "Service", "name": s.get("name"),
-                        "areaServed": area or None}} for s in services if isinstance(s, dict) and s.get("name")] or None,
+                        "areaServed": _area_served or (area or None)}} for s in services if isinstance(s, dict) and s.get("name")] or None,
     }
     ld_business = {k: val for k, val in ld_business.items() if val is not None}
     ld_website = {"@context": "https://schema.org", "@type": "WebSite", "name": name, "url": canonical,
                   "inLanguage": "es" if lang == "es" else "en"}
     ld_bc = {"@context": "https://schema.org", "@type": "BreadcrumbList",
              "itemListElement": [{"@type": "ListItem", "position": 1, "name": name, "item": canonical}]}
-    ld = json.dumps([ld_business, ld_website, ld_bc], ensure_ascii=False)
+    # FAQPage — AI engines frequently quote these answers verbatim.
+    _faq_items = [{"@type": "Question", "name": f.get("q"),
+                   "acceptedAnswer": {"@type": "Answer", "text": f.get("a")}}
+                  for f in faqs if isinstance(f, dict) and f.get("q") and f.get("a")]
+    ld_all = [ld_business, ld_website, ld_bc]
+    if _faq_items:
+        ld_all.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": _faq_items})
+    ld = json.dumps(ld_all, ensure_ascii=False)
 
     html = f"""<!doctype html>
 <html lang="{'es' if lang=='es' else 'en'}"><head>

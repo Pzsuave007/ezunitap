@@ -1148,3 +1148,18 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Fix crítico: los enlaces internos del sitio conservan ?lang al navegar (antes daba "Service not found" en ES).
 - Traducción de sitio ahora es robusta por partes en paralelo (evita fallos "AI could not translate" en sitios grandes) y translate-es incluye todos los campos (FAQ, casos, historia, milestones).
 - Acción del usuario tras deploy: pulsar 1 vez "Crear versión en Español" para generar la versión ES de las Páginas Cliente existentes.
+
+---
+## Update (Jun 2026) — AI-Search / SEO entity optimization + mapa
+**Problema detectado:** En ChatGPT/Gemini, Uni2 NO salía como 1ª opción y cuando salía la IA lo encasillaba como "agencia de tecnología/CRM", no como agencia full-service. Causas: señales geográficas mixtas (dirección Spokane WA pero teléfono 971/503 de Oregón; campo `areas` con placeholder "Your local area" y ciudades CA/AZ/NV/TX, ninguna de WA), sin impresión listada, sin FAQs, entidad fragmentada (uni2mkt.com / growthally.agency).
+
+**Implementado (verificado EN+ES vía SSR y sitio público):**
+- Schema JSON-LD (`_build_site_html` en server.py): `@type ProfessionalService`, `knowsLanguage [en,es]`, `geo` (GeoCoordinates Spokane), `areaServed` TIPADO = Country(United States) + lista de estados (relevancia local en cada estado), `FAQPage` con todas las FAQs, `makesOffer` nacional. Nuevo helper `_area_node` + campos `business_geo_lat/lng` en payload.
+- Data (script `/app/deploy/optimize_uni2_seo.py`, idempotente, editable en el editor):
+  - USER: NAP estructurado Spokane/WA/99202/US, geo, `alternate_name=Uni2 Marketing Group`, `schema_type=ProfessionalService`.
+  - WEBSITE uni2-marketing: `cta_phone=(503) 985-6472`, `areas` nacional+12 estados, servicio "Print & Signage" / "Diseño e Impresión", 6 FAQs del comprador (EN+ES content_es), seo_title/desc "Full-Service Digital & Print Marketing Agency, nationwide, bilingual".
+- Mapa clientes: tiles gratis OSM (sin "API KEY REQUIRED") + filtro CSS oscuro; full-width borde a borde en sitio público (ContractorSite). PinMap.jsx + index.css.
+
+**ACCIÓN USUARIO (producción VPS):** (1) desplegar backend actualizado (server.py) y reiniciar puerto 8007; (2) correr `python3 deploy/optimize_uni2_seo.py` contra la BD de producción; (3) subir `frontend/build/` (cambios del mapa).
+
+**Próximos pasos SEO (mayor palanca para "local en cualquier estado"):** crear Páginas de Ubicación por estado/ciudad (problem_pages) → "digital marketing agency in Texas/Florida/..." para pack local real en cada mercado. Pendiente decisión zoom por defecto del mapa.
