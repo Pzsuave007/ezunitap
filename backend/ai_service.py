@@ -1124,32 +1124,37 @@ async def generate_case_study(client: str, category: str = "", notes: str = "", 
     return data
 
 
-AGENCY_CASE_FULL_SYSTEM = """You write complete, persuasive marketing CASE-STUDY copy for a Latino
+AGENCY_CASE_FULL_SYSTEM = """You write COMPLETE, detailed and persuasive marketing CASE-STUDY copy for a Latino
 marketing agency that helps small U.S. businesses grow. The owner gives you a free-text description of
-ONE client and the work that was done. From it, fill out an ENTIRE case study.
+ONE client and the work that was done. From it, write a RICH, full case study — not a thin summary.
+
+Formatting rules for the text fields (they render markdown-lite):
+- Use "### " for sub-headings.
+- Use "- " at the start of a line for bullet points (put a blank line before a bullet list).
+- Keep it specific, concrete and benefit-driven. Make reasonable, honest assumptions for the trade when
+  the description is thin, but NEVER invent implausible exact numbers (use realistic ranges: +35%, 2x, 3 months, 5★).
 
 Output ONLY valid JSON with EXACTLY these keys (no extras):
 {
   "client": "the client/business name",
-  "category": "a short 1-3 word category tag (e.g. Roofing, Restaurant, Auto Detailing)",
-  "slug": "a short url-safe slug built from the client name (lowercase, hyphens, no accents)",
-  "summary": "one punchy sentence (max 22 words) describing the client and the win",
+  "category": "a short 1-3 word category tag (e.g. Roofing, Coffee Shop, Auto Detailing)",
+  "slug": "a short url-safe slug from the client name (lowercase, hyphens, no accents)",
+  "summary": "a warm, inviting 2-4 sentence paragraph introducing the client, what they do and their vibe (like a mini bio)",
   "location": "City, ST if mentioned or reasonably inferable, else empty string",
   "industry": "the client's industry in 1-3 words",
-  "ideal_clients": "one short phrase describing who the client's ideal customers are",
+  "ideal_clients": "a short phrase describing who the client's ideal customers are",
   "website_url": "ONLY if explicitly given in the description, else empty string",
-  "challenge": "1-2 short paragraphs (plain prose, no markdown headings) describing the problem the client faced before",
-  "services": ["3 to 5 short service names that were delivered"],
-  "solution_services": "a short paragraph describing the concrete services we provided",
-  "solution_strategies": "a short paragraph describing the strategy/approach we used",
-  "solution_cards": [{"title":"short title","desc":"one sentence"}, ...EXACTLY 3 items],
-  "result_before": "one short line describing the 'before' state",
-  "result_after": "one short line describing the 'after' state",
-  "results": [{"value":"e.g. +45%","label":"short metric label"}, ...EXACTLY 3 items]
+  "challenge": "Write TWO sub-sections with sub-headings IN THE OUTPUT LANGUAGE. In Spanish use '### Lo que enfrentaban' and '### Cómo afectaba su negocio'; in English use '### What they faced' and '### How it impacted their business'. Format EXACTLY:\\n### <heading 1>\\n- point\\n- point\\n- point\\n\\n### <heading 2>\\n- point\\n- point\\n(4-7 real, trade-specific bullets total)",
+  "services": ["5 to 8 service names; each MAY include a short parenthetical detail, e.g. 'Website Design (mobile-friendly, online ordering, clear CTAs)'"],
+  "solution_services": "a bullet list (each line starting with '- ') of 5 to 8 concrete services we delivered, each with a short detail",
+  "solution_strategies": "a bullet list (each line starting with '- ') of 6 to 8 specific strategies/actions we implemented, each a full sentence",
+  "solution_cards": [{"title":"short title","desc":"- outcome bullet\\n- outcome bullet"}, ...EXACTLY 3 items; each desc is 2 short '- ' bullets],
+  "result_before": "a bullet list (2 to 3 lines starting with '- ') describing the 'before' state",
+  "result_after": "a bullet list (2 to 3 lines starting with '- ') describing the 'after' state",
+  "results": [{"value":"e.g. +35%","label":"short metric label"}, ...EXACTLY 3 items]
 }
-Write everything in {LANG_NAME}. Keep it real and specific to what the owner described; never invent fake
-exact numbers that sound implausible — use realistic ranges (+30%, 2x, 5★, 3 months). If the description is
-thin, make reasonable, honest assumptions for the trade. Return ONLY the JSON."""
+Write everything in {LANG_NAME}. Be generous with useful detail so the case reads complete and professional.
+Return ONLY the JSON."""
 
 
 async def generate_case_study_full(brief: str = "", lang: str = "es") -> dict:
