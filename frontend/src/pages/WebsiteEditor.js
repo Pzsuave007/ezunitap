@@ -1429,6 +1429,34 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   };
   const [sub, setSub] = useState("import");
   const [aiBusy, setAiBusy] = useState(null);
+  const [caseBrief, setCaseBrief] = useState("");
+  const aiNewCase = async () => {
+    const brief = caseBrief.trim();
+    if (!brief) { toast.error(isEs ? "Describe al cliente y el trabajo primero." : "Describe the client and the work first."); return; }
+    setAiBusy("case-new");
+    try {
+      const { data } = await api.post("/website/ai-agency", { kind: "case_full", brief, lang: isEs ? "es" : "en" });
+      const g = data.data || {};
+      const slugify = (s) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const nc = {
+        client: g.client || "", category: g.category || "", slug: g.slug || slugify(g.client) || "",
+        summary: g.summary || "", location: g.location || "", industry: g.industry || "",
+        ideal_clients: g.ideal_clients || "", website_url: g.website_url || "",
+        challenge: g.challenge || "",
+        services: Array.isArray(g.services) ? g.services : [],
+        solution_services: g.solution_services || "", solution_strategies: g.solution_strategies || "",
+        solution_cards: Array.isArray(g.solution_cards) ? g.solution_cards.slice(0, 3) : [],
+        result_before: g.result_before || "", result_after: g.result_after || "",
+        results: Array.isArray(g.results) ? g.results : [],
+        cover: "", photos: [],
+      };
+      const n = [nc, ...cases];
+      setCases(n); setOpenCase(0); setCaseBrief("");
+      await save({ case_studies: n });
+      toast.success(isEs ? "¡Caso creado con IA! Revisa, agrega fotos y Guarda." : "Case created with AI! Review, add photos and Save.");
+    } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
+    finally { setAiBusy(null); }
+  };
   const aiCase = async (i) => {
     setAiBusy(`case-${i}`);
     try {
@@ -1572,6 +1600,35 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1 flex items-center gap-2"><Star className="w-4 h-4" /> {L.cases}</div>
         <p className="text-sm text-slate-500 mb-3">{L.casesDesc}</p>
+        {/* AI case generator — describe the client + work, AI fills every field */}
+        <div className="rounded-xl border border-dashed border-indigo-300 bg-indigo-50/60 p-4 mb-4" data-testid="agency-case-ai-generator">
+          <div className="flex items-center gap-2 font-semibold text-sm text-indigo-800 mb-1">
+            <Sparkles className="w-4 h-4" /> {isEs ? "Crear caso con IA" : "Create a case with AI"}
+          </div>
+          <p className="text-xs text-slate-500 mb-2">
+            {isEs
+              ? "Describe al cliente y el trabajo que hiciste (en tus palabras). La IA rellena todos los campos del caso por ti."
+              : "Describe the client and the work you did (in your own words). AI fills out every field of the case for you."}
+          </p>
+          <Textarea
+            value={caseBrief}
+            onChange={(e) => setCaseBrief(e.target.value)}
+            placeholder={isEs
+              ? "Ej: First Call Roofing, en Vancouver WA. Les hicimos su sitio en inglés desde cero, SEO local y Google Business. Antes casi no recibían llamadas; en 3 meses triplicaron sus solicitudes de presupuesto..."
+              : "E.g.: First Call Roofing in Vancouver, WA. We built their English website from scratch, local SEO and Google Business. Before, they barely got calls; in 3 months they tripled their quote requests..."}
+            className="rounded-lg min-h-[90px] bg-white text-sm"
+            data-testid="agency-case-ai-brief"
+          />
+          <Button
+            onClick={aiNewCase}
+            disabled={aiBusy === "case-new"}
+            className="rounded-xl h-10 mt-2 font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+            data-testid="agency-case-ai-generate">
+            {aiBusy === "case-new"
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isEs ? "Generando…" : "Generating…"}</>
+              : <><Sparkles className="w-4 h-4 mr-2" /> {isEs ? "Generar caso con IA" : "Generate case with AI"}</>}
+          </Button>
+        </div>
         <div className="space-y-3">
           {cases.map((c, i) => (
             <div key={i} className="rounded-xl border border-slate-200 overflow-hidden" data-testid={`agency-case-${i}`}>

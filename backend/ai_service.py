@@ -1124,6 +1124,48 @@ async def generate_case_study(client: str, category: str = "", notes: str = "", 
     return data
 
 
+AGENCY_CASE_FULL_SYSTEM = """You write complete, persuasive marketing CASE-STUDY copy for a Latino
+marketing agency that helps small U.S. businesses grow. The owner gives you a free-text description of
+ONE client and the work that was done. From it, fill out an ENTIRE case study.
+
+Output ONLY valid JSON with EXACTLY these keys (no extras):
+{
+  "client": "the client/business name",
+  "category": "a short 1-3 word category tag (e.g. Roofing, Restaurant, Auto Detailing)",
+  "slug": "a short url-safe slug built from the client name (lowercase, hyphens, no accents)",
+  "summary": "one punchy sentence (max 22 words) describing the client and the win",
+  "location": "City, ST if mentioned or reasonably inferable, else empty string",
+  "industry": "the client's industry in 1-3 words",
+  "ideal_clients": "one short phrase describing who the client's ideal customers are",
+  "website_url": "ONLY if explicitly given in the description, else empty string",
+  "challenge": "1-2 short paragraphs (plain prose, no markdown headings) describing the problem the client faced before",
+  "services": ["3 to 5 short service names that were delivered"],
+  "solution_services": "a short paragraph describing the concrete services we provided",
+  "solution_strategies": "a short paragraph describing the strategy/approach we used",
+  "solution_cards": [{"title":"short title","desc":"one sentence"}, ...EXACTLY 3 items],
+  "result_before": "one short line describing the 'before' state",
+  "result_after": "one short line describing the 'after' state",
+  "results": [{"value":"e.g. +45%","label":"short metric label"}, ...EXACTLY 3 items]
+}
+Write everything in {LANG_NAME}. Keep it real and specific to what the owner described; never invent fake
+exact numbers that sound implausible — use realistic ranges (+30%, 2x, 5★, 3 months). If the description is
+thin, make reasonable, honest assumptions for the trade. Return ONLY the JSON."""
+
+
+async def generate_case_study_full(brief: str = "", lang: str = "es") -> dict:
+    """One-shot: turn a free-text description of a client + work into a COMPLETE
+    case study (all editor fields)."""
+    lang_name = "Spanish (Latin-American, warm and professional)" if lang != "en" else "American English"
+    system = AGENCY_CASE_FULL_SYSTEM.replace("{LANG_NAME}", lang_name)
+    chat = _new_chat(system)
+    msg = f"Owner's description of the client and the work done:\n{brief or '(none)'}\n\nWrite the full case-study JSON now."
+    response = await chat.send_message(UserMessage(text=msg))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not write the case study. Try again.")
+    return data
+
+
 AGENCY_ABOUT_SYSTEM = """You write warm, authentic ABOUT-US copy for a Latino marketing agency that helps
 small U.S. businesses grow. You receive the business name and a brief/notes. Output ONLY valid JSON with
 EXACTLY these keys:
