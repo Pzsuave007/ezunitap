@@ -1443,16 +1443,25 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         if (Array.isArray(v)) return v.map((x) => (typeof x === "string" ? (/^\s*[-*•✅✔️➤]/.test(x) ? x : `- ${x}`) : "")).filter(Boolean).join("\n");
         return typeof v === "string" ? v : (v == null ? "" : String(v));
       };
+      // AI sometimes returns array fields as JSON-encoded strings; recover them.
+      const asArr = (v) => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === "string") {
+          const s = v.trim();
+          if (s.startsWith("[")) { try { const p = JSON.parse(s); return Array.isArray(p) ? p : []; } catch (e) { return []; } }
+        }
+        return [];
+      };
       const nc = {
         client: asText(g.client), category: asText(g.category), slug: g.slug || slugify(g.client) || "",
         summary: asText(g.summary), location: asText(g.location), industry: asText(g.industry),
         ideal_clients: asText(g.ideal_clients), website_url: asText(g.website_url),
         challenge: asText(g.challenge),
-        services: (Array.isArray(g.services) ? g.services : []).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).filter(Boolean),
+        services: asArr(g.services).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).filter(Boolean),
         solution_services: asText(g.solution_services), solution_strategies: asText(g.solution_strategies),
-        solution_cards: (Array.isArray(g.solution_cards) ? g.solution_cards : []).slice(0, 3).map((c) => ({ title: asText(c && c.title), desc: asText(c && c.desc) })),
+        solution_cards: asArr(g.solution_cards).slice(0, 3).map((c) => ({ title: asText(c && c.title), desc: asText(c && c.desc) })),
         result_before: asText(g.result_before), result_after: asText(g.result_after),
-        results: (Array.isArray(g.results) ? g.results : []).map((r) => (typeof r === "string" ? { value: r, label: "" } : { value: asText(r && r.value), label: asText(r && r.label) })),
+        results: asArr(g.results).map((r) => (typeof r === "string" ? { value: r, label: "" } : { value: asText(r && r.value), label: asText(r && r.label) })),
         cover: "", photos: [],
       };
       const n = [nc, ...cases];

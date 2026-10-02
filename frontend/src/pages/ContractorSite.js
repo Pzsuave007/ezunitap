@@ -2162,10 +2162,15 @@ function CaseDetail({ ctx }) {
   const CDEF = { hero: "#0a1130", info: "#f8fafc", challenge: "#ffffff", solution: "#f8fafc", tailored: "#ffffff", results: "#0a1130", portfolio: "#ffffff" };
   const CS = (k) => caseSecTheme(cc[k] || CDEF[k]);
   const tHero = CS("hero"), tInfo = CS("info"), tChal = CS("challenge"), tSol = CS("solution"), tTail = CS("tailored"), tRes = CS("results"), tPort = CS("portfolio");
-  const photos = (Array.isArray(c.photos) ? c.photos : []).filter(Boolean);
-  const services = Array.isArray(c.services) ? c.services : [];
-  const results = Array.isArray(c.results) ? c.results.filter((r) => r && (r.value || r.label)) : [];
-  const solCards = (Array.isArray(c.solution_cards) ? c.solution_cards : []).filter((x) => x && (x.title || x.desc));
+  const asArray = (v) => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string" && v.trim().startsWith("[")) { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch (e) { return []; } }
+    return [];
+  };
+  const photos = asArray(c.photos).filter(Boolean);
+  const services = asArray(c.services);
+  const results = asArray(c.results).filter((r) => r && (r.value || r.label));
+  const solCards = asArray(c.solution_cards).filter((x) => x && (x.title || x.desc));
   const challenge = asStr(c.challenge).trim();
   const solServices = asStr(c.solution_services).trim();
   const solStrategies = asStr(c.solution_strategies).trim();

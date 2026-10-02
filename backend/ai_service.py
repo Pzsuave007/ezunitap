@@ -1154,8 +1154,10 @@ Output ONLY valid JSON with EXACTLY these keys (no extras):
   "results": [{"value":"e.g. +35%","label":"short metric label"}, ...EXACTLY 3 items]
 }
 Write everything in {LANG_NAME}. Be generous with useful detail so the case reads complete and professional.
-Every text field MUST be a plain STRING (use "\\n" for line breaks and "- " for bullets); NEVER output an
-array or object for a text field. Return ONLY the JSON."""
+TYPES ARE STRICT: "services", "solution_cards" and "results" MUST be JSON ARRAYS exactly as shown above
+(NOT strings). Every OTHER field (summary, challenge, solution_services, solution_strategies,
+result_before, result_after, and each solution_cards[].desc) MUST be a plain STRING using "\\n" for line
+breaks and "- " for bullets — never an array for those. Return ONLY the JSON."""
 
 
 async def generate_case_study_full(brief: str = "", lang: str = "es") -> dict:
