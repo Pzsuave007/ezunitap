@@ -1179,3 +1179,12 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 
 ### Update (Jun 2026) — Casos de Éxito con IA: contenido enriquecido
 - Enriquecido `AGENCY_CASE_FULL_SYSTEM` (ai_service.py) para que el generador produzca casos DETALLADOS como los manuales (ref: growthally.agency/caso/espressobeso): summary párrafo cálido 2-4 frases; challenge con 2 sub-títulos ('### ') + viñetas (en el idioma de salida: ES "Lo que enfrentaban"/"Cómo afectaba su negocio", EN "What they faced"/"How it impacted their business"); services 5-8 con detalle entre paréntesis; solution_services/strategies como listas de viñetas (6-8); solution_cards x3 con 2 viñetas c/u; before/after como viñetas; results x3 con rangos realistas. El front (RichText/Prose) ya renderiza '### ' y '- '. Solo backend → requiere deploy (git pull && bash deploy.sh), sin rebuild. Probado EN+ES vía curl.
+
+### Fix (Jun 2026) — Crash "Algo salió mal" al crear caso con IA
+- CAUSA RAÍZ: el prompt enriquecido a veces hacía que la IA devolviera campos de texto (challenge, solution_services, result_before, solution_cards[].desc, etc.) como ARRAY en vez de string. El código hacía `.trim()`/`.split()` sobre esos valores → TypeError → error boundary de React tumbaba la página (editor y sitio público).
+- FIX (blindaje en 4 lugares):
+  1. RichEditor.jsx `mdToHtml`: coerce array/no-string → string.
+  2. WebsiteEditor.js `aiNewCase`: helper `asText()` normaliza todos los campos del caso generado.
+  3. ContractorSite.js: helper `asStr()` aplicado a Prose, RichText y a la extracción del detalle de caso (challenge/solServices/solStrategies/before/after).
+  4. ai_service.py `AGENCY_CASE_FULL_SYSTEM`: instrucción explícita "every text field MUST be a plain STRING; never output arrays".
+- Verificado: inyección forzada de caso con arrays → sin crash en sitio público (/caso/...) ni en editor; viñetas renderizan bien. Build frontend hecho y trackeado. Requiere deploy (git pull && bash deploy.sh).

@@ -1154,7 +1154,8 @@ Output ONLY valid JSON with EXACTLY these keys (no extras):
   "results": [{"value":"e.g. +35%","label":"short metric label"}, ...EXACTLY 3 items]
 }
 Write everything in {LANG_NAME}. Be generous with useful detail so the case reads complete and professional.
-Return ONLY the JSON."""
+Every text field MUST be a plain STRING (use "\\n" for line breaks and "- " for bullets); NEVER output an
+array or object for a text field. Return ONLY the JSON."""
 
 
 async def generate_case_study_full(brief: str = "", lang: str = "es") -> dict:

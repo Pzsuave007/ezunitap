@@ -23,6 +23,13 @@ const _isBullet = (l) => /^\s*([-*•✅✔️➤])\s+/.test(l);
 // Convert the legacy markdown-ish syntax (### headings, - bullets, blank lines)
 // into HTML so existing content shows formatted inside the WYSIWYG editor.
 const mdToHtml = (text) => {
+  // Safety: callers (e.g. AI-generated content) may pass an array or non-string.
+  // Coerce to a string so the editor never crashes the page.
+  if (Array.isArray(text)) {
+    text = text.map((x) => (typeof x === "string" ? (/^\s*[-*•✅✔️➤]/.test(x) ? x : `- ${x}`) : "")).filter(Boolean).join("\n");
+  } else if (text != null && typeof text !== "string") {
+    text = String(text);
+  }
   if (_isHtml(text)) return text || "";
   const block = (t) => {
     const lines = t.split(/\n/).filter((l) => l.trim());

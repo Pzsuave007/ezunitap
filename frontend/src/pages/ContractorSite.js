@@ -1807,6 +1807,12 @@ const ppForService = (data, name, i) => {
 };
 
 // ---- Rich text (WYSIWYG HTML) rendering ----
+// Coerce any non-string (e.g. AI-generated arrays) into safe text so a bad field
+// can never crash the public page.
+const asStr = (v) => {
+  if (Array.isArray(v)) return v.map((x) => (typeof x === "string" ? (/^\s*[-*•✅✔️➤]/.test(x) ? x : `- ${x}`) : "")).filter(Boolean).join("\n");
+  return typeof v === "string" ? v : (v == null ? "" : String(v));
+};
 const isHtml = (t) => /<\/?(p|div|span|b|strong|i|em|u|a|ul|ol|li|br|h[1-6]|font)\b/i.test(t || "");
 const stripHtml = (t) => String(t || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/\s+/g, " ").trim();
 const sanitizeHtml = (html) => String(html || "")
@@ -1821,7 +1827,7 @@ function RichHTML({ html, th, className = "" }) {
 }
 // Renders a field that may contain WYSIWYG HTML or plain text.
 function Prose({ text, th, className = "" }) {
-  const t = (text || "").trim();
+  const t = asStr(text).trim();
   if (!t) return null;
   if (isHtml(t)) return <RichHTML html={t} th={th} className={className} />;
   return <p className={`leading-relaxed whitespace-pre-line ${className}`} style={{ color: th?.muted }}>{t}</p>;
@@ -1939,7 +1945,7 @@ function SharedExtras({ ctx }) {
 // ---- MULTI-PAGE: Case Studies / Solutions / About (all templates) ----------
 function RichText({ text, th }) {
   if (isHtml(text)) return <RichHTML html={text} th={th} />;
-  const blocks = (text || "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  const blocks = asStr(text).split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const isBullet = (l) => /^\s*([-*•✅✔️➤])\s+/.test(l);
   const renderBody = (body, key) => {
     const lines = body.split(/\n/).filter((l) => l.trim());
@@ -2160,11 +2166,11 @@ function CaseDetail({ ctx }) {
   const services = Array.isArray(c.services) ? c.services : [];
   const results = Array.isArray(c.results) ? c.results.filter((r) => r && (r.value || r.label)) : [];
   const solCards = (Array.isArray(c.solution_cards) ? c.solution_cards : []).filter((x) => x && (x.title || x.desc));
-  const challenge = (c.challenge || "").trim();
-  const solServices = (c.solution_services || "").trim();
-  const solStrategies = (c.solution_strategies || "").trim();
-  const before = (c.result_before || "").trim();
-  const after = (c.result_after || "").trim();
+  const challenge = asStr(c.challenge).trim();
+  const solServices = asStr(c.solution_services).trim();
+  const solStrategies = asStr(c.solution_strategies).trim();
+  const before = asStr(c.result_before).trim();
+  const after = asStr(c.result_after).trim();
   const info = [
     c.location && ["📍", agT(lang, "Location", "Ubicación"), c.location],
     c.industry && ["🍽️", agT(lang, "Industry", "Industria"), c.industry],

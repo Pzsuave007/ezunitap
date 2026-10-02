@@ -1438,16 +1438,21 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       const { data } = await api.post("/website/ai-agency", { kind: "case_full", brief, lang: isEs ? "es" : "en" });
       const g = data.data || {};
       const slugify = (s) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      // AI may return list-style fields as arrays; coerce to clean text for RichEditor.
+      const asText = (v) => {
+        if (Array.isArray(v)) return v.map((x) => (typeof x === "string" ? (/^\s*[-*•✅✔️➤]/.test(x) ? x : `- ${x}`) : "")).filter(Boolean).join("\n");
+        return typeof v === "string" ? v : (v == null ? "" : String(v));
+      };
       const nc = {
-        client: g.client || "", category: g.category || "", slug: g.slug || slugify(g.client) || "",
-        summary: g.summary || "", location: g.location || "", industry: g.industry || "",
-        ideal_clients: g.ideal_clients || "", website_url: g.website_url || "",
-        challenge: g.challenge || "",
-        services: Array.isArray(g.services) ? g.services : [],
-        solution_services: g.solution_services || "", solution_strategies: g.solution_strategies || "",
-        solution_cards: Array.isArray(g.solution_cards) ? g.solution_cards.slice(0, 3) : [],
-        result_before: g.result_before || "", result_after: g.result_after || "",
-        results: Array.isArray(g.results) ? g.results : [],
+        client: asText(g.client), category: asText(g.category), slug: g.slug || slugify(g.client) || "",
+        summary: asText(g.summary), location: asText(g.location), industry: asText(g.industry),
+        ideal_clients: asText(g.ideal_clients), website_url: asText(g.website_url),
+        challenge: asText(g.challenge),
+        services: (Array.isArray(g.services) ? g.services : []).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).filter(Boolean),
+        solution_services: asText(g.solution_services), solution_strategies: asText(g.solution_strategies),
+        solution_cards: (Array.isArray(g.solution_cards) ? g.solution_cards : []).slice(0, 3).map((c) => ({ title: asText(c && c.title), desc: asText(c && c.desc) })),
+        result_before: asText(g.result_before), result_after: asText(g.result_after),
+        results: (Array.isArray(g.results) ? g.results : []).map((r) => (typeof r === "string" ? { value: r, label: "" } : { value: asText(r && r.value), label: asText(r && r.label) })),
         cover: "", photos: [],
       };
       const n = [nc, ...cases];
