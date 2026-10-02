@@ -1866,7 +1866,20 @@ function LogosStrip({ ctx, sty }) {
 
 function SamplesSection({ ctx, sty }) {
   const r = useReveal();
-  const items = (Array.isArray(ctx.w.samples) ? ctx.w.samples : []).filter((s) => s && (s.img || s.title));
+  // Primary source = the real case studies (latest 9, SAME order as the Cases page),
+  // so the home showcase auto-updates whenever a case is added. Fall back to the
+  // legacy `samples` list only when there are no case studies.
+  const caseList = (Array.isArray(ctx.w.case_studies) ? ctx.w.case_studies : [])
+    .map((c) => ({
+      img: c.cover || (Array.isArray(c.photos) && c.photos[0]) || "",
+      title: c.client || c.title || "",
+      subtitle: c.category || "",
+      caseSlug: c.slug || "",
+    }))
+    .filter((s) => s.img || s.title)
+    .slice(0, 9);
+  const legacy = (Array.isArray(ctx.w.samples) ? ctx.w.samples : []).filter((s) => s && (s.img || s.title));
+  const items = caseList.length ? caseList : legacy;
   const { accent, lang } = ctx;
   const T = secTheme(ctx.th, sty);
   if (!items.length) return null;

@@ -1188,3 +1188,8 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
   3. ContractorSite.js: helper `asStr()` aplicado a Prose, RichText y a la extracción del detalle de caso (challenge/solServices/solStrategies/before/after).
   4. ai_service.py `AGENCY_CASE_FULL_SYSTEM`: instrucción explícita "every text field MUST be a plain STRING; never output arrays".
 - Verificado: inyección forzada de caso con arrays → sin crash en sitio público (/caso/...) ni en editor; viñetas renderizan bien. Build frontend hecho y trackeado. Requiere deploy (git pull && bash deploy.sh).
+
+### Update (Jun 2026) — Home muestra 9 casos recientes + fix crash arrays/JSON-string
+- HOME: `SamplesSection` (ContractorSite.js) ahora deriva su showcase de `case_studies` (últimos 9, mismo orden que la página /casos) en vez del array estático `samples`. Al agregar un caso (se antepone), el home se actualiza y muestra los más recientes. Fallback a `samples` si no hay case_studies. Imágenes usan cover || photos[0].
+- FIX crash caso: la IA devolvía services/solution_cards/results como strings JSON y a veces campos de texto como arrays. Blindado: prompt aclara tipos (arrays vs strings); aiNewCase usa asText()+asArr() (parsea JSON-string arrays); ContractorSite CaseDetail usa asStr()+asArray() y RichText/Prose coercionan; RichEditor.mdToHtml coacciona no-string. Verificado: inyección de arrays y de JSON-strings → sin crash en sitio público ni editor.
+- Pendiente opcional: actualizar también el SSR (bots) para reflejar los 9 casos (hoy el SSR usa `samples`). No afecta la vista visible del usuario.
