@@ -853,6 +853,10 @@ export default function WebsiteEditor() {
           <Input value={w.headline || ""} onChange={(e) => patch({ headline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-headline" placeholder={t("website.headlinePh")} />
         </div>
         <div>
+          <Label>Slogan / Tagline</Label>
+          <Input value={w.hero_tagline || ""} onChange={(e) => patch({ hero_tagline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-hero-tagline" placeholder="Smart Digital Marketing Nationwide" />
+        </div>
+        <div>
           <Label>{t("website.subheadline")}</Label>
           <Input value={w.subheadline || ""} onChange={(e) => patch({ subheadline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-subheadline" />
         </div>
@@ -1166,7 +1170,7 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections } = w;
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline } = w;
   return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections };
 }
 

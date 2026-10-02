@@ -4452,6 +4452,7 @@ class WebsiteIn(BaseModel):
     published: Optional[bool] = None
     headline: Optional[str] = None
     subheadline: Optional[str] = None
+    hero_tagline: Optional[str] = None   # slogan shown under the H1 in the hero
     about: Optional[str] = None
     hero_photo_id: Optional[str] = None
     sections: Optional[dict] = None      # {services,gallery,reviews,contact,booking,about,how,why,faq,areas}
@@ -5061,7 +5062,7 @@ async def website_ai_generate(body: dict = Body(default={}), user_id: str = Depe
 
 
 _TRANSLATABLE_FIELDS = {
-    "headline", "subheadline", "about", "seo_title", "seo_description",
+    "headline", "subheadline", "hero_tagline", "about", "seo_title", "seo_description",
     "solutions_intro", "about_title", "about_story", "how_it_works", "why_us",
     "faqs", "services", "samples", "case_studies", "team", "milestones",
     "about_values", "about_sections", "areas",

@@ -1163,3 +1163,11 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 **ACCIÓN USUARIO (producción VPS):** (1) desplegar backend actualizado (server.py) y reiniciar puerto 8007; (2) correr `python3 deploy/optimize_uni2_seo.py` contra la BD de producción; (3) subir `frontend/build/` (cambios del mapa).
 
 **Próximos pasos SEO (mayor palanca para "local en cualquier estado"):** crear Páginas de Ubicación por estado/ciudad (problem_pages) → "digital marketing agency in Texas/Florida/..." para pack local real en cada mercado. Pendiente decisión zoom por defecto del mapa.
+
+### Update (Jun 2026) — Hero full-service positioning
+- H1 del hero cambiado a "Full-Service Digital & Print Marketing Agency" (ES: "Agencia de Marketing de Servicio Completo: Digital e Impresos") + subtítulo que enumera todos los servicios y alcance nacional. Mayor claridad para SEO + AI bots. Aplicado vía `deploy/optimize_uni2_seo.py` (ahora también setea headline/subheadline EN+ES). Slug prod real = `uni2-marketing-agency`, BD prod = `unitap_prod`. Script ahora auto-detecta BD y soporta ambos slugs + docs duplicados (update por _id).
+- NOTA: existen docs duplicados en prod (uni2-marketing-agency, dh-drywall-llc, tlaxcala, elite-remodeling-roofing). Pendiente opcional: script de limpieza de duplicados.
+
+### Update (Jun 2026) — Hero slogan + deploy automatizado
+- Agregado campo `hero_tagline` (slogan bajo el H1). Hero Uni2: H1 "Full-Service Digital & Print Marketing Agency" + slogan "Smart Digital Marketing Nationwide" (ES: "Marketing Digital Inteligente en Todo el País"). Editable en WebsiteEditor (campo "Slogan / Tagline"). Backend: `hero_tagline` en WebsiteIn + _TRANSLATABLE_FIELDS. ContractorSite Agency hero renderiza w.hero_tagline.
+- `deploy.sh` ahora corre `deploy/optimize_uni2_seo.py` automáticamente (con candado `_seo_opt_version=2`): aplica una vez y se auto-salta en futuros deploys para NO pisar ediciones del usuario. Comando único del usuario sin cambios: `cd /home/ezunitap/repo && git pull && bash deploy.sh`. FORCE=1 para re-aplicar.

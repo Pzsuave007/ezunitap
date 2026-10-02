@@ -2560,6 +2560,7 @@ function Agency({ ctx }) {
           <div className="wreveal wshow">
             <p className="font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: accent }}>{agT(lang, "Empowering Latino businesses", "Impulsando negocios latinos")}</p>
             <h1 className="wh text-4xl sm:text-5xl lg:text-6xl leading-[1.05]" style={{ color: H.ink }}>{w.headline || b?.name}</h1>
+            {w.hero_tagline && <p className="mt-4 text-lg md:text-xl font-semibold" style={{ color: accent }} data-testid="agency-hero-tagline">{w.hero_tagline}</p>}
             {aboutText && <p className="mt-6 text-base sm:text-lg max-w-xl leading-relaxed line-clamp-5" style={{ color: H.muted }}>{aboutText}</p>}
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button onClick={goContact} data-testid="agency-hero-cta" className="inline-flex items-center gap-2 font-bold px-7 py-3.5 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>

@@ -95,6 +95,16 @@ else
     as_user "bash $REPO/deploy/fix.sh"
 fi
 
+# --- One-time SEO / entity optimization (idempotent + self-guarded) ---------
+# Auto-applies the Uni2 SEO data (phone, slogan, states, print service, FAQs)
+# ONCE per version, then skips on every future deploy so it never overwrites
+# edits you make in the Website Editor. Non-fatal if it can't run.
+if [ -f "$REPO/deploy/optimize_uni2_seo.py" ]; then
+    echo ">>> SEO optimization (auto-skips if already applied)..."
+    as_user "'$PROD/venv/bin/python' '$REPO/deploy/optimize_uni2_seo.py'" \
+        || echo "  (!) SEO optimization skipped (non-fatal)"
+fi
+
 # ============ Publish the SAME app to ezunitech.com ============
 # ezunitech.com is a separate cPanel account on this same VPS. It shares this
 # backend (127.0.0.1:$PORT) and database, so it only needs the frontend +

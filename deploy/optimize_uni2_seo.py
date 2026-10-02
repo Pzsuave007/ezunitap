@@ -124,6 +124,25 @@ SEO_DESC_ES = ("Agencia de marketing de servicio completo para negocios latinos 
                "Sitios web en inglés, SEO, Google Business Profile, redes sociales, generación de leads, "
                "automatización con CRM E impresión y rótulos. En Spokane, WA — servicio a todo el país, con soporte en español.")
 
+# Hero (H1 + subheadline) — the strongest on-page signal for SEO + AI. Makes the
+# "full-service marketing agency (digital + print)" positioning unmistakable.
+HEADLINE_EN = "Full-Service Digital & Print Marketing Agency"
+SUBHEAD_EN = ("Uni2 Marketing Agency is your all-in-one team — websites, SEO, Google Business Profile, "
+              "social media, lead generation AND professional printing & signage. Serving Latino and "
+              "local businesses nationwide.")
+HEADLINE_ES = "Agencia de Marketing de Servicio Completo: Digital e Impresos"
+SUBHEAD_ES = ("Uni2 Marketing Agency es tu equipo todo-en-uno — sitios web, SEO, Google Business Profile, "
+              "redes sociales, generación de leads E impresión y rótulos profesionales. Atendemos negocios "
+              "latinos y locales en todo el país.")
+
+# Slogan shown under the H1 in the hero.
+HERO_TAGLINE_EN = "Smart Digital Marketing Nationwide"
+HERO_TAGLINE_ES = "Marketing Digital Inteligente en Todo el País"
+
+# Bump this when you change the values above and want deploy.sh to re-apply them
+# once. Until bumped, each deploy auto-skips (so your editor edits are never lost).
+SEO_OPT_VERSION = 2
+
 
 def _merge_faqs(existing, additions):
     existing = [f for f in (existing or []) if isinstance(f, dict)]
@@ -160,8 +179,16 @@ def main():
     sites = list(db.websites.find({"slug": {"$in": SLUGS}}))
     print(f">>> Found {len(sites)} matching website doc(s): {sorted({s.get('slug') for s in sites})}")
 
+    force = os.environ.get("FORCE", "").lower() in ("1", "true", "yes")
+    pending = [w for w in sites if force or int(w.get("_seo_opt_version") or 0) < SEO_OPT_VERSION]
+    if not pending:
+        print(f">>> Already optimized (v{SEO_OPT_VERSION}). Nothing to do — your edits are safe. "
+              f"(Run FORCE=1 ... to re-apply.)")
+        print("DONE. ✅")
+        return
+
     done_users = set()
-    for w in sites:
+    for w in pending:
         uid = w.get("user_id")
         # ---- USER: structured NAP + geo + entity (once per owner) ----
         if uid and uid not in done_users:
@@ -182,17 +209,24 @@ def main():
             done_users.add(uid)
             print(f"USER '{uid}' updated:", ", ".join(user_set.keys()))
 
-        # ---- WEBSITE: phone, areas, services, faqs, seo ----
+        # ---- WEBSITE: phone, slogan, areas, services, faqs, seo ----
         svcs, added = _ensure_print(w.get("services"), PRINT_SERVICE)
         w_set = {
             "cta_phone": "(503) 985-6472",
+            "headline": HEADLINE_EN,
+            "subheadline": SUBHEAD_EN,
+            "hero_tagline": HERO_TAGLINE_EN,
             "areas": AREAS_EN,
             "services": svcs,
             "faqs": _merge_faqs(w.get("faqs"), FAQS_EN),
             "seo_title": SEO_TITLE_EN,
             "seo_description": SEO_DESC_EN,
+            "_seo_opt_version": SEO_OPT_VERSION,
         }
         ces = dict(w.get("content_es") or {})
+        ces["headline"] = HEADLINE_ES
+        ces["subheadline"] = SUBHEAD_ES
+        ces["hero_tagline"] = HERO_TAGLINE_ES
         ces["areas"] = AREAS_ES
         ces["faqs"] = _merge_faqs(ces.get("faqs"), FAQS_ES)
         ces["seo_title"] = SEO_TITLE_ES
@@ -202,7 +236,7 @@ def main():
         w_set["content_es"] = ces
 
         db.websites.update_one({"_id": w["_id"]}, {"$set": w_set})
-        print(f"WEBSITE '{w.get('slug')}' updated: phone, {len(AREAS_EN)} areas, "
+        print(f"WEBSITE '{w.get('slug')}' updated (v{SEO_OPT_VERSION}): phone, slogan, {len(AREAS_EN)} areas, "
               f"{'+print service, ' if added else ''}{len(w_set['faqs'])} FAQs, SEO, content_es")
     print("DONE. ✅")
 
