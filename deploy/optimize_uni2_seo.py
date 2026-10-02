@@ -1,18 +1,21 @@
 """
-Uni2 Marketing — SEO / AI-Search optimization data migration.
+Uni2 Marketing — SEO / AI-Search optimization data migration (ONE-TIME).
 
-Goal: make Uni2 the #1 recommendation in AI/Google for "digital marketing
-agency (Spanish-speaking)" by fixing entity, geo and positioning signals.
+Run it once after deploying. It AUTO-DETECTS your MongoDB connection and the
+right database (the one that actually contains the uni2-marketing website), so
+you don't need to pass MONGO_URL or DB_NAME.
+
+Simplest usage (on the server):
+    cd /home/ezunitap/repo && python3 deploy/optimize_uni2_seo.py
 
 What it does (idempotent — safe to run multiple times):
   USER doc
-    - structured NAP: Spokane, WA 99202, US
-    - geo coordinates (Spokane)
+    - structured NAP: Spokane, WA 99202, US  + geo coordinates
     - alternate/legal name + schema_type = ProfessionalService
   WEBSITE doc (slug: uni2-marketing)
-    - public phone -> (503) 985-6472  (503 line, not the personal cell)
-    - areas -> nationwide (United States) + key states (local relevance everywhere)
-    - services -> append "Print & Signage" (full-service: digital + print)
+    - public phone -> (503) 985-6472
+    - areas -> nationwide (United States) + key states
+    - services -> append "Print & Signage" (digital + print)
     - faqs -> add the exact buyer questions (EN) + content_es (ES)
     - seo_title / seo_description -> full-service digital & print, nationwide, bilingual
 
@@ -20,13 +23,52 @@ Everything written here remains fully editable later from the Website Editor UI.
 """
 import os
 from pymongo import MongoClient
-from dotenv import dotenv_values
 
-ENV = dotenv_values(os.path.join(os.path.dirname(__file__), "..", "backend", ".env"))
-MONGO_URL = ENV.get("MONGO_URL") or os.environ["MONGO_URL"]
-DB_NAME = ENV.get("DB_NAME") or os.environ["DB_NAME"]
+try:
+    from dotenv import dotenv_values
+except Exception:
+    dotenv_values = lambda *a, **k: {}
 
 SLUG = "uni2-marketing"
+
+# ---------- resolve MongoDB connection (env -> .env files -> localhost) ----------
+def _resolve_mongo_url():
+    if os.environ.get("MONGO_URL"):
+        return os.environ["MONGO_URL"]
+    here = os.path.dirname(os.path.abspath(__file__))
+    for env_path in (os.path.join(here, "..", "backend", ".env"),
+                     "/home/ezunitap/repo/backend/.env",
+                     os.path.join(here, "backend.env.production")):
+        try:
+            vals = dotenv_values(env_path)
+            if vals.get("MONGO_URL"):
+                return vals["MONGO_URL"]
+        except Exception:
+            pass
+    return "mongodb://localhost:27017"
+
+
+def _find_db(client):
+    """Return (db, db_name) of the database that holds the uni2-marketing site."""
+    # 1) explicit DB_NAME if it actually has the site
+    forced = os.environ.get("DB_NAME")
+    candidates = []
+    if forced:
+        candidates.append(forced)
+    # 2) common prod name, then everything else
+    candidates.append("unitap_prod")
+    for n in client.list_database_names():
+        if n not in ("admin", "config", "local") and n not in candidates:
+            candidates.append(n)
+    for name in candidates:
+        try:
+            db = client[name]
+            if "websites" in db.list_collection_names() and db.websites.find_one({"slug": SLUG}):
+                return db, name
+        except Exception:
+            continue
+    return None, None
+
 
 PRINT_SERVICE = {
     "name": "Print & Signage",
@@ -96,7 +138,6 @@ def _ensure_print(services, print_svc):
     services = [s for s in (services or []) if isinstance(s, dict)]
     for s in services:
         n = (s.get("name") or "").lower()
-        # Match a real print service (not "Digital Signage"/menu offerings).
         if ("print" in n or "impres" in n or "rótulo" in n or "rotulo" in n
                 or n in ("print & signage", "diseño e impresión", "diseno e impresion")):
             return services, False
@@ -105,12 +146,18 @@ def _ensure_print(services, print_svc):
 
 
 def main():
-    c = MongoClient(MONGO_URL)
-    db = c[DB_NAME]
-    w = db.websites.find_one({"slug": SLUG})
-    if not w:
-        print(f"!! website '{SLUG}' not found")
+    url = _resolve_mongo_url()
+    client = MongoClient(url)
+    db, db_name = _find_db(client)
+    if db is None:
+        print(f"!! Could not find any database containing website '{SLUG}'.")
+        print(f"   Connected to: {url}")
+        print(f"   Databases seen: {[n for n in client.list_database_names() if n not in ('admin','config','local')]}")
+        print("   -> Run again passing your DB name, e.g.:  DB_NAME=yourdb python3 deploy/optimize_uni2_seo.py")
         return
+    print(f">>> Using database: '{db_name}'  (mongo: {url})")
+
+    w = db.websites.find_one({"slug": SLUG})
     uid = w["user_id"]
     user = db.users.find_one({"id": uid}) or {}
 
@@ -140,8 +187,6 @@ def main():
         "seo_title": SEO_TITLE_EN,
         "seo_description": SEO_DESC_EN,
     }
-
-    # Spanish overlay (content_es) — keep ES site aligned.
     ces = dict(w.get("content_es") or {})
     ces["areas"] = AREAS_ES
     ces["faqs"] = _merge_faqs(ces.get("faqs"), FAQS_ES)
@@ -154,7 +199,7 @@ def main():
     db.websites.update_one({"slug": SLUG}, {"$set": w_set})
     print(f"WEBSITE updated: phone, {len(AREAS_EN)} areas, "
           f"{'+print service, ' if added else ''}{len(w_set['faqs'])} FAQs, SEO title/desc, content_es")
-    print("DONE.")
+    print("DONE. ✅")
 
 
 if __name__ == "__main__":
