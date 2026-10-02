@@ -29,7 +29,7 @@ try:
 except Exception:
     dotenv_values = lambda *a, **k: {}
 
-SLUG = "uni2-marketing"
+SLUGS = ["uni2-marketing-agency", "uni2-marketing"]
 
 # ---------- resolve MongoDB connection (env -> .env files -> localhost) ----------
 def _resolve_mongo_url():
@@ -63,7 +63,7 @@ def _find_db(client):
     for name in candidates:
         try:
             db = client[name]
-            if "websites" in db.list_collection_names() and db.websites.find_one({"slug": SLUG}):
+            if "websites" in db.list_collection_names() and db.websites.find_one({"slug": {"$in": SLUGS}}):
                 return db, name
         except Exception:
             continue
@@ -150,55 +150,60 @@ def main():
     client = MongoClient(url)
     db, db_name = _find_db(client)
     if db is None:
-        print(f"!! Could not find any database containing website '{SLUG}'.")
+        print(f"!! Could not find any database containing websites {SLUGS}.")
         print(f"   Connected to: {url}")
         print(f"   Databases seen: {[n for n in client.list_database_names() if n not in ('admin','config','local')]}")
         print("   -> Run again passing your DB name, e.g.:  DB_NAME=yourdb python3 deploy/optimize_uni2_seo.py")
         return
     print(f">>> Using database: '{db_name}'  (mongo: {url})")
 
-    w = db.websites.find_one({"slug": SLUG})
-    uid = w["user_id"]
-    user = db.users.find_one({"id": uid}) or {}
+    sites = list(db.websites.find({"slug": {"$in": SLUGS}}))
+    print(f">>> Found {len(sites)} matching website doc(s): {sorted({s.get('slug') for s in sites})}")
 
-    # ---- USER: structured NAP + geo + entity ----
-    user_set = {
-        "business_city": "Spokane",
-        "business_state": "WA",
-        "business_zip": "99202",
-        "business_country": "US",
-        "business_geo_lat": 47.6588,
-        "business_geo_lng": -117.4260,
-        "alternate_name": "Uni2 Marketing Group",
-        "schema_type": "ProfessionalService",
-    }
-    if not (user.get("legal_name") or "").strip():
-        user_set["legal_name"] = "Uni2 Marketing Agency"
-    db.users.update_one({"id": uid}, {"$set": user_set})
-    print("USER updated:", ", ".join(user_set.keys()))
+    done_users = set()
+    for w in sites:
+        uid = w.get("user_id")
+        # ---- USER: structured NAP + geo + entity (once per owner) ----
+        if uid and uid not in done_users:
+            user = db.users.find_one({"id": uid}) or {}
+            user_set = {
+                "business_city": "Spokane",
+                "business_state": "WA",
+                "business_zip": "99202",
+                "business_country": "US",
+                "business_geo_lat": 47.6588,
+                "business_geo_lng": -117.4260,
+                "alternate_name": "Uni2 Marketing Group",
+                "schema_type": "ProfessionalService",
+            }
+            if not (user.get("legal_name") or "").strip():
+                user_set["legal_name"] = "Uni2 Marketing Agency"
+            db.users.update_one({"id": uid}, {"$set": user_set})
+            done_users.add(uid)
+            print(f"USER '{uid}' updated:", ", ".join(user_set.keys()))
 
-    # ---- WEBSITE: phone, areas, services, faqs, seo ----
-    svcs, added = _ensure_print(w.get("services"), PRINT_SERVICE)
-    w_set = {
-        "cta_phone": "(503) 985-6472",
-        "areas": AREAS_EN,
-        "services": svcs,
-        "faqs": _merge_faqs(w.get("faqs"), FAQS_EN),
-        "seo_title": SEO_TITLE_EN,
-        "seo_description": SEO_DESC_EN,
-    }
-    ces = dict(w.get("content_es") or {})
-    ces["areas"] = AREAS_ES
-    ces["faqs"] = _merge_faqs(ces.get("faqs"), FAQS_ES)
-    ces["seo_title"] = SEO_TITLE_ES
-    ces["seo_description"] = SEO_DESC_ES
-    if ces.get("services"):
-        ces["services"], _ = _ensure_print(ces.get("services"), PRINT_SERVICE_ES)
-    w_set["content_es"] = ces
+        # ---- WEBSITE: phone, areas, services, faqs, seo ----
+        svcs, added = _ensure_print(w.get("services"), PRINT_SERVICE)
+        w_set = {
+            "cta_phone": "(503) 985-6472",
+            "areas": AREAS_EN,
+            "services": svcs,
+            "faqs": _merge_faqs(w.get("faqs"), FAQS_EN),
+            "seo_title": SEO_TITLE_EN,
+            "seo_description": SEO_DESC_EN,
+        }
+        ces = dict(w.get("content_es") or {})
+        ces["areas"] = AREAS_ES
+        ces["faqs"] = _merge_faqs(ces.get("faqs"), FAQS_ES)
+        ces["seo_title"] = SEO_TITLE_ES
+        ces["seo_description"] = SEO_DESC_ES
+        if ces.get("services"):
+            ces["services"], _ = _ensure_print(ces.get("services"), PRINT_SERVICE_ES)
+        w_set["content_es"] = ces
 
-    db.websites.update_one({"slug": SLUG}, {"$set": w_set})
-    print(f"WEBSITE updated: phone, {len(AREAS_EN)} areas, "
-          f"{'+print service, ' if added else ''}{len(w_set['faqs'])} FAQs, SEO title/desc, content_es")
+        db.websites.update_one({"_id": w["_id"]}, {"$set": w_set})
+        print(f"WEBSITE '{w.get('slug')}' updated: phone, {len(AREAS_EN)} areas, "
+              f"{'+print service, ' if added else ''}{len(w_set['faqs'])} FAQs, SEO, content_es")
     print("DONE. ✅")
 
 
