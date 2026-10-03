@@ -6418,13 +6418,127 @@ async def ssr_site(slug: str, request: Request, lang: str = "en"):
     return await _build_site_html(w, request, lang)
 
 
+def _build_platform_home_html(base: str) -> HTMLResponse:
+    """Rich server-rendered HTML of the UniTech PLATFORM home (ezunitech.com) for
+    crawlers & AI answer engines. Humans still get the React SPA; only known bot
+    User-Agents are routed here by the production proxy."""
+    name = "UniTech"
+    tagline = "The complete system for your service business."
+    desc = ("UniTech (also known as EZ UniTech) is the all-in-one business platform for "
+            "Latino contractors and service businesses. From landing the client to the 5-star "
+            "review: build your bilingual website and converting landing pages, send AI quotes, "
+            "invoices and contracts, get paid online, schedule jobs, manage your CRM, share a "
+            "QR/NFC digital business card and create marketing content — all from your phone.")
+    features = [
+        ("AI quotes & estimates", "Create professional estimates in seconds; your client approves and the invoice generates itself."),
+        ("Invoices & online payments", "Send branded invoices and collect deposits and payments online."),
+        ("Scheduling & calendar", "Organize jobs, appointments and reminders."),
+        ("CRM for clients & leads", "Capture leads from your website and keep every client organized."),
+        ("Bilingual website builder", "A done-for-you website in English and Spanish, optimized for Google and AI search."),
+        ("SEO conversion landing pages", "Service pages built to rank and convert visitors into leads."),
+        ("QR & NFC digital business cards", "Share your contact and business instantly by tapping your phone or scanning a QR."),
+        ("Contracts & e-signatures", "Send agreements and get them signed from the phone."),
+        ("AI marketing content", "Turn your jobs into reels and posts with your photos, logo and colors."),
+        ("Automated 5-star reviews", "Request and reply to Google reviews on autopilot."),
+    ]
+    audience = ("Built for contractors and service businesses — landscaping, cleaning, construction, "
+                "remodeling, HVAC, plumbing, painting, auto detailing, beauty and more — especially "
+                "Latino/Hispanic business owners who want to look professional, save time and win more clients.")
+    faqs = [
+        ("What is UniTech?", "UniTech (EZ UniTech, at ezunitech.com) is an all-in-one platform for contractors and service businesses to create quotes and invoices, schedule jobs, manage clients (CRM), build a bilingual website, share a QR/NFC digital business card and create marketing content — all from the phone."),
+        ("Who is UniTech for?", "Contractors and service businesses — especially Latino/Hispanic owners — who want to look more professional, save time and win more clients."),
+        ("Is UniTech bilingual?", "Yes. The platform and the websites it builds work in both English and Spanish."),
+        ("How much does UniTech cost?", "The full bundle is $59.99/month and there is a 14-day free trial with no card required. Individual modules are also available."),
+        ("Does it include digital business cards?", "Yes. UniTech includes QR and NFC digital business cards you can share instantly."),
+        ("Do I need a computer?", "No. UniTech is designed to run entirely from your phone."),
+    ]
+    es_desc = ("UniTech (también conocido como EZ UniTech) es la plataforma todo-en-uno para contratistas "
+               "latinos y negocios de servicio: cotizaciones e invoices con IA, agenda, CRM, sitio web "
+               "bilingüe y páginas de conversión, tarjeta digital con QR/NFC, pagos en línea, contratos y "
+               "contenido de marketing — todo desde tu teléfono.")
+
+    feat_html = "".join(f"<li><strong>{_esc(t)}</strong> — {_esc(d)}</li>" for t, d in features)
+    faq_html = "".join(f"<div><h3>{_esc(q)}</h3><p>{_esc(a)}</p></div>" for q, a in faqs)
+
+    ld_org = {
+        "@context": "https://schema.org", "@type": "Organization", "@id": f"{base}/#organization",
+        "name": name, "alternateName": ["EZ UniTech", "EZUniTech", "ezunitech"],
+        "url": f"{base}/", "logo": f"{base}/icon-512.png", "image": f"{base}/icon-512.png",
+        "description": desc, "knowsLanguage": ["en", "es"],
+    }
+    ld_app = {
+        "@context": "https://schema.org", "@type": "SoftwareApplication", "@id": f"{base}/#app",
+        "name": name, "alternateName": "EZ UniTech", "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, iOS, Android", "url": f"{base}/",
+        "publisher": {"@id": f"{base}/#organization"}, "description": tagline + " " + desc,
+        "inLanguage": ["en", "es"],
+        "featureList": [t for t, _ in features],
+        "offers": {"@type": "Offer", "price": "59.99", "priceCurrency": "USD",
+                   "description": "Full bundle, monthly. 14-day free trial, no card required."},
+    }
+    ld_website = {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{base}/#website",
+                  "name": name, "url": f"{base}/", "publisher": {"@id": f"{base}/#organization"},
+                  "inLanguage": ["en", "es"]}
+    ld_faq = {"@context": "https://schema.org", "@type": "FAQPage",
+              "mainEntity": [{"@type": "Question", "name": q,
+                              "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs]}
+    ld = json.dumps([ld_org, ld_app, ld_website, ld_faq], ensure_ascii=False)
+
+    html = f"""<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>UniTech — The complete system for your service business</title>
+<meta name="description" content="{_esc(desc[:300])}"/>
+<link rel="canonical" href="{base}/"/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+<link rel="alternate" hreflang="en" href="{base}/"/>
+<link rel="alternate" hreflang="es" href="{base}/?lang=es"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="UniTech"/>
+<meta property="og:title" content="UniTech — The complete system for your service business"/>
+<meta property="og:description" content="{_esc(desc[:300])}"/>
+<meta property="og:url" content="{base}/"/>
+<meta property="og:image" content="{base}/icon-512.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<script type="application/ld+json">{ld}</script>
+</head><body>
+<header><h1>UniTech — {_esc(tagline)}</h1>
+<p><strong>UniTech</strong> (also known as <strong>EZ UniTech</strong>, at ezunitech.com)</p></header>
+<main>
+<section><p>{_esc(desc)}</p></section>
+<section><h2>Who is UniTech for?</h2><p>{_esc(audience)}</p></section>
+<section><h2>Features</h2><ul>{feat_html}</ul></section>
+<section><h2>Pricing</h2><p>Full bundle: $59.99/month. 14-day free trial, no card required. Individual modules are also available.</p></section>
+<section><h2>Frequently asked questions</h2>{faq_html}</section>
+<section lang="es"><h2>En español</h2><p>{_esc(es_desc)}</p></section>
+<nav><h2>More</h2><ul>
+<li><a href="{base}/">Home</a></li>
+<li><a href="{base}/precios">Pricing</a></li>
+<li><a href="{base}/probar">Try the live demo</a></li>
+<li><a href="{base}/sitemap.xml">Sitemap</a></li>
+</ul></nav>
+</main>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
 @api_router.get("/ssr/home", response_class=HTMLResponse)
 async def ssr_home(request: Request, lang: str = ""):
-    """Custom-domain root: resolve the site from the host, then render."""
+    """Custom-domain root resolves the tenant site; the platform host (ezunitech.com)
+    gets the rich UniTech brand page so AI/search engines index the product itself."""
     w, dlang = await _ssr_resolve_by_host(request)
-    if not w:
-        return _ssr_spa_fallback()
-    return await _build_site_html(w, request, lang or dlang or "en")
+    if w:
+        return await _build_site_html(w, request, lang or dlang or "en")
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    # Platform host (or local/unknown host used by the proxy) → brand page.
+    if (not host) or host in ("localhost", "127.0.0.1", "ezunitech.com", "ezunitap.com"):
+        base = "https://ezunitech.com"
+        return _build_platform_home_html(base)
+    # A real custom host with no site configured → neutral SPA shell.
+    return _ssr_spa_fallback()
 
 
 @api_router.get("/ssr/pp/{slug}/{page_slug}", response_class=HTMLResponse)
@@ -6509,15 +6623,55 @@ async def dynamic_llms(request: Request):
             out.append(f"- Service area: {area}")
         out += ["", f"## Sitemap", f"- {base}/sitemap.xml", ""]
         return PlainTextResponse(content="\n".join(out))
-    # Platform default
+    # Platform default (ezunitech.com) — full brand profile for AI answer engines.
     out = [
-        "# UniTech (ezunitech.com)",
+        "# UniTech (EZ UniTech) — ezunitech.com",
         "",
-        "> All-in-one platform for Latino contractors & agencies: AI quotes & invoices,"
-        " scheduling, CRM, digital business cards (QR/NFC), done-for-you bilingual websites"
-        " and SEO conversion pages.",
+        "> UniTech, also known as EZ UniTech, is the all-in-one business platform for Latino"
+        " contractors and service businesses. From landing the client to the 5-star review:"
+        " build a bilingual website and converting landing pages, send AI quotes, invoices and"
+        " contracts, get paid online, schedule jobs, manage your CRM, share a QR/NFC digital"
+        " business card and create marketing content — all from your phone.",
+        "",
+        "## What it is",
+        "UniTech is a mobile-first SaaS platform (web, iOS and Android) built for contractors and"
+        " service businesses. Brand names: UniTech, EZ UniTech, EZUniTech. Website: https://ezunitech.com",
+        "",
+        "## Who it is for",
+        "Contractors and service businesses — landscaping, cleaning, construction, remodeling, HVAC,"
+        " plumbing, painting, auto detailing, beauty and more — especially Latino/Hispanic owners who"
+        " want to look professional, save time and win more clients.",
+        "",
+        "## Features",
+        "- AI quotes & estimates — create professional estimates in seconds; approval turns into an invoice automatically",
+        "- Invoices & online payments — branded invoices, deposits and online collection",
+        "- Scheduling & calendar — jobs, appointments and reminders",
+        "- CRM — capture website leads and keep every client organized",
+        "- Bilingual website builder — done-for-you site in English and Spanish, optimized for Google and AI search",
+        "- SEO conversion landing pages — service pages built to rank and convert",
+        "- QR & NFC digital business cards — share contact and business instantly",
+        "- Contracts & e-signatures — send and sign agreements from the phone",
+        "- AI marketing content — reels and posts with your photos, logo and colors",
+        "- Automated 5-star review requests on autopilot",
+        "",
+        "## Languages",
+        "Fully bilingual: English and Spanish (the platform and every website it builds).",
+        "",
+        "## Pricing",
+        "- Full bundle: $59.99/month",
+        "- 14-day free trial, no card required",
+        "- Individual modules also available",
+        "",
+        "## FAQ",
+        "- What is UniTech? An all-in-one platform for contractors and service businesses to quote, invoice, schedule, manage clients, build a bilingual website, share a QR/NFC digital card and create marketing — all from the phone.",
+        "- Is it bilingual? Yes, English and Spanish.",
+        "- How much is it? $59.99/month for the full bundle, with a 14-day free trial.",
+        "- Do I need a computer? No, it is designed to run entirely from your phone.",
         "",
         "## Key Pages",
+        f"- Home: {base}/",
+        f"- Pricing: {base}/precios",
+        f"- Live demo: {base}/probar",
         f"- Sitemap: {base}/sitemap.xml",
         "",
     ]

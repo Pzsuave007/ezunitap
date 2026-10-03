@@ -1205,3 +1205,11 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - Sitio público: componente `ProductsSection` en ContractorSite ("OUR SOFTWARE / Tools you can use for your business"), render en home agency (y plantilla base), toggle sec.products. Cards con imagen|nombre, tagline, descripción y botón de link opcional. Usa asStr (seguro).
 - Migración `optimize_uni2_seo.py`: siembra 3 productos de arranque (UniTech, Insta Menu, QR Menu) EN+ES SOLO si el sitio no tiene productos (independiente del guard de versión, no pisa ediciones). Verificado e2e: home + editor sin crash, seeding idempotente.
 - Requiere deploy (backend+frontend): Save to GitHub + git pull && bash deploy.sh.
+
+## [Jun 2026] Brand SEO + AI Answer-Engine Optimization (ezunitech.com)
+Problema: al buscar "EZunitech", los motores de IA devolvían una descripción genérica/limitada porque el host de la plataforma (ezunitech.com) NO tenía SSR ni Schema rico (solo lo tenían los sitios de clientes); los bots recibían el shell vacío de React y un llms.txt de 3 líneas.
+- index.html: metatags reforzados (description, keywords, canonical, og:image/locale/alternate, twitter card) + JSON-LD de marca (Organization + SoftwareApplication + WebSite) con alternateName "EZ UniTech"/"EZUniTech".
+- server.py: nueva `_build_platform_home_html` + `ssr_home` ahora renderiza página de marca completa para el host de plataforma (features, audiencia, precio $59.99/mo + prueba 14 días, FAQPage) con JSON-LD Organization+SoftwareApplication+WebSite+FAQPage. Bilingüe (EN con sección ES).
+- server.py: `llms.txt` de plataforma enriquecido (qué es, audiencia, features, idiomas, precios, FAQ, páginas clave) — antes 3 líneas.
+- Verificado por curl: /api/ssr/home y /api/llms.txt válidos; JSON-LD parseable en SSR y en index.html del build.
+- Requiere deploy (backend+frontend) para que surta efecto en producción: Save to GitHub + deploy.
