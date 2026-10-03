@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, CalendarCheck, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock, Globe, QrCode, MonitorSmartphone } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, CalendarCheck, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock, Globe, QrCode, MonitorSmartphone, BarChart3 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ const MORE_ITEMS = [
   { to: "/quotes", labelKey: "nav.quotesLong", icon: FileText, feature: "business" },
   { to: "/contratos", labelKey: "nav.agreements", icon: FileSignature, feature: "business" },
   { to: "/invoices", labelKey: "nav.invoicesLong", icon: Receipt, feature: "business" },
+  { to: "/reports", labelKey: "nav.reportsLong", icon: BarChart3, feature: "business" },
   { to: "/trabajos", labelKey: "nav.jobs", icon: Briefcase, feature: "business" },
   { to: "/citas", labelKey: "nav.appointments", icon: CalendarCheck, feature: "card" },
   { to: "/pagina-web", labelKey: "nav.website", icon: MonitorSmartphone, anyFeature: ["card", "business"] },
@@ -47,6 +48,7 @@ const SIDEBAR = [
       { to: "/quotes", labelKey: "nav.quotes", icon: FileText, feature: "business" },
       { to: "/contratos", labelKey: "nav.agreements", icon: FileSignature, feature: "business" },
       { to: "/invoices", labelKey: "nav.invoices", icon: Receipt, feature: "business" },
+      { to: "/reports", labelKey: "nav.reports", icon: BarChart3, feature: "business" },
     ],
   },
   {

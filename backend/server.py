@@ -1421,6 +1421,95 @@ async def list_invoices(user_id: str = Depends(get_current_user_id), status: Opt
     return docs
 
 
+
+@api_router.get("/reports/income")
+async def income_report(start: str, end: str, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
+    """Cash-basis income report for taxes: counts money when actually collected
+    (by payment date). Returns totals, per-month and per-client breakdowns."""
+    from datetime import date as _date, datetime as _dt
+
+    def _as_date(s):
+        if not s:
+            return None
+        try:
+            return _dt.fromisoformat(str(s).replace("Z", "+00:00")).date()
+        except Exception:
+            try:
+                return _date.fromisoformat(str(s)[:10])
+            except Exception:
+                return None
+
+    sd, ed = _as_date(start), _as_date(end)
+    if not sd or not ed:
+        raise HTTPException(400, "Invalid date range")
+
+    invoices = await db.invoices.find({"user_id": user_id}, {"_id": 0}).to_list(5000)
+    clients = await db.clients.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "company": 1}).to_list(5000)
+    cmap = {c["id"]: (c.get("company") or c.get("name") or "—") for c in clients}
+
+    collected = tax_collected = invoiced = outstanding = 0.0
+    by_month = {}
+    by_client = {}
+    paid_ids = set()
+
+    for inv in invoices:
+        total = float(inv.get("total") or 0)
+        tax = float(inv.get("tax_amount") or 0)
+        paid_all = float(inv.get("amount_paid") or 0)
+        status = (inv.get("status") or "").lower()
+        cid = inv.get("client_id")
+        cname = cmap.get(cid, "—")
+
+        if status not in ("void", "cancelled", "canceled"):
+            bal = total - paid_all
+            if bal > 0.005:
+                outstanding += bal
+
+        cdt = _as_date(inv.get("created_at"))
+        if cdt and sd <= cdt <= ed:
+            invoiced += total
+
+        for p in (inv.get("payments") or []):
+            amt = float(p.get("amount") or 0)
+            pdt = _as_date(p.get("date") or p.get("created_at"))
+            if amt and pdt and sd <= pdt <= ed:
+                tx = (amt * tax / total) if total > 0 else 0.0
+                collected += amt
+                tax_collected += tx
+                mk = f"{pdt.year}-{pdt.month:02d}"
+                m = by_month.setdefault(mk, {"month": mk, "collected": 0.0, "tax": 0.0})
+                m["collected"] += amt
+                m["tax"] += tx
+                bc = by_client.setdefault(cname, {"client": cname, "collected": 0.0, "count": 0})
+                bc["collected"] += amt
+                paid_ids.add(inv.get("id"))
+
+    for bc in by_client.values():
+        bc["count"] = sum(1 for inv in invoices if cmap.get(inv.get("client_id"), "—") == bc["client"]
+                          and any((_as_date(p.get("date") or p.get("created_at")) and sd <= _as_date(p.get("date") or p.get("created_at")) <= ed) for p in (inv.get("payments") or [])))
+
+    r2 = lambda x: round(x, 2)
+    months = sorted(by_month.values(), key=lambda m: m["month"])
+    for m in months:
+        m["collected"], m["tax"] = r2(m["collected"]), r2(m["tax"])
+    clients_out = sorted(by_client.values(), key=lambda c: c["collected"], reverse=True)
+    for c in clients_out:
+        c["collected"] = r2(c["collected"])
+
+    return {
+        "start": start, "end": end,
+        "collected": r2(collected),
+        "net_collected": r2(collected - tax_collected),
+        "tax_collected": r2(tax_collected),
+        "invoiced": r2(invoiced),
+        "outstanding": r2(outstanding),
+        "paid_invoices": len(paid_ids),
+        "months": months,
+        "clients": clients_out,
+    }
+
+
+
 @api_router.post("/invoices")
 async def create_invoice(payload: InvoiceIn, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     count = await db.invoices.count_documents({"user_id": user_id})

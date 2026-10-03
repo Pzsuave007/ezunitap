@@ -37,7 +37,8 @@ async function loadImageAsDataURL(url) {
 }
 
 async function header(doc, business, title, numberLabel, number, dateStr) {
-  doc.setFillColor(...COLOR_PRIMARY);
+  // Clean white header with a thin bottom divider (matches the on-screen invoice).
+  doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, 210, 38, "F");
 
   // Logo on the left (if available)
@@ -48,10 +49,7 @@ async function header(doc, business, title, numberLabel, number, dateStr) {
       try {
         const fmt = dataUrl.startsWith("data:image/png") ? "PNG"
           : dataUrl.startsWith("data:image/webp") ? "WEBP" : "JPEG";
-        // 18x18 mm rounded white background card for the logo
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(14, 9, 20, 20, 3, 3, "F");
-        doc.addImage(dataUrl, fmt, 15, 10, 18, 18);
+        doc.addImage(dataUrl, fmt, 14, 9, 20, 20);
         textX = 38;
       } catch (e) {
         // ignore unsupported image formats
@@ -59,24 +57,32 @@ async function header(doc, business, title, numberLabel, number, dateStr) {
     }
   }
 
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(...COLOR_TEXT);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(business?.logo_photo_id ? 18 : 22);
   doc.text(business?.business_name || "Your Business", textX, 17);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
   let infoY = 23;
   if (business?.business_email) { doc.text(business.business_email, textX, infoY); infoY += 4.5; }
   if (business?.phone) { doc.text(business.phone, textX, infoY); infoY += 4.5; }
   if (business?.business_address) { doc.text(business.business_address, textX, infoY); }
 
+  doc.setTextColor(...COLOR_TEXT);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.text(title.toUpperCase(), 196, 17, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
   doc.text(`${numberLabel}: ${number || ""}`, 196, 24, { align: "right" });
   doc.text(`Date: ${dateStr}`, 196, 29, { align: "right" });
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.4);
+  doc.line(14, 38, 196, 38);
+  doc.setTextColor(...COLOR_TEXT);
 }
 
 function clientBlock(doc, client, y) {

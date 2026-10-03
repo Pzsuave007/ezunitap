@@ -16,6 +16,7 @@ import Quotes from "@/pages/Quotes";
 import QuoteBuilder from "@/pages/QuoteBuilder";
 import QuoteDetail from "@/pages/QuoteDetail";
 import Invoices from "@/pages/Invoices";
+import Reports from "@/pages/Reports";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import Jobs from "@/pages/Jobs";
 import JobForm from "@/pages/JobForm";
@@ -172,6 +173,7 @@ function App() {
               <Route path="/quotes/nuevo" element={<FeatureGate feature="business"><QuoteBuilder /></FeatureGate>} />
               <Route path="/quotes/:id" element={<FeatureGate feature="business"><QuoteDetail /></FeatureGate>} />
               <Route path="/invoices" element={<FeatureGate feature="business"><Invoices /></FeatureGate>} />
+              <Route path="/reports" element={<FeatureGate feature="business"><Reports /></FeatureGate>} />
               <Route path="/invoices/nuevo" element={<FeatureGate feature="business"><InvoiceDetail /></FeatureGate>} />
               <Route path="/invoices/:id" element={<FeatureGate feature="business"><InvoiceDetail /></FeatureGate>} />
               <Route path="/contratos" element={<FeatureGate feature="business"><Agreements /></FeatureGate>} />
