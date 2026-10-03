@@ -1864,6 +1864,51 @@ function LogosStrip({ ctx, sty }) {
   );
 }
 
+function ProductsSection({ ctx, sty }) {
+  const r = useReveal();
+  const items = (Array.isArray(ctx.w.products) ? ctx.w.products : []).filter((p) => p && (p.name || p.img));
+  const { accent, lang } = ctx;
+  const T = secTheme(ctx.th, sty);
+  if (!items.length) return null;
+  return (
+    <section id="products" className="py-16 md:py-24" style={{ background: T.bg }} data-testid="site-products">
+      <div ref={r} className="max-w-6xl mx-auto px-5 wreveal">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Our software", "Nuestro software")}</p>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{agT(lang, "Tools you can use for your business", "Herramientas que puedes usar para tu negocio")}</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {items.map((p, i) => {
+            const img = imgSrc(p.img, 800);
+            const href = p.link || "";
+            const cta = asStr(p.cta).trim() || agT(lang, "Learn more", "Ver más");
+            return (
+              <div key={i} data-testid={`site-product-${i}`} className="group flex flex-col rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: T.border, background: T.surface }}>
+                <div className="relative h-44 overflow-hidden flex items-center justify-center" style={{ background: img ? "transparent" : "rgba(127,127,127,.08)" }}>
+                  {img
+                    ? <img src={img} alt={asStr(p.name)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    : <span className="wh text-2xl px-4 text-center" style={{ color: accent }}>{asStr(p.name)}</span>}
+                </div>
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-bold text-lg leading-tight" style={{ color: T.ink }}>{asStr(p.name)}</h3>
+                  {asStr(p.tagline).trim() && <p className="text-sm font-semibold mt-0.5" style={{ color: accent }}>{asStr(p.tagline)}</p>}
+                  {asStr(p.description).trim() && <p className="text-sm mt-2 leading-relaxed flex-1" style={{ color: T.muted }}>{asStr(p.description)}</p>}
+                  {href && (
+                    <a href={href} target="_blank" rel="noreferrer" data-testid={`site-product-link-${i}`} className="inline-flex items-center gap-1 mt-4 text-sm font-bold" style={{ color: accent }}>
+                      {cta} <span aria-hidden>→</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function SamplesSection({ ctx, sty }) {
   const r = useReveal();
   // Primary source = the real case studies (latest 9, SAME order as the Cases page),
@@ -1947,6 +1992,7 @@ function SharedExtras({ ctx }) {
   const sec = ctx.sec || {};
   return (
     <>
+      {sec.products !== false && <ProductsSection ctx={ctx} />}
       {sec.samples !== false && <SamplesSection ctx={ctx} />}
       {sec.logos !== false && <LogosStrip ctx={ctx} />}
       {sec.map !== false && <ClientMap ctx={ctx} />}
@@ -2624,6 +2670,7 @@ function Agency({ ctx }) {
         </section>
       )}
 
+      {sec.products !== false && <ProductsSection ctx={ctx} sty={{ bg: sc.products || DEF.samples }} />}
       {sec.samples !== false && <SamplesSection ctx={ctx} sty={{ bg: sc.samples || DEF.samples }} />}
       {sec.logos !== false && <LogosStrip ctx={ctx} sty={{ bg: sc.logos || DEF.logos }} />}
       {sec.map !== false && <ClientMap ctx={ctx} sty={{ bg: sc.map || DEF.map }} />}

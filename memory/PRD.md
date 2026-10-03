@@ -1198,3 +1198,10 @@ App 100% bilingüe con `react-i18next` SIN duplicar componentes. Toggle `Languag
 - INVOICE HEADER: cambiado de azul (gradient blue-900) a BLANCO limpio con texto oscuro + divisor fino. En pantalla/print (PublicInvoice.js) y en el PDF descargable (lib/pdf.js header() ahora fondo blanco, texto COLOR_TEXT, logo sin tarjeta blanca, línea divisoria).
 - REPORTES (cash basis, para taxes): nuevo endpoint `GET /api/reports/income?start&end` (server.py, require_feature business) — cuenta ingresos por FECHA DE PAGO. Devuelve collected, net_collected, tax_collected (prorrateado), invoiced, outstanding (snapshot), paid_invoices, months[], clients[]. Nueva página `Reports.js` (/reports): selector de año, 5 KPIs, gráfico de barras mensual, desglose por cliente, Export CSV. Agregado al menú lateral bajo Invoicing + MORE_ITEMS; i18n nav.reports/reportsLong (es+en). Probado e2e con pagos de prueba.
 - Requiere deploy (git pull && bash deploy.sh) — toca backend + frontend. Save to GitHub primero.
+
+### Feature (Jun 2026) — Módulo de Productos / Software en el website
+- Nuevo campo `products` [{name, tagline, description, img, link, cta}] en website (WebsiteIn), traducible EN↔ES (_TRANSLATABLE_FIELDS + _TR_PERITEM_LISTS + en_snapshot + _restore_protected; img/link protegidos).
+- Editor: nuevo subtab "Products" en el panel Agency (CRUD completo + subida de imagen por producto). Agregado a pick/return de WebsiteEditor, SECTION_KEYS ("products") y toggles de sección; i18n website.sec.products (es+en).
+- Sitio público: componente `ProductsSection` en ContractorSite ("OUR SOFTWARE / Tools you can use for your business"), render en home agency (y plantilla base), toggle sec.products. Cards con imagen|nombre, tagline, descripción y botón de link opcional. Usa asStr (seguro).
+- Migración `optimize_uni2_seo.py`: siembra 3 productos de arranque (UniTech, Insta Menu, QR Menu) EN+ES SOLO si el sitio no tiene productos (independiente del guard de versión, no pisa ediciones). Verificado e2e: home + editor sin crash, seeding idempotente.
+- Requiere deploy (backend+frontend): Save to GitHub + git pull && bash deploy.sh.

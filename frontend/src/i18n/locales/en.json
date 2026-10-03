@@ -220,6 +220,7 @@
     },
     "sec": {
       "services": "Services",
+      "products": "Products / Software",
       "gallery": "Gallery (job photos)",
       "samples": "Samples (client showcase)",
       "logos": "Client logo strip",

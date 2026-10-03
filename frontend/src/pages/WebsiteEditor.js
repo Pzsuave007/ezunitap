@@ -16,7 +16,7 @@ import RichEditor from "@/components/RichEditor";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "about", "feature", "gallery", "samples", "logos", "map", "reviews", "how", "why", "band", "faq", "areas"];
+const SECTION_KEYS = ["services", "about", "feature", "gallery", "products", "samples", "logos", "map", "reviews", "how", "why", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "history"];
 // Curated color palettes per template — one tap for a pro look.
@@ -1170,8 +1170,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products };
 }
 
 function BaSlot({ label, id, onClick, testid }) {
@@ -1356,6 +1356,16 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   const setSamples = (arr) => patch({ samples: arr });
   const setLogos = (arr) => patch({ client_logos: arr });
   const setPins = (arr) => patch({ client_pins: arr });
+  const products = Array.isArray(w.products) ? w.products : [];
+  const setProducts = (arr) => patch({ products: arr });
+  const prodUpRef = useRef(null);
+  const [prodUpIdx, setProdUpIdx] = useState(null);
+  const uploadProdImg = async (file) => {
+    if (!file || prodUpIdx == null) return;
+    try { const id = await onUpload(file); const n = [...products]; n[prodUpIdx] = { ...n[prodUpIdx], img: id }; setProducts(n); }
+    catch { toast.error(t("website.saveError")); }
+    finally { setProdUpIdx(null); if (prodUpRef.current) prodUpRef.current.value = ""; }
+  };
   const [geoQ, setGeoQ] = useState("");
   const [geoBusy, setGeoBusy] = useState(false);
   const addPinByAddress = async () => {
@@ -1492,7 +1502,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
     finally { setAiBusy(null); }
   };
-  const SUBTABS = [["import", L.tImport], ["samples", L.tSamples], ["logos", L.tLogos], ["map", L.tMap], ["cases", L.tCases], ["solutions", L.tSol], ["about", L.tAbout]];
+  const SUBTABS = [["import", L.tImport], ["samples", L.tSamples], ["logos", L.tLogos], ["map", L.tMap], ["products", isEs ? "Productos" : "Products"], ["cases", L.tCases], ["solutions", L.tSol], ["about", L.tAbout]];
 
   return (
     <div className="space-y-4" data-testid="agency-panel">
@@ -1597,6 +1607,36 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
       )}
 
       {/* CASE STUDIES */}
+      {sub === "products" && (
+      <Card className="card-elevated border-0 shadow-none p-5">
+        <input ref={prodUpRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadProdImg(e.target.files?.[0])} />
+        <div className="font-semibold mb-1 flex items-center gap-2"><Sparkles className="w-4 h-4" /> {isEs ? "Productos / Software" : "Products / Software"}</div>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Muestra tu software y herramientas (UniTech, Insta Menu, QR Menu, etc.) para que los visitantes vean lo que pueden usar en sus negocios." : "Showcase your software and tools (UniTech, Insta Menu, QR Menu, etc.) so visitors see what they can use for their business."}</p>
+        <div className="space-y-3">
+          {products.map((p, i) => (
+            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`agency-product-${i}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200 flex items-center justify-center">
+                  {p.img ? <img src={/^https?:\/\//.test(p.img) ? p.img : photoSrc(p.img)} alt="" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-slate-300" />}
+                </div>
+                <Input value={p.name || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, name: e.target.value }; setProducts(n); }} placeholder={isEs ? "Nombre (ej. Insta Menu)" : "Name (e.g. Insta Menu)"} className="h-9 rounded-lg" data-testid={`agency-product-name-${i}`} />
+                <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" onClick={() => { setProdUpIdx(i); prodUpRef.current?.click(); }} data-testid={`agency-product-upload-${i}`}><ImagePlus className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setProducts(products.filter((_, x) => x !== i))} data-testid={`agency-product-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
+              </div>
+              <Input value={p.tagline || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, tagline: e.target.value }; setProducts(n); }} placeholder={isEs ? "Frase corta (ej. Menús digitales con QR)" : "Short tagline (e.g. Digital QR menus)"} className="h-9 rounded-lg" data-testid={`agency-product-tagline-${i}`} />
+              <Textarea value={p.description || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, description: e.target.value }; setProducts(n); }} placeholder={isEs ? "Descripción: qué es y cómo ayuda al negocio" : "Description: what it is and how it helps the business"} className="rounded-lg min-h-[70px] text-sm" data-testid={`agency-product-desc-${i}`} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={p.link || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, link: e.target.value }; setProducts(n); }} placeholder={isEs ? "Enlace (opcional)" : "Link (optional)"} className="h-9 rounded-lg" data-testid={`agency-product-link-${i}`} />
+                <Input value={p.cta || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, cta: e.target.value }; setProducts(n); }} placeholder={isEs ? "Texto del botón (ej. Ver más)" : "Button text (e.g. Learn more)"} className="h-9 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setProducts([...products, { name: "", tagline: "", description: "", img: "", link: "", cta: "" }])} data-testid="agency-product-add"><Plus className="w-4 h-4 mr-1" /> {isEs ? "Agregar producto" : "Add product"}</Button>
+      </Card>
+      )}
+
+
       {sub === "cases" && (
       <>
       <Card className="card-elevated border-0 shadow-none p-5" data-testid="case-colors-card">

@@ -4584,6 +4584,7 @@ class WebsiteIn(BaseModel):
     section_colors: Optional[dict] = None         # {hero, services, samples, logos, map, process, reviews, cta, contact, footer} bg hex
     case_colors: Optional[dict] = None            # {hero, info, challenge, solution, tailored, results, portfolio} bg hex for case detail pages
     about_sections: Optional[list] = None          # [{title, body(html), images:[photo_id]}] story sections with side images
+    products: Optional[list] = None                # [{name, tagline, description, img, link, cta}] software/products showcase
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -5154,7 +5155,7 @@ _TRANSLATABLE_FIELDS = {
     "headline", "subheadline", "hero_tagline", "about", "seo_title", "seo_description",
     "solutions_intro", "about_title", "about_story", "how_it_works", "why_us",
     "faqs", "services", "samples", "case_studies", "team", "milestones",
-    "about_values", "about_sections", "areas",
+    "about_values", "about_sections", "areas", "products",
 }
 
 
@@ -5173,6 +5174,7 @@ async def _build_en_snapshot(user_id: str) -> tuple[dict, dict]:
         "case_studies": w.get("case_studies") or [], "team": w.get("team") or [],
         "milestones": w.get("milestones") or [], "about_values": w.get("about_values") or [],
         "about_sections": w.get("about_sections") or [], "areas": w.get("areas") or [],
+        "products": w.get("products") or [],
     }
     return w, en_snapshot
 
@@ -5185,7 +5187,7 @@ async def _translate_site_es(user_id: str) -> dict:
     w, en_snapshot = await _build_en_snapshot(user_id)
     content_es = await ai_service.translate_website_content(
         dict(en_snapshot), old_src=w.get("content_es_src"), old_tr=w.get("content_es"))
-    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections"):
+    for key in ("samples", "case_studies", "team", "milestones", "how_it_works", "why_us", "faqs", "services", "about_values", "about_sections", "products"):
         if key in content_es:
             content_es[key] = _restore_protected(content_es.get(key), en_snapshot.get(key) or [], unprotect=({"name"} if key == "services" else ()))
     await db.websites.update_one({"user_id": user_id}, {"$set": {"content_es": content_es, "content_es_src": en_snapshot, "lang_toggle": True}})

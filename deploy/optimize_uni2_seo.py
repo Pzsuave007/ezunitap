@@ -164,6 +164,41 @@ def _ensure_print(services, print_svc):
     return services, True
 
 
+STARTER_PRODUCTS_EN = [
+    {"name": "UniTech", "tagline": "All-in-one business platform",
+     "description": "Website, smart card, invoicing, CRM and AI chatbot — everything to run and grow your business in one place.",
+     "img": "", "link": "https://uni2mkt.com", "cta": "Learn more"},
+    {"name": "Insta Menu", "tagline": "Digital menus that sell",
+     "description": "Beautiful mobile menus with photos and online ordering that your customers open from their phone.",
+     "img": "", "link": "", "cta": "Learn more"},
+    {"name": "QR Menu", "tagline": "Scan-to-view QR menus",
+     "description": "Instant QR codes for tables, flyers and storefronts so customers see your menu or offers in one tap.",
+     "img": "", "link": "", "cta": "Learn more"},
+]
+STARTER_PRODUCTS_ES = [
+    {"name": "UniTech", "tagline": "Plataforma todo-en-uno para tu negocio",
+     "description": "Sitio web, tarjeta inteligente, invoicing, CRM y chatbot con IA — todo para administrar y hacer crecer tu negocio en un solo lugar.",
+     "img": "", "link": "https://uni2mkt.com", "cta": "Ver más"},
+    {"name": "Insta Menu", "tagline": "Menús digitales que venden",
+     "description": "Menús móviles atractivos con fotos y pedidos en línea que tus clientes abren desde su teléfono.",
+     "img": "", "link": "", "cta": "Ver más"},
+    {"name": "QR Menu", "tagline": "Menús QR al escanear",
+     "description": "Códigos QR instantáneos para mesas, volantes y fachadas para que tus clientes vean tu menú u ofertas en un toque.",
+     "img": "", "link": "", "cta": "Ver más"},
+]
+
+
+def _seed_products(db, sites):
+    """Add starter software products ONCE (only if the site has none)."""
+    for w in sites:
+        if w.get("products"):
+            continue
+        ces = dict(w.get("content_es") or {})
+        ces["products"] = STARTER_PRODUCTS_ES
+        db.websites.update_one({"_id": w["_id"]}, {"$set": {"products": STARTER_PRODUCTS_EN, "content_es": ces}})
+        print(f"WEBSITE '{w.get('slug')}' seeded {len(STARTER_PRODUCTS_EN)} starter products")
+
+
 def main():
     url = _resolve_mongo_url()
     client = MongoClient(url)
@@ -180,6 +215,8 @@ def main():
     print(f">>> Found {len(sites)} matching website doc(s): {sorted({s.get('slug') for s in sites})}")
 
     force = os.environ.get("FORCE", "").lower() in ("1", "true", "yes")
+    # Seed starter products (independent of the SEO version guard; no-op if present).
+    _seed_products(db, sites)
     pending = [w for w in sites if force or int(w.get("_seo_opt_version") or 0) < SEO_OPT_VERSION]
     if not pending:
         print(f">>> Already optimized (v{SEO_OPT_VERSION}). Nothing to do — your edits are safe. "

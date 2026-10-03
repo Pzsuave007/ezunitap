@@ -888,7 +888,7 @@ _TR_SHORT_SCALARS = ["headline", "subheadline", "about", "seo_title",
 _TR_LONG_SCALARS = ["about_story"]
 _TR_BATCH_LISTS = ["how_it_works", "why_us", "faqs", "services", "samples",
                    "team", "milestones", "about_values"]
-_TR_PERITEM_LISTS = ["case_studies", "about_sections"]
+_TR_PERITEM_LISTS = ["case_studies", "about_sections", "products"]
 
 
 async def _translate_chunk(system: str, payload, retries: int = 2):
