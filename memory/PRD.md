@@ -1213,3 +1213,13 @@ Problema: al buscar "EZunitech", los motores de IA devolvían una descripción g
 - server.py: `llms.txt` de plataforma enriquecido (qué es, audiencia, features, idiomas, precios, FAQ, páginas clave) — antes 3 líneas.
 - Verificado por curl: /api/ssr/home y /api/llms.txt válidos; JSON-LD parseable en SSR y en index.html del build.
 - Requiere deploy (backend+frontend) para que surta efecto en producción: Save to GitHub + deploy.
+
+## [Jun 2026] Brand SEO v2 — Website prominence + How-it-works + sitemap
+Tras verificar respuestas reales de IA (Gemini), se detectó que el sitio web no se destacaba y faltaba el "cómo funciona".
+- SSR + llms.txt: reenfoque BILINGÜE E INCLUSIVO (no exclusivo para latinos) — "para cualquier contratista/negocio de servicio, funcione en inglés o español".
+- Añadidos los 9 pasos "How it works / Cómo funciona" (EN+ES) al SSR y llms.txt.
+- "Professional website (done-for-you)" + "SEO conversion landing pages" movidos al TOP de features; nueva FAQ dedicada "Does UniTech build me a website?" en SSR y llms.txt.
+- Sitemap global (host ezunitech.com/ezunitap.com): ahora incluye /precios y /probar.
+- Verificado por curl; resultado real de Gemini ya describe website/SEO/AI chat/3 pilares correctamente.
+- Pendiente opcional: AggregateRating con reseñas reales; og:image de marca personalizada.
+- NOTA: menciones a "latinos" en respuestas de IA provienen de fuentes externas en caché (FB/sitios viejos), no del código actual.
