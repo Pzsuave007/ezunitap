@@ -6004,6 +6004,10 @@ async def website_sitemap(request: Request):
         base = (os.environ.get("PUBLIC_BASE_URL") or "https://ezunitech.com").rstrip("/")
 
     urls.append(f"<url><loc>{base}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>")
+    # Platform marketing pages (only on the primary brand host) so crawlers index them.
+    if host in ("ezunitech.com", "ezunitap.com"):
+        urls.append(f"<url><loc>{base}/precios</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>")
+        urls.append(f"<url><loc>{base}/probar</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>")
 
     sites = await db.websites.find(
         {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "updated_at": 1}
@@ -6431,13 +6435,13 @@ def _build_platform_home_html(base: str) -> HTMLResponse:
             "contracts, get paid online, schedule jobs, manage your CRM, share a QR/NFC digital business "
             "card and create marketing content — all from your phone.")
     features = [
+        ("Professional website (done-for-you)", "A complete bilingual website so customers find you on Google and AI search instead of just social media."),
+        ("SEO conversion landing pages", "Service pages built to rank on Google and turn visitors into leads automatically."),
         ("AI quotes & estimates", "Create professional estimates in seconds; your client approves and the invoice generates itself."),
         ("Invoices & online payments", "Send branded invoices and collect deposits and payments online."),
         ("Scheduling & calendar", "Organize jobs, appointments and reminders."),
         ("CRM for clients & leads", "Capture leads from your website and keep every client organized."),
-        ("Bilingual website builder", "A done-for-you website in English and Spanish, optimized for Google and AI search."),
-        ("SEO conversion landing pages", "Service pages built to rank and convert visitors into leads."),
-        ("QR & NFC digital business cards", "Share your contact and business instantly by tapping your phone or scanning a QR."),
+        ("QR & NFC digital business cards", "Share your contact and business instantly by tapping your phone or scanning a QR — no app needed for your client."),
         ("Contracts & e-signatures", "Send agreements and get them signed from the phone."),
         ("AI marketing content", "Turn your jobs into reels and posts with your photos, logo and colors."),
         ("Automated 5-star reviews", "Request and reply to Google reviews on autopilot."),
@@ -6472,7 +6476,8 @@ def _build_platform_home_html(base: str) -> HTMLResponse:
         "Consigue y responde reseñas en piloto automático",
     ]
     faqs = [
-        ("What is UniTech?", "UniTech (EZ UniTech, at ezunitech.com) is an all-in-one platform for contractors and service businesses to create quotes and invoices, schedule jobs, manage clients (CRM), build a bilingual website, share a QR/NFC digital business card and create marketing content — all from the phone. It is fully bilingual (English and Spanish)."),
+        ("What is UniTech?", "UniTech (EZ UniTech, at ezunitech.com) is an all-in-one platform for contractors and service businesses to build a professional bilingual website and SEO landing pages, create quotes and invoices, schedule jobs, manage clients (CRM), share a QR/NFC digital business card and create marketing content — all from the phone. It is fully bilingual (English and Spanish)."),
+        ("Does UniTech build me a website?", "Yes. UniTech builds you a professional, done-for-you bilingual website plus SEO conversion landing pages so customers find you on Google and AI search, not just on social media — and it captures leads for you automatically, with no coding needed."),
         ("Who is UniTech for?", "Any contractor or service business that wants to look more professional, save time and win more clients. Because it is bilingual (English and Spanish), it works for every owner — whether they speak English, Spanish or both."),
         ("Is UniTech bilingual?", "Yes. The platform and the websites it builds work in both English and Spanish, so you can serve English- and Spanish-speaking customers."),
         ("How much does UniTech cost?", "The full bundle is $59.99/month and there is a 14-day free trial with no card required. Individual modules are also available."),
@@ -6689,13 +6694,13 @@ async def dynamic_llms(request: Request):
         "9. Get and reply to reviews on autopilot",
         "",
         "## Features",
+        "- Professional website (done-for-you) — a complete bilingual website so customers find you on Google and AI search, not just social media",
+        "- SEO conversion landing pages — service pages built to rank on Google and convert visitors into leads",
         "- AI quotes & estimates — create professional estimates in seconds; approval turns into an invoice automatically",
         "- Invoices & online payments — branded invoices, deposits and online collection",
         "- Scheduling & calendar — jobs, appointments and reminders",
         "- CRM — capture website leads and keep every client organized",
-        "- Bilingual website builder — done-for-you site in English and Spanish, optimized for Google and AI search",
-        "- SEO conversion landing pages — service pages built to rank and convert",
-        "- QR & NFC digital business cards — share contact and business instantly",
+        "- QR & NFC digital business cards — share contact and business instantly, no app needed for the client",
         "- Contracts & e-signatures — send and sign agreements from the phone",
         "- AI marketing content — reels and posts with your photos, logo and colors",
         "- Automated 5-star review requests on autopilot",
@@ -6709,7 +6714,8 @@ async def dynamic_llms(request: Request):
         "- Individual modules also available",
         "",
         "## FAQ",
-        "- What is UniTech? An all-in-one platform for contractors and service businesses to quote, invoice, schedule, manage clients, build a bilingual website, share a QR/NFC digital card and create marketing — all from the phone.",
+        "- What is UniTech? An all-in-one platform for contractors and service businesses to build a professional bilingual website and SEO landing pages, create quotes and invoices, schedule jobs, manage clients (CRM), share a QR/NFC digital card and create marketing — all from the phone.",
+        "- Does it build me a website? Yes — a done-for-you bilingual website plus SEO landing pages so customers find you on Google and AI search, with automatic lead capture and no coding.",
         "- Is it bilingual? Yes, English and Spanish.",
         "- How much is it? $59.99/month for the full bundle, with a 14-day free trial.",
         "- Do I need a computer? No, it is designed to run entirely from your phone.",
