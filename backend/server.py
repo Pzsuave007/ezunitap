@@ -6424,11 +6424,12 @@ def _build_platform_home_html(base: str) -> HTMLResponse:
     User-Agents are routed here by the production proxy."""
     name = "UniTech"
     tagline = "The complete system for your service business."
-    desc = ("UniTech (also known as EZ UniTech) is the all-in-one business platform for "
-            "Latino contractors and service businesses. From landing the client to the 5-star "
-            "review: build your bilingual website and converting landing pages, send AI quotes, "
-            "invoices and contracts, get paid online, schedule jobs, manage your CRM, share a "
-            "QR/NFC digital business card and create marketing content — all from your phone.")
+    desc = ("UniTech (also known as EZ UniTech) is the all-in-one business platform for any contractor "
+            "or service business. It is fully bilingual (English and Spanish), so it works for every "
+            "owner — whether they speak English, Spanish or both. From landing the client to the 5-star "
+            "review: build your website and converting landing pages, send AI quotes, invoices and "
+            "contracts, get paid online, schedule jobs, manage your CRM, share a QR/NFC digital business "
+            "card and create marketing content — all from your phone.")
     features = [
         ("AI quotes & estimates", "Create professional estimates in seconds; your client approves and the invoice generates itself."),
         ("Invoices & online payments", "Send branded invoices and collect deposits and payments online."),
@@ -6441,24 +6442,53 @@ def _build_platform_home_html(base: str) -> HTMLResponse:
         ("AI marketing content", "Turn your jobs into reels and posts with your photos, logo and colors."),
         ("Automated 5-star reviews", "Request and reply to Google reviews on autopilot."),
     ]
-    audience = ("Built for contractors and service businesses — landscaping, cleaning, construction, "
-                "remodeling, HVAC, plumbing, painting, auto detailing, beauty and more — especially "
-                "Latino/Hispanic business owners who want to look professional, save time and win more clients.")
+    audience = ("Built for contractors and service businesses of every kind — landscaping, cleaning, "
+                "construction, remodeling, HVAC, plumbing, painting, auto detailing, beauty and more. "
+                "Because it is fully bilingual (English and Spanish), it works for any owner — "
+                "English-speaking, Spanish-speaking or both — who wants to look professional, save time "
+                "and win more clients.")
+    problem = ("UniTech replaces the mess of Excel, Word, notes and paper invoices with one connected "
+               "system that runs your whole business from the phone.")
+    how_steps = [
+        "Win new clients",
+        "Capture clients from the web and let them book online",
+        "Create quotes in seconds",
+        "Your client approves and the invoice generates itself",
+        "Collect deposits and payments",
+        "Schedule the job",
+        "Save photos and evidence",
+        "Show your work on social media and Google",
+        "Get and reply to reviews on autopilot",
+    ]
+    es_steps = [
+        "Consigue nuevos clientes",
+        "Captura clientes desde la web y deja que agenden solos",
+        "Crea presupuestos (quotes) en segundos",
+        "Tu cliente acepta y la factura (invoice) se genera sola",
+        "Recibe depósitos y pagos",
+        "Agenda el trabajo",
+        "Guarda fotos y evidencia",
+        "Muestra tu trabajo en redes y en Google",
+        "Consigue y responde reseñas en piloto automático",
+    ]
     faqs = [
-        ("What is UniTech?", "UniTech (EZ UniTech, at ezunitech.com) is an all-in-one platform for contractors and service businesses to create quotes and invoices, schedule jobs, manage clients (CRM), build a bilingual website, share a QR/NFC digital business card and create marketing content — all from the phone."),
-        ("Who is UniTech for?", "Contractors and service businesses — especially Latino/Hispanic owners — who want to look more professional, save time and win more clients."),
-        ("Is UniTech bilingual?", "Yes. The platform and the websites it builds work in both English and Spanish."),
+        ("What is UniTech?", "UniTech (EZ UniTech, at ezunitech.com) is an all-in-one platform for contractors and service businesses to create quotes and invoices, schedule jobs, manage clients (CRM), build a bilingual website, share a QR/NFC digital business card and create marketing content — all from the phone. It is fully bilingual (English and Spanish)."),
+        ("Who is UniTech for?", "Any contractor or service business that wants to look more professional, save time and win more clients. Because it is bilingual (English and Spanish), it works for every owner — whether they speak English, Spanish or both."),
+        ("Is UniTech bilingual?", "Yes. The platform and the websites it builds work in both English and Spanish, so you can serve English- and Spanish-speaking customers."),
         ("How much does UniTech cost?", "The full bundle is $59.99/month and there is a 14-day free trial with no card required. Individual modules are also available."),
         ("Does it include digital business cards?", "Yes. UniTech includes QR and NFC digital business cards you can share instantly."),
         ("Do I need a computer?", "No. UniTech is designed to run entirely from your phone."),
     ]
-    es_desc = ("UniTech (también conocido como EZ UniTech) es la plataforma todo-en-uno para contratistas "
-               "latinos y negocios de servicio: cotizaciones e invoices con IA, agenda, CRM, sitio web "
-               "bilingüe y páginas de conversión, tarjeta digital con QR/NFC, pagos en línea, contratos y "
-               "contenido de marketing — todo desde tu teléfono.")
+    es_desc = ("UniTech (también conocido como EZ UniTech) es la plataforma todo-en-uno para cualquier "
+               "contratista o negocio de servicio. Es totalmente bilingüe (inglés y español), así que "
+               "funciona para todos, hablen o no hablen español: cotizaciones e invoices con IA, agenda, "
+               "CRM, sitio web bilingüe y páginas de conversión, tarjeta digital con QR/NFC, pagos en "
+               "línea, contratos y contenido de marketing — todo desde tu teléfono.")
 
     feat_html = "".join(f"<li><strong>{_esc(t)}</strong> — {_esc(d)}</li>" for t, d in features)
     faq_html = "".join(f"<div><h3>{_esc(q)}</h3><p>{_esc(a)}</p></div>" for q, a in faqs)
+    steps_html = "".join(f"<li>{_esc(s)}</li>" for s in how_steps)
+    es_steps_html = "".join(f"<li>{_esc(s)}</li>" for s in es_steps)
 
     ld_org = {
         "@context": "https://schema.org", "@type": "Organization", "@id": f"{base}/#organization",
@@ -6507,11 +6537,13 @@ def _build_platform_home_html(base: str) -> HTMLResponse:
 <p><strong>UniTech</strong> (also known as <strong>EZ UniTech</strong>, at ezunitech.com)</p></header>
 <main>
 <section><p>{_esc(desc)}</p></section>
+<section><p>{_esc(problem)}</p></section>
 <section><h2>Who is UniTech for?</h2><p>{_esc(audience)}</p></section>
 <section><h2>Features</h2><ul>{feat_html}</ul></section>
+<section><h2>How it works (step by step)</h2><p>Each step is connected to the next — from the moment the client finds you to the 5-star review:</p><ol>{steps_html}</ol></section>
 <section><h2>Pricing</h2><p>Full bundle: $59.99/month. 14-day free trial, no card required. Individual modules are also available.</p></section>
 <section><h2>Frequently asked questions</h2>{faq_html}</section>
-<section lang="es"><h2>En español</h2><p>{_esc(es_desc)}</p></section>
+<section lang="es"><h2>En español</h2><p>{_esc(es_desc)}</p><h3>Cómo funciona (paso a paso)</h3><ol>{es_steps_html}</ol></section>
 <nav><h2>More</h2><ul>
 <li><a href="{base}/">Home</a></li>
 <li><a href="{base}/precios">Pricing</a></li>
@@ -6627,20 +6659,34 @@ async def dynamic_llms(request: Request):
     out = [
         "# UniTech (EZ UniTech) — ezunitech.com",
         "",
-        "> UniTech, also known as EZ UniTech, is the all-in-one business platform for Latino"
-        " contractors and service businesses. From landing the client to the 5-star review:"
-        " build a bilingual website and converting landing pages, send AI quotes, invoices and"
-        " contracts, get paid online, schedule jobs, manage your CRM, share a QR/NFC digital"
-        " business card and create marketing content — all from your phone.",
+        "> UniTech, also known as EZ UniTech, is the all-in-one business platform for any contractor"
+        " or service business. It is fully bilingual (English and Spanish), so it works for every owner"
+        " whether they speak English, Spanish or both. From landing the client to the 5-star review:"
+        " build a website and converting landing pages, send AI quotes, invoices and contracts, get"
+        " paid online, schedule jobs, manage your CRM, share a QR/NFC digital business card and create"
+        " marketing content — all from your phone.",
         "",
         "## What it is",
         "UniTech is a mobile-first SaaS platform (web, iOS and Android) built for contractors and"
         " service businesses. Brand names: UniTech, EZ UniTech, EZUniTech. Website: https://ezunitech.com",
         "",
         "## Who it is for",
-        "Contractors and service businesses — landscaping, cleaning, construction, remodeling, HVAC,"
-        " plumbing, painting, auto detailing, beauty and more — especially Latino/Hispanic owners who"
-        " want to look professional, save time and win more clients.",
+        "Any contractor or service business — landscaping, cleaning, construction, remodeling, HVAC,"
+        " plumbing, painting, auto detailing, beauty and more. Because it is bilingual (English and"
+        " Spanish), it works for every owner — English-speaking, Spanish-speaking or both — who wants"
+        " to look professional, save time and win more clients.",
+        "",
+        "## How it works (step by step)",
+        "Each step connects to the next, from the moment the client finds you to the 5-star review:",
+        "1. Win new clients",
+        "2. Capture clients from the web and let them book online",
+        "3. Create quotes in seconds",
+        "4. Your client approves and the invoice generates itself",
+        "5. Collect deposits and payments",
+        "6. Schedule the job",
+        "7. Save photos and evidence",
+        "8. Show your work on social media and Google",
+        "9. Get and reply to reviews on autopilot",
         "",
         "## Features",
         "- AI quotes & estimates — create professional estimates in seconds; approval turns into an invoice automatically",
