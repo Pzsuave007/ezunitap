@@ -1629,6 +1629,52 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <Input value={p.link || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, link: e.target.value }; setProducts(n); }} placeholder={isEs ? "Enlace (opcional)" : "Link (optional)"} className="h-9 rounded-lg" data-testid={`agency-product-link-${i}`} />
                 <Input value={p.cta || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, cta: e.target.value }; setProducts(n); }} placeholder={isEs ? "Texto del botón (ej. Ver más)" : "Button text (e.g. Learn more)"} className="h-9 rounded-lg" />
               </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                <div className="text-sm font-medium flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-emerald-600" /> {isEs ? "Crear página de detalle" : "Create detail page"}</div>
+                <Switch checked={!!p.has_page} onCheckedChange={(v) => { const n = [...products]; n[i] = { ...p, has_page: v, slug: p.slug || (v ? (p.name || "").toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") : "") }; setProducts(n); }} data-testid={`agency-product-haspage-${i}`} />
+              </div>
+              {p.has_page && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "URL de la página (slug)" : "Page URL (slug)"}</Label>
+                    <Input value={p.slug || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-") }; setProducts(n); }} placeholder="insta-menu" className="h-9 rounded-lg mt-1" data-testid={`agency-product-slug-${i}`} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "Descripción larga (usa ### para títulos, - para viñetas)" : "Long description (use ### for headings, - for bullets)"}</Label>
+                    <Textarea value={p.long_description || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, long_description: e.target.value }; setProducts(n); }} placeholder={isEs ? "Explica a fondo qué es el producto y cómo ayuda al negocio…" : "Explain in depth what the product is and how it helps the business…"} className="rounded-lg min-h-[110px] text-sm mt-1" data-testid={`agency-product-long-${i}`} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "Características / beneficios (una por línea)" : "Features / benefits (one per line)"}</Label>
+                    <Textarea value={(p.features || []).join("\n")} onChange={(e) => { const n = [...products]; n[i] = { ...p, features: e.target.value.split("\n") }; setProducts(n); }} placeholder={isEs ? "Menús con QR\nActualización en tiempo real\nSin comisiones" : "QR menus\nReal-time updates\nNo commissions"} className="rounded-lg min-h-[90px] text-sm mt-1" data-testid={`agency-product-features-${i}`} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "Galería / capturas de pantalla" : "Gallery / screenshots"}</Label>
+                    <PhotoMultiField label="" desc="" values={Array.isArray(p.gallery) ? p.gallery : []} photos={photos} onChange={(ids) => { const n = [...products]; n[i] = { ...p, gallery: ids }; setProducts(n); }} onUpload={onUpload} testid={`product-gallery-${i}`} t={t} max={8} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "Video (YouTube o Vimeo)" : "Video (YouTube or Vimeo)"}</Label>
+                    <Input value={p.video_url || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, video_url: e.target.value }; setProducts(n); }} placeholder="https://youtube.com/watch?v=…" className="h-9 rounded-lg mt-1" data-testid={`agency-product-video-${i}`} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-xs text-slate-500">{isEs ? "Precio" : "Price"}</Label>
+                      <Input value={p.price || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, price: e.target.value }; setProducts(n); }} placeholder="$29/mo" className="h-9 rounded-lg mt-1" data-testid={`agency-product-price-${i}`} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-slate-500">{isEs ? "Detalle del precio / planes" : "Price detail / plans"}</Label>
+                      <Textarea value={p.price_detail || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, price_detail: e.target.value }; setProducts(n); }} placeholder={isEs ? "Incluye… / prueba gratis 14 días" : "Includes… / 14-day free trial"} className="rounded-lg min-h-[40px] text-sm mt-1" data-testid={`agency-product-pricedetail-${i}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">{isEs ? "Preguntas frecuentes (Pregunta | Respuesta por línea)" : "FAQ (Question | Answer per line)"}</Label>
+                    <Textarea value={(p.faqs || []).map((f) => `${f.q || ""} | ${f.a || ""}`).join("\n")} onChange={(e) => { const n = [...products]; n[i] = { ...p, faqs: e.target.value.split("\n").map((l) => { const ix = l.indexOf("|"); return ix === -1 ? { q: l.trim(), a: "" } : { q: l.slice(0, ix).trim(), a: l.slice(ix + 1).trim() }; }) }; setProducts(n); }} placeholder={isEs ? "¿Cómo funciona? | Escaneas el QR y ves el menú\n¿Tiene costo? | Prueba gratis 14 días" : "How does it work? | Scan the QR to see the menu\nIs there a cost? | 14-day free trial"} className="rounded-lg min-h-[70px] text-sm mt-1" data-testid={`agency-product-faqs-${i}`} />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-white border border-slate-200 px-3 py-2">
+                    <div className="text-sm font-medium">{isEs ? "Mostrar formulario \"Solicitar demo\"" : "Show \"Request a demo\" form"}</div>
+                    <Switch checked={p.show_demo_form !== false} onCheckedChange={(v) => { const n = [...products]; n[i] = { ...p, show_demo_form: v }; setProducts(n); }} data-testid={`agency-product-demoform-${i}`} />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

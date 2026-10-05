@@ -1223,3 +1223,14 @@ Tras verificar respuestas reales de IA (Gemini), se detectó que el sitio web no
 - Verificado por curl; resultado real de Gemini ya describe website/SEO/AI chat/3 pilares correctamente.
 - Pendiente opcional: AggregateRating con reseñas reales; og:image de marca personalizada.
 - NOTA: menciones a "latinos" en respuestas de IA provienen de fuentes externas en caché (FB/sitios viejos), no del código actual.
+
+## [Jun 2026] Product Detail Pages + Demo Request Form
+Módulo de Productos/Software ahora soporta páginas de detalle por producto (antes solo link externo).
+- Modelo product extendido: has_page (switch), slug, long_description (rich), features[], gallery[] (image ids), video_url (YouTube/Vimeo), price, price_detail, faqs[{q,a}], show_demo_form.
+- Backend: _PROTECTED_ITEM_KEYS += gallery, video_url, video, has_page, show_demo_form (para traducción EN↔ES sin romper). products ya era traducible per-item.
+- Rutas nuevas: /sitio/:slug/producto/:productSlug y /producto/:productSlug (byDomain). page="producto".
+- ContractorSite.js: componente ProductDetail (hero + "Solicitar demo", descripción larga, features, video, galería, precio, FAQ, formulario demo). ProductsSection card ahora enlaza a página interna cuando has_page; si no, link externo (como antes). videoEmbedSrc helper. LeadForm extendido con leadService/submitLabel.
+- Formulario "Solicitar demo" → reusa POST /api/public/website/{slug}/lead → entra al CRM (Clientes) con job_type="<Producto> (demo)". Validado por curl.
+- Editor (WebsiteEditor.js, subtab Agency→Products): switch "Create detail page" + todos los campos (slug auto, long desc, features, galería via PhotoMultiField, video, price/detail, FAQ "Q | A" por línea, switch mostrar formulario demo).
+- Validado e2e: página /producto/insta-menu renderiza (ejemplo sembrado en Insta Menu), lead de demo llega al CRM, editor muestra todos los campos.
+- PENDIENTE opcional: SSR + sitemap para páginas de producto (SEO para bots); hoy son client-rendered.

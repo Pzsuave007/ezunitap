@@ -5306,7 +5306,8 @@ async def website_localize_images(user_id: str = Depends(get_current_user_id), _
 
 
 
-_PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng"}
+_PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng",
+                        "gallery", "video_url", "video", "has_page", "show_demo_form"}
 
 
 def _restore_protected(translated, original, unprotect=()):

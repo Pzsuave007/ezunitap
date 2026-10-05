@@ -60,7 +60,7 @@ function useReveal() {
 
 // ===========================================================================
 export default function ContractorSite({ injected, page, byDomain }) {
-  const { slug, caseSlug, serviceSlug } = useParams();
+  const { slug, caseSlug, serviceSlug, productSlug } = useParams();
   const [data, setData] = useState(injected || null);
   const [err, setErr] = useState(false);
   const [lang, setLang] = useState("en");
@@ -258,6 +258,7 @@ export default function ContractorSite({ injected, page, byDomain }) {
   ctx.page = page || null;
   ctx.caseSlug = caseSlug || null;
   ctx.serviceSlug = serviceSlug || null;
+  ctx.productSlug = productSlug || null;
   if (page) ctx.goContact = () => { window.location.href = `${ctx.homeHref}#contact`; };
 
   return (
@@ -1895,10 +1896,12 @@ function ProductsSection({ ctx, sty }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((p, i) => {
             const img = imgSrc(p.img, 800);
-            const href = p.link || "";
             const cta = asStr(p.cta).trim() || agT(lang, "Learn more", "Ver más");
-            return (
-              <div key={i} data-testid={`site-product-${i}`} className="group flex flex-col rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: T.border, background: T.surface }}>
+            const pslug = slugify(p.slug || p.name);
+            const hasPage = !!(p.has_page && pslug);
+            const href = hasPage ? ctx.pageHref(`producto/${pslug}`) : (p.link || "");
+            const inner = (
+              <>
                 <div className="relative h-44 overflow-hidden flex items-center justify-center" style={{ background: img ? "transparent" : "rgba(127,127,127,.08)" }}>
                   {img
                     ? <img src={img} alt={asStr(p.name)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -1909,13 +1912,18 @@ function ProductsSection({ ctx, sty }) {
                   {asStr(p.tagline).trim() && <p className="text-sm font-semibold mt-0.5" style={{ color: accent }}>{asStr(p.tagline)}</p>}
                   {asStr(p.description).trim() && <p className="text-sm mt-2 leading-relaxed flex-1" style={{ color: T.muted }}>{asStr(p.description)}</p>}
                   {href && (
-                    <a href={href} target="_blank" rel="noreferrer" data-testid={`site-product-link-${i}`} className="inline-flex items-center gap-1 mt-4 text-sm font-bold" style={{ color: accent }}>
+                    <span className="inline-flex items-center gap-1 mt-4 text-sm font-bold" style={{ color: accent }}>
                       {cta} <span aria-hidden>→</span>
-                    </a>
+                    </span>
                   )}
                 </div>
-              </div>
+              </>
             );
+            const cls = "group flex flex-col rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl";
+            const stl = { borderColor: T.border, background: T.surface };
+            if (hasPage) return <a key={i} href={href} data-testid={`site-product-${i}`} className={cls} style={stl}>{inner}</a>;
+            if (p.link) return <a key={i} href={p.link} target="_blank" rel="noreferrer" data-testid={`site-product-${i}`} className={cls} style={stl}>{inner}</a>;
+            return <div key={i} data-testid={`site-product-${i}`} className={cls} style={stl}>{inner}</div>;
           })}
         </div>
       </div>
@@ -2579,6 +2587,154 @@ function AgencyFooter({ ctx }) {
   );
 }
 
+const videoEmbedSrc = (u) => {
+  const s = (u || "").trim();
+  if (!s) return "";
+  let m = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  m = s.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (m) return `https://player.vimeo.com/video/${m[1]}`;
+  return "";
+};
+
+function ProductDetail({ ctx }) {
+  const { th, accent, accentText, lang, w, productSlug, pageHref, homeHref } = ctx;
+  const asArray = (v) => {
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string" && v.trim().startsWith("[")) { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch (e) { return []; } }
+    return [];
+  };
+  const products = Array.isArray(w.products) ? w.products : [];
+  const want = slugify(productSlug || "");
+  const p = products.find((x) => slugify(x.slug || x.name || "") === want) || products.find((x) => slugify(x.name || "") === want);
+  if (!p) return <SubHero ctx={ctx} title={agT(lang, "Product not found", "Producto no encontrado")} sub={<a href={`${homeHref}#products`} style={{ color: accent }}>{agT(lang, "Back to products", "Volver a productos")}</a>} />;
+
+  const img = imgSrc(p.img, 1200);
+  const features = asArray(p.features).map((f) => asStr(f).trim()).filter(Boolean);
+  const gallery = asArray(p.gallery).filter(Boolean);
+  const faqs = asArray(p.faqs).filter((f) => f && (f.q || f.a));
+  const video = videoEmbedSrc(p.video_url);
+  const longDesc = asStr(p.long_description).trim();
+  const price = asStr(p.price).trim();
+  const priceDetail = asStr(p.price_detail).trim();
+  const showForm = p.show_demo_form !== false;
+  const name = asStr(p.name);
+
+  return (
+    <>
+      {/* HERO */}
+      <section className="border-b" style={{ background: th.surface, borderColor: th.border }} data-testid="product-detail">
+        <div className="max-w-6xl mx-auto px-5 py-12 md:py-20">
+          <a href={`${homeHref}#products`} className="text-sm hover:opacity-80 inline-block mb-8" style={{ color: th.muted }} data-testid="product-back">← {agT(lang, "All products", "Todos los productos")}</a>
+          <div className={`grid ${img ? "md:grid-cols-2" : ""} gap-8 md:gap-14 items-center`}>
+            {img && (
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: th.border, background: th.card }}>
+                <CoverFill src={img} alt={name} hover={false} />
+              </div>
+            )}
+            <div>
+              <h1 className="wh text-4xl md:text-5xl lg:text-6xl leading-[1.05]" style={{ color: th.ink }}>{name}</h1>
+              {asStr(p.tagline).trim() && <p className="mt-3 text-lg font-semibold" style={{ color: accent }}>{asStr(p.tagline)}</p>}
+              {asStr(p.description).trim() && <p className="mt-4 text-lg leading-relaxed" style={{ color: th.muted }}>{asStr(p.description)}</p>}
+              <div className="mt-7 flex flex-wrap gap-3">
+                {showForm && <a href="#demo" className="inline-flex items-center gap-2 font-bold px-6 py-3 rounded-full" style={{ background: accent, color: accentText }} data-testid="product-request-demo">{agT(lang, "Request a demo", "Solicitar demo")} <ArrowRight className="w-4 h-4" /></a>}
+                {p.link && <a href={p.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 font-bold px-6 py-3 rounded-full border" style={{ borderColor: th.border, color: th.ink }} data-testid="product-external-link">{asStr(p.cta).trim() || agT(lang, "Visit site", "Visitar sitio")}</a>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* LONG DESCRIPTION */}
+      {longDesc && (
+        <section className="max-w-4xl mx-auto px-5 py-14 md:py-20" data-testid="product-about">
+          <RichText text={longDesc} th={th} />
+        </section>
+      )}
+
+      {/* FEATURES */}
+      {features.length > 0 && (
+        <section className="py-14 md:py-20 border-t" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : "transparent" }} data-testid="product-features">
+          <div className="max-w-5xl mx-auto px-5">
+            <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{agT(lang, "What you get", "Lo que incluye")}</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {features.map((f, i) => (
+                <div key={i} className="flex gap-3 p-4 rounded-xl border" style={{ borderColor: th.border, background: th.surface }} data-testid={`product-feature-${i}`}>
+                  <CheckCircle2 className="w-5 h-5 flex-none mt-0.5" style={{ color: accent }} />
+                  <span className="leading-relaxed" style={{ color: th.ink }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* VIDEO */}
+      {video && (
+        <section className="py-14 md:py-20 border-t" style={{ borderColor: th.border }} data-testid="product-video">
+          <div className="max-w-4xl mx-auto px-5">
+            <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border" style={{ borderColor: th.border, paddingTop: "56.25%" }}>
+              <iframe title="product-video" src={video} className="absolute inset-0 w-full h-full" style={{ border: 0 }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* GALLERY */}
+      {gallery.length > 0 && (
+        <section className="py-14 md:py-20 border-t" style={{ borderColor: th.border }} data-testid="product-gallery">
+          <div className="max-w-5xl mx-auto px-5">
+            <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{agT(lang, "Screenshots", "Capturas")}</h2>
+            <PhotoGallery items={gallery.map((g) => ({ thumb: imgSrc(g, 700), full: imgSrc(g, 1600) }))} th={th} square={false} testidPrefix="product-shot" />
+          </div>
+        </section>
+      )}
+
+      {/* PRICE */}
+      {(price || priceDetail) && (
+        <section className="py-14 md:py-20 border-t" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="product-pricing">
+          <div className="max-w-3xl mx-auto px-5 text-center">
+            <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, "Pricing", "Precio")}</h2>
+            {price && <p className="wh text-4xl md:text-5xl font-bold mt-4" style={{ color: accent }}>{price}</p>}
+            {priceDetail && <div className="mt-5 text-left max-w-xl mx-auto"><RichText text={priceDetail} th={th} /></div>}
+          </div>
+        </section>
+      )}
+
+      {/* FAQ */}
+      {faqs.length > 0 && (
+        <section className="py-14 md:py-20 border-t" style={{ borderColor: th.border }} data-testid="product-faq">
+          <div className="max-w-3xl mx-auto px-5">
+            <h2 className="wh text-3xl md:text-4xl mb-8" style={{ color: th.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
+            <div className="space-y-4">
+              {faqs.map((f, i) => (
+                <div key={i} className="p-5 rounded-xl border" style={{ borderColor: th.border, background: th.surface }} data-testid={`product-faq-${i}`}>
+                  <h3 className="font-bold text-lg" style={{ color: th.ink }}>{asStr(f.q)}</h3>
+                  {asStr(f.a).trim() && <p className="mt-2 leading-relaxed" style={{ color: th.muted }}>{asStr(f.a)}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* DEMO FORM */}
+      {showForm && (
+        <section id="demo" className="py-16 md:py-20 border-t" style={{ borderColor: th.border, background: th.dark ? "rgba(255,255,255,.02)" : th.surface }} data-testid="product-demo">
+          <div className="max-w-2xl mx-auto px-5 text-center">
+            <h2 className="wh text-3xl md:text-4xl" style={{ color: th.ink }}>{agT(lang, `Request a demo of ${name}`, `Solicita una demo de ${name}`)}</h2>
+            <p className="mt-3" style={{ color: th.muted }}>{agT(lang, "Tell us a bit about your business and we'll reach out shortly.", "Cuéntanos un poco de tu negocio y te contactaremos muy pronto.")}</p>
+          </div>
+          <div className="max-w-xl mx-auto px-5 mt-8">
+            <LeadForm ctx={ctx} leadService={`${name} (demo)`} submitLabel={agT(lang, "Request demo", "Solicitar demo")} />
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+
 function SubPageRouter({ ctx }) {
   let th = ctx.th;
   if (ctx.key === "agency") {
@@ -2587,7 +2743,7 @@ function SubPageRouter({ ctx }) {
     th = { ...ctx.th, bg: "#ffffff", surface: "#ffffff", ink: "#0f172a", muted: "#64748b", border: "rgba(0,0,0,.08)", dark: false };
     ctx = { ...ctx, th };
   }
-  const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage, servicio: ServiceDetail }[ctx.page];
+  const Page = { casos: CaseList, caso: CaseDetail, soluciones: SolutionsPage, nosotros: AboutPage, servicio: ServiceDetail, producto: ProductDetail }[ctx.page];
   return (
     <div style={{ background: th.bg, color: th.ink }} data-testid={`site-subpage-${ctx.page}`}>
       <SubNav ctx={ctx} active={ctx.page === "caso" ? "casos" : (ctx.page === "servicio" ? "soluciones" : ctx.page)} />
@@ -3094,17 +3250,17 @@ function Stars({ n = 5 }) {
   return <div className="flex gap-0.5">{[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-4 h-4" style={{ fill: i <= n ? "#F5B301" : "none", color: i <= n ? "#F5B301" : "#D1D5DB" }} />)}</div>;
 }
 
-function LeadForm({ ctx, inline }) {
+function LeadForm({ ctx, inline, leadService, submitLabel }) {
   const { slug, th, accent, accentText, data, lang } = ctx;
   const services = data.services;
-  const [form, setForm] = useState({ name: "", phone: "", email: "", service: "", description: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", service: leadService || "", description: "" });
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.phone) return;
     setSending(true);
-    try { await axios.post(`${API}/public/website/${slug}/lead`, form); setDone(true); } catch { setSending(false); }
+    try { await axios.post(`${API}/public/website/${slug}/lead`, { ...form, service: leadService || form.service }); setDone(true); } catch { setSending(false); }
   };
   const inpStyle = { borderColor: th.border, background: th.dark ? "rgba(255,255,255,.06)" : "#fff", color: th.ink };
   const inp = "w-full h-12 px-4 rounded-xl border outline-none focus-visible:ring-2";
@@ -3120,7 +3276,7 @@ function LeadForm({ ctx, inline }) {
       <input required data-testid="site-lead-name" placeholder={agT(lang, "Your name *", "Tu nombre *")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inp} style={inpStyle} />
       <input required data-testid="site-lead-phone" placeholder={agT(lang, "Phone *", "Teléfono *")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inp} style={inpStyle} />
       <input type="email" data-testid="site-lead-email" placeholder={agT(lang, "Email", "Correo electrónico")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`${inp} ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
-      {services?.length > 0 && (
+      {!leadService && services?.length > 0 && (
         <select data-testid="site-lead-service" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} className={`${inp} ${inline ? "sm:col-span-2" : ""}`} style={inpStyle}>
           <option value="">{agT(lang, "What do you need?", "¿Qué necesitas?")}</option>
           {services.map((s, i) => <option key={i} value={s.name}>{s.name}</option>)}
@@ -3128,7 +3284,7 @@ function LeadForm({ ctx, inline }) {
       )}
       <textarea placeholder={agT(lang, "Tell us what you need (optional)", "Cuéntanos qué necesitas (opcional)")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`w-full min-h-[84px] p-4 rounded-xl border outline-none focus-visible:ring-2 ${inline ? "sm:col-span-2" : ""}`} style={inpStyle} />
       <button type="submit" disabled={sending} data-testid="site-lead-submit" className={`h-13 py-3.5 font-bold flex items-center justify-center gap-2 ${th.btn} ${inline ? "sm:col-span-2" : "w-full"}`} style={{ background: accent, color: accentText }}>
-        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> {agT(lang, "Send Request", "Enviar solicitud")}</>}
+        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> {submitLabel || agT(lang, "Send Request", "Enviar solicitud")}</>}
       </button>
     </form>
   );
