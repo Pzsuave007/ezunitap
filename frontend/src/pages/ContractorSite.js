@@ -1794,6 +1794,21 @@ const mapEmbedSrc = (v) => {
 // or one of the owner's uploaded photo ids.
 const imgSrc = (v, w) => (!v ? null : (/^https?:\/\//.test(v) ? v : photoUrl(v, w)));
 
+// Cover image that is NEVER cropped: a blurred, zoomed copy fills the box while
+// the real image sits on top with object-contain, so designed covers with baked-in
+// text always show in full regardless of their aspect ratio. Must live inside a
+// positioned (relative) box with a fixed aspect ratio.
+function CoverFill({ src, alt = "", hover = true }) {
+  if (!src) return null;
+  return (
+    <>
+      <img src={src} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50" />
+      <img src={src} alt={alt} loading="lazy" className={`absolute inset-0 w-full h-full object-contain${hover ? " transition-transform duration-500 group-hover:scale-105" : ""}`} />
+    </>
+  );
+}
+
+
 // URL-safe slug for a service. Mirrors the backend _slugify (used in sitemap.xml)
 // so the link generated here and the sitemap entry always resolve to the same page.
 const slugify = (t) => ((t || "").toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""));
@@ -1938,8 +1953,8 @@ function SamplesSection({ ctx, sty }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((s, i) => {
             const inner = (
-              <div className="relative aspect-[4/3] overflow-hidden">
-                {imgSrc(s.img, 800) && <img src={imgSrc(s.img, 800)} alt={s.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+              <div className="relative aspect-[4/3] overflow-hidden" style={{ background: T.surface }}>
+                <CoverFill src={imgSrc(s.img, 800)} alt={s.title || ""} />
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,.78),transparent 62%)" }} />
                 <div className="absolute bottom-0 inset-x-0 p-5">
                   {s.title && <h3 className="text-white font-bold text-lg leading-tight">{s.title}</h3>}
@@ -2139,8 +2154,8 @@ function CaseList({ ctx }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cases.map((c, i) => (
               <a key={i} href={pageHref(`caso/${c.slug || i}`)} data-testid={`case-card-${i}`} className="group rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: th.border, background: th.surface }}>
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  {imgSrc(c.cover, 800) && <img src={imgSrc(c.cover, 800)} alt={c.client || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+                <div className="relative aspect-[4/3] overflow-hidden" style={{ background: th.surface }}>
+                  <CoverFill src={imgSrc(c.cover, 800)} alt={c.client || ""} />
                   <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,.72),transparent 60%)" }} />
                   {c.category && <span className="absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: accent, color: accentText }}>{c.category}</span>}
                   <div className="absolute bottom-0 inset-x-0 p-4"><h3 className="text-white font-bold text-lg">{c.client}</h3></div>
@@ -2253,8 +2268,8 @@ function CaseDetail({ ctx }) {
           <a href={pageHref("casos")} className="text-sm hover:opacity-80 inline-block mb-8" style={{ color: heroSub }} data-testid="case-back">← {agT(lang, "All cases", "Todos los casos")}</a>
           <div className={`grid ${heroImg ? "md:grid-cols-2" : ""} gap-8 md:gap-14 items-center`}>
             {heroImg && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: tHero.border }}>
-                <img src={heroImg} alt={c.client || ""} className="w-full h-full object-cover aspect-[4/3]" />
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: tHero.border, background: tHero.card }}>
+                <CoverFill src={heroImg} alt={c.client || ""} hover={false} />
               </div>
             )}
             <div>
