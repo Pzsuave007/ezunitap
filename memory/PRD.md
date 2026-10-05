@@ -1234,3 +1234,11 @@ Módulo de Productos/Software ahora soporta páginas de detalle por producto (an
 - Editor (WebsiteEditor.js, subtab Agency→Products): switch "Create detail page" + todos los campos (slug auto, long desc, features, galería via PhotoMultiField, video, price/detail, FAQ "Q | A" por línea, switch mostrar formulario demo).
 - Validado e2e: página /producto/insta-menu renderiza (ejemplo sembrado en Insta Menu), lead de demo llega al CRM, editor muestra todos los campos.
 - PENDIENTE opcional: SSR + sitemap para páginas de producto (SEO para bots); hoy son client-rendered.
+
+## [Jun 2026] SSR + Sitemap para Páginas de Producto (SEO para bots)
+Las páginas de detalle de producto ahora son indexables por Google/IA (antes solo client-rendered).
+- Backend: _build_product_html() + endpoints /api/ssr/producto/{slug}/{product_slug} (/sitio) y /api/ssr/pr/{product_slug} (por dominio). JSON-LD: Product + Offer (precio) + BreadcrumbList + FAQPage. Bilingüe vía _site_view. Producto inexistente → SPA fallback (no 404/500).
+- Sitemap: URLs de producto (solo has_page) añadidas en ambas ramas (per-dominio con hreflang, y /sitio).
+- Proxy: deploy/Caddyfile (ssr_primary: /sitio/<slug>/producto/<p>; ssr_custom: /producto/<p>) y deploy/htaccess (reglas equivalentes) enrutan UAs de bots a los endpoints SSR.
+- deploy.sh: bloque guardado que valida y recarga el Caddyfile en cada deploy (solo si Caddy está instalado). htaccess ya se copiaba.
+- Validado por curl: SSR EN/ES 200, Schema válido (Product/Offer/Breadcrumb/FAQ), sitemap incluye producto/insta-menu con alternates.

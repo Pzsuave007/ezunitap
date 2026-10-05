@@ -33,9 +33,17 @@ RewriteRule ^sitemap\.xml$ http://127.0.0.1:8007/api/sitemap.xml  [P,L]
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
 RewriteRule ^p/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/p/$1 [P,L]
 
+# Product/Software detail page on a customer's own domain: /producto/<slug>
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^producto/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/pr/$1 [P,L]
+
 # Tenant conversion page under the platform: /sitio/<slug>/p/<pageslug>
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
 RewriteRule ^sitio/([^/]+)/p/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/pp/$1/$2 [P,L]
+
+# Tenant product page under the platform: /sitio/<slug>/producto/<productslug>
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]
+RewriteRule ^sitio/([^/]+)/producto/([^/]+)/?$ http://127.0.0.1:8007/api/ssr/producto/$1/$2 [P,L]
 
 # Tenant site home under the platform: /sitio/<slug>
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|anthropic-ai|Google-Extended|CCBot|Amazonbot|DuckDuckBot|YandexBot|meta-externalagent|Google-InspectionTool) [NC]

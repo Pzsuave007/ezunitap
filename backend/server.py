@@ -5942,7 +5942,7 @@ async def website_sitemap(request: Request):
         proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1,
                 "custom_domain_verified": 1, "custom_domain_lang": 1,
                 "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1,
-                "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "updated_at": 1}
+                "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "products": 1, "updated_at": 1}
         site = await db.websites.find_one({"custom_domain": host, "custom_domain_verified": True}, proj)
         if not site:
             site = await db.websites.find_one({"custom_domain_2": host, "custom_domain_2_verified": True}, proj)
@@ -5978,6 +5978,12 @@ async def website_sitemap(request: Request):
                     _sl = (_c.get("slug") or "").strip()
                     if _sl:
                         urls.append(_url(f"/caso/{_sl}"))
+            for _p in (site.get("products") or []):
+                if not _p.get("has_page"):
+                    continue
+                _ps = (_p.get("slug") or _slugify(_p.get("name") or "")).strip()
+                if _ps:
+                    urls.append(_url(f"/producto/{_ps}"))
             pps = await db.problem_pages.find(
                 {"website_slug": site["slug"], "published": True, "indexable": True},
                 {"_id": 0, "page_slug": 1, "service_name": 1},
@@ -6011,7 +6017,7 @@ async def website_sitemap(request: Request):
         urls.append(f"<url><loc>{base}/probar</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>")
 
     sites = await db.websites.find(
-        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "updated_at": 1}
+        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "products": 1, "updated_at": 1}
     ).to_list(2000)
     # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
@@ -6049,6 +6055,12 @@ async def website_sitemap(request: Request):
                 _sl = (_c.get("slug") or "").strip()
                 if _sl:
                     urls.append(f"<url><loc>{base}/sitio/{slug}/caso/{_sl}</loc><changefreq>weekly</changefreq></url>")
+        for _p in (s.get("products") or []):
+            if not _p.get("has_page"):
+                continue
+            _ps = (_p.get("slug") or _slugify(_p.get("name") or "")).strip()
+            if _ps:
+                urls.append(f"<url><loc>{base}/sitio/{slug}/producto/{_ps}</loc><changefreq>weekly</changefreq></url>")
 
     # Problem/Solution pages of on-site (non-custom-domain) sites only.
     for pp in _all_pps:
@@ -6298,6 +6310,102 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
 {f'<section><h2>{"Reseñas" if lang=="es" else "Reviews"}</h2>{reviews_html}</section>' if reviews_html else ''}
 {f'<nav><h2>{"Más" if lang=="es" else "More"}</h2><ul>{links}</ul></nav>' if links else ''}
 {f'<p>{"Teléfono" if lang=="es" else "Phone"}: <a href="tel:{_esc(biz.get("phone"))}">{_esc(biz.get("phone"))}</a></p>' if biz.get('phone') else ''}
+</main>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+async def _build_product_html(w: dict, product_slug: str, request: Request, lang: str = "en"):
+    """Server-rendered HTML of a single Product/Software detail page for crawlers."""
+    slug = w["slug"]
+    data = await _website_payload(w)
+    biz = data["business"]
+    lang = "es" if str(lang).lower().startswith("es") else "en"
+    v = _site_view(w, lang)
+    products = v.get("products") or w.get("products") or []
+    want = _slugify(product_slug or "")
+    p = next((x for x in products if _slugify(x.get("slug") or x.get("name") or "") == want), None)
+    if not p:
+        return _ssr_spa_fallback()
+    base = _public_base_from_request(request)
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].split(":")[0].lower()
+    on_domain = host and (host == (w.get("custom_domain") or "") or host == (w.get("custom_domain_2") or ""))
+    pslug = (p.get("slug") or _slugify(p.get("name") or "")).strip()
+    canonical = f"{base}/producto/{pslug}" if on_domain else f"{base}/sitio/{slug}/producto/{pslug}"
+    home = f"{base}/" if on_domain else f"{base}/sitio/{slug}"
+    bizname = biz.get("name") or slug
+    pname = (p.get("name") or "").strip()
+    tagline = (p.get("tagline") or "").strip()
+    pdesc = (p.get("description") or "").strip()
+    longd = (p.get("long_description") or "").strip()
+    feats = [str(f).strip() for f in (p.get("features") or []) if str(f).strip()]
+    faqs = [f for f in (p.get("faqs") or []) if isinstance(f, dict) and (f.get("q") or f.get("a"))]
+    price = (p.get("price") or "").strip()
+    price_detail = (p.get("price_detail") or "").strip()
+    img = _photo_abs(base, p.get("img"))
+    title = f"{pname} — {bizname}" if pname else bizname
+    desc = (tagline or pdesc or longd or f"{pname} by {bizname}")[:300]
+
+    feats_html = "".join(f"<li>{_esc(f)}</li>" for f in feats)
+    faq_html = "".join(f"<div><h3>{_esc(f.get('q'))}</h3><p>{_esc(f.get('a'))}</p></div>" for f in faqs if f.get("q"))
+
+    # JSON-LD Product (+ Offer when a numeric price exists) + FAQPage + Breadcrumb.
+    _digits = "".join(c for c in price if (c.isdigit() or c == "."))
+    offer = None
+    if _digits:
+        try:
+            offer = {"@type": "Offer", "price": str(float(_digits)), "priceCurrency": "USD",
+                     "url": canonical, "availability": "https://schema.org/InStock"}
+            if price_detail:
+                offer["description"] = price_detail
+        except ValueError:
+            offer = None
+    ld_product = {
+        "@context": "https://schema.org", "@type": "Product", "@id": canonical + "#product",
+        "name": pname, "description": desc,
+        "image": img or None,
+        "brand": {"@type": "Brand", "name": bizname},
+        "url": canonical,
+        "offers": offer,
+    }
+    ld_product = {k: val for k, val in ld_product.items() if val is not None}
+    ld_bc = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": bizname, "item": home},
+        {"@type": "ListItem", "position": 2, "name": pname, "item": canonical},
+    ]}
+    ld_all = [ld_product, ld_bc]
+    _faq_items = [{"@type": "Question", "name": f.get("q"),
+                   "acceptedAnswer": {"@type": "Answer", "text": f.get("a")}}
+                  for f in faqs if f.get("q") and f.get("a")]
+    if _faq_items:
+        ld_all.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": _faq_items})
+    ld = json.dumps(ld_all, ensure_ascii=False)
+
+    html = f"""<!doctype html>
+<html lang="{'es' if lang=='es' else 'en'}"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{_esc(title)}</title>
+<meta name="description" content="{_esc(desc)}"/>
+<link rel="canonical" href="{_esc(canonical)}"/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+<meta property="og:type" content="product"/>
+<meta property="og:site_name" content="{_esc(bizname)}"/>
+<meta property="og:title" content="{_esc(title)}"/>
+<meta property="og:description" content="{_esc(desc)}"/>
+<meta property="og:url" content="{_esc(canonical)}"/>
+{f'<meta property="og:image" content="{_esc(img)}"/>' if img else ''}
+<meta name="twitter:card" content="{'summary_large_image' if img else 'summary'}"/>
+<script type="application/ld+json">{ld}</script>
+</head><body>
+<header><h1>{_esc(pname)}</h1>{f'<p>{_esc(tagline)}</p>' if tagline else ''}</header>
+<main>
+{f'<p>{_esc(pdesc)}</p>' if pdesc else ''}
+{f'<section><h2>{"Descripción" if lang=="es" else "Overview"}</h2><p>{_esc(longd)}</p></section>' if longd else ''}
+{f'<section><h2>{"Lo que incluye" if lang=="es" else "What you get"}</h2><ul>{feats_html}</ul></section>' if feats_html else ''}
+{f'<section><h2>{"Precio" if lang=="es" else "Pricing"}</h2><p>{_esc(price)}{(" — " + _esc(price_detail)) if price_detail else ""}</p></section>' if (price or price_detail) else ''}
+{f'<section><h2>{"Preguntas frecuentes" if lang=="es" else "FAQ"}</h2>{faq_html}</section>' if faq_html else ''}
+<p><a href="{_esc(home)}">{_esc(bizname)}</a></p>
 </main>
 </body></html>"""
     return HTMLResponse(content=html)
@@ -6577,6 +6685,23 @@ async def ssr_home(request: Request, lang: str = ""):
         return _build_platform_home_html(base)
     # A real custom host with no site configured → neutral SPA shell.
     return _ssr_spa_fallback()
+
+
+@api_router.get("/ssr/producto/{slug}/{product_slug}", response_class=HTMLResponse)
+async def ssr_product(slug: str, product_slug: str, request: Request, lang: str = "en"):
+    w = await db.websites.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "Not found")
+    return await _build_product_html(w, product_slug, request, lang)
+
+
+@api_router.get("/ssr/pr/{product_slug}", response_class=HTMLResponse)
+async def ssr_product_by_host(product_slug: str, request: Request, lang: str = ""):
+    """Custom-domain product page: resolve the site from the host, then render."""
+    w, dlang = await _ssr_resolve_by_host(request)
+    if not w:
+        return _ssr_spa_fallback()
+    return await _build_product_html(w, product_slug, request, lang or dlang or "en")
 
 
 @api_router.get("/ssr/pp/{slug}/{page_slug}", response_class=HTMLResponse)

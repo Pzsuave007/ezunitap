@@ -46,6 +46,12 @@
         }
         rewrite @bot_sitepp /api/ssr/pp/{http.regexp.sitepp.1}/{http.regexp.sitepp.2}
 
+        @bot_siteproduct {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path_regexp siteproduct ^/sitio/([^/]+)/producto/([^/]+)/?$
+        }
+        rewrite @bot_siteproduct /api/ssr/producto/{http.regexp.siteproduct.1}/{http.regexp.siteproduct.2}
+
         @bot_site {
                 header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
                 path_regexp site ^/sitio/([^/]+)/?$
@@ -64,6 +70,12 @@
                 path_regexp cpp ^/p/([^/]+)/?$
         }
         rewrite @bot_pp /api/ssr/p/{http.regexp.cpp.1}
+
+        @bot_product {
+                header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)
+                path_regexp cproduct ^/producto/([^/]+)/?$
+        }
+        rewrite @bot_product /api/ssr/pr/{http.regexp.cproduct.1}
 
         @bot_root {
                 header_regexp User-Agent (?i)(googlebot|bingbot|gptbot|oai-searchbot|chatgpt-user|perplexitybot|perplexity-user|claudebot|claude-user|anthropic-ai|google-extended|ccbot|applebot|amazonbot|duckduckbot|yandexbot|facebookexternalhit|facebookbot|twitterbot|linkedinbot|whatsapp|slackbot|discordbot|meta-externalagent)

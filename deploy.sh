@@ -130,6 +130,20 @@ else
     echo "  (skip) ezunitech account or frontend build not found"
 fi
 
+# --- Front proxy (Caddy): refresh the Caddyfile so new bot-SSR routes (e.g.
+#     product pages /producto/<slug>) take effect. Guarded so it only runs when
+#     Caddy is the active front proxy. Validates before applying. Non-fatal.
+if command -v caddy >/dev/null 2>&1 && [ -d /etc/caddy ]; then
+    echo ">>> Refreshing Caddyfile ..."
+    if caddy validate --config "$REPO/deploy/Caddyfile" --adapter caddyfile >/dev/null 2>&1; then
+        cp "$REPO/deploy/Caddyfile" /etc/caddy/Caddyfile
+        systemctl reload caddy 2>/dev/null || systemctl restart caddy 2>/dev/null || true
+        echo "  ✅ Caddyfile updated & reloaded"
+    else
+        echo "  (!) New Caddyfile failed validation — kept existing (non-fatal)"
+    fi
+fi
+
 sleep 3
 if curl -sf "http://127.0.0.1:$PORT/api/" >/dev/null; then
     echo ""
