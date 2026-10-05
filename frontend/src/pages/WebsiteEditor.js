@@ -1492,6 +1492,37 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
     finally { setAiBusy(null); }
   };
+  const aiProduct = async (i) => {
+    const p = products[i] || {};
+    const brief = [p.tagline, p.description, p.long_description].filter(Boolean).join("\n").trim();
+    if (!(p.name || "").trim() && !brief) { toast.error(isEs ? "Escribe el nombre del producto (o una breve descripción) primero." : "Enter the product name (or a short description) first."); return; }
+    setAiBusy(`product-${i}`);
+    try {
+      const { data } = await api.post("/website/ai-agency", { kind: "product_full", product_name: p.name || "", brief, lang: isEs ? "es" : "en" });
+      const g = data.data || {};
+      const asText = (v) => Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : "")).filter(Boolean).join("\n") : (typeof v === "string" ? v : (v == null ? "" : String(v)));
+      const asArr = (v) => { if (Array.isArray(v)) return v; if (typeof v === "string") { const s = v.trim(); if (s.startsWith("[")) { try { const q = JSON.parse(s); return Array.isArray(q) ? q : []; } catch (e) { return []; } } } return []; };
+      const slugify = (s) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const nm = (p.name || "").trim() || asText(g.name);
+      const n = [...products];
+      n[i] = {
+        ...p,
+        name: nm,
+        tagline: asText(g.tagline) || p.tagline || "",
+        description: asText(g.description) || p.description || "",
+        long_description: asText(g.long_description) || p.long_description || "",
+        features: asArr(g.features).map((x) => (typeof x === "string" ? x : (x && x.name) || "")).filter(Boolean),
+        faqs: asArr(g.faqs).map((f) => ({ q: asText(f && f.q), a: asText(f && f.a) })).filter((f) => f.q || f.a),
+        price_detail: asText(g.price_detail) || p.price_detail || "",
+        cta: asText(g.cta) || p.cta || "",
+        has_page: true,
+        slug: p.slug || slugify(nm),
+      };
+      setProducts(n);
+      toast.success(isEs ? "¡Página de producto creada con IA! Revisa, ajusta el precio y Guarda." : "Product page created with AI! Review, set the price and Save.");
+    } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
+    finally { setAiBusy(null); }
+  };
   const aiAbout = async () => {
     setAiBusy("about");
     try {
@@ -1629,6 +1660,11 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                 <Input value={p.link || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, link: e.target.value }; setProducts(n); }} placeholder={isEs ? "Enlace (opcional)" : "Link (optional)"} className="h-9 rounded-lg" data-testid={`agency-product-link-${i}`} />
                 <Input value={p.cta || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, cta: e.target.value }; setProducts(n); }} placeholder={isEs ? "Texto del botón (ej. Ver más)" : "Button text (e.g. Learn more)"} className="h-9 rounded-lg" />
               </div>
+              <Button variant="outline" className="rounded-lg h-9 w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50" disabled={aiBusy === `product-${i}`} onClick={() => aiProduct(i)} data-testid={`agency-product-ai-${i}`}>
+                {aiBusy === `product-${i}`
+                  ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Escribiendo la página…" : "Writing the page…"}</>
+                  : <><Sparkles className="w-4 h-4 mr-2" /> {isEs ? "Generar página de producto con IA" : "Generate product page with AI"}</>}
+              </Button>
               <div className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
                 <div className="text-sm font-medium flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-emerald-600" /> {isEs ? "Crear página de detalle" : "Create detail page"}</div>
                 <Switch checked={!!p.has_page} onCheckedChange={(v) => { const n = [...products]; n[i] = { ...p, has_page: v, slug: p.slug || (v ? (p.name || "").toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") : "") }; setProducts(n); }} data-testid={`agency-product-haspage-${i}`} />

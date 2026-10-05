@@ -1174,6 +1174,49 @@ async def generate_case_study_full(brief: str = "", lang: str = "es") -> dict:
     return data
 
 
+AGENCY_PRODUCT_FULL_SYSTEM = """You write COMPLETE, persuasive PRODUCT / SOFTWARE detail-page copy for a company's
+website. The owner gives you the product name and a short free-text description of what it is / what it does.
+From it, write a RICH, full product page — not a thin summary.
+
+Formatting rules for the text fields (they render markdown-lite):
+- Use "### " for sub-headings inside long_description.
+- Use "- " at the start of a line for bullet points (put a blank line before a bullet list).
+- Be specific, concrete and benefit-driven. Make reasonable, honest assumptions for the product type when
+  the description is thin, but NEVER invent a price or fake statistics.
+
+Output ONLY valid JSON with EXACTLY these keys (no extras):
+{
+  "name": "the product name (keep the one given if provided)",
+  "tagline": "a punchy one-line value proposition (max ~8 words)",
+  "description": "a 1-2 sentence summary for the product card",
+  "long_description": "2-4 short sections. Start with '### ' headings (e.g. what it is, how it works, who it's for). Use '- ' bullets where useful. A plain STRING with \\n line breaks.",
+  "features": ["5 to 8 concrete benefit-driven feature lines (short phrases)"],
+  "faqs": [{"q":"a real question a buyer would ask","a":"a clear, helpful answer"}, ...4 to 6 items],
+  "price_detail": "optional: wording about plans/trial ONLY if implied by the description (e.g. 'Free 14-day trial'); else empty string",
+  "cta": "a short call-to-action button label (e.g. 'Request a demo')"
+}
+Write everything in {LANG_NAME}. TYPES ARE STRICT: "features" MUST be a JSON array of strings and "faqs"
+MUST be a JSON array of {"q","a"} objects (NOT strings). All other fields are plain STRINGS. Do NOT include
+a numeric price. Return ONLY the JSON."""
+
+
+async def generate_product_full(brief: str = "", product_name: str = "", lang: str = "es") -> dict:
+    """One-shot: turn a short description of a product/software into a COMPLETE
+    product detail page (tagline, description, long copy, features, FAQ, CTA)."""
+    lang_name = "Spanish (Latin-American, warm and professional)" if lang != "en" else "American English"
+    system = AGENCY_PRODUCT_FULL_SYSTEM.replace("{LANG_NAME}", lang_name)
+    chat = _new_chat(system)
+    msg = (f"Product name: {product_name or '(not given — infer a good one)'}\n"
+           f"Owner's description of the product / what it does:\n{brief or '(none)'}\n\n"
+           f"Write the full product-page JSON now.")
+    response = await chat.send_message(UserMessage(text=msg))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not write the product page. Try again.")
+    return data
+
+
+
 AGENCY_ABOUT_SYSTEM = """You write warm, authentic ABOUT-US copy for a Latino marketing agency that helps
 small U.S. businesses grow. You receive the business name and a brief/notes. Output ONLY valid JSON with
 EXACTLY these keys:

@@ -1242,3 +1242,10 @@ Las páginas de detalle de producto ahora son indexables por Google/IA (antes so
 - Proxy: deploy/Caddyfile (ssr_primary: /sitio/<slug>/producto/<p>; ssr_custom: /producto/<p>) y deploy/htaccess (reglas equivalentes) enrutan UAs de bots a los endpoints SSR.
 - deploy.sh: bloque guardado que valida y recarga el Caddyfile en cada deploy (solo si Caddy está instalado). htaccess ya se copiaba.
 - Validado por curl: SSR EN/ES 200, Schema válido (Product/Offer/Breadcrumb/FAQ), sitemap incluye producto/insta-menu con alternates.
+
+## [Jun 2026] Generador de Páginas de Producto con IA
+Botón "Generar página de producto con IA" en cada producto del editor (Agency → Products).
+- Backend: ai_service.generate_product_full() + AGENCY_PRODUCT_FULL_SYSTEM; dispatch kind="product_full" en POST /api/website/ai-agency. Devuelve name, tagline, description, long_description (markdown-lite), features[], faqs[{q,a}], price_detail, cta. NO inventa precio numérico. Bilingüe (lang en/es).
+- Frontend (WebsiteEditor.js): aiProduct(i) llama al endpoint con name+brief del producto, rellena los campos, activa has_page y auto-genera slug. Coerción robusta de arrays (features/faqs) por si la IA devuelve strings.
+- Validado: función directa (7 features, 6 faqs), endpoint con auth EN y ES (ok:true), botón visible en el editor.
+- Nota: un typo temporal en ai_service.py rompió el reload del backend (login colgaba); corregido antes de desplegar, sin impacto en producción.
