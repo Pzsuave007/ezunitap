@@ -1249,3 +1249,7 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Frontend (WebsiteEditor.js): aiProduct(i) llama al endpoint con name+brief del producto, rellena los campos, activa has_page y auto-genera slug. Coerción robusta de arrays (features/faqs) por si la IA devuelve strings.
 - Validado: función directa (7 features, 6 faqs), endpoint con auth EN y ES (ok:true), botón visible en el editor.
 - Nota: un typo temporal en ai_service.py rompió el reload del backend (login colgaba); corregido antes de desplegar, sin impacto en producción.
+
+## [Jun 2026] Editor de Productos colapsable (acordeón)
+- WebsiteEditor.js: cada producto ahora es un acordeón (estado openProd), igual que los casos: fila compacta (imagen+nombre+tagline+badge "Page" si tiene página+borrar+chevron) que se expande al hacer clic. "Agregar producto" abre el nuevo. Evita páginas gigantes con 3+ productos.
+- Validado por screenshot: lista colapsada compacta + expansión de un producto.

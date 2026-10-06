@@ -1417,6 +1417,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
   };
   const removeAboutSecImg = async (i, pi) => { const n = [...aboutSecs]; n[i] = { ...n[i], images: (n[i].images || []).filter((_, x) => x !== pi) }; setAboutSecs(n); await save({ about_sections: n }); };
   const [openCase, setOpenCase] = useState(0);
+  const [openProd, setOpenProd] = useState(-1);
   const moveCase = (i, dir) => { const j = i + dir; if (j < 0 || j >= cases.length) return; const n = [...cases]; [n[i], n[j]] = [n[j], n[i]]; setCases(n); setOpenCase(j); };
   const resToText = (r) => (Array.isArray(r) ? r.map((x) => `${x.value || ""} | ${x.label || ""}`).join("\n") : "");
   const textToRes = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => { const [value, ...rest] = l.split("|"); return { value: (value || "").trim(), label: rest.join("|").trim() }; });
@@ -1645,14 +1646,24 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
         <p className="text-sm text-slate-500 mb-3">{isEs ? "Muestra tu software y herramientas (UniTech, Insta Menu, QR Menu, etc.) para que los visitantes vean lo que pueden usar en sus negocios." : "Showcase your software and tools (UniTech, Insta Menu, QR Menu, etc.) so visitors see what they can use for their business."}</p>
         <div className="space-y-3">
           {products.map((p, i) => (
-            <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2" data-testid={`agency-product-${i}`}>
-              <div className="flex items-center gap-2">
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200 flex items-center justify-center">
+            <div key={i} className="rounded-xl border border-slate-200 overflow-hidden" data-testid={`agency-product-${i}`}>
+              <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition" onClick={() => setOpenProd(openProd === i ? -1 : i)} data-testid={`agency-product-toggle-${i}`}>
+                <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200 flex items-center justify-center">
                   {p.img ? <img src={/^https?:\/\//.test(p.img) ? p.img : photoSrc(p.img)} alt="" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-slate-300" />}
                 </div>
-                <Input value={p.name || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, name: e.target.value }; setProducts(n); }} placeholder={isEs ? "Nombre (ej. Insta Menu)" : "Name (e.g. Insta Menu)"} className="h-9 rounded-lg" data-testid={`agency-product-name-${i}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate">{p.name || (isEs ? "Producto sin título" : "Untitled product")}</div>
+                  {p.tagline && <div className="text-xs text-slate-400 truncate">{p.tagline}</div>}
+                </div>
+                {p.has_page && <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 flex-none">{isEs ? "Página" : "Page"}</span>}
+                <button type="button" onClick={(e) => { e.stopPropagation(); setProducts(products.filter((_, x) => x !== i)); }} className="w-7 h-7 rounded-md text-red-500 hover:bg-red-50 flex items-center justify-center flex-none" title={isEs ? "Eliminar" : "Delete"} data-testid={`agency-product-remove-${i}`}><Trash2 className="w-4 h-4" /></button>
+                <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${openProd === i ? "rotate-180" : ""}`} />
+              </div>
+              {openProd === i && (
+              <div className="p-3 pt-0 space-y-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 pt-2">
+                <Input value={p.name || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, name: e.target.value }; setProducts(n); }} placeholder={isEs ? "Nombre (ej. Insta Menu)" : "Name (e.g. Insta Menu)"} className="h-9 rounded-lg flex-1" data-testid={`agency-product-name-${i}`} />
                 <Button variant="outline" size="sm" className="rounded-lg h-9 flex-none" onClick={() => { setProdUpIdx(i); prodUpRef.current?.click(); }} data-testid={`agency-product-upload-${i}`}><ImagePlus className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="sm" className="rounded-lg h-9 flex-none text-red-500" onClick={() => setProducts(products.filter((_, x) => x !== i))} data-testid={`agency-product-remove-${i}`}><Trash2 className="w-4 h-4" /></Button>
               </div>
               <Input value={p.tagline || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, tagline: e.target.value }; setProducts(n); }} placeholder={isEs ? "Frase corta (ej. Menús digitales con QR)" : "Short tagline (e.g. Digital QR menus)"} className="h-9 rounded-lg" data-testid={`agency-product-tagline-${i}`} />
               <Textarea value={p.description || ""} onChange={(e) => { const n = [...products]; n[i] = { ...p, description: e.target.value }; setProducts(n); }} placeholder={isEs ? "Descripción: qué es y cómo ayuda al negocio" : "Description: what it is and how it helps the business"} className="rounded-lg min-h-[70px] text-sm" data-testid={`agency-product-desc-${i}`} />
@@ -1711,10 +1722,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
                   </div>
                 </div>
               )}
+              </div>
+              )}
             </div>
           ))}
         </div>
-        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => setProducts([...products, { name: "", tagline: "", description: "", img: "", link: "", cta: "" }])} data-testid="agency-product-add"><Plus className="w-4 h-4 mr-1" /> {isEs ? "Agregar producto" : "Add product"}</Button>
+        <Button variant="outline" className="rounded-xl h-9 mt-3" onClick={() => { setOpenProd(products.length); setProducts([...products, { name: "", tagline: "", description: "", img: "", link: "", cta: "" }]); }} data-testid="agency-product-add"><Plus className="w-4 h-4 mr-1" /> {isEs ? "Agregar producto" : "Add product"}</Button>
       </Card>
       )}
 
