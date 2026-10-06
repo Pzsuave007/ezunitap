@@ -1253,3 +1253,8 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 ## [Jun 2026] Editor de Productos colapsable (acordeón)
 - WebsiteEditor.js: cada producto ahora es un acordeón (estado openProd), igual que los casos: fila compacta (imagen+nombre+tagline+badge "Page" si tiene página+borrar+chevron) que se expande al hacer clic. "Agregar producto" abre el nuevo. Evita páginas gigantes con 3+ productos.
 - Validado por screenshot: lista colapsada compacta + expansión de un producto.
+
+## [Jun 2026] Franja de estadísticas en el home (agency)
+- ContractorSite.js componente Agency: nueva STATS BAND full-width (franja) entre hero y servicios, fondo = accent de marca, íconos (Award/Users/Zap/Globe) + números grandes con animación count-up (StatCountUp + IntersectionObserver). Defaults bilingües: 25+ Años experiencia, 150+ Negocios confían, 24/7 IA, 100% Bilingüe. Override opcional vía w.stats; ocultable con sec.stats=false.
+- Nota: AgencyHome.js es código muerto (no importado); el home real es el componente Agency en ContractorSite.js.
+- Validado por screenshot en /sitio/uni2-marketing.

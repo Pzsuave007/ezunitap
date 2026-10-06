@@ -3,12 +3,12 @@
  * Faithful replica of the existing WordPress sites, publishable to both domains.
  * EN = growthally.agency · ES = uni2mkt.com. Public route (no auth).
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import {
   Globe2, Bot, MapPin, Star, Zap, Target, Phone, ArrowRight,
-  Search, PenTool, Workflow, Rocket, TrendingUp, Menu, X,
+  Search, PenTool, Workflow, Rocket, TrendingUp, Menu, X, Award, Users,
 } from "lucide-react";
 
 const PHONE = "503-985-6472";
@@ -22,6 +22,38 @@ const LOGOS = [
 
 const SERVICE_ICONS = [Globe2, Bot, MapPin, Star, Zap, Target];
 const STEP_ICONS = [Search, PenTool, Workflow, Rocket, TrendingUp];
+const STAT_ICONS = [Award, Users, Bot, Globe2];
+
+/** Count-up number that animates once when scrolled into view. Keeps any
+ *  non-numeric suffix (e.g. "+", "%", "/7"). */
+function CountUp({ target }) {
+  const m = String(target).match(/^(\d+)(.*)$/);
+  const end = m ? parseInt(m[1], 10) : 0;
+  const suffix = m ? m[2] : String(target);
+  const [n, setN] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let raf, started = false;
+    const run = () => {
+      const dur = 1300, t0 = performance.now();
+      const tick = (now) => {
+        const p = Math.min(1, (now - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setN(Math.round(end * eased));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((ents) => {
+      ents.forEach((e) => { if (e.isIntersecting && !started) { started = true; run(); } });
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => { io.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, [end]);
+  return <span ref={ref}>{n}{suffix}</span>;
+}
 
 const T = {
   en: {
@@ -32,6 +64,12 @@ const T = {
     heroText: "We help businesses grow with strategic marketing, modern design, and intelligent digital systems that work around the clock — attracting the right customers and improving your presence across every platform.",
     heroCta: "Schedule a Free Demo",
     heroCall: "Call Us",
+    stats: [
+      ["25+", "Years of experience"],
+      ["150+", "Businesses trust us"],
+      ["24/7", "AI systems working"],
+      ["100%", "Bilingual · US-wide"],
+    ],
     servicesTitle: "Smart tools to grow your business",
     services: [
       ["Smart Websites", "Websites that think, learn, and turn visitors into customers — with AI features, pro design, and automations working 24/7."],
@@ -67,6 +105,12 @@ const T = {
     heroText: "Ayudamos a emprendedores latinos a destacar y crecer en el mercado estadounidense con estrategias digitales que combinan creatividad, automatización e inteligencia artificial. No solo diseñamos sitios: creamos sistemas que generan clientes reales.",
     heroCta: "Agenda un Demo Gratis",
     heroCall: "Llámanos",
+    stats: [
+      ["25+", "Años de experiencia"],
+      ["150+", "Negocios confían en nosotros"],
+      ["24/7", "Sistemas con IA"],
+      ["100%", "Bilingüe · en todo EE.UU."],
+    ],
     servicesTitle: "Herramientas inteligentes para hacer crecer tu negocio",
     services: [
       ["Websites Inteligentes", "Sitios que piensan, aprenden y generan clientes por ti — con IA, diseño profesional y automatizaciones que convierten visitantes en ventas 24/7."],
@@ -187,7 +231,26 @@ export default function AgencyHome() {
         </div>
       </section>
 
-      {/* SERVICES */}
+      {/* STATS BAND — eye-catching strip across the screen */}
+      <section className="relative -mt-px" data-testid="agency-stats">
+        <div className="bg-gradient-to-r from-emerald-400 via-emerald-400 to-teal-300 text-[#0a1130] shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)]">
+          <div className="max-w-6xl mx-auto px-5 py-9 md:py-11 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+            {t.stats.map(([value, label], i) => {
+              const Icon = STAT_ICONS[i];
+              return (
+                <div key={i} data-testid={`agency-stat-${i}`}
+                  className="text-center flex flex-col items-center md:border-r md:last:border-r-0 border-[#0a1130]/15 px-2 group">
+                  <Icon className="w-6 h-6 mb-2 opacity-70 group-hover:scale-110 transition-transform" />
+                  <div className="text-4xl md:text-5xl font-black tabular-nums tracking-tight leading-none">
+                    <CountUp target={value} />
+                  </div>
+                  <div className="mt-2 text-xs md:text-sm font-bold uppercase tracking-wide text-[#0a1130]/70 leading-tight">{label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
       <section id="services" className="max-w-6xl mx-auto px-5 py-20 md:py-28">
         <h2 className="text-3xl md:text-4xl font-black text-center max-w-3xl mx-auto">{t.servicesTitle}</h2>
         <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">

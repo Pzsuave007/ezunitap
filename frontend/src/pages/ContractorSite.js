@@ -2,7 +2,7 @@ import { PinMap } from "../components/PinMap";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Quote, Plus, Mail, Facebook, Instagram } from "lucide-react";
+import { Phone, MapPin, Clock, Star, ShieldCheck, CheckCircle2, Calendar, Send, Loader2, Menu, X, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Quote, Plus, Mail, Facebook, Instagram, Award, Users, Zap, Globe } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const photoUrl = (id, w) => (id ? `${API}/public/card/photo/${id}${w ? `?w=${w}` : ""}` : null);
@@ -2754,6 +2754,39 @@ function SubPageRouter({ ctx }) {
 }
 
 // ---- AGENCY: premium bilingual template (exclusive) ------------------------
+const STAT_ICONS = [Award, Users, Zap, Globe];
+
+/** Count-up number that animates once when scrolled into view. Keeps any
+ *  non-numeric suffix (e.g. "+", "%", "/7"). */
+function StatCountUp({ target }) {
+  const m = String(target).match(/^(\d+)(.*)$/);
+  const end = m ? parseInt(m[1], 10) : 0;
+  const suffix = m ? m[2] : String(target);
+  const [n, setN] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let raf, started = false;
+    const run = () => {
+      const dur = 1300, t0 = performance.now();
+      const tick = (now) => {
+        const p = Math.min(1, (now - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setN(Math.round(end * eased));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((ents) => {
+      ents.forEach((e) => { if (e.isIntersecting && !started) { started = true; run(); } });
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => { io.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, [end]);
+  return <span ref={ref}>{n}{suffix}</span>;
+}
+
 function Agency({ ctx }) {
   const { w, b, accent, accentText, heroImg, bandImg, services, goContact, lang, sec } = ctx;
   const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
@@ -2811,6 +2844,32 @@ function Agency({ ctx }) {
           <div className="w-full lg:justify-self-end max-w-md"><HeroForm ctx={ctx} dark={H.dark} /></div>
         </div>
       </section>
+
+      {/* STATS BAND — eye-catching strip across the screen */}
+      {sec.stats !== false && (() => {
+        const stats = (Array.isArray(w.stats) && w.stats.length ? w.stats : [
+          { value: "25+", label: agT(lang, "Years of experience", "Años de experiencia") },
+          { value: "150+", label: agT(lang, "Businesses trust us", "Negocios confían en nosotros") },
+          { value: "24/7", label: agT(lang, "AI systems working", "Sistemas con IA") },
+          { value: "100%", label: agT(lang, "Bilingual · US-wide", "Bilingüe · en todo EE.UU.") },
+        ]).slice(0, 4);
+        return (
+          <section className="relative" data-testid="agency-stats" style={{ background: accent, color: accentText }}>
+            <div className="max-w-6xl mx-auto px-5 py-9 md:py-11 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+              {stats.map((s, i) => {
+                const Icon = STAT_ICONS[i % STAT_ICONS.length];
+                return (
+                  <div key={i} data-testid={`agency-stat-${i}`} className="text-center flex flex-col items-center px-2 group">
+                    <Icon className="w-6 h-6 mb-2 opacity-70 group-hover:scale-110 transition-transform" />
+                    <div className="wh text-4xl md:text-5xl font-black tabular-nums leading-none"><StatCountUp target={s.value} /></div>
+                    <div className="mt-2 text-xs md:text-sm font-bold uppercase tracking-wide leading-tight" style={{ opacity: 0.82 }}>{s.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* SERVICES */}
       {services.length > 0 && sec.services !== false && (
