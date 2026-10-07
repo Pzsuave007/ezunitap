@@ -4647,6 +4647,94 @@ async def get_website(user_id: str = Depends(get_current_user_id)):
     return w
 
 
+@api_router.get("/website/sitemap")
+async def website_sitemap_breakdown(user_id: str = Depends(get_current_user_id)):
+    """Structured, human-readable view of exactly which URLs this site exposes to
+    search engines (mirrors the live /sitemap.xml rules), so the owner can see
+    'how Google perceives it' — including why a URL is or isn't included."""
+    w = await _get_or_init_website(user_id)
+    slug = w.get("slug")
+    published = bool(w.get("published"))
+    domains = []
+    if w.get("custom_domain") and w.get("custom_domain_verified"):
+        domains.append({"host": w["custom_domain"], "lang": w.get("custom_domain_lang") or "en"})
+    if w.get("custom_domain_2") and w.get("custom_domain_2_verified"):
+        domains.append({"host": w["custom_domain_2"], "lang": w.get("custom_domain_2_lang") or "es"})
+    public_base = (os.environ.get("PUBLIC_BASE_URL") or "https://ezunitech.com").rstrip("/")
+    on_custom = bool(domains)
+    primary_base = f"https://{domains[0]['host']}" if on_custom else f"{public_base}/sitio/{slug}"
+    sitemap_url = f"https://{domains[0]['host']}/sitemap.xml" if on_custom else f"{public_base}/sitemap.xml"
+
+    groups = []
+    main_items = [{"path": "/", "title": "Inicio / Home", "included": True}]
+    if w.get("services") or (w.get("solutions_intro") or "").strip():
+        main_items.append({"path": "/soluciones", "title": "Soluciones", "included": True})
+    if (w.get("about_story") or "").strip():
+        main_items.append({"path": "/nosotros", "title": "Nosotros / About", "included": True})
+    _cs = w.get("case_studies") or []
+    if _cs:
+        main_items.append({"path": "/casos", "title": "Casos / Cases", "included": True})
+    groups.append({"key": "main", "label": "Páginas principales", "items": main_items})
+
+    pps = await db.problem_pages.find(
+        {"user_id": user_id},
+        {"_id": 0, "page_slug": 1, "service_name": 1, "published": 1, "indexable": 1,
+         "content": 1, "content_es": 1, "service_name_es": 1},
+    ).to_list(2000)
+    pp_items = []
+    pp_names = set()
+    for pp in pps:
+        inc = bool(pp.get("published") and (pp.get("indexable", True)))
+        title = ((pp.get("content") or {}).get("problem_headline")) or pp.get("service_name") or pp.get("page_slug")
+        title_es = ((pp.get("content_es") or {}).get("problem_headline")) or pp.get("service_name_es")
+        reason = None if inc else ("No publicada" if not pp.get("published") else "Marcada como no indexable")
+        pp_items.append({"path": f"/p/{pp.get('page_slug')}", "title": title, "title_es": title_es, "included": inc, "reason": reason})
+        if inc:
+            pp_names.add((pp.get("service_name") or "").lower().strip())
+    groups.append({"key": "solutions", "label": "Páginas de soluciones (/p/)", "items": pp_items})
+
+    case_items = []
+    _seen = set()
+    for _c in _cs:
+        _sl = _slugify(_c.get("slug") or _c.get("client") or _c.get("title") or "")
+        if not _sl or _sl in _seen:
+            continue
+        _seen.add(_sl)
+        case_items.append({"path": f"/caso/{_sl}", "title": _c.get("client") or _c.get("title") or _sl, "included": True})
+    groups.append({"key": "cases", "label": "Casos de éxito (/caso/)", "items": case_items})
+
+    prod_items = []
+    for _p in (w.get("products") or []):
+        inc = bool(_p.get("has_page"))
+        _ps = (_p.get("slug") or _slugify(_p.get("name") or "")).strip()
+        prod_items.append({"path": f"/producto/{_ps}", "title": _p.get("name") or _ps, "included": inc,
+                           "reason": None if inc else "Página de producto no activada"})
+    if prod_items:
+        groups.append({"key": "products", "label": "Productos (/producto/)", "items": prod_items})
+
+    svc_items = []
+    for i, svc in enumerate(w.get("services") or []):
+        dup = (svc.get("name") or "").lower().strip() in pp_names
+        svc_items.append({"path": f"/servicio/{_svc_slug(svc, i)}", "title": svc.get("name") or "", "included": not dup,
+                          "reason": None if not dup else "Representado por su página /p/ (evita duplicados)"})
+    if svc_items:
+        groups.append({"key": "services", "label": "Páginas de servicio (/servicio/)", "items": svc_items})
+
+    total_included = sum(1 for g in groups for it in g["items"] if it.get("included"))
+    total_all = sum(len(g["items"]) for g in groups)
+    return {
+        "published": published,
+        "on_custom_domain": on_custom,
+        "primary_base": primary_base,
+        "sitemap_url": sitemap_url,
+        "domains": domains,
+        "groups": groups,
+        "total_included": total_included,
+        "total_all": total_all,
+    }
+
+
+
 @api_router.put("/website")
 async def update_website(payload: WebsiteIn, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
     await _get_or_init_website(user_id)

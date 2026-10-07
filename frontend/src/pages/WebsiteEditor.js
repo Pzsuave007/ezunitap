@@ -18,7 +18,7 @@ const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "tr
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
-const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "history"];
+const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "sitemap", "history"];
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
   agency: ["#22D3EE", "#10B981", "#6366F1", "#F5B301"],
@@ -746,6 +746,7 @@ export default function WebsiteEditor() {
       {tab === "agency" && <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />}
 
       {tab === "history" && <VersionHistory />}
+      {tab === "sitemap" && <SitemapPanel />}
 
       {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
       {tab === "forms" && (
@@ -2173,3 +2174,68 @@ function ProblemPagesPanel({ slug }) {
   );
 }
 
+
+function SitemapPanel() {
+  const { i18n } = useTranslation();
+  const isEs = (i18n.language || "").startsWith("es");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    api.get("/website/sitemap").then(({ data }) => setData(data)).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+  const copy = (txt) => { navigator.clipboard.writeText(txt); toast.success(isEs ? "Copiado" : "Copied"); };
+  if (loading) return <div className="py-16 text-center text-slate-400" data-testid="sitemap-loading"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>;
+  if (!data) return <Card className="p-6 text-slate-500">{isEs ? "No se pudo cargar el sitemap." : "Could not load sitemap."}</Card>;
+  return (
+    <div className="space-y-5" data-testid="sitemap-panel">
+      <Card className="p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="font-bold text-lg flex items-center gap-2"><Search className="w-5 h-5 text-blue-600" /> {isEs ? "Mapa del sitio (como lo ve Google)" : "Sitemap (how Google sees it)"}</h3>
+            <p className="text-sm text-slate-500 mt-1">{isEs ? "Estas son las páginas que tu sitio expone a Google y a los buscadores con IA." : "These are the pages your site exposes to Google and AI search engines."}</p>
+          </div>
+          <div className="text-right flex-none">
+            <div className="text-3xl font-black text-emerald-600" data-testid="sitemap-total">{data.total_included}</div>
+            <div className="text-xs text-slate-400">{isEs ? "URLs en el sitemap" : "URLs in sitemap"}</div>
+          </div>
+        </div>
+        {!data.published && <div className="mt-3 text-sm bg-amber-50 text-amber-800 rounded-lg px-3 py-2">{isEs ? "⚠️ Tu sitio está sin publicar: no aparecerá en el sitemap hasta que lo publiques." : "⚠️ Your site is unpublished: it won't show in the sitemap until you publish it."}</div>}
+        <div className="mt-3 flex items-center gap-2 text-sm">
+          <span className="text-slate-500 flex-none">Sitemap:</span>
+          <a href={data.sitemap_url} target="_blank" rel="noreferrer" className="text-blue-600 font-semibold truncate" data-testid="sitemap-url">{data.sitemap_url}</a>
+          <button onClick={() => copy(data.sitemap_url)} className="text-slate-400 hover:text-slate-700 flex-none" data-testid="sitemap-copy"><Copy className="w-4 h-4" /></button>
+        </div>
+      </Card>
+      {data.groups.map((g) => {
+        const inc = g.items.filter((it) => it.included).length;
+        return (
+          <Card key={g.key} className="p-5" data-testid={`sitemap-group-${g.key}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-bold text-slate-800">{g.label}</h4>
+              <span className="text-xs font-semibold text-slate-400">{inc}/{g.items.length}</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {g.items.map((it, i) => {
+                const title = isEs ? (it.title_es || it.title) : it.title;
+                return (
+                  <div key={i} className="py-2.5 flex items-start gap-3" data-testid={`sitemap-item-${g.key}-${i}`}>
+                    {it.included
+                      ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none mt-0.5" />
+                      : <span className="w-4 h-4 rounded-full border-2 border-slate-300 flex-none mt-0.5" />}
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-sm font-medium ${it.included ? "text-slate-800" : "text-slate-400 line-through"}`}>{title}</div>
+                      <a href={`${data.primary_base}${it.path}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">{it.path}</a>
+                      {!it.included && it.reason && <div className="text-xs text-amber-600 mt-0.5">{it.reason}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+              {g.items.length === 0 && <div className="py-3 text-sm text-slate-400">{isEs ? "Nada todavía." : "Nothing yet."}</div>}
+            </div>
+          </Card>
+        );
+      })}
+      <p className="text-xs text-slate-400 px-1">{isEs ? "Las páginas tachadas no están en el sitemap (por el motivo indicado). Publícalas o actívalas para incluirlas. En dominio inglés/español cada página usa su idioma vía hreflang." : "Struck-through pages are not in the sitemap for the reason shown. Publish or enable them to include them."}</p>
+    </div>
+  );
+}
