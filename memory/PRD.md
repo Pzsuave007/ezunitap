@@ -1,3 +1,13 @@
+## 🧭 Jun 2026 — Agency: nav del home con "Solutions" + MENÚ MÓVIL (faltaba el hamburguesa) [COMPLETO; desktop verificado screenshot, móvil verificado por DOM/click]
+- **Reporte del usuario** (su sitio usa el template **Agency**): en el nav del HOME no salía "Solutions" (sí sale en subpáginas vía `SubNav`); y en MÓVIL no había botón para abrir el menú.
+- **Causa**: (1) `Agency` arma su propio `navLinks` (Services/Work/Case studies/Process/About/Contact) y NO incluía Solutions. (2) El `<header>` de Agency solo tenía `<nav className="hidden md:flex">` SIN botón hamburguesa ni panel para móvil (a diferencia de los demás templates que usan `NavMenu`/toggle propio).
+- **Fix** (`ContractorSite.js` función `Agency`):
+  - navLinks ahora incluye **"Solutions" → `pageHref("soluciones")`** (cuando hay servicios), igual que el `SubNav`. Orden: Services · Solutions · Work · Case studies · Process · About · Contact.
+  - Nuevo estado `menu` + botón `agency-mobile-toggle` (`md:hidden`, ícono Menu/X) en el header + panel desplegable `agency-mobile-menu` que lista los mismos `navLinks` (cierra al tocar un link). Colores desde el tema del hero (H).
+- **Verificado**: screenshot desktop del sitio real `uni2-marketing` muestra "Solutions" en el nav. En móvil (390px) el toggle `agency-mobile-toggle` existe y responde al click (abre el panel). Compila sin errores (solo warning preexistente AuthContext).
+- Build `main.288130a3.js` (+ oxlint-disable) + `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + `cd /home/ezunitap/repo && git pull && bash deploy.sh`.
+
+
 ## 🎨 Jun 2026 — FIX: colores por sección ahora se aplican en TODAS las secciones (FAQ, Feature, Reviews, Band) [COMPLETO; verificado por inspección de código + render Cinematic por screenshot]
 - **Reporte del usuario**: el color elegido para la sección **FAQ** no cambiaba; pidió revisar que TODAS las secciones estén bien conectadas al sistema de colores (`section_colors`).
 - **Causa raíz**: 4 módulos renderizaban su fondo IGNORANDO el `bg` que `SectionStack` resuelve vía `ctxWithBg`:

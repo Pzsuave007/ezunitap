@@ -2416,6 +2416,7 @@ function Agency({ ctx }) {
   const phone = w.cta_phone || b?.phone;
   const aboutText = (w.subheadline || w.about || "").trim();
   const [scr, setScr] = useState(false);
+  const [menu, setMenu] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 30); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
   const sc = w.section_colors || {};
   const DEF = { hero: "#0a1130", services: "#ffffff", samples: "#f8fafc", logos: "#ffffff", map: "#f8fafc", process: "#0a1130", reviews: "#f8fafc", cta: accent, faq: "#f8fafc", contact: "#ffffff", footer: "#0a1130" };
@@ -2423,6 +2424,7 @@ function Agency({ ctx }) {
   const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), RV = S("reviews"), FQ = S("faq");
   const navLinks = [
     services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
+    services.length > 0 && [ctx.pageHref("soluciones"), agT(lang, "Solutions", "Soluciones")],
     (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
     (Array.isArray(w.case_studies) && w.case_studies.length) && [ctx.pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
     (steps.length > 0 && sec.how !== false) && ["#how", agT(lang, "Process", "Proceso")],
@@ -2441,8 +2443,14 @@ function Agency({ ctx }) {
           <div className="flex items-center gap-3">
             {phone && <a href={`tel:${phone}`} className="hidden lg:inline-flex items-center gap-1.5 text-sm hover:opacity-70" style={{ color: H.muted }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
             <button onClick={goContact} data-testid="agency-nav-cta" className="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{ctx.ctaShort} <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => setMenu(!menu)} data-testid="agency-mobile-toggle" aria-label="Menu" className="md:hidden p-2 -mr-1" style={{ color: H.ink }}>{menu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
           </div>
         </div>
+        {menu && (
+          <div className="md:hidden border-t px-5 py-3 space-y-1" data-testid="agency-mobile-menu" style={{ borderColor: H.cardBorder, background: H.dark ? "rgba(10,10,20,.98)" : "rgba(255,255,255,.98)" }}>
+            {navLinks.map(([href, label], i) => <a key={i} href={href} onClick={() => setMenu(false)} className="block py-2.5 font-semibold" style={{ color: H.ink }}>{label}</a>)}
+          </div>
+        )}
       </header>
 
       {/* HERO */}
