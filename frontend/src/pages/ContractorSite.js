@@ -2507,7 +2507,7 @@ function ServiceDetail({ ctx }) {
               const href = pp ? ctx.ppHref(pp.page_slug) : pageHref(`servicio/${svcSlug(x, i)}`);
               return (
                 <a key={i} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: th.surface, borderColor: th.border }}>
-                  {x.img && <div className="aspect-[16/10] overflow-hidden"><img src={x.img} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>}
+                  {x.img && <div className="relative aspect-[16/10] overflow-hidden"><CoverFill src={x.img} alt="" /></div>}
                   <div className="p-5"><h3 className="font-bold" style={{ color: th.ink }}>{x.name}</h3><span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span></div>
                 </a>
               );
@@ -2885,7 +2885,7 @@ function Agency({ ctx }) {
                 const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`);
                 return (
                   <a key={i} href={href} data-testid={`agency-svc-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: SV.card, borderColor: SV.cardBorder }}>
-                    {s.img && <div className="aspect-[16/10] overflow-hidden"><img src={s.img} alt={s.name || ""} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>}
+                    {s.img && <div className="relative aspect-[16/10] overflow-hidden" style={{ background: SV.card }}><CoverFill src={s.img} alt={s.name || ""} /></div>}
                     <div className="p-7 flex-1 flex flex-col">
                       {!s.img && <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
                       <h3 className="font-bold text-lg" style={{ color: SV.ink }}>{s.name || s.title}</h3>
