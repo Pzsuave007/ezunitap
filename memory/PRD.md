@@ -1,3 +1,12 @@
+## 🤖 Jun 2026 — Generador de IA para Páginas de Servicio (paquete completo) [COMPLETO; verificado a nivel datos]
+- **Petición**: un asistente de IA que cree las páginas de Servicio (las que venden), igual que Productos/Casos, con su página completa; las Soluciones (/p/) van DENTRO de cada servicio. SIN toggle (si el servicio existe, tiene página; para quitarlo se borra). Motor actual (Emergent LLM key, bilingüe).
+- **Backend**: `ai_service.generate_service_full(brief, service_name, lang)` (nuevo `AGENCY_SERVICE_FULL_SYSTEM`) → JSON {name, tagline, description, intro, benefits[], process[{title,desc}], faqs[{q,a}], seo_title, seo_description, cta}. Wired en `/website/ai-agency` kind `service_full`. Verificado ES: tagline + 7 beneficios + 5 pasos + 6 FAQs + SEO.
+- **Frontend editor** (`WebsiteEditor.js`): función `aiServicePage(i)` (lee `data.data`, guarda en `service.page` + `description`, hace PUT /website) + botón "Crear página IA / Regenerar" dentro de cada servicio (tab Services), con estado "✓ Página de venta con IA lista".
+- **Frontend render** (`ContractorSite.js` `ServiceDetail`): muestra tagline en hero + intro + "Qué incluye" (benefits) + "Cómo trabajamos" (process) + "Preguntas frecuentes" (faqs) + CTA (usa `page.cta`), y debajo la sección de Soluciones relacionadas (/p/). Fallback al `description` si no hay `page`.
+- **Datos**: `page` se guarda dentro de cada objeto de `w.services` → persiste y llega al payload público (verificado). Sin toggle; todos los /servicio/ ya están en el sitemap (cambio anterior).
+- Build + staged. Requiere deploy. Nota: contenido se genera en el idioma del editor; traducción bilingüe del `page` puede ser follow-up.
+
+
 ## 🔧 Jun 2026 — Páginas de Servicio (/servicio/) restauradas + soluciones anidadas + fix slug ES [COMPLETO; verificado a nivel datos]
 - **Reporte**: las páginas `/servicio/` daban error / no existían; el usuario quiere DOS tipos: páginas de Servicio (lo que hacen, indexables) y dentro de cada una las Soluciones (/p/, problemas específicos) de ese servicio. Yo había hecho dedup servicio↔/p/ y eso las ocultó/rompió.
 - **Causa raíz del error en dominio ES**: los servicios no tienen `slug` guardado → el slug se derivaba del NOMBRE. En ES el nombre está traducido ("Diseño Web y Gráfico"→`diseno-web-y-grafico`) pero el sitemap/backend usa el nombre inglés (`web-graphic-design`). Mismatch → "Service not found".

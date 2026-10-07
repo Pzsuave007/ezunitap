@@ -1231,6 +1231,50 @@ async def generate_product_full(brief: str = "", product_name: str = "", lang: s
     return data
 
 
+AGENCY_SERVICE_FULL_SYSTEM = """You write COMPLETE, persuasive SERVICE detail-page copy for a company's website.
+Service pages are the pages that SELL — they explain what the company does and convert visitors into leads.
+The owner gives you the service name and a short free-text description. From it, write a RICH, full service page.
+
+Rules:
+- Be specific, concrete and benefit-driven. Make honest, reasonable assumptions for the service type when the
+  description is thin. NEVER invent prices or fake statistics.
+- Keep it scannable and persuasive.
+
+Output ONLY valid JSON with EXACTLY these keys (no extras):
+{
+  "name": "the service name (keep the one given if provided)",
+  "tagline": "a punchy one-line value proposition (max ~9 words)",
+  "description": "a 1-2 sentence summary for the service card",
+  "intro": "2-3 persuasive sentences that open the service page (plain string)",
+  "benefits": ["5 to 7 concrete, benefit-driven lines of what's included / why it matters (short phrases)"],
+  "process": [{"title":"short step name","desc":"1 sentence"}, ...3 to 5 steps of how you work],
+  "faqs": [{"q":"a real question a buyer asks","a":"a clear, helpful answer"}, ...4 to 6 items],
+  "seo_title": "an SEO page title (~55-60 chars, include the service)",
+  "seo_description": "an SEO meta description (~150 chars, benefit-driven)",
+  "cta": "a short call-to-action button label (e.g. 'Get a free quote')"
+}
+Write everything in {LANG_NAME}. TYPES ARE STRICT: "benefits" MUST be a JSON array of strings, "process" MUST be
+a JSON array of {"title","desc"} objects, "faqs" MUST be a JSON array of {"q","a"} objects. All other fields are
+plain STRINGS. Return ONLY the JSON."""
+
+
+async def generate_service_full(brief: str = "", service_name: str = "", lang: str = "es") -> dict:
+    """One-shot: turn a short description of a service into a COMPLETE service
+    detail page (tagline, intro, benefits, process, FAQ, SEO, CTA)."""
+    lang_name = "Spanish (Latin-American, warm and professional)" if lang != "en" else "American English"
+    system = AGENCY_SERVICE_FULL_SYSTEM.replace("{LANG_NAME}", lang_name)
+    chat = _new_chat(system)
+    msg = (f"Service name: {service_name or '(not given — infer a good one)'}\n"
+           f"Owner's description of the service:\n{brief or '(none)'}\n\n"
+           f"Write the full service-page JSON now.")
+    response = await chat.send_message(UserMessage(text=msg))
+    data = _extract_json(response)
+    if not data:
+        raise ValueError("AI could not write the service page. Try again.")
+    return data
+
+
+
 
 AGENCY_ABOUT_SYSTEM = """You write warm, authentic ABOUT-US copy for a Latino marketing agency that helps
 small U.S. businesses grow. You receive the business name and a brief/notes. Output ONLY valid JSON with

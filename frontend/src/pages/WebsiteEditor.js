@@ -264,6 +264,39 @@ export default function WebsiteEditor() {
     } finally { setAiField(null); }
   };
 
+  const aiServicePage = async (i) => {
+    const s = (w.services || [])[i] || {};
+    const name = (s.name || "").trim();
+    if (!name && !(s.description || "").trim()) { toast.error(isEs ? "Escribe el nombre del servicio (o una breve descripción) primero." : "Enter the service name (or a short description) first."); return; }
+    setAiField(`service-page-${i}`);
+    try {
+      const { data } = await api.post("/website/ai-agency", { kind: "service_full", service_name: name, brief: s.description || "", lang: isEs ? "es" : "en" });
+      const g = data.data || {};
+      const arr = [...(w.services || [])];
+      arr[i] = {
+        ...arr[i],
+        name: g.name || arr[i].name,
+        description: g.description || arr[i].description || "",
+        page: {
+          tagline: g.tagline || "",
+          intro: g.intro || "",
+          benefits: Array.isArray(g.benefits) ? g.benefits : [],
+          process: Array.isArray(g.process) ? g.process : [],
+          faqs: Array.isArray(g.faqs) ? g.faqs : [],
+          seo_title: g.seo_title || "",
+          seo_description: g.seo_description || "",
+          cta: g.cta || "",
+        },
+      };
+      setW((prev) => ({ ...prev, services: arr }));
+      await api.put("/website", { services: arr });
+      toast.success(isEs ? "¡Página de servicio creada con IA! Revisa y Guarda." : "Service page created with AI! Review and Save.");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || t("website.aiError"));
+    } finally { setAiField(null); }
+  };
+
+
   const suggestServices = async () => {
     setSvcSuggesting(true); setSuggestOpen(true);
     try {
@@ -931,6 +964,10 @@ export default function WebsiteEditor() {
               <AiBtn fieldKey={`service-${i}`} onClick={() => aiWrite("service_desc", s.name, `service-${i}`, (txt) => listSet("services", i, "description", txt))} />
             </div>
             <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
+            <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
+              <span className="text-xs text-slate-600 min-w-0">{s.page ? (isEs ? "✓ Página de venta con IA lista" : "✓ AI sales page ready") : (isEs ? "Crea la página de venta de este servicio con IA" : "Create this service's sales page with AI")}</span>
+              <AiBtn fieldKey={`service-page-${i}`} onClick={() => aiServicePage(i)} label={isEs ? (s.page ? "Regenerar" : "Crear página IA") : (s.page ? "Regenerate" : "Create page")} />
+            </div>
             <div className="flex items-center gap-2">
               {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />}
               <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-img-${i}`}>

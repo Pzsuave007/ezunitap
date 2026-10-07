@@ -5550,6 +5550,11 @@ async def website_ai_agency(body: dict = Body(default={}), user_id: str = Depend
                 brief=body.get("brief") or body.get("notes") or "",
                 product_name=body.get("product_name") or body.get("name") or "", lang=lang,
             )
+        elif kind == "service_full":
+            data = await ai_service.generate_service_full(
+                brief=body.get("brief") or body.get("notes") or "",
+                service_name=body.get("service_name") or body.get("name") or "", lang=lang,
+            )
         elif kind == "about":
             card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
             name = body.get("business_name") or card.get("business_name") or card.get("name") or ""
