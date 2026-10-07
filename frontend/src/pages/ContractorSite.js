@@ -1021,12 +1021,11 @@ function AboutBlock({ ctx, bg, light }) {
 }
 
 // Shared: image-beside-text highlight (checklist + CTA), opt-in via why photo
-function FeatureBlock({ ctx }) {
+function FeatureBlock({ ctx, bg }) {
   const { w, th, accent, accentText, whyImg, goContact } = ctx;
-  const S = th.dark ? SectionDark : SectionLight;
   const points = (w.why_us?.length ? w.why_us : DEFAULT_WHY).slice(0, 4);
   return (
-    <S id="feature" kicker="Why choose us" title="Service you can trust" ctx={ctx}>
+    <SectionLight id="feature" kicker="Why choose us" title="Service you can trust" ctx={ctx} bg={bg} dark={th.dark}>
       <div className={`grid ${whyImg ? "md:grid-cols-2" : "grid-cols-1"} gap-8 md:gap-14 items-center`}>
         <div>
           {w.subheadline && <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{w.subheadline}</p>}
@@ -1046,15 +1045,15 @@ function FeatureBlock({ ctx }) {
         </div>
         )}
       </div>
-    </S>
+    </SectionLight>
   );
 }
 
 // Shared: full-bleed CTA band with background image, opt-in via band photo
-function CtaBand({ ctx }) {
+function CtaBand({ ctx, bg }) {
   const { b, th, accent, accentText, bandImg, goContact } = ctx;
   return (
-    <section className="relative overflow-hidden" data-testid="site-cta-band" style={!bandImg ? { background: accent } : undefined}>
+    <section className="relative overflow-hidden" data-testid="site-cta-band" style={!bandImg ? { background: bg || accent } : undefined}>
       {bandImg && <img src={bandImg} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(8,10,20,.86), rgba(8,10,20,.55))" }} />
       <div className="relative max-w-4xl mx-auto px-5 py-20 md:py-28 text-center text-white">
@@ -1099,11 +1098,11 @@ function SectionDark({ id, kicker, title, ctx, alt, children }) {
   );
 }
 
-function ReviewsBlock({ ctx, dark, editorial }) {
+function ReviewsBlock({ ctx, dark, editorial, bg }) {
   const { data, th, accent, accentText, b } = ctx;
   const S = dark ? SectionDark : SectionLight;
   return (
-    <S id="reviews" kicker="Real reviews" title="What Our Customers Say" ctx={ctx} alt={!dark}>
+    <S id="reviews" kicker="Real reviews" title="What Our Customers Say" ctx={ctx} alt={!dark} bg={bg}>
       {data.reviews.length > 0 ? (
         editorial ? (
           <div className="space-y-10 max-w-3xl">
@@ -1134,10 +1133,10 @@ function ReviewsBlock({ ctx, dark, editorial }) {
   );
 }
 
-function FaqBlock({ ctx, dark, light }) {
+function FaqBlock({ ctx, dark, light, bg }) {
   const { w, th, accent } = ctx;
   return (
-    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} dark={dark} light={light}>
+    <SectionLight id="faq" kicker="Good to know" title="Frequently Asked Questions" ctx={ctx} bg={bg} dark={dark} light={light}>
       <div className="max-w-3xl space-y-3">
         {(w.faqs?.length ? w.faqs : DEFAULT_FAQ).map((f, i) => <FaqItem key={i} q={f.q} a={f.a} th={th} accent={accent} light={light} />)}
       </div>
@@ -2390,16 +2389,16 @@ function SectionStack({ ctx }) {
       case "samples": el = <SamplesSection key={k} ctx={sctx} sty={{ bg }} />; break;
       case "products": el = <ProductsSection key={k} ctx={sctx} sty={{ bg }} />; break;
       case "about": el = <AboutBlock key={k} ctx={sctx} bg={bg} />; break;
-      case "feature": el = <FeatureBlock key={k} ctx={sctx} />; break;
+      case "feature": el = <FeatureBlock key={k} ctx={sctx} bg={bg} />; break;
       case "how": el = <HowModule key={k} ctx={sctx} />; break;
       case "why": el = <WhyModule key={k} ctx={sctx} />; break;
       case "gallery": el = <GalleryModule key={k} ctx={sctx} />; break;
       case "logos": el = <LogosStrip key={k} ctx={sctx} sty={{ bg }} />; break;
       case "stats": el = <StatsBand key={k} ctx={ctx} bg={sc.stats} />; break;
-      case "reviews": el = <ReviewsBlock key={k} ctx={sctx} dark={!isLight(bg)} />; break;
+      case "reviews": el = <ReviewsBlock key={k} ctx={sctx} dark={!isLight(bg)} bg={bg} />; break;
       case "map": el = <ClientMap key={k} ctx={sctx} sty={{ bg }} />; break;
-      case "band": el = <CtaBand key={k} ctx={sctx} />; break;
-      case "faq": el = <FaqBlock key={k} ctx={sctx} dark={!isLight(bg)} />; break;
+      case "band": el = <CtaBand key={k} ctx={sctx} bg={custom} />; break;
+      case "faq": el = <FaqBlock key={k} ctx={sctx} dark={!isLight(bg)} bg={bg} />; break;
       case "areas": el = <AreasBlock key={k} ctx={sctx} bg={bg} />; break;
       default: el = null;
     }

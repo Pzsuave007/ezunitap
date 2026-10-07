@@ -1,3 +1,21 @@
+## 🎨 Jun 2026 — FIX: colores por sección ahora se aplican en TODAS las secciones (FAQ, Feature, Reviews, Band) [COMPLETO; verificado por inspección de código + render Cinematic por screenshot]
+- **Reporte del usuario**: el color elegido para la sección **FAQ** no cambiaba; pidió revisar que TODAS las secciones estén bien conectadas al sistema de colores (`section_colors`).
+- **Causa raíz**: 4 módulos renderizaban su fondo IGNORANDO el `bg` que `SectionStack` resuelve vía `ctxWithBg`:
+  - `FaqBlock` llamaba `<SectionLight>` SIN pasar `bg` → `background` quedaba `undefined` (transparente) para colores claros.
+  - `FeatureBlock` elegía `SectionDark/SectionLight` sin `bg` → mismo problema en colores claros.
+  - `ReviewsBlock` usaba `alt` → pintaba `th.surface` (derivado) en vez del color exacto elegido (caso claro).
+  - `CtaBand` siempre usaba `accent`, ignorando cualquier override de color de la banda.
+- **Fix** (`ContractorSite.js`): `SectionStack` ahora pasa el color a cada uno: `FeatureBlock bg={bg}`, `ReviewsBlock bg={bg}`, `FaqBlock bg={bg}`, `CtaBand bg={custom}` (band conserva `accent` por defecto si no hay override). Los 4 componentes aceptan y pintan ese `bg`. FeatureBlock pasó a usar siempre `SectionLight` con `bg` + `dark={th.dark}`.
+- **Auditoría completa de conexión de color** (las 15 secciones del `SectionStack` + stats):
+  - vía `thm(ctx)` (lee `ctx.th.bg` = color elegido): services, how, why, gallery ✓
+  - vía `sty.bg` (`secTheme`): samples, products, logos, map ✓
+  - vía prop `bg`: about, areas ✓ (ya funcionaban) + **feature, reviews, faq (nuevos)** ✓
+  - vía `sc.stats`: stats ✓ · vía `custom||accent`: band ✓
+- **Claves**: el editor guarda `section_colors[key]` con las MISMAS claves que `SECTION_ORDER_DEFAULT`/`SECTION_KEYS` (incluye `faq`). Alias en SectionStack: how→process, band→cta, products→samples.
+- **Verificado**: compila sin errores (solo warning preexistente AuthContext). Probé en vivo seteando `section_colors.faq` y `.feature` en un sitio real (spokane-roofing-co) y render confirmado; datos de prueba revertidos. El tool de screenshot solo captura el tope de la página (hero), por eso la verificación visual del FAQ fue por código + plumbing.
+- Build `main.8ab99a35.js` (+ oxlint-disable en chunks vendor) + `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + `cd /home/ezunitap/repo && git pull && bash deploy.sh`.
+
+
 ## 🧩 Jun 2026 — Fase 2: TODOS los templates migrados a SectionStack (reorden + colores + productos/stats/mapa) [COMPLETO; compila OK; render Cinematic verificado por screenshot/poll, SIN testing_agent por patrón del usuario]
 - **Petición**: el usuario quería que el reordenamiento de secciones (flechas), los colores por sección y los módulos NUEVOS (productos, stats, mapa, casos) estuvieran disponibles en los 10 templates, no solo en Agency. Eligió explícitamente la **opción A: migración total a SectionStack** (acepta que el CUERPO de todos los templates se vea genérico/igual; la diferenciación queda en hero, nav, tipografía, colores y footer).
 - **Cambio** (`frontend/src/pages/ContractorSite.js`): en los 10 templates (Cinematic, Responder, Bento, Craftsman, Trust, Slider, OnePage, Neon, Playful, Luxe) se REEMPLAZÓ todo el cuerpo hardcodeado (services/about/feature/how/why/gallery/reviews/band/faq/areas con JSX propio de cada template) por:
