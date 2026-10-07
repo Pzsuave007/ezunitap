@@ -1402,3 +1402,12 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - SectionStack: resolución de color por clave directa sc[k] con alias de compatibilidad {how→process, band→cta, products→samples}. StatsBand acepta bg (sc.stats) con texto auto-contraste.
 - Verificado por screenshot (editor) + funciona en template Agency.
 - PENDIENTE Fase 2: los otros 10 templates aún usan su cuerpo propio; el reorder/colores por sección sólo aplican visualmente en Agency por ahora. Migrarlos a <SectionStack/> es el siguiente paso (con prueba por template para no romper sitios en vivo).
+
+## [Jun 2026] Tab Servicios rebuild = estilo Casos (acordeón + edición IA + colores)
+- Petición del usuario: que el tab "Services" del Website Editor funcione IGUAL que el tab "Casos": acordeón (solo se expande el seleccionado), poder EDITAR a mano lo que generó la IA (no solo regenerar), y tener sección de "colores por sección" de la página de servicio.
+- Backend (server.py): nuevo campo `service_colors: Optional[dict]` en WebsiteIn ({hero, body, gallery, related} hex) — se persiste en PUT /api/website y se devuelve en el payload público.
+- WebsiteEditor.js: tab Services ahora es ACORDEÓN (estado `openService`). Header colapsado con miniatura+nombre+estado, botones subir/bajar (moveService) y eliminar + chevron. Al expandir: name/description/precio + botón "Crear página IA" + foto principal + fotos de trabajo (kinds) + EDICIÓN inline de la página de venta: tagline, intro, beneficios (add/del), pasos del proceso (add/del, title+desc), FAQs (add/del, q+a), CTA, SEO title/description. Helpers nuevos: moveService, setServiceColor, svcPagePatch. Tarjeta "Colores de la página de servicio" (4 color pickers). pick() incluye service_colors.
+- ContractorSite.js ServiceDetail: aplica w.service_colors vía caseSecTheme() a las secciones hero/body/gallery/related (igual patrón que CaseDetail). Sigue mostrando foto principal (image_id) en hero y fotos de trabajo en galería/antes-después.
+- IMPORTANTE (aclaración de fotos al usuario): las fotos que salen en /servicio/ son las que se suben DENTRO de cada servicio (foto principal + "Fotos de trabajo"). Fotos subidas en otras secciones (galería general, muestras) NO están ligadas al servicio y por eso no aparecen ahí.
+- Verificado: testing_agent frontend 100% (iteration_60.json). Datos de prueba de la cuenta demo restaurados.
+- NOTA interna QA: ruta del editor es /pagina-web; testid del tab website-tab-services; botón guardar website-save-top; openService arranca en 0.

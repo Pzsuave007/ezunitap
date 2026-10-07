@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only end-to-end testing of the Website Editor 'Services' tab rebuilt as an accordion (mirroring Casos), including the new 'Service page colors' picker and inline-editable AI sales-page content, plus public /sitio/.../servicio/{slug} rendering. All requested flows pass. Service list (9 items) shows as collapsed rows; only one expands at a time; re-click collapses. All editable fields (name/desc/price/tagline/intro/benefits/process/faqs/cta/seo) accept input. Add/delete for benefit/step/faq works. Reorder (up/down) swaps items and keeps the moved item open. 'Crear página IA' button fired POST /api/website/ai-agency (200) and populated 7 benefits + 5 steps + 6 FAQs + tagline + intro into the editable fields. Save (PUT /api/website) persists service_colors (4 keys) and per-service page edits — verified by reload AND by inspecting PUT payload. Public service detail page renders correctly: data-testid='service-detail' present, Hero shows the chosen color (#223366 verified visually), tagline+intro render, 'What's included'/benefits list renders, 'How we work' process steps render with numbered badges, 'Frequently asked questions' FAQs render, CTA button uses saved text, 'Other services' related section renders in the chosen related color. Only noteworthy UX nit: when the color input is operated via DOM .value assignment without the native setter, React's onChange doesn't fire (sent service_colors:{} on save). Real user clicks on the color picker trigger React onChange correctly, so this is a test-harness quirk, not a product bug — persistence was then confirmed with the native-setter approach.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "WebsiteEditor › Services tab", "issues": ["Minor: on fresh load openService defaults to 0 so service #0 is already expanded; the chevron correctly rotates. Not a bug, just note for QA scripts that first click on toggle-0 collapses it."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WebsiteEditor.js is 2412 lines — exceeds the 700-line guideline. Consider splitting Services/Agency/Content tabs into separate components for maintainability.",
+    "pick() destructures ~50 fields on every save; a whitelist helper would be cleaner and less error-prone when new fields are added (service_colors was correctly added here).",
+    "setServiceColor and svcPagePatch mutate nested objects via spread but rely on patch() debouncing to re-render; still synchronous and worked in testing. No action needed, just document for future maintainers."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "demo-template@ezunitech.com / DemoTemplate2026! (site slug: elite-remodeling-roofing)",
+  "seed_data_creation": "Edited demo account: service[0] (Web & Graphic Design) tagline set to 'TEST_TAGLINE_XYZ_99'; service_colors set to {hero:#223366, body:#f0f4ff, gallery:#e8f5e9, related:#fff7ed}; service[2] (Online Reputation Management) full AI sales page generated and saved. Main agent can clear/reset if desired.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Website editor route is /pagina-web (NOT /website). Services tab testid: website-tab-services. Save button testid: website-save-top. openService state defaults to 0 so first service is expanded on load. For <input type='color'> interactions in Playwright, assign el.value using the native HTMLInputElement value setter and dispatch 'input'+'change' events so React onChange fires, otherwise service_colors won't make it into the PUT payload. Public service URL pattern: /sitio/{siteSlug}/servicio/{serviceSlug}?preview=1 where serviceSlug is the lowercased name with '&' replaced by space, non-alphanumeric stripped, spaces→'-'. Example: 'Web & Graphic Design' -> 'web-graphic-design'.",
+  "rca of the issue": "No product bug found. During initial testing the PUT /api/website payload showed service_colors:{} — root cause was the test script setting the color input via plain el.value assignment, which bypasses React's internal value tracker so onChange never fires. Fixed by using Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set to update the value, then dispatching input+change events. After that, service_colors persisted correctly and the public page rendered the chosen hero/body/related colors."
+}
