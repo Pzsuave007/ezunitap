@@ -1016,15 +1016,19 @@ export default function WebsiteEditor() {
             <input type="color" value={(w.section_colors && w.section_colors[k]) || SEC_DEF[k]} onChange={(e) => setSecColor(k, e.target.value)} className="w-12 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5" data-testid={`secbg-${k}`} />
           </div>
         );
+        const AP = (arr) => <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} only={arr} />;
+        const isAgency = w.template === "agency";
         const bodyFor = (k) => {
           if (k === "about") return (<>
-            <div>
-              <Label>{t("website.aboutUs")}</Label>
-              <Textarea value={w.about || ""} onChange={(e) => patch({ about: e.target.value })} className="rounded-xl mt-1.5 min-h-[90px]" data-testid="website-about" />
-              <div className="flex justify-end mt-1"><AiBtn fieldKey="about" onClick={() => aiWrite("about", w.headline, "about", (txt) => patch({ about: txt }))} /></div>
-            </div>
-            <PhotoMultiField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} values={(w.about_photo_ids && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : [])} photos={photos} onChange={(ids) => save({ about_photo_ids: ids, team_photo_id: ids[0] || "" })} onUpload={uploadPhoto} testid="about" t={t} max={4} />
-            <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
+            {isAgency ? AP(["about"]) : (<>
+              <div>
+                <Label>{t("website.aboutUs")}</Label>
+                <Textarea value={w.about || ""} onChange={(e) => patch({ about: e.target.value })} className="rounded-xl mt-1.5 min-h-[90px]" data-testid="website-about" />
+                <div className="flex justify-end mt-1"><AiBtn fieldKey="about" onClick={() => aiWrite("about", w.headline, "about", (txt) => patch({ about: txt }))} /></div>
+              </div>
+              <PhotoMultiField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} values={(w.about_photo_ids && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : [])} photos={photos} onChange={(ids) => save({ about_photo_ids: ids, team_photo_id: ids[0] || "" })} onUpload={uploadPhoto} testid="about" t={t} max={4} />
+              <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
+            </>)}
             <ColorRow k="about" />
           </>);
           if (k === "solutions") return (<>
@@ -1036,10 +1040,22 @@ export default function WebsiteEditor() {
             <ColorRow k="solutions" />
           </>);
           if (k === "samples") return (<>
-            {w.template === "agency"
-              ? <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />
+            {isAgency
+              ? AP(["import", "samples", "cases"])
               : <p className="text-sm text-slate-500">{isEs ? "Tus casos de éxito se generan y gestionan automáticamente." : "Your case studies are generated and managed automatically."}</p>}
             <ColorRow k="samples" />
+          </>);
+          if (k === "logos") return (<>
+            {isAgency ? AP(["logos"]) : <p className="text-sm text-slate-500">{isEs ? "Logos de clientes que se muestran en un carrusel." : "Client logos shown in a marquee."}</p>}
+            <ColorRow k="logos" />
+          </>);
+          if (k === "map") return (<>
+            {isAgency ? AP(["map"]) : <p className="text-sm text-slate-500">{isEs ? "Mapa de cobertura con ubicaciones de clientes." : "Coverage map with client locations."}</p>}
+            <ColorRow k="map" />
+          </>);
+          if (k === "products") return (<>
+            {isAgency ? AP(["products"]) : <p className="text-sm text-slate-500">{isEs ? "Catálogo de productos / software." : "Products / software catalog."}</p>}
+            <ColorRow k="products" />
           </>);
           if (k === "gallery") return (<>
             <input ref={galFileRef} type="file" accept="image/*" className="hidden" onChange={uploadGalleryPhoto} data-testid="website-gallery-upload-input" />
@@ -1815,7 +1831,7 @@ const UNI2_DEFAULTS = {
   ],
 };
 
-function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
+function AgencyPanel({ w, save, patch, photos, onUpload, t, only }) {
   const isEs = (t("website.tab.agency") === "Agencia");
   const L = isEs ? {
     intro: "Gestiona las secciones exclusivas del template Agencia: casos de clientes, franja de logos y mapa. Recuerda pulsar Guardar arriba.",
@@ -1953,7 +1969,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     try { const id = await onUpload(file); const n = [...team]; n[i] = { ...n[i], photo: id }; setTeam(n); await save({ team: n }); }
     catch { toast.error(t("website.saveError")); }
   };
-  const [sub, setSub] = useState("import");
+  const [sub, setSub] = useState(Array.isArray(only) && only.length ? only[0] : "import");
   const [aiBusy, setAiBusy] = useState(null);
   const [caseBrief, setCaseBrief] = useState("");
   const aiNewCase = async () => {
@@ -2049,11 +2065,12 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
     } catch (e) { toast.error(e?.response?.data?.detail || L.aiErr); }
     finally { setAiBusy(null); }
   };
-  const SUBTABS = [["import", L.tImport], ["samples", L.tSamples], ["logos", L.tLogos], ["map", L.tMap], ["products", isEs ? "Productos" : "Products"], ["cases", L.tCases], ["solutions", L.tSol], ["about", L.tAbout]];
+  const SUBTABS = [["import", L.tImport], ["samples", L.tSamples], ["logos", L.tLogos], ["map", L.tMap], ["products", isEs ? "Productos" : "Products"], ["cases", L.tCases], ["solutions", L.tSol], ["about", L.tAbout]].filter(([k]) => !Array.isArray(only) || only.includes(k));
 
   return (
     <div className="space-y-4" data-testid="agency-panel">
       <input ref={upRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadFor(e.target.files?.[0])} />
+      {(!Array.isArray(only) || only.length > 1) && (
       <div className="flex flex-wrap gap-2 sticky top-0 z-10 bg-white/90 backdrop-blur py-2 -mx-1 px-1 border-b border-slate-200">
         {SUBTABS.map(([k, label]) => (
           <button key={k} onClick={() => setSub(k)} data-testid={`agency-subtab-${k}`}
@@ -2061,6 +2078,7 @@ function AgencyPanel({ w, save, patch, photos, onUpload, t }) {
             style={sub === k ? { background: "#0a1130" } : {}}>{label}</button>
         ))}
       </div>
+      )}
       {sub === "import" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <p className="text-sm text-slate-500 mb-3">{L.intro}</p>
