@@ -5948,7 +5948,7 @@ async def website_sitemap(request: Request):
     # (uni2mkt) versions of the SAME site instead of treating them as duplicates.
     site = None
     if host and host not in ("localhost", "127.0.0.1"):
-        proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1,
+        proj = {"_id": 0, "slug": 1, "published": 1, "custom_domain": 1, "user_id": 1,
                 "custom_domain_verified": 1, "custom_domain_lang": 1,
                 "custom_domain_2": 1, "custom_domain_2_verified": 1, "custom_domain_2_lang": 1,
                 "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "products": 1, "updated_at": 1}
@@ -5994,7 +5994,7 @@ async def website_sitemap(request: Request):
                 if _ps:
                     urls.append(_url(f"/producto/{_ps}"))
             pps = await db.problem_pages.find(
-                {"website_slug": site["slug"], "published": True, "indexable": True},
+                {"user_id": site["user_id"], "published": True, "indexable": True},
                 {"_id": 0, "page_slug": 1, "service_name": 1},
             ).to_list(2000)
             pp_names = set()
@@ -6026,19 +6026,20 @@ async def website_sitemap(request: Request):
         urls.append(f"<url><loc>{base}/probar</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>")
 
     sites = await db.websites.find(
-        {"published": True}, {"_id": 0, "slug": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "products": 1, "updated_at": 1}
+        {"published": True}, {"_id": 0, "slug": 1, "user_id": 1, "custom_domain": 1, "custom_domain_verified": 1, "custom_domain_2": 1, "custom_domain_2_verified": 1, "case_studies": 1, "about_story": 1, "services": 1, "solutions_intro": 1, "products": 1, "updated_at": 1}
     ).to_list(2000)
     # Slugs of sites that stay on the primary host (no verified custom domain in either slot).
     onsite_slugs = set()
+    onsite_user_to_slug = {}
     # Problem/Solution page service names per site (to avoid emitting a duplicate
     # /servicio/ URL when a service already has its own /p/ conversion page).
     _all_pps = await db.problem_pages.find(
         {"published": True, "indexable": True},
-        {"_id": 0, "website_slug": 1, "page_slug": 1, "service_name": 1},
+        {"_id": 0, "user_id": 1, "page_slug": 1, "service_name": 1},
     ).to_list(4000)
-    pp_names_by_slug = {}
+    pp_names_by_user = {}
     for pp in _all_pps:
-        pp_names_by_slug.setdefault(pp.get("website_slug"), set()).add((pp.get("service_name") or "").lower().strip())
+        pp_names_by_user.setdefault(pp.get("user_id"), set()).add((pp.get("service_name") or "").lower().strip())
     for s in sites:
         has_domain = bool((s.get("custom_domain") and s.get("custom_domain_verified"))
                           or (s.get("custom_domain_2") and s.get("custom_domain_2_verified")))
@@ -6046,11 +6047,12 @@ async def website_sitemap(request: Request):
         if has_domain or not slug:
             continue
         onsite_slugs.add(slug)
+        onsite_user_to_slug[s.get("user_id")] = slug
         _lm = f"<lastmod>{s['updated_at'][:10]}</lastmod>" if s.get("updated_at") else ""
         urls.append(f"<url><loc>{base}/sitio/{slug}</loc>{_lm}<changefreq>weekly</changefreq></url>")
         if s.get("services") or (s.get("solutions_intro") or "").strip():
             urls.append(f"<url><loc>{base}/sitio/{slug}/soluciones</loc><changefreq>weekly</changefreq></url>")
-        _pp_names = pp_names_by_slug.get(slug, set())
+        _pp_names = pp_names_by_user.get(s.get("user_id"), set())
         for i, svc in enumerate(s.get("services") or []):
             if (svc.get("name") or "").lower().strip() in _pp_names:
                 continue
@@ -6073,8 +6075,8 @@ async def website_sitemap(request: Request):
 
     # Problem/Solution pages of on-site (non-custom-domain) sites only.
     for pp in _all_pps:
-        wslug = pp.get("website_slug")
-        if wslug in onsite_slugs:
+        wslug = onsite_user_to_slug.get(pp.get("user_id"))
+        if wslug:
             urls.append(
                 f"<url><loc>{base}/sitio/{wslug}/p/{pp['page_slug']}</loc><changefreq>weekly</changefreq></url>"
             )

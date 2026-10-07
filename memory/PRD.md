@@ -1,3 +1,11 @@
+## 🗺️ Jun 2026 — FIX sitemap: páginas de soluciones (/p/) se caían por website_slug desfasado [COMPLETO; verificado]
+- **Pregunta del usuario**: ¿todas las páginas de "lo que resolvemos" están en el sitemap?
+- **Hallazgo/bug**: `website_sitemap` (server.py ~5996 y ~6035) filtraba los problem_pages por `website_slug == site.slug`. En datos reales el `website_slug` guardado en las páginas puede quedar desfasado del slug actual del sitio (ej. preview: site.slug=`uni2-marketing` pero páginas con website_slug=`uni2-marketing-agency`) → la consulta devolvía 0 y las páginas NO entraban al sitemap.
+- **Fix**: ambas ramas (per-dominio y global) ahora filtran por **`user_id`** (cada usuario = un sitio). Agregado `user_id` a las proyecciones, `pp_names_by_user`, y `onsite_user_to_slug` para emitir `/sitio/{slug}/p/{page_slug}` por user_id. Solo entran páginas `published:true` + `indexable:true`.
+- **Verificado** (localhost, header X-Forwarded-Host=growthally.uni2mkt.com): el sitemap per-dominio ahora lista las 6 `/p/` publicadas+indexables (antes 0). Las 2 no publicadas (Deck Building, Fence Install) quedan fuera, correcto.
+- **Nota al usuario**: su sitio tiene dominio propio verificado → sus páginas están en el sitemap de ESE dominio (growthally.uni2mkt.com/sitemap.xml + ES uni2mkt), no en ezunitech.com (un sitemap solo lista su propio host). Cambio solo backend → aplica al desplegar.
+
+
 ## 🌐 Jun 2026 — FIX i18n tarjetas "Problems We Solve" (salían en inglés en sitios ES) [COMPLETO; payload verificado]
 - **Reporte**: no solo el título, también las TARJETAS (nombre de servicio + titular) salían en inglés en el sitio español, aunque las páginas internas sí están en español.
 - **Causa raíz**: el endpoint `public_website` (server.py ~5863) armaba `problem_pages` SOLO con campos en inglés (`service_name`, `content.problem_headline`), ignorando `content_es`. Además el `service_name` NO tenía versión en español guardada en ningún lado (`content_es` del pp no incluye el nombre del servicio).
