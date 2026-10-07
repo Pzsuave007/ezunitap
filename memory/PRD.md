@@ -1,3 +1,13 @@
+## 🧩 Jun 2026 — "Problems We Solve" ahora es reordenable + coloreable (integrada al SectionStack) [COMPLETO; compila OK]
+- **Reporte del usuario**: no encontraba la sección "How can we help? / Problems We Solve" en el editor para cambiarle el color ni moverla.
+- **Causa**: `ProblemsSection` (id `solutions`) se renderizaba APARTE en cada template (antes del `SectionStack`), fuera del sistema de orden/colores, así que no aparecía en las listas del editor (reorden ni colores) y en Agency ni siquiera se mostraba.
+- **Fix**:
+  - `ContractorSite.js`: nueva clave **`solutions`** en `SECTION_ORDER_DEFAULT` (posición por defecto: después de `services`). `SectionStack.has.solutions = problem_pages.length>0`. Nuevo `case "solutions"` → `<ProblemsSection ctx={sctx} bg={bg} />`. `ProblemsSection` ahora acepta `bg` y usa `SectionLight` con `bg` + `dark={th.dark}` (pinta el color elegido). Eliminadas las 10 líneas standalone de `<ProblemsSection>` en los templates.
+  - `WebsiteEditor.js`: `solutions` agregada a `SECTION_KEYS` (aparece en la lista de reorden con flechas + toggle on/off), etiqueta "Problems we solve / Problemas que resolvemos", y en el selector de **Colores por sección** con default `#f8fafc`.
+- **Efecto**: la sección ahora es parte del SectionStack en LOS 10 TEMPLATES + Agency → se puede mover (flechas), encender/apagar y pintar su color, igual que las demás. OJO: en sitios que YA tenían un `section_order` guardado sin `solutions`, la sección se agrega al FINAL del orden (el usuario la sube con las flechas); en sitios sin orden guardado aparece tras `services`.
+- **Verificado**: compila sin errores (solo warning preexistente AuthContext). Sitio real `uni2-marketing` tiene `problem_pages=6` → se renderiza. Build `main.ccfdfd3f.js` (+ oxlint-disable) + `git add -f frontend/build`. ⚠️ DESPLIEGUE: solo **frontend** → "Save to GitHub" + `cd /home/ezunitap/repo && git pull && bash deploy.sh`.
+
+
 ## 🧭 Jun 2026 — Agency: nav del home con "Solutions" + MENÚ MÓVIL (faltaba el hamburguesa) [COMPLETO; desktop verificado screenshot, móvil verificado por DOM/click]
 - **Reporte del usuario** (su sitio usa el template **Agency**): en el nav del HOME no salía "Solutions" (sí sale en subpáginas vía `SubNav`); y en MÓVIL no había botón para abrir el menú.
 - **Causa**: (1) `Agency` arma su propio `navLinks` (Services/Work/Case studies/Process/About/Contact) y NO incluía Solutions. (2) El `<header>` de Agency solo tenía `<nav className="hidden md:flex">` SIN botón hamburguesa ni panel para móvil (a diferencia de los demás templates que usan `NavMenu`/toggle propio).

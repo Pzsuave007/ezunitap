@@ -394,7 +394,6 @@ function Cinematic({ ctx }) {
 
       <HeroFormBand ctx={grayCtx} />
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <div style={{ background: "#ECECEF" }}><ContactBlock ctx={grayCtx} /></div>}
       <FooterBlock ctx={ctx} />
@@ -451,7 +450,6 @@ function Responder({ ctx }) {
       {/* Free estimate / booking form band (moved out of hero) */}
       <HeroFormBand ctx={ctx} dark />
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -524,7 +522,6 @@ function Bento({ ctx }) {
         </div>
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -567,7 +564,6 @@ function Craftsman({ ctx }) {
       </section>
 
       {/* Services alternating offset */}
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -625,7 +621,6 @@ function Trust({ ctx }) {
         </div>
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} id="contact2" />}
       <FooterBlock ctx={ctx} />
@@ -698,7 +693,6 @@ function Slider({ ctx }) {
         )}
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -738,7 +732,6 @@ function OnePage({ ctx }) {
         </div>
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -857,7 +850,6 @@ function Neon({ ctx }) {
         </div>
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -899,7 +891,6 @@ function Playful({ ctx }) {
         </div>
       </section>
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -939,7 +930,6 @@ function Luxe({ ctx }) {
 
       <HeroFormBand ctx={ctx} />
 
-      {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
       <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
@@ -2189,7 +2179,7 @@ function StatCountUp({ target }) {
   return <span ref={ref}>{n}{suffix}</span>;
 }
 
-const SECTION_ORDER_DEFAULT = ["services", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+const SECTION_ORDER_DEFAULT = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 
 function orderedSectionKeys(w) {
   const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_ORDER_DEFAULT.includes(k)) : [];
@@ -2358,6 +2348,7 @@ function SectionStack({ ctx }) {
   const reviews = (Array.isArray(data?.reviews) ? data.reviews : []).filter((r) => (r.text || "").trim());
   const has = {
     services: (services?.length || 0) > 0,
+    solutions: Array.isArray(data?.problem_pages) && data.problem_pages.length > 0,
     samples: (Array.isArray(w.samples) && w.samples.length > 0) || (Array.isArray(w.case_studies) && w.case_studies.length > 0),
     products: Array.isArray(w.products) && w.products.length > 0,
     about: !!((w.about_story || w.about || w.subheadline || "").toString().trim()) || (Array.isArray(w.about_sections) && w.about_sections.length > 0),
@@ -2386,6 +2377,7 @@ function SectionStack({ ctx }) {
     let el = null;
     switch (k) {
       case "services": el = <ServicesModule key={k} ctx={sctx} />; break;
+      case "solutions": el = <ProblemsSection key={k} ctx={sctx} bg={bg} />; break;
       case "samples": el = <SamplesSection key={k} ctx={sctx} sty={{ bg }} />; break;
       case "products": el = <ProductsSection key={k} ctx={sctx} sty={{ bg }} />; break;
       case "about": el = <AboutBlock key={k} ctx={sctx} bg={bg} />; break;
@@ -2556,13 +2548,12 @@ function HeroFormBand({ ctx, dark }) {
   );
 }
 
-function ProblemsSection({ ctx }) {
+function ProblemsSection({ ctx, bg }) {
   const { w, th, accent, data } = ctx;
   const pages = data.problem_pages || [];
   if (!pages.length) return null;
-  const S = th.dark ? SectionDark : SectionLight;
   return (
-    <S id="solutions" kicker="How can we help?" title="Problems We Solve" ctx={ctx}>
+    <SectionLight id="solutions" kicker="How can we help?" title="Problems We Solve" ctx={ctx} bg={bg} dark={th.dark}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {pages.map((p, i) => (
           <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`site-problem-card-${i}`}
@@ -2574,7 +2565,7 @@ function ProblemsSection({ ctx }) {
           </a>
         ))}
       </div>
-    </S>
+    </SectionLight>
   );
 }
 

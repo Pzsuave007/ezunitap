@@ -16,7 +16,7 @@ import RichEditor from "@/components/RichEditor";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+const SECTION_KEYS = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "history"];
 // Curated color palettes per template — one tap for a pro look.
@@ -549,8 +549,8 @@ export default function WebsiteEditor() {
         <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores por sección" : "Section colors"}</div>
         <p className="text-sm text-slate-500 mb-3">{isEs ? "Elige el color de fondo de cada sección. El texto se ajusta solo para buen contraste. Aplica al template que elijas." : "Pick the background color of each section. Text auto-adjusts for contrast. Applies to whichever template you choose."}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["products","#ffffff"],["about","#f8fafc"],["feature","#ffffff"],["how","#0a1130"],["why","#ffffff"],["gallery","#f8fafc"],["logos","#ffffff"],["stats",(w.accent_color||"#22D3EE")],["reviews","#f8fafc"],["map","#f8fafc"],["band",(w.accent_color||"#22D3EE")],["faq","#f8fafc"],["areas","#ffffff"],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => {
-            const LBL = { how: isEs?"Proceso":"Process", stats: isEs?"Estadísticas":"Stats", band: isEs?"Banner CTA":"CTA banner", samples: isEs?"Casos":"Cases", hero: "Hero", contact: isEs?"Contacto":"Contact", footer: isEs?"Pie":"Footer" };
+          {[["hero","#0a1130"],["services","#ffffff"],["solutions","#f8fafc"],["samples","#f8fafc"],["products","#ffffff"],["about","#f8fafc"],["feature","#ffffff"],["how","#0a1130"],["why","#ffffff"],["gallery","#f8fafc"],["logos","#ffffff"],["stats",(w.accent_color||"#22D3EE")],["reviews","#f8fafc"],["map","#f8fafc"],["band",(w.accent_color||"#22D3EE")],["faq","#f8fafc"],["areas","#ffffff"],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => {
+            const LBL = { how: isEs?"Proceso":"Process", stats: isEs?"Estadísticas":"Stats", band: isEs?"Banner CTA":"CTA banner", samples: isEs?"Casos":"Cases", solutions: isEs?"Problemas que resolvemos":"Problems we solve", hero: "Hero", contact: isEs?"Contacto":"Contact", footer: isEs?"Pie":"Footer" };
             let lbl = LBL[key] || t(`website.sec.${key}`); if (lbl === `website.sec.${key}`) lbl = key;
             return (
             <div key={key} className="flex items-center gap-2">
@@ -1071,7 +1071,7 @@ export default function WebsiteEditor() {
           {(() => {
             const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_KEYS.includes(k)) : [];
             const order = [...saved, ...SECTION_KEYS.filter((k) => !saved.includes(k))];
-            const SEC_LABELS = { stats: isEs ? "Franja de estadísticas" : "Stats band" };
+            const SEC_LABELS = { stats: isEs ? "Franja de estadísticas" : "Stats band", solutions: isEs ? "Problemas que resolvemos" : "Problems we solve" };
             const move = (idx, dir) => {
               const j = idx + dir;
               if (j < 0 || j >= order.length) return;
