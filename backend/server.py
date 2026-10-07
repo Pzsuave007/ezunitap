@@ -5983,9 +5983,11 @@ async def website_sitemap(request: Request):
             _cs = site.get("case_studies") or []
             if _cs:
                 urls.append(_url("/casos"))
+                _seen_cs = set()
                 for _c in _cs:
-                    _sl = (_c.get("slug") or "").strip()
-                    if _sl:
+                    _sl = _slugify(_c.get("slug") or _c.get("client") or _c.get("title") or "")
+                    if _sl and _sl not in _seen_cs:
+                        _seen_cs.add(_sl)
                         urls.append(_url(f"/caso/{_sl}"))
             for _p in (site.get("products") or []):
                 if not _p.get("has_page"):
@@ -6062,9 +6064,11 @@ async def website_sitemap(request: Request):
         _cs = s.get("case_studies") or []
         if _cs:
             urls.append(f"<url><loc>{base}/sitio/{slug}/casos</loc><changefreq>weekly</changefreq></url>")
+            _seen_cs = set()
             for _c in _cs:
-                _sl = (_c.get("slug") or "").strip()
-                if _sl:
+                _sl = _slugify(_c.get("slug") or _c.get("client") or _c.get("title") or "")
+                if _sl and _sl not in _seen_cs:
+                    _seen_cs.add(_sl)
                     urls.append(f"<url><loc>{base}/sitio/{slug}/caso/{_sl}</loc><changefreq>weekly</changefreq></url>")
         for _p in (s.get("products") or []):
             if not _p.get("has_page"):

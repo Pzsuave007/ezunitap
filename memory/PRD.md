@@ -1,3 +1,13 @@
+## 🗺️ Jun 2026 — FIX sitemap: slugs de casos "sucios" (espacios/mayúsculas) + casos sin slug omitidos [COMPLETO; verificado]
+- **Reporte**: comparando uni2mkt.com vs su sitemap, el usuario tenía URLs rotas como `/caso/Casa Lola` (espacio → URL inválida), `/caso/HRG`, `/caso/BajaSur` (mayúsculas). Y casos sin slug se omitían del sitemap.
+- **Fix** (`server.py` sitemap ambas ramas + `ContractorSite.js`):
+  - El sitemap ahora emite `_slugify(slug or client or title)` → URLs siempre válidas (minúsculas, guiones, sin espacios), con dedup por `_seen_cs`. Casos SIN slug ahora SÍ entran (usando el nombre del cliente/título).
+  - Enlaces internos del front (caseList home + tarjetas de CaseList) ahora usan `slugify(c.slug||c.client||c.title)` → coinciden con el sitemap.
+  - `CaseDetail` ya resolvía por `slugify` (tolerante), y **no hay SSR para /caso/** (los bots reciben el SPA), así que las URLs limpias resuelven sin romper nada. Paridad `slugify` front == `_slugify` backend confirmada.
+- **Verificado**: ensucié temporalmente un slug a "Casa Lola TEST" → el sitemap lo emitió como `/caso/casa-lola-test` (limpio); revertido. Todos los casos de uni2-marketing salen limpios (casa-lola, qdoba, etc.). Backend sin errores. Build `main.86fa1bd2.js` + `git add -f frontend/build`.
+- Pendiente del usuario: publicar los casos/soluciones que estén en borrador si quiere más links; opcional barrido i18n de etiquetas fijas.
+
+
 ## 🗺️ Jun 2026 — FIX sitemap: páginas de soluciones (/p/) se caían por website_slug desfasado [COMPLETO; verificado]
 - **Pregunta del usuario**: ¿todas las páginas de "lo que resolvemos" están en el sitemap?
 - **Hallazgo/bug**: `website_sitemap` (server.py ~5996 y ~6035) filtraba los problem_pages por `website_slug == site.slug`. En datos reales el `website_slug` guardado en las páginas puede quedar desfasado del slug actual del sitio (ej. preview: site.slug=`uni2-marketing` pero páginas con website_slug=`uni2-marketing-agency`) → la consulta devolvía 0 y las páginas NO entraban al sitemap.

@@ -1330,11 +1330,11 @@ function SamplesSection({ ctx, sty }) {
   // so the home showcase auto-updates whenever a case is added. Fall back to the
   // legacy `samples` list only when there are no case studies.
   const caseList = (Array.isArray(ctx.w.case_studies) ? ctx.w.case_studies : [])
-    .map((c) => ({
+    .map((c, i) => ({
       img: c.cover || (Array.isArray(c.photos) && c.photos[0]) || "",
       title: c.client || c.title || "",
       subtitle: c.category || "",
-      caseSlug: c.slug || "",
+      caseSlug: slugify(c.slug || c.client || c.title || `caso-${i}`),
     }))
     .filter((s) => s.img || s.title)
     .slice(0, 9);
@@ -1553,7 +1553,7 @@ function CaseList({ ctx }) {
         {cases.length === 0 ? <p className="text-center" style={{ color: th.muted }}>{agT(lang, "No case studies yet.", "Aún no hay casos.")}</p> : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cases.map((c, i) => (
-              <a key={i} href={pageHref(`caso/${c.slug || i}`)} data-testid={`case-card-${i}`} className="group rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: th.border, background: th.surface }}>
+              <a key={i} href={pageHref(`caso/${slugify(c.slug || c.client || c.title || `caso-${i}`)}`)} data-testid={`case-card-${i}`} className="group rounded-2xl overflow-hidden border transition-all hover:-translate-y-1 hover:shadow-xl" style={{ borderColor: th.border, background: th.surface }}>
                 <div className="relative aspect-[4/3] overflow-hidden" style={{ background: th.surface }}>
                   <CoverFill src={imgSrc(c.cover, 800)} alt={c.client || ""} />
                   <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,.72),transparent 60%)" }} />
