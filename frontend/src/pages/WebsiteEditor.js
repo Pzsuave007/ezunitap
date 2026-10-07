@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users, Layers, Sliders, Image as ImageIcon } from "lucide-react";
 import { PinMap, geocode } from "../components/PinMap";
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
@@ -18,7 +18,14 @@ const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "tr
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
 const SECTION_KEYS = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
-const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "sitemap", "history"];
+const TABS = ["crear", "secciones", "diseno", "funciones", "publicar"];
+const TAB_META = {
+  crear: { es: "Crear con IA", en: "AI Kickoff", icon: Sparkles },
+  secciones: { es: "Secciones del sitio", en: "Site Sections", icon: Layers },
+  diseno: { es: "Diseño", en: "Design", icon: Palette },
+  funciones: { es: "Funciones", en: "Features", icon: Sliders },
+  publicar: { es: "Publicar", en: "Publish", icon: Globe },
+};
 // Curated color palettes per template — one tap for a pro look.
 const PALETTES = {
   agency: ["#22D3EE", "#10B981", "#6366F1", "#F5B301"],
@@ -51,9 +58,10 @@ export default function WebsiteEditor() {
   const [galUploading, setGalUploading] = useState(false);
   const [baTarget, setBaTarget] = useState(null);
   const [galPicking, setGalPicking] = useState(false);
-  const [tab, setTab] = useState("publish");
+  const [tab, setTab] = useState("secciones");
   const [openService, setOpenService] = useState(0);
   const [recovering, setRecovering] = useState(false);
+  const [openSec, setOpenSec] = useState("hero");
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
@@ -179,6 +187,10 @@ export default function WebsiteEditor() {
     } finally { setImportingMedia(false); }
   };
   const setSecColor = (key, val) => patch({ section_colors: { ...(w?.section_colors || {}), [key]: val } });
+  const SEC_DEF = { hero: "#0a1130", about: "#f8fafc", services: "#ffffff", solutions: "#f8fafc", samples: "#f8fafc", products: "#ffffff", feature: "#ffffff", how: "#0a1130", why: "#ffffff", gallery: "#f8fafc", logos: "#ffffff", stats: (w?.accent_color || "#22D3EE"), reviews: "#f8fafc", map: "#f8fafc", band: (w?.accent_color || "#22D3EE"), faq: "#f8fafc", areas: "#ffffff", contact: "#ffffff" };
+  const toggleSec = (key, v) => save({ sections: { ...w?.sections, [key]: v } });
+  const secOrderList = () => { const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_KEYS.includes(k)) : []; return [...saved, ...SECTION_KEYS.filter((k) => !saved.includes(k))]; };
+  const moveSec = (key, dir) => { const order = secOrderList(); const idx = order.indexOf(key); const j = idx + dir; if (j < 0 || j >= order.length) return; const n = [...order]; [n[idx], n[j]] = [n[j], n[idx]]; save({ section_order: n }); };
   const translateEn = async () => {
     if (!window.confirm(t("website.transEnConfirm"))) return;
     setTranslatingEn(true);
@@ -509,12 +521,15 @@ export default function WebsiteEditor() {
         </div>
         <div className="pb-2 overflow-x-auto no-scrollbar">
           <div className="flex gap-1.5 min-w-max">
-            {TABS.filter((tb) => tb !== "agency" || w.template === "agency").map((tb) => (
-              <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
-                className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                {t(`website.tab.${tb}`)}
-              </button>
-            ))}
+            {TABS.map((tb) => {
+              const Icon = TAB_META[tb].icon;
+              return (
+                <button key={tb} onClick={() => setTab(tb)} data-testid={`website-tab-${tb}`}
+                  className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors inline-flex items-center gap-1.5 ${tab === tb ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  <Icon className="w-4 h-4" /> {isEs ? TAB_META[tb].es : TAB_META[tb].en}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -528,7 +543,7 @@ export default function WebsiteEditor() {
       </div>
 
       {/* AI Generate */}
-      {tab === "content" && (
+      {tab === "crear" && (
       <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-none"><Sparkles className="w-5 h-5" /></div>
@@ -578,7 +593,7 @@ export default function WebsiteEditor() {
       )}
 
       {/* Publish + link */}
-      {tab === "publish" && (
+      {tab === "publicar" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -605,11 +620,23 @@ export default function WebsiteEditor() {
             <Input value={w.slug} onChange={(e) => patch({ slug: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl" data-testid="website-slug" />
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+          <div className="font-semibold flex items-center gap-2"><Search className="w-4 h-4" /> {t("website.seoTitle")}</div>
+          <p className="text-sm text-slate-500 -mt-1">{t("website.seoDesc")}</p>
+          <div>
+            <Label>{t("website.seoPageTitle")}</Label>
+            <Input value={w.seo_title || ""} onChange={(e) => patch({ seo_title: e.target.value })} onBlur={saveAndToast} className="h-12 rounded-xl mt-1.5" data-testid="website-seo-title" placeholder={t("website.seoPageTitlePh")} />
+          </div>
+          <div>
+            <Label>{t("website.seoMetaDesc")}</Label>
+            <Textarea value={w.seo_description || ""} onChange={(e) => patch({ seo_description: e.target.value })} onBlur={saveAndToast} className="rounded-xl mt-1.5 min-h-[70px]" data-testid="website-seo-desc" placeholder={t("website.seoMetaDescPh")} />
+          </div>
+        </div>
       </Card>
       )}
 
       {/* Templates */}
-      {tab === "design" && (<>
+      {tab === "diseno" && (<>
       <Card className="card-elevated border-0 shadow-none p-5" data-testid="agency-colors-card">
         <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores por sección" : "Section colors"}</div>
         <p className="text-sm text-slate-500 mb-3">{isEs ? "Elige el color de fondo de cada sección. El texto se ajusta solo para buen contraste. Aplica al template que elijas." : "Pick the background color of each section. Text auto-adjusts for contrast. Applies to whichever template you choose."}</p>
@@ -810,11 +837,11 @@ export default function WebsiteEditor() {
 
       {tab === "agency" && <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />}
 
-      {tab === "history" && <VersionHistory />}
-      {tab === "sitemap" && <SitemapPanel />}
+      {tab === "publicar" && <VersionHistory />}
+      {tab === "publicar" && <SitemapPanel />}
 
       {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
-      {tab === "forms" && (
+      {tab === "funciones" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1">{t("website.formsTitle")}</div>
         <p className="text-sm text-slate-500 mb-4">{t("website.formsDesc")}</p>
@@ -918,7 +945,7 @@ export default function WebsiteEditor() {
       )}
 
       {/* Custom Domains — two slots: primary (EN) + secondary (ES), one site */}
-      {tab === "publish" && (
+      {tab === "publicar" && (
       <div className="space-y-4" data-testid="website-domains">
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-600">
           {t("website.domainsBilingualNote")}
@@ -957,7 +984,218 @@ export default function WebsiteEditor() {
       )}
 
       {/* Services */}
-      {tab === "services" && (
+      {tab === "secciones" && (() => {
+        const META = {
+          services: { es: "Servicios", en: "Services", Icon: Briefcase },
+          about: { es: "Nosotros", en: "About", Icon: Users },
+          solutions: { es: "Problemas que resolvemos", en: "Problems We Solve", Icon: HelpCircle },
+          samples: { es: "Casos de éxito", en: "Case Studies", Icon: Images },
+          products: { es: "Productos", en: "Products", Icon: Briefcase },
+          feature: { es: "Sección destacada", en: "Feature", Icon: Star },
+          how: { es: "Cómo trabajamos", en: "How it works", Icon: ListChecks },
+          why: { es: "Por qué elegirnos", en: "Why choose us", Icon: Check },
+          gallery: { es: "Galería de trabajos", en: "Work gallery", Icon: Images },
+          logos: { es: "Logos de clientes", en: "Client logos", Icon: Images },
+          stats: { es: "Franja de estadísticas", en: "Stats band", Icon: Star },
+          reviews: { es: "Reseñas", en: "Reviews", Icon: Star },
+          map: { es: "Mapa de cobertura", en: "Coverage map", Icon: MapPin },
+          band: { es: "Banner de llamada", en: "CTA banner", Icon: MessageSquare },
+          faq: { es: "Preguntas frecuentes", en: "FAQ", Icon: HelpCircle },
+          areas: { es: "Áreas que atendemos", en: "Service areas", Icon: MapPin },
+        };
+        const ColorRow = ({ k }) => (
+          <div className="pt-3 mt-1 border-t border-slate-100">
+            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1.5"><Palette className="w-3.5 h-3.5" /> {isEs ? "Color de fondo de la sección" : "Section background color"}</label>
+            <input type="color" value={(w.section_colors && w.section_colors[k]) || SEC_DEF[k]} onChange={(e) => setSecColor(k, e.target.value)} className="w-12 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5" data-testid={`secbg-${k}`} />
+          </div>
+        );
+        const bodyFor = (k) => {
+          if (k === "about") return (<>
+            <div>
+              <Label>{t("website.aboutUs")}</Label>
+              <Textarea value={w.about || ""} onChange={(e) => patch({ about: e.target.value })} className="rounded-xl mt-1.5 min-h-[90px]" data-testid="website-about" />
+              <div className="flex justify-end mt-1"><AiBtn fieldKey="about" onClick={() => aiWrite("about", w.headline, "about", (txt) => patch({ about: txt }))} /></div>
+            </div>
+            <PhotoMultiField label={t("website.teamPhotoTitle")} desc={t("website.teamPhotoDesc")} values={(w.about_photo_ids && w.about_photo_ids.length) ? w.about_photo_ids : (w.team_photo_id ? [w.team_photo_id] : [])} photos={photos} onChange={(ids) => save({ about_photo_ids: ids, team_photo_id: ids[0] || "" })} onUpload={uploadPhoto} testid="about" t={t} max={4} />
+            <PhotoField label={t("website.whyPhotoTitle")} desc={t("website.whyPhotoDesc")} value={w.why_photo_id} photos={photos} onPick={(id) => save({ why_photo_id: id })} onUpload={(f) => uploadField("why_photo_id", f)} onRemove={() => save({ why_photo_id: "" })} testid="why-photo" t={t} />
+            <ColorRow k="about" />
+          </>);
+          if (k === "solutions") return (<>
+            <div>
+              <Label>{isEs ? "Introducción" : "Intro"}</Label>
+              <Textarea value={w.solutions_intro || ""} onChange={(e) => patch({ solutions_intro: e.target.value })} className="rounded-xl mt-1.5 min-h-[70px]" data-testid="website-solutions-intro" placeholder={isEs ? "Describe los problemas que resuelves…" : "Describe the problems you solve…"} />
+            </div>
+            <ProblemPagesPanel slug={w.slug} />
+            <ColorRow k="solutions" />
+          </>);
+          if (k === "samples") return (<>
+            {w.template === "agency"
+              ? <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />
+              : <p className="text-sm text-slate-500">{isEs ? "Tus casos de éxito se generan y gestionan automáticamente." : "Your case studies are generated and managed automatically."}</p>}
+            <ColorRow k="samples" />
+          </>);
+          if (k === "gallery") return (<>
+            <input ref={galFileRef} type="file" accept="image/*" className="hidden" onChange={uploadGalleryPhoto} data-testid="website-gallery-upload-input" />
+            <p className="text-sm text-slate-500">{t("website.galleryDesc")}</p>
+            {galIds().length > 0 && (
+              <div className="space-y-2">
+                {galIds().map((id, idx) => (
+                  <div key={id} className="p-2 rounded-xl bg-slate-50 space-y-2" data-testid={`website-gallery-item-${idx}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center flex-none">{idx + 1}</span>
+                      <img src={photoSrc(id)} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />
+                      <div className="flex-1" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, -1)} disabled={idx === 0} data-testid={`website-gallery-up-${idx}`}><ArrowUp className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveGallery(idx, 1)} disabled={idx === galIds().length - 1} data-testid={`website-gallery-down-${idx}`}><ArrowDown className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => toggleGallery(id)} data-testid={`website-gallery-remove-${idx}`}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <textarea value={photoCaption(id)} onChange={(e) => setCap(id, e.target.value)} onBlur={() => saveCaption(id)} rows={2} placeholder={t("website.workCaptionPh")} className="flex-1 text-sm rounded-lg border border-slate-200 bg-white px-3 py-2 resize-none focus:outline-none focus:border-slate-400" data-testid={`website-gallery-caption-${idx}`} />
+                      <Button variant="outline" size="sm" onClick={() => aiCaption(id)} disabled={capBusy[id]} className="rounded-lg flex-none h-9 mt-0.5" data-testid={`website-gallery-caption-ai-${idx}`}>
+                        {capBusy[id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" /> {t("website.workCaptionAi")}</>}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button variant="outline" onClick={() => setGalPicking((v) => !v)} className="rounded-xl" data-testid="website-gallery-add-toggle"><Plus className="w-4 h-4 mr-1" /> {galPicking ? t("website.done") : t("website.galleryAddBtn")}</Button>
+            {galPicking && (
+              <div className="mt-1 p-3 rounded-xl bg-slate-50">
+                <div className="flex flex-wrap gap-3">
+                  <button onClick={() => galFileRef.current?.click()} disabled={galUploading} data-testid="website-gallery-upload" className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 flex-none">
+                    {galUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] mt-0.5">{t("website.upload")}</span></>}
+                  </button>
+                  {photos.map((p) => (
+                    <button key={p.id} onClick={() => toggleGallery(p.id)} data-testid={`website-gallery-pick-${p.id}`} className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 flex-none transition-all ${inGallery(p.id) ? "border-blue-600 ring-2 ring-blue-200" : "border-transparent hover:border-slate-300"}`}>
+                      <img src={photoSrc(p.id)} alt="" className="w-full h-full object-cover" />
+                      {inGallery(p.id) && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
+                    </button>
+                  ))}
+                </div>
+                {photos.length === 0 && <p className="text-xs text-slate-400 mt-2">{t("website.noPhotos")}</p>}
+              </div>
+            )}
+            <ColorRow k="gallery" />
+          </>);
+          if (k === "stats") return (<>
+            <p className="text-sm text-slate-500">{isEs ? "Hasta 4 cifras que llaman la atención (ej. 25+ Años de experiencia)." : "Up to 4 eye-catching numbers (e.g. 25+ Years of experience)."}</p>
+            <div className="space-y-2">
+              {[0, 1, 2, 3].map((i) => {
+                const st = (Array.isArray(w.stats) ? w.stats : [])[i] || {};
+                const setStat = (field, val) => { const arr = [0, 1, 2, 3].map((j) => ({ ...((Array.isArray(w.stats) ? w.stats : [])[j] || {}) })); arr[i] = { ...arr[i], [field]: val }; patch({ stats: arr.filter((x) => (x.value || x.label)) }); };
+                return (
+                  <div key={i} className="flex gap-2">
+                    <Input value={st.value || ""} onChange={(e) => setStat("value", e.target.value)} onBlur={saveAndToast} placeholder="25+" className="h-9 rounded-lg w-24 flex-none" data-testid={`stat-value-${i}`} />
+                    <Input value={st.label || ""} onChange={(e) => setStat("label", e.target.value)} onBlur={saveAndToast} placeholder={isEs ? "Años de experiencia" : "Years of experience"} className="h-9 rounded-lg flex-1" data-testid={`stat-label-${i}`} />
+                  </div>
+                );
+              })}
+            </div>
+            <ColorRow k="stats" />
+          </>);
+          if (k === "how") return (<>
+            {(w.how_it_works || []).map((s, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-how-${i}`}>
+                <div className="flex items-center gap-2">
+                  <Input value={s.title || ""} onChange={(e) => listSet("how_it_works", i, "title", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.stepTitle")} />
+                  <Button variant="ghost" size="icon" onClick={() => listDel("how_it_works", i)} className="text-slate-400 flex-none" data-testid={`website-how-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+                <Textarea value={s.desc || ""} onChange={(e) => listSet("how_it_works", i, "desc", e.target.value)} className="rounded-lg bg-white min-h-[60px]" placeholder={t("website.stepDesc")} />
+                <div className="flex justify-end -mt-1"><AiBtn fieldKey={`how-${i}`} onClick={() => aiWrite("how_desc", s.title, `how-${i}`, (txt) => listSet("how_it_works", i, "desc", txt))} /></div>
+              </div>
+            ))}
+            <Button variant="outline" onClick={() => listAdd("how_it_works", { title: "", desc: "" })} className="rounded-xl" data-testid="website-how-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addStep")}</Button>
+            <ColorRow k="how" />
+          </>);
+          if (k === "why") return (<>
+            {(w.why_us || []).map((s, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-why-${i}`}>
+                <div className="flex items-center gap-2">
+                  <Input value={s.title || ""} onChange={(e) => listSet("why_us", i, "title", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.whyItemTitle")} />
+                  <Button variant="ghost" size="icon" onClick={() => listDel("why_us", i)} className="text-slate-400 flex-none" data-testid={`website-why-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+                <Input value={s.desc || ""} onChange={(e) => listSet("why_us", i, "desc", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.whyItemDesc")} />
+                <div className="flex justify-end"><AiBtn fieldKey={`why-${i}`} onClick={() => aiWrite("why_desc", s.title, `why-${i}`, (txt) => listSet("why_us", i, "desc", txt))} /></div>
+              </div>
+            ))}
+            <Button variant="outline" onClick={() => listAdd("why_us", { title: "", desc: "" })} className="rounded-xl" data-testid="website-why-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addReason")}</Button>
+            <ColorRow k="why" />
+          </>);
+          if (k === "faq") return (<>
+            {(w.faqs || []).map((f, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-faq-${i}`}>
+                <div className="flex items-center gap-2">
+                  <Input value={f.q || ""} onChange={(e) => listSet("faqs", i, "q", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.faqQ")} />
+                  <Button variant="ghost" size="icon" onClick={() => listDel("faqs", i)} className="text-slate-400 flex-none" data-testid={`website-faq-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+                <Textarea value={f.a || ""} onChange={(e) => listSet("faqs", i, "a", e.target.value)} className="rounded-lg bg-white min-h-[60px]" placeholder={t("website.faqA")} />
+                <div className="flex justify-end -mt-1"><AiBtn fieldKey={`faq-${i}`} onClick={() => aiWrite("faq_answer", f.q, `faq-${i}`, (txt) => listSet("faqs", i, "a", txt))} /></div>
+              </div>
+            ))}
+            <Button variant="outline" onClick={() => listAdd("faqs", { q: "", a: "" })} className="rounded-xl" data-testid="website-faq-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addFaq")}</Button>
+            <ColorRow k="faq" />
+          </>);
+          if (k === "areas") return (<>
+            <p className="text-sm text-slate-500">{t("website.areasDesc")}</p>
+            <div className="space-y-2">
+              {(w.areas || []).map((a, i) => (
+                <div key={i} className="flex items-center gap-2" data-testid={`website-area-${i}`}>
+                  <Input value={a} onChange={(e) => areasSet(i, e.target.value)} className="h-11 rounded-lg" placeholder={t("website.areaPh")} />
+                  <Button variant="ghost" size="icon" onClick={() => listDel("areas", i)} className="text-slate-400 flex-none" data-testid={`website-area-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" onClick={() => patch({ areas: [...(w.areas || []), ""] })} className="rounded-xl" data-testid="website-area-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addArea")}</Button>
+            <ColorRow k="areas" />
+          </>);
+          return (<>
+            <p className="text-sm text-slate-500">{isEs ? "Esta sección se muestra automáticamente. Ajusta su color de fondo y actívala o desactívala." : "This section shows automatically. Adjust its background color and toggle it on/off."}</p>
+            <ColorRow k={k} />
+          </>);
+        };
+        const order = secOrderList();
+        const Row = ({ k, Icon, title, reorderable, idx, toggleable, children }) => {
+          const active = w.sections?.[k] !== false;
+          return (
+            <div className={`rounded-xl border overflow-hidden transition-colors ${openSec === k ? "border-blue-400 ring-2 ring-blue-50" : "border-slate-200"}`} data-testid={`section-accordion-${k}`}>
+              <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-slate-50 min-h-[44px]" onClick={() => setOpenSec(openSec === k ? "" : k)} data-testid={`section-head-${k}`}>
+                {reorderable && (
+                  <div className="flex flex-col flex-none -my-1">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); moveSec(k, -1); }} disabled={idx === 0} className="w-6 h-4 flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-25" data-testid={`section-up-${k}`}><ArrowUp className="w-3.5 h-3.5" /></button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); moveSec(k, 1); }} disabled={idx === order.length - 1} className="w-6 h-4 flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-25" data-testid={`section-down-${k}`}><ArrowDown className="w-3.5 h-3.5" /></button>
+                  </div>
+                )}
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-none ${active ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-400"}`}><Icon className="w-4.5 h-4.5" /></div>
+                <div className="flex-1 min-w-0">
+                  <div className={`font-semibold text-sm truncate ${active ? "" : "text-slate-400"}`}>{title}</div>
+                </div>
+                {toggleable
+                  ? <span onClick={(e) => e.stopPropagation()}><Switch checked={active} onCheckedChange={(v) => toggleSec(k, v)} data-testid={`section-toggle-${k}`} /></span>
+                  : <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex-none">{isEs ? "Fija" : "Fixed"}</span>}
+                <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${openSec === k ? "rotate-180" : ""}`} />
+              </div>
+              {openSec === k && <div className="p-4 border-t border-slate-100 bg-white space-y-4">{children}</div>}
+            </div>
+          );
+        };
+        return (
+          <div className="space-y-3" data-testid="sections-accordion">
+            <p className="text-sm text-slate-500">{isEs ? "Toca una sección para editar su texto, fotos y color en un solo lugar. Usa las flechas para ordenar y el interruptor para mostrar u ocultar." : "Tap a section to edit its text, photos and color in one place. Use arrows to reorder and the switch to show or hide."}</p>
+
+            {/* Hero (fixed, always on) */}
+            <Row k="hero" Icon={ImageIcon} title={isEs ? "Hero / Portada" : "Hero"} reorderable={false} toggleable={false}>
+              <div><Label>{t("website.headline")}</Label><Input value={w.headline || ""} onChange={(e) => patch({ headline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-headline" placeholder={t("website.headlinePh")} /></div>
+              <div><Label>Slogan / Tagline</Label><Input value={w.hero_tagline || ""} onChange={(e) => patch({ hero_tagline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-hero-tagline" placeholder="Smart Digital Marketing Nationwide" /></div>
+              <div><Label>{t("website.subheadline")}</Label><Input value={w.subheadline || ""} onChange={(e) => patch({ subheadline: e.target.value })} className="h-12 rounded-xl mt-1.5" data-testid="website-subheadline" /></div>
+              <PhotoField label={t("website.heroPhoto")} desc={t("website.heroPhotoDesc")} value={w.hero_photo_id} photos={photos} onPick={(id) => save({ hero_photo_id: id })} onUpload={(f) => uploadField("hero_photo_id", f)} onRemove={() => save({ hero_photo_id: "" })} testid="hero" t={t} />
+              <ColorRow k="hero" />
+            </Row>
+
+            {/* Reorderable sections from section_order */}
+            {order.map((k, idx) => (
+              <Row key={k} k={k} Icon={META[k]?.Icon || Star} title={META[k] ? (isEs ? META[k].es : META[k].en) : k} reorderable idx={idx} toggleable>
+                {k === "services" ? (
       <Card className="card-elevated border-0 shadow-none p-5 space-y-3">
         <div className="font-semibold flex items-center gap-2"><Briefcase className="w-4 h-4" /> {t("website.servicesTitle")}</div>
         <p className="text-sm text-slate-500 -mt-1">{t("website.servicesDesc")}</p>
@@ -1166,7 +1404,40 @@ export default function WebsiteEditor() {
         </div>
         <Button variant="outline" onClick={() => { listAdd("services", { name: "", description: "", starting_price: "" }); setOpenService((w.services || []).length); }} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>
       </Card>
-      )}
+                ) : bodyFor(k)}
+              </Row>
+            ))}
+
+            {/* Before / After (fixed) */}
+            <Row k="beforeafter" Icon={Images} title={isEs ? "Antes / Después" : "Before / After"} reorderable={false} toggleable={false}>
+              <p className="text-sm text-slate-500">{t("website.baDesc")}</p>
+              <input ref={baFileRef} type="file" accept="image/*" className="hidden" onChange={uploadBa} data-testid="website-ba-upload-input" />
+              <div className="space-y-3">
+                {baPairs().map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50" data-testid={`website-ba-pair-${i}`}>
+                    <BaSlot label={t("website.baBefore")} id={p.before} onClick={() => pickBa(i, "before")} testid={`website-ba-before-${i}`} />
+                    <ArrowRight className="w-5 h-5 text-slate-400 flex-none" />
+                    <BaSlot label={t("website.baAfter")} id={p.after} onClick={() => pickBa(i, "after")} testid={`website-ba-after-${i}`} />
+                    <div className="flex-1" />
+                    <Button variant="ghost" size="icon" onClick={() => baDel(i)} className="text-slate-400 flex-none" data-testid={`website-ba-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" onClick={baAdd} className="rounded-xl" data-testid="website-ba-add"><Plus className="w-4 h-4 mr-1" /> {t("website.baAdd")}</Button>
+            </Row>
+
+            {/* Contact (fixed, toggleable) */}
+            <Row k="contact" Icon={MapPin} title={isEs ? "Contacto" : "Contact"} reorderable={false} toggleable>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div><Label>{t("website.serviceArea")}</Label><Input value={w.service_area || ""} onChange={(e) => patch({ service_area: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("website.serviceAreaPh")} /></div>
+                <div><Label>{t("website.hours")}</Label><Input value={w.hours || ""} onChange={(e) => patch({ hours: e.target.value })} className="h-12 rounded-xl mt-1.5" placeholder={t("website.hoursPh")} /></div>
+              </div>
+              <div><Label>{t("website.callPhone")}</Label><Input value={w.cta_phone || ""} onChange={(e) => patch({ cta_phone: e.target.value })} className="h-12 rounded-xl mt-1.5" /></div>
+              <ColorRow k="contact" />
+            </Row>
+          </div>
+        );
+      })()}
 
       {/* How It Works */}
       {tab === "content" && (<>

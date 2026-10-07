@@ -1,149 +1,195 @@
 {
+  "project_title": "Multi-Tenant SaaS Website Editor Information Architecture & Visual Layout Blueprint",
+  "archetype": "THE PERFORMANCE PRO / SOFT UTILITY (Light Mode Admin Dashboard)",
+  "context": "saas_app (internal admin/builder screen for small service contractors)",
+  "language_context": "Bilingual (Spanish Primary / English Secondary)",
+  "color_palette": {
+    "background_page": "#F8FAFC",
+    "background_card": "#FFFFFF",
+    "background_subtle": "#F1F5F9",
+    "border_default": "#E2E8F0",
+    "border_focus": "#2563EB",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "text_muted": "#64748B",
+    "accent_primary": "#2563EB",
+    "accent_primary_hover": "#1D4ED8",
+    "accent_success": "#059669",
+    "accent_success_hover": "#047857",
+    "accent_ai_gradient": "from-violet-600 to-indigo-600",
+    "accent_warning": "#D97706",
+    "accent_danger": "#DC2626"
+  },
   "typography": {
-    "fonts": {
-      "headings": "Playfair Display (Luxury/Trust), Cabinet Grotesk (Playful/Bento), Space Grotesk (Neon), Anton (Responder)",
-      "body": "Inter or DM Sans for maximum legibility across all templates"
-    },
-    "hierarchy": {
-      "h1": "text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none",
-      "h2": "text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight",
-      "h3": "text-xl sm:text-2xl font-medium",
-      "body": "text-base sm:text-lg leading-relaxed text-muted-foreground",
-      "overline": "text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold"
+    "heading_font": "Plus Jakarta Sans, Outfit, or system-ui sans-serif (font-bold / font-heading)",
+    "body_font": "Inter or system-ui sans-serif",
+    "mono_font": "JetBrains Mono, Source Code Pro",
+    "scale": {
+      "h1_title": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-900",
+      "h2_section": "text-lg sm:text-xl font-bold tracking-tight text-slate-900",
+      "h3_card": "text-base font-semibold text-slate-900",
+      "body_regular": "text-sm text-slate-700 leading-relaxed",
+      "caption_muted": "text-xs text-slate-500",
+      "badge": "text-xs font-bold uppercase tracking-wider"
     }
   },
-  "layouts": {
-    "spacing": "Use generous tailwind spacing (py-24, gap-12). Maintain padding inside containers (p-6 to p-12).",
-    "patterns": {
-      "hero_with_top_cta": {
-        "description": "Full-height or 85vh hero focusing on a prominent background image. Must include clear top CTAs.",
-        "classes": "relative min-h-[85vh] flex items-center justify-center overflow-hidden",
-        "structure": [
-          "1. absolute inset-0 z-0 (Image with object-cover)",
-          "2. absolute inset-0 z-10 bg-black/40 (Overlay - adjust opacity per template, never full solid)",
-          "3. relative z-20 container mx-auto px-4 flex flex-col items-center (or grid for split form layout)",
-          "4. CTA group: flex flex-col sm:flex-row gap-4 mt-8 (Primary button must be large: h-14 px-8 text-lg rounded-full)"
-        ]
+  "visual_enhancers": {
+    "card_style": "bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
+    "sticky_header_style": "sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-xs",
+    "accordion_item_active": "border-blue-500/80 ring-2 ring-blue-50/80 bg-slate-50/40",
+    "ai_card_banner": "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-700 text-white rounded-2xl p-6 shadow-lg shadow-indigo-500/10"
+  },
+  "target_structure_5_tabs": [
+    {
+      "tab_id": "crear_ia",
+      "tab_name_es": "Crear con IA",
+      "tab_name_en": "AI Kickoff",
+      "icon": "Sparkles",
+      "data_testid": "website-tab-crear-ia",
+      "description": "Unified AI generation hub: brief input, Instagram media import, stock photo autofill, ES/EN translations, and image localization.",
+      "components": [
+        "AIBriefSection (AI Prompt + Instagram URL)",
+        "AIGenerateActionCard (Main AI site generator trigger)",
+        "StockPhotoAutofillAction (Auto-fills stock photos for missing slots)",
+        "BilingualTranslationSuite (Translate ES <-> EN actions)",
+        "ImageLocalizerAction (Downloads remote images to local storage)",
+        "AIDesignSuggestionsBanner (Smart template & color palette recommendation)"
+      ]
+    },
+    {
+      "tab_id": "secciones",
+      "tab_name_es": "Secciones del sitio",
+      "tab_name_en": "Site Sections",
+      "icon": "Layers",
+      "data_testid": "website-tab-secciones",
+      "description": "THE CORE EDITOR: Re-orderable, collapsible accordion list of all 13+ website sections. Mirrors the intuitive 'Servicios' accordion pattern.",
+      "components": [
+        "AccordionSectionList (Main container with drag/up-down reordering)",
+        "HeroSectionCard (Headline, Tagline, Subheadline, Call to Action, Hero Photo, BG Color)",
+        "AboutSectionCard (About text, Team/About Photos, BG Color)",
+        "ServicesSectionCard (Services list, /servicio/ page colors, AI service suggestions)",
+        "SolutionsSectionCard ('Problemas que resolvemos' / Problem pages & case studies)",
+        "GallerySectionCard (Recent work gallery, photo ordering, AI photo captions)",
+        "BeforeAfterSectionCard (Before/After image comparison pairs)",
+        "StatsBandSectionCard (Key statistics & counter badges, BG Color)",
+        "ReviewsSectionCard (Google Reviews & client testimonials)",
+        "ContactSectionCard (Location pin, phone, working hours, service area)",
+        "HowItWorksSectionCard (Process steps 1-2-3)",
+        "FaqSectionCard (Frequently asked questions list)",
+        "ServiceAreasSectionCard (List of cities & zip codes served)",
+        "LogosSectionCard (Partner & client trust logos)"
+      ]
+    },
+    {
+      "tab_id": "diseno",
+      "tab_name_es": "Diseño",
+      "tab_name_en": "Design & Style",
+      "icon": "Palette",
+      "data_testid": "website-tab-diseno",
+      "description": "Global visual styling: Template selection, brand accent colors, curated template palettes, and global section background colors.",
+      "components": [
+        "TemplateSelectorGrid (11 template thumbnails: agency, cinematic, responder, bento, craftsman, trust, slider, onepage, neon, playful, luxe)",
+        "BrandColorPalettePicker (Template recommended palettes + preset swatches + custom color picker)",
+        "GlobalSectionColorMatrix (Per-section background color pickers with automatic text contrast adjustment)",
+        "AIDesignSuggestionModal (One-click AI aesthetic match)"
+      ]
+    },
+    {
+      "tab_id": "funciones",
+      "tab_name_es": "Funciones",
+      "tab_name_en": "Interactions",
+      "icon": "Sliders",
+      "data_testid": "website-tab-funciones",
+      "description": "Interactive lead generation features and widget settings.",
+      "components": [
+        "ContactFormToggle (Toggle quotes & lead intake form)",
+        "BookingToggle (Toggle online appointment booking + digital card link)",
+        "AIChatbotSettingsCard (Toggle AI assistant, launcher badge, avatar photo, position left/right, Spanish & English greetings)"
+      ]
+    },
+    {
+      "tab_id": "publicar",
+      "tab_name_es": "Publicar",
+      "tab_name_en": "Publish & Domains",
+      "icon": "Globe",
+      "data_testid": "website-tab-publicar",
+      "description": "Site status control, domain routing, sitemap, and version control.",
+      "components": [
+        "PublishStatusToggle (Draft vs Published status switch)",
+        "PublicUrlCard (Live URL preview, copy link button, custom slug editor)",
+        "CustomDomainsBilingualSuite (Primary EN Domain + Secondary ES Domain connectors)",
+        "SitemapPanel (Interactive page route hierarchy viewer)",
+        "VersionHistoryDrawer (Backup restore points & snapshot history)"
+      ]
+    }
+  ],
+  "accordion_card_anatomy": {
+    "header_collapsed": {
+      "left_elements": [
+        "DragHandle (GripVertical icon for reordering)",
+        "ReorderButtons (ArrowUp & ArrowDown icons for precise mobile shifting)",
+        "SectionIcon (Specific Lucide icon, e.g., Briefcase for Services, Users for About)",
+        "SectionTitle (Bold, e.g., 'Hero', 'Nosotros', 'Servicios', 'Antes / Después')"
+      ],
+      "right_elements": [
+        "ActiveStatusSwitch (On/Off toggle switch `sections[key] !== false`)",
+        "StatusBadge ('Activa' emerald badge vs 'Oculta' slate badge)",
+        "ExpandChevron (ChevronDown icon with smooth 180deg rotate transition)"
+      ],
+      "interaction": "Click anywhere on header (except switches/buttons) to expand/collapse"
+    },
+    "body_expanded": {
+      "padding": "p-5 border-t border-slate-100 bg-white space-y-5 rounded-b-2xl",
+      "group_1_text_content": {
+        "heading": "1. Textos y Contenido",
+        "fields": "Inputs / Textareas with integrated 'AiBtn' (Sparkles icon for AI auto-write)"
       },
-      "service_card_with_photo": {
-        "description": "Standard service card displaying a photo, title, and description. Image scales on hover.",
-        "classes": "group relative overflow-hidden rounded-2xl bg-card border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
-        "structure": [
-          "1. div aspect-video w-full overflow-hidden (Image container)",
-          "2. img w-full h-full object-cover transition-transform duration-700 group-hover:scale-105",
-          "3. div p-6 md:p-8 flex flex-col gap-3 (Content block)"
-        ]
+      "group_2_media_assets": {
+        "heading": "2. Fotos e Imágenes",
+        "fields": "Single PhotoField or PhotoMultiField picker with upload dropzone + gallery picker modal"
       },
-      "service_card_bento_variant": {
-        "description": "Highly visual, bento-grid style cards where the photo is the background with an overlay.",
-        "container_classes": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4 md:gap-6",
-        "item_classes": "col-span-full md:col-span-4 group relative overflow-hidden rounded-3xl bg-neutral-950 text-white min-h-[320px] isolate",
-        "structure": [
-          "1. img absolute inset-0 -z-10 w-full h-full object-cover opacity-60 mix-blend-overlay transition-transform duration-700 group-hover:scale-110",
-          "2. div absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/30 to-transparent",
-          "3. div absolute bottom-0 left-0 w-full p-8 flex flex-col gap-3"
-        ]
-      },
-      "service_accordion_variant": {
-        "description": "For the OnePage template. A text trigger that expands to reveal a 16:9 photo and description.",
-        "classes": "overflow-hidden rounded-xl border bg-card transition-all duration-300",
-        "structure": [
-          "1. Trigger: w-full flex justify-between items-center p-6 text-xl font-medium",
-          "2. Content (Expanded): grid gap-6 pb-6 px-6",
-          "3. Image inside content: aspect-video w-full rounded-lg object-cover"
-        ]
-      },
-      "bottom_lead_form_section": {
-        "description": "The mandatory full-form section placed near the footer.",
-        "classes": "py-24 bg-muted/50",
-        "structure": [
-          "1. container mx-auto px-4 max-w-4xl",
-          "2. Glassmorphic or solid high-contrast card wrapper (p-8 md:p-12 rounded-3xl border shadow-2xl)",
-          "3. Form grid for inputs (grid-cols-1 md:grid-cols-2 gap-6)"
-        ]
+      "group_3_styling_color": {
+        "heading": "3. Color de Fondo de la Sección",
+        "fields": "Inline ColorPicker (`section_colors[key]`) with preset swatches and contrast preview"
       }
     }
   },
-  "art_direction": {
-    "Responder": {
-      "feel": "The Emergency/Hero. Fast, urgent, high contrast.",
-      "colors": "Primary: Warning Yellow or Alert Red. Background: Slate/Navy. High contrast.",
-      "typography": "Heavy, condensed sans-serif (e.g., Anton or Impact style) for headings. Uppercase labels.",
-      "photos": "Action shots. Workers in motion. Service cards MUST prominently feature high-quality photos.",
-      "components": "Sharp corners (rounded-none or rounded-sm). Thick 2px borders. Solid, bold buttons."
-    },
-    "Bento": {
-      "feel": "Editorial Bento. Immersive, high-end, visual impact.",
-      "colors": "Deep cinematic backgrounds (charcoal, midnight). Accent: Subtle metallic or brand color.",
-      "typography": "Elegant sans-serif, tight tracking.",
-      "photos": "MASSIVE background photos for the hero with gradient overlays. Services retain the bento-grid overlay style.",
-      "components": "Glassmorphism. backdrop-blur-2xl, bg-white/5 (dark mode) or bg-white/70 (light mode). Delicate 1px borders."
-    },
-    "Trust": {
-      "feel": "The Authority. Solid, classic, structured, highly reliable.",
-      "colors": "Navy blue, Slate, Off-White, Forest Green. Low saturation.",
-      "typography": "Classic Serif (Merriweather) for headings + clean geometric sans for body.",
-      "photos": "Professional team photos, pristine finished projects.",
-      "components": "Bento layout for services, but using SOLID flat backgrounds instead of images. Sharp shadows, solid borders. Top CTA is usually a side-by-side hero split with a visible compact form."
-    },
-    "OnePage": {
-      "feel": "Continuous Flow. Seamless, narrative, smooth.",
-      "colors": "Monochromatic base with one vibrant accent color.",
-      "typography": "Modern and airy.",
-      "photos": "Photos hidden behind interactions to keep the page clean, revealed on scroll or click (Accordion Services).",
-      "components": "Sticky floating navigation. Accordion service list (reveals photo + text). Lenis smooth scrolling (conceptually)."
-    },
-    "Neon": {
-      "feel": "Cyberpunk Local. Modern, highly differentiated, glowing.",
-      "colors": "Base: Deep Void Black (#0A0A0A). Accents: Cyan, Hot Pink, Lime Green.",
-      "typography": "Technical mono or wide tech sans (Space Grotesk).",
-      "photos": "High contrast, slightly desaturated, with neon color burn overlays or duotone effects.",
-      "components": "Glowing drop-shadows (shadow-[0_0_15px_rgba(brand)]). Tracing beam borders for cards. Dark mode strictly."
-    },
-    "Playful": {
-      "feel": "Neo-Pop / Brutalist-Lite. Extravagant, eye-catching, loud.",
-      "colors": "High saturation: Bubblegum pink, Electric blue, Canary yellow. Base: Pure White or Pale Beige.",
-      "typography": "Chunky, rounded, or highly expressive fonts. Massive typography.",
-      "photos": "Cutout subjects (transparent PNG style) or oversized photos masked in organic shapes (arches, blobs).",
-      "components": "Hard drop shadows (shadow-[8px_8px_0px_#000]). Thick black borders (border-4 border-black). Marquee scrolling text bands."
-    }
+  "spacing_and_layout": {
+    "container_max_width": "max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6",
+    "top_nav_bar": "flex items-center gap-2 overflow-x-auto no-scrollbar py-2",
+    "accordion_spacing": "space-y-3.5",
+    "card_internal_padding": "p-5 sm:p-6",
+    "input_height": "h-11 sm:h-12 rounded-xl text-sm border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
   },
-  "motion": {
-    "approach": "CSS-first IntersectionObserver for performance. Tasteful micro-interactions.",
-    "scroll_entrance": {
-      "base_classes": "transition-all duration-700 ease-out opacity-0 translate-y-8",
-      "active_classes": "opacity-100 translate-y-0",
-      "stagger_utilities": "Use style={{ transitionDelay: '100ms' }} or tailwind delay-100, delay-200 based on child index."
-    },
-    "micro_interactions": "Images must have group-hover:scale-105 transition-transform duration-700. Buttons should have active:scale-95 transition-transform."
-  },
-  "image_urls": {
-    "contractor": [
-      { "url": "https://images.unsplash.com/photo-1672627170267-fca17bb54156?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHw0fHxjb250cmFjdG9yJTIwaG9tZSUyMGJ1aWxkaW5nfGVufDB8fHx8MTc4NzY5MDY5N3ww&ixlib=rb-4.1.0&q=85", "category": "hero/background" },
-      { "url": "https://images.unsplash.com/photo-1587582423116-ec07293f0395?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHxjb250cmFjdG9yJTIwaG9tZSUyMGJ1aWxkaW5nfGVufDB8fHx8MTc4NzY5MDY5N3ww&ixlib=rb-4.1.0&q=85", "category": "service/roofing/framing" },
-      { "url": "https://images.unsplash.com/photo-1505798577917-a65157d3320a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwyfHxjb250cmFjdG9yJTIwaG9tZSUyMGJ1aWxkaW5nfGVufDB8fHx8MTc4NzY5MDY5N3ww&ixlib=rb-4.1.0&q=85", "category": "service/carpentry" }
-    ],
-    "salon": [
-      { "url": "https://images.unsplash.com/photo-1632345031435-8727f6897d53?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHwxfHxuYWlsJTIwc2Fsb24lMjBiZWF1dHl8ZW58MHx8fHwxNzg3NjkwNjk3fDA&ixlib=rb-4.1.0&q=85", "category": "hero/background" },
-      { "url": "https://images.pexels.com/photos/15202934/pexels-photo-15202934.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940", "category": "service/manicure" },
-      { "url": "https://images.pexels.com/photos/16041439/pexels-photo-16041439.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940", "category": "service/pedicure" }
+  "testing_attributes": {
+    "rule": "ALL interactive components MUST have explicit data-testid attributes",
+    "convention": "kebab-case naming",
+    "examples": [
+      "data-testid='website-tab-crear-ia'",
+      "data-testid='website-tab-secciones'",
+      "data-testid='website-tab-diseno'",
+      "data-testid='website-tab-funciones'",
+      "data-testid='website-tab-publicar'",
+      "data-testid='section-accordion-hero'",
+      "data-testid='section-toggle-hero'",
+      "data-testid='section-up-hero'",
+      "data-testid='section-down-hero'",
+      "data-testid='website-save-top'",
+      "data-testid='website-publish-switch'"
     ]
   },
-  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "You tend to converge toward generic, 'on distribution' outputs. Avoid the 'AI slop' aesthetic. Make creative, distinctive frontends.",
-    "Do not use generic placeholder text or image URLs. Use the provided realistic URLs from the design guidelines.",
-    "Do not center-align app containers globally (.App { text-align: center; }). It disrupts reading flow.",
-    "Avoid universal transitions (transition: all) to prevent breaking transforms. Use specific transitions (transition-all, transition-colors).",
-    "All interactive elements MUST include a data-testid attribute formatted as kebab-case and role-based (e.g., data-testid='hero-book-now-button').",
-    "Do not use complete transparent background in header or overlays. Always use a backdrop-blur or solid background for legibility.",
-    "Ensure contrast ratios meet APCA/WCAG standards, especially when placing text over images. Use gradients or shadows on text if necessary.",
-    "Apply generous spacing (2-3x standard). Cramped designs look cheap.",
-    "Implement the requested top CTA and bottom full-form pattern globally across all templates.",
-    "Apply the required visual differentiation for Bento, Neon, Playful, Trust, OnePage, and Responder EXACTLY as specified in art_direction."
+  "instructions_to_main_agent": [
+    "Execute the REORGANIZATION of `WebsiteEditor.js` into the target 5 tabs as requested by the user.",
+    "Do NOT delete or omit ANY existing backend API integration, hook, or state field.",
+    "Implement Tab 2 ('Secciones del sitio') as a high-density, accessible Accordion list where each card consolidates text + photos + section background color + on/off switch.",
+    "Ensure all data-testid attributes from the previous implementation are maintained or updated to match the new 5-tab structure so automated tests pass smoothly.",
+    "Maintain clean light mode aesthetic with slate-900 text, slate-100/200 borders, blue-600 primary accents, emerald-600 success actions, and smooth micro-interactions."
   ],
-  "accessibility": {
-    "contrast": "Always apply bg-black/40 (or equivalent) to hero images underneath text. Text on images MUST have a subtle text shadow.",
-    "focus": "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-    "aria": "Include aria-expanded for accordions and clear aria-labels for icon-only buttons."
-  }
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Avoid generic centered layouts or unstyled default components.",
+    "Ensure generous internal card padding (p-5 or p-6) to prevent text collision with borders.",
+    "Use specific CSS transitions (e.g. `transition: transform 0.2s ease, opacity 0.2s ease`), NEVER universal `transition: all`.",
+    "Ensure full touch accessibility on mobile devices with minimum 44px hit targets for accordion headers, switches, and buttons.",
+    "All state mutations must trigger smooth toast feedback using `sonner`."
+  ]
 }
