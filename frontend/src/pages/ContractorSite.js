@@ -362,8 +362,7 @@ function NavMenu({ ctx, light }) {
 // ===========================================================================
 function Cinematic({ ctx }) {
   const { w, b, data, sec, accent, accentText, th, heroImg, poolAt, services, goContact } = ctx;
-  // Cream sub-theme so we can alternate light sections and break the all-dark look.
-  const lightCtx = { ...ctx, th: { ...th, dark: false, bg: "#FBF7F0", surface: "#F3ECE0", ink: "#171412", muted: "#6b6259", border: "rgba(0,0,0,.10)" } };
+  // Cinematic: gray sub-theme for the hero form band and contact.
   const grayCtx = { ...ctx, th: { ...th, dark: false, bg: "#ECECEF", surface: "#ECECEF", ink: "#1a1a1a", muted: "#57534e", border: "rgba(0,0,0,.10)" } };
   const [scr, setScr] = useState(false);
   useEffect(() => { const f = () => setScr(window.scrollY > 40); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
@@ -395,75 +394,8 @@ function Cinematic({ ctx }) {
 
       <HeroFormBand ctx={grayCtx} />
 
-      {/* Services: edge-to-edge image cards */}
-      {sec.services !== false && (
-        <SectionDark id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {services.map((s, i) => (
-              <div key={i} className="group relative min-h-[320px] flex items-end overflow-hidden border" style={{ background: "#0d0d10", borderColor: th.border }} data-testid={`site-service-${i}`}>
-                {s.img && <img src={s.img} loading="lazy" decoding="async" alt={s.name} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />}
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,10,.95), rgba(8,8,10,.2))" }} />
-                <div className="relative p-7 w-full">
-                  <h3 className="wh font-bold text-2xl">{s.name}</h3>
-                  {s.description && <p className="mt-2 text-sm text-white/70 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-500">{s.description}</p>}
-                  {s.starting_price && <p className="mt-3 text-sm font-bold" style={{ color: accent }}>{s.starting_price}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionDark>
-      )}
-
-      {/* How it works: vertical timeline */}
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <div style={{ background: "#FBF7F0" }}><FeatureBlock ctx={lightCtx} /></div>}
-      {sec.how !== false && (
-        <SectionDark id="how" kicker="The process" title="How It Works" ctx={ctx} alt>
-          <div className="relative max-w-2xl border-l ml-3" style={{ borderColor: th.border }}>
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="relative pl-10 pb-10 last:pb-0">
-                <span className="absolute -left-[9px] top-1 w-4 h-4 rounded-full" style={{ background: accent, boxShadow: `0 0 20px ${accent}` }} />
-                <div className="text-xs font-bold tracking-widest" style={{ color: accent }}>STEP {i + 1}</div>
-                <h3 className="wh font-bold text-xl mt-1">{s.title}</h3>
-                <p className="mt-1.5 text-white/70 text-sm">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionDark>
-      )}
-
-      {/* Why us: big outlined numbers */}
-      {sec.why !== false && sec.feature === false && (
-        <SectionDark id="why" kicker="Why us" title="The difference is in the details" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
-              <div key={i} className="flex gap-5">
-                <div className="wh text-5xl font-extrabold leading-none" style={{ color: "transparent", WebkitTextStroke: `1.5px ${accent}` }}>{String(i + 1).padStart(2, "0")}</div>
-                <div><h3 className="wh font-bold text-lg">{s.title}</h3><p className="text-white/65 text-sm mt-1">{s.desc}</p></div>
-              </div>
-            ))}
-          </div>
-        </SectionDark>
-      )}
-
-      {/* Gallery masonry */}
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Our craft" title="Recent Work" ctx={lightCtx} alt>
-          <div className="columns-2 md:columns-3 gap-3 [column-fill:_balance]">
-            {data.photos.slice(0, 12).map((p) => (
-              <div key={p.id} className="mb-3 break-inside-avoid overflow-hidden">
-                <img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover hover:opacity-90 transition" />
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <div style={{ background: "#ECECEF" }}><ContactBlock ctx={grayCtx} /></div>}
       <FooterBlock ctx={ctx} />
     </div>
@@ -519,61 +451,8 @@ function Responder({ ctx }) {
       {/* Free estimate / booking form band (moved out of hero) */}
       <HeroFormBand ctx={ctx} dark />
 
-      {/* How it works: 3 bold blocks */}
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Simple" title="How It Works" ctx={ctx} bg="#374151" onDark>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="p-7 border-2 relative" style={{ background: th.surface, borderColor: th.ink, boxShadow: "8px 8px 0 0 rgba(0,0,0,1)" }}>
-                <div className="wh text-6xl leading-none" style={{ color: accent }}>{i + 1}</div>
-                <h3 className="wh uppercase text-xl mt-2" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {/* Services — bold photo cards */}
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="What we fix" title="Our Services" ctx={ctx} alt>
-          <ServiceCardsBold ctx={ctx} />
-        </SectionLight>
-      )}
-
-      {/* Why us marquee row already above; add cards */}
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why choose us" title="Neighbors trust us" ctx={ctx}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
-              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
-              return <div key={i} className="p-5 border-2 text-center" style={{ background: th.surface, borderColor: th.ink }}>
-                <I className="w-7 h-7 mx-auto" style={{ color: accent }} /><h3 className="wh uppercase text-base mt-2" style={{ color: th.ink }}>{s.title}</h3><p className="text-xs mt-1" style={{ color: th.muted }}>{s.desc}</p>
-              </div>;
-            })}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Proof" title="Recent Work" ctx={ctx} bg="#000000" onDark>
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 snap-x">
-            {data.photos.slice(0, 12).map((p) => (
-              <div key={p.id} className="snap-start flex-none w-64 h-64 overflow-hidden border-2" style={{ borderColor: th.ink }}>
-                <img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} bg="#000000" dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -645,67 +524,8 @@ function Bento({ ctx }) {
         </div>
       </section>
 
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s, i) => (
-              <div key={i} className={`p-6 ${th.radius} border hover:-translate-y-1 hover:shadow-xl`} style={{ borderColor: th.border, background: th.surface, boxShadow: "0 1px 2px rgba(0,0,0,.04)" }} data-testid={`site-service-${i}`}>
-                {s.img && <div className="-mx-6 -mt-6 mb-4 h-40 overflow-hidden"><img src={s.img} alt={s.name} className="w-full h-full object-cover" /></div>}
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: `${accent}1a` }}><CheckCircle2 className="w-6 h-6" style={{ color: accent }} /></div>
-                <h3 className="wh font-bold text-lg" style={{ color: th.ink }}>{s.name}</h3>
-                {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
-                {s.starting_price && <p className="mt-4 wh text-xl font-extrabold" style={{ color: th.ink }}>{s.starting_price}</p>}
-                {b.phone && <a href={`tel:${b.phone}`} className="mt-3 inline-flex text-sm font-bold" style={{ color: accent }}>Call now →</a>}
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Easy" title="How It Works" ctx={ctx} alt>
-          <div className="flex gap-4 overflow-x-auto snap-x pb-3 md:grid md:grid-cols-3 md:overflow-visible">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className={`snap-start flex-none w-72 md:w-auto p-6 ${th.radius} border`} style={{ background: th.bg, borderColor: th.border }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: accent, color: accentText }}>{i + 1}</div>
-                <h3 className="wh font-bold text-lg mt-4" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {/* Why us bento */}
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why us" title="Built on trust" ctx={ctx}>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[150px]">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
-              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
-              const big = i === 0;
-              return <div key={i} className={`p-6 ${th.radius} border ${big ? "col-span-2 row-span-2" : ""} flex flex-col justify-center`} style={{ background: big ? accent : th.surface, color: big ? accentText : th.ink, borderColor: th.border }}>
-                <I className="w-7 h-7" style={{ color: big ? accentText : accent }} /><h3 className="wh font-bold text-lg mt-3">{s.title}</h3><p className={`mt-1 text-sm ${big ? "opacity-90" : ""}`} style={{ color: big ? accentText : th.muted }}>{s.desc}</p>
-              </div>;
-            })}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} bg="#FAF5EA">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-square`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -747,70 +567,8 @@ function Craftsman({ ctx }) {
       </section>
 
       {/* Services alternating offset */}
-      {sec.services !== false && (
-        <section id="services" className="py-20 md:py-28">
-          <div className="max-w-6xl mx-auto px-5">
-            <Kicker ctx={ctx}>What we do</Kicker>
-            <h2 className="wh font-bold text-4xl md:text-5xl mb-12" style={{ color: th.ink }}>Our Services</h2>
-            <div className="space-y-16 md:space-y-24">
-              {services.map((s, i) => (
-                <div key={i} className={`grid ${s.img ? "md:grid-cols-2" : "grid-cols-1"} gap-6 md:gap-10 items-center ${i % 2 && s.img ? "md:[direction:rtl]" : ""}`} data-testid={`site-service-${i}`}>
-                  {s.img && <div className="overflow-hidden rounded-3xl shadow-lg [direction:ltr]"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full aspect-[4/3] object-cover hover:scale-105 transition duration-700" /></div>}
-                  <div className="[direction:ltr]">
-                    <div className="wh text-6xl italic font-normal" style={{ color: `${accent}55` }}>{String(i + 1).padStart(2, "0")}</div>
-                    <h3 className="wh font-bold text-3xl -mt-4" style={{ color: th.ink }}>{s.name}</h3>
-                    {s.description && <p className="mt-3 text-lg leading-relaxed" style={{ color: th.muted }}>{s.description}</p>}
-                    {s.starting_price && <p className="mt-3 font-bold" style={{ color: accent }}>{s.starting_price}</p>}
-                    {b.phone && <a href={`tel:${b.phone}`} className="mt-4 inline-flex items-center gap-2 font-bold" style={{ color: accent }}><Phone className="w-4 h-4" /> Call now</a>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Our process" title="How It Works" ctx={ctx} alt>
-          <div className="max-w-2xl mx-auto space-y-8">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="flex gap-6 items-start">
-                <div className="wh text-5xl italic font-normal flex-none w-16" style={{ color: accent }}>{i + 1}</div>
-                <div><h3 className="wh font-bold text-2xl" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1 text-lg" style={{ color: th.muted }}>{s.desc}</p></div>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why families choose us" title="Craft you can trust" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
-              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
-              return <div key={i} className={`p-7 ${th.radius}`} style={{ background: `${accent}0d` }}>
-                <I className="w-8 h-8" style={{ color: accent }} /><h3 className="wh font-bold text-xl mt-3" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1.5" style={{ color: th.muted }}>{s.desc}</p>
-              </div>;
-            })}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} dark>
-          <div className="columns-2 md:columns-3 gap-4">
-            {data.photos.slice(0, 12).map((p, i) => <div key={p.id} className={`mb-4 overflow-hidden rounded-2xl ${i % 3 === 1 ? "md:mt-8" : ""}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} editorial />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -867,55 +625,8 @@ function Trust({ ctx }) {
         </div>
       </section>
 
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <ServiceBento ctx={ctx} />
-        </SectionLight>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Easy as 1-2-3" title="How It Works" ctx={ctx} alt>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="text-center px-4">
-                <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center font-extrabold text-2xl" style={{ background: `${accent}1a`, color: accent }}>{i + 1}</div>
-                <h3 className="wh font-extrabold text-lg mt-4" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why choose us" title="Your trusted local pros" ctx={ctx}>
-          <div className="grid grid-cols-2 gap-4 max-w-3xl">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
-              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
-              return <div key={i} className={`p-6 ${th.radius} flex gap-4`} style={{ background: th.surface, boxShadow: "0 10px 30px rgba(0,0,0,.06)" }}>
-                <span className="w-11 h-11 rounded-lg flex items-center justify-center flex-none" style={{ background: `${accent}1a` }}><I className="w-5 h-5" style={{ color: accent }} /></span>
-                <div><h3 className="wh font-bold text-base" style={{ color: th.ink }}>{s.title}</h3><p className="text-sm mt-0.5" style={{ color: th.muted }}>{s.desc}</p></div>
-              </div>;
-            })}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="See our work" title="Recent Projects" ctx={ctx} dark>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {data.photos.slice(0, 9).map((p) => <div key={p.id} className={`overflow-hidden ${th.radius} aspect-[4/3] shadow-md`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} id="contact2" />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -988,72 +699,7 @@ function Slider({ ctx }) {
       </section>
 
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Our process" title="How It Works" ctx={ctx}>
-          <div className="grid sm:grid-cols-3 gap-4 items-stretch">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i, arr) => (
-              <div key={i} className="relative p-6 border-2" style={{ borderColor: th.ink, background: th.surface }}>
-                <div className="wh text-5xl" style={{ color: accent }}>{i + 1}</div>
-                <h3 className="wh uppercase text-lg mt-2" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-                {i < arr.length - 1 && <ArrowRight className="hidden sm:block absolute -right-5 top-1/2 -translate-y-1/2 w-7 h-7 z-10" style={{ color: accent }} />}
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx} alt>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((s, i) => (
-              <div key={i} className="border-2 overflow-hidden group" style={{ borderColor: th.ink, background: "#fff" }} data-testid={`site-service-${i}`}>
-                {s.img && <div className="aspect-[16/10] overflow-hidden"><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>}
-                <div className="p-5">
-                  <h3 className="wh uppercase text-xl" style={{ color: th.ink }}>{s.name}</h3>
-                  {s.description && <p className="mt-2 text-sm" style={{ color: th.muted }}>{s.description}</p>}
-                  {s.starting_price && <p className="mt-2 font-bold" style={{ color: accent }}>{s.starting_price}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why choose us" title="Results that speak" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4 max-w-3xl">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
-              <div key={i} className="flex gap-3 items-start"><CheckCircle2 className="w-6 h-6 flex-none" style={{ color: accent }} /><div><h3 className="wh uppercase text-base" style={{ color: th.ink }}>{s.title}</h3><p className="text-sm" style={{ color: th.muted }}>{s.desc}</p></div></div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && (ba.length > 0 || data.photos.length > 1) && (
-        <SectionLight id="gallery" kicker="Transformations" title="See The Difference" ctx={ctx} dark>
-          <div className="grid md:grid-cols-2 gap-5">
-            {ba.length > 0
-              ? ba.map((p, i) => (
-                  <div key={i} className="border-2" style={{ borderColor: th.ink }} data-testid={`site-ba-${i}`}>
-                    <BeforeAfter before={photoUrl(p.before)} after={photoUrl(p.after)} accent={accent} />
-                  </div>
-                ))
-              : [0, 2].map((base) => data.photos[base] && data.photos[base + 1] && (
-                  <div key={base} className="border-2" style={{ borderColor: th.ink }}>
-                    <BeforeAfter before={photoUrl(data.photos[base].id)} after={photoUrl(data.photos[base + 1].id)} accent={accent} />
-                  </div>
-                ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1092,62 +738,8 @@ function OnePage({ ctx }) {
         </div>
       </section>
 
-      {sec.services !== false && (
-        <section id="services" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
-          <div className="flex items-baseline justify-between mb-10"><h2 className="wh text-4xl" style={{ color: th.ink }}>Services</h2><span className="text-sm" style={{ color: th.muted }}>What we offer</span></div>
-          <div>{services.map((s, i) => <OneAccordion key={i} s={s} ctx={ctx} />)}</div>
-        </section>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} bg="#FAF5EA" />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <section id="how" className="max-w-5xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
-          <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>How it works</h2>
-          {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-            <div key={i} className="grid md:grid-cols-12 gap-4 py-8 border-t items-baseline" style={{ borderColor: th.border }}>
-              <div className="md:col-span-1 wh text-3xl" style={{ color: th.border === "#E5E7EB" ? "#D1D5DB" : th.muted }}>{String(i + 1).padStart(2, "0")}</div>
-              <h3 className="md:col-span-4 wh text-2xl" style={{ color: th.ink }}>{s.title}</h3>
-              <p className="md:col-span-7 text-lg leading-relaxed" style={{ color: th.muted }}>{s.desc}</p>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <section id="why" className="max-w-3xl mx-auto px-6 py-24 border-t" style={{ borderColor: th.border }}>
-          <h2 className="wh text-4xl mb-8" style={{ color: th.ink }}>Why us</h2>
-          <div className="space-y-6">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
-              <p key={i} className="text-xl leading-loose" style={{ color: th.muted }}><span className="wh" style={{ color: th.ink }}>{s.title}.</span> {s.desc}</p>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <section id="gallery" className="py-24" style={{ background: "#FAF5EA" }}>
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="wh text-4xl mb-10" style={{ color: th.ink }}>Recent work</h2>
-            <div className="columns-1 sm:columns-2 gap-8">
-              {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`mb-8 overflow-hidden rounded-sm ${i % 2 ? "sm:ml-10" : "sm:mr-10"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full object-cover" /></div>)}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {sec.reviews !== false && data.reviews.length > 0 && (
-        <section id="reviews" className="py-28 text-center" style={{ background: th.ink }}>
-          <div className="max-w-3xl mx-auto px-6">
-            <Stars n={data.reviews[0].rating} />
-            <p className="wh text-xl md:text-2xl leading-relaxed mt-4" style={{ color: "#FFFFFF" }}>"{data.reviews[0].text}"</p>
-            <div className="mt-5 text-sm tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.6)" }}>{data.reviews[0].customer_name}</div>
-          </div>
-        </section>
-      )}
-
-      {sec.band !== false && <CtaBand ctx={ctx} />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1265,66 +857,8 @@ function Neon({ ctx }) {
         </div>
       </section>
 
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="Capabilities" title="Our Services" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s, i) => (
-              <div key={i} className="p-6 rounded-xl border transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,.04)", borderColor: th.border }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 22px ${accent}44`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.border; e.currentTarget.style.boxShadow = "none"; }} data-testid={`site-service-${i}`}>
-                {s.img && <div className="-mx-6 -mt-6 mb-4 h-40 overflow-hidden"><img src={s.img} alt={s.name} className="w-full h-full object-cover" /></div>}
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style={{ background: `${accent}1a`, border: `1px solid ${accent}55` }}><CheckCircle2 className="w-5 h-5" style={{ color: accent }} /></div>
-                <h3 className="wh text-lg" style={{ color: "#fff" }}>{s.name}</h3>
-                {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
-                {s.starting_price && <p className="mt-3 font-mono text-sm" style={{ color: accent }}>{s.starting_price}</p>}
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} light />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Process" title="How It Works" ctx={ctx} alt>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="relative">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center font-mono font-bold border" style={{ borderColor: accent, color: accent, boxShadow: `0 0 16px ${accent}66` }}>{i + 1}</div>
-                <h3 className="wh text-lg mt-4" style={{ color: "#fff" }}>{s.title}</h3>
-                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="//advantages" title="Why Choose Us" ctx={ctx}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => {
-              const I = [Clock, ShieldCheck, CheckCircle2, Star][i % 4];
-              return <div key={i} className="p-6 rounded-xl border text-center" style={{ background: "rgba(255,255,255,.04)", borderColor: th.border }}>
-                <I className="w-7 h-7 mx-auto" style={{ color: accent }} /><h3 className="wh text-sm uppercase mt-2 font-mono" style={{ color: "#fff" }}>{s.title}</h3><p className="text-xs mt-1" style={{ color: th.muted }}>{s.desc}</p>
-              </div>;
-            })}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} light>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} light />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1365,67 +899,8 @@ function Playful({ ctx }) {
         </div>
       </section>
 
-      {sec.services !== false && (
-        <SectionLight id="services" kicker="What we do" title="Our Services" ctx={ctx}>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((s, i) => (
-              <div key={i} className={`overflow-hidden ${th.radius} hover:-translate-y-2 transition-transform duration-300`} style={{ background: pastels[i % pastels.length], border: "3px solid #33302E", boxShadow: "6px 6px 0 0 #33302E" }} data-testid={`site-service-${i}`}>
-                {s.img && <div className="h-44 overflow-hidden border-b-[3px]" style={{ borderColor: "#33302E" }}><img src={s.img} loading="lazy" decoding="async" alt={s.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" /></div>}
-                <div className="p-6">
-                  <h3 className="wh text-xl" style={{ color: th.ink }}>{s.name}</h3>
-                  {s.description && <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.description}</p>}
-                  <div className="mt-4 flex items-center justify-between gap-2">
-                    {s.starting_price ? <span className="font-extrabold" style={{ color: accent }}>{s.starting_price}</span> : <span />}
-                    <button onClick={goContact} className={`px-4 h-10 ${th.btn} text-sm`} style={{ background: accent, color: accentText }}>{ctx.cta}</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <SectionLight id="how" kicker="Easy peasy" title="How It Works" ctx={ctx} alt>
-          <div className="grid sm:grid-cols-3 gap-8">
-            {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center wh text-3xl text-white shadow-lg" style={{ background: accent }}>{i + 1}</div>
-                <h3 className="wh text-xl mt-4" style={{ color: th.ink }}>{s.title}</h3>
-                <p className="mt-1.5 text-sm" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <SectionLight id="why" kicker="Why choose us" title="Neighbors love us" ctx={ctx}>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
-              <div key={i} className={`px-6 py-5 rounded-[1.5rem] shadow-md max-w-[240px] ${i % 2 ? "rotate-2" : "-rotate-2"}`} style={{ background: pastels[i % pastels.length] }}>
-                <h3 className="wh text-lg" style={{ color: th.ink }}>{s.title}</h3><p className="text-sm mt-1" style={{ color: th.muted }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Our work" title="Recent Projects" ctx={ctx} dark>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {data.photos.slice(0, 8).map((p, i) => <div key={p.id} className={`overflow-hidden ${i % 3 === 0 ? "rounded-[2rem]" : "rounded-full aspect-square"}`}><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} dark />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} dark />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
@@ -1464,80 +939,8 @@ function Luxe({ ctx }) {
 
       <HeroFormBand ctx={ctx} />
 
-      {sec.services !== false && (
-        <section id="services" className="py-28" style={{ background: th.bg }}>
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="text-center mb-14"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>What we offer</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>Services</h2></div>
-            <div className="divide-y" style={{ borderColor: th.border }}>
-              {services.map((s, i) => (
-                <div key={i} className="group relative py-8 overflow-hidden" data-testid={`site-service-${i}`} style={{ borderColor: th.border }}>
-                  {s.img && <img src={s.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-20 transition-opacity duration-700" />}
-                  <div className="relative flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 className="wh text-3xl" style={{ color: th.ink }}>{s.name}</h3>
-                    {s.starting_price && <span className="text-sm tracking-widest" style={{ color: gold }}>{s.starting_price}</span>}
-                  </div>
-                  {s.description && <p className="relative mt-2 max-w-2xl font-light" style={{ color: th.muted }}>{s.description}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {(data.problem_pages || []).length > 0 && <ProblemsSection ctx={ctx} />}
-      {sec.about !== false && <AboutBlock ctx={ctx} light />}
-      {sec.feature !== false && <FeatureBlock ctx={ctx} />}
-      {sec.how !== false && (
-        <section id="how" className="py-28" style={{ background: th.surface }}>
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="text-center mb-14"><div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>The experience</div><h2 className="wh text-4xl md:text-5xl" style={{ color: th.ink }}>How It Works</h2></div>
-            <div className="space-y-10">
-              {(w.how_it_works?.length ? w.how_it_works : DEFAULT_HOW).map((s, i) => (
-                <div key={i} className="flex gap-8 items-start border-l pl-8" style={{ borderColor: `${gold}55` }}>
-                  <div className="wh text-4xl flex-none w-12" style={{ color: gold }}>{roman[i]}</div>
-                  <div><h3 className="wh text-2xl" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1 font-light" style={{ color: th.muted }}>{s.desc}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {sec.why !== false && sec.feature === false && (
-        <section id="why" className="py-28" style={{ background: th.bg }}>
-          <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: gold }}>Distinction</div>
-              <h2 className="wh text-4xl md:text-5xl mb-6" style={{ color: th.ink }}>Why Choose Us</h2>
-              <div className="space-y-5">
-                {(w.why_us?.length ? w.why_us : DEFAULT_WHY).map((s, i) => (
-                  <div key={i} className="border-b pb-4" style={{ borderColor: th.border }}><h3 className="wh text-xl" style={{ color: th.ink }}>{s.title}</h3><p className="mt-1 font-light" style={{ color: th.muted }}>{s.desc}</p></div>
-                ))}
-              </div>
-            </div>
-            {aboutImgs.length > 0 && (
-            <div className="grid grid-cols-2 gap-4">
-              {aboutImgs.slice(0, 2).map((src, i) => (
-                <img key={i} src={src} alt="" className={`w-full aspect-[3/4] object-cover ${i === 0 ? "mt-8" : ""}`} />
-              ))}
-            </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {sec.gallery !== false && data.photos.length > 0 && (
-        <SectionLight id="gallery" kicker="Portfolio" title="Recent Work" ctx={ctx} light>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {data.photos.slice(0, 8).map((p) => <div key={p.id} className="overflow-hidden rounded-xl aspect-square"><img src={photoUrl(p.id, 700)} loading="lazy" decoding="async" alt={p.label} className="w-full h-full object-cover hover:scale-105 transition" /></div>)}
-          </div>
-        </SectionLight>
-      )}
-
-      {sec.reviews !== false && <ReviewsBlock ctx={ctx} dark />}
-      {sec.band !== false && <CtaBand ctx={ctx} />}
-      {sec.faq !== false && <FaqBlock ctx={ctx} light />}
-      {sec.areas !== false && <AreasBlock ctx={ctx} />}
+      <SectionStack ctx={ctx} />
       {sec.contact !== false && <ContactBlock ctx={ctx} />}
       <FooterBlock ctx={ctx} />
     </div>
