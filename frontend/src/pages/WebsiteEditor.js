@@ -53,6 +53,7 @@ export default function WebsiteEditor() {
   const [galPicking, setGalPicking] = useState(false);
   const [tab, setTab] = useState("publish");
   const [openService, setOpenService] = useState(0);
+  const [recovering, setRecovering] = useState(false);
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
@@ -224,6 +225,22 @@ export default function WebsiteEditor() {
     const arr = [...(w.services || [])];
     arr[i] = { ...arr[i], page: { ...(arr[i].page || {}), ...obj } };
     patch({ services: arr });
+  };
+  const recoverServiceImages = async () => {
+    setRecovering(true);
+    try {
+      const { data } = await api.post("/website/recover-service-images?dry_run=true");
+      const n = (data.recovered || []).length;
+      if (!n) { toast.info(isEs ? "No se encontraron imágenes recuperables en los respaldos." : "No recoverable images found in backups."); setRecovering(false); return; }
+      if (!window.confirm(isEs ? `Se pueden recuperar las imágenes de ${n} servicio(s) desde un respaldo. ¿Aplicar ahora?` : `Images for ${n} service(s) can be recovered from a backup. Apply now?`)) { setRecovering(false); return; }
+      const { data: res } = await api.post("/website/recover-service-images?dry_run=false");
+      const { data: fresh } = await api.get("/website");
+      setW(fresh);
+      toast.success(isEs ? `Recuperadas imágenes de ${(res.recovered || []).length} servicio(s).` : `Recovered images for ${(res.recovered || []).length} service(s).`);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || (isEs ? "No se pudo recuperar." : "Recovery failed."));
+    }
+    setRecovering(false);
   };
   const addServicePhotos = async (i, files) => {
     const list = Array.from(files || []).slice(0, 8);
@@ -970,8 +987,16 @@ export default function WebsiteEditor() {
 
         {/* Service detail page (/servicio/) section colors */}
         <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4" data-testid="service-colors-card">
-          <div className="font-semibold text-sm mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores de la página de servicio" : "Service page colors"}</div>
-          <p className="text-xs text-slate-500 mb-3">{isEs ? "Color de fondo de cada sección de la página /servicio/." : "Background color for each section of the /servicio/ page."}</p>
+          <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+            <div>
+              <div className="font-semibold text-sm flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores de la página de servicio" : "Service page colors"}</div>
+              <p className="text-xs text-slate-500 mt-0.5">{isEs ? "Color de fondo de cada sección de la página /servicio/." : "Background color for each section of the /servicio/ page."}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={recoverServiceImages} disabled={recovering} className="rounded-lg text-xs" data-testid="recover-service-images-btn">
+              {recovering ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5 mr-1" />}
+              {isEs ? "Recuperar fotos de servicios" : "Recover service photos"}
+            </Button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[["hero", "#0a1130", isEs ? "Portada" : "Hero"], ["body", "#ffffff", isEs ? "Contenido" : "Content"], ["gallery", "#f8fafc", isEs ? "Galería" : "Gallery"], ["related", "#ffffff", isEs ? "Relacionados" : "Related"]].map(([key, def, label]) => (
               <div key={key} className="flex items-center gap-2">

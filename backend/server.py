@@ -3199,9 +3199,14 @@ async def get_card_settings(card_id: Optional[str] = None, user_id: str = Depend
 
 def _merge_service_media(incoming, existing):
     """Carry over per-service media (image_id / photos / hero_photo_id) from the
-    website's EXISTING services onto INCOMING (card) services — matched by name,
-    then by index — so syncing the card's service list never wipes the site's
-    service photos."""
+    EXISTING services onto INCOMING services — matched by name, then by index — so
+    a save/sync that OMITS these fields never wipes the service photos.
+
+    Only backfills a field when the incoming service does NOT include that key at
+    all (i.e. the payload simply didn't carry media — card sync, AI regen, an old
+    build, a stale save). If the caller EXPLICITLY sends the key (even empty, e.g.
+    image_id="" or photos=[]), that is treated as a deliberate change and respected,
+    so intentional image removal from the editor still works."""
     if not isinstance(incoming, list):
         return incoming
     ex = existing or []
@@ -3220,7 +3225,7 @@ def _merge_service_media(incoming, existing):
             src = ex[idx]
         if src:
             for f in ("image_id", "photos", "hero_photo_id"):
-                if not s.get(f) and src.get(f):
+                if f not in s and src.get(f):
                     s[f] = src[f]
         merged.append(s)
     return merged
@@ -4749,8 +4754,14 @@ async def update_website(payload: WebsiteIn, background_tasks: BackgroundTasks, 
             raise HTTPException(400, "Ese enlace ya está en uso, elige otro.")
         update["slug"] = s
     update["updated_at"] = _now_iso()
+    # SHIELD: a website save must NEVER wipe per-service images. Carry over
+    # image_id / photos / hero_photo_id from the EXISTING services when the
+    # incoming payload omits them (same protection the card-settings save has).
+    if "services" in update:
+        update["services"] = _merge_service_media(update["services"], (prev or {}).get("services"))
     await db.websites.update_one({"user_id": user_id}, {"$set": update})
-    # Keep services in sync with the Business Card (same company, one service list).
+    # Keep services in sync with the Business Card (same company, one service list) —
+    # push the MEDIA-MERGED list so the card never loses its service images either.
     if "services" in update:
         await db.cards.update_one(
             {"user_id": user_id, "is_primary": True},
@@ -4768,6 +4779,100 @@ async def update_website(payload: WebsiteIn, background_tasks: BackgroundTasks, 
     w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
     w["public_path"] = f"/sitio/{w['slug']}"
     return w
+
+
+@api_router.post("/website/recover-service-images")
+async def recover_service_images(dry_run: bool = True, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_any_feature("card", "business"))):
+    """SAFE, non-destructive recovery of per-service images (image_id / photos /
+    hero_photo_id) from the most recent content snapshot that still has them.
+    - Only FILLS services that currently have no media (never overwrites good data).
+    - Only restores photo references whose files still exist (is_deleted != true).
+    - dry_run=True (default) just reports what COULD be recovered without writing.
+    """
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "No website found")
+    cur_services = list(w.get("services") or [])
+
+    def _has_media(s):
+        return bool(isinstance(s, dict) and (s.get("image_id") or s.get("photos") or s.get("hero_photo_id")))
+
+    # Find the newest snapshot whose website services carry any media.
+    snaps = await db.content_snapshots.find(
+        {"user_id": user_id}, {"_id": 0, "created_at": 1, "website": 1}
+    ).sort("created_at", -1).to_list(60)
+    src_services = None
+    src_when = None
+    for sn in snaps:
+        svcs = ((sn.get("website") or {}).get("services")) or []
+        if any(_has_media(s) for s in svcs):
+            src_services = svcs
+            src_when = sn.get("created_at")
+            break
+    if not src_services:
+        return {"recovered": [], "skipped_missing_files": [], "already_had_media": [s.get("name") for s in cur_services if _has_media(s)], "source_snapshot": None, "message": "No earlier snapshot with service images was found."}
+
+    by_name = {}
+    for s in src_services:
+        if isinstance(s, dict) and (s.get("name") or "").strip():
+            by_name.setdefault(s["name"].strip().lower(), s)
+
+    async def _alive(pid):
+        if not pid:
+            return False
+        return await db.photos.count_documents({"id": pid, "is_deleted": {"$ne": True}}) > 0
+
+    recovered, skipped, already = [], [], []
+    out = []
+    for idx, s in enumerate(cur_services):
+        s = dict(s) if isinstance(s, dict) else s
+        if not isinstance(s, dict):
+            out.append(s); continue
+        if _has_media(s):
+            already.append(s.get("name")); out.append(s); continue
+        src = by_name.get((s.get("name") or "").strip().lower())
+        if src is None and idx < len(src_services) and isinstance(src_services[idx], dict):
+            src = src_services[idx]
+        if not src:
+            out.append(s); continue
+        got = False
+        # image_id
+        if src.get("image_id") and await _alive(src["image_id"]):
+            s["image_id"] = src["image_id"]; got = True
+        elif src.get("image_id"):
+            skipped.append(f"{s.get('name')}: cover {src['image_id']}")
+        # photos
+        kept = []
+        for p in (src.get("photos") or []):
+            pid = p.get("id") if isinstance(p, dict) else None
+            if pid and await _alive(pid):
+                kept.append(p); got = True
+            elif pid:
+                skipped.append(f"{s.get('name')}: photo {pid}")
+        if kept:
+            s["photos"] = kept
+        # hero_photo_id
+        if src.get("hero_photo_id") and await _alive(src["hero_photo_id"]):
+            s["hero_photo_id"] = src["hero_photo_id"]; got = True
+        if got:
+            recovered.append(s.get("name"))
+        out.append(s)
+
+    if not dry_run and recovered:
+        await _snapshot_content(user_id, "antes de recuperar fotos de servicios")
+        now = _now_iso()
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"services": out, "updated_at": now}})
+        await db.cards.update_one({"user_id": user_id, "is_primary": True}, {"$set": {"services": out, "updated_at": now}})
+
+    return {
+        "dry_run": dry_run,
+        "source_snapshot": src_when,
+        "recovered": recovered,
+        "skipped_missing_files": skipped,
+        "already_had_media": already,
+        "applied": (not dry_run and bool(recovered)),
+    }
+
 
 
 # ============================================================================
