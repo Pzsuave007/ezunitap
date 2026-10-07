@@ -1463,7 +1463,7 @@ function RichText({ text, th }) {
 function PageLinks({ ctx }) {
   const { th, accent, lang, w, pageHref } = ctx;
   const items = [
-    (w.solutions_intro || (ctx.services && ctx.services.length > 2)) && [pageHref("soluciones"), agT(lang, "Solutions", "Soluciones")],
+    (w.solutions_intro || (ctx.services && ctx.services.length > 2)) && [pageHref("soluciones"), agT(lang, "Services", "Servicios")],
     (Array.isArray(w.case_studies) && w.case_studies.length) && [pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
     (w.about_story || "").trim() && [pageHref("nosotros"), agT(lang, "About us", "Nosotros")],
   ].filter(Boolean);
@@ -1481,7 +1481,7 @@ function SubNav({ ctx, active }) {
   const { th, accent, accentText, b, w, lang, pageHref, homeHref } = ctx;
   const links = [
     [homeHref, agT(lang, "Home", "Inicio"), "home"],
-    (ctx.services && ctx.services.length) && [pageHref("soluciones"), agT(lang, "Solutions", "Soluciones"), "soluciones"],
+    (ctx.services && ctx.services.length) && [pageHref("soluciones"), agT(lang, "Services", "Servicios"), "soluciones"],
     (Array.isArray(w.case_studies) && w.case_studies.length) && [pageHref("casos"), agT(lang, "Case studies", "Casos"), "casos"],
     (w.about_story || "").trim() && [pageHref("nosotros"), agT(lang, "About", "Nosotros"), "nosotros"],
   ].filter(Boolean);
@@ -1765,7 +1765,7 @@ function SolutionsPage({ ctx }) {
   const { th, accent, lang, services, w, sec } = ctx;
   return (
     <>
-      <SubHero ctx={ctx} kicker={agT(lang, "Our solutions", "Nuestras soluciones")} title={agT(lang, "Marketing to grow your business", "Marketing para impulsar tu crecimiento")} sub={(w.solutions_intro || "").trim() || agT(lang, "Custom strategies that fit your budget and audience.", "Estrategias personalizadas que se ajustan a tu presupuesto y público.")} />
+      <SubHero ctx={ctx} kicker={agT(lang, "Our services", "Nuestros servicios")} title={agT(lang, "Marketing to grow your business", "Marketing para impulsar tu crecimiento")} sub={(w.solutions_intro || "").trim() || agT(lang, "Custom strategies that fit your budget and audience.", "Estrategias personalizadas que se ajustan a tu presupuesto y público.")} />
       <section className="max-w-6xl mx-auto px-5 py-16" data-testid="solutions-list">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {services.map((s, i) => (
@@ -1858,7 +1858,7 @@ function ServiceDetail({ ctx }) {
   const { accent, accentText, lang, services, serviceSlug, pageHref, homeHref, w } = ctx;
   let s = null;
   services.forEach((x, i) => { if (svcSlug(x, i) === serviceSlug) s = x; });
-  if (!s) return <SubHero ctx={ctx} title={agT(lang, "Service not found", "Servicio no encontrado")} sub={<a href={pageHref("soluciones")} style={{ color: accent }}>{agT(lang, "Back to solutions", "Volver a soluciones")}</a>} />;
+  if (!s) return <SubHero ctx={ctx} title={agT(lang, "Service not found", "Servicio no encontrado")} sub={<a href={pageHref("soluciones")} style={{ color: accent }}>{agT(lang, "Back to services", "Volver a servicios")}</a>} />;
   const scv = w.service_colors || {};
   const SDEF = { hero: "#0a1130", body: "#ffffff", gallery: "#f8fafc", related: "#ffffff" };
   const SS = (k) => caseSecTheme(scv[k] || SDEF[k]);
@@ -1939,7 +1939,7 @@ function ServiceDetail({ ctx }) {
             <div className="max-w-6xl mx-auto px-5 py-16 space-y-12">
               {related.length > 0 && (
                 <div data-testid="service-solutions">
-                  <h2 className="wh text-2xl md:text-3xl mb-2" style={{ color: tRel.ink }}>{agT(lang, "How we help with this", "Cómo te ayudamos en esto")}</h2>
+                  <h2 className="wh text-2xl md:text-3xl mb-2" style={{ color: tRel.ink }}>{agT(lang, "Problems We Solve", "Problemas que resolvemos")}</h2>
                   <p className="text-sm mb-6" style={{ color: tRel.muted }}>{agT(lang, "Specific problems we solve within this service.", "Problemas específicos que resolvemos dentro de este servicio.")}</p>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {related.map((p, i) => (
@@ -2481,7 +2481,7 @@ function Agency({ ctx }) {
   const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), RV = S("reviews"), FQ = S("faq");
   const navLinks = [
     [ctx.homeHref, agT(lang, "Home", "Inicio")],
-    services.length > 0 && [ctx.pageHref("soluciones"), agT(lang, "Solutions", "Soluciones")],
+    services.length > 0 && [ctx.pageHref("soluciones"), agT(lang, "Services", "Servicios")],
     (Array.isArray(w.case_studies) && w.case_studies.length) && [ctx.pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
     (steps.length > 0 && sec.how !== false) && ["#how", agT(lang, "Process", "Proceso")],
     (w.about_story || "").trim() && [ctx.pageHref("nosotros"), agT(lang, "About", "Nosotros")],
