@@ -1,3 +1,10 @@
+## 🗺️ Jun 2026 — Nueva pestaña "Sitemap" en el editor de Website (entre Sections e History) [COMPLETO; verificado por usuario]
+- **Petición**: ver en el editor un sitemap desglosado "como lo percibe Google".
+- **Backend**: nuevo `GET /api/website/sitemap` (auth) en server.py (tras get_website, ~línea 4649). Devuelve JSON agrupado (main, solutions /p/, cases /caso/, products /producto/, services /servicio/) replicando las MISMAS reglas del sitemap real: dedup servicio↔/p/, slugify de casos, has_page de productos, published+indexable de /p/. Cada item trae `included` + `reason` (ej. "No publicada") y `title`/`title_es`. Incluye `sitemap_url`, `primary_base`, `domains`, `total_included`/`total_all`, `published`.
+- **Frontend** (`WebsiteEditor.js`): "sitemap" agregado a `TABS` entre "sections" e "history"; i18n `website.tab.sitemap` (EN "Sitemap" / ES "Sitemap"); componente `SitemapPanel` (fetch a `/website/sitemap`) que muestra tarjeta resumen (URL del sitemap + total + aviso si sin publicar) y cada grupo con check verde (incluida) o círculo gris tachado (excluida con el motivo). Títulos en ES/EN según idioma. data-testids: `sitemap-panel`, `sitemap-group-*`, `sitemap-item-*`, `sitemap-url`, `sitemap-total`.
+- **Verificado**: endpoint probado con login admin → responde grupos correctos (las 2 /p/ sin publicar salen `included:false, reason:"No publicada"`). Frontend compila OK; el usuario confirmó que la pestaña se ve bien. Build + `git add -f frontend/build`. Cambio backend+frontend → requiere deploy.
+
+
 ## 🌐 Jun 2026 — FIX llms.txt: "Key Pages" (/p/) salían en inglés en dominio español [COMPLETO; verificado]
 - **Reporte**: en `uni2mkt.com/llms.txt` (dominio ES) las Key Pages salían con título en inglés ("Can't Find Your Business on Google?").
 - **Causa**: `dynamic_llms` (server.py ~6794) usaba `pp.get('headline')` (inglés) aunque `lang=='es'`.
