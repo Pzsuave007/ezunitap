@@ -2415,9 +2415,8 @@ function Agency({ ctx }) {
   const S = (k) => { const bg = sc[k] || DEF[k]; const light = isLight(bg); return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#64748b" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)", pill: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.08)" }; };
   const H = S("hero"), SV = S("services"), PR = S("process"), CT = S("cta"), CO = S("contact"), RV = S("reviews"), FQ = S("faq");
   const navLinks = [
-    services.length > 0 && sec.services !== false && ["#services", agT(lang, "Services", "Servicios")],
+    [ctx.homeHref, agT(lang, "Home", "Inicio")],
     services.length > 0 && [ctx.pageHref("soluciones"), agT(lang, "Solutions", "Soluciones")],
-    (Array.isArray(w.samples) && w.samples.length && sec.samples !== false) && ["#samples", agT(lang, "Work", "Casos")],
     (Array.isArray(w.case_studies) && w.case_studies.length) && [ctx.pageHref("casos"), agT(lang, "Case studies", "Casos de éxito")],
     (steps.length > 0 && sec.how !== false) && ["#how", agT(lang, "Process", "Proceso")],
     (w.about_story || "").trim() && [ctx.pageHref("nosotros"), agT(lang, "About", "Nosotros")],

@@ -1,3 +1,7 @@
+## 🧭 Jun 2026 — Agency nav: quitados "Services" y "Work", agregado "Home" [COMPLETO; compila OK]
+- Usuario reportó links duplicados en el menú superior del Agency. Ajustado `navLinks` en `ContractorSite.js` (función Agency): removidos `Services` (#services) y `Work` (#samples); agregado **Home** (`ctx.homeHref`) al inicio. Nav final: **Home · Solutions · Case studies · Process · About · Contact** (desktop + menú móvil usan el mismo array). Build `main.a22d9510.js` + `git add -f frontend/build`. Despliegue solo frontend.
+
+
 ## 🧩 Jun 2026 — "Problems We Solve" ahora es reordenable + coloreable (integrada al SectionStack) [COMPLETO; compila OK]
 - **Reporte del usuario**: no encontraba la sección "How can we help? / Problems We Solve" en el editor para cambiarle el color ni moverla.
 - **Causa**: `ProblemsSection` (id `solutions`) se renderizaba APARTE en cada template (antes del `SectionStack`), fuera del sistema de orden/colores, así que no aparecía en las listas del editor (reorden ni colores) y en Agency ni siquiera se mostraba.
