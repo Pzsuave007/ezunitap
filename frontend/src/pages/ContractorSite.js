@@ -228,7 +228,8 @@ export default function ContractorSite({ injected, page, byDomain }) {
   const poolAt = () => null;
   const esServices = esOn && Array.isArray(w.content_es.services) && w.content_es.services.length ? w.content_es.services : null;
   const _rawServices = esServices || (data.services.length ? data.services : DEFAULT_SERVICES);
-  const services = _rawServices.map((s, i) => ({ ...s, img: photoUrl(s.image_id, 800) || null }));
+  const _enServices = data.services.length ? data.services : DEFAULT_SERVICES;
+  const services = _rawServices.map((s, i) => ({ ...s, slug: s.slug || _enServices[i]?.slug || slugify(_enServices[i]?.name || s.name) || `servicio-${i}`, img: photoUrl(s.image_id, 800) || null }));
   const goContact = () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
   const teamImg = photoUrl(w.team_photo_id, 700) || null;
@@ -1768,11 +1769,12 @@ function SolutionsPage({ ctx }) {
       <section className="max-w-6xl mx-auto px-5 py-16" data-testid="solutions-list">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {services.map((s, i) => (
-            <div key={i} data-testid={`solution-${i}`} className="rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ borderColor: th.border, background: th.surface }}>
+            <a key={i} href={ctx.pageHref(`servicio/${svcSlug(s, i)}`)} data-testid={`solution-${i}`} className="group block rounded-2xl border p-7 transition-all hover:-translate-y-1" style={{ borderColor: th.border, background: th.surface }}>
               {s.img ? <div className="w-14 h-14 rounded-xl overflow-hidden mb-5"><img src={s.img} alt="" className="w-full h-full object-contain" /></div> : <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
               <h3 className="font-bold text-lg" style={{ color: th.ink }}>{s.name || s.title}</h3>
               {s.description && <p className="mt-2.5 text-sm leading-relaxed" style={{ color: th.muted }}>{s.description}</p>}
-            </div>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+            </a>
           ))}
         </div>
       </section>
@@ -1889,14 +1891,33 @@ function ServiceDetail({ ctx }) {
           <PhotoGallery items={gallery.map((p) => ({ thumb: photoUrl(p.id, 800), full: photoUrl(p.id, 1600) }))} th={th} cols="grid-cols-2 sm:grid-cols-3" square={false} testidPrefix="service-gallery-img" />
         </section>
       )}
+      {(() => {
+        const norm = (x) => (x || "").toLowerCase().trim();
+        const si = services.indexOf(s);
+        const related = (ctx.data?.problem_pages || []).filter((p) => norm(p.service_name) === norm(s.name) || (si >= 0 && norm(p.service_name) === norm(services[si]?.name)));
+        if (!related.length) return null;
+        return (
+          <section className="max-w-5xl mx-auto px-5 pb-16" data-testid="service-solutions">
+            <h2 className="wh text-2xl md:text-3xl mb-2" style={{ color: th.ink }}>{agT(lang, "How we help with this", "Cómo te ayudamos en esto")}</h2>
+            <p className="text-sm mb-6" style={{ color: th.muted }}>{agT(lang, "Specific problems we solve within this service.", "Problemas específicos que resolvemos dentro de este servicio.")}</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {related.map((p, i) => (
+                <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`service-solution-${i}`} className="group block p-6 rounded-2xl border transition hover:-translate-y-1" style={{ background: th.surface, borderColor: th.border }}>
+                  <div className="text-base font-bold leading-snug" style={{ color: th.ink }}>{(lang === "es" && (p.headline_es || p.service_name_es)) || p.headline || p.service_name}</div>
+                  <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "See how we help", "Mira cómo ayudamos")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+                </a>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
       {others.length > 0 && (
         <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-more">
           <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Other services", "Otros servicios")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {others.map((x) => {
               const i = services.indexOf(x);
-              const pp = ppForService(ctx.data, x.name, i);
-              const href = pp ? ctx.ppHref(pp.page_slug) : pageHref(`servicio/${svcSlug(x, i)}`);
+              const href = pageHref(`servicio/${svcSlug(x, i)}`);
               return (
                 <a key={i} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: th.surface, borderColor: th.border }}>
                   {x.img && <div className="relative aspect-[16/10] overflow-hidden"><CoverFill src={x.img} alt="" /></div>}
@@ -2252,7 +2273,7 @@ function ServicesModule({ ctx, alt }) {
           <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{w.services_title || agT(lang, "Our services", "Nuestros servicios")}</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {services.map((s, i) => { const pp = ppForService(ctx.data, s.name, i); const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`); return (
+          {services.map((s, i) => { const href = ctx.pageHref(`servicio/${svcSlug(s, i)}`); return (
             <a key={i} href={href} data-testid={`site-service-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: T.card, borderColor: T.cardBorder }}>
               {s.img && <div className="relative aspect-[16/10] overflow-hidden" style={{ background: T.card }}><CoverFill src={s.img} alt={s.name || ""} /></div>}
               <div className="p-7 flex-1 flex flex-col">

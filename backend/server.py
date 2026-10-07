@@ -4714,9 +4714,7 @@ async def website_sitemap_breakdown(user_id: str = Depends(get_current_user_id))
 
     svc_items = []
     for i, svc in enumerate(w.get("services") or []):
-        dup = (svc.get("name") or "").lower().strip() in pp_names
-        svc_items.append({"path": f"/servicio/{_svc_slug(svc, i)}", "title": svc.get("name") or "", "included": not dup,
-                          "reason": None if not dup else "Representado por su página /p/ (evita duplicados)"})
+        svc_items.append({"path": f"/servicio/{_svc_slug(svc, i)}", "title": svc.get("name") or "", "included": True})
     if svc_items:
         groups.append({"key": "services", "label": "Páginas de servicio (/servicio/)", "items": svc_items})
 
@@ -6092,8 +6090,6 @@ async def website_sitemap(request: Request):
                 urls.append(_url(f"/p/{pp['page_slug']}"))
                 pp_names.add((pp.get("service_name") or "").lower().strip())
             for i, svc in enumerate(site.get("services") or []):
-                if (svc.get("name") or "").lower().strip() in pp_names:
-                    continue
                 urls.append(_url(f"/servicio/{_svc_slug(svc, i)}"))
         xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
@@ -6144,8 +6140,6 @@ async def website_sitemap(request: Request):
             urls.append(f"<url><loc>{base}/sitio/{slug}/soluciones</loc><changefreq>weekly</changefreq></url>")
         _pp_names = pp_names_by_user.get(s.get("user_id"), set())
         for i, svc in enumerate(s.get("services") or []):
-            if (svc.get("name") or "").lower().strip() in _pp_names:
-                continue
             urls.append(f"<url><loc>{base}/sitio/{slug}/servicio/{_svc_slug(svc, i)}</loc><changefreq>weekly</changefreq></url>")
         if (s.get("about_story") or "").strip():
             urls.append(f"<url><loc>{base}/sitio/{slug}/nosotros</loc><changefreq>weekly</changefreq></url>")
@@ -6204,6 +6198,16 @@ def _site_view(w: dict, lang: str) -> dict:
         for k, v in w["content_es"].items():
             if v:
                 view[k] = v
+    # Stamp a stable, language-independent slug on each service (from the English
+    # base name) so /servicio/<slug> resolves identically on the EN and ES domains.
+    base_services = w.get("services") or []
+    vs = view.get("services")
+    if isinstance(vs, list):
+        view["services"] = [dict(s) if isinstance(s, dict) else s for s in vs]
+        for i, s in enumerate(view["services"]):
+            if isinstance(s, dict) and not (s.get("slug") or "").strip():
+                base = base_services[i] if (i < len(base_services) and isinstance(base_services[i], dict)) else s
+                s["slug"] = _svc_slug(base, i)
     return view
 
 
@@ -6272,7 +6276,7 @@ async def _build_site_html(w: dict, request: Request, lang: str = "en"):
         links += f'<li><a href="{_esc(href)}">{_esc(pp.get("headline") or pp.get("service_name") or pslug)}</a></li>'
         pp_names.add((pp.get("service_name") or "").lower().strip())
     for i, s in enumerate(services):
-        if not isinstance(s, dict) or (s.get("name") or "").lower().strip() in pp_names:
+        if not isinstance(s, dict):
             continue
         sslug = _svc_slug(s, i)
         href = f"{base}/servicio/{sslug}" if on_domain else f"{base}/sitio/{slug}/servicio/{sslug}"

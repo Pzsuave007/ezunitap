@@ -1,3 +1,13 @@
+## 🔧 Jun 2026 — Páginas de Servicio (/servicio/) restauradas + soluciones anidadas + fix slug ES [COMPLETO; verificado a nivel datos]
+- **Reporte**: las páginas `/servicio/` daban error / no existían; el usuario quiere DOS tipos: páginas de Servicio (lo que hacen, indexables) y dentro de cada una las Soluciones (/p/, problemas específicos) de ese servicio. Yo había hecho dedup servicio↔/p/ y eso las ocultó/rompió.
+- **Causa raíz del error en dominio ES**: los servicios no tienen `slug` guardado → el slug se derivaba del NOMBRE. En ES el nombre está traducido ("Diseño Web y Gráfico"→`diseno-web-y-grafico`) pero el sitemap/backend usa el nombre inglés (`web-graphic-design`). Mismatch → "Service not found".
+- **Fixes**:
+  - **Frontend** (`ContractorSite.js`): (1) los enlaces de servicios (home `ServicesModule`, `SolutionsPage` ahora clickable, "otros servicios" en `ServiceDetail`) SIEMPRE van a `/servicio/{slug}` (ya no a `/p/`). (2) `ServiceDetail` ahora lista las SOLUCIONES relacionadas (pps cuyo `service_name` coincide) con enlace a `/p/`. (3) Cada servicio recibe un **slug estable derivado del nombre inglés** (`slug: s.slug || enServices[i].slug || slugify(enName)`), igual en EN y ES → resuelve en ambos dominios.
+  - **Backend** (`server.py`): (1) `_site_view` estampa el mismo slug estable (inglés) en los servicios para SSR. (2) Sitemap (per-dominio + global) y SSR ahora incluyen TODOS los `/servicio/` (quitado el dedup que los excluía). (3) Endpoint `/api/website/sitemap`: servicios siempre `included: true`.
+- **Verificado**: sitemap per-dominio ahora lista los 10 `/servicio/` (antes 1); breakdown servicios 10/10; `_svc_slug`==`svcSlug` (ambos nombre inglés). Compila OK, backend limpio. Build + staged. Requiere deploy.
+- Nota: no hay SSR dedicado para /servicio/ (bots reciben SPA, como /caso/); aceptable.
+
+
 ## 🗺️ Jun 2026 — Nueva pestaña "Sitemap" en el editor de Website (entre Sections e History) [COMPLETO; verificado por usuario]
 - **Petición**: ver en el editor un sitemap desglosado "como lo percibe Google".
 - **Backend**: nuevo `GET /api/website/sitemap` (auth) en server.py (tras get_website, ~línea 4649). Devuelve JSON agrupado (main, solutions /p/, cases /caso/, products /producto/, services /servicio/) replicando las MISMAS reglas del sitemap real: dedup servicio↔/p/, slugify de casos, has_page de productos, published+indexable de /p/. Cada item trae `included` + `reason` (ej. "No publicada") y `title`/`title_es`. Incluye `sitemap_url`, `primary_base`, `domains`, `total_included`/`total_all`, `published`.
