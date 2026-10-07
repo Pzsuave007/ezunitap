@@ -62,6 +62,7 @@ export default function WebsiteEditor() {
   const [openService, setOpenService] = useState(0);
   const [recovering, setRecovering] = useState(false);
   const [openSec, setOpenSec] = useState("hero");
+  const [openPub, setOpenPub] = useState("status");
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
@@ -594,7 +595,23 @@ export default function WebsiteEditor() {
 
       {/* Publish + link */}
       {tab === "publicar" && (
-      <Card className="card-elevated border-0 shadow-none p-5">
+        <div className="space-y-3" data-testid="publish-accordion">
+          {[
+            { k: "status", es: "Estado, enlace y SEO", en: "Status, link & SEO", Icon: Globe },
+            { k: "domains", es: "Dominios personalizados", en: "Custom domains", Icon: ExternalLink },
+            { k: "sitemap", es: "Mapa del sitio", en: "Sitemap", Icon: FileText },
+            { k: "history", es: "Historial de versiones", en: "Version history", Icon: CalendarClock },
+          ].map(({ k, es, en, Icon }) => (
+            <div key={k} className={`rounded-xl border overflow-hidden transition-colors ${openPub === k ? "border-blue-400 ring-2 ring-blue-50" : "border-slate-200"}`} data-testid={`pub-acc-${k}`}>
+              <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-slate-50 min-h-[44px]" onClick={() => setOpenPub(openPub === k ? "" : k)} data-testid={`pub-head-${k}`}>
+                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center flex-none"><Icon className="w-4.5 h-4.5" /></div>
+                <div className="font-semibold text-sm flex-1 min-w-0 truncate">{isEs ? es : en}</div>
+                <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${openPub === k ? "rotate-180" : ""}`} />
+              </div>
+              {openPub === k && (
+                <div className="border-t border-slate-100 bg-white">
+                  {k === "status" && (
+      <div className="p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="font-semibold flex items-center gap-2">{t("website.status")}
@@ -632,7 +649,24 @@ export default function WebsiteEditor() {
             <Textarea value={w.seo_description || ""} onChange={(e) => patch({ seo_description: e.target.value })} onBlur={saveAndToast} className="rounded-xl mt-1.5 min-h-[70px]" data-testid="website-seo-desc" placeholder={t("website.seoMetaDescPh")} />
           </div>
         </div>
-      </Card>
+      </div>
+                  )}
+                  {k === "domains" && (
+      <div className="space-y-4 p-4" data-testid="website-domains">
+        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-600">
+          {t("website.domainsBilingualNote")}
+        </div>
+        <DomainConnect slot={1} published={!!w.published} badge={t("website.domainBadgeEn")} />
+        <DomainConnect slot={2} published={!!w.published} badge={t("website.domainBadgeEs")} />
+      </div>
+                  )}
+                  {k === "sitemap" && <div className="p-2"><SitemapPanel /></div>}
+                  {k === "history" && <div className="p-2"><VersionHistory /></div>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Templates */}
@@ -837,8 +871,6 @@ export default function WebsiteEditor() {
 
       {tab === "agency" && <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} />}
 
-      {tab === "publicar" && <VersionHistory />}
-      {tab === "publicar" && <SitemapPanel />}
 
       {/* Forms, Booking & AI Chat — decide what visitors can do on your site */}
       {tab === "funciones" && (
@@ -945,15 +977,6 @@ export default function WebsiteEditor() {
       )}
 
       {/* Custom Domains — two slots: primary (EN) + secondary (ES), one site */}
-      {tab === "publicar" && (
-      <div className="space-y-4" data-testid="website-domains">
-        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-600">
-          {t("website.domainsBilingualNote")}
-        </div>
-        <DomainConnect slot={1} published={!!w.published} badge={t("website.domainBadgeEn")} />
-        <DomainConnect slot={2} published={!!w.published} badge={t("website.domainBadgeEs")} />
-      </div>
-      )}
 
       {/* Content */}
       {tab === "content" && (
