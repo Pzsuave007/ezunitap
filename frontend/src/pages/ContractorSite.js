@@ -2548,19 +2548,19 @@ function HeroFormBand({ ctx, dark }) {
 }
 
 function ProblemsSection({ ctx, bg }) {
-  const { w, th, accent, data } = ctx;
+  const { w, th, accent, data, lang } = ctx;
   const pages = data.problem_pages || [];
   if (!pages.length) return null;
   return (
-    <SectionLight id="solutions" kicker="How can we help?" title="Problems We Solve" ctx={ctx} bg={bg} dark={th.dark}>
+    <SectionLight id="solutions" kicker={agT(lang, "How can we help?", "¿Cómo podemos ayudarte?")} title={agT(lang, "Problems We Solve", "Problemas que resolvemos")} ctx={ctx} bg={bg} dark={th.dark}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {pages.map((p, i) => (
           <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`site-problem-card-${i}`}
              className={`group block p-6 ${th.radius} transition hover:-translate-y-1`}
              style={{ background: th.surface, border: `1px solid ${th.border}` }}>
-            <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>{p.service_name}</div>
-            <div className="text-lg font-bold leading-snug" style={{ color: th.ink }}>{p.headline || p.service_name}</div>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>See how we help <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></div>
+            <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>{(lang === "es" && p.service_name_es) || p.service_name}</div>
+            <div className="text-lg font-bold leading-snug" style={{ color: th.ink }}>{(lang === "es" && p.headline_es) || p.headline || p.service_name}</div>
+            <div className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "See how we help", "Mira cómo ayudamos")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></div>
           </a>
         ))}
       </div>

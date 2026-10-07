@@ -1,3 +1,21 @@
+## 🌐 Jun 2026 — FIX i18n tarjetas "Problems We Solve" (salían en inglés en sitios ES) [COMPLETO; payload verificado]
+- **Reporte**: no solo el título, también las TARJETAS (nombre de servicio + titular) salían en inglés en el sitio español, aunque las páginas internas sí están en español.
+- **Causa raíz**: el endpoint `public_website` (server.py ~5863) armaba `problem_pages` SOLO con campos en inglés (`service_name`, `content.problem_headline`), ignorando `content_es`. Además el `service_name` NO tenía versión en español guardada en ningún lado (`content_es` del pp no incluye el nombre del servicio).
+- **Fix backend** (`server.py` + `ai_service.py`):
+  - Payload `problem_pages` ahora incluye `headline_es` (= `content_es.problem_headline`) y `service_name_es`.
+  - Nuevo `ai_service.translate_label_es(text)` (traduce nombre corto de servicio a ES con gpt-4o-mini vía Emergent key). `_translate_pp_es(content, seo, service_name)` ahora también traduce el service_name → `service_name_es`. `_translate_all_pp_es` solo saltea páginas que YA tengan `service_name_es` (así re-traduce una vez para backfill).
+  - Backfill ejecutado en preview para `uni2-marketing` (8 páginas) → service_name_es poblado.
+- **Fix frontend** (`ContractorSite.js` `ProblemsSection`): la tarjeta usa `(lang==='es' && p.service_name_es)||p.service_name` para el kicker y `(lang==='es' && p.headline_es)||p.headline` para el título. (También el kicker/título/CTA de la sección ya usaban `agT`.)
+- **Verificado**: payload del endpoint devuelve `service_name_es` y `headline_es` correctos (ej. "Diseño Web y Arquitectura Web" / "¿Tu sitio web confunde a los clientes?"). Backend sin errores. Build `main.1233a977.js` + `git add -f frontend/build`.
+- ⚠️ **PRODUCCIÓN (ezunitech.com)**: tras `git pull && bash deploy.sh`, los TÍTULOS saldrán en español de inmediato (headline_es ya existe en `content_es`). Los nombres de categoría (service_name_es) se poblarán cuando corra la traducción ES de las páginas: el usuario debe **re-ejecutar "Traducir a español"** en el editor (o guardar el sitio, que dispara `_auto_translate_es_task`). Como el skip ahora exige `service_name_es`, esa corrida rellena todas las páginas.
+
+
+## 🌐 Jun 2026 — FIX i18n: "Problems We Solve" salía en inglés en sitios ES [COMPLETO; compila OK]
+- **Causa**: en `ProblemsSection` (`ContractorSite.js`) el `kicker`, `title` y el CTA de cada tarjeta estaban HARDCODED en inglés (no usaban `agT(lang, en, es)`), así que salían en inglés sin importar `lang` del sitio. La traducción con IA solo traduce contenido del usuario (`content_es`), NO las etiquetas fijas de la plantilla.
+- **Fix**: `ProblemsSection` ahora destructura `lang` y usa `agT`: kicker "¿Cómo podemos ayudarte?" / title "Problemas que resolvemos" / CTA "Mira cómo ayudamos" (EN se mantiene). Build `main.f76ab23f.js` + `git add -f frontend/build`.
+- **PENDIENTE/observado**: `ContactBlock` y posiblemente otros bloques tienen el mismo patrón de etiquetas fijas en inglés ("Let's talk", "Get Your Free Estimate", "Book an Appointment"...). Ofrecí al usuario hacer un barrido completo de i18n de etiquetas de plantilla; espera su confirmación.
+
+
 ## 🧭 Jun 2026 — Agency nav: quitados "Services" y "Work", agregado "Home" [COMPLETO; compila OK]
 - Usuario reportó links duplicados en el menú superior del Agency. Ajustado `navLinks` en `ContractorSite.js` (función Agency): removidos `Services` (#services) y `Work` (#samples); agregado **Home** (`ctx.homeHref`) al inicio. Nav final: **Home · Solutions · Case studies · Process · About · Contact** (desktop + menú móvil usan el mismo array). Build `main.a22d9510.js` + `git add -f frontend/build`. Despliegue solo frontend.
 

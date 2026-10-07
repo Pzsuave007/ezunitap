@@ -1097,6 +1097,21 @@ async def translate_problem_page(payload: dict) -> dict:
     return await _translate_chunk(PROBLEM_PAGE_ES_SYSTEM, payload)
 
 
+async def translate_label_es(text: str) -> str:
+    """Translate a short label / service name to natural Latin-American Spanish."""
+    if not (text or "").strip():
+        return ""
+    try:
+        out = await _translate_chunk(
+            'You translate a short service/category name to natural Latin-American Spanish. '
+            'You receive JSON {"t":"..."}. Return ONLY JSON {"t":"<translation>"}. '
+            'Keep it short, title-case, no quotes inside.',
+            {"t": text})
+        return ((out or {}).get("t") or text).strip() or text
+    except Exception:  # noqa: BLE001
+        return text
+
+
 
 AGENCY_CASE_SYSTEM = """You write concise, persuasive marketing CASE-STUDY copy for a Latino marketing
 agency that helps small U.S. businesses grow. You receive a client's name, category and some notes.

@@ -5862,10 +5862,12 @@ async def _website_payload(w):
         "card_slug": card.get("slug") or "",
         "problem_pages": [
             {"service_name": p.get("service_name"), "page_slug": p.get("page_slug"),
-             "headline": (p.get("content") or {}).get("problem_headline") or p.get("service_name")}
+             "service_name_es": p.get("service_name_es"),
+             "headline": (p.get("content") or {}).get("problem_headline") or p.get("service_name"),
+             "headline_es": (p.get("content_es") or {}).get("problem_headline")}
             for p in await db.problem_pages.find(
                 {"user_id": w["user_id"], "published": True},
-                {"_id": 0, "service_name": 1, "page_slug": 1, "content": 1},
+                {"_id": 0, "service_name": 1, "page_slug": 1, "content": 1, "content_es": 1, "service_name_es": 1},
             ).to_list(100)
         ],
     }
@@ -7119,13 +7121,16 @@ def _pp_owner_view(pp: dict) -> dict:
     }
 
 
-async def _translate_pp_es(content: dict, seo: dict) -> dict:
-    """Translate one problem page's content + seo to Spanish. Returns
-    {"content_es": {...}, "seo_es": {...}} or {} on failure (non-fatal)."""
+async def _translate_pp_es(content: dict, seo: dict, service_name: str = "") -> dict:
+    """Translate one problem page's content + seo (+ service_name) to Spanish. Returns
+    {"content_es": {...}, "seo_es": {...}, "service_name_es": "..."} or {} on failure (non-fatal)."""
     try:
         out = await ai_service.translate_problem_page({"content": content or {}, "seo": seo or {}})
         if isinstance(out, dict) and out.get("content"):
-            return {"content_es": out.get("content") or {}, "seo_es": out.get("seo") or {}}
+            res = {"content_es": out.get("content") or {}, "seo_es": out.get("seo") or {}}
+            if (service_name or "").strip():
+                res["service_name_es"] = await ai_service.translate_label_es(service_name)
+            return res
     except Exception as e:  # noqa: BLE001
         logger.warning(f"problem page ES translate failed: {e!r}")
     return {}
@@ -7147,14 +7152,14 @@ async def _translate_all_pp_es(user_id: str):
     todo = []
     for p in pages:
         sig = _sig(p)
-        if p.get("pp_src_sig") == sig and p.get("content_es"):
+        if p.get("pp_src_sig") == sig and p.get("content_es") and p.get("service_name_es"):
             continue  # unchanged since last translation
         todo.append((p, sig))
     if not todo:
         logger.info("problem pages ES: all up to date, nothing to translate")
         return
     results = await asyncio.gather(
-        *[_translate_pp_es(p.get("content", {}), p.get("seo", {})) for (p, _) in todo],
+        *[_translate_pp_es(p.get("content", {}), p.get("seo", {}), p.get("service_name", "")) for (p, _) in todo],
         return_exceptions=True,
     )
     for (p, sig), es in zip(todo, results):
