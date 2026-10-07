@@ -687,22 +687,6 @@ export default function WebsiteEditor() {
           })}
         </div>
       </Card>
-      <Card className="card-elevated border-0 shadow-none p-5" data-testid="stats-band-card">
-        <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Franja de estadísticas" : "Stats band"}</div>
-        <p className="text-sm text-slate-500 mb-3">{isEs ? "Hasta 4 cifras que llaman la atención (ej. 25+ Años de experiencia). Déjalas vacías para usar las de ejemplo." : "Up to 4 eye-catching numbers (e.g. 25+ Years of experience). Leave blank to use the defaults."}</p>
-        <div className="space-y-2">
-          {[0,1,2,3].map((i) => {
-            const st = (Array.isArray(w.stats) ? w.stats : [])[i] || {};
-            const setStat = (field, val) => { const arr = [0,1,2,3].map((j) => ({ ...((Array.isArray(w.stats) ? w.stats : [])[j] || {}) })); arr[i] = { ...arr[i], [field]: val }; patch({ stats: arr.filter((x) => (x.value || x.label)) }); };
-            return (
-              <div key={i} className="flex gap-2">
-                <Input value={st.value || ""} onChange={(e) => setStat("value", e.target.value)} onBlur={saveAndToast} placeholder="25+" className="h-9 rounded-lg w-24 flex-none" data-testid={`stat-value-${i}`} />
-                <Input value={st.label || ""} onChange={(e) => setStat("label", e.target.value)} onBlur={saveAndToast} placeholder={isEs ? "Años de experiencia" : "Years of experience"} className="h-9 rounded-lg flex-1" data-testid={`stat-label-${i}`} />
-              </div>
-            );
-          })}
-        </div>
-      </Card>
       <Card className="card-elevated border-0 shadow-none p-5" data-testid="import-media-card">
         <div className="font-semibold mb-1">{t("website.copyImages")}</div>
         <p className="text-sm text-slate-500 mb-3">{t("website.copyImagesDesc")}</p>
