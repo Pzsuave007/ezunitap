@@ -4585,6 +4585,8 @@ class WebsiteIn(BaseModel):
     case_colors: Optional[dict] = None            # {hero, info, challenge, solution, tailored, results, portfolio} bg hex for case detail pages
     about_sections: Optional[list] = None          # [{title, body(html), images:[photo_id]}] story sections with side images
     products: Optional[list] = None                # [{name, tagline, description, img, link, cta}] software/products showcase
+    stats: Optional[list] = None                   # [{value, label}] headline stats band (e.g. "25+", "Years")
+    section_order: Optional[list] = None           # ordered section keys applied to any template body
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -5307,7 +5309,7 @@ async def website_localize_images(user_id: str = Depends(get_current_user_id), _
 
 
 _PROTECTED_ITEM_KEYS = {"img", "cover", "photo", "photos", "images", "image_id", "link", "logo", "slug", "caseSlug", "name", "lat", "lng",
-                        "gallery", "video_url", "video", "has_page", "show_demo_form"}
+                        "gallery", "video_url", "video", "has_page", "show_demo_form", "value"}
 
 
 def _restore_protected(translated, original, unprotect=()):

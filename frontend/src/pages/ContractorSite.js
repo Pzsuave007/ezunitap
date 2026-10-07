@@ -2787,6 +2787,198 @@ function StatCountUp({ target }) {
   return <span ref={ref}>{n}{suffix}</span>;
 }
 
+const SECTION_ORDER_DEFAULT = ["services", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+
+function orderedSectionKeys(w) {
+  const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_ORDER_DEFAULT.includes(k)) : [];
+  const rest = SECTION_ORDER_DEFAULT.filter((k) => !saved.includes(k));
+  return [...saved, ...rest];
+}
+
+function modTheme(ctx, alt) {
+  const t = ctx.th || {};
+  const base = t.bg || "#ffffff";
+  const surf = t.surface || base;
+  const bg = alt ? surf : base;
+  const light = isLight(bg);
+  return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#5b6472" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)" };
+}
+
+function StatsBand({ ctx }) {
+  const { w, lang, accent, accentText } = ctx;
+  const stats = (Array.isArray(w.stats) && w.stats.length ? w.stats : [
+    { value: "25+", label: agT(lang, "Years of experience", "Años de experiencia") },
+    { value: "150+", label: agT(lang, "Businesses trust us", "Negocios confían en nosotros") },
+    { value: "24/7", label: agT(lang, "AI systems working", "Sistemas con IA") },
+    { value: "100%", label: agT(lang, "Bilingual · US-wide", "Bilingüe · en todo EE.UU.") },
+  ]).slice(0, 4);
+  return (
+    <section className="relative" data-testid="site-stats" style={{ background: accent, color: accentText }}>
+      <div className="max-w-6xl mx-auto px-5 py-9 md:py-11 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+        {stats.map((s, i) => { const Icon = STAT_ICONS[i % STAT_ICONS.length]; return (
+          <div key={i} data-testid={`site-stat-${i}`} className="text-center flex flex-col items-center px-2 group">
+            <Icon className="w-6 h-6 mb-2 opacity-70 group-hover:scale-110 transition-transform" />
+            <div className="wh text-4xl md:text-5xl font-black tabular-nums leading-none"><StatCountUp target={s.value} /></div>
+            <div className="mt-2 text-xs md:text-sm font-bold uppercase tracking-wide leading-tight" style={{ opacity: 0.82 }}>{s.label}</div>
+          </div>); })}
+      </div>
+    </section>
+  );
+}
+
+function ServicesModule({ ctx, alt }) {
+  const { w, services, accent, lang } = ctx;
+  if (!services?.length) return null;
+  const T = modTheme(ctx, alt);
+  return (
+    <section id="services" className="py-16 md:py-24" style={{ background: T.bg }}>
+      <div className="max-w-6xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "What we do", "Qué hacemos")}</p>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{w.services_title || agT(lang, "Our services", "Nuestros servicios")}</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {services.map((s, i) => { const pp = ppForService(ctx.data, s.name, i); const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`); return (
+            <a key={i} href={href} data-testid={`site-service-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: T.card, borderColor: T.cardBorder }}>
+              {s.img && <div className="relative aspect-[16/10] overflow-hidden" style={{ background: T.card }}><CoverFill src={s.img} alt={s.name || ""} /></div>}
+              <div className="p-7 flex-1 flex flex-col">
+                {!s.img && <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
+                <h3 className="font-bold text-lg" style={{ color: T.ink }}>{s.name || s.title}</h3>
+                {s.description && <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: T.muted }}>{s.description}</p>}
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+              </div>
+            </a>); })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowModule({ ctx, alt }) {
+  const { w, accent, lang } = ctx;
+  const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
+  if (!steps.length) return null;
+  const T = modTheme(ctx, alt);
+  return (
+    <section id="how" className="border-y py-16 md:py-24" style={{ background: T.bg, borderColor: T.cardBorder }}>
+      <div className="max-w-6xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "How it works", "Cómo funciona")}</p>
+          <h2 className="wh text-3xl md:text-4xl" style={{ color: T.ink }}>{w.how_it_works_title || agT(lang, "How it works", "Cómo funciona")}</h2>
+        </div>
+        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5">
+          {steps.slice(0, 5).map((s, i) => (
+            <div key={i} className="relative rounded-2xl border p-6" style={{ background: T.card, borderColor: T.cardBorder }}>
+              <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}33` }}>{i + 1}</span>
+              <h3 className="font-bold text-base relative mt-2" style={{ color: T.ink }}>{s.title}</h3>
+              {s.desc && <p className="mt-2 text-xs leading-relaxed relative" style={{ color: T.muted }}>{s.desc}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyModule({ ctx, alt }) {
+  const { w, accent, lang } = ctx;
+  const items = Array.isArray(w.why_us) ? w.why_us : [];
+  if (!items.length) return null;
+  const T = modTheme(ctx, alt);
+  return (
+    <section id="why" className="py-16 md:py-24" style={{ background: T.bg }}>
+      <div className="max-w-6xl mx-auto px-5">
+        <h2 className="wh text-3xl md:text-4xl text-center mb-12" style={{ color: T.ink }}>{w.why_us_title || agT(lang, "Why choose us", "Por qué elegirnos")}</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {items.map((s, i) => (
+            <div key={i} className="rounded-2xl border p-6" style={{ background: T.card, borderColor: T.cardBorder }}>
+              <div className="wh text-3xl font-black mb-2" style={{ color: accent }}>{String(i + 1).padStart(2, "0")}</div>
+              <h3 className="font-bold text-lg" style={{ color: T.ink }}>{s.title}</h3>
+              {s.desc && <p className="mt-2 text-sm leading-relaxed" style={{ color: T.muted }}>{s.desc}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GalleryModule({ ctx, alt }) {
+  const { data, lang } = ctx;
+  const photos = (data?.photos || []);
+  if (!photos.length) return null;
+  const T = modTheme(ctx, alt);
+  return (
+    <section id="gallery" className="py-16 md:py-24" style={{ background: T.bg }}>
+      <div className="max-w-6xl mx-auto px-5">
+        <h2 className="wh text-3xl md:text-4xl text-center mb-10" style={{ color: T.ink }}>{agT(lang, "Recent work", "Trabajos recientes")}</h2>
+        <div className="columns-2 md:columns-3 gap-3 [column-fill:_balance]">
+          {photos.slice(0, 12).map((p) => (
+            <div key={p.id} className="mb-3 break-inside-avoid overflow-hidden rounded-xl">
+              <img src={photoUrl(p.id, 700)} loading="lazy" alt={p.label || ""} className="w-full object-cover hover:opacity-90 transition" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Unified, reorderable body shared by ALL templates. Each template keeps its
+ *  own hero/nav/footer; the body modules render in the client's section_order
+ *  and adapt to the template's theme. */
+function SectionStack({ ctx }) {
+  const { w, data, services } = ctx;
+  const sec = ctx.sec || w.sections || {};
+  const keys = orderedSectionKeys(w);
+  const reviews = (Array.isArray(data?.reviews) ? data.reviews : []).filter((r) => (r.text || "").trim());
+  const has = {
+    services: (services?.length || 0) > 0,
+    samples: (Array.isArray(w.samples) && w.samples.length > 0) || (Array.isArray(w.case_studies) && w.case_studies.length > 0),
+    products: Array.isArray(w.products) && w.products.length > 0,
+    about: !!((w.about_story || w.about || w.subheadline || "").toString().trim()) || (Array.isArray(w.about_sections) && w.about_sections.length > 0),
+    feature: Array.isArray(w.features) && w.features.length > 0,
+    how: Array.isArray(w.how_it_works) && w.how_it_works.length > 0,
+    why: Array.isArray(w.why_us) && w.why_us.length > 0,
+    gallery: (data?.photos?.length || 0) > 0,
+    logos: Array.isArray(w.client_logos) && w.client_logos.length > 0,
+    stats: true,
+    reviews: reviews.length > 0,
+    map: true,
+    band: true,
+    faq: Array.isArray(w.faqs) && w.faqs.length > 0,
+    areas: Array.isArray(w.areas) && w.areas.length > 0,
+  };
+  let n = 0;
+  const out = [];
+  for (const k of keys) {
+    if (sec[k] === false || has[k] === false) continue;
+    const alt = n % 2 === 1;
+    const bg = modTheme(ctx, alt).bg;
+    let el = null;
+    switch (k) {
+      case "services": el = <ServicesModule key={k} ctx={ctx} alt={alt} />; break;
+      case "samples": el = <SamplesSection key={k} ctx={ctx} sty={{ bg }} />; break;
+      case "products": el = <ProductsSection key={k} ctx={ctx} sty={{ bg }} />; break;
+      case "about": el = <AboutBlock key={k} ctx={ctx} />; break;
+      case "feature": el = <FeatureBlock key={k} ctx={ctx} />; break;
+      case "how": el = <HowModule key={k} ctx={ctx} alt={alt} />; break;
+      case "why": el = <WhyModule key={k} ctx={ctx} alt={alt} />; break;
+      case "gallery": el = <GalleryModule key={k} ctx={ctx} alt={alt} />; break;
+      case "logos": el = <LogosStrip key={k} ctx={ctx} sty={{ bg }} />; break;
+      case "stats": el = <StatsBand key={k} ctx={ctx} />; break;
+      case "reviews": el = <ReviewsBlock key={k} ctx={ctx} />; break;
+      case "map": el = <ClientMap key={k} ctx={ctx} sty={{ bg }} />; break;
+      case "band": el = <CtaBand key={k} ctx={ctx} />; break;
+      case "faq": el = <FaqBlock key={k} ctx={ctx} />; break;
+      case "areas": el = <AreasBlock key={k} ctx={ctx} />; break;
+      default: el = null;
+    }
+    if (el) { out.push(el); n++; }
+  }
+  return <>{out}</>;
+}
+
 function Agency({ ctx }) {
   const { w, b, accent, accentText, heroImg, bandImg, services, goContact, lang, sec } = ctx;
   const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
@@ -2845,157 +3037,9 @@ function Agency({ ctx }) {
         </div>
       </section>
 
-      {/* STATS BAND — eye-catching strip across the screen */}
-      {sec.stats !== false && (() => {
-        const stats = (Array.isArray(w.stats) && w.stats.length ? w.stats : [
-          { value: "25+", label: agT(lang, "Years of experience", "Años de experiencia") },
-          { value: "150+", label: agT(lang, "Businesses trust us", "Negocios confían en nosotros") },
-          { value: "24/7", label: agT(lang, "AI systems working", "Sistemas con IA") },
-          { value: "100%", label: agT(lang, "Bilingual · US-wide", "Bilingüe · en todo EE.UU.") },
-        ]).slice(0, 4);
-        return (
-          <section className="relative" data-testid="agency-stats" style={{ background: accent, color: accentText }}>
-            <div className="max-w-6xl mx-auto px-5 py-9 md:py-11 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
-              {stats.map((s, i) => {
-                const Icon = STAT_ICONS[i % STAT_ICONS.length];
-                return (
-                  <div key={i} data-testid={`agency-stat-${i}`} className="text-center flex flex-col items-center px-2 group">
-                    <Icon className="w-6 h-6 mb-2 opacity-70 group-hover:scale-110 transition-transform" />
-                    <div className="wh text-4xl md:text-5xl font-black tabular-nums leading-none"><StatCountUp target={s.value} /></div>
-                    <div className="mt-2 text-xs md:text-sm font-bold uppercase tracking-wide leading-tight" style={{ opacity: 0.82 }}>{s.label}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })()}
+      <SectionStack ctx={ctx} />
 
-      {/* SERVICES */}
-      {services.length > 0 && sec.services !== false && (
-        <section id="services" className="py-16 md:py-24" style={{ background: SV.bg }}>
-          <div className="max-w-6xl mx-auto px-5">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "What we do", "Qué hacemos")}</p>
-              <h2 className="wh text-3xl md:text-4xl" style={{ color: SV.ink }}>{w.services_title || agT(lang, "Smart tools to grow your business", "Herramientas inteligentes para crecer tu negocio")}</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {services.map((s, i) => {
-                const pp = ppForService(ctx.data, s.name, i);
-                const href = pp ? ctx.ppHref(pp.page_slug) : ctx.pageHref(`servicio/${svcSlug(s, i)}`);
-                return (
-                  <a key={i} href={href} data-testid={`agency-svc-${i}`} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ background: SV.card, borderColor: SV.cardBorder }}>
-                    {s.img && <div className="relative aspect-[16/10] overflow-hidden" style={{ background: SV.card }}><CoverFill src={s.img} alt={s.name || ""} /></div>}
-                    <div className="p-7 flex-1 flex flex-col">
-                      {!s.img && <div className="w-11 h-11 rounded-xl grid place-items-center mb-5 wh text-lg font-black" style={{ background: `${accent}22`, color: accent }}>{String(i + 1).padStart(2, "0")}</div>}
-                      <h3 className="font-bold text-lg" style={{ color: SV.ink }}>{s.name || s.title}</h3>
-                      {s.description && <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: SV.muted }}>{s.description}</p>}
-                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {sec.products !== false && <ProductsSection ctx={ctx} sty={{ bg: sc.products || DEF.samples }} />}
-      {sec.samples !== false && <SamplesSection ctx={ctx} sty={{ bg: sc.samples || DEF.samples }} />}
-      {sec.logos !== false && <LogosStrip ctx={ctx} sty={{ bg: sc.logos || DEF.logos }} />}
-      {sec.map !== false && <ClientMap ctx={ctx} sty={{ bg: sc.map || DEF.map }} />}
-
-      {/* PROCESS */}
-      {steps.length > 0 && sec.how !== false && (
-        <section id="how" className="border-y py-16 md:py-24" style={{ background: PR.bg, borderColor: PR.cardBorder }}>
-          <div className="max-w-6xl mx-auto px-5">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "How it works", "Cómo funciona")}</p>
-              <h2 className="wh text-3xl md:text-4xl" style={{ color: PR.ink }}>{w.how_it_works_title || agT(lang, "We transform your digital presence step by step", "Transformamos tu presencia digital paso a paso")}</h2>
-            </div>
-            <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5">
-              {steps.slice(0, 5).map((s, i) => (
-                <div key={i} className="relative rounded-2xl border p-6" style={{ background: PR.card, borderColor: PR.cardBorder }}>
-                  <span className="wh absolute -top-3 -left-1 text-5xl font-black" style={{ color: `${accent}33` }}>{i + 1}</span>
-                  <h3 className="font-bold text-base relative mt-2" style={{ color: PR.ink }}>{s.title}</h3>
-                  {s.desc && <p className="mt-2 text-xs leading-relaxed relative" style={{ color: PR.muted }}>{s.desc}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* REVIEWS */}
-      {sec.reviews !== false && reviews.length > 0 && (
-        <section id="reviews" className="py-16 md:py-24" style={{ background: RV.bg }} data-testid="site-reviews">
-          <div className="max-w-6xl mx-auto px-5">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{agT(lang, "Reviews", "Reseñas")}</p>
-              <h2 className="wh text-3xl md:text-4xl" style={{ color: RV.ink }}>{agT(lang, "What our clients say", "Lo que dicen nuestros clientes")}</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {reviews.slice(0, 6).map((r, i) => (
-                <div key={i} data-testid={`agency-review-${i}`} className="rounded-2xl border p-6" style={{ background: RV.card, borderColor: RV.cardBorder }}>
-                  <Stars n={r.rating || 5} />
-                  <p className="mt-3 text-sm leading-relaxed" style={{ color: RV.muted }}>"{r.text}"</p>
-                  {r.customer_name && <div className="mt-4 font-bold text-sm" style={{ color: RV.ink }}>{r.customer_name}</div>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CTA BAND */}
-      {sec.band !== false && (
-        <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: CT.bg }}>
-          {bandImg && <img src={bandImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-          {bandImg && <div className="absolute inset-0" style={{ background: CT.dark ? "linear-gradient(180deg,rgba(0,0,0,.7),rgba(0,0,0,.82))" : "linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.85))" }} />}
-          <div className="relative max-w-3xl mx-auto px-5 text-center">
-            <h2 className="wh text-3xl md:text-5xl" style={{ color: CT.ink }}>{agT(lang, "Ready to elevate your business?", "¿Listo para elevar tu negocio?")}</h2>
-            <p className="mt-5 leading-relaxed" style={{ color: CT.muted }}>{agT(lang, "Book a free demo and see how a smart digital system can bring you more clients.", "Agenda una demostración gratuita y descubre cómo un sistema digital inteligente puede traerte más clientes.")}</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <button onClick={goContact} className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: CT.dark ? accent : "#0a1130", color: CT.dark ? accentText : "#ffffff" }}>{ctx.cta} <ArrowRight className="w-5 h-5" /></button>
-              {phone && <a href={`tel:${phone}`} className="inline-flex items-center gap-2 border px-7 py-4 rounded-full font-semibold hover:opacity-80" style={{ borderColor: CT.cardBorder, color: CT.ink }}><Phone className="w-4 h-4" /> {phone}</a>}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* FAQ */}
-      {faqs.length > 0 && sec.faq !== false && (
-        <section className="py-16 md:py-20" style={{ background: FQ.bg }}>
-          <div className="max-w-3xl mx-auto px-5">
-            <h2 className="wh text-3xl md:text-4xl text-center mb-8" style={{ color: FQ.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
-            <div className="space-y-3">
-              {faqs.map((f, i) => (
-                <details key={i} className="group rounded-xl border p-4" style={{ background: FQ.card, borderColor: FQ.cardBorder }}>
-                  <summary className="flex items-center justify-between cursor-pointer font-semibold text-sm list-none" style={{ color: FQ.ink }}>{f.q}<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" style={{ color: accent }} /></summary>
-                  {f.a && <p className="mt-3 text-sm leading-relaxed" style={{ color: FQ.muted }}>{f.a}</p>}
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CONTACT */}
-      <section id="contact" className="py-16 md:py-24" style={{ background: CO.bg }}>
-        <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-start">
-          <div>
-            <h2 className="wh text-3xl md:text-4xl" style={{ color: CO.ink }}>{ctx.bookingOn ? agT(lang, "Book your appointment", "Agenda tu cita") : agT(lang, "Ready to grow?", "¿Listo para crecer?")}</h2>
-            <p className="mt-4 leading-relaxed max-w-md" style={{ color: CO.muted }}>{ctx.bookingOn ? agT(lang, "Pick a time that works — we'll confirm right away.", "Elige un horario — te confirmamos de inmediato.") : agT(lang, "Tell us about your goals and we'll show you how we can help. No obligation.", "Cuéntanos tus metas y te mostramos cómo ayudarte. Sin compromiso.")}</p>
-            {phone && <a href={`tel:${phone}`} className="mt-6 inline-flex items-center gap-2 text-sm" style={{ color: CO.muted }}><Phone className="w-4 h-4" style={{ color: accent }} /> {phone}</a>}
-            {areas.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {areas.map((a, i) => <span key={i} className="text-xs px-3 py-1 rounded-full" style={{ background: CO.pill, color: CO.muted }}><MapPin className="w-3 h-3 inline mr-1" style={{ color: accent }} />{a}</span>)}
-              </div>
-            )}
-          </div>
-          <div className="w-full max-w-md"><HeroForm ctx={ctx} dark={CO.dark} /></div>
-        </div>
-      </section>
+      {sec.contact !== false && <ContactBlock ctx={ctx} />}
 
       <AgencyFooter ctx={ctx} />
     </div>

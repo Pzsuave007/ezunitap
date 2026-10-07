@@ -16,7 +16,7 @@ import RichEditor from "@/components/RichEditor";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "about", "feature", "gallery", "products", "samples", "logos", "map", "reviews", "how", "why", "band", "faq", "areas"];
+const SECTION_KEYS = ["services", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["publish", "design", "content", "services", "agency", "problem", "media", "forms", "sections", "history"];
 // Curated color palettes per template — one tap for a pro look.
@@ -1048,15 +1048,38 @@ export default function WebsiteEditor() {
       {tab === "sections" && (
       <Card className="card-elevated border-0 shadow-none p-5">
         <div className="font-semibold mb-1">{t("website.sections")}</div>
-        <p className="text-sm text-slate-500 mb-3">{t("website.sectionsDesc")}</p>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Prende/apaga secciones y usa las flechas para ordenarlas. El orden se aplica a cualquier template que elijas." : "Toggle sections on/off and use the arrows to reorder them. The order applies to whichever template you choose."}</p>
         <div className="space-y-1">
-          {SECTION_KEYS.map((key) => (
-            <div key={key} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-              <span className="text-sm">{t(`website.sec.${key}`)}</span>
-              <Switch checked={w.sections?.[key] !== false} data-testid={`website-section-${key}`}
-                onCheckedChange={(v) => save({ sections: { ...w.sections, [key]: v } })} />
-            </div>
-          ))}
+          {(() => {
+            const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_KEYS.includes(k)) : [];
+            const order = [...saved, ...SECTION_KEYS.filter((k) => !saved.includes(k))];
+            const SEC_LABELS = { stats: isEs ? "Franja de estadísticas" : "Stats band" };
+            const move = (idx, dir) => {
+              const j = idx + dir;
+              if (j < 0 || j >= order.length) return;
+              const n = [...order];
+              [n[idx], n[j]] = [n[j], n[idx]];
+              save({ section_order: n });
+            };
+            return order.map((key, idx) => {
+              let label = SEC_LABELS[key] || t(`website.sec.${key}`);
+              if (label === `website.sec.${key}`) label = key;
+              return (
+                <div key={key} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0" data-testid={`website-section-row-${key}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex flex-col flex-none">
+                      <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} className="w-6 h-4 flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-25" data-testid={`website-section-up-${key}`}>▲</button>
+                      <button type="button" onClick={() => move(idx, 1)} disabled={idx === order.length - 1} className="w-6 h-4 flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-25" data-testid={`website-section-down-${key}`}>▼</button>
+                    </div>
+                    <span className="text-xs text-slate-300 w-5 flex-none">{idx + 1}</span>
+                    <span className="text-sm truncate">{label}</span>
+                  </div>
+                  <Switch checked={w.sections?.[key] !== false} data-testid={`website-section-${key}`}
+                    onCheckedChange={(v) => save({ sections: { ...w.sections, [key]: v } })} />
+                </div>
+              );
+            });
+          })()}
         </div>
       </Card>
       )}

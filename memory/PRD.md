@@ -1258,3 +1258,10 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - ContractorSite.js componente Agency: nueva STATS BAND full-width (franja) entre hero y servicios, fondo = accent de marca, íconos (Award/Users/Zap/Globe) + números grandes con animación count-up (StatCountUp + IntersectionObserver). Defaults bilingües: 25+ Años experiencia, 150+ Negocios confían, 24/7 IA, 100% Bilingüe. Override opcional vía w.stats; ocultable con sec.stats=false.
 - Nota: AgencyHome.js es código muerto (no importado); el home real es el componente Agency en ContractorSite.js.
 - Validado por screenshot en /sitio/uni2-marketing.
+
+## [Jun 2026] Secciones reordenables + módulos compartidos (SectionStack) — FASE 1
+- Backend: WebsiteIn + section_order (orden de secciones) y stats[]. stats añadido a _TR_PERITEM_LISTS (traducción) y "value" a _PROTECTED_ITEM_KEYS.
+- ContractorSite.js: nuevo sistema compartido: orderedSectionKeys, modTheme, módulos StatsBand/ServicesModule/HowModule/WhyModule/GalleryModule + SectionStack (renderiza en el orden del cliente, adapta al tema del template, incluye TODOS los módulos: services, samples/casos, products, about, feature, how, why, gallery, logos, stats, reviews, map, band, faq, areas).
+- Template Agency REFACTORIZADO para usar <SectionStack/> (mantiene su nav/hero/footer). Verificado por screenshot: todos los módulos en orden.
+- Editor (WebsiteEditor.js) tab Secciones: lista ordenable con flechas ▲▼ (escribe section_order) + switches on/off + nuevo label "Stats band". SECTION_KEYS reordenado e incluye "stats".
+- PENDIENTE FASE 2: migrar los otros 10 templates (cinematic, responder, bento, craftsman, trust, slider, onepage, neon, playful, luxe) para que también usen <SectionStack/> y respeten el orden. Hoy esos templates aún usan su cuerpo propio (el reorder aplica visualmente solo en agency por ahora). Se dejó en fases para no romper sitios de otros clientes en vivo.
