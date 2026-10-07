@@ -1265,3 +1265,7 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Template Agency REFACTORIZADO para usar <SectionStack/> (mantiene su nav/hero/footer). Verificado por screenshot: todos los módulos en orden.
 - Editor (WebsiteEditor.js) tab Secciones: lista ordenable con flechas ▲▼ (escribe section_order) + switches on/off + nuevo label "Stats band". SECTION_KEYS reordenado e incluye "stats".
 - PENDIENTE FASE 2: migrar los otros 10 templates (cinematic, responder, bento, craftsman, trust, slider, onepage, neon, playful, luxe) para que también usen <SectionStack/> y respeten el orden. Hoy esos templates aún usan su cuerpo propio (el reorder aplica visualmente solo en agency por ahora). Se dejó en fases para no romper sitios de otros clientes en vivo.
+
+## [Jun 2026] Fix: SectionStack respeta section_colors
+- SectionStack ahora resuelve el color de cada sección desde w.section_colors (map CK: services→services, samples/products→samples, logos→logos, map→map, how→process, reviews→reviews, band→cta, faq→faq) y lo inyecta vía ctxWithBg(ctx,bg) para que cada módulo (nuevos y compartidos: AboutBlock/ReviewsBlock/FaqBlock/CtaBand/AreasBlock/Samples/Products/Logos/Map) pinte el color elegido con texto auto-contrastado. Helpers nuevos: thm(ctx), ctxWithBg(ctx,bg). Secciones sin color asignado alternan bg del tema. Stats mantiene color accent.
+- Verificado por screenshot (services con color custom aplicado).

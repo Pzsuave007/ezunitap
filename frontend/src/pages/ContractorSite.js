@@ -2804,6 +2804,26 @@ function modTheme(ctx, alt) {
   return { bg, dark: !light, ink: light ? "#0f172a" : "#ffffff", muted: light ? "#5b6472" : "rgba(255,255,255,.72)", card: light ? "#ffffff" : "rgba(255,255,255,.05)", cardBorder: light ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.12)" };
 }
 
+// Section theme read straight from ctx.th (used by shared body modules so the
+// background can be fully controlled by SectionStack via ctxWithBg).
+function thm(ctx) {
+  const t = ctx.th || {};
+  return { bg: t.bg || "#ffffff", ink: t.ink || "#0f172a", muted: t.muted || "#5b6472", card: t.surface || "#ffffff", cardBorder: t.border || "rgba(0,0,0,.08)" };
+}
+
+// Returns a ctx whose th is re-derived from an explicit background color so any
+// section component (shared or new) paints with the client's chosen color and
+// auto-contrasting text.
+function ctxWithBg(ctx, bg) {
+  const light = isLight(bg);
+  const th = { ...ctx.th, bg, dark: !light,
+    surface: light ? "#ffffff" : "rgba(255,255,255,.05)",
+    ink: light ? "#0f172a" : "#ffffff",
+    muted: light ? "#5b6472" : "rgba(255,255,255,.72)",
+    border: light ? "rgba(0,0,0,.10)" : "rgba(255,255,255,.14)" };
+  return { ...ctx, th };
+}
+
 function StatsBand({ ctx }) {
   const { w, lang, accent, accentText } = ctx;
   const stats = (Array.isArray(w.stats) && w.stats.length ? w.stats : [
@@ -2829,7 +2849,7 @@ function StatsBand({ ctx }) {
 function ServicesModule({ ctx, alt }) {
   const { w, services, accent, lang } = ctx;
   if (!services?.length) return null;
-  const T = modTheme(ctx, alt);
+  const T = thm(ctx);
   return (
     <section id="services" className="py-16 md:py-24" style={{ background: T.bg }}>
       <div className="max-w-6xl mx-auto px-5">
@@ -2858,7 +2878,7 @@ function HowModule({ ctx, alt }) {
   const { w, accent, lang } = ctx;
   const steps = Array.isArray(w.how_it_works) ? w.how_it_works : [];
   if (!steps.length) return null;
-  const T = modTheme(ctx, alt);
+  const T = thm(ctx);
   return (
     <section id="how" className="border-y py-16 md:py-24" style={{ background: T.bg, borderColor: T.cardBorder }}>
       <div className="max-w-6xl mx-auto px-5">
@@ -2884,7 +2904,7 @@ function WhyModule({ ctx, alt }) {
   const { w, accent, lang } = ctx;
   const items = Array.isArray(w.why_us) ? w.why_us : [];
   if (!items.length) return null;
-  const T = modTheme(ctx, alt);
+  const T = thm(ctx);
   return (
     <section id="why" className="py-16 md:py-24" style={{ background: T.bg }}>
       <div className="max-w-6xl mx-auto px-5">
@@ -2907,7 +2927,7 @@ function GalleryModule({ ctx, alt }) {
   const { data, lang } = ctx;
   const photos = (data?.photos || []);
   if (!photos.length) return null;
-  const T = modTheme(ctx, alt);
+  const T = thm(ctx);
   return (
     <section id="gallery" className="py-16 md:py-24" style={{ background: T.bg }}>
       <div className="max-w-6xl mx-auto px-5">
@@ -2949,29 +2969,33 @@ function SectionStack({ ctx }) {
     faq: Array.isArray(w.faqs) && w.faqs.length > 0,
     areas: Array.isArray(w.areas) && w.areas.length > 0,
   };
+  const sc = w.section_colors || {};
+  const CK = { services: "services", samples: "samples", products: "samples", logos: "logos", map: "map", how: "process", reviews: "reviews", band: "cta", faq: "faq" };
   let n = 0;
   const out = [];
   for (const k of keys) {
     if (sec[k] === false || has[k] === false) continue;
     const alt = n % 2 === 1;
-    const bg = modTheme(ctx, alt).bg;
+    const custom = CK[k] && sc[CK[k]];
+    const bg = custom || modTheme(ctx, alt).bg;
+    const sctx = ctxWithBg(ctx, bg);
     let el = null;
     switch (k) {
-      case "services": el = <ServicesModule key={k} ctx={ctx} alt={alt} />; break;
-      case "samples": el = <SamplesSection key={k} ctx={ctx} sty={{ bg }} />; break;
-      case "products": el = <ProductsSection key={k} ctx={ctx} sty={{ bg }} />; break;
-      case "about": el = <AboutBlock key={k} ctx={ctx} />; break;
-      case "feature": el = <FeatureBlock key={k} ctx={ctx} />; break;
-      case "how": el = <HowModule key={k} ctx={ctx} alt={alt} />; break;
-      case "why": el = <WhyModule key={k} ctx={ctx} alt={alt} />; break;
-      case "gallery": el = <GalleryModule key={k} ctx={ctx} alt={alt} />; break;
-      case "logos": el = <LogosStrip key={k} ctx={ctx} sty={{ bg }} />; break;
+      case "services": el = <ServicesModule key={k} ctx={sctx} />; break;
+      case "samples": el = <SamplesSection key={k} ctx={sctx} sty={{ bg }} />; break;
+      case "products": el = <ProductsSection key={k} ctx={sctx} sty={{ bg }} />; break;
+      case "about": el = <AboutBlock key={k} ctx={sctx} bg={bg} />; break;
+      case "feature": el = <FeatureBlock key={k} ctx={sctx} />; break;
+      case "how": el = <HowModule key={k} ctx={sctx} />; break;
+      case "why": el = <WhyModule key={k} ctx={sctx} />; break;
+      case "gallery": el = <GalleryModule key={k} ctx={sctx} />; break;
+      case "logos": el = <LogosStrip key={k} ctx={sctx} sty={{ bg }} />; break;
       case "stats": el = <StatsBand key={k} ctx={ctx} />; break;
-      case "reviews": el = <ReviewsBlock key={k} ctx={ctx} />; break;
-      case "map": el = <ClientMap key={k} ctx={ctx} sty={{ bg }} />; break;
-      case "band": el = <CtaBand key={k} ctx={ctx} />; break;
-      case "faq": el = <FaqBlock key={k} ctx={ctx} />; break;
-      case "areas": el = <AreasBlock key={k} ctx={ctx} />; break;
+      case "reviews": el = <ReviewsBlock key={k} ctx={sctx} dark={!isLight(bg)} />; break;
+      case "map": el = <ClientMap key={k} ctx={sctx} sty={{ bg }} />; break;
+      case "band": el = <CtaBand key={k} ctx={sctx} />; break;
+      case "faq": el = <FaqBlock key={k} ctx={sctx} dark={!isLight(bg)} />; break;
+      case "areas": el = <AreasBlock key={k} ctx={sctx} bg={bg} />; break;
       default: el = null;
     }
     if (el) { out.push(el); n++; }
