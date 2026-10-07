@@ -52,6 +52,7 @@ export default function WebsiteEditor() {
   const [baTarget, setBaTarget] = useState(null);
   const [galPicking, setGalPicking] = useState(false);
   const [tab, setTab] = useState("publish");
+  const [openService, setOpenService] = useState(0);
   const fileRef = useRef(null);
   const galFileRef = useRef(null);
   const baFileRef = useRef(null);
@@ -208,6 +209,20 @@ export default function WebsiteEditor() {
   const svcPatch = (i, obj) => {
     const arr = [...(w.services || [])];
     arr[i] = { ...arr[i], ...obj };
+    patch({ services: arr });
+  };
+  const moveService = (i, dir) => {
+    const arr = [...(w.services || [])];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    patch({ services: arr });
+    setOpenService(j);
+  };
+  const setServiceColor = (key, val) => patch({ service_colors: { ...(w?.service_colors || {}), [key]: val } });
+  const svcPagePatch = (i, obj) => {
+    const arr = [...(w.services || [])];
+    arr[i] = { ...arr[i], page: { ...(arr[i].page || {}), ...obj } };
     patch({ services: arr });
   };
   const addServicePhotos = async (i, files) => {
@@ -953,60 +968,178 @@ export default function WebsiteEditor() {
           )}
         </div>
 
-        {(w.services || []).map((s, i) => (
-          <div key={i} className="p-3 rounded-xl bg-slate-50 space-y-2" data-testid={`website-service-${i}`}>
-            <div className="flex items-center gap-2">
-              <Input value={s.name || ""} onChange={(e) => listSet("services", i, "name", e.target.value)} className="h-11 rounded-lg bg-white font-semibold" placeholder={t("website.serviceName")} />
-              <Button variant="ghost" size="icon" onClick={() => listDel("services", i)} className="text-slate-400 flex-none" data-testid={`website-service-del-${i}`}><Trash2 className="w-4 h-4" /></Button>
-            </div>
-            <Textarea value={s.description || ""} onChange={(e) => listSet("services", i, "description", e.target.value)} className="rounded-lg bg-white min-h-[56px]" placeholder={t("website.serviceDesc")} />
-            <div className="flex justify-end -mt-1">
-              <AiBtn fieldKey={`service-${i}`} onClick={() => aiWrite("service_desc", s.name, `service-${i}`, (txt) => listSet("services", i, "description", txt))} />
-            </div>
-            <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
-            <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
-              <span className="text-xs text-slate-600 min-w-0">{s.page ? (isEs ? "✓ Página de venta con IA lista" : "✓ AI sales page ready") : (isEs ? "Crea la página de venta de este servicio con IA" : "Create this service's sales page with AI")}</span>
-              <AiBtn fieldKey={`service-page-${i}`} onClick={() => aiServicePage(i)} label={isEs ? (s.page ? "Regenerar" : "Crear página IA") : (s.page ? "Regenerate" : "Create page")} />
-            </div>
-            <div className="flex items-center gap-2">
-              {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />}
-              <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-img-${i}`}>
-                <ImagePlus className="w-4 h-4" /> {s.image_id ? t("website.changePhoto") : t("website.addPhoto")}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadServiceImg(i, e.target.files?.[0])} />
-              </label>
-              {s.image_id && <button onClick={async () => { const arr=[...(w.services||[])]; arr[i]={...arr[i], image_id:""}; setW((prev)=>({...prev, services:arr})); await api.put("/website", { services: arr }); }} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
-            </div>
-            {/* Work photos for THIS service (used on its Conversion Page proof section) */}
-            <div className="pt-2 border-t border-slate-200/70">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-500">{t("website.workPhotos")}</span>
-                <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-photos-add-${i}`}>
-                  <ImagePlus className="w-3.5 h-3.5" /> {t("website.addWorkPhotos")}
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addServicePhotos(i, e.target.files)} />
-                </label>
+        {/* Service detail page (/servicio/) section colors */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4" data-testid="service-colors-card">
+          <div className="font-semibold text-sm mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores de la página de servicio" : "Service page colors"}</div>
+          <p className="text-xs text-slate-500 mb-3">{isEs ? "Color de fondo de cada sección de la página /servicio/." : "Background color for each section of the /servicio/ page."}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[["hero", "#0a1130", isEs ? "Portada" : "Hero"], ["body", "#ffffff", isEs ? "Contenido" : "Content"], ["gallery", "#f8fafc", isEs ? "Galería" : "Gallery"], ["related", "#ffffff", isEs ? "Relacionados" : "Related"]].map(([key, def, label]) => (
+              <div key={key} className="flex items-center gap-2">
+                <input type="color" value={(w.service_colors && w.service_colors[key]) || def} onChange={(e) => setServiceColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`servicecolor-${key}`} />
+                <span className="text-sm">{label}</span>
               </div>
-              {(s.photos || []).length > 0 && (
-                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid={`website-service-photos-${i}`}>
-                  {s.photos.map((ph, pi) => (
-                    <div key={ph.id || pi} className="rounded-lg bg-white border border-slate-200 p-1.5 space-y-1">
-                      <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${ph.id}?w=300`} alt="" className="w-full h-20 rounded object-cover" />
-                      <div className="flex items-center gap-1">
-                        <select value={ph.kind || "general"} onChange={(e) => setServicePhotoKind(i, pi, e.target.value)} className="text-[11px] rounded border border-slate-200 bg-white px-1 py-0.5 flex-1" data-testid={`website-service-photo-kind-${i}-${pi}`}>
-                          <option value="general">{t("website.photoKind.general")}</option>
-                          <option value="before">{t("website.photoKind.before")}</option>
-                          <option value="after">{t("website.photoKind.after")}</option>
-                          <option value="completed">{t("website.photoKind.completed")}</option>
-                        </select>
-                        <button onClick={() => delServicePhoto(i, pi)} className="text-slate-400 hover:text-red-500" data-testid={`website-service-photo-del-${i}-${pi}`}><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+        {(w.services || []).map((s, i) => (
+          <div key={i} className="rounded-xl border border-slate-200 overflow-hidden" data-testid={`website-service-${i}`}>
+            {/* Collapsed header (click to expand only this one) */}
+            <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition" onClick={() => setOpenService(openService === i ? -1 : i)} data-testid={`website-service-toggle-${i}`}>
+              <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 flex-none border border-slate-200">
+                {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-full h-full object-cover" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm truncate">{s.name || (isEs ? "Servicio sin título" : "Untitled service")}</div>
+                <div className="text-xs text-slate-400 truncate">{s.page ? (isEs ? "✓ Página de venta lista" : "✓ Sales page ready") : (isEs ? "Sin página de venta" : "No sales page yet")}</div>
+              </div>
+              <button type="button" onClick={(e) => { e.stopPropagation(); moveService(i, -1); }} disabled={i === 0} className="w-7 h-7 rounded-md text-slate-400 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center flex-none" title={isEs ? "Subir" : "Move up"} data-testid={`website-service-up-${i}`}><ArrowUp className="w-4 h-4" /></button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); moveService(i, 1); }} disabled={i === (w.services || []).length - 1} className="w-7 h-7 rounded-md text-slate-400 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center flex-none" title={isEs ? "Bajar" : "Move down"} data-testid={`website-service-down-${i}`}><ArrowDown className="w-4 h-4" /></button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); listDel("services", i); }} className="w-7 h-7 rounded-md text-red-500 hover:bg-red-50 flex items-center justify-center flex-none" title={isEs ? "Eliminar" : "Delete"} data-testid={`website-service-del-${i}`}><Trash2 className="w-4 h-4" /></button>
+              <ChevronDown className={`w-5 h-5 text-slate-400 flex-none transition-transform ${openService === i ? "rotate-180" : ""}`} />
             </div>
+            {openService === i && (
+            <div className="p-3 pt-0 space-y-2 border-t border-slate-100">
+              <div className="pt-2">
+                <Input value={s.name || ""} onChange={(e) => listSet("services", i, "name", e.target.value)} className="h-11 rounded-lg bg-white font-semibold" placeholder={t("website.serviceName")} data-testid={`website-service-name-${i}`} />
+              </div>
+              <Textarea value={s.description || ""} onChange={(e) => listSet("services", i, "description", e.target.value)} className="rounded-lg bg-white min-h-[56px]" placeholder={t("website.serviceDesc")} data-testid={`website-service-desc-${i}`} />
+              <div className="flex justify-end -mt-1">
+                <AiBtn fieldKey={`service-${i}`} onClick={() => aiWrite("service_desc", s.name, `service-${i}`, (txt) => listSet("services", i, "description", txt))} />
+              </div>
+              <Input value={s.starting_price || ""} onChange={(e) => listSet("services", i, "starting_price", e.target.value)} className="h-11 rounded-lg bg-white" placeholder={t("website.servicePrice")} />
+
+              {/* AI full sales page generator */}
+              <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
+                <span className="text-xs text-slate-600 min-w-0">{s.page ? (isEs ? "✓ Página de venta con IA lista — edítala abajo" : "✓ AI sales page ready — edit below") : (isEs ? "Crea la página de venta de este servicio con IA" : "Create this service's sales page with AI")}</span>
+                <AiBtn fieldKey={`service-page-${i}`} onClick={() => aiServicePage(i)} label={isEs ? (s.page ? "Regenerar" : "Crear página IA") : (s.page ? "Regenerate" : "Create page")} />
+              </div>
+
+              {/* Main photo */}
+              <div className="flex items-center gap-2">
+                {s.image_id && <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${s.image_id}`} alt="" className="w-12 h-12 rounded-lg object-cover flex-none" />}
+                <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-img-${i}`}>
+                  <ImagePlus className="w-4 h-4" /> {s.image_id ? t("website.changePhoto") : t("website.addPhoto")}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadServiceImg(i, e.target.files?.[0])} />
+                </label>
+                {s.image_id && <button onClick={async () => { const arr=[...(w.services||[])]; arr[i]={...arr[i], image_id:""}; setW((prev)=>({...prev, services:arr})); await api.put("/website", { services: arr }); }} className="text-xs text-slate-400 ml-auto" data-testid={`website-service-img-del-${i}`}>{t("website.removePhoto")}</button>}
+              </div>
+
+              {/* Work photos for THIS service (shown on its /servicio/ page: gallery + before/after) */}
+              <div className="pt-2 border-t border-slate-200/70">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-slate-500">{t("website.workPhotos")}</span>
+                  <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 cursor-pointer" data-testid={`website-service-photos-add-${i}`}>
+                    <ImagePlus className="w-3.5 h-3.5" /> {t("website.addWorkPhotos")}
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addServicePhotos(i, e.target.files)} />
+                  </label>
+                </div>
+                {(s.photos || []).length > 0 && (
+                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid={`website-service-photos-${i}`}>
+                    {s.photos.map((ph, pi) => (
+                      <div key={ph.id || pi} className="rounded-lg bg-white border border-slate-200 p-1.5 space-y-1">
+                        <img src={`${process.env.REACT_APP_BACKEND_URL}/api/public/card/photo/${ph.id}?w=300`} alt="" className="w-full h-20 rounded object-cover" />
+                        <div className="flex items-center gap-1">
+                          <select value={ph.kind || "general"} onChange={(e) => setServicePhotoKind(i, pi, e.target.value)} className="text-[11px] rounded border border-slate-200 bg-white px-1 py-0.5 flex-1" data-testid={`website-service-photo-kind-${i}-${pi}`}>
+                            <option value="general">{t("website.photoKind.general")}</option>
+                            <option value="before">{t("website.photoKind.before")}</option>
+                            <option value="after">{t("website.photoKind.after")}</option>
+                            <option value="completed">{t("website.photoKind.completed")}</option>
+                          </select>
+                          <button onClick={() => delServicePhoto(i, pi)} className="text-slate-400 hover:text-red-500" data-testid={`website-service-photo-del-${i}-${pi}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Editable AI sales-page content */}
+              <div className="pt-3 border-t border-slate-200/70 space-y-3" data-testid={`website-service-page-editor-${i}`}>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{isEs ? "Página de venta (/servicio/)" : "Sales page (/servicio/)"}</div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">{isEs ? "Titular / Tagline" : "Headline / Tagline"}</label>
+                  <Input value={s.page?.tagline || ""} onChange={(e) => svcPagePatch(i, { tagline: e.target.value })} className="h-10 rounded-lg bg-white mt-1" placeholder={isEs ? "Soluciones que generan resultados" : "Solutions that drive results"} data-testid={`website-service-tagline-${i}`} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">{isEs ? "Introducción" : "Intro"}</label>
+                  <Textarea value={s.page?.intro || ""} onChange={(e) => svcPagePatch(i, { intro: e.target.value })} className="rounded-lg bg-white min-h-[72px] mt-1" placeholder={isEs ? "Explica el servicio y el valor que aporta…" : "Explain the service and the value it brings…"} data-testid={`website-service-intro-${i}`} />
+                </div>
+                {/* Benefits */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-500">{isEs ? "Qué incluye (beneficios)" : "What's included (benefits)"}</label>
+                    <button type="button" onClick={() => svcPagePatch(i, { benefits: [...((s.page?.benefits) || []), ""] })} className="text-xs font-semibold text-blue-600 inline-flex items-center gap-1" data-testid={`website-service-benefit-add-${i}`}><Plus className="w-3.5 h-3.5" /> {isEs ? "Agregar" : "Add"}</button>
+                  </div>
+                  <div className="space-y-1.5 mt-1">
+                    {((s.page?.benefits) || []).map((bn, bi) => (
+                      <div key={bi} className="flex items-center gap-2">
+                        <Input value={bn} onChange={(e) => { const arr = [...((s.page?.benefits) || [])]; arr[bi] = e.target.value; svcPagePatch(i, { benefits: arr }); }} className="h-9 rounded-lg bg-white" placeholder={isEs ? "Beneficio" : "Benefit"} data-testid={`website-service-benefit-${i}-${bi}`} />
+                        <button type="button" onClick={() => svcPagePatch(i, { benefits: ((s.page?.benefits) || []).filter((_, x) => x !== bi) })} className="text-slate-400 hover:text-red-500 flex-none" data-testid={`website-service-benefit-del-${i}-${bi}`}><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Process */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-500">{isEs ? "Cómo trabajamos (pasos)" : "How we work (steps)"}</label>
+                    <button type="button" onClick={() => svcPagePatch(i, { process: [...((s.page?.process) || []), { title: "", desc: "" }] })} className="text-xs font-semibold text-blue-600 inline-flex items-center gap-1" data-testid={`website-service-step-add-${i}`}><Plus className="w-3.5 h-3.5" /> {isEs ? "Agregar" : "Add"}</button>
+                  </div>
+                  <div className="space-y-2 mt-1">
+                    {((s.page?.process) || []).map((st, si) => (
+                      <div key={si} className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold grid place-items-center flex-none mt-0.5">{si + 1}</span>
+                        <div className="flex-1 space-y-1.5">
+                          <Input value={st.title || ""} onChange={(e) => { const arr = [...((s.page?.process) || [])]; arr[si] = { ...arr[si], title: e.target.value }; svcPagePatch(i, { process: arr }); }} className="h-9 rounded-lg bg-white" placeholder={isEs ? "Título del paso" : "Step title"} data-testid={`website-service-step-title-${i}-${si}`} />
+                          <Textarea value={st.desc || ""} onChange={(e) => { const arr = [...((s.page?.process) || [])]; arr[si] = { ...arr[si], desc: e.target.value }; svcPagePatch(i, { process: arr }); }} className="rounded-lg bg-white min-h-[48px]" placeholder={isEs ? "Descripción del paso" : "Step description"} />
+                        </div>
+                        <button type="button" onClick={() => svcPagePatch(i, { process: ((s.page?.process) || []).filter((_, x) => x !== si) })} className="text-slate-400 hover:text-red-500 flex-none mt-0.5" data-testid={`website-service-step-del-${i}-${si}`}><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* FAQs */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-500">{isEs ? "Preguntas frecuentes" : "FAQs"}</label>
+                    <button type="button" onClick={() => svcPagePatch(i, { faqs: [...((s.page?.faqs) || []), { q: "", a: "" }] })} className="text-xs font-semibold text-blue-600 inline-flex items-center gap-1" data-testid={`website-service-faq-add-${i}`}><Plus className="w-3.5 h-3.5" /> {isEs ? "Agregar" : "Add"}</button>
+                  </div>
+                  <div className="space-y-2 mt-1">
+                    {((s.page?.faqs) || []).map((f, fi) => (
+                      <div key={fi} className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <div className="flex-1 space-y-1.5">
+                          <Input value={f.q || ""} onChange={(e) => { const arr = [...((s.page?.faqs) || [])]; arr[fi] = { ...arr[fi], q: e.target.value }; svcPagePatch(i, { faqs: arr }); }} className="h-9 rounded-lg bg-white font-semibold" placeholder={isEs ? "Pregunta" : "Question"} data-testid={`website-service-faq-q-${i}-${fi}`} />
+                          <Textarea value={f.a || ""} onChange={(e) => { const arr = [...((s.page?.faqs) || [])]; arr[fi] = { ...arr[fi], a: e.target.value }; svcPagePatch(i, { faqs: arr }); }} className="rounded-lg bg-white min-h-[48px]" placeholder={isEs ? "Respuesta" : "Answer"} />
+                        </div>
+                        <button type="button" onClick={() => svcPagePatch(i, { faqs: ((s.page?.faqs) || []).filter((_, x) => x !== fi) })} className="text-slate-400 hover:text-red-500 flex-none mt-0.5" data-testid={`website-service-faq-del-${i}-${fi}`}><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* CTA + SEO */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">{isEs ? "Texto del botón (CTA)" : "Button text (CTA)"}</label>
+                  <Input value={s.page?.cta || ""} onChange={(e) => svcPagePatch(i, { cta: e.target.value })} className="h-10 rounded-lg bg-white mt-1" placeholder={isEs ? "Solicita tu cotización gratis" : "Get your free quote"} data-testid={`website-service-cta-${i}`} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500">SEO title</label>
+                    <Input value={s.page?.seo_title || ""} onChange={(e) => svcPagePatch(i, { seo_title: e.target.value })} className="h-9 rounded-lg bg-white mt-1" data-testid={`website-service-seotitle-${i}`} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500">SEO description</label>
+                    <Input value={s.page?.seo_description || ""} onChange={(e) => svcPagePatch(i, { seo_description: e.target.value })} className="h-9 rounded-lg bg-white mt-1" data-testid={`website-service-seodesc-${i}`} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            )}
           </div>
         ))}
-        <Button variant="outline" onClick={() => listAdd("services", { name: "", description: "", starting_price: "" })} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>
+        </div>
+        <Button variant="outline" onClick={() => { listAdd("services", { name: "", description: "", starting_price: "" }); setOpenService((w.services || []).length); }} className="rounded-xl" data-testid="website-service-add"><Plus className="w-4 h-4 mr-1" /> {t("website.addService")}</Button>
       </Card>
       )}
 
@@ -1249,8 +1382,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products, stats, section_order } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products, stats, section_order };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, service_colors, about_sections, hero_tagline, products, stats, section_order } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, service_colors, about_sections, hero_tagline, products, stats, section_order };
 }
 
 function BaSlot({ label, id, onClick, testid }) {

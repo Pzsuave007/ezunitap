@@ -1855,104 +1855,123 @@ function AboutPage({ ctx }) {
 }
 
 function ServiceDetail({ ctx }) {
-  const { th, accent, accentText, lang, services, serviceSlug, pageHref, homeHref, w, b } = ctx;
+  const { accent, accentText, lang, services, serviceSlug, pageHref, homeHref, w } = ctx;
   let s = null;
   services.forEach((x, i) => { if (svcSlug(x, i) === serviceSlug) s = x; });
   if (!s) return <SubHero ctx={ctx} title={agT(lang, "Service not found", "Servicio no encontrado")} sub={<a href={pageHref("soluciones")} style={{ color: accent }}>{agT(lang, "Back to solutions", "Volver a soluciones")}</a>} />;
+  const scv = w.service_colors || {};
+  const SDEF = { hero: "#0a1130", body: "#ffffff", gallery: "#f8fafc", related: "#ffffff" };
+  const SS = (k) => caseSecTheme(scv[k] || SDEF[k]);
+  const tHero = SS("hero"), tBody = SS("body"), tGal = SS("gallery"), tRel = SS("related");
   const photos = (Array.isArray(s.photos) ? s.photos : []).filter((p) => p && p.id);
   const beforeP = photos.filter((p) => p.kind === "before");
   const afterP = photos.filter((p) => p.kind === "after");
   const gallery = photos.filter((p) => !["before", "after"].includes(p.kind));
   const others = services.filter((x, i) => svcSlug(x, i) !== serviceSlug).slice(0, 3);
+  const heroImg = s.img;
   return (
     <>
-      <section className="relative" data-testid="service-detail">
-        {s.img && <div className="absolute inset-0"><img src={s.img} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.82))" }} /></div>}
+      <section className="relative" data-testid="service-detail" style={heroImg ? {} : { background: tHero.bg }}>
+        {heroImg && <div className="absolute inset-0"><img src={heroImg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.82))" }} /></div>}
         <div className="relative max-w-5xl mx-auto px-5 py-20 md:py-28">
-          <a href={pageHref("soluciones")} className={`text-sm ${s.img ? "text-white/80 hover:text-white" : ""}`} style={s.img ? {} : { color: th.muted }} data-testid="service-back">← {agT(lang, "All services", "Todos los servicios")}</a>
+          <a href={pageHref("soluciones")} className="text-sm hover:opacity-80" style={{ color: heroImg ? "rgba(255,255,255,.8)" : tHero.muted }} data-testid="service-back">← {agT(lang, "All services", "Todos los servicios")}</a>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>{agT(lang, "Service", "Servicio")}</p>
-          <h1 className="wh text-4xl md:text-6xl mt-2" style={{ color: s.img ? "#fff" : th.ink }}>{s.name || s.title}</h1>
-          {s.page?.tagline && <p className="mt-3 text-lg md:text-xl max-w-2xl" style={{ color: s.img ? "rgba(255,255,255,.92)" : th.muted }}>{s.page.tagline}</p>}
-          {s.starting_price && <p className="mt-4 text-lg font-semibold" style={{ color: s.img ? "rgba(255,255,255,.9)" : accent }}>{agT(lang, "From", "Desde")} {s.starting_price}</p>}
+          <h1 className="wh text-4xl md:text-6xl mt-2" style={{ color: heroImg ? "#fff" : tHero.ink }}>{s.name || s.title}</h1>
+          {s.page?.tagline && <p className="mt-3 text-lg md:text-xl max-w-2xl" style={{ color: heroImg ? "rgba(255,255,255,.92)" : tHero.muted }}>{s.page.tagline}</p>}
+          {s.starting_price && <p className="mt-4 text-lg font-semibold" style={{ color: heroImg ? "rgba(255,255,255,.9)" : accent }}>{agT(lang, "From", "Desde")} {s.starting_price}</p>}
         </div>
       </section>
-      <section className="max-w-3xl mx-auto px-5 py-16">
-        {s.page?.intro ? <p className="text-lg leading-relaxed" style={{ color: th.muted }}>{s.page.intro}</p> : ((s.description || "").trim() ? <RichText text={s.description} th={th} /> : <p className="leading-relaxed" style={{ color: th.muted }}>{agT(lang, "Contact us to learn more about this service.", "Contáctanos para conocer más sobre este servicio.")}</p>)}
-        {Array.isArray(s.page?.benefits) && s.page.benefits.length > 0 && (
-          <div className="mt-8">
-            <h2 className="wh text-2xl mb-4" style={{ color: th.ink }}>{agT(lang, "What's included", "Qué incluye")}</h2>
-            <ul className="space-y-2.5">
-              {s.page.benefits.map((bn, i) => <li key={i} className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 flex-none mt-0.5" style={{ color: accent }} /><span style={{ color: th.muted }}>{bn}</span></li>)}
-            </ul>
-          </div>
-        )}
-        {Array.isArray(s.page?.process) && s.page.process.length > 0 && (
-          <div className="mt-10">
-            <h2 className="wh text-2xl mb-4" style={{ color: th.ink }}>{agT(lang, "How we work", "Cómo trabajamos")}</h2>
-            <div className="space-y-4">
-              {s.page.process.map((st, i) => <div key={i} className="flex gap-4"><span className="wh flex-none w-9 h-9 rounded-full grid place-items-center font-bold" style={{ background: `${accent}22`, color: accent }}>{i + 1}</span><div><h3 className="font-bold" style={{ color: th.ink }}>{st.title}</h3><p className="text-sm mt-0.5" style={{ color: th.muted }}>{st.desc}</p></div></div>)}
+      <section style={{ background: tBody.bg }}>
+        <div className="max-w-3xl mx-auto px-5 py-16">
+          {s.page?.intro ? <p className="text-lg leading-relaxed" style={{ color: tBody.muted }}>{s.page.intro}</p> : ((s.description || "").trim() ? <RichText text={s.description} th={tBody} /> : <p className="leading-relaxed" style={{ color: tBody.muted }}>{agT(lang, "Contact us to learn more about this service.", "Contáctanos para conocer más sobre este servicio.")}</p>)}
+          {Array.isArray(s.page?.benefits) && s.page.benefits.length > 0 && (
+            <div className="mt-8">
+              <h2 className="wh text-2xl mb-4" style={{ color: tBody.ink }}>{agT(lang, "What's included", "Qué incluye")}</h2>
+              <ul className="space-y-2.5">
+                {s.page.benefits.map((bn, i) => <li key={i} className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 flex-none mt-0.5" style={{ color: accent }} /><span style={{ color: tBody.muted }}>{bn}</span></li>)}
+              </ul>
             </div>
-          </div>
-        )}
-        {Array.isArray(s.page?.faqs) && s.page.faqs.length > 0 && (
-          <div className="mt-10">
-            <h2 className="wh text-2xl mb-4" style={{ color: th.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
-            <div className="space-y-4">
-              {s.page.faqs.map((f, i) => <div key={i} className="border-b pb-3" style={{ borderColor: th.border }}><h3 className="font-bold" style={{ color: th.ink }}>{f.q}</h3><p className="text-sm mt-1" style={{ color: th.muted }}>{f.a}</p></div>)}
+          )}
+          {Array.isArray(s.page?.process) && s.page.process.length > 0 && (
+            <div className="mt-10">
+              <h2 className="wh text-2xl mb-4" style={{ color: tBody.ink }}>{agT(lang, "How we work", "Cómo trabajamos")}</h2>
+              <div className="space-y-4">
+                {s.page.process.map((st, i) => <div key={i} className="flex gap-4"><span className="wh flex-none w-9 h-9 rounded-full grid place-items-center font-bold" style={{ background: `${accent}22`, color: accent }}>{i + 1}</span><div><h3 className="font-bold" style={{ color: tBody.ink }}>{st.title}</h3><p className="text-sm mt-0.5" style={{ color: tBody.muted }}>{st.desc}</p></div></div>)}
+              </div>
             </div>
-          </div>
-        )}
-        <a href={`${homeHref}#contact`} data-testid="service-cta" className="mt-10 inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{s.page?.cta || ctx.cta}<ArrowRight className="w-5 h-5" /></a>
+          )}
+          {Array.isArray(s.page?.faqs) && s.page.faqs.length > 0 && (
+            <div className="mt-10">
+              <h2 className="wh text-2xl mb-4" style={{ color: tBody.ink }}>{agT(lang, "Frequently asked questions", "Preguntas frecuentes")}</h2>
+              <div className="space-y-4">
+                {s.page.faqs.map((f, i) => <div key={i} className="border-b pb-3" style={{ borderColor: tBody.border }}><h3 className="font-bold" style={{ color: tBody.ink }}>{f.q}</h3><p className="text-sm mt-1" style={{ color: tBody.muted }}>{f.a}</p></div>)}
+              </div>
+            </div>
+          )}
+          <a href={`${homeHref}#contact`} data-testid="service-cta" className="mt-10 inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full hover:-translate-y-0.5 transition-transform" style={{ background: accent, color: accentText }}>{s.page?.cta || ctx.cta}<ArrowRight className="w-5 h-5" /></a>
+        </div>
       </section>
-      {(beforeP.length > 0 && afterP.length > 0) && (
-        <section className="max-w-5xl mx-auto px-5 pb-8" data-testid="service-beforeafter">
-          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Before & after", "Antes y después")}</h2>
-          <BeforeAfter before={photoUrl(beforeP[0].id, 900)} after={photoUrl(afterP[0].id, 900)} accent={accent} />
-        </section>
-      )}
-      {gallery.length > 0 && (
-        <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-gallery">
-          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Our work", "Nuestro trabajo")}</h2>
-          <PhotoGallery items={gallery.map((p) => ({ thumb: photoUrl(p.id, 800), full: photoUrl(p.id, 1600) }))} th={th} cols="grid-cols-2 sm:grid-cols-3" square={false} testidPrefix="service-gallery-img" />
-        </section>
+      {((beforeP.length > 0 && afterP.length > 0) || gallery.length > 0) && (
+      <section style={{ background: tGal.bg }}>
+        <div className="max-w-6xl mx-auto px-5 py-16 space-y-10">
+          {(beforeP.length > 0 && afterP.length > 0) && (
+            <div data-testid="service-beforeafter">
+              <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: tGal.ink }}>{agT(lang, "Before & after", "Antes y después")}</h2>
+              <BeforeAfter before={photoUrl(beforeP[0].id, 900)} after={photoUrl(afterP[0].id, 900)} accent={accent} />
+            </div>
+          )}
+          {gallery.length > 0 && (
+            <div data-testid="service-gallery">
+              <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: tGal.ink }}>{agT(lang, "Our work", "Nuestro trabajo")}</h2>
+              <PhotoGallery items={gallery.map((p) => ({ thumb: photoUrl(p.id, 800), full: photoUrl(p.id, 1600) }))} th={tGal} cols="grid-cols-2 sm:grid-cols-3" square={false} testidPrefix="service-gallery-img" />
+            </div>
+          )}
+        </div>
+      </section>
       )}
       {(() => {
         const norm = (x) => (x || "").toLowerCase().trim();
         const si = services.indexOf(s);
         const related = (ctx.data?.problem_pages || []).filter((p) => norm(p.service_name) === norm(s.name) || (si >= 0 && norm(p.service_name) === norm(services[si]?.name)));
-        if (!related.length) return null;
+        if (!related.length && !others.length) return null;
         return (
-          <section className="max-w-5xl mx-auto px-5 pb-16" data-testid="service-solutions">
-            <h2 className="wh text-2xl md:text-3xl mb-2" style={{ color: th.ink }}>{agT(lang, "How we help with this", "Cómo te ayudamos en esto")}</h2>
-            <p className="text-sm mb-6" style={{ color: th.muted }}>{agT(lang, "Specific problems we solve within this service.", "Problemas específicos que resolvemos dentro de este servicio.")}</p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {related.map((p, i) => (
-                <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`service-solution-${i}`} className="group block p-6 rounded-2xl border transition hover:-translate-y-1" style={{ background: th.surface, borderColor: th.border }}>
-                  <div className="text-base font-bold leading-snug" style={{ color: th.ink }}>{(lang === "es" && (p.headline_es || p.service_name_es)) || p.headline || p.service_name}</div>
-                  <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "See how we help", "Mira cómo ayudamos")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
-                </a>
-              ))}
+          <section style={{ background: tRel.bg }}>
+            <div className="max-w-6xl mx-auto px-5 py-16 space-y-12">
+              {related.length > 0 && (
+                <div data-testid="service-solutions">
+                  <h2 className="wh text-2xl md:text-3xl mb-2" style={{ color: tRel.ink }}>{agT(lang, "How we help with this", "Cómo te ayudamos en esto")}</h2>
+                  <p className="text-sm mb-6" style={{ color: tRel.muted }}>{agT(lang, "Specific problems we solve within this service.", "Problemas específicos que resolvemos dentro de este servicio.")}</p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {related.map((p, i) => (
+                      <a key={i} href={ctx.ppHref(p.page_slug)} data-testid={`service-solution-${i}`} className="group block p-6 rounded-2xl border transition hover:-translate-y-1" style={{ background: tRel.surface, borderColor: tRel.border }}>
+                        <div className="text-base font-bold leading-snug" style={{ color: tRel.ink }}>{(lang === "es" && (p.headline_es || p.service_name_es)) || p.headline || p.service_name}</div>
+                        <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "See how we help", "Mira cómo ayudamos")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {others.length > 0 && (
+                <div data-testid="service-more">
+                  <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: tRel.ink }}>{agT(lang, "Other services", "Otros servicios")}</h2>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {others.map((x) => {
+                      const idx = services.indexOf(x);
+                      const href = pageHref(`servicio/${svcSlug(x, idx)}`);
+                      return (
+                        <a key={idx} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: tRel.surface, borderColor: tRel.border }}>
+                          {x.img && <div className="relative aspect-[16/10] overflow-hidden"><CoverFill src={x.img} alt="" /></div>}
+                          <div className="p-5"><h3 className="font-bold" style={{ color: tRel.ink }}>{x.name}</h3><span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span></div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         );
       })()}
-      {others.length > 0 && (
-        <section className="max-w-6xl mx-auto px-5 pb-16" data-testid="service-more">
-          <h2 className="wh text-2xl md:text-3xl mb-6" style={{ color: th.ink }}>{agT(lang, "Other services", "Otros servicios")}</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {others.map((x) => {
-              const i = services.indexOf(x);
-              const href = pageHref(`servicio/${svcSlug(x, i)}`);
-              return (
-                <a key={i} href={href} className="group rounded-2xl border overflow-hidden transition-all hover:-translate-y-1 flex flex-col" style={{ background: th.surface, borderColor: th.border }}>
-                  {x.img && <div className="relative aspect-[16/10] overflow-hidden"><CoverFill src={x.img} alt="" /></div>}
-                  <div className="p-5"><h3 className="font-bold" style={{ color: th.ink }}>{x.name}</h3><span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>{agT(lang, "Learn more", "Ver más")}<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span></div>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-      )}
       <CaseCTA ctx={ctx} />
     </>
   );

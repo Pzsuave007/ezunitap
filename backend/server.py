@@ -4583,6 +4583,7 @@ class WebsiteIn(BaseModel):
     solutions_intro: Optional[str] = None        # Solutions page intro paragraph
     section_colors: Optional[dict] = None         # {hero, services, samples, logos, map, process, reviews, cta, contact, footer} bg hex
     case_colors: Optional[dict] = None            # {hero, info, challenge, solution, tailored, results, portfolio} bg hex for case detail pages
+    service_colors: Optional[dict] = None         # {hero, body, gallery, related} bg hex for service detail (/servicio/) pages
     about_sections: Optional[list] = None          # [{title, body(html), images:[photo_id]}] story sections with side images
     products: Optional[list] = None                # [{name, tagline, description, img, link, cta}] software/products showcase
     stats: Optional[list] = None                   # [{value, label}] headline stats band (e.g. "25+", "Years")
