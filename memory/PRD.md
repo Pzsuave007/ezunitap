@@ -1,3 +1,11 @@
+## 🌐 Jun 2026 — FIX llms.txt: "Key Pages" (/p/) salían en inglés en dominio español [COMPLETO; verificado]
+- **Reporte**: en `uni2mkt.com/llms.txt` (dominio ES) las Key Pages salían con título en inglés ("Can't Find Your Business on Google?").
+- **Causa**: `dynamic_llms` (server.py ~6794) usaba `pp.get('headline')` (inglés) aunque `lang=='es'`.
+- **Fix**: cuando `lang=='es'` usa `pp.get('headline_es') or service_name_es or headline or service_name`. (`_website_payload` ya expone `headline_es`/`service_name_es`.)
+- **Verificado** (host ES de prueba): Key Pages ahora en español ("¿Tu sitio web confunde a los clientes?", "¿Se te escapan los leads?", etc.). ezunitech.com (brand) y EN intactos.
+- **Confirmado al usuario**: las 14 `/p/` YA están en el sitemap del dominio español (verificado por crawl con cache-bust). Las páginas `/p/` renderizadas (SSR, línea 6436) YA usan content_es en dominio ES. Solo faltaba llms.txt. Cambio solo backend.
+
+
 ## 🗺️ Jun 2026 — FIX sitemap: slugs de casos "sucios" (espacios/mayúsculas) + casos sin slug omitidos [COMPLETO; verificado]
 - **Reporte**: comparando uni2mkt.com vs su sitemap, el usuario tenía URLs rotas como `/caso/Casa Lola` (espacio → URL inválida), `/caso/HRG`, `/caso/BajaSur` (mayúsculas). Y casos sin slug se omitían del sitemap.
 - **Fix** (`server.py` sitemap ambas ramas + `ContractorSite.js`):

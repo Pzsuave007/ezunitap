@@ -6793,7 +6793,11 @@ async def dynamic_llms(request: Request):
             out += ["", "## Key Pages"]
             for pp in pps:
                 if pp.get("page_slug"):
-                    out.append(f"- [{pp.get('headline') or pp.get('service_name')}]({base}/p/{pp['page_slug']})")
+                    if lang == "es":
+                        _title = pp.get("headline_es") or pp.get("service_name_es") or pp.get("headline") or pp.get("service_name")
+                    else:
+                        _title = pp.get("headline") or pp.get("service_name")
+                    out.append(f"- [{_title}]({base}/p/{pp['page_slug']})")
         out += ["", "## Contact"]
         if biz.get("phone"):
             out.append(f"- Phone: {biz['phone']}")
