@@ -545,20 +545,38 @@ export default function WebsiteEditor() {
 
       {/* Templates */}
       {tab === "design" && (<>
-      {w.template === "agency" && (
       <Card className="card-elevated border-0 shadow-none p-5" data-testid="agency-colors-card">
-        <div className="font-semibold mb-1">{t("website.secColors")}</div>
-        <p className="text-sm text-slate-500 mb-3">{t("website.secColorsDesc")}</p>
+        <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Colores por sección" : "Section colors"}</div>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Elige el color de fondo de cada sección. El texto se ajusta solo para buen contraste. Aplica al template que elijas." : "Pick the background color of each section. Text auto-adjusts for contrast. Applies to whichever template you choose."}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["logos","#ffffff"],["map","#f8fafc"],["process","#0a1130"],["reviews","#f8fafc"],["cta",(w.accent_color||"#22D3EE")],["faq","#f8fafc"],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => (
+          {[["hero","#0a1130"],["services","#ffffff"],["samples","#f8fafc"],["products","#ffffff"],["about","#f8fafc"],["feature","#ffffff"],["how","#0a1130"],["why","#ffffff"],["gallery","#f8fafc"],["logos","#ffffff"],["stats",(w.accent_color||"#22D3EE")],["reviews","#f8fafc"],["map","#f8fafc"],["band",(w.accent_color||"#22D3EE")],["faq","#f8fafc"],["areas","#ffffff"],["contact","#ffffff"],["footer","#0a1130"]].map(([key,def]) => {
+            const LBL = { how: isEs?"Proceso":"Process", stats: isEs?"Estadísticas":"Stats", band: isEs?"Banner CTA":"CTA banner", samples: isEs?"Casos":"Cases", hero: "Hero", contact: isEs?"Contacto":"Contact", footer: isEs?"Pie":"Footer" };
+            let lbl = LBL[key] || t(`website.sec.${key}`); if (lbl === `website.sec.${key}`) lbl = key;
+            return (
             <div key={key} className="flex items-center gap-2">
               <input type="color" value={(w.section_colors && w.section_colors[key]) || def} onChange={(e) => setSecColor(key, e.target.value)} className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer flex-none p-0.5" data-testid={`seccolor-${key}`} />
-              <span className="text-sm capitalize">{t(`website.sec.${key === "process" ? "how" : key}`) || key}</span>
+              <span className="text-sm capitalize truncate">{lbl}</span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
-      )}
+      <Card className="card-elevated border-0 shadow-none p-5" data-testid="stats-band-card">
+        <div className="font-semibold mb-1 flex items-center gap-2"><Palette className="w-4 h-4" /> {isEs ? "Franja de estadísticas" : "Stats band"}</div>
+        <p className="text-sm text-slate-500 mb-3">{isEs ? "Hasta 4 cifras que llaman la atención (ej. 25+ Años de experiencia). Déjalas vacías para usar las de ejemplo." : "Up to 4 eye-catching numbers (e.g. 25+ Years of experience). Leave blank to use the defaults."}</p>
+        <div className="space-y-2">
+          {[0,1,2,3].map((i) => {
+            const st = (Array.isArray(w.stats) ? w.stats : [])[i] || {};
+            const setStat = (field, val) => { const arr = [0,1,2,3].map((j) => ({ ...((Array.isArray(w.stats) ? w.stats : [])[j] || {}) })); arr[i] = { ...arr[i], [field]: val }; patch({ stats: arr.filter((x) => (x.value || x.label)) }); };
+            return (
+              <div key={i} className="flex gap-2">
+                <Input value={st.value || ""} onChange={(e) => setStat("value", e.target.value)} onBlur={saveAndToast} placeholder="25+" className="h-9 rounded-lg w-24 flex-none" data-testid={`stat-value-${i}`} />
+                <Input value={st.label || ""} onChange={(e) => setStat("label", e.target.value)} onBlur={saveAndToast} placeholder={isEs ? "Años de experiencia" : "Years of experience"} className="h-9 rounded-lg flex-1" data-testid={`stat-label-${i}`} />
+              </div>
+            );
+          })}
+        </div>
+      </Card>
       <Card className="card-elevated border-0 shadow-none p-5" data-testid="import-media-card">
         <div className="font-semibold mb-1">{t("website.copyImages")}</div>
         <p className="text-sm text-slate-500 mb-3">{t("website.copyImagesDesc")}</p>
@@ -1193,8 +1211,8 @@ function PhotoField({ label, desc, value, photos, onPick, onUpload, onRemove, te
 }
 
 function pick(w) {
-  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products } = w;
-  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products };
+  const { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products, stats, section_order } = w;
+  return { slug, template, accent_color, published, headline, subheadline, about, hero_photo_id, sections, cta_phone, service_area, hours, how_it_works, why_us, faqs, areas, services, seo_title, seo_description, gallery_photo_ids, chat_enabled, chat_launcher, chat_position, chat_bot_name, chat_bot_avatar, chat_greeting_es, chat_greeting_en, before_after, team_photo_id, about_photo_ids, why_photo_id, band_photo_id, instagram_url, ai_brief, samples, client_logos, client_pins, map_embed, case_studies, about_title, about_story, milestones, about_values, team, solutions_intro, section_colors, case_colors, about_sections, hero_tagline, products, stats, section_order };
 }
 
 function BaSlot({ label, id, onClick, testid }) {

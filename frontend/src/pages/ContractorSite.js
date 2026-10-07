@@ -2824,8 +2824,10 @@ function ctxWithBg(ctx, bg) {
   return { ...ctx, th };
 }
 
-function StatsBand({ ctx }) {
+function StatsBand({ ctx, bg }) {
   const { w, lang, accent, accentText } = ctx;
+  const bandBg = bg || accent;
+  const txt = bg ? (isLight(bg) ? "#0f172a" : "#ffffff") : accentText;
   const stats = (Array.isArray(w.stats) && w.stats.length ? w.stats : [
     { value: "25+", label: agT(lang, "Years of experience", "Años de experiencia") },
     { value: "150+", label: agT(lang, "Businesses trust us", "Negocios confían en nosotros") },
@@ -2833,7 +2835,7 @@ function StatsBand({ ctx }) {
     { value: "100%", label: agT(lang, "Bilingual · US-wide", "Bilingüe · en todo EE.UU.") },
   ]).slice(0, 4);
   return (
-    <section className="relative" data-testid="site-stats" style={{ background: accent, color: accentText }}>
+    <section className="relative" data-testid="site-stats" style={{ background: bandBg, color: txt }}>
       <div className="max-w-6xl mx-auto px-5 py-9 md:py-11 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
         {stats.map((s, i) => { const Icon = STAT_ICONS[i % STAT_ICONS.length]; return (
           <div key={i} data-testid={`site-stat-${i}`} className="text-center flex flex-col items-center px-2 group">
@@ -2970,13 +2972,13 @@ function SectionStack({ ctx }) {
     areas: Array.isArray(w.areas) && w.areas.length > 0,
   };
   const sc = w.section_colors || {};
-  const CK = { services: "services", samples: "samples", products: "samples", logos: "logos", map: "map", how: "process", reviews: "reviews", band: "cta", faq: "faq" };
+  const ALIAS = { how: "process", band: "cta", products: "samples" };
   let n = 0;
   const out = [];
   for (const k of keys) {
     if (sec[k] === false || has[k] === false) continue;
     const alt = n % 2 === 1;
-    const custom = CK[k] && sc[CK[k]];
+    const custom = sc[k] || (ALIAS[k] && sc[ALIAS[k]]);
     const bg = custom || modTheme(ctx, alt).bg;
     const sctx = ctxWithBg(ctx, bg);
     let el = null;
@@ -2990,7 +2992,7 @@ function SectionStack({ ctx }) {
       case "why": el = <WhyModule key={k} ctx={sctx} />; break;
       case "gallery": el = <GalleryModule key={k} ctx={sctx} />; break;
       case "logos": el = <LogosStrip key={k} ctx={sctx} sty={{ bg }} />; break;
-      case "stats": el = <StatsBand key={k} ctx={ctx} />; break;
+      case "stats": el = <StatsBand key={k} ctx={ctx} bg={sc.stats} />; break;
       case "reviews": el = <ReviewsBlock key={k} ctx={sctx} dark={!isLight(bg)} />; break;
       case "map": el = <ClientMap key={k} ctx={sctx} sty={{ bg }} />; break;
       case "band": el = <CtaBand key={k} ctx={sctx} />; break;

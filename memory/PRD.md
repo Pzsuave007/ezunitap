@@ -1269,3 +1269,11 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 ## [Jun 2026] Fix: SectionStack respeta section_colors
 - SectionStack ahora resuelve el color de cada sección desde w.section_colors (map CK: services→services, samples/products→samples, logos→logos, map→map, how→process, reviews→reviews, band→cta, faq→faq) y lo inyecta vía ctxWithBg(ctx,bg) para que cada módulo (nuevos y compartidos: AboutBlock/ReviewsBlock/FaqBlock/CtaBand/AreasBlock/Samples/Products/Logos/Map) pinte el color elegido con texto auto-contrastado. Helpers nuevos: thm(ctx), ctxWithBg(ctx,bg). Secciones sin color asignado alternan bg del tema. Stats mantiene color accent.
 - Verificado por screenshot (services con color custom aplicado).
+
+## [Jun 2026] Colores por sección (todos los templates/secciones) + editor de Stats
+- Editor (WebsiteEditor.js, Design tab): tarjeta "Colores por sección" ya NO está limitada a agency (se muestra para todos los templates) y expone las 18 secciones (hero, services, samples, products, about, feature, how, why, gallery, logos, stats, reviews, map, band, faq, areas, contact, footer).
+- Nueva tarjeta "Franja de estadísticas": 4 filas value/label que editan w.stats.
+- stats y section_order añadidos al whitelist de guardado del editor.
+- SectionStack: resolución de color por clave directa sc[k] con alias de compatibilidad {how→process, band→cta, products→samples}. StatsBand acepta bg (sc.stats) con texto auto-contraste.
+- Verificado por screenshot (editor) + funciona en template Agency.
+- PENDIENTE Fase 2: los otros 10 templates aún usan su cuerpo propio; el reorder/colores por sección sólo aplican visualmente en Agency por ahora. Migrarlos a <SectionStack/> es el siguiente paso (con prueba por template para no romper sitios en vivo).
