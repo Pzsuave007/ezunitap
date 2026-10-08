@@ -1041,7 +1041,7 @@ export default function WebsiteEditor() {
           </>);
           if (k === "samples") return (<>
             {isAgency
-              ? AP(["import", "samples", "cases"])
+              ? AP(["import", "cases"])
               : <p className="text-sm text-slate-500">{isEs ? "Tus casos de éxito se generan y gestionan automáticamente." : "Your case studies are generated and managed automatically."}</p>}
             <ColorRow k="samples" />
           </>);
