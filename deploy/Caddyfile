@@ -84,6 +84,22 @@
         rewrite @bot_root /api/ssr/home
 }
 
+# --- Agency widget/embed host -----------------------------------------------
+# Serves /embed.js and proxies /api for every external client site that embeds
+# the UniTech chat / forms / Google-reviews widget (e.g. bogeyroom.com loads
+# https://gmb.uni2mkt.com/embed.js). This subdomain MUST stay resolvable or ALL
+# embedded client sites break. Requirement: a DNS A record
+#   gmb.uni2mkt.com  ->  132.148.78.187  (this server)
+# Caddy then auto-issues the Let's Encrypt cert on first hit.
+gmb.uni2mkt.com {
+        root * /home/ezunitap/public_html
+        encode zstd gzip
+        @api path /api/*
+        reverse_proxy @api 127.0.0.1:8007
+        try_files {path} /index.html
+        file_server
+}
+
 # --- Primary UniTech domains (normal automatic HTTPS) ----------------------
 ezunitap.com, www.ezunitap.com, ezunitech.com, www.ezunitech.com {
         root * /home/ezunitap/public_html
