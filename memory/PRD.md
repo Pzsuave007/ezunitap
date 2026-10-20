@@ -1,3 +1,21 @@
+## 📧 Jun 2026 — Módulo de Newsletter (capacidad reutilizable bajo "Funciones") [IMPLEMENTADO; backend verificado e2e por curl, render público verificado por screenshot]
+- **Petición**: formulario de suscripción (newsletter) reutilizable para TODOS los sitios, con nombre + email, como bloque "Suscríbete". El usuario pidió también un redactor de boletines con IA y envío a suscriptores (Fase 1 + Fase 2 juntas).
+- **Decisión de arquitectura (a sugerencia del usuario)**: todo el newsletter vive bajo la pestaña **Funciones (Features)** del Website Editor, NO en "Secciones del sitio". Un solo interruptor "Newsletter" (`newsletter_enabled`) activa el bloque público "Suscríbete" y muestra ahí mismo la lista de suscriptores, export CSV y el redactor con IA. La sección pública aparece automáticamente al activar el flag (no es toggle de Secciones).
+- **Correo**: reutiliza `email_service.send_to` (Resend ya configurado vía `RESEND_API_KEY`, o SMTP). No requiere claves nuevas.
+- **Backend** (`server.py`): colección `newsletter_subscribers` (dedupe por user_id+email).
+  - Público: `POST /api/public/newsletter/{slug}/subscribe` {name,email} → guarda + email de bienvenida (background) → `{ok:true}` (o `{already:true}`). Valida email.
+  - Owner: `GET /api/newsletter/subscribers`, `GET /api/newsletter/subscribers.csv`, `DELETE /api/newsletter/subscribers/{id}`.
+  - IA: `POST /api/newsletter/ai-draft` {topic,lang} → `ai_service.write_newsletter()` devuelve `{subject, html}` (HTML email-safe con estilos inline).
+  - Envío: `POST /api/newsletter/send` {subject,html} → background task envía a todos con pacing 0.4s; exige `_notify_enabled()` y >0 suscriptores; devuelve `{queued:n}`.
+  - `_website_payload` inyecta `newsletter:{enabled,title,title_es,subtitle,subtitle_es}`. Campos agregados a `WebsiteIn`.
+- **Frontend**:
+  - `components/NewsletterSection.jsx` (público): bloque "Suscríbete" (nombre+email), estado de éxito, errores. En `ContractorSite.js` → "newsletter" en `SECTION_ORDER_DEFAULT` (antes de "band"), `has.newsletter = data.newsletter.enabled`, case en `SectionStack`. NO está en SECTION_KEYS del editor (se controla solo desde Funciones).
+  - `pages/NewsletterPanel.jsx` (editor): lista de suscriptores, export CSV, redactor con IA (topic → genera subject+html → editable + vista previa en iframe → enviar). Montado en la pestaña "funciones" de `WebsiteEditor.js` bajo el toggle Newsletter + inputs de título/subtítulo (ES/EN).
+- **Verificado**: curl con cuenta pzsuave007 → subscribe (ok/dedupe/validación), list, csv, ai-draft (subject + HTML 2.5KB). Screenshot del sitio público `/sitio/uni2-marketing` muestra el bloque renderizado correctamente. Frontend compila OK.
+- **Nota**: dejé `newsletter_enabled=true` en el sitio real `uni2-marketing` para que el usuario lo vea tras el deploy; puede desactivarlo en el editor.
+- **Pendiente usuario**: usar "Save to Github" y luego `cd /home/ezunitap/repo && git pull && bash deploy.sh` (hay cambios de frontend → `frontend/build` regenerado).
+
+
 ## 🎟️ Jun 2026 — Módulo de Eventos (sección reutilizable del Website) [IMPLEMENTADO; backend verificado e2e, frontend compila — render público NO verificado visualmente por bloqueo de CloudFlare al navegador automatizado]
 - **Petición**: módulo reutilizable de Eventos para sitios de instructores (salsa), gimnasios, eventos sociales, talleres de marketing, etc. No es una plantilla aparte: es una SECCIÓN opcional del Website que aparece sola cuando hay eventos publicados.
 - **Decisiones del usuario**:

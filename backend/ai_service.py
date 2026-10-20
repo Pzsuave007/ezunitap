@@ -584,6 +584,41 @@ async def write_event_description(title: str, notes: str = "", business_type: st
     return (response or "").strip().strip('"').strip("\u201c\u201d").strip()
 
 
+async def write_newsletter(topic: str, business_name: str = "", lang: str = "es", audience: str = "") -> dict:
+    """Draft a polished, email-safe HTML newsletter. Returns {subject, html}."""
+    is_es = (lang or "es").lower().startswith("es")
+    lang_name = "Spanish" if is_es else "English"
+    system = (
+        "You are an expert email newsletter copywriter and designer for small local businesses. "
+        f"Write a warm, engaging newsletter in {lang_name}. "
+        "Return ONLY JSON: {\"subject\": \"...\", \"html\": \"...\"}. "
+        "The 'subject' must be a short, catchy email subject line. "
+        "The 'html' must be a COMPLETE, email-safe HTML body (no <html>/<head> tags, no <style> blocks, no external CSS, no <script>). "
+        "Use ONLY inline styles on each element. Build it as a centered container (max-width 600px) with: "
+        "a colored header band with the business name, a headline, 2-4 short readable paragraphs/sections "
+        "with generous spacing, an eye-catching call-to-action button (inline-styled anchor), and a small footer line. "
+        "Use a clean sans-serif font-family, comfortable line-height, and a tasteful accent color. "
+        "Keep it mobile-friendly with width:100% on the outer wrapper. Do not invent fake links; use href=\"#\" for the CTA."
+    )
+    chat = _new_chat(system)
+    parts = [f"Newsletter topic / goal: {topic}"]
+    if business_name:
+        parts.append(f"Business name: {business_name}")
+    if audience:
+        parts.append(f"Audience: {audience}")
+    parts.append(f"Write everything in {lang_name}.")
+    response = await chat.send_message(UserMessage(text="\n".join(parts)))
+    data = _extract_json(response) or {}
+    subject = (data.get("subject") or "").strip()
+    html = (data.get("html") or "").strip()
+    if not html:
+        html = f"<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1f2937\"><p>{(response or '').strip()}</p></div>"
+    if not subject:
+        subject = topic[:70] if topic else (business_name or "Newsletter")
+    return {"subject": subject, "html": html}
+
+
+
 
 
 SCOPE_SYSTEM = """You generate a professional Scope of Work in ENGLISH for U.S. clients,

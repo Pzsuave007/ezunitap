@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users, Layers, Sliders, Image as ImageIcon } from "lucide-react";
+import { Globe, ExternalLink, Copy, Loader2, Check, CheckCircle2, Palette, Sparkles, Plus, Trash2, ImagePlus, ListChecks, HelpCircle, MapPin, Search, Briefcase, Wand2, Eye, Images, MessageSquare, ArrowUp, ArrowDown, ArrowRight, ChevronDown, Bot, FileText, CalendarClock, Instagram, Star, Users, Layers, Sliders, Mail, Image as ImageIcon } from "lucide-react";
 import { PinMap, geocode } from "../components/PinMap";
 import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
 import RichEditor from "@/components/RichEditor";
 import EventsPanel from "@/pages/EventsPanel";
+import NewsletterPanel from "@/pages/NewsletterPanel";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
@@ -958,6 +959,43 @@ export default function WebsiteEditor() {
         </div>
 
         <a href="/sitio-web" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600" data-testid="website-embed-link"><MessageSquare className="w-4 h-4" /> {t("website.embedLink")}</a>
+
+        {/* Newsletter — subscribe block + subscriber manager + AI broadcast */}
+        <div className="py-3 border-t border-slate-100 mt-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-2">
+              <Mail className="w-5 h-5 text-slate-700 flex-none mt-0.5" />
+              <div>
+                <div className="font-semibold text-sm">{isEs ? "Boletín (Newsletter)" : "Newsletter"}</div>
+                <p className="text-sm text-slate-500 mt-0.5">{isEs ? "Muestra un bloque \"Suscríbete\" en tu sitio, reúne correos y envía boletines (con IA)." : "Show a \"Subscribe\" block on your site, collect emails and send newsletters (with AI)."}</p>
+              </div>
+            </div>
+            <Switch checked={!!w.newsletter_enabled} onCheckedChange={(v) => save({ newsletter_enabled: v })} data-testid="website-newsletter-toggle" />
+          </div>
+          {w.newsletter_enabled && (
+            <>
+              <div className="mt-4 ml-7 grid sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>{isEs ? "Título del bloque (Español)" : "Block title (Spanish)"}</Label>
+                  <Input value={w.newsletter_title_es || ""} onChange={(e) => patch({ newsletter_title_es: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder="Únete al boletín" data-testid="website-newsletter-title-es" />
+                </div>
+                <div>
+                  <Label>{isEs ? "Título del bloque (Inglés)" : "Block title (English)"}</Label>
+                  <Input value={w.newsletter_title || ""} onChange={(e) => patch({ newsletter_title: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder="Join our newsletter" data-testid="website-newsletter-title-en" />
+                </div>
+                <div>
+                  <Label>{isEs ? "Subtítulo (Español)" : "Subtitle (Spanish)"}</Label>
+                  <Input value={w.newsletter_subtitle_es || ""} onChange={(e) => patch({ newsletter_subtitle_es: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder="Recibe novedades de clases y eventos." data-testid="website-newsletter-subtitle-es" />
+                </div>
+                <div>
+                  <Label>{isEs ? "Subtítulo (Inglés)" : "Subtitle (English)"}</Label>
+                  <Input value={w.newsletter_subtitle || ""} onChange={(e) => patch({ newsletter_subtitle: e.target.value })} onBlur={saveAndToast} className="h-11 rounded-xl mt-1.5" placeholder="Get news about classes and events." data-testid="website-newsletter-subtitle-en" />
+                </div>
+              </div>
+              <NewsletterPanel isEs={isEs} />
+            </>
+          )}
+        </div>
       </Card>
       )}
 

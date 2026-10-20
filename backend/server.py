@@ -4593,6 +4593,11 @@ class WebsiteIn(BaseModel):
     products: Optional[list] = None                # [{name, tagline, description, img, link, cta}] software/products showcase
     stats: Optional[list] = None                   # [{value, label}] headline stats band (e.g. "25+", "Years")
     section_order: Optional[list] = None           # ordered section keys applied to any template body
+    newsletter_enabled: Optional[bool] = None       # show the "Subscribe" block + enable the newsletter tool
+    newsletter_title: Optional[str] = None           # subscribe block heading (EN)
+    newsletter_title_es: Optional[str] = None        # subscribe block heading (ES)
+    newsletter_subtitle: Optional[str] = None        # subscribe block subheading (EN)
+    newsletter_subtitle_es: Optional[str] = None     # subscribe block subheading (ES)
 
 
 _WEBSITE_DEFAULT_SECTIONS = {
@@ -6069,7 +6074,168 @@ async def _website_payload(w):
             ).to_list(100)
         ],
         "events": await _upcoming_events_payload(w["user_id"]),
+        "newsletter": {
+            "enabled": bool(w.get("newsletter_enabled")),
+            "title": w.get("newsletter_title") or "",
+            "title_es": w.get("newsletter_title_es") or "",
+            "subtitle": w.get("newsletter_subtitle") or "",
+            "subtitle_es": w.get("newsletter_subtitle_es") or "",
+        },
     }
+
+
+# ============================================================================
+# NEWSLETTER — reusable "Subscribe" capability for any tenant site. Visitors
+# submit name + email on the public site; subscribers are stored per owner,
+# exportable as CSV. A welcome email goes out on signup, and the owner can
+# compose + broadcast a newsletter to all subscribers (optionally drafted by
+# AI). Reuses the existing email backend (Resend/SMTP).
+# ============================================================================
+
+
+async def _business_name_for(user_id: str) -> str:
+    card = await db.cards.find_one({"user_id": user_id, "is_primary": True}, {"_id": 0, "name": 1, "company": 1}) or {}
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "headline": 1}) or {}
+    return (card.get("company") or card.get("name") or w.get("headline") or "").strip()
+
+
+def _newsletter_welcome_html(business_name: str, name: str, lang: str) -> str:
+    is_es = (lang or "es").lower().startswith("es")
+    biz = business_name or ("nuestro boletín" if is_es else "our newsletter")
+    hi = f"¡Hola {name}!" if is_es else f"Hi {name}!"
+    if not name:
+        hi = "¡Hola!" if is_es else "Hi!"
+    body = (f"Gracias por suscribirte a {biz}. Te mantendremos al tanto de novedades, clases y eventos. "
+            "¡Nos alegra tenerte!") if is_es else (
+            f"Thanks for subscribing to {biz}. We'll keep you posted on news, classes and events. "
+            "Glad to have you!")
+    foot = ("Recibiste este correo porque te suscribiste en nuestro sitio."
+            if is_es else "You received this email because you subscribed on our website.")
+    return (
+        f"<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:0;color:#1f2937\">"
+        f"<div style=\"background:#0f172a;color:#fff;padding:22px 28px;font-size:18px;font-weight:bold\">{biz}</div>"
+        f"<div style=\"padding:28px\">"
+        f"<h1 style=\"font-size:22px;margin:0 0 14px\">{hi}</h1>"
+        f"<p style=\"font-size:15px;line-height:1.6;margin:0 0 18px\">{body}</p>"
+        f"</div>"
+        f"<div style=\"padding:16px 28px;border-top:1px solid #e5e7eb;color:#94a3b8;font-size:12px\">{foot}</div>"
+        f"</div>"
+    )
+
+
+class NewsletterSubscribeIn(BaseModel):
+    name: Optional[str] = ""
+    email: str
+
+
+class NewsletterSendIn(BaseModel):
+    subject: str
+    html: str
+
+
+class NewsletterDraftIn(BaseModel):
+    topic: str
+    lang: Optional[str] = "es"
+
+
+@api_router.post("/public/newsletter/{slug}/subscribe")
+async def public_newsletter_subscribe(slug: str, payload: NewsletterSubscribeIn, background_tasks: BackgroundTasks):
+    email = (payload.email or "").strip().lower()
+    if not email or "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(400, "Correo no válido.")
+    w = await db.websites.find_one({"slug": slug}, {"_id": 0, "user_id": 1})
+    if not w:
+        raise HTTPException(404, "Site not found")
+    user_id = w["user_id"]
+    name = (payload.name or "").strip()[:120]
+    existing = await db.newsletter_subscribers.find_one({"user_id": user_id, "email": email}, {"_id": 0, "id": 1})
+    if existing:
+        return {"ok": True, "already": True}
+    sub = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "name": name,
+        "email": email,
+        "source": "website",
+        "created_at": _now_iso(),
+    }
+    await db.newsletter_subscribers.insert_one(sub)
+    biz = await _business_name_for(user_id)
+    lang = "es"  # welcome in Spanish by default; owner's audience is bilingual
+    background_tasks.add_task(email_service.send_to, email,
+                              ("¡Bienvenido/a!" if biz == "" else f"¡Bienvenido/a a {biz}!"),
+                              _newsletter_welcome_html(biz, name, lang))
+    return {"ok": True}
+
+
+@api_router.get("/newsletter/subscribers")
+async def list_newsletter_subscribers(user_id: str = Depends(get_current_user_id)):
+    subs = await db.newsletter_subscribers.find(
+        {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(5000)
+    return {"subscribers": subs, "count": len(subs)}
+
+
+@api_router.get("/newsletter/subscribers.csv")
+async def export_newsletter_subscribers(user_id: str = Depends(get_current_user_id)):
+    import csv as _csv
+    import io as _io
+    subs = await db.newsletter_subscribers.find(
+        {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(5000)
+    buf = _io.StringIO()
+    writer = _csv.writer(buf)
+    writer.writerow(["Name", "Email", "Source", "Subscribed"])
+    for s in subs:
+        writer.writerow([s.get("name") or "", s.get("email") or "", s.get("source") or "", s.get("created_at") or ""])
+    return Response(content=buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="subscribers.csv"'})
+
+
+@api_router.delete("/newsletter/subscribers/{sub_id}")
+async def delete_newsletter_subscriber(sub_id: str, user_id: str = Depends(get_current_user_id)):
+    res = await db.newsletter_subscribers.delete_one({"id": sub_id, "user_id": user_id})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "No encontrado")
+    return {"ok": True}
+
+
+@api_router.post("/newsletter/ai-draft")
+async def newsletter_ai_draft(payload: NewsletterDraftIn, user_id: str = Depends(get_current_user_id)):
+    biz = await _business_name_for(user_id)
+    draft = await ai_service.write_newsletter(payload.topic, business_name=biz, lang=payload.lang or "es")
+    return draft
+
+
+async def _send_newsletter_task(user_id: str, subject: str, html: str):
+    subs = await db.newsletter_subscribers.find({"user_id": user_id}, {"_id": 0, "email": 1}).to_list(5000)
+    sent = 0
+    for s in subs:
+        em = (s.get("email") or "").strip()
+        if not em:
+            continue
+        try:
+            res = await email_service.send_to(em, subject, html)
+            if res.get("ok"):
+                sent += 1
+        except Exception:
+            pass
+        await asyncio.sleep(0.4)  # gentle pacing for provider rate limits
+    logger.info(f"[newsletter] sent {sent}/{len(subs)} for user={user_id} subject={subject!r}")
+
+
+@api_router.post("/newsletter/send")
+async def send_newsletter(payload: NewsletterSendIn, background_tasks: BackgroundTasks,
+                          user_id: str = Depends(get_current_user_id)):
+    subject = (payload.subject or "").strip()
+    html = (payload.html or "").strip()
+    if not subject or not html:
+        raise HTTPException(400, "Falta el asunto o el contenido.")
+    if not email_service._notify_enabled():
+        raise HTTPException(400, "El correo no está configurado en el servidor.")
+    count = await db.newsletter_subscribers.count_documents({"user_id": user_id})
+    if count == 0:
+        raise HTTPException(400, "Aún no tienes suscriptores.")
+    background_tasks.add_task(_send_newsletter_task, user_id, subject, html)
+    return {"ok": True, "queued": count}
 
 
 # ============================================================================

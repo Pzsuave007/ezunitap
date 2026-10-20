@@ -1,5 +1,6 @@
 import { PinMap } from "../components/PinMap";
 import { EventsSection } from "../components/EventsSection";
+import { NewsletterSection } from "../components/NewsletterSection";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -2245,7 +2246,7 @@ function StatCountUp({ target }) {
   return <span ref={ref}>{n}{suffix}</span>;
 }
 
-const SECTION_ORDER_DEFAULT = ["services", "events", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+const SECTION_ORDER_DEFAULT = ["services", "events", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "newsletter", "band", "faq", "areas"];
 
 function orderedSectionKeys(w) {
   const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_ORDER_DEFAULT.includes(k)) : [];
@@ -2430,6 +2431,7 @@ function SectionStack({ ctx }) {
     band: true,
     faq: Array.isArray(w.faqs) && w.faqs.length > 0,
     areas: Array.isArray(w.areas) && w.areas.length > 0,
+    newsletter: !!(data?.newsletter?.enabled),
   };
   const sc = w.section_colors || {};
   const ALIAS = { how: "process", band: "cta", products: "samples" };
@@ -2458,6 +2460,7 @@ function SectionStack({ ctx }) {
       case "reviews": el = <ReviewsBlock key={k} ctx={sctx} dark={!isLight(bg)} bg={bg} />; break;
       case "map": el = <ClientMap key={k} ctx={sctx} sty={{ bg }} />; break;
       case "band": el = <CtaBand key={k} ctx={sctx} bg={custom} />; break;
+      case "newsletter": el = <NewsletterSection key={k} ctx={sctx} bg={bg} />; break;
       case "faq": el = <FaqBlock key={k} ctx={sctx} dark={!isLight(bg)} bg={bg} />; break;
       case "areas": el = <AreasBlock key={k} ctx={sctx} bg={bg} />; break;
       default: el = null;
