@@ -1,3 +1,27 @@
+## 🎟️ Jun 2026 — Módulo de Eventos (sección reutilizable del Website) [IMPLEMENTADO; backend verificado e2e, frontend compila — render público NO verificado visualmente por bloqueo de CloudFlare al navegador automatizado]
+- **Petición**: módulo reutilizable de Eventos para sitios de instructores (salsa), gimnasios, eventos sociales, talleres de marketing, etc. No es una plantilla aparte: es una SECCIÓN opcional del Website que aparece sola cuando hay eventos publicados.
+- **Decisiones del usuario**:
+  - Eventos gratuitos (RSVP) y de pago (boletos) desde v1.
+  - Lista pública de próximos eventos + vista de calendario mensual ("Ver calendario").
+  - Recurrentes desde v1 (daily/weekly/monthly con intervalo y fecha "hasta").
+  - Pagos: mostrar TODAS las formas de pago igual que en invoices (tarjeta Stripe Connect + Venmo/PayPal/Cash App/Zelle/efectivo/cheque del owner). Se reutiliza `_normalize_payment_methods`.
+  - Notificaciones: SOLO una confirmación al registrarse (sin recordatorios automáticos, sin cron). El asistente agrega el evento a su calendario (archivo .ics + enlace Google Calendar) y su dispositivo maneja los recordatorios.
+  - Campos de registro: nombre y email obligatorios, teléfono opcional.
+- **Backend** (`server.py`): colecciones `events` y `event_registrations`.
+  - Owner CRUD: `GET/POST /api/events`, `GET/PUT/DELETE /api/events/{id}`, `GET /api/events/{id}/registrations`, `GET /api/events/{id}/registrations.csv`.
+  - Público: `POST /api/public/events/{id}/register` (crea registro; si pago con tarjeta devuelve `checkout_url`, si manual devuelve `pending_manual`), `GET /api/public/events/checkout/status/{session_id}` (marca pagado + envía confirmación + notifica owner; devuelve `event_id`/`occurrence`), `GET /api/public/events/{id}/calendar.ics` (ICS con VALARM -1h).
+  - `_upcoming_events_payload(w)` inyecta eventos publicados (con `occurrences` expandidas por recurrencia y `pay` normalizado) en el payload de `_website_payload` → clave `events`.
+  - AI: `ai_service.write_event_description(title, notes, business_type, lang)`.
+  - Pago tarjeta: `connect_service.create_event_checkout_connect(...)` (patrón de invoice checkout).
+  - Email: confirmación única con enlaces de calendario vía `email_service.send_to`.
+- **Frontend**:
+  - `components/EventsSection.jsx` (público): sección "events" en `ContractorSite.js` (añadida a `SECTION_ORDER_DEFAULT`, `has.events`, switch de `SectionStack`). Lista de tarjetas + modal de registro (selector de ocurrencia, campos, selección de método de pago estilo invoice, botones "Agregar a calendario" Google/ICS) + modal de calendario mensual + manejo de retorno de Stripe (`?event_paid=&session_id=`).
+  - `pages/EventsPanel.jsx` (editor): nueva sección "events" en `WebsiteEditor.js` (SECTION_KEYS, SEC_DEF, META con icono CalendarClock, bodyFor). CRUD de eventos, subida/elección de imagen, recurrencia, publicación, lista de inscritos y export CSV.
+- **Verificado e2e (curl, cuenta pzsuave007)**: crear evento recurrente semanal (7 ocurrencias), listar, registrar (manual venmo → pending_manual, total $30 por 2 boletos), listar inscritos, ICS correcto con VALARM, y payload público incluye `events` con ocurrencias + todos los métodos de pago (card+venmo+paypal+zelle+cash+check). Backend y frontend compilan sin errores.
+- **PENDIENTE de verificación**: render visual del sitio público (CloudFlare reta al navegador automatizado y aborta el XHR a `/api/public/website/...` de forma intermitente; curl funciona). Falta deploy. Sugerido: usuario verifica en su navegador o autoriza testing_agent.
+
+
+
 ## 🤖 Jun 2026 — Generador de IA para Páginas de Servicio (paquete completo) [COMPLETO; verificado a nivel datos]
 - **Petición**: un asistente de IA que cree las páginas de Servicio (las que venden), igual que Productos/Casos, con su página completa; las Soluciones (/p/) van DENTRO de cada servicio. SIN toggle (si el servicio existe, tiene página; para quitarlo se borra). Motor actual (Emergent LLM key, bilingüe).
 - **Backend**: `ai_service.generate_service_full(brief, service_name, lang)` (nuevo `AGENCY_SERVICE_FULL_SYSTEM`) → JSON {name, tagline, description, intro, benefits[], process[{title,desc}], faqs[{q,a}], seo_title, seo_description, cta}. Wired en `/website/ai-agency` kind `service_full`. Verificado ES: tagline + 7 beneficios + 5 pasos + 6 FAQs + SEO.

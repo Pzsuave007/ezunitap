@@ -4601,6 +4601,7 @@ _WEBSITE_DEFAULT_SECTIONS = {
     "how": True, "why": True, "faq": True, "areas": True,
     "feature": True, "band": True,
     "samples": True, "logos": True, "map": True,
+    "events": True,
 }
 
 
@@ -6067,7 +6068,501 @@ async def _website_payload(w):
                 {"_id": 0, "service_name": 1, "page_slug": 1, "content": 1, "content_es": 1, "service_name_es": 1},
             ).to_list(100)
         ],
+        "events": await _upcoming_events_payload(w["user_id"]),
     }
+
+
+# ============================================================================
+# EVENTS — reusable event calendar + RSVP/ticket module for any tenant site.
+# Attendees register from the public site, get a confirmation email with an
+# "add to my phone calendar" (.ics + Google) link; their device fires the
+# reminder (no server-side reminder jobs). Paid tickets reuse the invoice
+# payment options (Stripe card + the owner's Venmo/PayPal/Zelle/etc.).
+# ============================================================================
+import calendar as _calendar
+from urllib.parse import urlparse as _urlparse, quote as _urlquote
+
+_PM_LABELS = {"venmo": "Venmo", "paypal": "PayPal", "cashapp": "Cash App",
+              "zelle": "Zelle", "cash": "Efectivo", "check": "Cheque"}
+
+
+def _parse_event_dt(s):
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "").strip())
+    except Exception:
+        return None
+
+
+def _add_months(dt, months):
+    m = dt.month - 1 + months
+    y = dt.year + m // 12
+    m = m % 12 + 1
+    d = min(dt.day, _calendar.monthrange(y, m)[1])
+    return dt.replace(year=y, month=m, day=d)
+
+
+def _event_occurrences(ev, limit=12, horizon_days=400):
+    """Expand recurrence into upcoming datetimes (floating local time)."""
+    start = _parse_event_dt(ev.get("start"))
+    if not start:
+        return []
+    now = datetime.now()
+    grace = now - timedelta(hours=4)
+    rec = ev.get("recurrence") or {}
+    freq = (rec.get("freq") or "none").lower()
+    until = _parse_event_dt(rec.get("until")) if rec.get("until") else None
+    out = []
+    if freq in ("none", ""):
+        if start >= grace:
+            out.append(start)
+        return out
+    interval = max(1, int(rec.get("interval") or 1))
+    horizon = now + timedelta(days=horizon_days)
+    cur = start
+    guard = 0
+    while cur <= horizon and len(out) < limit and guard < 1000:
+        guard += 1
+        if until and cur.date() > until.date():
+            break
+        if cur >= grace:
+            out.append(cur)
+        if freq == "daily":
+            cur = cur + timedelta(days=interval)
+        elif freq == "weekly":
+            cur = cur + timedelta(weeks=interval)
+        elif freq == "monthly":
+            cur = _add_months(cur, interval)
+        else:
+            break
+    return out
+
+
+def _event_duration_minutes(ev):
+    s = _parse_event_dt(ev.get("start"))
+    e = _parse_event_dt(ev.get("end"))
+    if s and e and e > s:
+        return int((e - s).total_seconds() // 60)
+    return 90
+
+
+def _event_public(ev, occ_iso=None):
+    return {
+        "id": ev["id"],
+        "slug": ev.get("slug") or "",
+        "title": ev.get("title") or "",
+        "description": ev.get("description") or "",
+        "image_id": ev.get("image_id") or "",
+        "start": occ_iso or ev.get("start"),
+        "end": ev.get("end") or "",
+        "duration_min": _event_duration_minutes(ev),
+        "timezone": ev.get("timezone") or "",
+        "location_name": ev.get("location_name") or "",
+        "location_address": ev.get("location_address") or "",
+        "online_url": ev.get("online_url") or "",
+        "price": float(ev.get("price") or 0),
+        "capacity": int(ev.get("capacity") or 0),
+        "recurrence": ev.get("recurrence") or {},
+    }
+
+
+async def _event_seats_taken(event_id, occurrence):
+    agg = await db.event_registrations.aggregate([
+        {"$match": {"event_id": event_id, "occurrence": occurrence,
+                    "status": {"$in": ["free", "paid", "pending_manual"]}}},
+        {"$group": {"_id": None, "n": {"$sum": "$tickets"}}},
+    ]).to_list(1)
+    return int(agg[0]["n"]) if agg else 0
+
+
+async def _upcoming_events_payload(user_id):
+    evs = await db.events.find({"user_id": user_id, "published": True}, {"_id": 0}).to_list(200)
+    if not evs:
+        return []
+    owner = await db.users.find_one({"id": user_id}, {"_id": 0}) or {}
+    card_enabled = _stripe_collect_enabled_for(owner)
+    pm = _normalize_payment_methods(owner.get("payment_methods") or {})
+    methods = [{"key": k, "label": _PM_LABELS.get(k, k), "value": v["value"], "note": v["note"]}
+               for k, v in pm.items() if v.get("enabled")]
+    items = []
+    for ev in evs:
+        occs = _event_occurrences(ev, limit=12)
+        if not occs:
+            continue
+        pub = _event_public(ev, occ_iso=occs[0].isoformat())
+        pub["occurrences"] = [o.isoformat() for o in occs]
+        if pub["price"] > 0:
+            pub["pay"] = {"card": bool(card_enabled), "methods": methods}
+        items.append(pub)
+    items.sort(key=lambda x: x.get("start") or "")
+    return items
+
+
+def _ics_esc(s):
+    return (str(s or "").replace("\\", "\\\\").replace(",", "\\,")
+            .replace(";", "\\;").replace("\n", "\\n"))
+
+
+def _fmt_cal_dt(dt):
+    return dt.strftime("%Y%m%dT%H%M%S")
+
+
+def _build_event_ics(ev, start):
+    dur = _event_duration_minutes(ev)
+    end = (start + timedelta(minutes=dur)) if start else None
+    loc = ev.get("location_name") or ""
+    if ev.get("location_address"):
+        loc = (loc + " " + ev["location_address"]).strip()
+    if not loc and ev.get("online_url"):
+        loc = ev["online_url"]
+    uid = f"{ev['id']}-{_fmt_cal_dt(start) if start else 'x'}@unitech"
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UniTech//Events//EN", "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT", f"UID:{uid}", f"DTSTAMP:{_fmt_cal_dt(datetime.now())}",
+        f"DTSTART:{_fmt_cal_dt(start)}" if start else "",
+        f"DTEND:{_fmt_cal_dt(end)}" if end else "",
+        f"SUMMARY:{_ics_esc(ev.get('title') or 'Event')}",
+        f"DESCRIPTION:{_ics_esc(ev.get('description') or '')}",
+        f"LOCATION:{_ics_esc(loc)}",
+        "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Recordatorio", "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR",
+    ]
+    return "\r\n".join([ln for ln in lines if ln])
+
+
+def _google_cal_url(ev, start):
+    dur = _event_duration_minutes(ev)
+    end = start + timedelta(minutes=dur)
+    loc = ev.get("location_name") or ""
+    if ev.get("location_address"):
+        loc = (loc + " " + ev["location_address"]).strip()
+    if not loc and ev.get("online_url"):
+        loc = ev["online_url"]
+    return (
+        "https://calendar.google.com/calendar/render?action=TEMPLATE"
+        f"&text={_urlquote(ev.get('title') or 'Event')}"
+        f"&dates={_fmt_cal_dt(start)}/{_fmt_cal_dt(end)}"
+        f"&details={_urlquote(ev.get('description') or '')}"
+        f"&location={_urlquote(loc)}"
+    )
+
+
+async def _send_event_confirmation(ev, reg, owner, paid=True):
+    if not email_service.is_configured() or not reg.get("email"):
+        return
+    start = _parse_event_dt(reg.get("occurrence")) or _parse_event_dt(ev.get("start"))
+    biz = (owner or {}).get("business_name") or "UniTech"
+    base = ""
+    try:
+        u = _urlparse(reg.get("site_url") or "")
+        if u.scheme and u.netloc:
+            base = f"{u.scheme}://{u.netloc}"
+    except Exception:
+        base = ""
+    ics_url = (f"{base}/api/public/events/{ev['id']}/calendar.ics?occ="
+               f"{_urlquote(reg.get('occurrence') or '')}") if base else ""
+    gcal = _google_cal_url(ev, start) if start else ""
+    when = start.strftime("%d/%m/%Y · %I:%M %p") if start else ""
+    where = ev.get("location_name") or ev.get("location_address") or ev.get("online_url") or ""
+    rows = [("Evento", ev.get("title")), ("Fecha", when), ("Lugar", where),
+            ("Boletos", str(reg.get("tickets") or 1))]
+    if not paid and float(reg.get("amount") or 0) > 0:
+        rows.append(("Pago", f"Pendiente — ${float(reg['amount']):.2f}"))
+    heading = "¡Registro confirmado!" if paid else "Registro recibido"
+    intro = f'Gracias por registrarte en "{ev.get("title")}" de {biz}.'
+    ics_html = (f'<a href="{ics_url}" style="color:#2563eb;">Apple / otro calendario (.ics)</a> · '
+                if ics_url else "")
+    footer = (f'{ics_html}Agrega el evento a tu teléfono y tu calendario te enviará el '
+              f'recordatorio automáticamente.')
+    html = email_service._shell(lang="es", heading=heading, intro=intro, rows=rows,
+                                cta_url=gcal, cta_label="Agregar a Google Calendar", footer=footer)
+    await email_service.send_to(reg["email"], f"Confirmación: {ev.get('title')}", html)
+
+
+async def _notify_owner_registration(ev, reg, owner):
+    email = (owner or {}).get("email")
+    if not email or not email_service.is_configured():
+        return
+    start = _parse_event_dt(reg.get("occurrence"))
+    when = start.strftime("%d/%m/%Y %I:%M %p") if start else ""
+    status = {"free": "Gratis", "paid": "Pagado", "pending_manual": "Pago pendiente"}.get(
+        reg.get("status"), reg.get("status"))
+    rows = [("Evento", ev.get("title")), ("Asistente", reg.get("name")),
+            ("Email", reg.get("email")), ("Teléfono", reg.get("phone")),
+            ("Boletos", str(reg.get("tickets") or 1)), ("Fecha", when), ("Estado", status)]
+    html = email_service._shell(
+        lang="es", heading="Nuevo registro a tu evento",
+        intro=f'{reg.get("name")} se registró en "{ev.get("title")}".',
+        rows=rows, cta_url="", cta_label="",
+        footer="Recibes esto porque administras este evento en UniTech.")
+    await email_service.send_to(email, f"Nuevo registro: {ev.get('title')}", html)
+
+
+class EventIn(BaseModel):
+    title: str = ""
+    description: str = ""
+    image_id: str = ""
+    start: str = ""
+    end: str = ""
+    timezone: str = ""
+    location_name: str = ""
+    location_address: str = ""
+    online_url: str = ""
+    capacity: int = 0
+    price: float = 0
+    recurrence: dict = {}
+    published: bool = True
+
+
+async def _unique_event_slug(user_id, title, current_id=None):
+    base = _slugify(title) or "evento"
+    slug, n = base, 0
+    while True:
+        ex = await db.events.find_one({"user_id": user_id, "slug": slug}, {"_id": 0, "id": 1})
+        if not ex or ex.get("id") == current_id:
+            return slug
+        n += 1
+        slug = f"{base}-{n}"
+
+
+@api_router.get("/events")
+async def list_events(user_id: str = Depends(get_current_user_id)):
+    evs = await db.events.find({"user_id": user_id}, {"_id": 0}).sort("start", 1).to_list(500)
+    for ev in evs:
+        ev["registration_count"] = await db.event_registrations.count_documents({"event_id": ev["id"]})
+    return {"events": evs}
+
+
+@api_router.post("/events")
+async def create_event(payload: EventIn, user_id: str = Depends(get_current_user_id)):
+    if not (payload.title or "").strip():
+        raise HTTPException(400, "El título es obligatorio")
+    if not _parse_event_dt(payload.start):
+        raise HTTPException(400, "Fecha/hora de inicio inválida")
+    ev = {
+        "id": _new_id(), "user_id": user_id,
+        "slug": await _unique_event_slug(user_id, payload.title),
+        "title": payload.title.strip()[:160],
+        "description": (payload.description or "").strip(),
+        "image_id": payload.image_id or "",
+        "start": payload.start, "end": payload.end or "",
+        "timezone": (payload.timezone or "").strip(),
+        "location_name": (payload.location_name or "").strip()[:160],
+        "location_address": (payload.location_address or "").strip()[:240],
+        "online_url": (payload.online_url or "").strip()[:400],
+        "capacity": max(0, int(payload.capacity or 0)),
+        "price": max(0, round(float(payload.price or 0), 2)),
+        "recurrence": payload.recurrence or {},
+        "published": bool(payload.published),
+        "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.events.insert_one(dict(ev))
+    ev["registration_count"] = 0
+    return ev
+
+
+@api_router.put("/events/{event_id}")
+async def update_event(event_id: str, payload: EventIn, user_id: str = Depends(get_current_user_id)):
+    ev = await db.events.find_one({"id": event_id, "user_id": user_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(404, "Evento no encontrado")
+    if not (payload.title or "").strip():
+        raise HTTPException(400, "El título es obligatorio")
+    if not _parse_event_dt(payload.start):
+        raise HTTPException(400, "Fecha/hora de inicio inválida")
+    upd = {
+        "title": payload.title.strip()[:160],
+        "description": (payload.description or "").strip(),
+        "image_id": payload.image_id or "",
+        "start": payload.start, "end": payload.end or "",
+        "timezone": (payload.timezone or "").strip(),
+        "location_name": (payload.location_name or "").strip()[:160],
+        "location_address": (payload.location_address or "").strip()[:240],
+        "online_url": (payload.online_url or "").strip()[:400],
+        "capacity": max(0, int(payload.capacity or 0)),
+        "price": max(0, round(float(payload.price or 0), 2)),
+        "recurrence": payload.recurrence or {},
+        "published": bool(payload.published),
+        "updated_at": _now_iso(),
+    }
+    await db.events.update_one({"id": event_id, "user_id": user_id}, {"$set": upd})
+    return {**ev, **upd}
+
+
+@api_router.delete("/events/{event_id}")
+async def delete_event(event_id: str, user_id: str = Depends(get_current_user_id)):
+    r = await db.events.delete_one({"id": event_id, "user_id": user_id})
+    if r.deleted_count:
+        await db.event_registrations.delete_many({"event_id": event_id})
+    return {"ok": True}
+
+
+@api_router.get("/events/{event_id}/registrations")
+async def list_event_registrations(event_id: str, user_id: str = Depends(get_current_user_id)):
+    ev = await db.events.find_one({"id": event_id, "user_id": user_id}, {"_id": 0, "id": 1})
+    if not ev:
+        raise HTTPException(404, "Evento no encontrado")
+    regs = await db.event_registrations.find(
+        {"event_id": event_id, "user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(2000)
+    return {"registrations": regs}
+
+
+@api_router.get("/events/{event_id}/registrations.csv")
+async def export_event_registrations(event_id: str, user_id: str = Depends(get_current_user_id)):
+    ev = await db.events.find_one({"id": event_id, "user_id": user_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(404, "Evento no encontrado")
+    regs = await db.event_registrations.find(
+        {"event_id": event_id, "user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(5000)
+    import csv as _csv
+    import io as _io
+    buf = _io.StringIO()
+    wtr = _csv.writer(buf)
+    wtr.writerow(["Nombre", "Email", "Teléfono", "Boletos", "Monto", "Estado", "Fecha evento", "Registrado"])
+    for r in regs:
+        wtr.writerow([r.get("name", ""), r.get("email", ""), r.get("phone", ""),
+                      r.get("tickets", 1), r.get("amount", 0), r.get("status", ""),
+                      r.get("occurrence", ""), r.get("created_at", "")])
+    fn = (_slugify(ev.get("title")) or "evento") + "-registros.csv"
+    return Response(content=buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{fn}"'})
+
+
+class EventAiIn(BaseModel):
+    title: str = ""
+    notes: str = ""
+
+
+@api_router.post("/events/ai-generate")
+async def event_ai_generate(payload: EventAiIn, user_id: str = Depends(get_current_user_id)):
+    if not (payload.title or "").strip():
+        raise HTTPException(400, "Escribe un título primero")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0}) or {}
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    try:
+        text = await ai_service.write_event_description(
+            payload.title, payload.notes or "",
+            card.get("business_type") or "", user.get("business_name") or "")
+    except Exception as e:
+        logger.error(f"event AI failed: {e!r}")
+        raise HTTPException(500, "No se pudo generar la descripción")
+    return {"description": text}
+
+
+@api_router.get("/public/events/{event_id}/calendar.ics")
+async def public_event_ics(event_id: str, occ: str = ""):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(404, "Not found")
+    start = _parse_event_dt(occ) or _parse_event_dt(ev.get("start"))
+    ics = _build_event_ics(ev, start)
+    return Response(content=ics, media_type="text/calendar",
+                    headers={"Content-Disposition": 'attachment; filename="evento.ics"'})
+
+
+class EventRegisterIn(BaseModel):
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    tickets: int = 1
+    occurrence: str = ""
+    method: str = ""
+    origin_url: str = ""
+
+
+@api_router.post("/public/events/{event_id}/register")
+async def public_register_event(event_id: str, payload: EventRegisterIn):
+    ev = await db.events.find_one({"id": event_id, "published": True}, {"_id": 0})
+    if not ev:
+        raise HTTPException(404, "Evento no disponible")
+    owner = await db.users.find_one({"id": ev["user_id"]}, {"_id": 0}) or {}
+    name = (payload.name or "").strip()[:120]
+    email = (payload.email or "").strip().lower()[:160]
+    if not name or "@" not in email:
+        raise HTTPException(400, "Nombre y email válidos son obligatorios")
+    tickets = max(1, min(int(payload.tickets or 1), 20))
+    occ = payload.occurrence or ev.get("start")
+    cap = int(ev.get("capacity") or 0)
+    if cap > 0:
+        taken = await _event_seats_taken(event_id, occ)
+        if taken + tickets > cap:
+            raise HTTPException(409, "Lo sentimos, ya no hay lugares disponibles")
+    price = float(ev.get("price") or 0)
+    amount = round(price * tickets, 2)
+    reg = {
+        "id": _new_id(), "event_id": event_id, "user_id": ev["user_id"],
+        "event_title": ev.get("title"), "occurrence": occ,
+        "name": name, "email": email, "phone": (payload.phone or "").strip()[:40],
+        "tickets": tickets, "amount": amount, "price": price,
+        "method": (payload.method or "").strip()[:20],
+        "site_url": (payload.origin_url or "").strip(),
+        "status": "pending", "created_at": _now_iso(),
+    }
+    if amount <= 0:
+        reg["status"] = "free"
+        reg["method"] = "free"
+        await db.event_registrations.insert_one(dict(reg))
+        await _send_event_confirmation(ev, reg, owner, paid=True)
+        await _notify_owner_registration(ev, reg, owner)
+        return {"ok": True, "registration_id": reg["id"], "status": "confirmed"}
+
+    if (payload.method or "") == "card":
+        if not _stripe_collect_enabled_for(owner):
+            raise HTTPException(400, "El pago con tarjeta no está disponible")
+        acct = _connect_collect_account(owner)
+        if not acct:
+            raise HTTPException(400, "El pago con tarjeta no está disponible")
+        origin = (payload.origin_url or "").rstrip("/")
+        if not origin.startswith("http"):
+            raise HTTPException(400, "origin_url inválido")
+        sep = "&" if "?" in origin else "?"
+        success_url = f"{origin}{sep}event_paid={reg['id']}&session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = origin
+        reg["status"] = "pending"
+        await db.event_registrations.insert_one(dict(reg))
+        res = await connect_service.create_event_checkout_connect(
+            db, ev, reg, amount, success_url, cancel_url, acct)
+        return {"ok": True, "registration_id": reg["id"], "checkout_url": res["url"], "status": "redirect"}
+
+    reg["status"] = "pending_manual"
+    await db.event_registrations.insert_one(dict(reg))
+    await _send_event_confirmation(ev, reg, owner, paid=False)
+    await _notify_owner_registration(ev, reg, owner)
+    return {"ok": True, "registration_id": reg["id"], "status": "pending_manual"}
+
+
+@api_router.get("/public/events/checkout/status/{session_id}")
+async def public_event_checkout_status(session_id: str):
+    tx0 = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if not tx0:
+        return {"payment_status": None}
+    if tx0.get("is_connect") and tx0.get("connect_account_id"):
+        result = connect_service.get_checkout_status_connect(session_id, tx0["connect_account_id"])
+    else:
+        result = {"payment_status": tx0.get("payment_status")}
+    if result.get("payment_status") == "paid":
+        tx = await db.payment_transactions.find_one_and_update(
+            {"session_id": session_id, "type": "event_ticket", "recorded": {"$ne": True}},
+            {"$set": {"recorded": True, "payment_status": "paid", "status": "complete"}},
+        )
+        if tx:
+            await db.event_registrations.update_one(
+                {"id": tx["registration_id"]},
+                {"$set": {"status": "paid", "paid_at": _now_iso()}},
+            )
+            reg = await db.event_registrations.find_one({"id": tx["registration_id"]}, {"_id": 0})
+            ev = await db.events.find_one({"id": tx["event_id"]}, {"_id": 0})
+            owner = await db.users.find_one({"id": tx["user_id"]}, {"_id": 0})
+            if reg and ev:
+                await _send_event_confirmation(ev, reg, owner, paid=True)
+                await _notify_owner_registration(ev, reg, owner)
+    reg0 = await db.event_registrations.find_one({"id": tx0.get("registration_id")}, {"_id": 0, "occurrence": 1})
+    result["event_id"] = tx0.get("event_id")
+    result["occurrence"] = (reg0 or {}).get("occurrence") or ""
+    return result
 
 
 @api_router.get("/public/website/{slug}")

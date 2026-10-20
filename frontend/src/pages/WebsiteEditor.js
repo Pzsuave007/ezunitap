@@ -13,10 +13,11 @@ import { toast } from "sonner";
 import { VersionHistory } from "@/components/VersionHistory";
 import DomainConnect from "@/components/DomainConnect";
 import RichEditor from "@/components/RichEditor";
+import EventsPanel from "@/pages/EventsPanel";
 
 const TEMPLATES = ["agency", "cinematic", "responder", "bento", "craftsman", "trust", "slider", "onepage", "neon", "playful", "luxe"];
 const TPL_SWATCH = { agency: "#0a1130", cinematic: "#0A0A0F", responder: "#DC2626", bento: "#2563EB", craftsman: "#B45309", trust: "#0F766E", slider: "#111827", onepage: "#FAFAFA", neon: "#0A0A0C", playful: "#FF8A3D", luxe: "#141414" };
-const SECTION_KEYS = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+const SECTION_KEYS = ["services", "events", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["crear", "secciones", "diseno", "funciones", "publicar"];
 const TAB_META = {
@@ -188,7 +189,7 @@ export default function WebsiteEditor() {
     } finally { setImportingMedia(false); }
   };
   const setSecColor = (key, val) => patch({ section_colors: { ...(w?.section_colors || {}), [key]: val } });
-  const SEC_DEF = { hero: "#0a1130", about: "#f8fafc", services: "#ffffff", solutions: "#f8fafc", samples: "#f8fafc", products: "#ffffff", feature: "#ffffff", how: "#0a1130", why: "#ffffff", gallery: "#f8fafc", logos: "#ffffff", stats: (w?.accent_color || "#22D3EE"), reviews: "#f8fafc", map: "#f8fafc", band: (w?.accent_color || "#22D3EE"), faq: "#f8fafc", areas: "#ffffff", contact: "#ffffff" };
+  const SEC_DEF = { hero: "#0a1130", about: "#f8fafc", services: "#ffffff", events: "#f8fafc", solutions: "#f8fafc", samples: "#f8fafc", products: "#ffffff", feature: "#ffffff", how: "#0a1130", why: "#ffffff", gallery: "#f8fafc", logos: "#ffffff", stats: (w?.accent_color || "#22D3EE"), reviews: "#f8fafc", map: "#f8fafc", band: (w?.accent_color || "#22D3EE"), faq: "#f8fafc", areas: "#ffffff", contact: "#ffffff" };
   const toggleSec = (key, v) => save({ sections: { ...w?.sections, [key]: v } });
   const secOrderList = () => { const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_KEYS.includes(k)) : []; return [...saved, ...SECTION_KEYS.filter((k) => !saved.includes(k))]; };
   const moveSec = (key, dir) => { const order = secOrderList(); const idx = order.indexOf(key); const j = idx + dir; if (j < 0 || j >= order.length) return; const n = [...order]; [n[idx], n[j]] = [n[j], n[idx]]; save({ section_order: n }); };
@@ -994,6 +995,7 @@ export default function WebsiteEditor() {
       {tab === "secciones" && (() => {
         const META = {
           services: { es: "Servicios", en: "Services", Icon: Briefcase },
+          events: { es: "Eventos", en: "Events", Icon: CalendarClock },
           about: { es: "Nosotros", en: "About", Icon: Users },
           solutions: { es: "Problemas que resolvemos", en: "Problems We Solve", Icon: HelpCircle },
           samples: { es: "Casos de éxito", en: "Case Studies", Icon: Images },
@@ -1019,6 +1021,10 @@ export default function WebsiteEditor() {
         const AP = (arr) => <AgencyPanel w={w} save={save} patch={patch} photos={photos} onUpload={uploadPhoto} t={t} only={arr} />;
         const isAgency = w.template === "agency";
         const bodyFor = (k) => {
+          if (k === "events") return (<>
+            <EventsPanel isEs={isEs} />
+            <ColorRow k="events" />
+          </>);
           if (k === "about") return (<>
             {isAgency ? AP(["about"]) : (<>
               <div>

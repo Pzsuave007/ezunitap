@@ -564,6 +564,27 @@ async def write_field(kind: str, name: str, business_type: str = "", business_na
     return (response or "").strip().strip('"').strip("\u201c\u201d").strip()
 
 
+async def write_event_description(title: str, notes: str = "", business_type: str = "", business_name: str = "") -> str:
+    """Write an inviting event description in SPANISH (2-4 short sentences)."""
+    system = (
+        "Eres un copywriter de marketing para negocios locales. "
+        "Escribe una descripción de evento ATRACTIVA en ESPAÑOL (2 a 4 frases cortas) "
+        "que haga que la gente quiera asistir. Tono cálido, con energía y concreto. "
+        "Devuelve SOLO el texto de la descripción — sin comillas, sin etiquetas, sin markdown."
+    )
+    chat = _new_chat(system)
+    parts = [f"Título del evento: {title}"]
+    if business_name:
+        parts.append(f"Negocio: {business_name}")
+    if business_type:
+        parts.append(f"Giro: {business_type}")
+    if notes:
+        parts.append(f"Detalles: {notes}")
+    response = await chat.send_message(UserMessage(text="\n".join(parts)))
+    return (response or "").strip().strip('"').strip("\u201c\u201d").strip()
+
+
+
 
 SCOPE_SYSTEM = """You generate a professional Scope of Work in ENGLISH for U.S. clients,
 based on a Spanish description from a contractor.

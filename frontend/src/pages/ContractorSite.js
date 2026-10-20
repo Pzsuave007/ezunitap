@@ -1,4 +1,5 @@
 import { PinMap } from "../components/PinMap";
+import { EventsSection } from "../components/EventsSection";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -2244,7 +2245,7 @@ function StatCountUp({ target }) {
   return <span ref={ref}>{n}{suffix}</span>;
 }
 
-const SECTION_ORDER_DEFAULT = ["services", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
+const SECTION_ORDER_DEFAULT = ["services", "events", "solutions", "samples", "products", "about", "feature", "how", "why", "gallery", "logos", "stats", "reviews", "map", "band", "faq", "areas"];
 
 function orderedSectionKeys(w) {
   const saved = Array.isArray(w.section_order) ? w.section_order.filter((k) => SECTION_ORDER_DEFAULT.includes(k)) : [];
@@ -2413,6 +2414,7 @@ function SectionStack({ ctx }) {
   const reviews = (Array.isArray(data?.reviews) ? data.reviews : []).filter((r) => (r.text || "").trim());
   const has = {
     services: (services?.length || 0) > 0,
+    events: Array.isArray(data?.events) && data.events.length > 0,
     solutions: Array.isArray(data?.problem_pages) && data.problem_pages.length > 0,
     samples: (Array.isArray(w.samples) && w.samples.length > 0) || (Array.isArray(w.case_studies) && w.case_studies.length > 0),
     products: Array.isArray(w.products) && w.products.length > 0,
@@ -2442,6 +2444,7 @@ function SectionStack({ ctx }) {
     let el = null;
     switch (k) {
       case "services": el = <ServicesModule key={k} ctx={sctx} />; break;
+      case "events": el = <EventsSection key={k} ctx={sctx} bg={bg} />; break;
       case "solutions": el = <ProblemsSection key={k} ctx={sctx} bg={bg} />; break;
       case "samples": el = <SamplesSection key={k} ctx={sctx} sty={{ bg }} />; break;
       case "products": el = <ProductsSection key={k} ctx={sctx} sty={{ bg }} />; break;

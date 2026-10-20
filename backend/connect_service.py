@@ -152,6 +152,68 @@ async def create_invoice_checkout_connect(
     return {"session_id": session.id, "url": session.url}
 
 
+async def create_event_checkout_connect(
+    db,
+    event: dict,
+    registration: dict,
+    amount: float,
+    success_url: str,
+    cancel_url: str,
+    account_id: str,
+) -> dict:
+    """Direct-charge Checkout Session for an event ticket on the connected account."""
+    amount_cents = int(round(float(amount) * 100))
+    title = (event.get("title") or "Evento").strip()[:90]
+    product_name = f"{title} — {registration.get('tickets', 1)} boleto(s)"[:120]
+    metadata = {
+        "type": "event_ticket",
+        "event_id": event["id"],
+        "registration_id": registration["id"],
+        "user_id": event["user_id"],
+        "app": "unitap",
+    }
+    params = {
+        "mode": "payment",
+        "line_items": [{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": product_name},
+                "unit_amount": amount_cents,
+            },
+            "quantity": 1,
+        }],
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "metadata": metadata,
+    }
+    fee_cents = int(amount_cents * APP_FEE_BPS / 10000) if APP_FEE_BPS > 0 else 0
+    if fee_cents > 0:
+        params["payment_intent_data"] = {"application_fee_amount": fee_cents}
+
+    session = _v1().checkout.sessions.create(params=params, options={"stripe_account": account_id})
+
+    await db.payment_transactions.insert_one({
+        "id": session.id,
+        "session_id": session.id,
+        "type": "event_ticket",
+        "event_id": event["id"],
+        "registration_id": registration["id"],
+        "user_id": event["user_id"],
+        "amount_cents": amount_cents,
+        "currency": "usd",
+        "description": product_name,
+        "status": "initiated",
+        "payment_status": "pending",
+        "recorded": False,
+        "is_connect": True,
+        "connect_account_id": account_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "metadata": metadata,
+    })
+
+    return {"session_id": session.id, "url": session.url}
+
+
 def get_checkout_status_connect(session_id: str, account_id: str) -> dict:
     session = _v1().checkout.sessions.retrieve(session_id, options={"stripe_account": account_id})
     return {
