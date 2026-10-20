@@ -6090,6 +6090,12 @@ async def public_domain_allowed(domain: str = ""):
         d = d[4:]
     if not d:
         raise HTTPException(400, "domain required")
+    # Agency infra hosts (e.g. the widget/embed subdomain gmb.uni2mkt.com) are
+    # served by this same edge Caddy but are NOT customer sites, so allow them
+    # explicitly so on-demand TLS can issue their certs. Configurable via env.
+    extra = {h.strip().lower().lstrip("www.") for h in (os.environ.get("EXTRA_ALLOWED_DOMAINS", "gmb.uni2mkt.com")).split(",") if h.strip()}
+    if d in extra:
+        return {"ok": True}
     w = await db.websites.find_one({
         "custom_domain_verified": True,
         "$or": [{"custom_domain": d}, {"custom_domain_2": d}],
