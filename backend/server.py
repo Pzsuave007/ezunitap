@@ -6284,7 +6284,98 @@ async def _assistant_read(user_id: str, name: str, args: dict) -> dict:
         return await _assistant_account_status(user_id)
     if name == "list_services":
         return await _assistant_list_services(user_id)
+    if name == "get_card_stats":
+        card = await _ensure_card(user_id)
+        rows = await db.card_events.aggregate([
+            {"$match": {"card_id": card["id"]}},
+            {"$group": {"_id": "$event", "count": {"$sum": 1}}},
+        ]).to_list(50)
+        counts = {r["_id"]: r["count"] for r in rows}
+        return {
+            "total_views": sum(counts.values()),
+            "leads": await db.card_leads.count_documents({"card_id": card["id"]}),
+            "reviews": await db.reviews.count_documents({"user_id": user_id}),
+            "card_slug": card.get("slug"),
+        }
+    if name == "get_website_status":
+        card = await _ensure_card(user_id)
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0}) or {}
+        sec = w.get("sections") or {}
+        return {
+            "sections_off": [k for k, v in sec.items() if v is False],
+            "newsletter_enabled": bool(w.get("newsletter_enabled")),
+            "services_count": len(w.get("services") or []),
+            "events_count": await db.events.count_documents({"user_id": user_id}),
+            "products_count": len(w.get("products") or []),
+            "public_link": f"/sitio/{card.get('slug')}" if card.get("slug") else None,
+        }
+    if name == "get_pending_payments":
+        invs = await db.invoices.find({"user_id": user_id}, {"_id": 0}).to_list(2000)
+        clients = {c["id"]: (c.get("company") or c.get("name") or "—") for c in await db.clients.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "company": 1}).to_list(2000)}
+        outstanding = 0.0
+        unpaid = []
+        for inv in invs:
+            if (inv.get("status") or "").lower() in ("void", "cancelled", "canceled"):
+                continue
+            bal = float(inv.get("total") or 0) - float(inv.get("amount_paid") or 0)
+            if bal > 0.005:
+                outstanding += bal
+                unpaid.append({"number": inv.get("number"), "client": clients.get(inv.get("client_id"), "—"),
+                               "balance": round(bal, 2), "status": inv.get("status")})
+        unpaid.sort(key=lambda x: x["balance"], reverse=True)
+        return {"outstanding_total": round(outstanding, 2), "unpaid_count": len(unpaid), "unpaid": unpaid[:10]}
+    if name == "list_invoices":
+        invs = await db.invoices.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(15)
+        clients = {c["id"]: (c.get("company") or c.get("name") or "—") for c in await db.clients.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "company": 1}).to_list(2000)}
+        return {"invoices": [{"number": i.get("number"), "client": clients.get(i.get("client_id"), "—"),
+                              "total": float(i.get("total") or 0), "paid": float(i.get("amount_paid") or 0),
+                              "status": i.get("status")} for i in invs]}
+    if name == "get_invoice_link":
+        num = (args.get("invoice_number") or "").strip()
+        inv = await db.invoices.find_one({"user_id": user_id, "number": num}, {"_id": 0, "id": 1})
+        if not inv:
+            return {"error": "no_encontrada"}
+        return {"link": f"/p/invoice/{inv['id']}"}
+    if name == "list_social_templates":
+        return {"templates": sorted(list(SOCIAL_TEMPLATES))}
     return {"error": "unknown tool"}
+
+
+async def _assistant_create_social_post(user_id: str, args: dict, lang: str) -> str:
+    es = (lang or "es").lower().startswith("es")
+    template = (args.get("template") or "showcase").strip()
+    if template not in SOCIAL_TEMPLATES:
+        template = "showcase"
+    language = "es" if (args.get("language") or lang or "es").lower().startswith("es") else "en"
+    brief = (args.get("brief") or "").strip()
+    image_id = (args.get("image_id") or "").strip()
+    needed = social_service.DESIGN_PHOTOS.get(template, 1)
+    source_ids = []
+    if image_id:
+        source_ids = [image_id] * needed  # reuse the uploaded photo to satisfy multi-photo templates
+    if len(source_ids) < needed:
+        raise HTTPException(400, "Necesito que adjuntes una foto para el post.")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    card = await _ensure_card(user_id)
+    copy = await ai_service.generate_social_copy(
+        brief, template=template, language=language,
+        business_name=user.get("business_name", ""),
+        business_type=card.get("business_type", ""),
+        phone=card.get("contact_phone") or user.get("phone", ""),
+    )
+    fmts = ["1x1", "9x16"]
+    brand = await _social_brand(user_id, language)
+    images = await _render_social_images(template, fmts, source_ids, copy, brand, user_id)
+    doc = {
+        "id": _new_id(), "user_id": user_id, "template": template, "brief": brief,
+        "language": language, "formats": fmts, "brand_color": "", "accent_color": "",
+        "copy": copy, "source_photo_ids": source_ids, "images": images,
+        "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.social_posts.insert_one(dict(doc))
+    headline = (copy or {}).get("headline") or brief
+    return (f"¡Listo! Creé tu post de marketing: \"{headline}\". Lo encuentras en Marketing Studio para descargarlo o editarlo.") if es \
+        else (f"Done! I created your marketing post: \"{headline}\". You'll find it in Marketing Studio to download or edit.")
 
 
 async def _assistant_apply(user_id: str, pending: dict, lang: str) -> str:
@@ -6363,6 +6454,94 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str) -> str:
         }
         await db.events.insert_one(dict(ev))
         return (f"¡Listo! Creé el evento \"{ev['title']}\" y ya está publicado en tu sitio.") if es else (f"Done! I created the event \"{ev['title']}\" and it's live on your site.")
+    if name == "update_contact_links":
+        fmap = {"whatsapp": "whatsapp", "facebook": "facebook", "instagram": "instagram", "website": "website", "hours": "hours"}
+        cu = {fmap[k]: str(v)[:300] for k, v in args.items() if k in fmap and v}
+        if cu:
+            cu["updated_at"] = _now_iso()
+            await db.cards.update_one({"id": card["id"]}, {"$set": cu})
+        return "¡Listo! Actualicé tus enlaces de contacto." if es else "Done! I updated your contact links."
+    if name == "toggle_website_section":
+        section = (args.get("section") or "").strip()
+        enabled = bool(args.get("enabled"))
+        if not section:
+            raise HTTPException(400, "Falta la sección")
+        if section == "newsletter":
+            await db.websites.update_one({"user_id": user_id}, {"$set": {"newsletter_enabled": enabled, "updated_at": _now_iso()}})
+        else:
+            w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "sections": 1}) or {}
+            sec = dict(w.get("sections") or {})
+            sec[section] = enabled
+            await db.websites.update_one({"user_id": user_id}, {"$set": {"sections": sec, "updated_at": _now_iso()}})
+        state = ("activé" if enabled else "oculté")
+        state_en = ("showed" if enabled else "hid")
+        return (f"¡Listo! {state.capitalize()} la sección \"{section}\" en tu sitio.") if es else (f"Done! I {state_en} the \"{section}\" section on your site.")
+    if name == "create_client":
+        doc = {
+            "id": _new_id(), "user_id": user_id,
+            "name": str(args.get("name", "")).strip()[:120],
+            "company": str(args.get("company", "")).strip()[:120],
+            "phone": str(args.get("phone", "")).strip()[:40],
+            "email": str(args.get("email", "")).strip()[:120],
+            "address": "", "job_type": "", "notes": "", "stage": "lead",
+            "created_at": _now_iso(), "updated_at": _now_iso(),
+        }
+        await db.clients.insert_one(dict(doc))
+        return (f"¡Listo! Agregué al cliente \"{doc['name']}\".") if es else (f"Done! I added the client \"{doc['name']}\".")
+    if name == "create_invoice":
+        cname = (args.get("client_name") or "").strip()
+        client = await db.clients.find_one({"user_id": user_id, "name": {"$regex": f"^{re.escape(cname)}$", "$options": "i"}}, {"_id": 0, "id": 1})
+        if not client:
+            cdoc = {"id": _new_id(), "user_id": user_id, "name": cname[:120], "company": "", "phone": "",
+                    "email": "", "address": "", "job_type": "", "notes": "", "stage": "active",
+                    "created_at": _now_iso(), "updated_at": _now_iso()}
+            await db.clients.insert_one(dict(cdoc))
+            client_id = cdoc["id"]
+        else:
+            client_id = client["id"]
+        items = []
+        subtotal = 0.0
+        for it in (args.get("line_items") or []):
+            qty = float(it.get("quantity") or 1)
+            price = float(it.get("unit_price") or 0)
+            amt = round(qty * price, 2)
+            subtotal += amt
+            items.append({"description": str(it.get("description", "")).strip()[:300], "quantity": qty,
+                          "unit": "ea", "unit_price": price, "amount": amt})
+        subtotal = round(subtotal, 2)
+        tax_rate = float(args.get("tax_rate") or 0)
+        tax_amount = round(subtotal * tax_rate / 100, 2)
+        total = round(subtotal + tax_amount, 2)
+        count = await db.invoices.count_documents({"user_id": user_id})
+        inv = {
+            "id": _new_id(), "user_id": user_id, "number": f"INV-{2000 + count + 1}",
+            "client_id": client_id, "quote_id": None, "agreement_id": None,
+            "job_title": str(args.get("job_title", "")).strip()[:160],
+            "line_items": items, "subtotal": subtotal, "tax_rate": tax_rate, "tax_amount": tax_amount,
+            "total": total, "amount_paid": 0, "deposit_amount": 0, "deposit_paid": False,
+            "due_date": args.get("due_date") or None, "notes": str(args.get("notes", "")).strip(),
+            "status": "sent", "payments": [],
+            "created_at": _now_iso(), "updated_at": _now_iso(),
+        }
+        await db.invoices.insert_one(dict(inv))
+        return (f"¡Listo! Creé la factura {inv['number']} para \"{cname}\" por ${total:,.2f}. Puedes mandar el cobro con el enlace: /p/invoice/{inv['id']}") if es \
+            else (f"Done! I created invoice {inv['number']} for \"{cname}\" for ${total:,.2f}. Share the payment link: /p/invoice/{inv['id']}")
+    if name == "record_payment":
+        num = (args.get("invoice_number") or "").strip()
+        inv = await db.invoices.find_one({"user_id": user_id, "number": num}, {"_id": 0})
+        if not inv:
+            raise HTTPException(404, "No encontré esa factura")
+        amount = round(float(args.get("amount") or 0), 2)
+        if amount <= 0:
+            raise HTTPException(400, "El monto debe ser mayor a 0")
+        payment = {"id": _new_id(), "amount": amount, "method": (args.get("method") or "cash"),
+                   "date": _now_iso(), "note": "Registrado por el asistente", "plan_item_id": None,
+                   "created_at": _now_iso()}
+        await db.invoices.update_one({"id": inv["id"], "user_id": user_id}, {"$push": {"payments": payment}})
+        await _recalc_invoice_payments(inv["id"], user_id)
+        return (f"¡Listo! Registré ${amount:,.2f} en la factura {num}.") if es else (f"Done! I recorded ${amount:,.2f} on invoice {num}.")
+    if name == "create_social_post":
+        return await _assistant_create_social_post(user_id, args, lang)
     raise HTTPException(400, "Acción desconocida")
 
 
@@ -6388,9 +6567,9 @@ async def assistant_chat(
         if len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
         ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
-        image_id = await _store_card_photo(user_id, data, ct, "profile_photo", ext)
+        image_id = await _store_card_photo(user_id, data, ct, "assistant", ext)
         attached = True
-        user_text += f"\n\n[Sistema: el usuario adjuntó una imagen; su image_id es '{image_id}'. Úsalo si quiere poner esta imagen como la foto de su tarjeta o como el logo.]"
+        user_text += f"\n\n[Sistema: el usuario adjuntó una imagen; su image_id es '{image_id}'. Úsalo si quiere poner esta imagen como la foto de su tarjeta, como el logo, o usarla en un post de marketing.]"
     if not user_text:
         raise HTTPException(400, "Mensaje vacío")
     biz = await _business_name_for(user_id)

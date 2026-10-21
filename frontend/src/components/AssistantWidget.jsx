@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
-import { Sparkles, Send, X, ImagePlus, Loader2, Check, Bot } from "lucide-react";
+import { Send, X, ImagePlus, Loader2, Check, Bot } from "lucide-react";
 
 function uuid() {
   return (crypto?.randomUUID && crypto.randomUUID()) || `sid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -105,14 +105,45 @@ export default function AssistantWidget() {
   return (
     <>
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          data-testid="assistant-fab"
-          className="fixed z-40 bottom-20 lg:bottom-6 right-4 lg:right-6 w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-blue-900 to-emerald-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition"
-          aria-label="Asistente"
-        >
-          <Sparkles className="w-6 h-6" />
-        </button>
+        <div className="fixed z-40 bottom-20 lg:bottom-6 right-4 lg:right-6 flex items-center gap-2">
+          <style>{`
+            @keyframes uaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+            @keyframes uaGlow{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.9;transform:scale(1.18)}}
+            @keyframes uaBlink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+            @keyframes uaPulse{0%,100%{opacity:.4}50%{opacity:1}}
+            @keyframes uaWave{0%,60%,100%{opacity:0;transform:translateX(6px)}15%,45%{opacity:1;transform:translateX(0)}}
+          `}</style>
+          <div className="hidden sm:block px-3 py-1.5 rounded-2xl rounded-br-sm bg-white shadow-lg border border-slate-200 text-xs font-semibold text-slate-700" style={{ animation: "uaWave 6s ease-in-out infinite" }} data-testid="assistant-hint-bubble">
+            {T("Need help? Wake me up 👋", "¿Te ayudo? Despiértame 👋")}
+          </div>
+          <button
+            onClick={() => setOpen(true)}
+            data-testid="assistant-fab"
+            className="relative w-16 h-16 flex items-center justify-center group"
+            aria-label="Asistente"
+          >
+            <span className="absolute inset-0 rounded-full bg-emerald-400/40 blur-md" style={{ animation: "uaGlow 2.8s ease-in-out infinite" }} />
+            <span className="relative w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center group-hover:scale-105 group-active:scale-95 transition" style={{ animation: "uaBob 3s ease-in-out infinite" }}>
+              <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* antenna */}
+                <line x1="24" y1="6" x2="24" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="24" cy="5" r="2.5" fill="#fde047" style={{ animation: "uaPulse 1.6s ease-in-out infinite" }} />
+                {/* head */}
+                <rect x="9" y="12" width="30" height="24" rx="8" fill="white" />
+                {/* ears */}
+                <rect x="6" y="19" width="3" height="9" rx="1.5" fill="white" />
+                <rect x="39" y="19" width="3" height="9" rx="1.5" fill="white" />
+                {/* eyes (blink) */}
+                <g style={{ transformOrigin: "center", animation: "uaBlink 4s ease-in-out infinite" }}>
+                  <circle cx="18" cy="23" r="3.2" fill="#0f3a8a" />
+                  <circle cx="30" cy="23" r="3.2" fill="#0f3a8a" />
+                </g>
+                {/* smile */}
+                <path d="M18 29.5c2 2.2 10 2.2 12 0" stroke="#0f3a8a" strokeWidth="2" strokeLinecap="round" fill="none" />
+              </svg>
+            </span>
+          </button>
+        </div>
       )}
 
       {open && (

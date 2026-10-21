@@ -27,7 +27,9 @@ OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
 # Tools that CHANGE data — never executed inside this service. When the model
 # calls one, we stop and hand a "pending action" back to the server, which shows
 # the user a confirmation before applying it.
-WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upsert_service", "create_event"}
+WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upsert_service", "create_event",
+               "update_contact_links", "create_client", "create_invoice", "record_payment",
+               "toggle_website_section", "create_social_post"}
 
 TOOLS = [
     {"type": "function", "function": {
@@ -90,6 +92,106 @@ TOOLS = [
             "capacity": {"type": "integer"},
         }, "required": ["title", "start"]},
     }},
+    # ---- Digital card (complete) ----
+    {"type": "function", "function": {
+        "name": "get_card_stats",
+        "description": "Get the digital card's stats: total views, leads captured, reviews.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "update_contact_links",
+        "description": "Update the card's contact links and hours. Only include the fields the user wants to change.",
+        "parameters": {"type": "object", "properties": {
+            "whatsapp": {"type": "string", "description": "Phone for WhatsApp, digits only or E.164."},
+            "facebook": {"type": "string"},
+            "instagram": {"type": "string"},
+            "website": {"type": "string"},
+            "hours": {"type": "string"},
+        }},
+    }},
+    # ---- Website ----
+    {"type": "function", "function": {
+        "name": "get_website_status",
+        "description": "Get the website's state: which sections are on/off, how many services/events/products, and the public link.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "toggle_website_section",
+        "description": "Turn a website section on or off. Valid sections: services, events, newsletter, about, gallery, reviews, faq, map, products, areas, contact, booking.",
+        "parameters": {"type": "object", "properties": {
+            "section": {"type": "string"},
+            "enabled": {"type": "boolean"},
+        }, "required": ["section", "enabled"]},
+    }},
+    # ---- Invoicing ----
+    {"type": "function", "function": {
+        "name": "get_pending_payments",
+        "description": "Get the owner's outstanding balance and a short list of unpaid/overdue invoices.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "list_invoices",
+        "description": "List the most recent invoices with their number, client, total, amount paid and status.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "create_client",
+        "description": "Add a new client/customer.",
+        "parameters": {"type": "object", "properties": {
+            "name": {"type": "string"},
+            "phone": {"type": "string"},
+            "email": {"type": "string"},
+            "company": {"type": "string"},
+        }, "required": ["name"]},
+    }},
+    {"type": "function", "function": {
+        "name": "create_invoice",
+        "description": "Create an invoice for a client. Gather the client name, a job title, and line items (description + amount each) before calling. Ask for anything missing.",
+        "parameters": {"type": "object", "properties": {
+            "client_name": {"type": "string", "description": "Client's name; if they don't exist yet, they'll be created."},
+            "job_title": {"type": "string"},
+            "line_items": {"type": "array", "description": "List of line items.", "items": {"type": "object", "properties": {
+                "description": {"type": "string"},
+                "quantity": {"type": "number"},
+                "unit_price": {"type": "number"},
+            }, "required": ["description", "unit_price"]}},
+            "tax_rate": {"type": "number", "description": "Tax percent, e.g. 8.25. Optional."},
+            "due_date": {"type": "string", "description": "ISO date, optional."},
+            "notes": {"type": "string"},
+        }, "required": ["client_name", "job_title", "line_items"]},
+    }},
+    {"type": "function", "function": {
+        "name": "record_payment",
+        "description": "Record a payment received on an invoice (marks it paid/partial).",
+        "parameters": {"type": "object", "properties": {
+            "invoice_number": {"type": "string", "description": "The invoice number, e.g. INV-2001."},
+            "amount": {"type": "number"},
+            "method": {"type": "string", "description": "cash, check, zelle, transfer, card, other."},
+        }, "required": ["invoice_number", "amount"]},
+    }},
+    {"type": "function", "function": {
+        "name": "get_invoice_link",
+        "description": "Get the public shareable payment link for an invoice so the owner can send it to the client.",
+        "parameters": {"type": "object", "properties": {
+            "invoice_number": {"type": "string"},
+        }, "required": ["invoice_number"]},
+    }},
+    # ---- Marketing Studio ----
+    {"type": "function", "function": {
+        "name": "list_social_templates",
+        "description": "List the available social post design templates the owner can use.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "create_social_post",
+        "description": "Create a branded social media post using one of the templates and a photo the user attached (their work or product). Writes AI copy from the brief. Uses AI credits and takes a few seconds.",
+        "parameters": {"type": "object", "properties": {
+            "template": {"type": "string", "description": "Template id, e.g. 'showcase', 'promo', 'coupon', 'review_5star'. Default 'showcase'."},
+            "brief": {"type": "string", "description": "What the post is about (in the owner's words)."},
+            "image_id": {"type": "string", "description": "The image_id of the photo the user attached to use in the post."},
+            "language": {"type": "string", "description": "'es' or 'en'."},
+        }, "required": ["brief"]},
+    }},
 ]
 
 
@@ -102,11 +204,15 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "de negocios que NO son expertos en tecnología a usar su cuenta de Unitech (tarjeta digital, "
             f"sitio web, servicios, eventos y boletín).{who} "
             "Hablas claro y sencillo, sin tecnicismos, en español. "
-            "Puedes HACER cosas por el usuario usando tus herramientas: cambiar la foto de la tarjeta, "
-            "cambiar el logo, actualizar datos del negocio, agregar o editar servicios y crear eventos. "
-            "Cuando el usuario quiera cambiar una foto o el logo y haya adjuntado una imagen, usa la "
+            "Puedes HACER cosas por el usuario usando tus herramientas en las 4 áreas de su panel: "
+            "(1) Tarjeta digital: cambiar foto, logo, datos, servicios, redes/horario, ver vistas y leads. "
+            "(2) Sitio web: activar u ocultar secciones, ver su estado y enlace público. "
+            "(3) Facturación: ver pagos pendientes, listar facturas, crear clientes, CREAR FACTURAS, registrar pagos y dar el enlace de cobro. "
+            "(4) Marketing: listar plantillas y CREAR posts para redes con la foto que suba el usuario (de su trabajo o productos). "
+            "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
             "herramienta correspondiente pasando el image_id que te da el sistema. "
-            "Si te faltan datos (por ejemplo la fecha de un evento), pregúntalos ANTES de usar la herramienta. "
+            "En facturación trata el dinero con cuidado: junta primero el cliente, los conceptos y los montos, y si falta algo, pregúntalo. "
+            "Si te faltan datos (por ejemplo la fecha de un evento o el monto de un concepto), pregúntalos ANTES de usar la herramienta. "
             "Para ayudar con la configuración de la cuenta, primero usa get_account_status para ver qué falta "
             "y guía al usuario paso a paso, uno a la vez. "
             "Cada cambio se le confirmará al usuario antes de aplicarse, así que propón la acción con confianza. "
@@ -116,10 +222,15 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "You are the Unitech Assistant, a friendly, patient virtual employee who helps non-technical "
         f"business owners use their Unitech account (digital card, website, services, events, newsletter).{who} "
         "Speak plainly, no jargon, in English. "
-        "You can DO things for the user with your tools: change the card photo, change the logo, update "
-        "business info, add/edit services, and create events. When the user wants to change a photo or logo "
-        "and has attached an image, call the matching tool passing the image_id the system gives you. "
-        "If details are missing (e.g. an event date), ask first. To help set up the account, call "
+        "You can DO things for the user with your tools across the 4 areas of their dashboard: "
+        "(1) Digital card: change photo, logo, business info, services, contact links/hours, view visits and leads. "
+        "(2) Website: turn sections on/off, see its status and public link. "
+        "(3) Invoicing: see pending payments, list invoices, create clients, CREATE INVOICES, record payments, get the payment link. "
+        "(4) Marketing: list templates and CREATE social posts using a photo the user uploads (their work or products). "
+        "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
+        "matching tool passing the image_id the system gives you. In invoicing, handle money carefully: gather the client, "
+        "line items and amounts first, and ask for anything missing. "
+        "If details are missing (e.g. an event date or a line-item amount), ask first. To help set up the account, call "
         "get_account_status first to see what's missing and guide step by step. Every change is confirmed "
         "with the user before applying. Be brief and warm."
     )
@@ -146,6 +257,29 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
     if name == "create_event":
         return (f"Voy a crear el evento \"{args.get('title','')}\" para el {args.get('start','')}. ¿Confirmas?") if es \
             else (f"I'll create the event \"{args.get('title','')}\" on {args.get('start','')}. Confirm?")
+    if name == "update_contact_links":
+        parts = [f"{k}: {v}" for k, v in args.items() if v]
+        joined = "; ".join(parts)
+        return (f"Voy a actualizar tus contactos → {joined}. ¿Confirmas?") if es \
+            else (f"I'll update your contact links → {joined}. Confirm?")
+    if name == "toggle_website_section":
+        state = ("activar" if args.get("enabled") else "ocultar") if es else ("show" if args.get("enabled") else "hide")
+        return (f"Voy a {state} la sección \"{args.get('section','')}\" de tu sitio. ¿Confirmas?") if es \
+            else (f"I'll {state} the \"{args.get('section','')}\" section on your site. Confirm?")
+    if name == "create_client":
+        return (f"Voy a agregar al cliente \"{args.get('name','')}\". ¿Confirmas?") if es \
+            else (f"I'll add the client \"{args.get('name','')}\". Confirm?")
+    if name == "create_invoice":
+        items = args.get("line_items") or []
+        total = sum(float(i.get("unit_price", 0) or 0) * float(i.get("quantity", 1) or 1) for i in items)
+        return (f"Voy a crear una factura para \"{args.get('client_name','')}\" ({args.get('job_title','')}), {len(items)} concepto(s), subtotal ~${total:,.2f}. ¿Confirmas?") if es \
+            else (f"I'll create an invoice for \"{args.get('client_name','')}\" ({args.get('job_title','')}), {len(items)} item(s), subtotal ~${total:,.2f}. Confirm?")
+    if name == "record_payment":
+        return (f"Voy a registrar un pago de ${float(args.get('amount',0)):,.2f} ({args.get('method','efectivo')}) en la factura {args.get('invoice_number','')}. ¿Confirmas?") if es \
+            else (f"I'll record a ${float(args.get('amount',0)):,.2f} payment ({args.get('method','cash')}) on invoice {args.get('invoice_number','')}. Confirm?")
+    if name == "create_social_post":
+        return (f"Voy a crear un post de marketing (plantilla \"{args.get('template','showcase')}\") con tu foto y el texto que generaré. Usa créditos de IA y tarda unos segundos. ¿Confirmas?") if es \
+            else (f"I'll create a marketing post (template \"{args.get('template','showcase')}\") with your photo and AI-written copy. Uses AI credits, takes a few seconds. Confirm?")
     return "¿Confirmas esta acción?" if es else "Confirm this action?"
 
 
