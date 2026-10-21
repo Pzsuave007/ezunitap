@@ -112,6 +112,8 @@ export default function AssistantWidget() {
             @keyframes uaBlink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
             @keyframes uaPulse{0%,100%{opacity:.4}50%{opacity:1}}
             @keyframes uaWave{0%,60%,100%{opacity:0;transform:translateX(6px)}15%,45%{opacity:1;transform:translateX(0)}}
+            @keyframes uaArm{0%,70%,100%{transform:rotate(8deg)}80%{transform:rotate(-24deg)}90%{transform:rotate(4deg)}}
+            @keyframes uaShadow{0%,100%{transform:scaleX(1);opacity:.28}50%{transform:scaleX(.82);opacity:.18}}
           `}</style>
           <div className="hidden sm:block px-3 py-1.5 rounded-2xl rounded-br-sm bg-white shadow-lg border border-slate-200 text-xs font-semibold text-slate-700" style={{ animation: "uaWave 6s ease-in-out infinite" }} data-testid="assistant-hint-bubble">
             {T("Need help? Wake me up 👋", "¿Te ayudo? Despiértame 👋")}
@@ -119,29 +121,57 @@ export default function AssistantWidget() {
           <button
             onClick={() => setOpen(true)}
             data-testid="assistant-fab"
-            className="relative w-16 h-16 flex items-center justify-center group"
+            className="relative w-[70px] h-[92px] flex items-end justify-center group"
             aria-label="Asistente"
           >
-            <span className="absolute inset-0 rounded-full bg-emerald-400/40 blur-md" style={{ animation: "uaGlow 2.8s ease-in-out infinite" }} />
-            <span className="relative w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-blue-900 to-emerald-500 flex items-center justify-center group-hover:scale-105 group-active:scale-95 transition" style={{ animation: "uaBob 3s ease-in-out infinite" }}>
-              <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* antenna */}
-                <line x1="24" y1="6" x2="24" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="24" cy="5" r="2.5" fill="#fde047" style={{ animation: "uaPulse 1.6s ease-in-out infinite" }} />
-                {/* head */}
-                <rect x="9" y="12" width="30" height="24" rx="8" fill="white" />
-                {/* ears */}
-                <rect x="6" y="19" width="3" height="9" rx="1.5" fill="white" />
-                <rect x="39" y="19" width="3" height="9" rx="1.5" fill="white" />
-                {/* eyes (blink) */}
-                <g style={{ transformOrigin: "center", animation: "uaBlink 4s ease-in-out infinite" }}>
-                  <circle cx="18" cy="23" r="3.2" fill="#0f3a8a" />
-                  <circle cx="30" cy="23" r="3.2" fill="#0f3a8a" />
-                </g>
-                {/* smile */}
-                <path d="M18 29.5c2 2.2 10 2.2 12 0" stroke="#0f3a8a" strokeWidth="2" strokeLinecap="round" fill="none" />
-              </svg>
-            </span>
+            <span className="absolute left-1/2 -translate-x-1/2 bottom-1 w-11 h-3 rounded-full bg-emerald-400/40 blur-md" style={{ animation: "uaGlow 2.8s ease-in-out infinite" }} />
+            <svg width="70" height="92" viewBox="0 0 70 92" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative drop-shadow-xl group-hover:scale-105 group-active:scale-95 transition" style={{ animation: "uaBob 3s ease-in-out infinite", transformOrigin: "bottom center" }}>
+              <defs>
+                <linearGradient id="uaBody" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#1e3a8a" />
+                  <stop offset="1" stopColor="#10b981" />
+                </linearGradient>
+              </defs>
+              {/* ground shadow */}
+              <ellipse cx="35" cy="88" rx="18" ry="3.2" fill="#0f172a" style={{ animation: "uaShadow 3s ease-in-out infinite", transformOrigin: "35px 88px" }} />
+              {/* legs + feet */}
+              <rect x="27" y="70" width="6" height="12" rx="3" fill="#334155" />
+              <rect x="37" y="70" width="6" height="12" rx="3" fill="#334155" />
+              <ellipse cx="28" cy="83" rx="6" ry="3.2" fill="#1e293b" />
+              <ellipse cx="42" cy="83" rx="6" ry="3.2" fill="#1e293b" />
+              {/* left arm */}
+              <g style={{ transformOrigin: "22px 46px" }}>
+                <rect x="13" y="44" width="7" height="18" rx="3.5" fill="#1e3a8a" />
+                <circle cx="16.5" cy="63" r="4" fill="#e2e8f0" />
+              </g>
+              {/* right arm (waving) */}
+              <g style={{ transformOrigin: "48px 46px", animation: "uaArm 3.2s ease-in-out infinite" }}>
+                <rect x="50" y="44" width="7" height="18" rx="3.5" fill="#10b981" />
+                <circle cx="53.5" cy="63" r="4" fill="#e2e8f0" />
+              </g>
+              {/* body */}
+              <rect x="21" y="42" width="28" height="30" rx="9" fill="url(#uaBody)" />
+              <circle cx="35" cy="57" r="3.2" fill="#fde047" style={{ animation: "uaPulse 1.8s ease-in-out infinite" }} />
+              {/* neck */}
+              <rect x="32" y="37" width="6" height="6" fill="#334155" />
+              {/* antenna */}
+              <line x1="35" y1="12" x2="35" y2="6" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="35" cy="4.5" r="2.6" fill="#fde047" style={{ animation: "uaPulse 1.6s ease-in-out infinite" }} />
+              {/* head */}
+              <rect x="18" y="11" width="34" height="27" rx="9" fill="url(#uaBody)" />
+              {/* ears */}
+              <rect x="15" y="20" width="3.5" height="9" rx="1.75" fill="#334155" />
+              <rect x="51.5" y="20" width="3.5" height="9" rx="1.75" fill="#334155" />
+              {/* face screen */}
+              <rect x="22" y="15" width="26" height="18" rx="6" fill="#0b1220" />
+              {/* eyes (blink) */}
+              <g style={{ transformOrigin: "center", animation: "uaBlink 4s ease-in-out infinite" }}>
+                <circle cx="30" cy="23" r="3" fill="#5eead4" />
+                <circle cx="40" cy="23" r="3" fill="#5eead4" />
+              </g>
+              {/* smile */}
+              <path d="M30 28.5c2 2 8 2 10 0" stroke="#5eead4" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            </svg>
           </button>
         </div>
       )}

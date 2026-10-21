@@ -6668,7 +6668,7 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
                 else (f"Done! I emailed invoice {num} to {client['email']}. You can also share the link: {link}")
         return (f"La factura {num} no tiene correo del cliente guardado. Comparte este enlace de pago: {link}") if es \
             else (f"Invoice {num} has no client email on file. Share this payment link: {link}")
-    raise HTTPException(400, "Acción desconocida")
+    raise HTTPException(400, "Esa acción aún no está disponible en tu servidor. Si acabas de actualizar el código, vuelve a ejecutar 'bash deploy.sh' para reiniciar el backend con la última versión.")
 
 
 @api_router.post("/assistant/chat")
