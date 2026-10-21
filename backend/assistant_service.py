@@ -29,8 +29,8 @@ OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
 # the user a confirmation before applying it.
 WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upsert_service", "create_event",
                "update_contact_links", "create_client", "create_invoice", "record_payment",
-               "toggle_website_section", "update_website_photo", "update_website_text", "add_faq",
-               "add_gallery_photo", "add_product", "create_social_post",
+               "toggle_website_section", "update_website_photo", "update_website_text", "update_website_color",
+               "add_faq", "add_gallery_photo", "add_product", "create_social_post",
                "update_cover_photo", "remove_service", "send_invoice"}
 
 TOOLS = [
@@ -161,6 +161,13 @@ TOOLS = [
         }},
     }},
     {"type": "function", "function": {
+        "name": "update_website_color",
+        "description": "Change the website's main theme/accent color. Pass a hex code (e.g. scarlet red = #FF2400, royal blue = #1D4ED8). Convert the color the user names into the closest hex.",
+        "parameters": {"type": "object", "properties": {
+            "color": {"type": "string", "description": "Hex color code, e.g. #FF2400"},
+        }, "required": ["color"]},
+    }},
+    {"type": "function", "function": {
         "name": "add_faq",
         "description": "Add a question & answer to the website's FAQ section.",
         "parameters": {"type": "object", "properties": {
@@ -285,7 +292,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "Hablas claro y sencillo, sin tecnicismos, en español. "
             "Puedes HACER cosas por el usuario usando tus herramientas en las 4 áreas de su panel: "
             "(1) Tarjeta digital: cambiar foto, portada, logo, datos, eslogan, servicios (agregar/quitar), redes/horario, ver vistas y leads. "
-            "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
+            "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
             "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
             "(4) Marketing: listar plantillas y CREAR posts para redes con la foto que suba el usuario (de su trabajo o productos). "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
@@ -295,10 +302,12 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "Para ayudar con la configuración de la cuenta, primero usa get_account_status para ver qué falta "
             "y guía al usuario paso a paso, uno a la vez. "
             "Cada cambio se le confirmará al usuario antes de aplicarse, así que propón la acción con confianza. "
-            "Si el usuario prefiere hacer el cambio él mismo, o quiere ver dónde se hace, ofrécele abrir la página "
-            "correspondiente agregando AL FINAL de tu mensaje una etiqueta (sin explicarla): [[OPEN:card]] para la "
-            "tarjeta digital, [[OPEN:website]] para el sitio web, [[OPEN:invoices]] para facturación, [[OPEN:clients]] "
-            "para clientes o [[OPEN:marketing]] para marketing. El sistema la convierte en un botón. "
+            "Si el usuario prefiere hacer el cambio él mismo, quiere ver dónde se hace, o pregunta DÓNDE está algo, "
+            "llévalo a la página correcta agregando AL FINAL de tu mensaje una etiqueta (sin explicarla). Claves disponibles: "
+            "[[OPEN:home]] inicio, [[OPEN:card]] tarjeta digital, [[OPEN:website]] sitio web, [[OPEN:invoices]] facturas, "
+            "[[OPEN:quotes]] cotizaciones, [[OPEN:clients]] clientes, [[OPEN:marketing]] marketing, [[OPEN:reviews]] reseñas de Google, "
+            "[[OPEN:appointments]] citas, [[OPEN:jobs]] trabajos, [[OPEN:calendar]] calendario, [[OPEN:qr]] códigos QR, "
+            "[[OPEN:reports]] reportes, [[OPEN:settings]] ajustes. El sistema convierte la etiqueta en un botón. "
             "Sé breve y cálido."
         )
     return (
@@ -307,7 +316,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "Speak plainly, no jargon, in English. "
         "You can DO things for the user with your tools across the 4 areas of their dashboard: "
         "(1) Digital card: change photo, cover, logo, business info, tagline, services (add/remove), contact links/hours, view visits and leads. "
-        "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
+        "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
         "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
         "(4) Marketing: list templates and CREATE social posts using a photo the user uploads (their work or products). "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
@@ -315,11 +324,11 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "line items and amounts first, and ask for anything missing. "
         "If details are missing (e.g. an event date or a line-item amount), ask first. To help set up the account, call "
         "get_account_status first to see what's missing and guide step by step. Every change is confirmed "
-        "with the user before applying. If the user prefers to make a change themselves, or wants to see where "
-        "it's done, offer to open the right page by adding a tag AT THE END of your message (don't explain it): "
-        "[[OPEN:card]] for the digital card, [[OPEN:website]] for the website, [[OPEN:invoices]] for invoicing, "
-        "[[OPEN:clients]] for clients, or [[OPEN:marketing]] for marketing. The system turns it into a button. "
-        "Be brief and warm."
+        "with the user before applying. If the user prefers to make a change themselves, wants to see where it's done, "
+        "or asks WHERE something is, take them to the right page by adding a tag AT THE END of your message (don't explain it). "
+        "Available keys: [[OPEN:home]], [[OPEN:card]], [[OPEN:website]], [[OPEN:invoices]], [[OPEN:quotes]], [[OPEN:clients]], "
+        "[[OPEN:marketing]], [[OPEN:reviews]], [[OPEN:appointments]], [[OPEN:jobs]], [[OPEN:calendar]], [[OPEN:qr]], "
+        "[[OPEN:reports]], [[OPEN:settings]]. The system turns the tag into a button. Be brief and warm."
     )
 
 
@@ -364,6 +373,9 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
         joined = "; ".join(parts)
         return (f"Voy a actualizar el texto de tu sitio → {joined}. ¿Confirmas?") if es \
             else (f"I'll update your website text → {joined}. Confirm?")
+    if name == "update_website_color":
+        return (f"Voy a cambiar el color principal de tu sitio a {args.get('color','')}. ¿Confirmas?") if es \
+            else (f"I'll change your website's main color to {args.get('color','')}. Confirm?")
     if name == "add_faq":
         return (f"Voy a agregar esta pregunta frecuente: \"{args.get('question','')}\". ¿Confirmas?") if es \
             else (f"I'll add this FAQ: \"{args.get('question','')}\". Confirm?")

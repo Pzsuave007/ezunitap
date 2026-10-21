@@ -6526,6 +6526,13 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         upd["updated_at"] = _now_iso()
         await db.websites.update_one({"user_id": user_id}, {"$set": upd})
         return "¡Listo! Actualicé el texto de tu sitio. Refresca la página para verlo." if es else "Done! I updated your website text. Refresh to see it."
+    if name == "update_website_color":
+        color = _valid_hex(args.get("color") or "")
+        if not color:
+            raise HTTPException(400, "Necesito un color válido en formato hex, por ejemplo #FF2400.")
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"accent_color": color, "updated_at": _now_iso()}})
+        return (f"¡Listo! Cambié el color principal de tu sitio a {color}. Refresca la página para verlo.") if es \
+            else (f"Done! I changed your website's main color to {color}. Refresh to see it.")
     if name == "add_faq":
         q = str(args.get("question", "")).strip()[:300]
         a = str(args.get("answer", "")).strip()[:1500]

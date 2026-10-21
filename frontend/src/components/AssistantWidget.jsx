@@ -9,11 +9,20 @@ function uuid() {
 }
 
 const PAGE_LINKS = {
+  home: { path: "/", en: "Open Home", es: "Abrir Inicio" },
   card: { path: "/tarjeta", en: "Open Digital Card", es: "Abrir Tarjeta digital" },
   website: { path: "/pagina-web", en: "Open Website editor", es: "Abrir editor de Sitio web" },
   invoices: { path: "/invoices", en: "Open Invoicing", es: "Abrir Facturación" },
+  quotes: { path: "/quotes", en: "Open Quotes", es: "Abrir Cotizaciones" },
   clients: { path: "/clientes", en: "Open Clients", es: "Abrir Clientes" },
   marketing: { path: "/marketing", en: "Open Marketing Studio", es: "Abrir Marketing Studio" },
+  reviews: { path: "/reviews", en: "Open Google Reviews", es: "Abrir Reseñas de Google" },
+  appointments: { path: "/citas", en: "Open Appointments", es: "Abrir Citas" },
+  jobs: { path: "/trabajos", en: "Open Jobs", es: "Abrir Trabajos" },
+  calendar: { path: "/calendario", en: "Open Calendar", es: "Abrir Calendario" },
+  qr: { path: "/qr", en: "Open QR Codes", es: "Abrir Códigos QR" },
+  reports: { path: "/reports", en: "Open Reports", es: "Abrir Reportes" },
+  settings: { path: "/ajustes", en: "Open Settings", es: "Abrir Ajustes" },
 };
 
 // Pull [[OPEN:key]] tags out of a reply → { text, links: [key,...] }

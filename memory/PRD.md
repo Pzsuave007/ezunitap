@@ -1,4 +1,9 @@
-## 🤖 Jun 2026 — Asistente v4: botón "Abrir la página" (enseña al usuario dónde se hacen las cosas)
+## 🤖 Jun 2026 — Asistente v5: cambia color del template + guía a TODO el sistema
+- `update_website_color` (write): cambia `website.accent_color` (el tema del sitio público). El LLM convierte el nombre del color a hex (ej. rojo escarlata → #FF2400); servidor valida con `_valid_hex`. Verificado e2e y restaurado.
+- Navegación ampliada a todo el panel: PAGE_LINKS ahora cubre home, card, website, invoices, quotes, clients, marketing, reviews, appointments, jobs, calendar, qr, reports, settings. El prompt instruye al bot a usar `[[OPEN:key]]` también cuando el usuario pregunta DÓNDE está algo. Rutas: /tarjeta, /pagina-web, /invoices, /quotes, /clientes, /marketing, /reviews, /citas, /trabajos, /calendario, /qr, /reports, /ajustes, /.
+- Total herramientas write del asistente: 20 (incluye update_website_color). Todas con confirmación.
+
+
 - El bot ahora puede ofrecer abrir la página del panel donde se hace el cambio, para que el usuario lo haga él mismo (educativo).
 - Mecanismo: el system prompt instruye al LLM a añadir al final de su mensaje una etiqueta `[[OPEN:card|website|invoices|clients|marketing]]`. El frontend (`AssistantWidget.jsx`, `parseLinks()` + `PAGE_LINKS`) la quita del texto y renderiza un botón que navega (useNavigate) a la ruta y cierra el widget. Rutas: card→/tarjeta, website→/pagina-web, invoices→/invoices, clients→/clientes, marketing→/marketing.
 - Verificado: bot emite `[[OPEN:website]]`; screenshot muestra botón "Open Website editor" (data-testid assistant-open-website) funcionando.
