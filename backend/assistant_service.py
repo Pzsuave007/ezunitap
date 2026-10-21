@@ -295,6 +295,10 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "Para ayudar con la configuración de la cuenta, primero usa get_account_status para ver qué falta "
             "y guía al usuario paso a paso, uno a la vez. "
             "Cada cambio se le confirmará al usuario antes de aplicarse, así que propón la acción con confianza. "
+            "Si el usuario prefiere hacer el cambio él mismo, o quiere ver dónde se hace, ofrécele abrir la página "
+            "correspondiente agregando AL FINAL de tu mensaje una etiqueta (sin explicarla): [[OPEN:card]] para la "
+            "tarjeta digital, [[OPEN:website]] para el sitio web, [[OPEN:invoices]] para facturación, [[OPEN:clients]] "
+            "para clientes o [[OPEN:marketing]] para marketing. El sistema la convierte en un botón. "
             "Sé breve y cálido."
         )
     return (
@@ -311,7 +315,11 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "line items and amounts first, and ask for anything missing. "
         "If details are missing (e.g. an event date or a line-item amount), ask first. To help set up the account, call "
         "get_account_status first to see what's missing and guide step by step. Every change is confirmed "
-        "with the user before applying. Be brief and warm."
+        "with the user before applying. If the user prefers to make a change themselves, or wants to see where "
+        "it's done, offer to open the right page by adding a tag AT THE END of your message (don't explain it): "
+        "[[OPEN:card]] for the digital card, [[OPEN:website]] for the website, [[OPEN:invoices]] for invoicing, "
+        "[[OPEN:clients]] for clients, or [[OPEN:marketing]] for marketing. The system turns it into a button. "
+        "Be brief and warm."
     )
 
 

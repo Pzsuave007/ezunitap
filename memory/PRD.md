@@ -1,4 +1,11 @@
-## 🤖 Jun 2026 — Asistente Unitech v3: "empleado" que maneja todo Unitech (4 secciones a fondo) + fix de imágenes
+## 🤖 Jun 2026 — Asistente v4: botón "Abrir la página" (enseña al usuario dónde se hacen las cosas)
+- El bot ahora puede ofrecer abrir la página del panel donde se hace el cambio, para que el usuario lo haga él mismo (educativo).
+- Mecanismo: el system prompt instruye al LLM a añadir al final de su mensaje una etiqueta `[[OPEN:card|website|invoices|clients|marketing]]`. El frontend (`AssistantWidget.jsx`, `parseLinks()` + `PAGE_LINKS`) la quita del texto y renderiza un botón que navega (useNavigate) a la ruta y cierra el widget. Rutas: card→/tarjeta, website→/pagina-web, invoices→/invoices, clients→/clientes, marketing→/marketing.
+- Verificado: bot emite `[[OPEN:website]]`; screenshot muestra botón "Open Website editor" (data-testid assistant-open-website) funcionando.
+- Burbuja del robot "¿Te ayudo? Despiértame 👋" ahora visible y persistente en desktop y móvil (quitado hidden/anim que la ocultaba).
+- Mensaje de fallback de _assistant_apply mejorado: en vez de "Acción desconocida" indica reejecutar deploy.sh (ayuda ante backend desactualizado en el servidor del usuario).
+
+
 - **Fix crítico image_id**: el modelo pasaba image_id inventados ("last_attached_image", "image_0"). Ahora el servidor rastrea `last_image_id` en la sesión (al adjuntar en /assistant/chat) y `_assistant_apply` lo resuelve server-side vía `_resolve_image()` (valida que el photo doc exista; ignora el valor del modelo si no existe). Verificado: card apunta al id real subido.
 - **Nota entorno de prueba**: las imágenes ORIGINALES (card/logo/about) no existen como archivos en el pod de preview (solo está la BD, no el storage) → dan 500 al cargar. Las fotos subidas por el asistente sí se guardan en /app/uploads y se ven. En producción los archivos existen. Esto NO es bug del asistente.
 - **Herramientas completas por sección** (todas write = confirmación):

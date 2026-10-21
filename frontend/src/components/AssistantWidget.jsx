@@ -1,10 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
-import { Send, X, ImagePlus, Loader2, Check, Bot } from "lucide-react";
+import { Send, X, ImagePlus, Loader2, Check, Bot, ExternalLink } from "lucide-react";
 
 function uuid() {
   return (crypto?.randomUUID && crypto.randomUUID()) || `sid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+const PAGE_LINKS = {
+  card: { path: "/tarjeta", en: "Open Digital Card", es: "Abrir Tarjeta digital" },
+  website: { path: "/pagina-web", en: "Open Website editor", es: "Abrir editor de Sitio web" },
+  invoices: { path: "/invoices", en: "Open Invoicing", es: "Abrir Facturación" },
+  clients: { path: "/clientes", en: "Open Clients", es: "Abrir Clientes" },
+  marketing: { path: "/marketing", en: "Open Marketing Studio", es: "Abrir Marketing Studio" },
+};
+
+// Pull [[OPEN:key]] tags out of a reply → { text, links: [key,...] }
+function parseLinks(content) {
+  const keys = [];
+  const text = (content || "").replace(/\[\[OPEN:([a-z]+)\]\]/gi, (_, k) => {
+    const key = k.toLowerCase();
+    if (PAGE_LINKS[key] && !keys.includes(key)) keys.push(key);
+    return "";
+  }).trim();
+  return { text, links: keys };
 }
 
 // Minimal **bold** + newline renderer (replies are short, plain text).
@@ -19,6 +39,7 @@ function renderText(text) {
 
 export default function AssistantWidget() {
   const { i18n } = useTranslation();
+  const navigate = useNavigate();
   const lang = (i18n.language || "es").startsWith("es") ? "es" : "en";
   const T = (en, es) => (lang === "es" ? es : en);
 
@@ -192,13 +213,30 @@ export default function AssistantWidget() {
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-slate-50" data-testid="assistant-messages">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : "bg-white border border-slate-200 text-slate-800 rounded-bl-md"}`}>
-                  {renderText(m.content)}
+            {messages.map((m, i) => {
+              const parsed = m.role === "assistant" ? parseLinks(m.content) : { text: m.content, links: [] };
+              return (
+                <div key={i} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
+                  <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : "bg-white border border-slate-200 text-slate-800 rounded-bl-md"}`}>
+                    {renderText(parsed.text)}
+                  </div>
+                  {parsed.links.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {parsed.links.map((k) => (
+                        <button
+                          key={k}
+                          onClick={() => { navigate(PAGE_LINKS[k].path); setOpen(false); }}
+                          data-testid={`assistant-open-${k}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> {PAGE_LINKS[k][lang]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {busy && (
               <div className="flex justify-start"><div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-3.5 py-2.5"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div></div>
             )}
