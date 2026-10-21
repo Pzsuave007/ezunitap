@@ -10,6 +10,7 @@ import TrialBanner from "@/components/TrialBanner";
 import NotificationBanner from "@/components/NotificationBanner";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import LanguageToggle from "@/components/LanguageToggle";
+import AssistantWidget from "@/components/AssistantWidget";
 
 // Mobile bottom nav — 5 essentials. "Marketing" is front-and-center for our
 // non-tech contractors; "Más" opens a full menu with everything else.
@@ -273,6 +274,8 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <AssistantWidget />
 
       {/* Mobile bottom nav */}
       <nav

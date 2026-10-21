@@ -29,6 +29,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import ai_service  # noqa: E402  (must be after load_dotenv so EMERGENT_LLM_KEY is set)
+import assistant_service  # noqa: E402
 import pexels_service  # noqa: E402
 import storage_service  # noqa: E402
 import social_service  # noqa: E402
@@ -6236,6 +6237,201 @@ async def send_newsletter(payload: NewsletterSendIn, background_tasks: Backgroun
         raise HTTPException(400, "Aún no tienes suscriptores.")
     background_tasks.add_task(_send_newsletter_task, user_id, subject, html)
     return {"ok": True, "queued": count}
+
+
+# ============================================================================
+# ASSISTANT — in-app AI copilot ("Asistente Unitech"). Chats with the owner and
+# performs a safe set of actions with an explicit confirm step. Write actions are
+# never auto-run by the LLM: the model proposes, the server confirms + applies.
+# ============================================================================
+class AssistantExecuteIn(BaseModel):
+    session_id: str
+    lang: Optional[str] = "es"
+
+
+async def _assistant_account_status(user_id: str) -> dict:
+    card = await _ensure_card(user_id)
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    services = w.get("services") or card.get("services") or []
+    events = await db.events.count_documents({"user_id": user_id})
+    return {
+        "has_card_photo": bool(card.get("profile_photo_id")),
+        "has_logo": bool(card.get("logo_photo_id")),
+        "business_name": card.get("person_name") or "",
+        "has_phone": bool(card.get("contact_phone")),
+        "business_type": card.get("business_type") or "",
+        "has_hours": bool(card.get("hours")),
+        "has_service_area": bool(card.get("service_area")),
+        "has_about": bool(card.get("about_me") or w.get("about")),
+        "services_count": len(services),
+        "events_count": events,
+        "card_slug": card.get("slug"),
+    }
+
+
+async def _assistant_list_services(user_id: str) -> dict:
+    card = await _ensure_card(user_id)
+    w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "services": 1}) or {}
+    services = w.get("services") or card.get("services") or []
+    return {"services": [
+        {"name": s.get("name"), "description": s.get("description"), "price": s.get("starting_price")}
+        for s in services if isinstance(s, dict)
+    ]}
+
+
+async def _assistant_read(user_id: str, name: str, args: dict) -> dict:
+    if name == "get_account_status":
+        return await _assistant_account_status(user_id)
+    if name == "list_services":
+        return await _assistant_list_services(user_id)
+    return {"error": "unknown tool"}
+
+
+async def _assistant_apply(user_id: str, pending: dict, lang: str) -> str:
+    name = pending.get("name")
+    args = pending.get("arguments") or {}
+    es = (lang or "es").lower().startswith("es")
+    card = await _ensure_card(user_id)
+    if name == "update_card_photo":
+        image_id = args.get("image_id")
+        if not image_id:
+            raise HTTPException(400, "Falta la imagen")
+        await db.cards.update_one({"id": card["id"]}, {"$set": {"profile_photo_id": image_id, "updated_at": _now_iso()}})
+        return "¡Listo! Actualicé la foto de tu tarjeta digital." if es else "Done! I updated your digital card photo."
+    if name == "update_logo":
+        image_id = args.get("image_id")
+        if not image_id:
+            raise HTTPException(400, "Falta la imagen")
+        await db.cards.update_one({"id": card["id"]}, {"$set": {"logo_photo_id": image_id, "updated_at": _now_iso()}})
+        return "¡Listo! Actualicé el logo de tu negocio." if es else "Done! I updated your business logo."
+    if name == "update_business_info":
+        field_map = {"name": "person_name", "phone": "contact_phone", "email": "contact_email",
+                     "hours": "hours", "service_area": "service_area", "business_type": "business_type",
+                     "about": "about_me"}
+        cu = {}
+        for k, field in field_map.items():
+            if args.get(k):
+                cu[field] = str(args[k])[:500]
+        if cu:
+            cu["updated_at"] = _now_iso()
+            await db.cards.update_one({"id": card["id"]}, {"$set": cu})
+        if args.get("about"):
+            await db.websites.update_one({"user_id": user_id}, {"$set": {"about": str(args["about"])[:1000], "updated_at": _now_iso()}})
+        return "¡Listo! Actualicé los datos de tu negocio." if es else "Done! I updated your business info."
+    if name == "upsert_service":
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "services": 1}) or {}
+        services = list(w.get("services") or card.get("services") or [])
+        svc = {
+            "name": str(args.get("name", "")).strip()[:120],
+            "description": str(args.get("description", "")).strip()[:600],
+            "starting_price": str(args.get("price", "")).strip()[:60],
+            "icon": "",
+        }
+        replace = (args.get("replace_name") or "").strip().lower()
+        idx = -1
+        if replace:
+            idx = next((i for i, s in enumerate(services) if isinstance(s, dict) and (s.get("name", "").strip().lower() == replace)), -1)
+        if idx >= 0:
+            services[idx] = {**services[idx], **svc}
+        else:
+            services.append(svc)
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"services": services, "updated_at": _now_iso()}})
+        await db.cards.update_one({"id": card["id"]}, {"$set": {"services": services, "updated_at": _now_iso()}})
+        verb = "edité" if idx >= 0 else "agregué"
+        verb_en = "edited" if idx >= 0 else "added"
+        return (f"¡Listo! {verb.capitalize()} el servicio \"{svc['name']}\".") if es else (f"Done! I {verb_en} the service \"{svc['name']}\".")
+    if name == "create_event":
+        start = args.get("start", "")
+        if not _parse_event_dt(start):
+            raise HTTPException(400, "Fecha/hora inválida")
+        ev = {
+            "id": _new_id(), "user_id": user_id,
+            "slug": await _unique_event_slug(user_id, args.get("title", "")),
+            "title": str(args.get("title", "")).strip()[:160],
+            "description": str(args.get("description", "")).strip(),
+            "image_id": "",
+            "start": start, "end": "",
+            "timezone": "",
+            "location_name": str(args.get("location_name", "")).strip()[:160],
+            "location_address": "",
+            "online_url": str(args.get("online_url", "")).strip()[:400],
+            "capacity": max(0, int(args.get("capacity") or 0)),
+            "price": max(0, round(float(args.get("price") or 0), 2)),
+            "recurrence": {},
+            "published": True,
+            "created_at": _now_iso(), "updated_at": _now_iso(),
+        }
+        await db.events.insert_one(dict(ev))
+        return (f"¡Listo! Creé el evento \"{ev['title']}\" y ya está publicado en tu sitio.") if es else (f"Done! I created the event \"{ev['title']}\" and it's live on your site.")
+    raise HTTPException(400, "Acción desconocida")
+
+
+@api_router.post("/assistant/chat")
+async def assistant_chat(
+    session_id: str = Form(...),
+    message: str = Form(""),
+    lang: str = Form("es"),
+    file: Optional[UploadFile] = File(None),
+    user_id: str = Depends(get_current_user_id),
+):
+    sess = await db.assistant_sessions.find_one({"id": session_id, "user_id": user_id}, {"_id": 0})
+    if not sess:
+        sess = {"id": session_id, "user_id": user_id, "messages": [], "pending": None, "created_at": _now_iso()}
+        await db.assistant_sessions.insert_one(dict(sess))
+    user_text = (message or "").strip()
+    attached = False
+    if file is not None:
+        ct = (file.content_type or "").lower()
+        if ct not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
+        data = await file.read()
+        if len(data) > MAX_IMAGE_BYTES:
+            raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
+        ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
+        image_id = await _store_card_photo(user_id, data, ct, "profile_photo", ext)
+        attached = True
+        user_text += f"\n\n[Sistema: el usuario adjuntó una imagen; su image_id es '{image_id}'. Úsalo si quiere poner esta imagen como la foto de su tarjeta o como el logo.]"
+    if not user_text:
+        raise HTTPException(400, "Mensaje vacío")
+    biz = await _business_name_for(user_id)
+    sys_prompt = assistant_service.system_prompt(lang, biz)
+    transcript = sess.get("messages") or []
+
+    async def read_dispatch(name, a):
+        return await _assistant_read(user_id, name, a)
+
+    result = await assistant_service.respond(sys_prompt, transcript, user_text, lang, read_dispatch)
+    display_user = (message or "").strip() or ("📷 Imagen adjunta" if attached else "")
+    new_msgs = transcript + [{"role": "user", "content": display_user}, {"role": "assistant", "content": result["reply"]}]
+    pending = result.get("pending")
+    await db.assistant_sessions.update_one(
+        {"id": session_id}, {"$set": {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}})
+    return {"reply": result["reply"], "needs_confirmation": bool(pending), "action": (pending or {}).get("name")}
+
+
+@api_router.post("/assistant/execute")
+async def assistant_execute(payload: AssistantExecuteIn, user_id: str = Depends(get_current_user_id)):
+    sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
+    if not sess or not sess.get("pending"):
+        raise HTTPException(400, "No hay ninguna acción pendiente de confirmar")
+    note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es")
+    msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
+    await db.assistant_sessions.update_one(
+        {"id": payload.session_id}, {"$set": {"messages": msgs[-40:], "pending": None, "updated_at": _now_iso()}})
+    return {"reply": note, "done": True}
+
+
+@api_router.post("/assistant/cancel")
+async def assistant_cancel(payload: AssistantExecuteIn, user_id: str = Depends(get_current_user_id)):
+    await db.assistant_sessions.update_one(
+        {"id": payload.session_id, "user_id": user_id}, {"$set": {"pending": None}})
+    return {"ok": True}
+
+
+@api_router.get("/assistant/history/{session_id}")
+async def assistant_history(session_id: str, user_id: str = Depends(get_current_user_id)):
+    sess = await db.assistant_sessions.find_one({"id": session_id, "user_id": user_id}, {"_id": 0})
+    return {"messages": (sess or {}).get("messages") or [], "pending": bool((sess or {}).get("pending"))}
 
 
 # ============================================================================
