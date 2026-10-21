@@ -115,7 +115,7 @@ export default function AssistantWidget() {
             @keyframes uaArm{0%,70%,100%{transform:rotate(8deg)}80%{transform:rotate(-24deg)}90%{transform:rotate(4deg)}}
             @keyframes uaShadow{0%,100%{transform:scaleX(1);opacity:.28}50%{transform:scaleX(.82);opacity:.18}}
           `}</style>
-          <div className="hidden sm:block px-3 py-1.5 rounded-2xl rounded-br-sm bg-white shadow-lg border border-slate-200 text-xs font-semibold text-slate-700" style={{ animation: "uaWave 6s ease-in-out infinite" }} data-testid="assistant-hint-bubble">
+          <div className="flex items-center px-3 py-1.5 rounded-2xl rounded-br-sm bg-white shadow-lg border border-slate-200 text-xs font-semibold text-slate-700 whitespace-nowrap" style={{ animation: "uaBob 3s ease-in-out infinite" }} data-testid="assistant-hint-bubble">
             {T("Need help? Wake me up 👋", "¿Te ayudo? Despiértame 👋")}
           </div>
           <button
