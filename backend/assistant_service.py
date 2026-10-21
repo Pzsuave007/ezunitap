@@ -24,6 +24,32 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 EMERGENT_MODEL = os.environ.get("ASSISTANT_MODEL", "gpt-5.4")
 OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
 
+# ── Central system map (single source of truth, shared with the frontend) ──
+# /app/frontend/src/assistant/pages.json lists every page the assistant can open
+# and what it's for. Both the nav buttons and the bot's knowledge read from here,
+# so adding a new feature = one line in that file (no re-programming the bot).
+_PAGES_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "src", "assistant", "pages.json")
+
+
+def _load_pages():
+    try:
+        with open(_PAGES_PATH, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception as exc:  # pragma: no cover - map is optional for chat to work
+        logger.warning("assistant: could not load page map: %s", exc)
+        return []
+
+
+def _pages_catalog(es: bool) -> str:
+    """Human-readable list the model uses to know WHERE everything lives."""
+    lines = []
+    for p in _load_pages():
+        label = p.get("es" if es else "en", p.get("key"))
+        desc = p.get("desc_es" if es else "desc_en", "")
+        lines.append(f"[[OPEN:{p['key']}]] {label}" + (f" — {desc}" if desc else ""))
+    return "; ".join(lines)
+
+
 # Tools that CHANGE data — never executed inside this service. When the model
 # calls one, we stop and hand a "pending action" back to the server, which shows
 # the user a confirmation before applying it.
@@ -303,11 +329,10 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "y guía al usuario paso a paso, uno a la vez. "
             "Cada cambio se le confirmará al usuario antes de aplicarse, así que propón la acción con confianza. "
             "Si el usuario prefiere hacer el cambio él mismo, quiere ver dónde se hace, o pregunta DÓNDE está algo, "
-            "llévalo a la página correcta agregando AL FINAL de tu mensaje una etiqueta (sin explicarla). Claves disponibles: "
-            "[[OPEN:home]] inicio, [[OPEN:card]] tarjeta digital, [[OPEN:website]] sitio web, [[OPEN:invoices]] facturas, "
-            "[[OPEN:quotes]] cotizaciones, [[OPEN:clients]] clientes, [[OPEN:marketing]] marketing, [[OPEN:reviews]] reseñas de Google, "
-            "[[OPEN:appointments]] citas, [[OPEN:jobs]] trabajos, [[OPEN:calendar]] calendario, [[OPEN:qr]] códigos QR, "
-            "[[OPEN:reports]] reportes, [[OPEN:settings]] ajustes. El sistema convierte la etiqueta en un botón. "
+            "llévalo a la página correcta agregando AL FINAL de tu mensaje la etiqueta [[OPEN:clave]] que corresponda (sin explicarla). "
+            "Conoces TODO el sistema; estas son las páginas y para qué sirve cada una: "
+            + _pages_catalog(True) +
+            ". El sistema convierte la etiqueta en un botón. Elige la clave cuya descripción mejor coincida con lo que pide el usuario. "
             "Sé breve y cálido."
         )
     return (
@@ -325,10 +350,10 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "If details are missing (e.g. an event date or a line-item amount), ask first. To help set up the account, call "
         "get_account_status first to see what's missing and guide step by step. Every change is confirmed "
         "with the user before applying. If the user prefers to make a change themselves, wants to see where it's done, "
-        "or asks WHERE something is, take them to the right page by adding a tag AT THE END of your message (don't explain it). "
-        "Available keys: [[OPEN:home]], [[OPEN:card]], [[OPEN:website]], [[OPEN:invoices]], [[OPEN:quotes]], [[OPEN:clients]], "
-        "[[OPEN:marketing]], [[OPEN:reviews]], [[OPEN:appointments]], [[OPEN:jobs]], [[OPEN:calendar]], [[OPEN:qr]], "
-        "[[OPEN:reports]], [[OPEN:settings]]. The system turns the tag into a button. Be brief and warm."
+        "or asks WHERE something is, take them to the right page by adding the matching [[OPEN:key]] tag AT THE END of your message (don't explain it). "
+        "You know the WHOLE system; these are the pages and what each is for: "
+        + _pages_catalog(False) +
+        ". The system turns the tag into a button. Pick the key whose description best matches what the user asked. Be brief and warm."
     )
 
 

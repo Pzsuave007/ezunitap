@@ -1525,3 +1525,13 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Implementación vía splice en python (/tmp/build_secciones.py reutilizó la tarjeta de Servicios verbatim). Bloques viejos (tab==='content'|'media'|'sections'|'problem'|'agency') quedan en el fuente pero gated a nombres que ya NO están en TABS → nunca renderizan (confirmado por testing: sin render fantasma).
 - Verificado: testing_agent frontend 100% (iteration_61.json) — 12/12 checks, 0 errores de consola, persistencia (headline, toggle, reorder) confirmada tras reload. Datos de prueba restaurados por el agente.
 - Deuda técnica menor: los bloques viejos inertes siguen en el archivo (~400 líneas muertas); se pueden limpiar luego sin afectar funcionalidad.
+
+## [Jun 2026] Asistente: MAPA CENTRAL del sistema (single source of truth)
+- Petición: que el bot "sepa dónde está todo" y pueda llevar al usuario a cada rincón SIN tener que reprogramar cada ruta. Usuario eligió: (1) mapa central automático, (2) ejecutar solo acciones seguras y siempre confirmando.
+- Antes el mapa de páginas estaba DUPLICADO y hardcodeado en 2 lugares (assistant_service.py prompt + AssistantWidget.jsx PAGE_LINKS). Agregar una función exigía editar ambos.
+- AHORA fuente única: /app/frontend/src/assistant/pages.json (18 páginas: key, path, feature, label es/en, desc es/en).
+  - Frontend AssistantWidget.jsx importa el JSON y construye PAGE_LINKS con Object.fromEntries. Botón: "Abrir {label}".
+  - Backend assistant_service.py: _load_pages() lee el MISMO json (ruta ../frontend/src/assistant/pages.json) y _pages_catalog(es) inyecta "[[OPEN:key]] Label — descripción" en el system_prompt ES/EN. El bot elige la clave cuya descripción mejor coincide con lo que pide el usuario.
+- Resultado: agregar una pantalla nueva = UNA línea en pages.json y el bot ya la conoce (navegar/guiar) al instante. Páginas nuevas cubiertas: contratos(agreements), embed, reportes, mensajes, ajustes, precios, además de las que ya existían.
+- Verificado: backend curl (facturas→invoices, reseñas→reviews, contratos→agreements, calendar EN→calendar) y UI (screenshot: "donde veo mis citas?" → botón "Open Appointments"). Build regenerado + parche oxlint no-undef aplicado + staged.
+- EJECUCIÓN de cambios: se mantiene el modelo de herramientas seguras con confirmación (WRITE_TOOLS). NO se habilitó ejecución libre/autónoma por riesgo en datos reales.

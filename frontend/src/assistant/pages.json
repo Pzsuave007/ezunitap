@@ -1,0 +1,20 @@
+[
+  { "key": "home", "path": "/", "feature": null, "es": "Inicio", "en": "Home", "desc_es": "Panel principal con el resumen de tu cuenta", "desc_en": "Main dashboard with your account overview" },
+  { "key": "card", "path": "/tarjeta", "feature": "card", "es": "Tarjeta digital", "en": "Digital Card", "desc_es": "Editar tu tarjeta digital: foto, logo, datos, servicios, redes y horario", "desc_en": "Edit your digital card: photo, logo, info, services, links and hours" },
+  { "key": "website", "path": "/pagina-web", "feature": ["card", "business"], "es": "Sitio web", "en": "Website", "desc_es": "Editor del sitio web: secciones, textos, fotos, color del tema, galería, productos, FAQs, eventos y boletín", "desc_en": "Website editor: sections, text, photos, theme color, gallery, products, FAQs, events and newsletter" },
+  { "key": "embed", "path": "/sitio-web", "feature": "card", "es": "Insertar o compartir", "en": "Embed or share", "desc_es": "Opciones para insertar o compartir tu sitio", "desc_en": "Options to embed or share your site" },
+  { "key": "invoices", "path": "/invoices", "feature": "business", "es": "Facturas", "en": "Invoices", "desc_es": "Crear, enviar y cobrar facturas", "desc_en": "Create, send and collect invoices" },
+  { "key": "quotes", "path": "/quotes", "feature": "business", "es": "Cotizaciones", "en": "Quotes", "desc_es": "Crear y enviar cotizaciones a tus clientes", "desc_en": "Create and send quotes to clients" },
+  { "key": "agreements", "path": "/contratos", "feature": "business", "es": "Contratos", "en": "Agreements", "desc_es": "Crear y firmar contratos o acuerdos", "desc_en": "Create and sign agreements" },
+  { "key": "clients", "path": "/clientes", "feature": ["card", "business"], "es": "Clientes", "en": "Clients", "desc_es": "Administrar tus clientes y sus datos", "desc_en": "Manage your clients and their info" },
+  { "key": "jobs", "path": "/trabajos", "feature": "business", "es": "Trabajos", "en": "Jobs", "desc_es": "Administrar trabajos y su estado", "desc_en": "Manage jobs and their status" },
+  { "key": "calendar", "path": "/calendario", "feature": "business", "es": "Calendario", "en": "Calendar", "desc_es": "Ver y agendar trabajos en el calendario", "desc_en": "View and schedule jobs on the calendar" },
+  { "key": "marketing", "path": "/marketing", "feature": "marketing", "es": "Marketing Studio", "en": "Marketing Studio", "desc_es": "Crear publicaciones para redes con plantillas e IA", "desc_en": "Create social posts with templates and AI" },
+  { "key": "reviews", "path": "/reviews", "feature": "card", "es": "Reseñas de Google", "en": "Google Reviews", "desc_es": "Pedir y administrar reseñas de Google", "desc_en": "Request and manage Google reviews" },
+  { "key": "qr", "path": "/qr", "feature": "card", "es": "Códigos QR", "en": "QR Codes", "desc_es": "Generar códigos QR para tu tarjeta o tu sitio", "desc_en": "Generate QR codes for your card or site" },
+  { "key": "appointments", "path": "/citas", "feature": "card", "es": "Citas", "en": "Appointments", "desc_es": "Administrar citas y reservas", "desc_en": "Manage appointments and bookings" },
+  { "key": "reports", "path": "/reports", "feature": "business", "es": "Reportes", "en": "Reports", "desc_es": "Ver reportes e ingresos", "desc_en": "View reports and revenue" },
+  { "key": "messages", "path": "/mensajes", "feature": null, "es": "Mensajes", "en": "Messages", "desc_es": "Ver los mensajes que recibes", "desc_en": "View messages you receive" },
+  { "key": "settings", "path": "/ajustes", "feature": null, "es": "Ajustes", "en": "Settings", "desc_es": "Configuración de la cuenta, pagos y preferencias", "desc_en": "Account, payments and preferences settings" },
+  { "key": "pricing", "path": "/precios", "feature": null, "es": "Planes y precios", "en": "Plans & Pricing", "desc_es": "Ver planes y mejorar tu suscripción", "desc_en": "View plans and upgrade your subscription" }
+]

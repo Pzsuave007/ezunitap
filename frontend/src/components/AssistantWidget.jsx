@@ -3,27 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { Send, X, ImagePlus, Loader2, Check, Bot, ExternalLink } from "lucide-react";
+import PAGES from "@/assistant/pages.json";
 
 function uuid() {
   return (crypto?.randomUUID && crypto.randomUUID()) || `sid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-const PAGE_LINKS = {
-  home: { path: "/", en: "Open Home", es: "Abrir Inicio" },
-  card: { path: "/tarjeta", en: "Open Digital Card", es: "Abrir Tarjeta digital" },
-  website: { path: "/pagina-web", en: "Open Website editor", es: "Abrir editor de Sitio web" },
-  invoices: { path: "/invoices", en: "Open Invoicing", es: "Abrir Facturación" },
-  quotes: { path: "/quotes", en: "Open Quotes", es: "Abrir Cotizaciones" },
-  clients: { path: "/clientes", en: "Open Clients", es: "Abrir Clientes" },
-  marketing: { path: "/marketing", en: "Open Marketing Studio", es: "Abrir Marketing Studio" },
-  reviews: { path: "/reviews", en: "Open Google Reviews", es: "Abrir Reseñas de Google" },
-  appointments: { path: "/citas", en: "Open Appointments", es: "Abrir Citas" },
-  jobs: { path: "/trabajos", en: "Open Jobs", es: "Abrir Trabajos" },
-  calendar: { path: "/calendario", en: "Open Calendar", es: "Abrir Calendario" },
-  qr: { path: "/qr", en: "Open QR Codes", es: "Abrir Códigos QR" },
-  reports: { path: "/reports", en: "Open Reports", es: "Abrir Reportes" },
-  settings: { path: "/ajustes", en: "Open Settings", es: "Abrir Ajustes" },
-};
+// Single source of truth: the system page map (see /assistant/pages.json).
+const PAGE_LINKS = Object.fromEntries(PAGES.map((p) => [p.key, p]));
 
 // Pull [[OPEN:key]] tags out of a reply → { text, links: [key,...] }
 function parseLinks(content) {
@@ -238,7 +225,7 @@ export default function AssistantWidget() {
                           data-testid={`assistant-open-${k}`}
                           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" /> {PAGE_LINKS[k][lang]}
+                          <ExternalLink className="w-3.5 h-3.5" /> {T("Open", "Abrir")} {PAGE_LINKS[k][lang]}
                         </button>
                       ))}
                     </div>
