@@ -6341,14 +6341,21 @@ async def _assistant_read(user_id: str, name: str, args: dict) -> dict:
     return {"error": "unknown tool"}
 
 
-async def _assistant_create_social_post(user_id: str, args: dict, lang: str) -> str:
+async def _assistant_create_social_post(user_id: str, args: dict, lang: str, last_image_id: str = None) -> str:
     es = (lang or "es").lower().startswith("es")
     template = (args.get("template") or "showcase").strip()
     if template not in SOCIAL_TEMPLATES:
         template = "showcase"
     language = "es" if (args.get("language") or lang or "es").lower().startswith("es") else "en"
     brief = (args.get("brief") or "").strip()
-    image_id = (args.get("image_id") or "").strip()
+    # Resolve the real uploaded image (the model often passes a bogus id).
+    image_id = None
+    for cand in (args.get("image_id"), last_image_id):
+        if cand:
+            doc = await db.photos.find_one({"id": cand, "user_id": user_id}, {"_id": 0, "id": 1})
+            if doc:
+                image_id = cand
+                break
     needed = social_service.DESIGN_PHOTOS.get(template, 1)
     source_ids = []
     if image_id:
@@ -6378,21 +6385,33 @@ async def _assistant_create_social_post(user_id: str, args: dict, lang: str) -> 
         else (f"Done! I created your marketing post: \"{headline}\". You'll find it in Marketing Studio to download or edit.")
 
 
-async def _assistant_apply(user_id: str, pending: dict, lang: str) -> str:
+async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id: str = None) -> str:
     name = pending.get("name")
     args = pending.get("arguments") or {}
     es = (lang or "es").lower().startswith("es")
     card = await _ensure_card(user_id)
+
+    async def _resolve_image(candidate):
+        # The LLM is unreliable at echoing the real image_id, so prefer the
+        # actual last-uploaded image tracked server-side; only trust the model's
+        # value if it matches a real photo doc.
+        for cand in (candidate, last_image_id):
+            if cand:
+                doc = await db.photos.find_one({"id": cand, "user_id": user_id}, {"_id": 0, "id": 1})
+                if doc:
+                    return cand
+        return None
+
     if name == "update_card_photo":
-        image_id = args.get("image_id")
+        image_id = await _resolve_image(args.get("image_id"))
         if not image_id:
-            raise HTTPException(400, "Falta la imagen")
+            raise HTTPException(400, "No encontré la imagen. Vuelve a adjuntar la foto, por favor.")
         await db.cards.update_one({"id": card["id"]}, {"$set": {"profile_photo_id": image_id, "updated_at": _now_iso()}})
         return "¡Listo! Actualicé la foto de tu tarjeta digital." if es else "Done! I updated your digital card photo."
     if name == "update_logo":
-        image_id = args.get("image_id")
+        image_id = await _resolve_image(args.get("image_id"))
         if not image_id:
-            raise HTTPException(400, "Falta la imagen")
+            raise HTTPException(400, "No encontré la imagen. Vuelve a adjuntar el logo, por favor.")
         await db.cards.update_one({"id": card["id"]}, {"$set": {"logo_photo_id": image_id, "updated_at": _now_iso()}})
         return "¡Listo! Actualicé el logo de tu negocio." if es else "Done! I updated your business logo."
     if name == "update_business_info":
@@ -6541,7 +6560,7 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str) -> str:
         await _recalc_invoice_payments(inv["id"], user_id)
         return (f"¡Listo! Registré ${amount:,.2f} en la factura {num}.") if es else (f"Done! I recorded ${amount:,.2f} on invoice {num}.")
     if name == "create_social_post":
-        return await _assistant_create_social_post(user_id, args, lang)
+        return await _assistant_create_social_post(user_id, args, lang, last_image_id)
     raise HTTPException(400, "Acción desconocida")
 
 
@@ -6583,8 +6602,10 @@ async def assistant_chat(
     display_user = (message or "").strip() or ("📷 Imagen adjunta" if attached else "")
     new_msgs = transcript + [{"role": "user", "content": display_user}, {"role": "assistant", "content": result["reply"]}]
     pending = result.get("pending")
-    await db.assistant_sessions.update_one(
-        {"id": session_id}, {"$set": {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}})
+    set_fields = {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}
+    if attached:
+        set_fields["last_image_id"] = image_id
+    await db.assistant_sessions.update_one({"id": session_id}, {"$set": set_fields})
     return {"reply": result["reply"], "needs_confirmation": bool(pending), "action": (pending or {}).get("name")}
 
 
@@ -6593,7 +6614,7 @@ async def assistant_execute(payload: AssistantExecuteIn, user_id: str = Depends(
     sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
     if not sess or not sess.get("pending"):
         raise HTTPException(400, "No hay ninguna acción pendiente de confirmar")
-    note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es")
+    note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es", sess.get("last_image_id"))
     msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
     await db.assistant_sessions.update_one(
         {"id": payload.session_id}, {"$set": {"messages": msgs[-40:], "pending": None, "updated_at": _now_iso()}})
