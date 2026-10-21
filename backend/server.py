@@ -6338,6 +6338,12 @@ async def _assistant_read(user_id: str, name: str, args: dict) -> dict:
         return {"link": f"/p/invoice/{inv['id']}"}
     if name == "list_social_templates":
         return {"templates": sorted(list(SOCIAL_TEMPLATES))}
+    if name == "list_clients":
+        rows = await db.clients.find({"user_id": user_id}, {"_id": 0, "name": 1, "company": 1, "phone": 1, "email": 1}).sort("created_at", -1).to_list(200)
+        return {"clients": rows, "count": len(rows)}
+    if name == "list_social_posts":
+        posts = await db.social_posts.find({"user_id": user_id}, {"_id": 0, "template": 1, "copy": 1, "created_at": 1}).sort("created_at", -1).to_list(15)
+        return {"posts": [{"template": p.get("template"), "headline": (p.get("copy") or {}).get("headline"), "created_at": p.get("created_at")} for p in posts]}
     return {"error": "unknown tool"}
 
 
@@ -6417,7 +6423,7 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
     if name == "update_business_info":
         field_map = {"name": "person_name", "phone": "contact_phone", "email": "contact_email",
                      "hours": "hours", "service_area": "service_area", "business_type": "business_type",
-                     "about": "about_me"}
+                     "tagline": "tagline", "about": "about_me"}
         cu = {}
         for k, field in field_map.items():
             if args.get(k):
@@ -6495,6 +6501,68 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         state = ("activé" if enabled else "oculté")
         state_en = ("showed" if enabled else "hid")
         return (f"¡Listo! {state.capitalize()} la sección \"{section}\" en tu sitio.") if es else (f"Done! I {state_en} the \"{section}\" section on your site.")
+    if name == "update_website_photo":
+        image_id = await _resolve_image(args.get("image_id"))
+        if not image_id:
+            raise HTTPException(400, "No encontré la imagen. Vuelve a adjuntar la foto, por favor.")
+        target = (args.get("target") or "about").strip().lower()
+        field_map = {"hero": "hero_photo_id", "why": "why_photo_id", "band": "band_photo_id"}
+        labels = {"about": "Sobre Nosotros", "hero": "banner principal", "why": "por qué elegirnos", "band": "banner CTA"}
+        if target == "about":
+            upd = {"about_photo_ids": [image_id], "team_photo_id": image_id, "updated_at": _now_iso()}
+        elif target in field_map:
+            upd = {field_map[target]: image_id, "updated_at": _now_iso()}
+        else:
+            raise HTTPException(400, "No reconozco esa sección del sitio")
+        await db.websites.update_one({"user_id": user_id}, {"$set": upd})
+        lbl = labels.get(target, target)
+        return (f"¡Listo! Cambié la foto de \"{lbl}\" en tu sitio. Refresca la página para verla.") if es \
+            else (f"Done! I changed the \"{target}\" photo on your site. Refresh the page to see it.")
+    if name == "update_website_text":
+        fields = ("headline", "subheadline", "hero_tagline", "about", "about_title", "about_story")
+        upd = {k: str(args[k])[:4000] for k in fields if args.get(k)}
+        if not upd:
+            raise HTTPException(400, "No indicaste qué texto cambiar")
+        upd["updated_at"] = _now_iso()
+        await db.websites.update_one({"user_id": user_id}, {"$set": upd})
+        return "¡Listo! Actualicé el texto de tu sitio. Refresca la página para verlo." if es else "Done! I updated your website text. Refresh to see it."
+    if name == "add_faq":
+        q = str(args.get("question", "")).strip()[:300]
+        a = str(args.get("answer", "")).strip()[:1500]
+        if not q or not a:
+            raise HTTPException(400, "Falta la pregunta o la respuesta")
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "faqs": 1}) or {}
+        faqs = list(w.get("faqs") or [])
+        faqs.append({"q": q, "a": a})
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"faqs": faqs, "updated_at": _now_iso()}})
+        return (f"¡Listo! Agregué la pregunta frecuente a tu sitio.") if es else ("Done! I added the FAQ to your site.")
+    if name == "add_gallery_photo":
+        image_id = await _resolve_image(args.get("image_id"))
+        if not image_id:
+            raise HTTPException(400, "No encontré la imagen. Vuelve a adjuntar la foto, por favor.")
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "gallery_photo_ids": 1}) or {}
+        gids = list(w.get("gallery_photo_ids") or [])
+        if image_id not in gids:
+            gids.append(image_id)
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"gallery_photo_ids": gids, "updated_at": _now_iso()}})
+        return "¡Listo! Agregué la foto a tu galería de trabajos. Refresca para verla." if es else "Done! I added the photo to your work gallery. Refresh to see it."
+    if name == "add_product":
+        image_id = await _resolve_image(args.get("image_id")) if args.get("image_id") else None
+        pname = str(args.get("name", "")).strip()[:160]
+        if not pname:
+            raise HTTPException(400, "Falta el nombre del producto")
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "products": 1}) or {}
+        products = list(w.get("products") or [])
+        prod = {
+            "id": _new_id(), "name": pname, "slug": _slugify(pname),
+            "description": str(args.get("description", "")).strip()[:1500],
+            "price": str(args.get("price", "")).strip()[:60],
+            "image_id": image_id or "", "photos": [image_id] if image_id else [],
+            "has_page": False,
+        }
+        products.append(prod)
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"products": products, "updated_at": _now_iso()}})
+        return (f"¡Listo! Agregué el producto \"{pname}\" a tu sitio. Refresca para verlo.") if es else (f"Done! I added the product \"{pname}\" to your site. Refresh to see it.")
     if name == "create_client":
         doc = {
             "id": _new_id(), "user_id": user_id,
@@ -6561,6 +6629,45 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         return (f"¡Listo! Registré ${amount:,.2f} en la factura {num}.") if es else (f"Done! I recorded ${amount:,.2f} on invoice {num}.")
     if name == "create_social_post":
         return await _assistant_create_social_post(user_id, args, lang, last_image_id)
+    if name == "update_cover_photo":
+        image_id = await _resolve_image(args.get("image_id"))
+        if not image_id:
+            raise HTTPException(400, "No encontré la imagen. Vuelve a adjuntar la foto, por favor.")
+        await db.cards.update_one({"id": card["id"]}, {"$set": {"cover_photo_id": image_id, "updated_at": _now_iso()}})
+        return "¡Listo! Actualicé la foto de portada de tu tarjeta." if es else "Done! I updated your card cover photo."
+    if name == "remove_service":
+        target = (args.get("name") or "").strip().lower()
+        if not target:
+            raise HTTPException(400, "Falta el nombre del servicio")
+        w = await db.websites.find_one({"user_id": user_id}, {"_id": 0, "services": 1}) or {}
+        services = [s for s in (w.get("services") or card.get("services") or []) if isinstance(s, dict)]
+        kept = [s for s in services if (s.get("name", "").strip().lower() != target)]
+        if len(kept) == len(services):
+            raise HTTPException(404, "No encontré ese servicio")
+        await db.websites.update_one({"user_id": user_id}, {"$set": {"services": kept, "updated_at": _now_iso()}})
+        await db.cards.update_one({"id": card["id"]}, {"$set": {"services": kept, "updated_at": _now_iso()}})
+        return (f"¡Listo! Quité el servicio \"{args.get('name','')}\".") if es else (f"Done! I removed the service \"{args.get('name','')}\".")
+    if name == "send_invoice":
+        num = (args.get("invoice_number") or "").strip()
+        inv = await db.invoices.find_one({"user_id": user_id, "number": num}, {"_id": 0})
+        if not inv:
+            raise HTTPException(404, "No encontré esa factura")
+        base = (os.environ.get("PUBLIC_BASE_URL") or "https://ezunitech.com").rstrip("/")
+        link = f"{base}/p/invoice/{inv['id']}"
+        client = await db.clients.find_one({"id": inv.get("client_id")}, {"_id": 0, "name": 1, "email": 1}) or {}
+        bal = round(float(inv.get("total") or 0) - float(inv.get("amount_paid") or 0), 2)
+        if client.get("email"):
+            biz = await _business_name_for(user_id)
+            html = (f"<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1f2937\">"
+                    f"<h2 style=\"margin:0 0 12px\">Factura {num}</h2>"
+                    f"<p>Hola {client.get('name','')}, {biz or 'tu proveedor'} te envía la factura <b>{num}</b> por <b>${bal:,.2f}</b>.</p>"
+                    f"<p style=\"margin:20px 0\"><a href=\"{link}\" style=\"background:#0f172a;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:bold\">Ver y pagar</a></p>"
+                    f"<p style=\"font-size:12px;color:#64748b\">O copia este enlace: {link}</p></div>")
+            await email_service.send_to(client["email"], f"Factura {num}", html)
+            return (f"¡Listo! Envié la factura {num} a {client['email']}. También puedes compartir el enlace: {link}") if es \
+                else (f"Done! I emailed invoice {num} to {client['email']}. You can also share the link: {link}")
+        return (f"La factura {num} no tiene correo del cliente guardado. Comparte este enlace de pago: {link}") if es \
+            else (f"Invoice {num} has no client email on file. Share this payment link: {link}")
     raise HTTPException(400, "Acción desconocida")
 
 

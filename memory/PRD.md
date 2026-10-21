@@ -1,4 +1,18 @@
-## 🤖 Jun 2026 — Asistente Unitech v2: maneja las 4 secciones del panel + robot animado [IMPLEMENTADO; backend verificado e2e por curl, widget verificado por screenshot]
+## 🤖 Jun 2026 — Asistente Unitech v3: "empleado" que maneja todo Unitech (4 secciones a fondo) + fix de imágenes
+- **Fix crítico image_id**: el modelo pasaba image_id inventados ("last_attached_image", "image_0"). Ahora el servidor rastrea `last_image_id` en la sesión (al adjuntar en /assistant/chat) y `_assistant_apply` lo resuelve server-side vía `_resolve_image()` (valida que el photo doc exista; ignora el valor del modelo si no existe). Verificado: card apunta al id real subido.
+- **Nota entorno de prueba**: las imágenes ORIGINALES (card/logo/about) no existen como archivos en el pod de preview (solo está la BD, no el storage) → dan 500 al cargar. Las fotos subidas por el asistente sí se guardan en /app/uploads y se ven. En producción los archivos existen. Esto NO es bug del asistente.
+- **Herramientas completas por sección** (todas write = confirmación):
+  - Tarjeta: update_card_photo, update_cover_photo, update_logo, update_business_info (name/phone/email/hours/service_area/business_type/tagline/about), update_contact_links (whatsapp/fb/ig/website/hours), upsert_service, remove_service, get_card_stats (read).
+  - Sitio web: toggle_website_section, update_website_photo (about/hero/why/band), update_website_text (headline/subheadline/hero_tagline/about/about_title/about_story), add_faq, add_gallery_photo, add_product, get_website_status (read).
+  - Facturación: get_pending_payments/list_invoices/list_clients/get_invoice_link (reads), create_client, create_invoice, record_payment, send_invoice (email al cliente con enlace /p/invoice/{id} usando PUBLIC_BASE_URL; si no hay email, devuelve el enlace).
+  - Marketing: list_social_templates/list_social_posts (reads), create_social_post (plantilla + foto subida + copy IA).
+  - Eventos: create_event. Newsletter: toggle via toggle_website_section.
+- **Verificado e2e por curl** (cuenta pzsuave007, con limpieza/restauración): update_website_photo (about → id real), update_website_text (headline), add_faq, list_clients (22), send_invoice (ruta sin email → enlace), remove_service. Fotos subidas por asistente dan HTTP 200.
+- **FAB robot animado** (SVG: bob, parpadeo, antena pulsante, glow, burbuja "¿Te ayudo?").
+- **Arquitectura llaves**: prod usa OPENAI_API_KEY (SDK openai, ruta `_run_openai` — NO probada localmente por falta de llave); testing usa Emergent (emergentintegrations 0.2.2 en pod; requirements.txt queda en 0.1.0 para no chocar con stripe 15). La lógica de aplicación (_assistant_apply) es idéntica en ambas rutas, así que el fix de imágenes aplica igual.
+- **Pendiente usuario**: "Save to Github" + `cd /home/ezunitap/repo && git pull && bash deploy.sh`. Confirmar OPENAI_API_KEY y PUBLIC_BASE_URL en prod.
+
+
 - **Petición**: que el asistente pueda MANEJAR las 4 secciones del dashboard (Invoicing, Tarjeta digital, Sitio web, Marketing Studio). Invoicing en modo completo (crear facturas y cobros, siempre confirmando). Marketing: crear posts usando las plantillas existentes y fotos que sube el cliente. Botón flotante como robotito animado "esperando que lo despierten".
 - **Nuevas herramientas** (en `assistant_service.py` TOOLS + WRITE_TOOLS + confirm_summary + system prompt bilingüe):
   - Tarjeta: `get_card_stats` (vistas/leads/reviews, read), `update_contact_links` (whatsapp/facebook/instagram/website/hours, write).

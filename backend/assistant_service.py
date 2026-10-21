@@ -29,7 +29,9 @@ OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
 # the user a confirmation before applying it.
 WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upsert_service", "create_event",
                "update_contact_links", "create_client", "create_invoice", "record_payment",
-               "toggle_website_section", "create_social_post"}
+               "toggle_website_section", "update_website_photo", "update_website_text", "add_faq",
+               "add_gallery_photo", "add_product", "create_social_post",
+               "update_cover_photo", "remove_service", "send_invoice"}
 
 TOOLS = [
     {"type": "function", "function": {
@@ -66,8 +68,23 @@ TOOLS = [
             "hours": {"type": "string", "description": "Business hours, free text."},
             "service_area": {"type": "string"},
             "business_type": {"type": "string", "description": "e.g. salsa instructor, gym, plumber."},
+            "tagline": {"type": "string", "description": "Short slogan under the business name."},
             "about": {"type": "string", "description": "Short about/description text."},
         }},
+    }},
+    {"type": "function", "function": {
+        "name": "update_cover_photo",
+        "description": "Set the digital card's cover/banner photo using an image the user attached.",
+        "parameters": {"type": "object", "properties": {
+            "image_id": {"type": "string", "description": "The image_id of the photo the user attached."},
+        }},
+    }},
+    {"type": "function", "function": {
+        "name": "remove_service",
+        "description": "Remove a service from the card/website by its name.",
+        "parameters": {"type": "object", "properties": {
+            "name": {"type": "string", "description": "Exact name of the service to remove."},
+        }, "required": ["name"]},
     }},
     {"type": "function", "function": {
         "name": "upsert_service",
@@ -123,6 +140,51 @@ TOOLS = [
             "enabled": {"type": "boolean"},
         }, "required": ["section", "enabled"]},
     }},
+    {"type": "function", "function": {
+        "name": "update_website_photo",
+        "description": "Change a photo on the website using an image the user attached. Targets: 'about' (About Us photo), 'hero' (main top banner image), 'why' (Why-choose-us image), 'band' (mid-page CTA background).",
+        "parameters": {"type": "object", "properties": {
+            "target": {"type": "string", "description": "one of: about, hero, why, band"},
+            "image_id": {"type": "string", "description": "The image_id of the photo the user attached."},
+        }, "required": ["target"]},
+    }},
+    {"type": "function", "function": {
+        "name": "update_website_text",
+        "description": "Edit the website's text. Only include the fields the user wants to change.",
+        "parameters": {"type": "object", "properties": {
+            "headline": {"type": "string", "description": "Main hero headline (H1)."},
+            "subheadline": {"type": "string", "description": "Subtitle under the headline."},
+            "hero_tagline": {"type": "string", "description": "Short slogan above/under the H1."},
+            "about": {"type": "string", "description": "Short About Us text on the home page."},
+            "about_title": {"type": "string", "description": "About page heading."},
+            "about_story": {"type": "string", "description": "Longer About page story."},
+        }},
+    }},
+    {"type": "function", "function": {
+        "name": "add_faq",
+        "description": "Add a question & answer to the website's FAQ section.",
+        "parameters": {"type": "object", "properties": {
+            "question": {"type": "string"},
+            "answer": {"type": "string"},
+        }, "required": ["question", "answer"]},
+    }},
+    {"type": "function", "function": {
+        "name": "add_gallery_photo",
+        "description": "Add a photo the user attached to the website 'Recent Work' / gallery.",
+        "parameters": {"type": "object", "properties": {
+            "image_id": {"type": "string", "description": "The image_id of the photo the user attached."},
+        }},
+    }},
+    {"type": "function", "function": {
+        "name": "add_product",
+        "description": "Add a product to the website. Optionally use a photo the user attached.",
+        "parameters": {"type": "object", "properties": {
+            "name": {"type": "string"},
+            "description": {"type": "string"},
+            "price": {"type": "string", "description": "Price text, e.g. '$30'."},
+            "image_id": {"type": "string", "description": "The image_id of a photo the user attached (optional)."},
+        }, "required": ["name"]},
+    }},
     # ---- Invoicing ----
     {"type": "function", "function": {
         "name": "get_pending_payments",
@@ -133,6 +195,18 @@ TOOLS = [
         "name": "list_invoices",
         "description": "List the most recent invoices with their number, client, total, amount paid and status.",
         "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "list_clients",
+        "description": "List the owner's clients/customers with phone and email.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
+        "name": "send_invoice",
+        "description": "Send the payment link for an invoice to the client by email (needs the client's email on file). Also returns the link to share manually.",
+        "parameters": {"type": "object", "properties": {
+            "invoice_number": {"type": "string"},
+        }, "required": ["invoice_number"]},
     }},
     {"type": "function", "function": {
         "name": "create_client",
@@ -183,6 +257,11 @@ TOOLS = [
         "parameters": {"type": "object", "properties": {}},
     }},
     {"type": "function", "function": {
+        "name": "list_social_posts",
+        "description": "List the owner's most recent social media posts (template + headline).",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
         "name": "create_social_post",
         "description": "Create a branded social media post using one of the templates and a photo the user attached (their work or product). Writes AI copy from the brief. Uses AI credits and takes a few seconds.",
         "parameters": {"type": "object", "properties": {
@@ -205,9 +284,9 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             f"sitio web, servicios, eventos y boletín).{who} "
             "Hablas claro y sencillo, sin tecnicismos, en español. "
             "Puedes HACER cosas por el usuario usando tus herramientas en las 4 áreas de su panel: "
-            "(1) Tarjeta digital: cambiar foto, logo, datos, servicios, redes/horario, ver vistas y leads. "
-            "(2) Sitio web: activar u ocultar secciones, ver su estado y enlace público. "
-            "(3) Facturación: ver pagos pendientes, listar facturas, crear clientes, CREAR FACTURAS, registrar pagos y dar el enlace de cobro. "
+            "(1) Tarjeta digital: cambiar foto, portada, logo, datos, eslogan, servicios (agregar/quitar), redes/horario, ver vistas y leads. "
+            "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
+            "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
             "(4) Marketing: listar plantillas y CREAR posts para redes con la foto que suba el usuario (de su trabajo o productos). "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
             "herramienta correspondiente pasando el image_id que te da el sistema. "
@@ -223,9 +302,9 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         f"business owners use their Unitech account (digital card, website, services, events, newsletter).{who} "
         "Speak plainly, no jargon, in English. "
         "You can DO things for the user with your tools across the 4 areas of their dashboard: "
-        "(1) Digital card: change photo, logo, business info, services, contact links/hours, view visits and leads. "
-        "(2) Website: turn sections on/off, see its status and public link. "
-        "(3) Invoicing: see pending payments, list invoices, create clients, CREATE INVOICES, record payments, get the payment link. "
+        "(1) Digital card: change photo, cover, logo, business info, tagline, services (add/remove), contact links/hours, view visits and leads. "
+        "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
+        "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
         "(4) Marketing: list templates and CREATE social posts using a photo the user uploads (their work or products). "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
         "matching tool passing the image_id the system gives you. In invoicing, handle money carefully: gather the client, "
@@ -266,6 +345,26 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
         state = ("activar" if args.get("enabled") else "ocultar") if es else ("show" if args.get("enabled") else "hide")
         return (f"Voy a {state} la sección \"{args.get('section','')}\" de tu sitio. ¿Confirmas?") if es \
             else (f"I'll {state} the \"{args.get('section','')}\" section on your site. Confirm?")
+    if name == "update_website_photo":
+        labels = {"about": "Sobre Nosotros", "hero": "banner principal", "why": "por qué elegirnos", "band": "banner de llamada a la acción"}
+        labels_en = {"about": "About Us", "hero": "main banner", "why": "why-choose-us", "band": "CTA band"}
+        tgt = (args.get("target") or "about")
+        return (f"Voy a cambiar la foto de \"{labels.get(tgt, tgt)}\" en tu sitio con la imagen que enviaste. ¿Confirmas?") if es \
+            else (f"I'll change the \"{labels_en.get(tgt, tgt)}\" photo on your site with the image you sent. Confirm?")
+    if name == "update_website_text":
+        parts = [f"{k}: {str(v)[:60]}" for k, v in args.items() if v]
+        joined = "; ".join(parts)
+        return (f"Voy a actualizar el texto de tu sitio → {joined}. ¿Confirmas?") if es \
+            else (f"I'll update your website text → {joined}. Confirm?")
+    if name == "add_faq":
+        return (f"Voy a agregar esta pregunta frecuente: \"{args.get('question','')}\". ¿Confirmas?") if es \
+            else (f"I'll add this FAQ: \"{args.get('question','')}\". Confirm?")
+    if name == "add_gallery_photo":
+        return ("Voy a agregar la foto que enviaste a tu galería de trabajos. ¿Confirmas?") if es \
+            else ("I'll add the photo you sent to your work gallery. Confirm?")
+    if name == "add_product":
+        return (f"Voy a agregar el producto \"{args.get('name','')}\" a tu sitio. ¿Confirmas?") if es \
+            else (f"I'll add the product \"{args.get('name','')}\" to your site. Confirm?")
     if name == "create_client":
         return (f"Voy a agregar al cliente \"{args.get('name','')}\". ¿Confirmas?") if es \
             else (f"I'll add the client \"{args.get('name','')}\". Confirm?")
@@ -280,6 +379,15 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
     if name == "create_social_post":
         return (f"Voy a crear un post de marketing (plantilla \"{args.get('template','showcase')}\") con tu foto y el texto que generaré. Usa créditos de IA y tarda unos segundos. ¿Confirmas?") if es \
             else (f"I'll create a marketing post (template \"{args.get('template','showcase')}\") with your photo and AI-written copy. Uses AI credits, takes a few seconds. Confirm?")
+    if name == "update_cover_photo":
+        return ("Voy a poner la imagen que enviaste como la foto de portada de tu tarjeta. ¿Confirmas?") if es \
+            else ("I'll set the image you sent as your card's cover photo. Confirm?")
+    if name == "remove_service":
+        return (f"Voy a quitar el servicio \"{args.get('name','')}\" de tu tarjeta y sitio. ¿Confirmas?") if es \
+            else (f"I'll remove the service \"{args.get('name','')}\" from your card and site. Confirm?")
+    if name == "send_invoice":
+        return (f"Voy a enviar el enlace de pago de la factura {args.get('invoice_number','')} al correo del cliente. ¿Confirmas?") if es \
+            else (f"I'll email the payment link for invoice {args.get('invoice_number','')} to the client. Confirm?")
     return "¿Confirmas esta acción?" if es else "Confirm this action?"
 
 
