@@ -48,7 +48,8 @@
     "appointments": "Citas",
     "embed": "Formularios / Bot IA",
     "website": "Página Web",
-    "qrCodes": "Códigos QR"
+    "qrCodes": "Códigos QR",
+    "directory": "Ficha En Directorio"
   },
   "website": {
     "title": "Página Web",
@@ -228,7 +229,7 @@
       "map": "Mapa de clientes (pines)",
       "hero": "Hero",
       "cta": "Banda CTA",
-      "contact": "Contacto",
+      "contact": "Contacto + formulario",
       "footer": "Pie de página",
       "reviews": "Reseñas",
       "how": "Cómo funciona",
@@ -238,7 +239,6 @@
       "about": "Sobre nosotros / horarios / zonas",
       "feature": "Destacado (imagen + beneficios)",
       "band": "Banner de llamada a la acción",
-      "contact": "Contacto + formulario",
       "booking": "Reservar cita"
     },
     "formsTitle": "Formularios, citas y chat IA",

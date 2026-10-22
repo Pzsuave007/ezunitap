@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, CalendarCheck, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock, Globe, QrCode, MonitorSmartphone, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Receipt, Briefcase, LogOut, User as UserIcon, Hammer, Sparkles, IdCard, CalendarDays, CalendarCheck, ShieldCheck, FileSignature, CreditCard, Star, Megaphone, Menu, Lock, Globe, QrCode, MonitorSmartphone, BarChart3, Store } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const NAV = [
 
 // Everything reachable from the mobile "Más" menu (big, clearly-labeled rows).
 const MORE_ITEMS = [
+  { to: "/directorio-ficha", labelKey: "nav.directory", icon: Store, accent: true },
   { to: "/calendario", labelKey: "nav.schedule", icon: CalendarDays, feature: "business" },
   { to: "/quotes", labelKey: "nav.quotesLong", icon: FileText, feature: "business" },
   { to: "/contratos", labelKey: "nav.agreements", icon: FileSignature, feature: "business" },
@@ -42,6 +43,7 @@ const MORE_ITEMS = [
 // Desktop sidebar — grouped for clarity.
 const SIDEBAR = [
   { to: "/", labelKey: "nav.home", icon: LayoutDashboard, end: true },
+  { to: "/directorio-ficha", labelKey: "nav.directory", icon: Store, accent: true },
   { to: "/clientes", labelKey: "nav.clients", icon: Users, anyFeature: ["card", "business"] },
   {
     labelKey: "nav.invoicing", icon: Receipt, feature: "business",

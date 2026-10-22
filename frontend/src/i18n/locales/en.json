@@ -48,7 +48,8 @@
     "appointments": "Appointments",
     "embed": "Forms / AI Bot",
     "website": "Web Page",
-    "qrCodes": "QR Codes"
+    "qrCodes": "QR Codes",
+    "directory": "Directory Profile"
   },
   "website": {
     "title": "Web Page",
@@ -227,7 +228,7 @@
       "map": "Client map (pins)",
       "hero": "Hero",
       "cta": "CTA band",
-      "contact": "Contact",
+      "contact": "Contact + form",
       "footer": "Footer",
       "reviews": "Reviews",
       "how": "How It Works",
@@ -237,7 +238,6 @@
       "about": "About us / hours / areas",
       "feature": "Highlight (image + benefits)",
       "band": "Call-to-action banner",
-      "contact": "Contact + form",
       "booking": "Book appointment"
     },
     "formsTitle": "Forms, booking & AI chat",

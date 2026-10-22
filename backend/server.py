@@ -11887,6 +11887,14 @@ async def _notify_owner_email(user_id: str, event: str, ctx: dict) -> None:
                 lang=lang, business_name=biz, lead=ctx,
                 cta_url=f"{APP_BASE_URL}/clientes",
             )
+        elif event == "directory_lead":
+            upsell = not payments_service.is_paying_subscriber(user)
+            subject, html = email_service.build_directory_lead_email(
+                lang=lang, business_name=biz, lead=ctx,
+                cta_url=f"{APP_BASE_URL}/clientes",
+                directory_name=ctx.get("source_label") or "Pro Finder",
+                upsell=upsell, upsell_url=f"{APP_BASE_URL}/precios",
+            )
         elif event == "payment":
             subject, html = email_service.build_payment_email(
                 lang=lang, business_name=biz,
@@ -12658,6 +12666,373 @@ async def stripe_webhook(request: Request):
 @api_router.get("/")
 async def root():
     return {"app": "UniTech", "ok": True}
+
+# ============================================================================
+# CONTRACTOR DIRECTORY ("Pro Finder") — free public directory that doubles as
+# the acquisition funnel into UniTech. Every logged-in user ALWAYS gets the
+# directory profile editor for free (no feature gate); all other modules stay
+# gated behind their paid plan. The public directory has its own brand/domain
+# but is powered entirely by this backend.
+# ============================================================================
+DIRECTORY_CATEGORIES = [
+    {"slug": "painting", "en": "Painting", "es": "Pintura"},
+    {"slug": "drywall", "en": "Drywall", "es": "Tablaroca / Drywall"},
+    {"slug": "remodeling", "en": "Remodeling", "es": "Remodelación"},
+    {"slug": "roofing", "en": "Roofing", "es": "Techos"},
+    {"slug": "flooring", "en": "Flooring", "es": "Pisos"},
+    {"slug": "plumbing", "en": "Plumbing", "es": "Plomería"},
+    {"slug": "electrical", "en": "Electrical", "es": "Electricidad"},
+    {"slug": "hvac", "en": "AC & Heating", "es": "Aire y Calefacción"},
+    {"slug": "landscaping", "en": "Landscaping", "es": "Jardinería"},
+    {"slug": "concrete", "en": "Concrete", "es": "Concreto"},
+    {"slug": "cleaning", "en": "Cleaning", "es": "Limpieza"},
+    {"slug": "handyman", "en": "Handyman", "es": "Reparaciones (Handyman)"},
+    {"slug": "fencing", "en": "Fencing", "es": "Cercas"},
+    {"slug": "carpentry", "en": "Carpentry", "es": "Carpintería"},
+    {"slug": "tile", "en": "Tile", "es": "Azulejos"},
+    {"slug": "pressure_washing", "en": "Pressure Washing", "es": "Lavado a Presión"},
+    {"slug": "windows", "en": "Windows & Doors", "es": "Ventanas y Puertas"},
+    {"slug": "masonry", "en": "Masonry", "es": "Albañilería"},
+    {"slug": "general", "en": "General Contractor", "es": "Contratista General"},
+]
+_DIR_CAT_SLUGS = {c["slug"] for c in DIRECTORY_CATEGORIES}
+
+DIRECTORY_CONFIG_DEFAULT = {
+    "name": "Pro Finder",
+    "tagline_es": "Encuentra contratistas de confianza cerca de ti",
+    "tagline_en": "Find trusted contractors near you",
+    "primary_color": "#0f5f46",
+    "accent_color": "#10b981",
+    "sponsor_enabled": False,
+    "sponsor_name": "",
+    "sponsor_label_es": "Patrocinado por",
+    "sponsor_label_en": "Sponsored by",
+    "sponsor_logo_url": "",
+}
+
+
+async def _directory_config() -> dict:
+    doc = await db.app_config.find_one({"key": "directory_config"}, {"_id": 0})
+    cfg = dict(DIRECTORY_CONFIG_DEFAULT)
+    if doc and isinstance(doc.get("data"), dict):
+        cfg.update(doc["data"])
+    return cfg
+
+
+async def _unique_directory_slug(business_name: str, user_id: str) -> str:
+    base = _slugify(business_name or "contratista") or "contratista"
+    slug = base
+    for _ in range(50):
+        clash = await db.directory_profiles.find_one(
+            {"slug": slug, "user_id": {"$ne": user_id}}, {"_id": 0, "id": 1})
+        if not clash:
+            return slug
+        slug = f"{base}-{uuid.uuid4().hex[:4]}"
+    return f"{base}-{uuid.uuid4().hex[:6]}"
+
+
+async def _get_or_init_directory_profile(user_id: str) -> dict:
+    prof = await db.directory_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    if prof:
+        return prof
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0}) or {}
+    card = await db.cards.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    biz = user.get("business_name") or card.get("person_name") or "Mi Negocio"
+    slug = await _unique_directory_slug(biz, user_id)
+    prof = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "business_name": biz,
+        "categories": [],
+        "phone": user.get("phone") or card.get("contact_phone") or "",
+        "email": user.get("business_email") or user.get("email") or "",
+        "city": "",
+        "state": "",
+        "zip": "",
+        "service_area": card.get("service_area") or "",
+        "about": card.get("about_me") or card.get("tagline") or "",
+        "website_url": "",
+        "hero_photo_id": card.get("profile_photo_id") or None,
+        "logo_photo_id": card.get("logo_photo_id") or None,
+        "gallery": [],
+        "published": False,
+        "badge_status": "none",   # none | pending | approved
+        "slug": slug,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.directory_profiles.insert_one(dict(prof))
+    prof.pop("_id", None)
+    return prof
+
+
+def _dir_public_view(prof: dict, full: bool = False) -> dict:
+    out = {
+        "slug": prof.get("slug"),
+        "business_name": prof.get("business_name"),
+        "categories": prof.get("categories") or [],
+        "city": prof.get("city") or "",
+        "state": prof.get("state") or "",
+        "service_area": prof.get("service_area") or "",
+        "about": prof.get("about") or "",
+        "badge": (prof.get("badge_status") == "approved"),
+        "logo_url": _photo_public_url(prof["logo_photo_id"]) if prof.get("logo_photo_id") else None,
+        "hero_url": _photo_public_url(prof["hero_photo_id"]) if prof.get("hero_photo_id") else None,
+    }
+    if full:
+        out["phone"] = prof.get("phone") or ""
+        out["email"] = prof.get("email") or ""
+        out["website_url"] = prof.get("website_url") or ""
+        out["gallery"] = [_photo_public_url(pid) for pid in (prof.get("gallery") or [])]
+    else:
+        # short preview of the about text for cards
+        out["about"] = (out["about"][:160] + "…") if len(out["about"]) > 160 else out["about"]
+    return out
+
+
+class DirectoryProfileIn(BaseModel):
+    business_name: Optional[str] = None
+    categories: Optional[List[str]] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    service_area: Optional[str] = None
+    about: Optional[str] = None
+    website_url: Optional[str] = None
+
+
+class DirectoryPublishIn(BaseModel):
+    published: bool
+
+
+class DirectoryConfigIn(BaseModel):
+    name: Optional[str] = None
+    tagline_es: Optional[str] = None
+    tagline_en: Optional[str] = None
+    primary_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    sponsor_enabled: Optional[bool] = None
+    sponsor_name: Optional[str] = None
+    sponsor_label_es: Optional[str] = None
+    sponsor_label_en: Optional[str] = None
+    sponsor_logo_url: Optional[str] = None
+
+
+class DirectoryBadgeIn(BaseModel):
+    status: str  # none | pending | approved
+
+
+# ---- Owner-side (authenticated, FREE — no feature gate) --------------------
+@api_router.get("/directory/profile")
+async def get_directory_profile(user_id: str = Depends(get_current_user_id)):
+    prof = await _get_or_init_directory_profile(user_id)
+    prof["logo_url"] = _photo_public_url(prof["logo_photo_id"]) if prof.get("logo_photo_id") else None
+    prof["hero_url"] = _photo_public_url(prof["hero_photo_id"]) if prof.get("hero_photo_id") else None
+    prof["gallery_urls"] = [_photo_public_url(pid) for pid in (prof.get("gallery") or [])]
+    return prof
+
+
+@api_router.put("/directory/profile")
+async def update_directory_profile(payload: DirectoryProfileIn, user_id: str = Depends(get_current_user_id)):
+    await _get_or_init_directory_profile(user_id)
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if "categories" in update:
+        update["categories"] = [c for c in update["categories"] if c in _DIR_CAT_SLUGS][:6]
+    if "state" in update:
+        update["state"] = (update["state"] or "").strip().upper()[:2]
+    if "business_name" in update and update["business_name"].strip():
+        update["slug"] = await _unique_directory_slug(update["business_name"], user_id)
+    update["updated_at"] = _now_iso()
+    await db.directory_profiles.update_one({"user_id": user_id}, {"$set": update})
+    return await get_directory_profile(user_id)
+
+
+@api_router.post("/directory/profile/photo")
+async def upload_directory_photo(
+    file: UploadFile = File(...),
+    slot: str = Form("gallery"),  # hero | logo | gallery
+    user_id: str = Depends(get_current_user_id),
+):
+    if slot not in ("hero", "logo", "gallery"):
+        raise HTTPException(400, "slot inválido")
+    ct = (file.content_type or "").lower()
+    if ct not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
+    data = await file.read()
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "jpg"
+    await _get_or_init_directory_profile(user_id)
+    photo_id = await _store_card_photo(user_id, data, ct, "directory", ext)
+    if slot == "hero":
+        await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"hero_photo_id": photo_id, "updated_at": _now_iso()}})
+    elif slot == "logo":
+        await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"logo_photo_id": photo_id, "updated_at": _now_iso()}})
+    else:
+        await db.directory_profiles.update_one({"user_id": user_id}, {"$push": {"gallery": {"$each": [photo_id], "$slice": -12}}, "$set": {"updated_at": _now_iso()}})
+    return {"photo_id": photo_id, "url": _photo_public_url(photo_id), "slot": slot}
+
+
+@api_router.delete("/directory/profile/gallery/{photo_id}")
+async def delete_directory_gallery_photo(photo_id: str, user_id: str = Depends(get_current_user_id)):
+    await db.directory_profiles.update_one({"user_id": user_id}, {"$pull": {"gallery": photo_id}, "$set": {"updated_at": _now_iso()}})
+    return {"ok": True}
+
+
+@api_router.post("/directory/profile/publish")
+async def publish_directory_profile(payload: DirectoryPublishIn, user_id: str = Depends(get_current_user_id)):
+    prof = await _get_or_init_directory_profile(user_id)
+    if payload.published:
+        missing = []
+        if not (prof.get("business_name") or "").strip():
+            missing.append("nombre del negocio")
+        if not (prof.get("categories") or []):
+            missing.append("al menos un servicio")
+        if not (prof.get("city") or "").strip() or not (prof.get("state") or "").strip():
+            missing.append("ciudad y estado")
+        if not (prof.get("phone") or "").strip():
+            missing.append("teléfono")
+        if missing:
+            raise HTTPException(400, "Completa estos datos antes de publicar: " + ", ".join(missing))
+    await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"published": payload.published, "updated_at": _now_iso()}})
+    return await get_directory_profile(user_id)
+
+
+@api_router.post("/directory/profile/badge-request")
+async def request_directory_badge(user_id: str = Depends(get_current_user_id)):
+    prof = await _get_or_init_directory_profile(user_id)
+    if prof.get("badge_status") != "approved":
+        await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"badge_status": "pending", "updated_at": _now_iso()}})
+    return await get_directory_profile(user_id)
+
+
+# ---- Public (no auth) ------------------------------------------------------
+@api_router.get("/public/directory/config")
+async def public_directory_config():
+    cfg = await _directory_config()
+    states = await db.directory_profiles.distinct("state", {"published": True, "state": {"$ne": ""}})
+    return {"config": cfg, "categories": DIRECTORY_CATEGORIES, "states": sorted([s for s in states if s])}
+
+
+@api_router.get("/public/directory/search")
+async def public_directory_search(
+    category: Optional[str] = None,
+    q: Optional[str] = None,
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+):
+    query: dict = {"published": True}
+    if category and category in _DIR_CAT_SLUGS:
+        query["categories"] = category
+    if state:
+        query["state"] = state.strip().upper()[:2]
+    if city:
+        query["city"] = {"$regex": re.escape(city.strip()), "$options": "i"}
+    if q:
+        query["business_name"] = {"$regex": re.escape(q.strip()), "$options": "i"}
+    docs = await db.directory_profiles.find(query, {"_id": 0}).sort([("badge_status", -1), ("updated_at", -1)]).to_list(120)
+    return {"results": [_dir_public_view(d, full=False) for d in docs], "count": len(docs)}
+
+
+@api_router.get("/public/directory/listing/{slug}")
+async def public_directory_listing(slug: str):
+    prof = await db.directory_profiles.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not prof:
+        raise HTTPException(404, "Ficha no encontrada")
+    return _dir_public_view(prof, full=True)
+
+
+@api_router.post("/public/directory/listing/{slug}/lead")
+async def public_directory_lead(slug: str, payload: CardLeadIn):
+    prof = await db.directory_profiles.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not prof:
+        raise HTTPException(404, "Ficha no encontrada")
+    user_id = prof["user_id"]
+    cfg = await _directory_config()
+    via = cfg.get("name") or "Pro Finder"
+    service_label = (payload.service or "").strip()
+    lead = {
+        "id": _new_id(), "user_id": user_id, "name": payload.name,
+        "phone": payload.phone or "", "email": payload.email or "",
+        "address": payload.address or "", "service": service_label,
+        "description": payload.description or "", "lead_type": "estimate",
+        "source": "directory", "source_site": via, "status": "new",
+        "created_at": _now_iso(),
+    }
+    await db.card_leads.insert_one(dict(lead))
+    notes = [f"[Lead desde el directorio {via}]"]
+    if service_label:
+        notes.append(f"Servicio: {service_label}")
+    if payload.description:
+        notes.append(payload.description.strip())
+    client_notes = "\n".join([l for l in notes if l])
+    dedupe_or = []
+    if (payload.phone or "").strip():
+        dedupe_or.append({"phone": payload.phone.strip()})
+    if (payload.email or "").strip():
+        dedupe_or.append({"email": payload.email.strip()})
+    existing = await db.clients.find_one({"user_id": user_id, "$or": dedupe_or}, {"_id": 0}) if dedupe_or else None
+    if existing:
+        await db.clients.update_one({"id": existing["id"], "user_id": user_id}, {"$set": {"lead_type": "estimate", "lead_source": "directory", "source_site": via, **({"job_type": service_label} if service_label else {})}})
+        await db.client_notes.insert_one({"id": _new_id(), "client_id": existing["id"], "user_id": user_id, "text": client_notes, "created_at": _now_iso()})
+    else:
+        await db.clients.insert_one({
+            "id": _new_id(), "user_id": user_id, "name": payload.name,
+            "phone": payload.phone or "", "email": payload.email or "",
+            "address": payload.address or "", "job_type": service_label,
+            "notes": client_notes, "lead_type": "estimate", "interests": [],
+            "preferred_contact": payload.preferred_contact or "",
+            "lead_source": "directory", "source_site": via,
+            "project_request": (payload.description or "").strip(),
+            "stage": "prospect", "created_at": _now_iso(),
+        })
+    try:
+        await _create_notification(
+            user_id=user_id,
+            title=f"📒 Nuevo lead desde {via}",
+            body=f"{payload.name} te encontró en el directorio y pidió una cotización. Ya está en tu CRM.",
+            kind="success", action_url="/clientes", action_label="Ver en CRM",
+        )
+    except Exception as e:
+        logger.error(f"directory lead notif failed: {e!r}")
+    try:
+        _fire_owner_email(user_id, "directory_lead", {
+            "name": payload.name, "phone": payload.phone or "", "email": payload.email or "",
+            "service": service_label, "description": (payload.description or "").strip(),
+            "source_label": via,
+        })
+    except Exception as e:
+        logger.error(f"directory lead email failed: {e!r}")
+    return {"ok": True}
+
+
+# ---- Admin (super-admin only) ---------------------------------------------
+@api_router.get("/admin/directory/profiles")
+async def admin_list_directory_profiles(_admin: dict = Depends(_require_super_admin)):
+    docs = await db.directory_profiles.find({}, {"_id": 0}).sort("updated_at", -1).to_list(500)
+    return {"profiles": docs}
+
+
+@api_router.post("/admin/directory/profiles/{user_id}/badge")
+async def admin_set_directory_badge(user_id: str, payload: DirectoryBadgeIn, _admin: dict = Depends(_require_super_admin)):
+    if payload.status not in ("none", "pending", "approved"):
+        raise HTTPException(400, "status inválido")
+    res = await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"badge_status": payload.status, "updated_at": _now_iso()}})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Ficha no encontrada")
+    return {"ok": True, "status": payload.status}
+
+
+@api_router.put("/admin/directory/config")
+async def admin_update_directory_config(payload: DirectoryConfigIn, _admin: dict = Depends(_require_super_admin)):
+    cfg = await _directory_config()
+    cfg.update({k: v for k, v in payload.model_dump().items() if v is not None})
+    await db.app_config.update_one({"key": "directory_config"}, {"$set": {"key": "directory_config", "data": cfg}}, upsert=True)
+    return {"ok": True, "config": cfg}
+
+
 
 
 # ============================================================================

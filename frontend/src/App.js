@@ -60,6 +60,9 @@ import DemoFlujo from "@/pages/DemoFlujo";
 import ContractorSite from "@/pages/ContractorSite";
 import ProblemPage from "@/pages/ProblemPage";
 import WebsiteEditor from "@/pages/WebsiteEditor";
+import DirectoryProfileEditor from "@/pages/DirectoryProfileEditor";
+import DirectoryHome from "@/pages/DirectoryHome";
+import DirectoryListing from "@/pages/DirectoryListing";
 import { FeatureGate } from "@/components/FeatureGate";
 import LanguageSuggestBanner from "@/components/LanguageSuggestBanner";
 import InstallPWA from "@/components/InstallPWA";
@@ -138,6 +141,8 @@ function App() {
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/p/quote/:id" element={<PublicQuote />} />
             <Route path="/demo" element={<DemoFlow />} />
+            <Route path="/directorio" element={<DirectoryHome />} />
+            <Route path="/directorio/:category/:cityState/:slug" element={<DirectoryListing />} />
             <Route path="/probar" element={<DemoStart />} />
             <Route path="/demo-all" element={<DemoAll />} />
             <Route path="/demo-flujo" element={<DemoFlujo />} />
@@ -206,6 +211,7 @@ function App() {
               <Route path="/admin/emails" element={<AdminEmails />} />
               <Route path="/admin/leads" element={<AdminLeads />} />
               <Route path="/notificaciones" element={<NotificationsInbox />} />
+              <Route path="/directorio-ficha" element={<DirectoryProfileEditor />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

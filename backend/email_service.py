@@ -235,7 +235,7 @@ _ACCENT = "#10B981"
 
 
 def _shell(*, lang: str, heading: str, intro: str, rows, cta_url: str,
-           cta_label: str, footer: str, accent: str = _ACCENT) -> str:
+           cta_label: str, footer: str, accent: str = _ACCENT, promo: str = "") -> str:
     """Email-client-safe HTML shell (inline CSS + tables)."""
     row_html = ""
     for label, value in rows:
@@ -278,6 +278,7 @@ def _shell(*, lang: str, heading: str, intro: str, rows, cta_url: str,
 {row_html}{cta_block}
 </table>
 </td></tr>
+{promo}
 <tr><td style="padding:24px 32px 32px;">
 <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8;line-height:1.5;margin:0;">{footer}</p>
 </td></tr>
@@ -307,6 +308,63 @@ def build_lead_email(*, lang: str, business_name: str, lead: dict, cta_url: str)
         cta, footer = "Ver en el CRM", "Recibes este correo porque los avisos de leads están activados en tu cuenta UniTech."
     return subject, _shell(lang=lang, heading=heading, intro=intro, rows=rows,
                            cta_url=cta_url, cta_label=cta, footer=footer)
+
+
+def build_directory_lead_email(*, lang: str, business_name: str, lead: dict,
+                               cta_url: str, directory_name: str = "Pro Finder",
+                               upsell: bool = True, upsell_url: str = ""):
+    """Lead alert for a contact that came in through the public directory.
+    When `upsell` is True (free / directory-only owners), appends a promo block
+    selling the full UniTech toolset so the lead converts into a paying job."""
+    name = (lead.get("name") or "").strip()
+    if lang == "en":
+        subject = f"New lead from {directory_name}: {name or 'someone'}"
+        heading = f"New lead from {directory_name}!"
+        intro = f"Someone found {business_name} on {directory_name} and asked for a quote. Reply fast to win the job."
+        rows = [("Name", name), ("Phone", lead.get("phone")), ("Email", lead.get("email")),
+                ("Service", lead.get("service")), ("Message", lead.get("description"))]
+        cta, footer = "See their info in your CRM", f"You're listed free on {directory_name}, powered by UniTech."
+    else:
+        subject = f"Nuevo lead de {directory_name}: {name or 'alguien'}"
+        heading = f"¡Nuevo lead de {directory_name}!"
+        intro = f"Alguien encontró a {business_name} en {directory_name} y pidió una cotización. Responde rápido para ganar el trabajo."
+        rows = [("Nombre", name), ("Teléfono", lead.get("phone")), ("Email", lead.get("email")),
+                ("Servicio", lead.get("service")), ("Mensaje", lead.get("description"))]
+        cta, footer = "Ver sus datos en tu CRM", f"Apareces gratis en {directory_name}, con tecnología de UniTech."
+
+    promo = ""
+    if upsell:
+        url = upsell_url or cta_url
+        if lang == "en":
+            promo = (
+                '<tr><td style="padding:16px 32px 0;">'
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+                f'style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px 18px;">'
+                '<tr><td style="font-family:Arial,Helvetica,sans-serif;">'
+                '<div style="font-size:13px;font-weight:700;color:#047857;text-transform:uppercase;letter-spacing:0.5px;">Turn this lead into money</div>'
+                '<p style="font-size:14px;color:#334155;line-height:1.5;margin:8px 0 0;">'
+                'Right now you only have the free listing. Activate UniTech to reply with a professional quote, '
+                'send invoices, get paid online, build your website and keep every customer organized — all in one app.</p>'
+                f'<a href="{url}" style="display:inline-block;margin-top:12px;background:{_BRAND};color:#ffffff;'
+                'text-decoration:none;padding:10px 22px;border-radius:9999px;font-size:13px;font-weight:700;">Activate UniTech</a>'
+                '</td></tr></table></td></tr>'
+            )
+        else:
+            promo = (
+                '<tr><td style="padding:16px 32px 0;">'
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+                f'style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px 18px;">'
+                '<tr><td style="font-family:Arial,Helvetica,sans-serif;">'
+                '<div style="font-size:13px;font-weight:700;color:#047857;text-transform:uppercase;letter-spacing:0.5px;">Convierte este lead en dinero</div>'
+                '<p style="font-size:14px;color:#334155;line-height:1.5;margin:8px 0 0;">'
+                'Ahora solo tienes la ficha gratis. Activa UniTech para responder con una cotización profesional, '
+                'mandar facturas, cobrar en línea, tener tu página web y mantener a todos tus clientes organizados — todo en una sola app.</p>'
+                f'<a href="{url}" style="display:inline-block;margin-top:12px;background:{_BRAND};color:#ffffff;'
+                'text-decoration:none;padding:10px 22px;border-radius:9999px;font-size:13px;font-weight:700;">Activar UniTech</a>'
+                '</td></tr></table></td></tr>'
+            )
+    return subject, _shell(lang=lang, heading=heading, intro=intro, rows=rows,
+                           cta_url=cta_url, cta_label=cta, footer=footer, promo=promo)
 
 
 def build_payment_email(*, lang: str, business_name: str, amount: str, method: str,
