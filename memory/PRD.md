@@ -1619,3 +1619,11 @@ Frontend:
 - Nav "Ficha En Directorio" (icono Store) en SIDEBAR y MORE_ITEMS, sin feature → nunca bloqueado. i18n nav.directory (es/en).
 Verificado (curl + screenshots, SIN testing agent por pedido del usuario): init/PUT/publish de ficha, config/search públicos, listing, lead → cae en CRM. Las 3 páginas renderizan bien.
 Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (endpoints ya existen); conectar dominio propio (DNS, paso del usuario); assets/logo de Sherwin cuando haya permiso. Requiere rebuild de frontend (yarn build) + REDEPLOY (Save to Github + git pull && bash deploy.sh).
+
+## [Jun 2026] Panel Admin del Directorio (dentro del área admin existente)
+- Nueva pestaña "Directorio" en AdminTabs (components/AdminTabs.js, icono Store) → vive junto a Cuentas/Leads/Emails.
+- pages/AdminDirectory.js (ruta /admin/directorio, super-admin): 
+  1) Marca y patrocinador: editar nombre, color principal, eslóganes ES/EN, y toggle "Mostrar patrocinador" + nombre/logo/texto del patrocinador (configurable, no amarrado a Sherwin). Guarda vía PUT /api/admin/directory/config.
+  2) Lista de fichas con logo, estado publicada/oculta, ciudad y # servicios; aprobar/quitar/dar sello (POST /api/admin/directory/profiles/{user_id}/badge). Muestra contador de sellos pendientes.
+- Verificado (curl + screenshot, SIN testing agent): admin list, aprobar sello (acme-painting badge→approved, visible en listing público), PUT config. Página renderiza con la pestaña activa.
+- Frontend reconstruido (yarn build OK). Listo para Save to Github + redeploy.
