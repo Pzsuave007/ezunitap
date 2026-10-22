@@ -1570,3 +1570,9 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Frontend AssistantWidget parseLinks ahora extrae [[IMG:]] (render <img src=BACKEND+url>) y [[POST:]] (botones Guardar/Hazme otro/Descartar → /assistant/post-approve|regenerate|discard). Import Sparkles añadido.
 - Verificado e2e por curl: ai_image (sin foto) genera imagen + preview + approve→aparece en lista; before_after con 2 fotos usa 2 fuentes distintas; draft oculto hasta aprobar; preview img pública HTTP 200. Screenshot widget OK sin errores. Posts de prueba eliminados.
 - NOTA prod: el bug de "adjuntar no carga / saludo genérico" era backend viejo; requiere REDEPLOY. ai_image usa créditos de imágenes IA (Nano Banana / OpenAI fallback) y respeta el límite mensual del plan.
+
+## [Jun 2026] Fix ruta nativa OpenAI (producción) — pérdida de contexto
+- Síntoma (SOLO producción): el bot ofrece a/b/c para el post, el usuario responde "A" y el bot saluda genérico (pierde el hilo). En preview funciona.
+- Causa raíz: dos rutas en assistant_service.respond(). Preview NO tiene OPENAI_API_KEY → usa _run_emergent (modelo gpt-5.4, inyecta la conversación en el system message). Producción SÍ tiene OPENAI_API_KEY → usa _run_openai (modelo OPENAI_OWN_MODEL, default gpt-4o). El usuario intuyó bien: "el AI en producción no es el mismo".
+- Fix en _run_openai: ahora también inyecta la conversación reciente (últimos 16) en el system message con instrucción explícita "continúa el hilo; NO vuelvas a saludar", además de pasar el historial como mensajes con rol. Envuelto en try/except con logger.error (model=...) para visibilidad. No se pudo probar en preview (sin llave OpenAI nativa).
+- Acción para el usuario: verificar OPENAI_OWN_MODEL en /opt/ezunitap/backend/.env (o keys.txt). Default gpt-4o es capaz; si estuviera en un modelo débil/viejo, cambiarlo a gpt-4o. Requiere REDEPLOY.

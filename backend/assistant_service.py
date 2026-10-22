@@ -477,28 +477,43 @@ async def respond(system_base: str, transcript: list, user_text: str, lang: str,
 async def _run_openai(system_base, transcript, user_text, lang, read_dispatch) -> dict:
     from openai import AsyncOpenAI
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-    messages = [{"role": "system", "content": system_base}]
-    for m in transcript:
-        messages.append({"role": m["role"], "content": m["content"]})
+    # Reinforce context in the system message too (weaker models can lose the
+    # thread across turns otherwise, e.g. forgetting a just-offered a/b/c choice).
+    recent = transcript[-16:]
+    context = ""
+    if recent:
+        lines = []
+        for m in recent:
+            who = "Usuario" if m["role"] == "user" else "Asistente"
+            lines.append(f"{who}: {m.get('content') or ''}")
+        context = ("\n\nConversación reciente (continúa este hilo; NO vuelvas a saludar ni reinicies, "
+                   "responde a lo último que dijo el usuario):\n" + "\n".join(lines))
+    messages = [{"role": "system", "content": system_base + context}]
+    for m in recent:
+        messages.append({"role": m["role"], "content": m.get("content") or ""})
     messages.append({"role": "user", "content": user_text})
 
-    for _ in range(4):
-        resp = await client.chat.completions.create(
-            model=OPENAI_OWN_MODEL, messages=messages, tools=TOOLS, tool_choice="auto",
-        )
-        msg = resp.choices[0].message
-        tcs = msg.tool_calls or []
-        if not tcs:
-            return {"reply": (msg.content or "").strip(), "pending": None}
-        write = next((tc for tc in tcs if tc.function.name in WRITE_TOOLS), None)
-        if write:
-            args = _safe_json(write.function.arguments)
-            return {"reply": confirm_summary(write.function.name, args, lang),
-                    "pending": {"name": write.function.name, "arguments": args}}
-        messages.append(msg)
-        for tc in tcs:
-            res = await read_dispatch(tc.function.name, _safe_json(tc.function.arguments))
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(res)})
+    try:
+        for _ in range(4):
+            resp = await client.chat.completions.create(
+                model=OPENAI_OWN_MODEL, messages=messages, tools=TOOLS, tool_choice="auto",
+            )
+            msg = resp.choices[0].message
+            tcs = msg.tool_calls or []
+            if not tcs:
+                return {"reply": (msg.content or "").strip(), "pending": None}
+            write = next((tc for tc in tcs if tc.function.name in WRITE_TOOLS), None)
+            if write:
+                args = _safe_json(write.function.arguments)
+                return {"reply": confirm_summary(write.function.name, args, lang),
+                        "pending": {"name": write.function.name, "arguments": args}}
+            messages.append(msg)
+            for tc in tcs:
+                res = await read_dispatch(tc.function.name, _safe_json(tc.function.arguments))
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(res)})
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"assistant _run_openai failed (model={OPENAI_OWN_MODEL}): {e!r}")
+        raise
     return {"reply": "", "pending": None}
 
 
