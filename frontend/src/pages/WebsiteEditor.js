@@ -22,7 +22,7 @@ const SECTION_KEYS = ["services", "events", "solutions", "samples", "products", 
 const COLORS = ["#007AFF", "#1D4ED8", "#0EA5E9", "#10B981", "#2F5233", "#F97316", "#FF3B30", "#7C3AED", "#0A0A0A"];
 const TABS = ["crear", "secciones", "diseno", "funciones", "publicar"];
 const TAB_META = {
-  crear: { es: "Crear con IA", en: "AI Kickoff", icon: Sparkles },
+  crear: { es: "Fotos e idiomas", en: "Photos & Languages", icon: ImagePlus },
   secciones: { es: "Secciones del sitio", en: "Site Sections", icon: Layers },
   diseno: { es: "Diseño", en: "Design", icon: Palette },
   funciones: { es: "Funciones", en: "Features", icon: Sliders },
@@ -50,7 +50,7 @@ export default function WebsiteEditor() {
   const [w, setW] = useState(null);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [generating, setGenerating] = useState(false); // eslint-disable-line no-unused-vars
   const [stocking, setStocking] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -106,39 +106,6 @@ export default function WebsiteEditor() {
     about_photo_ids: Array.isArray(w.about_photo_ids) ? w.about_photo_ids : [],
     services: Array.isArray(w.services) ? w.services : [],
   });
-
-  const generate = async () => {
-    setGenerating(true);
-    try {
-      const { data } = await api.post("/website/ai-generate", slotState());
-      const ph = data.photos || {};
-      patch({
-        headline: data.headline || w.headline,
-        subheadline: data.subheadline || w.subheadline,
-        about: data.about || w.about,
-        how_it_works: Array.isArray(data.how_it_works) ? data.how_it_works : w.how_it_works,
-        why_us: Array.isArray(data.why_us) ? data.why_us : w.why_us,
-        faqs: Array.isArray(data.faqs) ? data.faqs : w.faqs,
-        areas: Array.isArray(data.areas) ? data.areas : w.areas,
-        seo_title: data.seo_title || w.seo_title,
-        seo_description: data.seo_description || w.seo_description,
-        // Auto-placed stock photos (from backend) take priority; else AI-suggested services if the site had none.
-        services: (Array.isArray(ph.services) && ph.services.length)
-          ? ph.services
-          : ((Array.isArray(data.services) && data.services.length && (!w.services || w.services.length === 0)) ? data.services : w.services),
-        ...(ph.hero_photo_id ? { hero_photo_id: ph.hero_photo_id } : {}),
-        ...(ph.why_photo_id ? { why_photo_id: ph.why_photo_id } : {}),
-        ...(ph.band_photo_id ? { band_photo_id: ph.band_photo_id } : {}),
-        ...(Array.isArray(ph.about_photo_ids) ? { about_photo_ids: ph.about_photo_ids } : {}),
-        ...(ph.team_photo_id ? { team_photo_id: ph.team_photo_id } : {}),
-      });
-      // Refresh the gallery so the new stock photos show up in the pickers.
-      api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
-      toast.success(t("website.aiDone"));
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || t("website.aiError"));
-    } finally { setGenerating(false); }
-  };
 
   const stockPhotos = async () => {
     setStocking(true);
@@ -507,6 +474,17 @@ export default function WebsiteEditor() {
   const listDel = (key, idx) => patch({ [key]: (w[key] || []).filter((_, i) => i !== idx) });
   const areasSet = (idx, val) => { const arr = [...(w.areas || [])]; arr[idx] = val; patch({ areas: arr }); };
 
+  // How many website photo slots are still empty (motivates the one-tap fill).
+  const emptyPhotoCount = (() => {
+    let n = 0;
+    if (!w.hero_photo_id) n++;
+    if (!w.why_photo_id) n++;
+    if (!w.band_photo_id) n++;
+    if (!(Array.isArray(w.about_photo_ids) && w.about_photo_ids.length)) n++;
+    (Array.isArray(w.services) ? w.services : []).forEach((s) => { if (!(s && s.image_id)) n++; });
+    return n;
+  })();
+
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-24" data-testid="website-editor">
       {/* Sticky header: save + section tabs */}
@@ -545,54 +523,51 @@ export default function WebsiteEditor() {
         </div>
       </div>
 
-      {/* AI Generate */}
+      {/* Site photos (primary) + languages */}
       {tab === "crear" && (
-      <Card className="border-0 shadow-none p-5 bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
-        <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-none"><Sparkles className="w-5 h-5" /></div>
-          <div className="min-w-0 flex-1">
-            <div className="font-bold text-lg">{t("website.aiTitle")}</div>
-            <p className="text-sm text-white/85 mt-0.5">{t("website.aiDesc")}</p>
-            <div className="mb-3">
-              <div className="text-xs font-semibold text-white/90 mb-1.5">{t("website.briefLabel")}</div>
-              <textarea value={w.ai_brief || ""} onChange={(e) => patch({ ai_brief: e.target.value })} onBlur={() => save(pick(w))} placeholder={t("website.briefPh")} data-testid="website-ai-brief"
-                className="w-full min-h-[110px] p-4 rounded-xl bg-white/15 border border-white/30 text-white placeholder-white/50 outline-none focus:bg-white/20 text-sm" />
-            </div>
-            <div className="mt-4 mb-1">
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/90 mb-1.5"><Instagram className="w-4 h-4" /> {t("website.igLabel")}</div>
-              <input value={w.instagram_url || ""} onChange={(e) => patch({ instagram_url: e.target.value })} onBlur={() => save(pick(w))} placeholder="https://instagram.com/negocio" data-testid="website-instagram-url"
-                className="w-full h-11 px-4 rounded-xl bg-white/15 border border-white/30 text-white placeholder-white/50 outline-none focus:bg-white/20 text-sm" />
-              <p className="text-[11px] text-white/70 mt-1">{t("website.igHint")}</p>
-            </div>
-            <Button onClick={generate} disabled={generating} data-testid="website-ai-generate"
-              className="mt-1 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto">
-              {generating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.aiWorking")}</> : <><Sparkles className="w-4 h-4 mr-2" /> {t("website.aiBtn")}</>}
-            </Button>
-            <div className="mt-3">
-              <Button onClick={stockPhotos} disabled={stocking} variant="outline" data-testid="website-stock-photos"
-                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
-                {stocking ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.stockWorking")}</> : <><ImagePlus className="w-4 h-4 mr-2" /> {t("website.stockBtn")}</>}
+      <div className="space-y-4" data-testid="crear-tab">
+        {/* Hero: one-tap fill all photos */}
+        <Card className="border-0 shadow-sm p-6 bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-none"><ImagePlus className="w-6 h-6" /></div>
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-lg">{isEs ? "Fotos del sitio" : "Site photos"}</div>
+              <p className="text-sm text-white/85 mt-0.5">
+                {isEs
+                  ? "Llena de una sola vez todos los espacios de fotos vacíos con imágenes de tu oficio: portada, galería, \u201cpor qué elegirnos\u201d, el banner, TODOS tus servicios y el fondo de tu tarjeta digital. Nunca reemplaza las que tú subiste."
+                  : "Fill every empty photo slot at once with images from your trade: hero, gallery, \u201cwhy us\u201d, the banner, ALL your services and your digital card background. It never replaces the ones you uploaded."}
+              </p>
+              <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold bg-white/15 rounded-full px-3 py-1" data-testid="empty-photos-count">
+                {emptyPhotoCount > 0
+                  ? (isEs ? `Tienes ${emptyPhotoCount} espacio${emptyPhotoCount === 1 ? "" : "s"} de foto por llenar` : `You have ${emptyPhotoCount} photo slot${emptyPhotoCount === 1 ? "" : "s"} to fill`)
+                  : (isEs ? "Todas tus fotos están puestas ✓" : "All your photos are set ✓")}
+              </div>
+              <Button onClick={stockPhotos} disabled={stocking} data-testid="website-stock-photos"
+                className="mt-4 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto px-6 block">
+                {stocking ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Buscando fotos…" : "Finding photos…"}</> : <><Sparkles className="w-4 h-4 mr-2" /> {isEs ? "Rellenar todas las fotos" : "Fill all photos"}</>}
               </Button>
-              <p className="text-[11px] text-white/70 mt-1">{t("website.stockHint")}</p>
-            </div>
-            <div className="mt-3 pt-3 border-t border-white/20">
-              <p className="text-xs text-white/80 mb-2">{t("website.transDesc")}</p>
-              <Button onClick={translateEs} disabled={translating} variant="outline" data-testid="website-translate-es"
-                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
-                {translating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🌐 {t("website.transBtn")}{w?.content_es ? " ✓" : ""}</>}
-              </Button>
-              <Button onClick={translateEn} disabled={translatingEn} variant="outline" data-testid="website-translate-en"
-                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0">
-                {translatingEn ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🇺🇸 {t("website.transEnBtn")}</>}
-              </Button>
-              <Button onClick={localizeImages} disabled={localizing} variant="outline" data-testid="website-localize-images"
-                className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0">
-                {localizing ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Guardando imágenes…</> : <>💾 Guardar imágenes localmente</>}
-              </Button>
+              <p className="text-[11px] text-white/70 mt-2">{isEs ? "Toca de nuevo si quieres otras fotos. Puedes subir las tuyas cuando quieras un toque personal." : "Tap again for different photos. Upload your own anytime for a personal touch."}</p>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        {/* Language versions + local save */}
+        <Card className="border border-slate-200 shadow-none p-5">
+          <div className="font-semibold text-sm text-slate-800">{isEs ? "Idioma e imágenes" : "Language & images"}</div>
+          <p className="text-xs text-slate-500 mt-0.5 mb-3">{isEs ? "Agrega una versión en otro idioma para que tus visitantes puedan cambiarlo." : "Add another language version so visitors can switch."}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={translateEs} disabled={translating} variant="outline" data-testid="website-translate-es" className="rounded-xl h-10 font-semibold text-sm">
+              {translating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🌐 {t("website.transBtn")}{w?.content_es ? " ✓" : ""}</>}
+            </Button>
+            <Button onClick={translateEn} disabled={translatingEn} variant="outline" data-testid="website-translate-en" className="rounded-xl h-10 font-semibold text-sm">
+              {translatingEn ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("website.transWorking")}</> : <>🇺🇸 {t("website.transEnBtn")}</>}
+            </Button>
+            <Button onClick={localizeImages} disabled={localizing} variant="outline" data-testid="website-localize-images" className="rounded-xl h-10 font-semibold text-sm">
+              {localizing ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Guardando imágenes…" : "Saving images…"}</> : <>💾 {isEs ? "Guardar imágenes localmente" : "Save images locally"}</>}
+            </Button>
+          </div>
+        </Card>
+      </div>
       )}
 
       {/* Publish + link */}

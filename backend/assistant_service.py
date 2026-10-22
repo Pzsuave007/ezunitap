@@ -57,7 +57,7 @@ WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upse
                "update_contact_links", "create_client", "create_invoice", "record_payment",
                "toggle_website_section", "update_website_photo", "update_website_text", "update_website_color",
                "add_faq", "add_gallery_photo", "add_product", "create_social_post",
-               "update_cover_photo", "remove_service", "send_invoice"}
+               "update_cover_photo", "remove_service", "send_invoice", "fill_website_photos"}
 
 TOOLS = [
     {"type": "function", "function": {
@@ -218,6 +218,11 @@ TOOLS = [
             "image_id": {"type": "string", "description": "The image_id of a photo the user attached (optional)."},
         }, "required": ["name"]},
     }},
+    {"type": "function", "function": {
+        "name": "fill_website_photos",
+        "description": "Automatically fill the EMPTY photo slots across the whole website (hero/main banner, About Us, Why-choose-us, the CTA band and EVERY service) AND the digital card background with professional stock photos related to the owner's trade. Never replaces a photo the owner uploaded. Use this whenever the user asks to fill all the photos, auto-add photos, put pictures on the site, or make the site/card look complete with images.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
     # ---- Invoicing ----
     {"type": "function", "function": {
         "name": "get_pending_payments",
@@ -318,7 +323,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "Hablas claro y sencillo, sin tecnicismos, en español. "
             "Puedes HACER cosas por el usuario usando tus herramientas en las 4 áreas de su panel: "
             "(1) Tarjeta digital: cambiar foto, portada, logo, datos, eslogan, servicios (agregar/quitar), redes/horario, ver vistas y leads. "
-            "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
+            "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), RELLENAR AUTOMÁTICAMENTE todas las fotos que faltan con fotos de stock de su oficio (incluido el fondo de la tarjeta digital), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
             "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
             "(4) Marketing: listar plantillas y CREAR posts para redes con la foto que suba el usuario (de su trabajo o productos). "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
@@ -341,7 +346,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "Speak plainly, no jargon, in English. "
         "You can DO things for the user with your tools across the 4 areas of their dashboard: "
         "(1) Digital card: change photo, cover, logo, business info, tagline, services (add/remove), contact links/hours, view visits and leads. "
-        "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
+        "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), AUTO-FILL every missing photo with trade-relevant stock photos (including the digital card background), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
         "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
         "(4) Marketing: list templates and CREATE social posts using a photo the user uploads (their work or products). "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
@@ -410,6 +415,13 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
     if name == "add_product":
         return (f"Voy a agregar el producto \"{args.get('name','')}\" a tu sitio. ¿Confirmas?") if es \
             else (f"I'll add the product \"{args.get('name','')}\" to your site. Confirm?")
+    if name == "fill_website_photos":
+        return ("Voy a rellenar con fotos profesionales de tu oficio todos los espacios vacíos de tu sitio "
+                "(portada, Sobre Nosotros, \u201cpor qué elegirnos\u201d, el banner y todos tus servicios) y el fondo de tu "
+                "tarjeta digital. No reemplazaré las fotos que tú subiste. ¿Confirmas?") if es \
+            else ("I'll fill every empty photo slot on your site (hero, About Us, why-us, the CTA band and all your "
+                  "services) and your digital card background with professional photos from your trade. I won't "
+                  "replace photos you uploaded. Confirm?")
     if name == "create_client":
         return (f"Voy a agregar al cliente \"{args.get('name','')}\". ¿Confirmas?") if es \
             else (f"I'll add the client \"{args.get('name','')}\". Confirm?")

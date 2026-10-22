@@ -5114,13 +5114,10 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
                     to_delete.append(w["band_photo_id"])
                 update["band_photo_id"] = nid
 
-    # Per-service images (own search per service name; cap 6)
+    # Per-service images (own search per service name; fill ALL services)
     services = [dict(s) if isinstance(s, dict) else {"name": str(s)} for s in (w.get("services") or [])]
     svc_changed = False
-    filled_svc = 0
     for s in services:
-        if filled_svc >= 6:
-            break
         if not await _should_fill(s.get("image_id")):
             continue
         name = (s.get("name") or "").strip()
@@ -5136,15 +5133,40 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
                 to_delete.append(s["image_id"])
             s["image_id"] = nid
             svc_changed = True
-            filled_svc += 1
     if svc_changed:
         update["services"] = services
+
+    # Digital card background (cover) — trade-relevant, same safe rule as the
+    # website slots: never overwrite the owner's own upload; only fill when empty
+    # or (on refresh) replace a photo we auto-placed. Written to db.cards here.
+    card_cover_nid = None
+    try:
+        prim = await _resolve_card(user_id, None)
+    except Exception:  # noqa: BLE001
+        prim = None
+    if prim and await _should_fill(prim.get("cover_photo_id")):
+        q = pexels_service.trade_query(business_type)
+        urls = await pexels_service.search_photos(
+            q, per_page=3, orientation="landscape",
+            page=(random.randint(1, 2) if refresh else 1),
+        )
+        url = urls[0] if urls else _next_url()
+        if url:
+            nid = await _store_stock_url(user_id, url)
+            if nid:
+                cover = prim.get("cover_photo_id")
+                if cover and await _is_stock_photo(cover):
+                    to_delete.append(cover)
+                await db.cards.update_one({"id": prim["id"]}, {"$set": {"cover_photo_id": nid, "updated_at": _now_iso()}})
+                card_cover_nid = nid
 
     if update:
         update["updated_at"] = _now_iso()
         await db.websites.update_one({"user_id": user_id}, {"$set": update})
     if to_delete:
         await db.photos.update_many({"id": {"$in": to_delete}}, {"$set": {"is_deleted": True}})
+    if card_cover_nid:
+        update["card_cover_photo_id"] = card_cover_nid  # reported only; not a website field
     return update
 
 
@@ -6533,6 +6555,19 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         await db.websites.update_one({"user_id": user_id}, {"$set": {"accent_color": color, "updated_at": _now_iso()}})
         return (f"¡Listo! Cambié el color principal de tu sitio a {color}. Refresca la página para verlo.") if es \
             else (f"Done! I changed your website's main color to {color}. Refresh to see it.")
+    if name == "fill_website_photos":
+        w = await _get_or_init_website(user_id)
+        try:
+            update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"assistant fill_website_photos failed: {e!r}")
+            raise HTTPException(502, "No pude traer las fotos en este momento. Inténtalo de nuevo en un momento." if es else "I couldn't fetch the photos right now. Try again in a moment.")
+        n = len([k for k in update if k not in ("updated_at",)])
+        if n:
+            return ("¡Listo! Rellené las fotos que faltaban en tu sitio y el fondo de tu tarjeta con imágenes de tu oficio. Refresca la página para verlas.") if es \
+                else ("Done! I filled the missing photos on your site and your card background with images from your trade. Refresh to see them.")
+        return ("Tu sitio ya tenía todas sus fotos puestas, así que no cambié nada. Si quieres fotos diferentes, sube las tuyas o dime qué sección cambiar.") if es \
+            else ("Your site already had all its photos, so I didn't change anything. For different photos, upload your own or tell me which section to change.")
     if name == "add_faq":
         q = str(args.get("question", "")).strip()[:300]
         a = str(args.get("answer", "")).strip()[:1500]
@@ -10711,6 +10746,14 @@ async def onboarding_complete(payload: dict = Body(...), user_id: str = Depends(
             {"user_id": user_id},
             {"$set": {"team_photo_id": ppid, "about_photo_ids": [ppid], "updated_at": now}},
         )
+        # Connect the SAME personal photo to the digital card's profile photo, so
+        # the card and the website's About section show the owner consistently.
+        try:
+            prim = await _resolve_card(user_id, None)
+            if prim and not prim.get("profile_photo_id"):
+                await db.cards.update_one({"id": prim["id"]}, {"$set": {"profile_photo_id": ppid, "updated_at": now}})
+        except Exception as e:  # noqa: BLE001
+            logger.warning("onboarding: link personal photo to card failed: %r", e)
 
     # Build the ENTIRE website (content + design + stock photos + publish) so the
     # owner finishes onboarding with a finished, live site. Best-effort.

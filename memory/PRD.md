@@ -1535,3 +1535,17 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Resultado: agregar una pantalla nueva = UNA línea en pages.json y el bot ya la conoce (navegar/guiar) al instante. Páginas nuevas cubiertas: contratos(agreements), embed, reportes, mensajes, ajustes, precios, además de las que ya existían.
 - Verificado: backend curl (facturas→invoices, reseñas→reviews, contratos→agreements, calendar EN→calendar) y UI (screenshot: "donde veo mis citas?" → botón "Open Appointments"). Build regenerado + parche oxlint no-undef aplicado + staged.
 - EJECUCIÓN de cambios: se mantiene el modelo de herramientas seguras con confirmación (WRITE_TOOLS). NO se habilitó ejecución libre/autónoma por riesgo en datos reales.
+
+## [Jun 2026] Pestaña "Fotos e idiomas" (ex "Crear con IA") + fotos stock a tarjeta + robot llena fotos
+- Petición: dejar la pestaña "Crear con IA" del editor 100x mejor. El onboarding ya crea servicios/soluciones/contenido, así que el reescritor de IA era redundante. El botón de fotos de stock "antes funcionaba y ahora no" y debía llenar TODAS las fotos de una vez. Además: conectar foto personal del onboarding a la tarjeta, y que el ROBOT pueda ejecutar el llenado de fotos.
+- DECISIONES del usuario (ask_human): fotos = acción principal; QUITAR por completo "Reescribir todo con IA" de esta pestaña (el AI vive en los módulos).
+- Frontend WebsiteEditor.js:
+  - Pestaña "crear" renombrada a "Fotos e idiomas" / "Photos & Languages" (icono ImagePlus).
+  - Rediseñada: tarjeta HERO azul con botón primario "Rellenar todas las fotos" + badge de estado (emptyPhotoCount: cuántos slots vacíos) + tarjeta secundaria "Idioma e imágenes" (traducir ES/EN, guardar imágenes locales). Se eliminó del UI el brief de IA, el link de Instagram y "Generar contenido" (función generate() y estado quedaron inertes con eslint-disable; campos ai_brief/instagram_url siguen en el modelo de datos).
+- Backend _fill_website_stock_photos (compartida por el botón Y el onboarding _build_full_website):
+  - Quitado el límite de 6 servicios → ahora llena TODOS los servicios sin foto.
+  - AÑADIDO: llena el FONDO de la tarjeta digital (cards.cover_photo_id) con foto landscape del oficio. Misma regla segura: nunca pisa subidas del dueño; en refresh reemplaza solo stock que colocamos. Reporta card_cover_photo_id (no se escribe en websites).
+- Backend onboarding_complete: la foto personal (personal_photo_id) ahora también se conecta a cards.profile_photo_id (solo si la tarjeta no tiene ya una), además de team_photo_id/about_photo_ids del sitio.
+- Robot/asistente: nueva WRITE TOOL `fill_website_photos` (assistant_service.py TOOLS + WRITE_TOOLS + confirm_summary; prompts ES/EN actualizados). Ejecutor en server.py _assistant_apply llama a _fill_website_stock_photos(refresh=True) con confirmación. Verificado por curl: chat→needs_confirmation(action=fill_website_photos)→execute = "¡Listo!".
+- NOTA producción: el botón funcionaba en preview (filled/ok). El fallo del usuario es casi seguro deploy viejo (backend/build). Requiere PEXELS_API_KEY presente en el .env de producción.
+- Verificado: python (cover fill real + restaurado, is_stock true), screenshot (pestaña rediseñada), curl (robot fill flow). Build regenerado + parche oxlint + staged.
