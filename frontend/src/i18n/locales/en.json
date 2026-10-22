@@ -2775,6 +2775,9 @@
       "publishError": "Couldn't publish",
       "badgeRequested": "Badge requested — we'll review it",
       "loadError": "Couldn't load your profile"
-    }
+    },
+    "signupTitle": "Claim your free listing",
+    "signupDesc": "Create your account and get listed free in the directory. Local customers will find you and can request a quote.",
+    "signupBadge": "Directory listing · Free"
   }
 }

@@ -312,7 +312,8 @@ def build_lead_email(*, lang: str, business_name: str, lead: dict, cta_url: str)
 
 def build_directory_lead_email(*, lang: str, business_name: str, lead: dict,
                                cta_url: str, directory_name: str = "Pro Finder",
-                               upsell: bool = True, upsell_url: str = ""):
+                               upsell: bool = True, upsell_url: str = "",
+                               sponsor_name: str = ""):
     """Lead alert for a contact that came in through the public directory.
     When `upsell` is True (free / directory-only owners), appends a promo block
     selling the full UniTech toolset so the lead converts into a paying job."""
@@ -333,10 +334,25 @@ def build_directory_lead_email(*, lang: str, business_name: str, lead: dict,
         cta, footer = "Ver sus datos en tu CRM", f"Apareces gratis en {directory_name}, con tecnología de UniTech."
 
     promo = ""
+    if sponsor_name:
+        if lang == "en":
+            sp_txt = (f"Reminder: this lead came through {directory_name}. "
+                      f"Keep winning work like this by using <strong>{sponsor_name}</strong> products on the job.")
+        else:
+            sp_txt = (f"Recordatorio: este lead llegó por {directory_name}. "
+                      f"Sigue ganando trabajos como este usando productos <strong>{sponsor_name}</strong> en la obra.")
+        promo += (
+            '<tr><td style="padding:16px 32px 0;">'
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+            'style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 18px;">'
+            '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#9a3412;line-height:1.5;">'
+            f'🎨 {sp_txt}'
+            '</td></tr></table></td></tr>'
+        )
     if upsell:
         url = upsell_url or cta_url
         if lang == "en":
-            promo = (
+            promo += (
                 '<tr><td style="padding:16px 32px 0;">'
                 '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
                 f'style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px 18px;">'
@@ -350,7 +366,7 @@ def build_directory_lead_email(*, lang: str, business_name: str, lead: dict,
                 '</td></tr></table></td></tr>'
             )
         else:
-            promo = (
+            promo += (
                 '<tr><td style="padding:16px 32px 0;">'
                 '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
                 f'style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:16px 18px;">'

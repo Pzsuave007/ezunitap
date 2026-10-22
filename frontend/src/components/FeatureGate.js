@@ -32,12 +32,13 @@ export function UpgradeWall({ feature, locked }) {
         <Lock className="w-7 h-7" />
       </div>
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {locked ? "Tu prueba gratis terminó" : `Desbloquea ${info.label}`}
+        {locked ? `Activa ${info.label}` : `Desbloquea ${info.label}`}
       </h2>
       <p className="text-slate-500 mt-2 leading-relaxed">
+        {`Aquí tienes ${info.desc}. `}
         {locked
-          ? "Elige un plan para seguir usando UniTech y todas tus herramientas."
-          : `Para usar ${info.desc}, activa el plan ${info.label} o el Bundle completo.`}
+          ? "Tu prueba gratis terminó — suscríbete a un plan para activar esta herramienta."
+          : `Activa el plan ${info.label} o el Bundle completo para empezar a usarla.`}
       </p>
       <Button
         data-testid="upgrade-wall-cta"

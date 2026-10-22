@@ -11908,11 +11908,17 @@ async def _notify_owner_email(user_id: str, event: str, ctx: dict) -> None:
             )
         elif event == "directory_lead":
             upsell = not payments_service.is_paying_subscriber(user)
+            try:
+                _dcfg = await _directory_config()
+            except Exception:
+                _dcfg = {}
+            _sponsor = (_dcfg.get("sponsor_name") or "") if _dcfg.get("sponsor_enabled") else ""
             subject, html = email_service.build_directory_lead_email(
                 lang=lang, business_name=biz, lead=ctx,
                 cta_url=f"{APP_BASE_URL}/clientes",
                 directory_name=ctx.get("source_label") or "Pro Finder",
                 upsell=upsell, upsell_url=f"{APP_BASE_URL}/precios",
+                sponsor_name=_sponsor,
             )
         elif event == "payment":
             subject, html = email_service.build_payment_email(

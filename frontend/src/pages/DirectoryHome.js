@@ -161,7 +161,7 @@ export default function DirectoryHome() {
         <div className="mt-12 rounded-2xl p-6 text-center text-white" style={{ background: primary }} data-testid="directory-join-cta">
           <h2 className="font-heading text-xl font-bold">{t("directory.ctaTitle")}</h2>
           <p className="text-sm opacity-90 mt-1 max-w-xl mx-auto">{t("directory.ctaDesc", { name: dirName })}</p>
-          <button onClick={() => navigate("/register")} data-testid="directory-join-btn"
+          <button onClick={() => navigate("/register?from=directory")} data-testid="directory-join-btn"
             className="mt-4 inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-5 py-2.5 rounded-xl">
             <Phone className="w-4 h-4" /> {t("directory.ctaButton")}
           </button>

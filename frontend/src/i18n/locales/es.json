@@ -2776,6 +2776,9 @@
       "publishError": "No se pudo publicar",
       "badgeRequested": "Sello solicitado — lo revisaremos",
       "loadError": "No se pudo cargar tu ficha"
-    }
+    },
+    "signupTitle": "Reclama tu ficha gratis",
+    "signupDesc": "Crea tu cuenta y aparece gratis en el directorio. Los clientes de tu zona te encontrarán y podrán pedirte cotización.",
+    "signupBadge": "Ficha en el directorio · Gratis"
   }
 }

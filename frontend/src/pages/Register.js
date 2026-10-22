@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hammer, Loader2, Gift } from "lucide-react";
+import { Hammer, Loader2, Gift, Store } from "lucide-react";
 import { toast } from "sonner";
 import { fbTrack, fbTrackCustom } from "@/lib/fbpixel";
 import api from "@/lib/api";
@@ -18,6 +18,7 @@ export default function Register() {
   const [params] = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const selectedPlan = params.get("plan") || "";
+  const fromDirectory = params.get("from") === "directory";
   const planLabel = selectedPlan ? t(`auth.register.plans.${selectedPlan}`, { defaultValue: "" }) : "";
   const [form, setForm] = useState({
     business_name: "",
@@ -66,7 +67,7 @@ export default function Register() {
           navigate(`/precios?plan=${planParam}&billing=${billingParam}`);
         }
       } else {
-        navigate("/");
+        navigate(fromDirectory ? "/directorio-ficha" : "/");
       }
     } catch (err) {
       toast.error(err?.response?.data?.detail || t("auth.register.error"));
@@ -101,13 +102,21 @@ export default function Register() {
           </div>
         )}
 
-        <h2 className="font-heading text-3xl font-bold tracking-tight">{t("auth.register.createAccount")}</h2>
+        <h2 className="font-heading text-3xl font-bold tracking-tight">{fromDirectory ? t("directory.signupTitle") : t("auth.register.createAccount")}</h2>
+        {fromDirectory && (
+          <div data-testid="directory-signup-banner" className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold mb-2">
+              <Store className="w-3.5 h-3.5" /> {t("directory.signupBadge")}
+            </div>
+            <p>{t("directory.signupDesc")}</p>
+          </div>
+        )}
         {selectedPlan && planLabel && (
           <div data-testid="plan-banner" className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
             <span className="font-semibold">{t("auth.register.planChosen", { plan: planLabel })}</span> {t("auth.register.planContinue")}
           </div>
         )}
-        {!inviteToken && (
+        {!inviteToken && !fromDirectory && (
           <div
             data-testid="trial-badge"
             className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold"
@@ -115,7 +124,7 @@ export default function Register() {
             <Gift className="w-3.5 h-3.5" /> {t("auth.register.trialBadge")}
           </div>
         )}
-        <p className="text-slate-500 mt-2 text-sm">{t("auth.register.trialSubtitle")}</p>
+        <p className="text-slate-500 mt-2 text-sm">{fromDirectory ? "" : t("auth.register.trialSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           <div>
