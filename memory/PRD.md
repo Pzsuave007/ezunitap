@@ -1589,3 +1589,14 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Fix 1 (seguro en /assistant/chat): si el modelo propone create_social_post con design_mode template/ai_pick y NO hay foto (ni adjunta ni en sesión), NO se crea pending; se responde pidiendo la foto. Evita el callejón sin salida del confirm vacío, sin importar el modelo. En preview (gpt-5.4) ya pedía foto solo; el seguro cubre modelos que no lo hacen (gpt-6-luna).
 - Fix 2 (brevedad): prompts ES/EN ahora exigen "sé MUY breve, 1-2 frases, no repitas opciones/listas ya dichas, nada de párrafos largos".
 - Verificado: con foto + opción 2 sigue proponiendo create_social_post (pending ok, confirm 150 chars). Backend only; el build de frontend ya estaba staged. Requiere REDEPLOY.
+
+## [Jun 2026] RAÍZ REAL del bug "No hay ninguna acción pendiente" en producción → sesiones DUPLICADAS
+- Diagnóstico sin login en el servidor del usuario (/opt/ezunitap/backend): código ya actualizado (SI), modelo gpt-6-luna, workers=1. Punto clave (Mongo DB_NAME=unitap_prod): había MÚLTIPLES documentos en `assistant_sessions` con el MISMO `id` (3 copias de 6ddb3556...): una con `pending` guardado y dos con `pending: None`.
+- Causa: `/assistant/execute` hacía `find_one({id,user_id})` y Mongo devolvía CUALQUIER duplicado — a menudo uno con `pending: None` → HTTP 400 "No hay ninguna acción pendiente". En preview nunca pasó porque no había duplicados. Esa era la única diferencia preview vs prod.
+- Fix (backend, server.py):
+  1) `_dedupe_assistant_sessions()` en startup: agrupa por (user_id, id), conserva el doc con pending (o el updated_at más nuevo), borra el resto, y crea índice ÚNICO (user_id,id). Corre automático en cada arranque → limpia los duplicados existentes al desplegar.
+  2) Creación de sesión en /chat pasó de insert_one a upsert ($setOnInsert) → una carrera ya no puede crear duplicados.
+  3) Todos los writes de sesión (/chat final, /execute, afirmación/negación tipeada) ahora filtran por {id, user_id} consistente con el índice único.
+- Fix adicional (ya aplicado antes en esta sesión): si el usuario escribe "sí/ok/dale" o "no/cancela" EN TEXTO en vez de tocar el botón, /chat ahora ejecuta o cancela el pending directamente, en vez de perderlo.
+- Verificado en preview: índice único creado (user_id_1_id_1 unique=True); flujo completo pedir→opción 2→subir foto→confirmar (botón) = HTTP 200 y post creado; confirmar escribiendo "si" también crea el post.
+- SOLO BACKEND. No requiere rebuild de frontend. Requiere REDEPLOY (Save to Github + `cd /home/ezunitap/repo && git pull && bash deploy.sh`). El dedupe limpia los duplicados al reiniciar.

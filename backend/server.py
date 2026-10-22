@@ -6801,7 +6801,9 @@ async def assistant_chat(
     sess = await db.assistant_sessions.find_one({"id": session_id, "user_id": user_id}, {"_id": 0})
     if not sess:
         sess = {"id": session_id, "user_id": user_id, "messages": [], "pending": None, "created_at": _now_iso()}
-        await db.assistant_sessions.insert_one(dict(sess))
+        # Upsert (not insert) so a race can never create duplicate session docs.
+        await db.assistant_sessions.update_one(
+            {"id": session_id, "user_id": user_id}, {"$setOnInsert": sess}, upsert=True)
     user_text = (message or "").strip()
     # Accept one or many images (carousel / before-after).
     uploads = [f for f in (files or []) if f is not None]
@@ -6847,14 +6849,14 @@ async def assistant_chat(
             dmsgs = transcript + [{"role": "user", "content": (message or "").strip()},
                                   {"role": "assistant", "content": note}]
             await db.assistant_sessions.update_one(
-                {"id": session_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
+                {"id": session_id, "user_id": user_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
             return {"reply": note, "needs_confirmation": False, "action": None}
         if low in negate:
             cancel_msg = "Está bien, no haré ese cambio." if es_lang else "Okay, I won't make that change."
             dmsgs = transcript + [{"role": "user", "content": (message or "").strip()},
                                   {"role": "assistant", "content": cancel_msg}]
             await db.assistant_sessions.update_one(
-                {"id": session_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
+                {"id": session_id, "user_id": user_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
             return {"reply": cancel_msg, "needs_confirmation": False, "action": None}
 
     biz = await _business_name_for(user_id)
@@ -6881,7 +6883,7 @@ async def assistant_chat(
     if attached:
         set_fields["last_image_ids"] = image_ids
         set_fields["last_image_id"] = image_ids[-1]
-    await db.assistant_sessions.update_one({"id": session_id}, {"$set": set_fields})
+    await db.assistant_sessions.update_one({"id": session_id, "user_id": user_id}, {"$set": set_fields})
     return {"reply": result["reply"], "needs_confirmation": bool(pending), "action": (pending or {}).get("name")}
 
 
@@ -6893,7 +6895,7 @@ async def assistant_execute(payload: AssistantExecuteIn, user_id: str = Depends(
     note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es", sess.get("last_image_ids") or ([sess["last_image_id"]] if sess.get("last_image_id") else None))
     msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
     await db.assistant_sessions.update_one(
-        {"id": payload.session_id}, {"$set": {"messages": msgs[-40:], "pending": None, "updated_at": _now_iso()}})
+        {"id": payload.session_id, "user_id": user_id}, {"$set": {"messages": msgs[-40:], "pending": None, "updated_at": _now_iso()}})
     return {"reply": note, "done": True}
 
 
@@ -12847,12 +12849,42 @@ async def _seed_demo_template() -> None:
 
 
 
+async def _dedupe_assistant_sessions() -> None:
+    """Collapse duplicate assistant_sessions that share the same (user_id, id).
+
+    An older insert path could create more than one document per session. When
+    /assistant/execute then read the wrong duplicate (pending=None) it failed
+    with "No hay ninguna acción pendiente" (HTTP 400). Keep the best doc per key
+    (the one that holds a pending action, else the newest), delete the rest, and
+    enforce a unique index so duplicates can never come back.
+    """
+    docs = await db.assistant_sessions.find(
+        {}, {"_id": 1, "id": 1, "user_id": 1, "updated_at": 1, "pending": 1}).to_list(None)
+    groups: dict = {}
+    for d in docs:
+        groups.setdefault((d.get("user_id"), d.get("id")), []).append(d)
+    dups = []
+    for items in groups.values():
+        if len(items) <= 1:
+            continue
+        items.sort(key=lambda d: (1 if d.get("pending") else 0, d.get("updated_at") or ""), reverse=True)
+        dups.extend(d["_id"] for d in items[1:])
+    if dups:
+        await db.assistant_sessions.delete_many({"_id": {"$in": dups}})
+        logger.info(f"Deduped {len(dups)} duplicate assistant_sessions")
+    await db.assistant_sessions.create_index([("user_id", 1), ("id", 1)], unique=True)
+
+
 @app.on_event("startup")
 async def startup():
     try:
         storage_service.init_storage_at_startup()
     except Exception as e:
         logger.error(f"Storage init at startup failed: {e}")
+    try:
+        await _dedupe_assistant_sessions()
+    except Exception as e:
+        logger.error(f"assistant_sessions dedupe/index failed: {e!r}")
     try:
         await _seed_admin_from_env(
             "SUPER_ADMIN_EMAIL", "SUPER_ADMIN_PASSWORD",
