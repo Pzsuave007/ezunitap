@@ -6826,9 +6826,39 @@ async def assistant_chat(
                           f"Úsalas EN ORDEN para un post tipo carrusel o antes/después. Para create_social_post pasa el primer image_id en 'image_id'; el sistema usará todas.]")
     if not user_text:
         raise HTTPException(400, "Mensaje vacío")
+    es_lang = (lang or "es").lower().startswith("es")
+    transcript = sess.get("messages") or []
+
+    # If a confirmation is already pending and the user TYPES yes/no (instead of
+    # tapping the buttons — old clients, voice input, double-send, slow model),
+    # honor it directly. This guarantees a typed message can never silently wipe
+    # a pending action and leave /execute with nothing to do.
+    existing_pending = sess.get("pending")
+    if existing_pending and not attached:
+        low = re.sub(r"[^\wáéíóúñ ]", "", (message or "").strip().lower()).strip()
+        affirm = {"si", "sí", "si hazlo", "sí hazlo", "yes", "ok", "okay", "dale", "claro",
+                  "hazlo", "confirmo", "confirmar", "confirmado", "adelante", "va", "vale",
+                  "sip", "aja", "ajá", "de una", "hagalo", "hágalo", "sisi", "sí sí"}
+        negate = {"no", "nel", "nop", "nope", "cancela", "cancelar", "mejor no", "no gracias"}
+        if low in affirm:
+            note = await _assistant_apply(
+                user_id, existing_pending, lang,
+                sess.get("last_image_ids") or ([sess["last_image_id"]] if sess.get("last_image_id") else None))
+            dmsgs = transcript + [{"role": "user", "content": (message or "").strip()},
+                                  {"role": "assistant", "content": note}]
+            await db.assistant_sessions.update_one(
+                {"id": session_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
+            return {"reply": note, "needs_confirmation": False, "action": None}
+        if low in negate:
+            cancel_msg = "Está bien, no haré ese cambio." if es_lang else "Okay, I won't make that change."
+            dmsgs = transcript + [{"role": "user", "content": (message or "").strip()},
+                                  {"role": "assistant", "content": cancel_msg}]
+            await db.assistant_sessions.update_one(
+                {"id": session_id}, {"$set": {"messages": dmsgs[-40:], "pending": None, "updated_at": _now_iso()}})
+            return {"reply": cancel_msg, "needs_confirmation": False, "action": None}
+
     biz = await _business_name_for(user_id)
     sys_prompt = assistant_service.system_prompt(lang, biz)
-    transcript = sess.get("messages") or []
 
     async def read_dispatch(name, a):
         return await _assistant_read(user_id, name, a)
@@ -6837,7 +6867,6 @@ async def assistant_chat(
     pending = result.get("pending")
     # Safety net: a template/ai_pick post NEEDS a photo. If the model proposes it
     # without one, don't create a dead confirmation — ask for the photo instead.
-    es_lang = (lang or "es").lower().startswith("es")
     if pending and pending.get("name") == "create_social_post":
         pmode = (pending.get("arguments", {}).get("design_mode") or "").lower()
         has_photo = bool(image_ids) or bool(pending["arguments"].get("image_id")) or bool(sess.get("last_image_ids") or sess.get("last_image_id"))
