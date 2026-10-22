@@ -103,6 +103,9 @@ export default function DirectoryListing() {
               {(data.categories || []).map((c) => (
                 <span key={c} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{catLabel(c)}</span>
               ))}
+              {(data.custom_services || []).map((s) => (
+                <span key={s} className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{s}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -174,6 +177,7 @@ export default function DirectoryListing() {
                 className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none focus:border-emerald-400">
                 <option value="">{T("What do you need?", "¿Qué necesitas?")}</option>
                 {(data.categories || []).map((c) => <option key={c} value={catLabel(c)}>{catLabel(c)}</option>)}
+                {(data.custom_services || []).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} data-testid="listing-form-message"
                 placeholder={T("Tell them about your project…", "Cuéntale sobre tu proyecto…")} rows={3}

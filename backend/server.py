@@ -12744,6 +12744,7 @@ async def _get_or_init_directory_profile(user_id: str) -> dict:
         "user_id": user_id,
         "business_name": biz,
         "categories": [],
+        "custom_services": [],
         "phone": user.get("phone") or card.get("contact_phone") or "",
         "email": user.get("business_email") or user.get("email") or "",
         "city": "",
@@ -12771,6 +12772,7 @@ def _dir_public_view(prof: dict, full: bool = False) -> dict:
         "slug": prof.get("slug"),
         "business_name": prof.get("business_name"),
         "categories": prof.get("categories") or [],
+        "custom_services": prof.get("custom_services") or [],
         "city": prof.get("city") or "",
         "state": prof.get("state") or "",
         "service_area": prof.get("service_area") or "",
@@ -12793,6 +12795,7 @@ def _dir_public_view(prof: dict, full: bool = False) -> dict:
 class DirectoryProfileIn(BaseModel):
     business_name: Optional[str] = None
     categories: Optional[List[str]] = None
+    custom_services: Optional[List[str]] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     city: Optional[str] = None
@@ -12840,6 +12843,14 @@ async def update_directory_profile(payload: DirectoryProfileIn, user_id: str = D
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
     if "categories" in update:
         update["categories"] = [c for c in update["categories"] if c in _DIR_CAT_SLUGS][:6]
+    if "custom_services" in update:
+        seen, cleaned = set(), []
+        for s in update["custom_services"]:
+            s = (s or "").strip()[:40]
+            if s and s.lower() not in seen:
+                seen.add(s.lower())
+                cleaned.append(s)
+        update["custom_services"] = cleaned[:12]
     if "state" in update:
         update["state"] = (update["state"] or "").strip().upper()[:2]
     if "business_name" in update and update["business_name"].strip():
@@ -12931,7 +12942,8 @@ async def public_directory_search(
     if city:
         query["city"] = {"$regex": re.escape(city.strip()), "$options": "i"}
     if q:
-        query["business_name"] = {"$regex": re.escape(q.strip()), "$options": "i"}
+        rx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"business_name": rx}, {"custom_services": rx}]
     docs = await db.directory_profiles.find(query, {"_id": 0}).sort([("badge_status", -1), ("updated_at", -1)]).to_list(120)
     return {"results": [_dir_public_view(d, full=False) for d in docs], "count": len(docs)}
 

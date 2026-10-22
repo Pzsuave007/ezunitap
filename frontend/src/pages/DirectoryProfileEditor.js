@@ -28,6 +28,7 @@ export default function DirectoryProfileEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({});
+  const [svcInput, setSvcInput] = useState("");
   const heroRef = useRef(null);
   const logoRef = useRef(null);
   const galRef = useRef(null);
@@ -52,6 +53,7 @@ export default function DirectoryProfileEditor() {
         about: p.data.about || "",
         website_url: p.data.website_url || "",
         categories: p.data.categories || [],
+        custom_services: p.data.custom_services || [],
       });
       setCats(c.data.categories || []);
       setConfig(c.data.config || null);
@@ -70,6 +72,19 @@ export default function DirectoryProfileEditor() {
     if ((f.categories || []).length >= 6) { toast.error(T("Max 6 services", "Máximo 6 servicios")); return f; }
     return { ...f, categories: [...(f.categories || []), slug] };
   });
+
+  const addService = () => {
+    const v = svcInput.trim();
+    if (!v) return;
+    setForm((f) => {
+      const cur = f.custom_services || [];
+      if (cur.length >= 12) { toast.error(T("Max 12 services", "Máximo 12 servicios")); return f; }
+      if (cur.some((s) => s.toLowerCase() === v.toLowerCase())) return f;
+      return { ...f, custom_services: [...cur, v.slice(0, 40)] };
+    });
+    setSvcInput("");
+  };
+  const removeService = (s) => setForm((f) => ({ ...f, custom_services: (f.custom_services || []).filter((x) => x !== s) }));
 
   const save = async () => {
     setSaving(true);
@@ -236,6 +251,33 @@ export default function DirectoryProfileEditor() {
                 </button>
               );
             })}
+          </div>
+          <div className="mt-4">
+            <p className="text-xs text-slate-500 mb-2">{T("Add your own services (type and press Enter)", "Agrega tus propios servicios (escribe y presiona Enter)")}</p>
+            <div className="flex gap-2">
+              <Input
+                data-testid="directory-custom-service-input"
+                value={svcInput}
+                onChange={(e) => setSvcInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
+                placeholder={T("e.g. Cabinet refinishing", "ej. Pintura de gabinetes")}
+                className="rounded-xl"
+              />
+              <Button type="button" onClick={addService} data-testid="directory-custom-service-add"
+                variant="outline" className="rounded-xl flex-none px-4">{T("Add", "Agregar")}</Button>
+            </div>
+            {(form.custom_services || []).length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3" data-testid="directory-custom-services">
+                {(form.custom_services || []).map((s) => (
+                  <span key={s} className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-full text-sm font-medium" data-testid={`directory-custom-chip-${s}`}>
+                    {s}
+                    <button type="button" onClick={() => removeService(s)} className="text-emerald-500 hover:text-emerald-700">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
