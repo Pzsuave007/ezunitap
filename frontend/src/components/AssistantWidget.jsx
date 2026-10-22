@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
-import { Send, X, ImagePlus, Loader2, Check, Bot, ExternalLink } from "lucide-react";
+import { Send, X, ImagePlus, Loader2, Check, Bot, ExternalLink, Sparkles } from "lucide-react";
 import PAGES from "@/assistant/pages.json";
 
 function uuid() {
@@ -15,12 +15,16 @@ const PAGE_LINKS = Object.fromEntries(PAGES.map((p) => [p.key, p]));
 // Pull [[OPEN:key]] tags out of a reply → { text, links: [key,...] }
 function parseLinks(content) {
   const keys = [];
-  const text = (content || "").replace(/\[\[OPEN:([a-z]+)\]\]/gi, (_, k) => {
+  const images = [];
+  let postId = null;
+  let text = (content || "").replace(/\[\[OPEN:([a-z]+)\]\]/gi, (_, k) => {
     const key = k.toLowerCase();
     if (PAGE_LINKS[key] && !keys.includes(key)) keys.push(key);
     return "";
-  }).trim();
-  return { text, links: keys };
+  });
+  text = text.replace(/\[\[IMG:([^\]]+)\]\]/gi, (_, url) => { images.push(url.trim()); return ""; });
+  text = text.replace(/\[\[POST:([^\]]+)\]\]/gi, (_, id) => { postId = id.trim(); return ""; });
+  return { text: text.trim(), links: keys, images, postId };
 }
 
 // Minimal **bold** + newline renderer (replies are short, plain text).
@@ -47,7 +51,7 @@ export default function AssistantWidget() {
   });
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -81,16 +85,16 @@ export default function AssistantWidget() {
 
   const send = async () => {
     const text = input.trim();
-    if ((!text && !file) || busy) return;
-    const shownUser = text || (file ? T("📷 Attached image", "📷 Imagen adjunta") : "");
+    if ((!text && files.length === 0) || busy) return;
+    const shownUser = text || (files.length > 1 ? T(`📷 ${files.length} attached images`, `📷 ${files.length} imágenes adjuntas`) : T("📷 Attached image", "📷 Imagen adjunta"));
     setMessages((m) => [...m, { role: "user", content: shownUser }]);
     setInput(""); setBusy(true);
     const fd = new FormData();
     fd.append("session_id", sid);
     fd.append("message", text);
     fd.append("lang", lang);
-    if (file) fd.append("file", file);
-    setFile(null);
+    files.forEach((f) => fd.append("files", f));
+    setFiles([]);
     try {
       const { data } = await api.post("/assistant/chat", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
@@ -117,6 +121,18 @@ export default function AssistantWidget() {
     setPending(false);
     try { await api.post("/assistant/cancel", { session_id: sid, lang }); } catch { /* ignore */ }
     setMessages((m) => [...m, { role: "assistant", content: T("Okay, I won't make that change.", "Está bien, no haré ese cambio.") }]);
+  };
+
+  const postAction = async (action, postId) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/assistant/post-${action}`, { post_id: postId, session_id: sid, lang });
+      setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+    } catch (e) {
+      setMessages((m) => [...m, { role: "assistant", content: e?.response?.data?.detail || T("Something went wrong.", "Algo salió mal.") }]);
+    }
+    setBusy(false);
   };
 
   return (
@@ -210,12 +226,37 @@ export default function AssistantWidget() {
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-slate-50" data-testid="assistant-messages">
             {messages.map((m, i) => {
-              const parsed = m.role === "assistant" ? parseLinks(m.content) : { text: m.content, links: [] };
+              const parsed = m.role === "assistant" ? parseLinks(m.content) : { text: m.content, links: [], images: [], postId: null };
+              const BACKEND = process.env.REACT_APP_BACKEND_URL;
               return (
                 <div key={i} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                   <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : "bg-white border border-slate-200 text-slate-800 rounded-bl-md"}`}>
                     {renderText(parsed.text)}
                   </div>
+                  {parsed.images && parsed.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {parsed.images.map((u, idx) => (
+                        <img key={idx} src={`${BACKEND}${u}`} alt="post preview" data-testid="assistant-post-preview"
+                          className="w-40 rounded-xl border border-slate-200 shadow-sm" />
+                      ))}
+                    </div>
+                  )}
+                  {parsed.postId && (
+                    <div className="flex flex-wrap gap-2 mt-2" data-testid="assistant-post-actions">
+                      <button onClick={() => postAction("approve", parsed.postId)} disabled={busy} data-testid="assistant-post-approve"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition disabled:opacity-50">
+                        <Check className="w-3.5 h-3.5" /> {T("Save it", "Guardar")}
+                      </button>
+                      <button onClick={() => postAction("regenerate", parsed.postId)} disabled={busy} data-testid="assistant-post-regenerate"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition disabled:opacity-50">
+                        <Sparkles className="w-3.5 h-3.5" /> {T("Make another", "Hazme otro")}
+                      </button>
+                      <button onClick={() => postAction("discard", parsed.postId)} disabled={busy} data-testid="assistant-post-discard"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition disabled:opacity-50">
+                        <X className="w-3.5 h-3.5" /> {T("Discard", "Descartar")}
+                      </button>
+                    </div>
+                  )}
                   {parsed.links.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {parsed.links.map((k) => (
@@ -248,24 +289,28 @@ export default function AssistantWidget() {
 
           {/* Input */}
           <div className="flex-none p-3 border-t border-slate-200 bg-white">
-            {file && (
-              <div className="mb-2 flex items-center gap-2 text-xs text-slate-600 bg-slate-100 rounded-lg px-2.5 py-1.5" data-testid="assistant-file-chip">
-                <ImagePlus className="w-3.5 h-3.5" /> {file.name}
-                <button onClick={() => setFile(null)} className="ml-auto text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+            {files.length > 0 && (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-600" data-testid="assistant-file-chip">
+                {files.map((f, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
+                    <ImagePlus className="w-3.5 h-3.5" /> {f.name.length > 18 ? f.name.slice(0, 16) + "…" : f.name}
+                    <button onClick={() => setFiles((fs) => fs.filter((_, j) => j !== idx))} className="text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                  </span>
+                ))}
               </div>
             )}
             <div className="flex items-end gap-2">
-              <button onClick={() => fileRef.current?.click()} data-testid="assistant-attach" className="w-10 h-10 flex-none rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center" title={T("Attach image", "Adjuntar imagen")}>
+              <button onClick={() => fileRef.current?.click()} data-testid="assistant-attach" className="w-10 h-10 flex-none rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center" title={T("Attach images", "Adjuntar imágenes")}>
                 <ImagePlus className="w-5 h-5" />
               </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = ""; }} />
+              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { const fl = Array.from(e.target.files || []); if (fl.length) setFiles((prev) => [...prev, ...fl]); e.target.value = ""; }} />
               <textarea
                 value={input} onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                 rows={1} placeholder={T("Type what you need…", "Escribe lo que necesitas…")}
                 className="flex-1 resize-none max-h-28 rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 data-testid="assistant-input" />
-              <button onClick={send} disabled={busy || (!input.trim() && !file)} data-testid="assistant-send" className="w-10 h-10 flex-none rounded-xl bg-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:bg-blue-700">
+              <button onClick={send} disabled={busy || (!input.trim() && files.length === 0)} data-testid="assistant-send" className="w-10 h-10 flex-none rounded-xl bg-blue-600 text-white flex items-center justify-center disabled:opacity-40 hover:bg-blue-700">
                 <Send className="w-5 h-5" />
               </button>
             </div>

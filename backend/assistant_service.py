@@ -303,13 +303,14 @@ TOOLS = [
     }},
     {"type": "function", "function": {
         "name": "create_social_post",
-        "description": "Create a branded social media post using one of the templates and a photo the user attached (their work or product). Writes AI copy from the brief. Uses AI credits and takes a few seconds.",
+        "description": "Create a branded social media post. Three design modes: 'template' = use a specific template with a photo the user attached; 'ai_pick' = AI picks the best template and writes the copy (needs a photo); 'ai_image' = AI generates a brand-new graphic from scratch (NO photo needed). For 'template' and 'ai_pick' you MUST have a photo (image_id); if none was attached, ask the user to attach one. For 'ai_image' no photo is needed. Writes AI copy from the brief. Uses AI credits and takes a few seconds. After it runs, the system shows the owner a preview to approve before it's saved.",
         "parameters": {"type": "object", "properties": {
-            "template": {"type": "string", "description": "Template id, e.g. 'showcase', 'promo', 'coupon', 'review_5star'. Default 'showcase'."},
+            "design_mode": {"type": "string", "description": "'template', 'ai_pick', or 'ai_image'. Ask the user which they prefer if unclear."},
+            "template": {"type": "string", "description": "Template id when design_mode='template', e.g. 'showcase', 'promo', 'coupon', 'review_5star'."},
             "brief": {"type": "string", "description": "What the post is about (in the owner's words)."},
-            "image_id": {"type": "string", "description": "The image_id of the photo the user attached to use in the post."},
+            "image_id": {"type": "string", "description": "The image_id of the photo the user attached (required for 'template' and 'ai_pick')."},
             "language": {"type": "string", "description": "'es' or 'en'."},
-        }, "required": ["brief"]},
+        }, "required": ["brief", "design_mode"]},
     }},
 ]
 
@@ -327,7 +328,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "(1) Tarjeta digital: cambiar foto, portada, logo, datos, eslogan, servicios (agregar/quitar), redes/horario, ver vistas y leads. "
             "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), RELLENAR AUTOMÁTICAMENTE todas las fotos que faltan con fotos de stock de su oficio (incluido el fondo de la tarjeta digital), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
             "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
-            "(4) Marketing: listar plantillas y CREAR posts para redes con la foto que suba el usuario (de su trabajo o productos). "
+            "(4) Marketing: listar plantillas y CREAR posts para redes de 3 formas que debes ofrecer cuando pidan un post: (a) con una PLANTILLA y la foto que suba el usuario, (b) que la IA ELIJA la mejor plantilla (también necesita foto), o (c) que la IA GENERE una imagen nueva desde cero (NO necesita foto). Pregunta cuál prefiere. Para (a) y (b) necesitas una foto: si no adjuntó ninguna, PÍDESELA; nunca digas que usarás una foto que no existe. Para (c) no hace falta foto. "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
             "herramienta correspondiente pasando el image_id que te da el sistema. "
             "En facturación trata el dinero con cuidado: junta primero el cliente, los conceptos y los montos, y si falta algo, pregúntalo. "
@@ -335,6 +336,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "Para ayudar con la configuración de la cuenta, primero usa get_account_status para ver qué falta "
             "y guía al usuario paso a paso, uno a la vez. "
             "Cada cambio se le confirmará al usuario antes de aplicarse, así que propón la acción con confianza. "
+            "NUNCA pidas confirmación con texto (como \u201c¿te parece bien?\u201d): llama directamente a la herramienta y el sistema mostrará los botones Sí/No. "
             "Si el usuario prefiere hacer el cambio él mismo, quiere ver dónde se hace, o pregunta DÓNDE está algo, "
             "llévalo a la página correcta agregando AL FINAL de tu mensaje la etiqueta [[OPEN:clave]] que corresponda (sin explicarla). "
             "Conoces TODO el sistema; estas son las páginas y para qué sirve cada una: "
@@ -350,13 +352,14 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "(1) Digital card: change photo, cover, logo, business info, tagline, services (add/remove), contact links/hours, view visits and leads. "
         "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), AUTO-FILL every missing photo with trade-relevant stock photos (including the digital card background), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
         "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
-        "(4) Marketing: list templates and CREATE social posts using a photo the user uploads (their work or products). "
+        "(4) Marketing: list templates and CREATE social posts in 3 ways you must offer when they ask for a post: (a) with a TEMPLATE and a photo the user uploads, (b) let AI PICK the best template (also needs a photo), or (c) let AI GENERATE a brand-new image from scratch (NO photo needed). Ask which they prefer. For (a) and (b) you need a photo: if none was attached, ASK for it; never claim you'll use a photo that doesn't exist. For (c) no photo is needed. "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
         "matching tool passing the image_id the system gives you. In invoicing, handle money carefully: gather the client, "
         "line items and amounts first, and ask for anything missing. "
         "If details are missing (e.g. an event date or a line-item amount), ask first. To help set up the account, call "
         "get_account_status first to see what's missing and guide step by step. Every change is confirmed "
-        "with the user before applying. If the user prefers to make a change themselves, wants to see where it's done, "
+        "with the user before applying. NEVER ask for confirmation in plain text (like \u201cis that ok?\u201d): call the tool "
+        "directly and the system will show the Yes/No buttons. If the user prefers to make a change themselves, wants to see where it's done, "
         "or asks WHERE something is, take them to the right page by adding the matching [[OPEN:key]] tag AT THE END of your message (don't explain it). "
         "You know the WHOLE system; these are the pages and what each is for: "
         + _pages_catalog(False) +
@@ -439,8 +442,15 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
         return (f"Voy a registrar un pago de ${float(args.get('amount',0)):,.2f} ({args.get('method','efectivo')}) en la factura {args.get('invoice_number','')}. ¿Confirmas?") if es \
             else (f"I'll record a ${float(args.get('amount',0)):,.2f} payment ({args.get('method','cash')}) on invoice {args.get('invoice_number','')}. Confirm?")
     if name == "create_social_post":
-        return (f"Voy a crear un post de marketing (plantilla \"{args.get('template','showcase')}\") con tu foto y el texto que generaré. Usa créditos de IA y tarda unos segundos. ¿Confirmas?") if es \
-            else (f"I'll create a marketing post (template \"{args.get('template','showcase')}\") with your photo and AI-written copy. Uses AI credits, takes a few seconds. Confirm?")
+        mode = (args.get("design_mode") or "ai_pick").lower()
+        if mode == "ai_image":
+            return ("Voy a crear un post con una imagen NUEVA generada por IA (sin usar una foto tuya) y el texto. Usa créditos de IA y tarda unos segundos. Te mostraré el resultado para que lo apruebes. ¿Confirmas?") if es \
+                else ("I'll create a post with a BRAND-NEW AI-generated image (no photo of yours) plus the copy. Uses AI credits, takes a few seconds. I'll show you the result to approve. Confirm?")
+        if mode == "ai_pick":
+            return ("Voy a crear un post: la IA elegirá la mejor plantilla y escribirá el texto, usando tu foto. Te mostraré el resultado para que lo apruebes. ¿Confirmas?") if es \
+                else ("I'll create a post: AI will pick the best template and write the copy, using your photo. I'll show you the result to approve. Confirm?")
+        return (f"Voy a crear un post de marketing (plantilla \"{args.get('template','showcase')}\") con tu foto y el texto que generaré. Te mostraré el resultado para que lo apruebes. ¿Confirmas?") if es \
+            else (f"I'll create a marketing post (template \"{args.get('template','showcase')}\") with your photo and AI-written copy. I'll show you the result to approve. Confirm?")
     if name == "update_cover_photo":
         return ("Voy a poner la imagen que enviaste como la foto de portada de tu tarjeta. ¿Confirmas?") if es \
             else ("I'll set the image you sent as your card's cover photo. Confirm?")

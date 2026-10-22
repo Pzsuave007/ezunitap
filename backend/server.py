@@ -3802,7 +3802,7 @@ async def rerender_social_post(post_id: str, payload: SocialCopyIn, user_id: str
 
 @api_router.get("/social/posts")
 async def list_social_posts(user_id: str = Depends(get_current_user_id)):
-    docs = await db.social_posts.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    docs = await db.social_posts.find({"user_id": user_id, "status": {"$ne": "draft"}}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return docs
 
 
@@ -6380,34 +6380,86 @@ async def _assistant_read(user_id: str, name: str, args: dict) -> dict:
         rows = await db.clients.find({"user_id": user_id}, {"_id": 0, "name": 1, "company": 1, "phone": 1, "email": 1}).sort("created_at", -1).to_list(200)
         return {"clients": rows, "count": len(rows)}
     if name == "list_social_posts":
-        posts = await db.social_posts.find({"user_id": user_id}, {"_id": 0, "template": 1, "copy": 1, "created_at": 1}).sort("created_at", -1).to_list(15)
+        posts = await db.social_posts.find({"user_id": user_id, "status": {"$ne": "draft"}}, {"_id": 0, "template": 1, "copy": 1, "created_at": 1}).sort("created_at", -1).to_list(15)
         return {"posts": [{"template": p.get("template"), "headline": (p.get("copy") or {}).get("headline"), "created_at": p.get("created_at")} for p in posts]}
     return {"error": "unknown tool"}
 
 
-async def _assistant_create_social_post(user_id: str, args: dict, lang: str, last_image_id: str = None) -> str:
+def _pick_template_for_brief(brief: str) -> str:
+    """Lightweight 'AI picks the best template' based on the brief's intent."""
+    b = (brief or "").lower()
+    pairs = [
+        (("promo", "oferta", "descuento", "sale", "discount", "%", "rebaj", "special"), "promo"),
+        (("cupon", "cupón", "coupon", "codigo", "código", "promo code"), "coupon"),
+        (("reseña", "resena", "review", "estrella", "5 star", "5-star", "testimon"), "review_5star"),
+        (("contrat", "hiring", "empleo", "vacante", "job open", "we're hiring"), "now_hiring"),
+        (("temporada", "season", "otoño", "otono", "invierno", "verano", "navidad", "holiday", "fall", "summer", "winter", "spring"), "seasonal"),
+    ]
+    for kws, tpl in pairs:
+        if any(k in b for k in kws) and tpl in SOCIAL_TEMPLATES:
+            return tpl
+    return "showcase"
+
+
+async def _assistant_create_social_post(user_id: str, args: dict, lang: str, last_image_ids: list = None) -> str:
     es = (lang or "es").lower().startswith("es")
-    template = (args.get("template") or "showcase").strip()
-    if template not in SOCIAL_TEMPLATES:
-        template = "showcase"
     language = "es" if (args.get("language") or lang or "es").lower().startswith("es") else "en"
     brief = (args.get("brief") or "").strip()
-    # Resolve the real uploaded image (the model often passes a bogus id).
-    image_id = None
-    for cand in (args.get("image_id"), last_image_id):
-        if cand:
-            doc = await db.photos.find_one({"id": cand, "user_id": user_id}, {"_id": 0, "id": 1})
-            if doc:
-                image_id = cand
-                break
-    needed = social_service.DESIGN_PHOTOS.get(template, 1)
-    source_ids = []
-    if image_id:
-        source_ids = [image_id] * needed  # reuse the uploaded photo to satisfy multi-photo templates
-    if len(source_ids) < needed:
-        raise HTTPException(400, "Necesito que adjuntes una foto para el post.")
+    mode = (args.get("design_mode") or "").strip().lower()
+    if mode not in ("template", "ai_pick", "ai_image"):
+        mode = "template" if (args.get("template")) else "ai_pick"
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     card = await _ensure_card(user_id)
+
+    # Pick the template: explicit (template mode) or auto (ai_pick / ai_image).
+    if mode == "template":
+        template = (args.get("template") or "showcase").strip()
+        if template not in SOCIAL_TEMPLATES:
+            template = "showcase"
+    else:
+        template = _pick_template_for_brief(brief)
+
+    # Resolve the source image.
+    if mode == "ai_image":
+        # Brand-new AI graphic — no user photo needed. Respect monthly AI limit.
+        limit = _ai_image_limit(user)
+        used = await _ai_images_used(user_id)
+        if limit >= 0 and used >= limit:
+            raise HTTPException(403, (f"Llegaste a tu límite de {limit} imágenes IA este mes." if es else f"You've hit your limit of {limit} AI images this month."))
+        prompt = f"{brief}. Professional, eye-catching marketing image for a {card.get('business_type','') or 'local'} business. Clean, high quality, vibrant, no text, no words, no logos."
+        try:
+            raw, _ct = await ai_service.generate_image(prompt, aspect="1x1", style="realistic")
+            out_bytes, out_ct = _crop_to_aspect(raw, "1x1")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"assistant ai_image generation failed: {e!r}")
+            raise HTTPException(502, ("No pude generar la imagen con IA ahora. Inténtalo de nuevo." if es else "I couldn't generate the AI image right now. Try again."))
+        image_id = await _store_card_photo(user_id, out_bytes, out_ct, "ai_gen", "jpg")
+        await db.ai_images.insert_one({
+            "id": _new_id(), "user_id": user_id, "photo_id": image_id, "prompt": prompt,
+            "aspect": "1x1", "style": "realistic", "month": _current_month(),
+            "is_deleted": False, "created_at": _now_iso(),
+        })
+    needed = social_service.DESIGN_PHOTOS.get(template, 1)
+    if mode == "ai_image":
+        source_ids = [image_id] * needed
+    else:
+        # Use ALL attached photos in order (carousel / before-after), padding by
+        # repeating the last one if the template needs more than were provided.
+        cand_ids = []
+        if args.get("image_id"):
+            cand_ids.append(args["image_id"])
+        cand_ids.extend(last_image_ids or [])
+        valid_ids = []
+        for cid in cand_ids:
+            if cid and cid not in valid_ids:
+                doc = await db.photos.find_one({"id": cid, "user_id": user_id}, {"_id": 0, "id": 1})
+                if doc:
+                    valid_ids.append(cid)
+        if not valid_ids:
+            raise HTTPException(400, ("Necesito que adjuntes una foto para el post." if es else "I need you to attach a photo for the post."))
+        source_ids = valid_ids[:needed]
+        while len(source_ids) < needed:
+            source_ids.append(source_ids[-1])
     copy = await ai_service.generate_social_copy(
         brief, template=template, language=language,
         business_name=user.get("business_name", ""),
@@ -6419,21 +6471,25 @@ async def _assistant_create_social_post(user_id: str, args: dict, lang: str, las
     images = await _render_social_images(template, fmts, source_ids, copy, brand, user_id)
     doc = {
         "id": _new_id(), "user_id": user_id, "template": template, "brief": brief,
+        "design_mode": mode, "status": "draft",
         "language": language, "formats": fmts, "brand_color": "", "accent_color": "",
         "copy": copy, "source_photo_ids": source_ids, "images": images,
         "created_at": _now_iso(), "updated_at": _now_iso(),
     }
     await db.social_posts.insert_one(dict(doc))
     headline = (copy or {}).get("headline") or brief
-    return (f"¡Listo! Creé tu post de marketing: \"{headline}\". Lo encuentras en Marketing Studio para descargarlo o editarlo. [[OPEN:marketing]]") if es \
-        else (f"Done! I created your marketing post: \"{headline}\". You'll find it in Marketing Studio to download or edit. [[OPEN:marketing]]")
+    preview_url = images[0]["url"] if images else ""
+    note = (f"Aquí está tu post: \"{headline}\". ¿Lo guardo en tus posts?") if es \
+        else (f"Here's your post: \"{headline}\". Want me to save it to your posts?")
+    return f"{note} [[IMG:{preview_url}]] [[POST:{doc['id']}]]"
 
 
-async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id: str = None) -> str:
+async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_ids: list = None) -> str:
     name = pending.get("name")
     args = pending.get("arguments") or {}
     es = (lang or "es").lower().startswith("es")
     card = await _ensure_card(user_id)
+    last_image_id = (last_image_ids or [None])[-1]
 
     async def _resolve_image(candidate):
         # The LLM is unreliable at echoing the real image_id, so prefer the
@@ -6690,7 +6746,7 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         await _recalc_invoice_payments(inv["id"], user_id)
         return (f"¡Listo! Registré ${amount:,.2f} en la factura {num}.") if es else (f"Done! I recorded ${amount:,.2f} on invoice {num}.")
     if name == "create_social_post":
-        return await _assistant_create_social_post(user_id, args, lang, last_image_id)
+        return await _assistant_create_social_post(user_id, args, lang, last_image_ids)
     if name == "update_cover_photo":
         image_id = await _resolve_image(args.get("image_id"))
         if not image_id:
@@ -6739,6 +6795,7 @@ async def assistant_chat(
     message: str = Form(""),
     lang: str = Form("es"),
     file: Optional[UploadFile] = File(None),
+    files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id),
 ):
     sess = await db.assistant_sessions.find_one({"id": session_id, "user_id": user_id}, {"_id": 0})
@@ -6746,18 +6803,27 @@ async def assistant_chat(
         sess = {"id": session_id, "user_id": user_id, "messages": [], "pending": None, "created_at": _now_iso()}
         await db.assistant_sessions.insert_one(dict(sess))
     user_text = (message or "").strip()
-    attached = False
+    # Accept one or many images (carousel / before-after).
+    uploads = [f for f in (files or []) if f is not None]
     if file is not None:
-        ct = (file.content_type or "").lower()
+        uploads.append(file)
+    image_ids = []
+    for f in uploads:
+        ct = (f.content_type or "").lower()
         if ct not in ALLOWED_IMAGE_TYPES:
             raise HTTPException(400, "Tipo de imagen no permitido (JPEG/PNG/WEBP)")
-        data = await file.read()
+        data = await f.read()
         if len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(400, "Imagen demasiado grande (máx 8MB)")
-        ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
-        image_id = await _store_card_photo(user_id, data, ct, "assistant", ext)
-        attached = True
-        user_text += f"\n\n[Sistema: el usuario adjuntó una imagen; su image_id es '{image_id}'. Úsalo si quiere poner esta imagen como la foto de su tarjeta, como el logo, o usarla en un post de marketing.]"
+        ext = f.filename.rsplit(".", 1)[-1].lower() if f.filename and "." in f.filename else "png"
+        image_ids.append(await _store_card_photo(user_id, data, ct, "assistant", ext))
+    attached = len(image_ids) > 0
+    if attached:
+        if len(image_ids) == 1:
+            user_text += f"\n\n[Sistema: el usuario adjuntó 1 imagen; su image_id es '{image_ids[0]}'. Úsala si quiere ponerla como foto de tarjeta, logo, o en un post de marketing.]"
+        else:
+            user_text += (f"\n\n[Sistema: el usuario adjuntó {len(image_ids)} imágenes; sus image_ids en orden son {image_ids}. "
+                          f"Úsalas EN ORDEN para un post tipo carrusel o antes/después. Para create_social_post pasa el primer image_id en 'image_id'; el sistema usará todas.]")
     if not user_text:
         raise HTTPException(400, "Mensaje vacío")
     biz = await _business_name_for(user_id)
@@ -6768,12 +6834,13 @@ async def assistant_chat(
         return await _assistant_read(user_id, name, a)
 
     result = await assistant_service.respond(sys_prompt, transcript, user_text, lang, read_dispatch)
-    display_user = (message or "").strip() or ("📷 Imagen adjunta" if attached else "")
+    display_user = (message or "").strip() or (f"📷 {len(image_ids)} imágenes adjuntas" if len(image_ids) > 1 else "📷 Imagen adjunta") if attached else (message or "").strip()
     new_msgs = transcript + [{"role": "user", "content": display_user}, {"role": "assistant", "content": result["reply"]}]
     pending = result.get("pending")
     set_fields = {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}
     if attached:
-        set_fields["last_image_id"] = image_id
+        set_fields["last_image_ids"] = image_ids
+        set_fields["last_image_id"] = image_ids[-1]
     await db.assistant_sessions.update_one({"id": session_id}, {"$set": set_fields})
     return {"reply": result["reply"], "needs_confirmation": bool(pending), "action": (pending or {}).get("name")}
 
@@ -6783,7 +6850,7 @@ async def assistant_execute(payload: AssistantExecuteIn, user_id: str = Depends(
     sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
     if not sess or not sess.get("pending"):
         raise HTTPException(400, "No hay ninguna acción pendiente de confirmar")
-    note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es", sess.get("last_image_id"))
+    note = await _assistant_apply(user_id, sess["pending"], payload.lang or "es", sess.get("last_image_ids") or ([sess["last_image_id"]] if sess.get("last_image_id") else None))
     msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
     await db.assistant_sessions.update_one(
         {"id": payload.session_id}, {"$set": {"messages": msgs[-40:], "pending": None, "updated_at": _now_iso()}})
@@ -6801,6 +6868,69 @@ async def assistant_cancel(payload: AssistantExecuteIn, user_id: str = Depends(g
 async def assistant_history(session_id: str, user_id: str = Depends(get_current_user_id)):
     sess = await db.assistant_sessions.find_one({"id": session_id, "user_id": user_id}, {"_id": 0})
     return {"messages": (sess or {}).get("messages") or [], "pending": bool((sess or {}).get("pending"))}
+
+
+class AssistantPostAction(BaseModel):
+    post_id: str
+    session_id: Optional[str] = None
+    lang: Optional[str] = "es"
+
+
+@api_router.post("/assistant/post-approve")
+async def assistant_post_approve(payload: AssistantPostAction, user_id: str = Depends(get_current_user_id)):
+    """Approve a draft post the assistant previewed → it now shows in Marketing Studio."""
+    post = await db.social_posts.find_one({"id": payload.post_id, "user_id": user_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post no encontrado")
+    await db.social_posts.update_one({"id": payload.post_id, "user_id": user_id},
+                                     {"$set": {"status": "active", "updated_at": _now_iso()}})
+    es = (payload.lang or "es").lower().startswith("es")
+    note = ("¡Listo! Guardé tu post. Lo encuentras en Marketing Studio para descargarlo o publicarlo. [[OPEN:marketing]]") if es \
+        else ("Done! I saved your post. You'll find it in Marketing Studio to download or publish. [[OPEN:marketing]]")
+    if payload.session_id:
+        sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
+        if sess:
+            msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
+            await db.assistant_sessions.update_one({"id": payload.session_id}, {"$set": {"messages": msgs[-40:]}})
+    return {"reply": note, "ok": True}
+
+
+@api_router.post("/assistant/post-discard")
+async def assistant_post_discard(payload: AssistantPostAction, user_id: str = Depends(get_current_user_id)):
+    """Discard a draft post the user didn't like (deletes it and its images)."""
+    post = await db.social_posts.find_one({"id": payload.post_id, "user_id": user_id}, {"_id": 0})
+    if post:
+        for img in post.get("images", []):
+            await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+        await db.social_posts.delete_one({"id": payload.post_id, "user_id": user_id})
+    es = (payload.lang or "es").lower().startswith("es")
+    return {"reply": ("Listo, lo descarté. Dime si quieres que te haga otro." if es else "Okay, I discarded it. Tell me if you'd like another one."), "ok": True}
+
+
+@api_router.post("/assistant/post-regenerate")
+async def assistant_post_regenerate(payload: AssistantPostAction, user_id: str = Depends(get_current_user_id)):
+    """Make another version: discard the old draft and create a fresh one with the same brief/mode."""
+    post = await db.social_posts.find_one({"id": payload.post_id, "user_id": user_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post no encontrado")
+    args = {
+        "design_mode": post.get("design_mode") or ("ai_pick" if post.get("source_photo_ids") else "ai_image"),
+        "template": post.get("template"),
+        "brief": post.get("brief") or "",
+        "language": post.get("language") or payload.lang or "es",
+    }
+    prior_sources = post.get("source_photo_ids") or []
+    # Delete the old draft + its rendered images first.
+    for img in post.get("images", []):
+        await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    await db.social_posts.delete_one({"id": payload.post_id, "user_id": user_id})
+    note = await _assistant_create_social_post(user_id, args, payload.lang or "es", prior_sources)
+    if payload.session_id:
+        sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
+        if sess:
+            msgs = (sess.get("messages") or []) + [{"role": "assistant", "content": note}]
+            await db.assistant_sessions.update_one({"id": payload.session_id}, {"$set": {"messages": msgs[-40:]}})
+    return {"reply": note, "ok": True}
 
 
 # ============================================================================
