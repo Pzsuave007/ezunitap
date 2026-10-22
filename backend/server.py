@@ -3728,6 +3728,100 @@ async def create_social_post(
     return _strip_id(doc)
 
 
+async def _render_carousel_slides(kind, source_ids, copy, brand, user_id, language):
+    """Build the ordered, branded slide images for a carousel and store each one.
+    Returns [{photo_id, url, kind}] in slide order."""
+    pil_photos = []
+    for pid in source_ids:
+        img = await _load_pil_image(pid, user_id)
+        if img is not None:
+            pil_photos.append(img)
+    raw_slides = social_service.build_carousel_slides(kind, pil_photos, copy, brand, language=language)
+    slides = []
+    for jpeg, skind in raw_slides:
+        out_id = await _store_card_photo(user_id, jpeg, "image/jpeg", "social_out", "jpg")
+        slides.append({"photo_id": out_id, "url": _photo_public_url(out_id), "kind": skind})
+    return slides
+
+
+async def _store_social_src_files(files, user_id):
+    source_ids, skipped = [], 0
+    for f in (files or []):
+        ct = (f.content_type or "").lower()
+        if ct not in ALLOWED_IMAGE_TYPES:
+            skipped += 1
+            continue
+        data = await f.read()
+        if not data or len(data) > MAX_IMAGE_BYTES:
+            skipped += 1
+            continue
+        ext = f.filename.rsplit(".", 1)[-1].lower() if f.filename and "." in f.filename else "png"
+        source_ids.append(await _store_card_photo(user_id, data, ct, "social_src", ext))
+    return source_ids, skipped
+
+
+@api_router.post("/social/carousel")
+async def create_social_carousel(
+    kind: str = Form("gallery"),
+    brief: str = Form(""),
+    language: str = Form("en"),
+    brand_color: str = Form(""),
+    accent_color: str = Form(""),
+    files: List[UploadFile] = File(default=[]),
+    user_id: str = Depends(get_current_user_id),
+    _feat: dict = Depends(require_feature("marketing")),
+):
+    """Create a multi-slide carousel post (swipeable): 'gallery' = cover + each
+    photo + CTA; 'before_after' = BEFORE / AFTER / CTA. Each slide is a branded
+    1:1 image ready to upload to Instagram/Facebook."""
+    kind = "before_after" if kind == "before_after" else "gallery"
+    language = "es" if language == "es" else "en"
+    brand_color = _valid_hex(brand_color)
+    accent_color = _valid_hex(accent_color)
+
+    source_ids, skipped = await _store_social_src_files(files, user_id)
+    if len(source_ids) < 2:
+        if skipped:
+            raise HTTPException(400, "Una o más fotos no se pudieron usar (formato no soportado o más de 8MB). Sube JPG/PNG de menos de 8MB.")
+        raise HTTPException(400, "Un carrusel necesita al menos 2 fotos.")
+    source_ids = source_ids[:2] if kind == "before_after" else source_ids[:10]
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    card = await _ensure_card(user_id)
+    try:
+        copy = await ai_service.generate_social_copy(
+            brief, template="showcase", language=language,
+            business_name=user.get("business_name", ""),
+            business_type=card.get("business_type", ""),
+            phone=card.get("contact_phone") or user.get("phone", ""),
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Error generando el texto con IA: {e}")
+
+    brand = await _social_brand(user_id, language, brand_override=brand_color, accent_override=accent_color)
+    slides = await _render_carousel_slides(kind, source_ids, copy, brand, user_id, language)
+    doc = {
+        "id": _new_id(),
+        "user_id": user_id,
+        "type": "carousel",
+        "carousel_kind": kind,
+        "template": "carousel",
+        "brief": brief,
+        "language": language,
+        "formats": ["1x1"],
+        "brand_color": brand_color or "",
+        "accent_color": accent_color or "",
+        "copy": copy,
+        "source_photo_ids": source_ids,
+        "slides": slides,
+        "images": [{"format": "1x1", "photo_id": slides[0]["photo_id"], "url": slides[0]["url"]}] if slides else [],
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    await db.social_posts.insert_one(doc)
+    return _strip_id(doc)
+
+
 class SocialStyleIn(BaseModel):
     legibility: Optional[str] = None        # none | soft | medium | strong
     text_position: Optional[str] = None     # top | center | bottom
@@ -3813,6 +3907,8 @@ async def delete_social_post(post_id: str, user_id: str = Depends(get_current_us
         raise HTTPException(404, "Post no encontrado")
     for img in post.get("images", []):
         await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    for sl in post.get("slides", []):
+        await db.photos.update_one({"id": sl["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
     await db.social_posts.delete_one({"id": post_id, "user_id": user_id})
     return {"ok": True}
 
@@ -6484,6 +6580,56 @@ async def _assistant_create_social_post(user_id: str, args: dict, lang: str, las
     return f"{note} [[IMG:{preview_url}]] [[POST:{doc['id']}]]"
 
 
+async def _assistant_create_carousel(user_id: str, args: dict, lang: str, last_image_ids: list = None) -> str:
+    es = (lang or "es").lower().startswith("es")
+    language = "es" if (args.get("language") or lang or "es").lower().startswith("es") else "en"
+    brief = (args.get("brief") or "").strip()
+    raw_kind = (args.get("carousel_kind") or "").strip().lower()
+    kind = "before_after" if ("before" in raw_kind or "antes" in raw_kind or "despu" in raw_kind) else "gallery"
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    card = await _ensure_card(user_id)
+
+    # Collect attached photos IN ORDER (image_id first, then tracked uploads).
+    cand_ids = []
+    if args.get("image_id"):
+        cand_ids.append(args["image_id"])
+    cand_ids.extend(last_image_ids or [])
+    valid_ids = []
+    for cid in cand_ids:
+        if cid and cid not in valid_ids:
+            doc0 = await db.photos.find_one({"id": cid, "user_id": user_id}, {"_id": 0, "id": 1})
+            if doc0:
+                valid_ids.append(cid)
+    if len(valid_ids) < 2:
+        raise HTTPException(400, ("Un carrusel necesita al menos 2 fotos. Adjúntalas y lo armo." if es
+                                  else "A carousel needs at least 2 photos. Attach them and I'll build it."))
+    source_ids = valid_ids[:2] if kind == "before_after" else valid_ids[:10]
+
+    copy = await ai_service.generate_social_copy(
+        brief, template="showcase", language=language,
+        business_name=user.get("business_name", ""),
+        business_type=card.get("business_type", ""),
+        phone=card.get("contact_phone") or user.get("phone", ""),
+    )
+    brand = await _social_brand(user_id, language)
+    slides = await _render_carousel_slides(kind, source_ids, copy, brand, user_id, language)
+    doc = {
+        "id": _new_id(), "user_id": user_id, "type": "carousel", "carousel_kind": kind,
+        "template": "carousel", "brief": brief, "design_mode": "carousel", "status": "draft",
+        "language": language, "formats": ["1x1"], "brand_color": "", "accent_color": "",
+        "copy": copy, "source_photo_ids": source_ids, "slides": slides,
+        "images": [{"format": "1x1", "photo_id": slides[0]["photo_id"], "url": slides[0]["url"]}] if slides else [],
+        "created_at": _now_iso(), "updated_at": _now_iso(),
+    }
+    await db.social_posts.insert_one(dict(doc))
+    headline = (copy or {}).get("headline") or brief
+    preview_url = slides[0]["url"] if slides else ""
+    n = len(slides)
+    note = (f"Aquí está tu carrusel de {n} tarjetas: \"{headline}\". ¿Lo guardo en tus posts?") if es \
+        else (f"Here's your {n}-slide carousel: \"{headline}\". Want me to save it to your posts?")
+    return f"{note} [[IMG:{preview_url}]] [[POST:{doc['id']}]]"
+
+
 async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_ids: list = None) -> str:
     name = pending.get("name")
     args = pending.get("arguments") or {}
@@ -6747,6 +6893,8 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         return (f"¡Listo! Registré ${amount:,.2f} en la factura {num}.") if es else (f"Done! I recorded ${amount:,.2f} on invoice {num}.")
     if name == "create_social_post":
         return await _assistant_create_social_post(user_id, args, lang, last_image_ids)
+    if name == "create_carousel":
+        return await _assistant_create_carousel(user_id, args, lang, last_image_ids)
     if name == "update_cover_photo":
         image_id = await _resolve_image(args.get("image_id"))
         if not image_id:
@@ -6877,6 +7025,14 @@ async def assistant_chat(
                    else "Great — upload the photo you'd like to use and I'll make the post. 📷")
             result = {"reply": ask, "pending": None}
             pending = None
+    if pending and pending.get("name") == "create_carousel":
+        prior_ids = list(sess.get("last_image_ids") or ([sess["last_image_id"]] if sess.get("last_image_id") else []))
+        n_photos = len(set((image_ids or []) + prior_ids))
+        if n_photos < 2:
+            ask = ("Un carrusel necesita al menos 2 fotos. Súbelas juntas y lo armo. 📷" if es_lang
+                   else "A carousel needs at least 2 photos. Upload them together and I'll build it. 📷")
+            result = {"reply": ask, "pending": None}
+            pending = None
     display_user = (message or "").strip() or (f"📷 {len(image_ids)} imágenes adjuntas" if len(image_ids) > 1 else "📷 Imagen adjunta") if attached else (message or "").strip()
     new_msgs = transcript + [{"role": "user", "content": display_user}, {"role": "assistant", "content": result["reply"]}]
     set_fields = {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}
@@ -6944,6 +7100,8 @@ async def assistant_post_discard(payload: AssistantPostAction, user_id: str = De
     if post:
         for img in post.get("images", []):
             await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+        for sl in post.get("slides", []):
+            await db.photos.update_one({"id": sl["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
         await db.social_posts.delete_one({"id": payload.post_id, "user_id": user_id})
     es = (payload.lang or "es").lower().startswith("es")
     return {"reply": ("Listo, lo descarté. Dime si quieres que te haga otro." if es else "Okay, I discarded it. Tell me if you'd like another one."), "ok": True}
@@ -6955,18 +7113,25 @@ async def assistant_post_regenerate(payload: AssistantPostAction, user_id: str =
     post = await db.social_posts.find_one({"id": payload.post_id, "user_id": user_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Post no encontrado")
+    prior_sources = post.get("source_photo_ids") or []
+    is_carousel = (post.get("type") == "carousel")
     args = {
         "design_mode": post.get("design_mode") or ("ai_pick" if post.get("source_photo_ids") else "ai_image"),
         "template": post.get("template"),
+        "carousel_kind": post.get("carousel_kind") or "gallery",
         "brief": post.get("brief") or "",
         "language": post.get("language") or payload.lang or "es",
     }
-    prior_sources = post.get("source_photo_ids") or []
-    # Delete the old draft + its rendered images first.
+    # Delete the old draft + its rendered images/slides first.
     for img in post.get("images", []):
         await db.photos.update_one({"id": img["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
+    for sl in post.get("slides", []):
+        await db.photos.update_one({"id": sl["photo_id"], "user_id": user_id}, {"$set": {"is_deleted": True}})
     await db.social_posts.delete_one({"id": payload.post_id, "user_id": user_id})
-    note = await _assistant_create_social_post(user_id, args, payload.lang or "es", prior_sources)
+    if is_carousel:
+        note = await _assistant_create_carousel(user_id, args, payload.lang or "es", prior_sources)
+    else:
+        note = await _assistant_create_social_post(user_id, args, payload.lang or "es", prior_sources)
     if payload.session_id:
         sess = await db.assistant_sessions.find_one({"id": payload.session_id, "user_id": user_id}, {"_id": 0})
         if sess:

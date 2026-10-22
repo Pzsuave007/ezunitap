@@ -61,7 +61,7 @@ def _pages_catalog(es: bool) -> str:
 WRITE_TOOLS = {"update_card_photo", "update_logo", "update_business_info", "upsert_service", "create_event",
                "update_contact_links", "create_client", "create_invoice", "record_payment",
                "toggle_website_section", "update_website_photo", "update_website_text", "update_website_color",
-               "add_faq", "add_gallery_photo", "add_product", "create_social_post",
+               "add_faq", "add_gallery_photo", "add_product", "create_social_post", "create_carousel",
                "update_cover_photo", "remove_service", "send_invoice", "fill_website_photos"}
 
 TOOLS = [
@@ -317,6 +317,16 @@ TOOLS = [
             "language": {"type": "string", "description": "'es' or 'en'."},
         }, "required": ["brief", "design_mode"]},
     }},
+    {"type": "function", "function": {
+        "name": "create_carousel",
+        "description": "Create a multi-slide CAROUSEL post (several swipeable photos) from photos the user attached. Use this when the user wants a 'carrusel', 'carousel', a gallery of several photos, or a BEFORE/AFTER comparison. Requires at least 2 attached photos (for before/after, exactly 2: the first is BEFORE, the second is AFTER). The system builds a branded cover slide, one slide per photo, and a final contact/CTA slide. Writes AI copy from the brief. After it runs, the system shows the owner a swipeable preview to approve before it's saved.",
+        "parameters": {"type": "object", "properties": {
+            "carousel_kind": {"type": "string", "description": "'gallery' for several photos, or 'before_after' for a before/after comparison (needs exactly 2 photos)."},
+            "brief": {"type": "string", "description": "What the carousel is about (in the owner's words)."},
+            "image_id": {"type": "string", "description": "The image_id of the first attached photo (the system uses all attached photos in order)."},
+            "language": {"type": "string", "description": "'es' or 'en'."},
+        }, "required": ["brief", "carousel_kind"]},
+    }},
 ]
 
 
@@ -334,6 +344,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), RELLENAR AUTOMÁTICAMENTE todas las fotos que faltan con fotos de stock de su oficio (incluido el fondo de la tarjeta digital), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
             "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
             "(4) Marketing: listar plantillas y CREAR posts para redes de 3 formas que debes ofrecer cuando pidan un post: (a) con una PLANTILLA y la foto que suba el usuario, (b) que la IA ELIJA la mejor plantilla (también necesita foto), o (c) que la IA GENERE una imagen nueva desde cero (NO necesita foto). Pregunta cuál prefiere SOLO UNA VEZ. En cuanto el usuario elija el modo (y, para (a) y (b), ya haya una foto adjunta), LLAMA DE INMEDIATO a create_social_post con design_mode; para (c) llama de inmediato sin pedir foto. NO repitas las opciones ni vuelvas a pedir la foto si ya se adjuntó. Si falta la foto para (a)/(b), pídela una sola vez; nunca digas que usarás una foto que no existe. "
+            "CARRUSEL: si el usuario quiere un 'carrusel', una galería de varias fotos, o un ANTES/DESPUÉS, usa create_carousel (NO create_social_post). Necesita al menos 2 fotos adjuntas; para antes/después exactamente 2 (la 1ª = antes, la 2ª = después). En cuanto estén adjuntas, LLAMA DE INMEDIATO a create_carousel con carousel_kind ('gallery' o 'before_after'). "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
             "herramienta correspondiente pasando el image_id que te da el sistema. "
             "En facturación trata el dinero con cuidado: junta primero el cliente, los conceptos y los montos, y si falta algo, pregúntalo. "
@@ -358,6 +369,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), AUTO-FILL every missing photo with trade-relevant stock photos (including the digital card background), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
         "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
         "(4) Marketing: list templates and CREATE social posts in 3 ways you must offer when they ask for a post: (a) with a TEMPLATE and a photo the user uploads, (b) let AI PICK the best template (also needs a photo), or (c) let AI GENERATE a brand-new image from scratch (NO photo needed). Ask which they prefer ONLY ONCE. As soon as the user picks a mode (and, for (a) and (b), a photo is already attached), CALL create_social_post IMMEDIATELY with design_mode; for (c) call it immediately with no photo. Do NOT repeat the options or ask again for a photo that was already attached. If a photo is missing for (a)/(b), ask once; never claim you'll use a photo that doesn't exist. "
+        "CAROUSEL: if the user wants a 'carousel', a gallery of several photos, or a BEFORE/AFTER, use create_carousel (NOT create_social_post). It needs at least 2 attached photos; for before/after exactly 2 (1st = before, 2nd = after). As soon as they're attached, CALL create_carousel IMMEDIATELY with carousel_kind ('gallery' or 'before_after'). "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
         "matching tool passing the image_id the system gives you. In invoicing, handle money carefully: gather the client, "
         "line items and amounts first, and ask for anything missing. "
@@ -457,6 +469,13 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
                 else ("I'll create a post: AI will pick the best template and write the copy, using your photo. I'll show you the result to approve. Confirm?")
         return (f"Voy a crear un post de marketing (plantilla \"{args.get('template','showcase')}\") con tu foto y el texto que generaré. Te mostraré el resultado para que lo apruebes. ¿Confirmas?") if es \
             else (f"I'll create a marketing post (template \"{args.get('template','showcase')}\") with your photo and AI-written copy. I'll show you the result to approve. Confirm?")
+    if name == "create_carousel":
+        kind = (args.get("carousel_kind") or "gallery").lower()
+        if "before" in kind or "antes" in kind:
+            return ("Voy a crear un carrusel de ANTES / DESPUÉS con tus 2 fotos (la 1ª = antes, la 2ª = después) más una tarjeta final con tu contacto. Te mostraré el resultado deslizable para que lo apruebes. ¿Confirmas?") if es \
+                else ("I'll create a BEFORE / AFTER carousel from your 2 photos (1st = before, 2nd = after) plus a final contact slide. I'll show you the swipeable result to approve. Confirm?")
+        return ("Voy a crear un carrusel: una portada con tu marca, una tarjeta por cada foto que subiste y una tarjeta final con tu contacto. Te mostraré el resultado deslizable para que lo apruebes. ¿Confirmas?") if es \
+            else ("I'll create a carousel: a branded cover, one slide per photo you uploaded, and a final contact slide. I'll show you the swipeable result to approve. Confirm?")
     if name == "update_cover_photo":
         return ("Voy a poner la imagen que enviaste como la foto de portada de tu tarjeta. ¿Confirmas?") if es \
             else ("I'll set the image you sent as your card's cover photo. Confirm?")

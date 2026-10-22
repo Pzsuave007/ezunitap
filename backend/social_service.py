@@ -1155,3 +1155,165 @@ def build_brand(card: dict, user: dict, logo_bytes: Optional[bytes], language: s
         "promo_label": promo_label,
         "style": style or {},
     }
+
+
+# ---------------------------------------------------------------------------
+# Carousel (multi-slide) — swipeable posts: gallery or before / after.
+# Each slide is a standalone square (1:1) branded image. build_carousel_slides
+# returns an ordered list of (jpeg_bytes, slide_kind) ready to upload to IG/FB.
+# ---------------------------------------------------------------------------
+
+def _brand_chip_tl(canvas, draw, brand):
+    w, _h = canvas.size
+    _paste_logo_chip(canvas, draw, brand.get("logo"), brand.get("business_name", ""),
+                     int(w * 0.05), int(w * 0.05), int(w * 0.055))
+
+
+def _swipe_hint(canvas, draw, accent, text):
+    w, h = canvas.size
+    f = _font("bold", int(w * 0.034))
+    pad = int(w * 0.03)
+    tw = draw.textlength(text, font=f)
+    gap = int(w * 0.012)
+    tri = int(f.size * 0.42)
+    bw, bh = tw + gap + tri + pad * 2, f.size + pad
+    x, y = w - int(w * 0.05) - bw, h - int(w * 0.05) - bh
+    fg = _text_on(accent)
+    draw.rounded_rectangle([x, y, x + bw, y + bh], radius=bh // 2, fill=accent)
+    draw.text((x + pad, y + bh / 2), text, font=f, fill=fg, anchor="lm")
+    tx = x + pad + tw + gap
+    cy = y + bh / 2
+    draw.polygon([(tx, cy - tri / 2), (tx, cy + tri / 2), (tx + tri * 0.75, cy)], fill=fg)
+
+
+def _carousel_cover(size, photo, copy, brand, swipe_text):
+    w, h = size
+    brand_rgb, accent_rgb = brand["brand"], brand["accent"]
+    base = _cover_crop(photo, w, h) if photo else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.35), start_frac=0.62))
+    draw = ImageDraw.Draw(canvas)
+    _brand_chip_tl(canvas, draw, brand)
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * 0.07)
+    head = (copy.get("headline") or brand.get("business_name") or "").strip()
+    hf, hlines, hlh = _fit_text(draw, head, "extrabold", w - margin * 2, int(h * 0.34), int(w * 0.11), 46)
+    sub = (copy.get("subheadline") or "").strip()
+    sf = sub_lines = None
+    slh = 0
+    if sub:
+        sf, sub_lines, slh = _fit_text(draw, sub, "semibold", w - margin * 2, int(h * 0.13), int(w * 0.046), 30)
+    block = hlh * len(hlines) + ((int(h * 0.015) + slh * len(sub_lines)) if sub_lines else 0)
+    y = h - margin - block - int(h * 0.055)
+    draw.rounded_rectangle([margin, y - int(h * 0.028), margin + int(w * 0.14), y - int(h * 0.028) + 10], radius=5, fill=accent_rgb)
+    y = _draw_lines(draw, hlines, hf, margin, y, hlh, (255, 255, 255))
+    if sub_lines:
+        y += int(h * 0.015)
+        _draw_lines(draw, sub_lines, sf, margin, y, slh, (235, 240, 245))
+    _swipe_hint(canvas, draw, accent_rgb, swipe_text)
+    return canvas.convert("RGB")
+
+
+def _carousel_photo(size, photo, brand, label="", caption=""):
+    w, h = size
+    brand_rgb, accent_rgb = brand["brand"], brand["accent"]
+    base = _cover_crop(photo, w, h) if photo else Image.new("RGB", (w, h), brand_rgb)
+    canvas = base.convert("RGBA")
+    if caption:
+        canvas.alpha_composite(_bottom_scrim((w, h), _darken(brand_rgb, 0.35), start_frac=0.4))
+    draw = ImageDraw.Draw(canvas)
+    _brand_chip_tl(canvas, draw, brand)
+    draw = ImageDraw.Draw(canvas)
+    if label:
+        f = _font("extrabold", int(w * 0.05))
+        pad_x, pad_y = int(w * 0.03), int(w * 0.018)
+        tw = draw.textlength(label, font=f)
+        bw, bh = tw + pad_x * 2, f.size + pad_y * 2
+        x = w - int(w * 0.05) - bw
+        y = int(w * 0.05)
+        draw.rounded_rectangle([x, y, x + bw, y + bh], radius=16, fill=accent_rgb)
+        draw.text((x + bw / 2, y + bh / 2), label, font=f, fill=_text_on(accent_rgb), anchor="mm")
+    if caption:
+        margin = int(w * 0.07)
+        cf, clines, clh = _fit_text(draw, caption, "semibold", w - margin * 2, int(h * 0.18), int(w * 0.05), 30)
+        _draw_lines(draw, clines, cf, margin, h - margin - clh * len(clines), clh, (255, 255, 255))
+    return canvas.convert("RGB")
+
+
+def _carousel_cta(size, copy, brand, es):
+    w, h = size
+    brand_rgb, accent_rgb = brand["brand"], brand["accent"]
+    top, bottom = brand_rgb, _darken(brand_rgb, 0.5)
+    grad = Image.new("RGB", (1, h))
+    for y in range(h):
+        t = y / max(1, h - 1)
+        grad.putpixel((0, y), tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
+    canvas = grad.resize((w, h)).convert("RGBA")
+    draw = ImageDraw.Draw(canvas)
+    fg = _text_on(brand_rgb)
+    cy = int(h * 0.26)
+    logo = brand.get("logo")
+    if logo is not None:
+        lh = int(h * 0.15)
+        lw = int(logo.size[0] * (lh / max(1, logo.size[1])))
+        lg = logo.resize((lw, lh), Image.LANCZOS)
+        canvas.paste(lg, ((w - lw) // 2, cy), lg)
+        cy += lh + int(h * 0.045)
+    name = (brand.get("business_name") or "").strip()
+    if name:
+        nf = _font("extrabold", int(w * 0.072))
+        _draw_text(draw, (w / 2, cy), name, nf, fg, anchor="ma")
+        cy += int(nf.size * 1.3)
+    cta = (copy.get("cta") or ("¡Contáctanos hoy!" if es else "Contact us today!")).strip()
+    cf = _font("bold", int(w * 0.05))
+    tw = draw.textlength(cta, font=cf)
+    ph, pw = cf.size + 44, tw + 96
+    px, py = (w - pw) // 2, int(h * 0.60)
+    draw.rounded_rectangle([px, py, px + pw, py + ph], radius=ph // 2, fill=accent_rgb)
+    draw.text((w / 2, py + ph / 2), cta, font=cf, fill=_text_on(accent_rgb), anchor="mm")
+    phone = (brand.get("phone") or "").strip()
+    if phone:
+        pf = _font("semibold", int(w * 0.05))
+        _draw_text(draw, (w / 2, py + ph + int(h * 0.05)), phone, pf, fg, anchor="ma")
+    return canvas.convert("RGB")
+
+
+def build_carousel_slides(kind: str, photos: List[Image.Image], copy: dict, brand: dict,
+                          language: str = "en", size_key: str = "1x1") -> List[tuple]:
+    """Build an ordered carousel. kind: 'gallery' | 'before_after'.
+
+    Returns [(jpeg_bytes, slide_kind), ...] where slide_kind is
+    'cover' | 'photo' | 'before' | 'after' | 'cta'.
+    """
+    global _STYLE
+    _STYLE = dict(brand.get("style") or {})
+    _STYLE.setdefault("legibility", "medium")
+    size = SIZES.get(size_key, SIZES["1x1"])
+    es = (language or "en").lower().startswith("es")
+    swipe = "Desliza" if es else "Swipe"
+    captions = copy.get("slide_captions") or []
+    out = []
+
+    def _jpeg(img):
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=90)
+        return buf.getvalue()
+
+    if kind == "before_after":
+        lb, la = brand.get("ba_labels", ("BEFORE", "AFTER"))
+        p0 = photos[0] if photos else None
+        p1 = photos[1] if len(photos) > 1 else p0
+        out.append((_jpeg(_carousel_photo(size, p0, brand, label=lb)), "before"))
+        out.append((_jpeg(_carousel_photo(size, p1, brand, label=la)), "after"))
+        out.append((_jpeg(_carousel_cta(size, copy, brand, es)), "cta"))
+        return out
+
+    # gallery
+    if not photos:
+        return out
+    out.append((_jpeg(_carousel_cover(size, photos[0], copy, brand, swipe)), "cover"))
+    for i, p in enumerate(photos[1:], start=1):
+        cap = captions[i] if i < len(captions) else ""
+        out.append((_jpeg(_carousel_photo(size, p, brand, caption=cap)), "photo"))
+    out.append((_jpeg(_carousel_cta(size, copy, brand, es)), "cta"))
+    return out

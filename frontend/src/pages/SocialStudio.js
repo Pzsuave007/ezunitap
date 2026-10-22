@@ -12,13 +12,15 @@ import { toast } from "sonner";
 import {
   Megaphone, Sparkles, Loader2, Download, Copy, Trash2,
   ImagePlus, Wand2, X, Check, Image as ImageIcon, Video, IdCard,
-  SlidersHorizontal, Languages, Palette, Star, MapPin, ChevronLeft, ChevronRight, ChevronDown,
+  SlidersHorizontal, Languages, Palette, Star, MapPin, ChevronLeft, ChevronRight, ChevronDown, Images,
 } from "lucide-react";
 import { COLOR_THEMES, resolveColors } from "@/lib/socialThemes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import ReelStudio from "@/components/ReelStudio";
 import AiImageStudio from "@/components/AiImageStudio";
+import CarouselStudio from "@/components/CarouselStudio";
+import SlideCarousel from "@/components/SlideCarousel";
 import { AiTranslateButton } from "@/components/AiTranslateButton";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
@@ -118,7 +120,7 @@ export default function SocialStudio() {
   const { t, i18n } = useTranslation();
   const [mode, setMode] = useState(() => {
     const m = searchParams.get("mode");
-    return ["image", "reel", "ai"].includes(m) ? m : "image";
+    return ["image", "carousel", "reel", "ai"].includes(m) ? m : "image";
   });
   const [template, setTemplate] = useState("before_after");
   const tplScrollRef = useRef(null);
@@ -155,6 +157,8 @@ export default function SocialStudio() {
   const [reelInject, setReelInject] = useState(null); // AI image pushed into the reel builder
   const [advOpen, setAdvOpen] = useState(false); // "Más opciones" drawer (idioma + colores personalizados)
   const [resultOpen, setResultOpen] = useState(false); // slide-up result drawer
+  const [viewCarousel, setViewCarousel] = useState(null); // history carousel being viewed
+  const [dlAllBusy, setDlAllBusy] = useState(false);
 
   // Publish a generated post image to Google Business Profile
   const [gmbConnected, setGmbConnected] = useState(false);
@@ -422,6 +426,27 @@ export default function SocialStudio() {
     toast.success(t("socialStudio.postDeleted"));
   };
 
+  const downloadAllSlides = async (slides) => {
+    if (!slides?.length) return;
+    setDlAllBusy(true);
+    try {
+      for (let i = 0; i < slides.length; i++) {
+        // eslint-disable-next-line no-await-in-loop
+        await download({ url: slides[i].url, format: `carrusel-${String(i + 1).padStart(2, "0")}` });
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, 350));
+      }
+    } finally {
+      setDlAllBusy(false);
+    }
+  };
+
+  const openHistory = (h) => {
+    if (h.type === "carousel") { setViewCarousel(h); return; }
+    setPost(h);
+    setResultOpen(true);
+  };
+
   return (
     <div className="space-y-6" data-testid="social-studio">
       <div>
@@ -443,6 +468,15 @@ export default function SocialStudio() {
           }`}
         >
           <ImageIcon className="w-4 h-4" /> {t("socialStudio.tabImage")}
+        </button>
+        <button
+          onClick={() => setMode("carousel")}
+          data-testid="mode-carousel"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold tap transition-all ${
+            mode === "carousel" ? "bg-white shadow-sm text-emerald-700" : "text-slate-500"
+          }`}
+        >
+          <Images className="w-4 h-4" /> {i18n.language?.startsWith("es") ? "Carrusel" : "Carousel"}
         </button>
         <button
           onClick={() => setMode("reel")}
@@ -486,6 +520,8 @@ export default function SocialStudio() {
 
 
       {mode === "reel" && <ReelStudio injectPhoto={reelInject} />}
+
+      {mode === "carousel" && <CarouselStudio onCreated={loadHistory} />}
 
       {mode === "ai" && (
         <AiImageStudio
@@ -910,16 +946,22 @@ export default function SocialStudio() {
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
             {history.map((h) => {
               const thumb = h.images?.[0];
+              const isCarousel = h.type === "carousel";
               return (
                 <div key={h.id} className="relative group">
                   {thumb && (
                     <img
                       src={`${BACKEND}${thumb.url}`}
                       alt={h.template}
-                      onClick={() => { setPost(h); setResultOpen(true); }}
+                      onClick={() => openHistory(h)}
                       data-testid={`history-${h.id}`}
                       className="w-full aspect-square object-cover rounded-xl border border-slate-200 cursor-pointer tap"
                     />
+                  )}
+                  {isCarousel && (
+                    <span className="absolute bottom-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/65 text-white text-[10px] font-bold pointer-events-none">
+                      <Images className="w-3 h-3" /> {(h.slides || []).length}
+                    </span>
                   )}
                   <button
                     onClick={() => deletePost(h.id)}
@@ -934,6 +976,36 @@ export default function SocialStudio() {
           </div>
         </Card>
       )}
+
+      {/* Carousel viewer (from history) */}
+      <Drawer open={!!viewCarousel} onOpenChange={(o) => !o && setViewCarousel(null)}>
+        <DrawerContent data-testid="carousel-view-drawer" className="max-h-[92vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="font-heading flex items-center gap-2">
+              <Images className="w-5 h-5 text-emerald-600" /> {i18n.language?.startsWith("es") ? "Tu carrusel" : "Your carousel"}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 overflow-y-auto max-w-md mx-auto w-full" data-testid="carousel-view">
+            {viewCarousel && (
+              <div className="space-y-4">
+                <SlideCarousel slides={viewCarousel.slides || []} testId="carousel-view-slides" />
+                <Button onClick={() => downloadAllSlides(viewCarousel.slides)} disabled={dlAllBusy} data-testid="carousel-view-download-all"
+                  className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                  {dlAllBusy ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
+                  {i18n.language?.startsWith("es") ? "Descargar todas las diapositivas" : "Download all slides"}
+                </Button>
+                {viewCarousel.copy?.caption && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("socialStudio.captionForPost")}</Label>
+                    <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">{viewCarousel.copy.caption}</p>
+                    <p className="text-sm text-blue-600 mt-2">{(viewCarousel.copy.hashtags || []).join(" ")}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* AI photo enhancement before/after dialog */}
       <Dialog open={!!enhancePreview} onOpenChange={(v) => !v && setEnhancePreview(null)}>
