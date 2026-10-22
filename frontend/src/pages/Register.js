@@ -39,7 +39,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await register({ ...form, invite_token: inviteToken || undefined });
+      await register({ ...form, invite_token: inviteToken || undefined, source: fromDirectory ? "directory" : undefined });
       // Meta Pixel: account created (free 14-day trial, no card).
       fbTrack("CompleteRegistration", { content_name: selectedPlan || "trial", status: true });
       fbTrackCustom("StartTrial", { plan: selectedPlan || "" });

@@ -2774,10 +2774,21 @@
       "unpublished": "Unpublished",
       "publishError": "Couldn't publish",
       "badgeRequested": "Badge requested — we'll review it",
-      "loadError": "Couldn't load your profile"
+      "loadError": "Couldn't load your profile",
+      "tryTrial": "Try UniTech free for 14 days"
     },
     "signupTitle": "Claim your free listing",
     "signupDesc": "Create your account and get listed free in the directory. Local customers will find you and can request a quote.",
-    "signupBadge": "Directory listing · Free"
+    "signupBadge": "Directory listing · Free",
+    "home": {
+      "title": "Your directory listing is ready",
+      "freeForLife": "Free for life · no time limit",
+      "desc": "Keep your listing up to date so local customers can find you and request a quote.",
+      "editListing": "View / edit my listing",
+      "tryTitle": "Want to grow your business?",
+      "tryDesc": "Try UniTech free for 14 days: quotes, invoices, digital card, website and AI marketing. No card required.",
+      "tryBtn": "Try UniTech free for 14 days",
+      "tryStarting": "Starting your trial…"
+    }
   }
 }

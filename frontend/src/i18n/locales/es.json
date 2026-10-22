@@ -2775,10 +2775,21 @@
       "unpublished": "Despublicada",
       "publishError": "No se pudo publicar",
       "badgeRequested": "Sello solicitado — lo revisaremos",
-      "loadError": "No se pudo cargar tu ficha"
+      "loadError": "No se pudo cargar tu ficha",
+      "tryTrial": "Probar UniTech gratis 14 días"
     },
     "signupTitle": "Reclama tu ficha gratis",
     "signupDesc": "Crea tu cuenta y aparece gratis en el directorio. Los clientes de tu zona te encontrarán y podrán pedirte cotización.",
-    "signupBadge": "Ficha en el directorio · Gratis"
+    "signupBadge": "Ficha en el directorio · Gratis",
+    "home": {
+      "title": "Tu ficha del directorio está lista",
+      "freeForLife": "Gratis de por vida · sin límite de tiempo",
+      "desc": "Mantén tu ficha al día para que los clientes de tu zona te encuentren y te pidan cotización.",
+      "editListing": "Ver / editar mi ficha",
+      "tryTitle": "¿Quieres hacer crecer tu negocio?",
+      "tryDesc": "Prueba UniTech gratis 14 días: cotizaciones, facturas, tarjeta digital, página web y marketing con IA. Sin tarjeta.",
+      "tryBtn": "Probar UniTech gratis 14 días",
+      "tryStarting": "Activando tu prueba…"
+    }
   }
 }

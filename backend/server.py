@@ -75,6 +75,7 @@ class RegisterIn(BaseModel):
     owner_name: Optional[str] = ""
     phone: Optional[str] = ""
     invite_token: Optional[str] = None
+    source: Optional[str] = None
 
 
 class LoginIn(BaseModel):
@@ -441,6 +442,7 @@ async def _user_doc(user_id: str) -> dict:
     # Surface subscription-related fields (already on user doc; ensure present)
     u.setdefault("plan_type", None)
     u.setdefault("subscription_status", None)
+    u.setdefault("account_type", "full")
     u.setdefault("trial_ends_at", None)
     u.setdefault("current_period_end", None)
     u.setdefault("cancel_at_period_end", False)
@@ -515,6 +517,9 @@ async def register(payload: RegisterIn):
     import time as _time
     now_ts = int(_time.time())
     trial_ends_at = now_ts + 14 * 24 * 3600  # 14-day local trial
+    # Directory-only signup: FREE-FOR-LIFE listing, NO trial clock. The rest of
+    # UniTech stays locked (shown but gated) until they start a trial or pay.
+    is_directory = (payload.source == "directory")
 
     # Process invite token if provided (grants comp access on signup).
     invite = None
@@ -542,8 +547,9 @@ async def register(payload: RegisterIn):
         "business_email": payload.email.lower(),
         "created_at": _now_iso(),
         "plan_type": None,
-        "subscription_status": "trialing",
-        "trial_ends_at": trial_ends_at,
+        "subscription_status": "none" if is_directory else "trialing",
+        "trial_ends_at": None if is_directory else trial_ends_at,
+        "account_type": "directory" if is_directory else "full",
         "trial_extended": False,
         "trial_notifs": [],
         "current_period_end": None,
@@ -580,21 +586,35 @@ async def register(payload: RegisterIn):
         )
 
     token = create_token(user["id"])
-    # Welcome notification for new local-trial users (skip invited comp accounts).
+    # Welcome notification (skip invited comp accounts).
     if not invite:
         try:
-            await _create_notification(
-                user_id=user["id"],
-                title="👋 ¡Bienvenido a UniTech!",
-                body=(
-                    "Tienes <strong>14 días gratis</strong> para probar todo. "
-                    "Empieza creando tu primer quote profesional en inglés y comparte tu "
-                    "tarjeta digital. ¡Estamos para ayudarte a crecer tu negocio!"
-                ),
-                kind="success",
-                action_url="/quotes",
-                action_label="Crear mi primer quote",
-            )
+            if is_directory:
+                await _create_notification(
+                    user_id=user["id"],
+                    title="👋 ¡Bienvenido! Tu ficha es gratis para siempre",
+                    body=(
+                        "Completa tu <strong>Ficha En Directorio</strong> y publícala para que "
+                        "los clientes de tu zona te encuentren. Es <strong>gratis de por vida</strong>, "
+                        "sin límite de tiempo."
+                    ),
+                    kind="success",
+                    action_url="/directorio-ficha",
+                    action_label="Completar mi ficha",
+                )
+            else:
+                await _create_notification(
+                    user_id=user["id"],
+                    title="👋 ¡Bienvenido a UniTech!",
+                    body=(
+                        "Tienes <strong>14 días gratis</strong> para probar todo. "
+                        "Empieza creando tu primer quote profesional en inglés y comparte tu "
+                        "tarjeta digital. ¡Estamos para ayudarte a crecer tu negocio!"
+                    ),
+                    kind="success",
+                    action_url="/quotes",
+                    action_label="Crear mi primer quote",
+                )
             await db.users.update_one(
                 {"id": user["id"]}, {"$addToSet": {"trial_notifs": "welcome"}}
             )
@@ -604,6 +624,41 @@ async def register(payload: RegisterIn):
         "token": token,
         "user": await _user_doc(user["id"]),
     }
+
+
+@api_router.post("/account/start-trial")
+async def start_trial(user_id: str = Depends(get_current_user_id)):
+    """Let a directory-only (or any non-subscribed) user start the 14-day free
+    trial of the full UniTech suite — ONLY when they explicitly ask for it."""
+    import time as _time
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Already has access (paid, comp, or an active trial)? Nothing to do.
+    if payments_service.user_features(u):
+        return {"user": await _user_doc(user_id), "started": False}
+    now_ts = int(_time.time())
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "subscription_status": "trialing",
+            "trial_ends_at": now_ts + 14 * 24 * 3600,
+            "account_type": "full",
+            "trial_started_at": _now_iso(),
+        }},
+    )
+    try:
+        await _create_notification(
+            user_id=user_id,
+            title="🚀 ¡Empezó tu prueba de UniTech!",
+            body=("Tienes <strong>14 días gratis</strong> para usar todo: cotizaciones, "
+                  "facturas, tarjeta digital, web y marketing con IA."),
+            kind="success", action_url="/onboarding", action_label="Configurar mi cuenta",
+        )
+    except Exception as e:
+        logger.error(f"start-trial notif failed: {e!r}")
+    return {"user": await _user_doc(user_id), "started": True}
+
 
 
 @api_router.post("/auth/login")

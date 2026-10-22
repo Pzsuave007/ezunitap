@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon, Megaphone, Bell, ChevronRight,
   IdCard, Star, Eye, UserCheck, Image as ImageIcon, Video, Lock, Plus,
   Building2, BarChart3, MapPin, CheckCircle2, MonitorSmartphone, ExternalLink, Pencil, Copy,
+  Store, Loader2,
 } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import SetupChecklist from "@/components/SetupChecklist";
@@ -17,6 +18,7 @@ import StatusBadge from "@/components/StatusBadge";
 import OnboardingCelebration from "@/components/OnboardingCelebration";
 import TourButton from "@/components/TourButton";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { PhoneFrame, LiveCardPreview } from "@/components/LiveCardPreview";
 
 const money = (n) => `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -541,7 +543,7 @@ function UpsellBlock({ navigate, missing }) {
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { user, hasFeature } = useAuth();
+  const { user, hasFeature, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total_clients: 0, quotes_sent: 0, invoices_pending: 0, active_jobs: 0, pending_amount: 0 });
   const [recentQuotes, setRecentQuotes] = useState([]);
@@ -560,15 +562,36 @@ export default function Dashboard() {
   const hasMarketing = hasFeature("marketing");
   const hasWebsite = hasBusiness || hasCard;
 
+  // Directory-only account: FREE-FOR-LIFE listing, no trial clock, nothing else
+  // unlocked. Show a short, directory-focused home (no business wizard).
+  const directoryOnly = user?.account_type === "directory"
+    && !hasBusiness && !hasCard && !hasMarketing
+    && user?.subscription_status !== "trialing";
+
+  const [startingTrial, setStartingTrial] = useState(false);
+  const startTrial = async () => {
+    setStartingTrial(true);
+    try {
+      await api.post("/account/start-trial");
+      await refreshUser();
+      navigate("/onboarding");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Error");
+      setStartingTrial(false);
+    }
+  };
+
   useEffect(() => {
     // Mandatory onboarding: send new accounts to the guided wizard first.
+    // Directory-only users skip this — they get the short directory home.
+    if (directoryOnly) return;
     (async () => {
       try {
         const { data } = await api.get("/onboarding/status");
         if (!data?.completed) navigate("/onboarding", { replace: true });
       } catch (e) { /* ignore */ }
     })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [directoryOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (hasBusiness) {
@@ -618,6 +641,45 @@ export default function Dashboard() {
     return t("dashboard.greetingEvening");
   };
 
+  const [activeTab, setActiveTab] = useState(null);
+
+  if (directoryOnly) {
+    return (
+      <div className="space-y-6 pb-6" data-testid="directory-home-panel">
+        <div>
+          <p className="text-sm text-slate-500">{greeting()},</p>
+          <h1 className="font-heading text-2xl font-bold tracking-tight">{user?.business_name}</h1>
+        </div>
+
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-emerald-600 to-emerald-700 text-white">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-bold mb-2">
+            <Store className="w-3.5 h-3.5" /> {t("directory.home.freeForLife")}
+          </div>
+          <h2 className="font-heading text-xl font-bold">{t("directory.home.title")}</h2>
+          <p className="text-sm text-white/90 mt-1 max-w-lg">{t("directory.home.desc")}</p>
+          <button data-testid="directory-home-edit" onClick={() => navigate("/directorio-ficha")}
+            className="mt-4 inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2.5 rounded-xl">
+            <Store className="w-4 h-4" /> {t("directory.home.editListing")} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Try full UniTech — starts the 14-day trial only on request */}
+        <div className="rounded-2xl p-5 border border-dashed border-amber-300 bg-amber-50/60">
+          <h3 className="font-bold text-slate-900">{t("directory.home.tryTitle")}</h3>
+          <p className="text-sm text-slate-600 mt-1 max-w-lg">{t("directory.home.tryDesc")}</p>
+          <Button data-testid="directory-home-try-trial" onClick={startTrial} disabled={startingTrial}
+            className="mt-3 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold">
+            {startingTrial ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            {startingTrial ? t("directory.home.tryStarting") : t("directory.home.tryBtn")}
+          </Button>
+        </div>
+
+        <UpsellBlock navigate={navigate} missing={["business", "card", "marketing"].filter((f) => !hasFeature(f))} />
+      </div>
+    );
+  }
+
+
   const missing = ["business", "card", "marketing"].filter((f) => !hasFeature(f));
 
   // Tabs: only show for the modules the user owns. "main" = Invoicing & Jobs.
@@ -627,7 +689,6 @@ export default function Dashboard() {
     hasCard && { k: "card", label: t("dashboard.tabCard"), icon: IdCard },
     hasMarketing && { k: "marketing", label: t("dashboard.tabMarketing"), icon: Megaphone },
   ].filter(Boolean);
-  const [activeTab, setActiveTab] = useState(null);
   const currentTab = activeTab && tabs.some((tb) => tb.k === activeTab)
     ? activeTab
     : (tabs[0]?.k || null);

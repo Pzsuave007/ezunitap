@@ -1644,3 +1644,19 @@ Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (
 - Verificado con usuario demo dirdemo@test.com (prueba vencida → solo directorio): menú se ve completo con candados, y /invoices muestra "Activa Negocio" + Ver planes. Desktop y móvil OK.
 - ai_service.translate_text + POST /api/ai/translate siguen disponibles (sin uso en directorio tras pasar a i18n).
 - Build de producción reconstruido con todo.
+
+## [Jun 2026] Cuenta "solo directorio" gratis de por vida (sin trial) + prueba on-demand
+- Decisión del usuario: quien entra por el directorio NO recibe reloj de prueba de 14 días; su ficha es gratis de por vida. Pueden iniciar el trial de UniTech solo si lo piden; al iniciarlo aparece el asistente de negocio completo.
+- Backend:
+  - RegisterIn: campo `source`. register(): si source=="directory" → subscription_status="none", trial_ends_at=None, account_type="directory", y notificación de bienvenida enfocada en la ficha ("gratis de por vida"). Resto igual (trial 14d, account_type="full").
+  - user_features() devuelve set() para directory-only (sin trial/plan) → todo bloqueado menos el directorio (ungated). Sin banner de prueba (trialDaysLeft requiere subscription_status=="trialing").
+  - Nuevo POST /api/account/start-trial: inicia el trial 14d on-demand (subscription_status=trialing, trial_ends_at=now+14d, account_type="full"); no-op si ya tiene acceso. Devuelve user actualizado.
+  - _user_doc: account_type default "full" (usuarios viejos no afectados).
+- Frontend:
+  - Register.js: envía source="directory" cuando from=directory. AuthContext.register ya reenvía el payload.
+  - DirectoryProfileEditor: banner upsell ahora tiene 2 botones — "Activar todo UniTech" (/precios) y "Probar UniTech gratis 14 días" (POST start-trial → refreshUser → /onboarding).
+  - Dashboard.js: detecta directoryOnly (account_type=="directory" && sin features && no trialing). Si es directoryOnly: NO redirige a /onboarding; muestra Home corto "Your directory listing is ready · Free for life" + botón "Try UniTech free for 14 days" (start-trial → /onboarding) + UpsellBlock. useState activeTab movido arriba del early-return (rules-of-hooks).
+  - i18n: directory.home.* y directory.editor.tryTrial en es/en.
+- Verificado (curl + screenshot): register source=directory → account_type=directory, features=[]; start-trial → features completas y trialing. Home corto se muestra para dirview@test.com sin redirección al wizard. Sin agente de testing (por pedido del usuario).
+- Flujo completo del enlistado (confirmado): /directorio → "Publicar mi negocio gratis" → /register?from=directory ("Reclama tu ficha gratis", sin badge de trial) → crea cuenta directory-only → cae en /directorio-ficha → llena y publica → aparece en el directorio; leads caen en CRM + email (con línea de patrocinador si está activo + upsell UniTech para no-pagos).
+- Build de producción reconstruido con todo.

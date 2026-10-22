@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,8 @@ const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 export default function DirectoryProfileEditor() {
   const { t, i18n } = useTranslation();
-  const { hasFeature } = useAuth();
+  const { hasFeature, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const es = (i18n.language || "en").startsWith("es");
   const te = (k, opts) => t(`directory.editor.${k}`, opts);
 
@@ -136,6 +138,19 @@ export default function DirectoryProfileEditor() {
     } catch {}
   };
 
+  const [starting, setStarting] = useState(false);
+  const startTrial = async () => {
+    setStarting(true);
+    try {
+      await api.post("/account/start-trial");
+      await refreshUser();
+      navigate("/onboarding");
+    } catch {
+      toast.error(te("saveError"));
+      setStarting(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-24"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
   const dirName = config?.name || "Pro Finder";
@@ -160,10 +175,17 @@ export default function DirectoryProfileEditor() {
             <div className="flex-1">
               <p className="font-bold text-sm text-slate-800">{te("freePlan")}</p>
               <p className="text-xs text-slate-500 mt-0.5">{te("freeDesc")}</p>
-              <Button data-testid="directory-activate-btn" onClick={() => (window.location.href = "/precios")}
-                className="mt-3 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
-                {te("activate")} <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button data-testid="directory-activate-btn" onClick={() => (window.location.href = "/precios")}
+                  className="h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
+                  {te("activate")} <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+                <Button data-testid="directory-try-trial-btn" onClick={startTrial} disabled={starting}
+                  variant="outline" className="h-10 rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50">
+                  {starting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Rocket className="w-4 h-4 mr-1.5" />}
+                  {te("tryTrial")}
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
