@@ -182,7 +182,7 @@ export default function CarouselStudio({ onCreated }) {
               </button>
             )}
           </div>
-          <input ref={addRef} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden
+          <input ref={addRef} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden data-testid="carousel-file-input"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
           <p className="text-[11px] text-slate-400 mt-2">
             {kind === "before_after"

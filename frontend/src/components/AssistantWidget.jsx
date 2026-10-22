@@ -307,7 +307,7 @@ export default function AssistantWidget() {
               <button onClick={() => fileRef.current?.click()} data-testid="assistant-attach" className="w-10 h-10 flex-none rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center" title={T("Attach images", "Adjuntar imágenes")}>
                 <ImagePlus className="w-5 h-5" />
               </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { const fl = Array.from(e.target.files || []); if (fl.length) setFiles((prev) => [...prev, ...fl]); e.target.value = ""; }} />
+              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" data-testid="assistant-file-input" onChange={(e) => { const fl = Array.from(e.target.files || []); if (fl.length) setFiles((prev) => [...prev, ...fl]); e.target.value = ""; }} />
               <textarea
                 value={input} onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
