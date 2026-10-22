@@ -287,8 +287,12 @@ export default function AssistantWidget() {
             </div>
           )}
 
-          {/* Input */}
+          {/* Input (hidden while a confirmation is pending → user must tap Yes/No) */}
           <div className="flex-none p-3 border-t border-slate-200 bg-white">
+            {pending && !busy ? (
+              <p className="text-xs text-center text-amber-700" data-testid="assistant-confirm-hint">{T("Tap “Yes” or “No” above to continue.", "Toca “Sí” o “No” arriba para continuar.")}</p>
+            ) : (
+            <>
             {files.length > 0 && (
               <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-600" data-testid="assistant-file-chip">
                 {files.map((f, idx) => (
@@ -314,6 +318,8 @@ export default function AssistantWidget() {
                 <Send className="w-5 h-5" />
               </button>
             </div>
+            </>
+            )}
           </div>
         </div>
       )}

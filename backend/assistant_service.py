@@ -28,16 +28,21 @@ OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-6-luna")
 # /app/frontend/src/assistant/pages.json lists every page the assistant can open
 # and what it's for. Both the nav buttons and the bot's knowledge read from here,
 # so adding a new feature = one line in that file (no re-programming the bot).
-_PAGES_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "src", "assistant", "pages.json")
+_PAGES_CANDIDATES = [
+    os.path.join(os.path.dirname(__file__), "assistant_pages.json"),  # backend-local copy (production)
+    os.path.join(os.path.dirname(__file__), "..", "frontend", "src", "assistant", "pages.json"),  # dev / monorepo
+]
 
 
 def _load_pages():
-    try:
-        with open(_PAGES_PATH, "r", encoding="utf-8") as fh:
-            return json.load(fh)
-    except Exception as exc:  # pragma: no cover - map is optional for chat to work
-        logger.warning("assistant: could not load page map: %s", exc)
-        return []
+    for path in _PAGES_CANDIDATES:
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:  # noqa: BLE001
+            continue
+    logger.warning("assistant: could not load page map from any known path")
+    return []
 
 
 def _pages_catalog(es: bool) -> str:
