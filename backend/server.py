@@ -6834,9 +6834,20 @@ async def assistant_chat(
         return await _assistant_read(user_id, name, a)
 
     result = await assistant_service.respond(sys_prompt, transcript, user_text, lang, read_dispatch)
+    pending = result.get("pending")
+    # Safety net: a template/ai_pick post NEEDS a photo. If the model proposes it
+    # without one, don't create a dead confirmation — ask for the photo instead.
+    es_lang = (lang or "es").lower().startswith("es")
+    if pending and pending.get("name") == "create_social_post":
+        pmode = (pending.get("arguments", {}).get("design_mode") or "").lower()
+        has_photo = bool(image_ids) or bool(pending["arguments"].get("image_id")) or bool(sess.get("last_image_ids") or sess.get("last_image_id"))
+        if pmode in ("template", "ai_pick") and not has_photo:
+            ask = ("Perfecto. Súbeme la foto que quieres usar y te preparo el post. 📷" if es_lang
+                   else "Great — upload the photo you'd like to use and I'll make the post. 📷")
+            result = {"reply": ask, "pending": None}
+            pending = None
     display_user = (message or "").strip() or (f"📷 {len(image_ids)} imágenes adjuntas" if len(image_ids) > 1 else "📷 Imagen adjunta") if attached else (message or "").strip()
     new_msgs = transcript + [{"role": "user", "content": display_user}, {"role": "assistant", "content": result["reply"]}]
-    pending = result.get("pending")
     set_fields = {"messages": new_msgs[-40:], "pending": pending, "updated_at": _now_iso()}
     if attached:
         set_fields["last_image_ids"] = image_ids

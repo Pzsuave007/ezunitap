@@ -1583,3 +1583,9 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Cambios (assistant_service.py): OPENAI_OWN_MODEL default "gpt-4o" → "gpt-6-luna". En _run_openai se agrega reasoning_effort="none" SOLO para modelos de razonamiento (gpt-5/gpt-6/o*); gpt-4o-class no lo recibe. Prompt de marketing endurecido para NO dar vueltas: en cuanto hay modo (+foto para a/b) llamar create_social_post de inmediato, sin repetir opciones ni re-pedir foto.
 - Producción usa default (OPENAI_OWN_MODEL "no definido") → tras deploy usará gpt-6-luna. La llave OpenAI del usuario DEBE tener acceso a gpt-6-luna.
 - No testeable en preview (sin llave OpenAI nativa). Frontend build regenerado y staged (antes faltaba en git).
+
+## [Jun 2026] Post: seguro anti "confirmé y no hizo nada" + brevedad
+- Síntoma prod: usuario eligió opción 2 (ai_pick) SIN adjuntar foto; el bot (gpt-6-luna) igual mostró botones de confirmar; al confirmar → "No hay ninguna acción pendiente" y no pasó nada. Además las respuestas eran muy largas/repetitivas.
+- Fix 1 (seguro en /assistant/chat): si el modelo propone create_social_post con design_mode template/ai_pick y NO hay foto (ni adjunta ni en sesión), NO se crea pending; se responde pidiendo la foto. Evita el callejón sin salida del confirm vacío, sin importar el modelo. En preview (gpt-5.4) ya pedía foto solo; el seguro cubre modelos que no lo hacen (gpt-6-luna).
+- Fix 2 (brevedad): prompts ES/EN ahora exigen "sé MUY breve, 1-2 frases, no repitas opciones/listas ya dichas, nada de párrafos largos".
+- Verificado: con foto + opción 2 sigue proponiendo create_social_post (pending ok, confirm 150 chars). Backend only; el build de frontend ya estaba staged. Requiere REDEPLOY.
