@@ -1576,3 +1576,10 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Causa raíz: dos rutas en assistant_service.respond(). Preview NO tiene OPENAI_API_KEY → usa _run_emergent (modelo gpt-5.4, inyecta la conversación en el system message). Producción SÍ tiene OPENAI_API_KEY → usa _run_openai (modelo OPENAI_OWN_MODEL, default gpt-4o). El usuario intuyó bien: "el AI en producción no es el mismo".
 - Fix en _run_openai: ahora también inyecta la conversación reciente (últimos 16) en el system message con instrucción explícita "continúa el hilo; NO vuelvas a saludar", además de pasar el historial como mensajes con rol. Envuelto en try/except con logger.error (model=...) para visibilidad. No se pudo probar en preview (sin llave OpenAI nativa).
 - Acción para el usuario: verificar OPENAI_OWN_MODEL en /opt/ezunitap/backend/.env (o keys.txt). Default gpt-4o es capaz; si estuviera en un modelo débil/viejo, cambiarlo a gpt-4o. Requiere REDEPLOY.
+
+## [Jun 2026] Bot producción → modelo GPT 6 Luna (gpt-6-luna)
+- Decisión del usuario: cambiar el modelo del bot en producción. Eligió GPT 6 Luna (rápido/económico, mejor que gpt-4o para tool calling multi-paso).
+- Vía integration_expert: id de API = `gpt-6-luna`; para tool calling en Chat Completions REQUIERE reasoning_effort="none". openai SDK 1.99.9 ya soporta el parámetro.
+- Cambios (assistant_service.py): OPENAI_OWN_MODEL default "gpt-4o" → "gpt-6-luna". En _run_openai se agrega reasoning_effort="none" SOLO para modelos de razonamiento (gpt-5/gpt-6/o*); gpt-4o-class no lo recibe. Prompt de marketing endurecido para NO dar vueltas: en cuanto hay modo (+foto para a/b) llamar create_social_post de inmediato, sin repetir opciones ni re-pedir foto.
+- Producción usa default (OPENAI_OWN_MODEL "no definido") → tras deploy usará gpt-6-luna. La llave OpenAI del usuario DEBE tener acceso a gpt-6-luna.
+- No testeable en preview (sin llave OpenAI nativa). Frontend build regenerado y staged (antes faltaba en git).

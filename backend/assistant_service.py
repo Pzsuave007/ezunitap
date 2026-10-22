@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 EMERGENT_MODEL = os.environ.get("ASSISTANT_MODEL", "gpt-5.4")
-OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-4o")
+OPENAI_OWN_MODEL = os.environ.get("OPENAI_OWN_MODEL", "gpt-6-luna")
 
 # ── Central system map (single source of truth, shared with the frontend) ──
 # /app/frontend/src/assistant/pages.json lists every page the assistant can open
@@ -328,7 +328,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
             "(1) Tarjeta digital: cambiar foto, portada, logo, datos, eslogan, servicios (agregar/quitar), redes/horario, ver vistas y leads. "
             "(2) Sitio web: activar u ocultar secciones, CAMBIAR FOTOS (Sobre Nosotros, banner principal, etc.), RELLENAR AUTOMÁTICAMENTE todas las fotos que faltan con fotos de stock de su oficio (incluido el fondo de la tarjeta digital), CAMBIAR EL COLOR del tema, editar TEXTOS (título, subtítulo, Sobre Nosotros), agregar preguntas frecuentes, fotos a la galería y productos; ver su estado y enlace público. "
             "(3) Facturación: ver pagos pendientes, listar facturas y clientes, crear clientes, CREAR FACTURAS, registrar pagos, ENVIAR la factura al cliente por correo y dar el enlace de cobro. "
-            "(4) Marketing: listar plantillas y CREAR posts para redes de 3 formas que debes ofrecer cuando pidan un post: (a) con una PLANTILLA y la foto que suba el usuario, (b) que la IA ELIJA la mejor plantilla (también necesita foto), o (c) que la IA GENERE una imagen nueva desde cero (NO necesita foto). Pregunta cuál prefiere. Para (a) y (b) necesitas una foto: si no adjuntó ninguna, PÍDESELA; nunca digas que usarás una foto que no existe. Para (c) no hace falta foto. "
+            "(4) Marketing: listar plantillas y CREAR posts para redes de 3 formas que debes ofrecer cuando pidan un post: (a) con una PLANTILLA y la foto que suba el usuario, (b) que la IA ELIJA la mejor plantilla (también necesita foto), o (c) que la IA GENERE una imagen nueva desde cero (NO necesita foto). Pregunta cuál prefiere SOLO UNA VEZ. En cuanto el usuario elija el modo (y, para (a) y (b), ya haya una foto adjunta), LLAMA DE INMEDIATO a create_social_post con design_mode; para (c) llama de inmediato sin pedir foto. NO repitas las opciones ni vuelvas a pedir la foto si ya se adjuntó. Si falta la foto para (a)/(b), pídela una sola vez; nunca digas que usarás una foto que no existe. "
             "Cuando el usuario quiera cambiar una foto, el logo, o usar una foto en un post y haya adjuntado una imagen, usa la "
             "herramienta correspondiente pasando el image_id que te da el sistema. "
             "En facturación trata el dinero con cuidado: junta primero el cliente, los conceptos y los montos, y si falta algo, pregúntalo. "
@@ -352,7 +352,7 @@ def system_prompt(lang: str, business_name: str = "") -> str:
         "(1) Digital card: change photo, cover, logo, business info, tagline, services (add/remove), contact links/hours, view visits and leads. "
         "(2) Website: turn sections on/off, CHANGE PHOTOS (About Us, main banner, etc.), AUTO-FILL every missing photo with trade-relevant stock photos (including the digital card background), CHANGE THE theme COLOR, edit TEXT (headline, subtitle, About), add FAQs, gallery photos and products; see its status and public link. "
         "(3) Invoicing: see pending payments, list invoices and clients, create clients, CREATE INVOICES, record payments, EMAIL the invoice to the client, and get the payment link. "
-        "(4) Marketing: list templates and CREATE social posts in 3 ways you must offer when they ask for a post: (a) with a TEMPLATE and a photo the user uploads, (b) let AI PICK the best template (also needs a photo), or (c) let AI GENERATE a brand-new image from scratch (NO photo needed). Ask which they prefer. For (a) and (b) you need a photo: if none was attached, ASK for it; never claim you'll use a photo that doesn't exist. For (c) no photo is needed. "
+        "(4) Marketing: list templates and CREATE social posts in 3 ways you must offer when they ask for a post: (a) with a TEMPLATE and a photo the user uploads, (b) let AI PICK the best template (also needs a photo), or (c) let AI GENERATE a brand-new image from scratch (NO photo needed). Ask which they prefer ONLY ONCE. As soon as the user picks a mode (and, for (a) and (b), a photo is already attached), CALL create_social_post IMMEDIATELY with design_mode; for (c) call it immediately with no photo. Do NOT repeat the options or ask again for a photo that was already attached. If a photo is missing for (a)/(b), ask once; never claim you'll use a photo that doesn't exist. "
         "When the user wants to change a photo, the logo, or use a photo in a post and has attached an image, call the "
         "matching tool passing the image_id the system gives you. In invoicing, handle money carefully: gather the client, "
         "line items and amounts first, and ask for anything missing. "
@@ -495,9 +495,12 @@ async def _run_openai(system_base, transcript, user_text, lang, read_dispatch) -
 
     try:
         for _ in range(4):
-            resp = await client.chat.completions.create(
-                model=OPENAI_OWN_MODEL, messages=messages, tools=TOOLS, tool_choice="auto",
-            )
+            kwargs = dict(model=OPENAI_OWN_MODEL, messages=messages, tools=TOOLS, tool_choice="auto")
+            # Reasoning models (gpt-5/gpt-6/o-series) require reasoning_effort="none"
+            # for tool calling via Chat Completions; gpt-4o-class models reject the param.
+            if OPENAI_OWN_MODEL.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4")):
+                kwargs["reasoning_effort"] = "none"
+            resp = await client.chat.completions.create(**kwargs)
             msg = resp.choices[0].message
             tcs = msg.tool_calls or []
             if not tcs:
