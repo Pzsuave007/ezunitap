@@ -1556,3 +1556,8 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - CAMBIO 2 (FIX referencias rotas — causa del "no hay vacíos" en prod): nuevo helper _photo_is_usable(pid) (doc existe y no is_deleted). _should_fill ahora trata una referencia borrada/inexistente como VACÍA → la rellena. About collage usa usable_about para about_empty. Verificado: hero con id roto se rellenó en modo refresh=false sin tocar slots válidos.
 - CAMBIO 3 (UX error): frontend ahora distingue reason "pexels_down" (no se pudo conectar al servicio de fotos) de "no_slots" (ya no se confunden en un mismo mensaje).
 - IMPORTANTE: requiere REDEPLOY a producción (prod corría versión anterior). Requiere PEXELS_API_KEY en el .env de producción.
+
+## [Jun 2026] Robot: botones de navegación tras ejecutar acciones
+- Problema: al crear un post, el bot decía "ve a Marketing Studio" pero NO daba botón para ir. Los mensajes de éxito los arma el servidor (_assistant_apply / _assistant_create_social_post) y no incluían la etiqueta [[OPEN:...]] que el frontend convierte en botón.
+- Fix: se agregó la etiqueta al final de los mensajes de éxito: create_social_post → [[OPEN:marketing]]; create_invoice → [[OPEN:invoices]]; fill_website_photos (ambos modos) → [[OPEN:website]]. El frontend ya parsea enlaces en TODO mensaje del asistente (AssistantWidget línea 213), incluida la respuesta de /assistant/execute.
+- Verificado e2e por curl: crear post con imagen+brief → execute devuelve "...Marketing Studio... [[OPEN:marketing]]". Solo backend (sin rebuild de frontend). Post de prueba eliminado de la cuenta.

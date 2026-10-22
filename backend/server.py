@@ -6425,8 +6425,8 @@ async def _assistant_create_social_post(user_id: str, args: dict, lang: str, las
     }
     await db.social_posts.insert_one(dict(doc))
     headline = (copy or {}).get("headline") or brief
-    return (f"¡Listo! Creé tu post de marketing: \"{headline}\". Lo encuentras en Marketing Studio para descargarlo o editarlo.") if es \
-        else (f"Done! I created your marketing post: \"{headline}\". You'll find it in Marketing Studio to download or edit.")
+    return (f"¡Listo! Creé tu post de marketing: \"{headline}\". Lo encuentras en Marketing Studio para descargarlo o editarlo. [[OPEN:marketing]]") if es \
+        else (f"Done! I created your marketing post: \"{headline}\". You'll find it in Marketing Studio to download or edit. [[OPEN:marketing]]")
 
 
 async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id: str = None) -> str:
@@ -6582,10 +6582,10 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
         n = len([k for k in update if k not in ("updated_at",)])
         if n:
             if refresh:
-                return ("¡Listo! Renové las fotos automáticas de tu sitio y el fondo de tu tarjeta con imágenes nuevas de tu oficio. Refresca la página para verlas.") if es \
-                    else ("Done! I refreshed your site's auto photos and your card background with new images from your trade. Refresh to see them.")
-            return ("¡Listo! Rellené los espacios de foto vacíos de tu sitio y el fondo de tu tarjeta con imágenes de tu oficio. Refresca la página para verlas.") if es \
-                else ("Done! I filled the empty photo slots on your site and your card background with images from your trade. Refresh to see them.")
+                return ("¡Listo! Renové las fotos automáticas de tu sitio y el fondo de tu tarjeta con imágenes nuevas de tu oficio. Refresca la página para verlas. [[OPEN:website]]") if es \
+                    else ("Done! I refreshed your site's auto photos and your card background with new images from your trade. Refresh to see them. [[OPEN:website]]")
+            return ("¡Listo! Rellené los espacios de foto vacíos de tu sitio y el fondo de tu tarjeta con imágenes de tu oficio. Refresca la página para verlas. [[OPEN:website]]") if es \
+                else ("Done! I filled the empty photo slots on your site and your card background with images from your trade. Refresh to see them. [[OPEN:website]]")
         return ("Tu sitio ya tenía todas sus fotos puestas, así que no cambié nada. Si quieres fotos diferentes dime \u201ctráeme fotos diferentes\u201d, o sube las tuyas.") if es \
             else ("Your site already had all its photos, so I didn't change anything. For different photos say \u201cget me different photos\u201d, or upload your own.")
     if name == "add_faq":
@@ -6673,8 +6673,8 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
             "created_at": _now_iso(), "updated_at": _now_iso(),
         }
         await db.invoices.insert_one(dict(inv))
-        return (f"¡Listo! Creé la factura {inv['number']} para \"{cname}\" por ${total:,.2f}. Puedes mandar el cobro con el enlace: /p/invoice/{inv['id']}") if es \
-            else (f"Done! I created invoice {inv['number']} for \"{cname}\" for ${total:,.2f}. Share the payment link: /p/invoice/{inv['id']}")
+        return (f"¡Listo! Creé la factura {inv['number']} para \"{cname}\" por ${total:,.2f}. Puedes mandar el cobro con el enlace: /p/invoice/{inv['id']} [[OPEN:invoices]]") if es \
+            else (f"Done! I created invoice {inv['number']} for \"{cname}\" for ${total:,.2f}. Share the payment link: /p/invoice/{inv['id']} [[OPEN:invoices]]")
     if name == "record_payment":
         num = (args.get("invoice_number") or "").strip()
         inv = await db.invoices.find_one({"user_id": user_id, "number": num}, {"_id": 0})
