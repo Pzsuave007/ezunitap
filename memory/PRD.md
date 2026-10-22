@@ -1600,3 +1600,22 @@ Botón "Generar página de producto con IA" en cada producto del editor (Agency 
 - Fix adicional (ya aplicado antes en esta sesión): si el usuario escribe "sí/ok/dale" o "no/cancela" EN TEXTO en vez de tocar el botón, /chat ahora ejecuta o cancela el pending directamente, en vez de perderlo.
 - Verificado en preview: índice único creado (user_id_1_id_1 unique=True); flujo completo pedir→opción 2→subir foto→confirmar (botón) = HTTP 200 y post creado; confirmar escribiendo "si" también crea el post.
 - SOLO BACKEND. No requiere rebuild de frontend. Requiere REDEPLOY (Save to Github + `cd /home/ezunitap/repo && git pull && bash deploy.sh`). El dedupe limpia los duplicados al reiniciar.
+
+## [Jun 2026] Directorio de contratistas "Pro Finder" (MVP Fase 1)
+Oportunidad de negocio: directorio público de contratistas, gratis, patrocinable (Sherwin-Williams u otro). Gancho de entrada a UniTech: contratistas aparecen gratis en el directorio y desde ahí se les vende todo UniTech (web, CRM, facturas, marketing) con paga.
+Decisiones del usuario: todo bajo UniTech; directorio con dominio/imagen propia (URLs /directorio/servicio/ciudad-estado/negocio); nuevo segmento menú "Ficha En Directorio"; plan gratis = solo la ficha, lo demás bloqueado hasta activar y pagar; patrocinador CONFIGURABLE (no amarrado a Sherwin); nombre provisional "Pro Finder".
+Arquitectura (sin tocar el sistema de planes): el directorio NO lleva feature gate — todo usuario autenticado puede editar su ficha gratis; el resto sigue con FeatureGate/UpgradeWall como estaba.
+Backend (server.py, bloque "CONTRACTOR DIRECTORY" antes de include_router):
+- Colección `directory_profiles` (1 por user_id): business_name, categories[], phone, email, city, state, zip, service_area, about, website_url, hero_photo_id, logo_photo_id, gallery[], published, badge_status(none|pending|approved), slug único.
+- DIRECTORY_CATEGORIES (19 oficios bilingües). Config en app_config key `directory_config` (name, taglines, colores, sponsor_*).
+- Owner (auth, SIN gate): GET/PUT /api/directory/profile, POST /api/directory/profile/photo (slot hero|logo|gallery), DELETE gallery/{id}, POST publish, POST badge-request.
+- Público (no auth): GET /api/public/directory/config, GET search?category&q&city&state, GET listing/{slug}, POST listing/{slug}/lead → guarda en card_leads + CRM (clients, dedupe por tel/email) + notificación + email al dueño.
+- Admin (_require_super_admin): GET /api/admin/directory/profiles, POST .../{user_id}/badge, PUT /api/admin/directory/config.
+- Email: email_service.build_directory_lead_email con bloque UPSELL de UniTech (solo si NO es suscriptor pagado: payments_service.is_paying_subscriber). _shell ahora acepta promo="". Evento "directory_lead" en _notify_owner_email.
+Frontend:
+- pages/DirectoryProfileEditor.js (ruta /directorio-ficha, dentro de HomeOrAuth SIN FeatureGate) — editor de ficha + publicar + sello + banner upsell para usuarios free.
+- pages/DirectoryHome.js (público /directorio) — buscador por servicio/ciudad/estado + grid + CTA "publica gratis".
+- pages/DirectoryListing.js (público /directorio/:category/:cityState/:slug) — ficha elegante: hero, logo, badge, about, galería, CTAs Llamar/Pedir cotización, formulario de contacto pequeño.
+- Nav "Ficha En Directorio" (icono Store) en SIDEBAR y MORE_ITEMS, sin feature → nunca bloqueado. i18n nav.directory (es/en).
+Verificado (curl + screenshots, SIN testing agent por pedido del usuario): init/PUT/publish de ficha, config/search públicos, listing, lead → cae en CRM. Las 3 páginas renderizan bien.
+Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (endpoints ya existen); conectar dominio propio (DNS, paso del usuario); assets/logo de Sherwin cuando haya permiso. Requiere rebuild de frontend (yarn build) + REDEPLOY (Save to Github + git pull && bash deploy.sh).
