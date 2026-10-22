@@ -1490,6 +1490,22 @@ async def polish_to_english(field_type: str, text_es: str, business_type: str = 
     return out
 
 
+async def translate_text(text: str, target_lang: str = "en") -> str:
+    """Generic two-way translator (ES<->EN) for short profile fields."""
+    tgt = "English" if (target_lang or "en") == "en" else "Spanish"
+    system = (
+        f"You are a professional translator. Translate the user's text into {tgt}. "
+        "Output ONLY the translation — no quotes, no explanations, no labels, no markdown. "
+        "Keep it natural and concise, and preserve the meaning, tone, names and numbers."
+    )
+    chat = _new_chat(system)
+    response = await chat.send_message(UserMessage(text=text))
+    out = (response or "").strip()
+    if len(out) >= 2 and out[0] in "\"'“”" and out[-1] in "\"'“”":
+        out = out[1:-1].strip()
+    return out
+
+
 PHOTO_QUOTE_SYSTEM = """You analyze a contractor's job-site photo and propose a quote draft.
 
 Output ONLY JSON:

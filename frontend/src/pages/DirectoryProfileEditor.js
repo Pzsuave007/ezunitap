@@ -17,10 +17,10 @@ import {
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 export default function DirectoryProfileEditor() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { hasFeature } = useAuth();
-  const es = (i18n.language || "es").startsWith("es");
-  const T = (en, esT) => (es ? esT : en);
+  const es = (i18n.language || "en").startsWith("es");
+  const te = (k, opts) => t(`directory.editor.${k}`, opts);
 
   const [profile, setProfile] = useState(null);
   const [cats, setCats] = useState([]);
@@ -58,7 +58,7 @@ export default function DirectoryProfileEditor() {
       setCats(c.data.categories || []);
       setConfig(c.data.config || null);
     } catch {
-      toast.error(T("Couldn't load your profile", "No se pudo cargar tu ficha"));
+      toast.error(te("loadError"));
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function DirectoryProfileEditor() {
   const toggleCat = (slug) => setForm((f) => {
     const has = (f.categories || []).includes(slug);
     if (has) return { ...f, categories: f.categories.filter((s) => s !== slug) };
-    if ((f.categories || []).length >= 6) { toast.error(T("Max 6 services", "Máximo 6 servicios")); return f; }
+    if ((f.categories || []).length >= 6) { toast.error(te("max6")); return f; }
     return { ...f, categories: [...(f.categories || []), slug] };
   });
 
@@ -78,7 +78,7 @@ export default function DirectoryProfileEditor() {
     if (!v) return;
     setForm((f) => {
       const cur = f.custom_services || [];
-      if (cur.length >= 12) { toast.error(T("Max 12 services", "Máximo 12 servicios")); return f; }
+      if (cur.length >= 12) { toast.error(te("max12")); return f; }
       if (cur.some((s) => s.toLowerCase() === v.toLowerCase())) return f;
       return { ...f, custom_services: [...cur, v.slice(0, 40)] };
     });
@@ -91,9 +91,9 @@ export default function DirectoryProfileEditor() {
     try {
       const { data } = await api.put("/directory/profile", form);
       setProfile(data);
-      toast.success(T("Saved", "Guardado"));
+      toast.success(te("saved"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || T("Couldn't save", "No se pudo guardar"));
+      toast.error(e?.response?.data?.detail || te("saveError"));
     } finally {
       setSaving(false);
     }
@@ -107,9 +107,9 @@ export default function DirectoryProfileEditor() {
     try {
       await api.post("/directory/profile/photo", fd, { headers: { "Content-Type": "multipart/form-data" } });
       await load();
-      toast.success(T("Photo added", "Foto agregada"));
+      toast.success(te("photoAdded"));
     } catch {
-      toast.error(T("Couldn't upload photo", "No se pudo subir la foto"));
+      toast.error(te("photoError"));
     }
   };
 
@@ -122,9 +122,9 @@ export default function DirectoryProfileEditor() {
     try {
       const { data } = await api.post("/directory/profile/publish", { published: !profile.published });
       setProfile(data);
-      toast.success(data.published ? T("Published!", "¡Publicada!") : T("Unpublished", "Despublicada"));
+      toast.success(data.published ? te("published") : te("unpublished"));
     } catch (e) {
-      toast.error(e?.response?.data?.detail || T("Couldn't publish", "No se pudo publicar"));
+      toast.error(e?.response?.data?.detail || te("publishError"));
     }
   };
 
@@ -132,7 +132,7 @@ export default function DirectoryProfileEditor() {
     try {
       const { data } = await api.post("/directory/profile/badge-request");
       setProfile(data);
-      toast.success(T("Badge requested — we'll review it", "Sello solicitado — lo revisaremos"));
+      toast.success(te("badgeRequested"));
     } catch {}
   };
 
@@ -143,76 +143,69 @@ export default function DirectoryProfileEditor() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-5" data-testid="directory-editor">
-      {/* Header */}
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-none">
           <Store className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <h1 className="font-heading text-2xl font-bold tracking-tight">{T("My Directory Profile", "Mi Ficha En Directorio")}</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {T(`Free listing on ${dirName} so customers find you.`, `Aparece gratis en ${dirName} para que los clientes te encuentren.`)}
-          </p>
+          <h1 className="font-heading text-2xl font-bold tracking-tight">{te("title")}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{te("subtitle", { name: dirName })}</p>
         </div>
       </div>
 
-      {/* Upsell banner for free (directory-only) users */}
       {!fullAccess && (
         <Card className="p-4 border-0 bg-gradient-to-br from-amber-50 to-white ring-1 ring-amber-200" data-testid="directory-upsell">
           <div className="flex items-start gap-3">
             <Crown className="w-5 h-5 text-amber-500 flex-none mt-0.5" />
             <div className="flex-1">
-              <p className="font-bold text-sm text-slate-800">{T("You're on the free Directory plan", "Estás en el plan gratuito del Directorio")}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{T("Unlock your website, quotes, invoices, CRM and AI marketing to turn these leads into paying jobs.", "Activa tu página web, cotizaciones, facturas, CRM y marketing con IA para convertir estos leads en trabajos pagados.")}</p>
+              <p className="font-bold text-sm text-slate-800">{te("freePlan")}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{te("freeDesc")}</p>
               <Button data-testid="directory-activate-btn" onClick={() => (window.location.href = "/precios")}
                 className="mt-3 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
-                {T("Activate full UniTech", "Activar todo UniTech")} <ArrowRight className="w-4 h-4 ml-1.5" />
+                {te("activate")} <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Publish + badge */}
       <Card className="p-4 border-0 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-bold text-sm text-slate-800">{T("Show my profile publicly", "Mostrar mi ficha al público")}</p>
-            <p className="text-xs text-slate-500">{profile.published ? T("Live on the directory", "Visible en el directorio") : T("Hidden — only you can see it", "Oculta — solo tú la ves")}</p>
+            <p className="font-bold text-sm text-slate-800">{te("showPublic")}</p>
+            <p className="text-xs text-slate-500">{profile.published ? te("live") : te("hidden")}</p>
           </div>
           <Switch checked={!!profile.published} onCheckedChange={togglePublish} data-testid="directory-publish-switch" />
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
           {profile.badge_status === "approved" ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full" data-testid="directory-badge-approved">
-              <BadgeCheck className="w-4 h-4" /> {T("Sponsor badge active", "Sello de patrocinador activo")}
+              <BadgeCheck className="w-4 h-4" /> {te("badgeActive")}
             </span>
           ) : profile.badge_status === "pending" ? (
-            <span className="text-sm text-amber-600 font-medium" data-testid="directory-badge-pending">{T("Badge under review…", "Sello en revisión…")}</span>
+            <span className="text-sm text-amber-600 font-medium" data-testid="directory-badge-pending">{te("badgePending")}</span>
           ) : (
-            <Button variant="outline" size="sm" onClick={requestBadge} data-testid="directory-badge-request"
-              className="rounded-xl">
-              <BadgeCheck className="w-4 h-4 mr-1.5" /> {T("Request sponsor badge", "Solicitar sello de patrocinador")}
+            <Button variant="outline" size="sm" onClick={requestBadge} data-testid="directory-badge-request" className="rounded-xl">
+              <BadgeCheck className="w-4 h-4 mr-1.5" /> {te("badgeRequest")}
             </Button>
           )}
           {profile.published && (
             <a href={publicUrl} target="_blank" rel="noreferrer" data-testid="directory-view-public"
               className="inline-flex items-center gap-1.5 text-sm text-emerald-700 font-semibold ml-auto">
-              <Eye className="w-4 h-4" /> {T("View my public profile", "Ver mi ficha pública")} <ExternalLink className="w-3.5 h-3.5" />
+              <Eye className="w-4 h-4" /> {te("viewPublic")} <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
         </div>
       </Card>
 
-      {/* Photos */}
       <Card className="p-4 border-0 shadow-sm space-y-4">
-        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("Photos", "Fotos")}</Label>
+        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("photos")}</Label>
         <div className="flex gap-3">
-          <PhotoBox label={T("Logo", "Logo")} url={profile.logo_url} onClick={() => logoRef.current?.click()} testId="directory-logo" round />
-          <PhotoBox label={T("Cover photo", "Foto principal")} url={profile.hero_url} onClick={() => heroRef.current?.click()} testId="directory-hero" />
+          <PhotoBox label={te("logo")} url={profile.logo_url} onClick={() => logoRef.current?.click()} testId="directory-logo" round />
+          <PhotoBox label={te("cover")} url={profile.hero_url} onClick={() => heroRef.current?.click()} testId="directory-hero" />
         </div>
         <div>
-          <p className="text-xs text-slate-500 mb-1.5">{T("Work gallery (up to 12)", "Galería de trabajos (hasta 12)")}</p>
+          <p className="text-xs text-slate-500 mb-1.5">{te("gallery")}</p>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2" data-testid="directory-gallery">
             {(profile.gallery_urls || []).map((u) => (
               <div key={u} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group">
@@ -233,14 +226,13 @@ export default function DirectoryProfileEditor() {
         <input ref={galRef} type="file" accept="image/*" hidden onChange={(e) => { uploadPhoto(e.target.files?.[0], "gallery"); e.target.value = ""; }} />
       </Card>
 
-      {/* Details */}
       <Card className="p-4 border-0 shadow-sm space-y-4">
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("Business name", "Nombre del negocio")}</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("businessName")}</Label>
           <Input data-testid="directory-name-input" value={form.business_name} onChange={(e) => setField("business_name", e.target.value)} className="mt-1.5 rounded-xl" />
         </div>
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("Services you offer", "Servicios que ofreces")}</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("services")}</Label>
           <div className="flex flex-wrap gap-2 mt-2" data-testid="directory-categories">
             {cats.map((c) => {
               const on = (form.categories || []).includes(c.slug);
@@ -253,18 +245,13 @@ export default function DirectoryProfileEditor() {
             })}
           </div>
           <div className="mt-4">
-            <p className="text-xs text-slate-500 mb-2">{T("Add your own services (type and press Enter)", "Agrega tus propios servicios (escribe y presiona Enter)")}</p>
+            <p className="text-xs text-slate-500 mb-2">{te("addOwn")}</p>
             <div className="flex gap-2">
-              <Input
-                data-testid="directory-custom-service-input"
-                value={svcInput}
-                onChange={(e) => setSvcInput(e.target.value)}
+              <Input data-testid="directory-custom-service-input" value={svcInput} onChange={(e) => setSvcInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
-                placeholder={T("e.g. Cabinet refinishing", "ej. Pintura de gabinetes")}
-                className="rounded-xl"
-              />
+                placeholder={te("addOwnPh")} className="rounded-xl" />
               <Button type="button" onClick={addService} data-testid="directory-custom-service-add"
-                variant="outline" className="rounded-xl flex-none px-4">{T("Add", "Agregar")}</Button>
+                variant="outline" className="rounded-xl flex-none px-4">{te("add")}</Button>
             </div>
             {(form.custom_services || []).length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3" data-testid="directory-custom-services">
@@ -282,43 +269,43 @@ export default function DirectoryProfileEditor() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{T("City", "Ciudad")}</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{t("directory.city")}</Label>
             <Input data-testid="directory-city-input" value={form.city} onChange={(e) => setField("city", e.target.value)} className="mt-1.5 rounded-xl" placeholder="Houston" />
           </div>
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("State", "Estado")}</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("directory.state")}</Label>
             <Input data-testid="directory-state-input" value={form.state} onChange={(e) => setField("state", e.target.value)} maxLength={2} className="mt-1.5 rounded-xl uppercase" placeholder="TX" />
           </div>
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("ZIP", "Código postal")}</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("zip")}</Label>
             <Input data-testid="directory-zip-input" value={form.zip} onChange={(e) => setField("zip", e.target.value)} className="mt-1.5 rounded-xl" placeholder="77002" />
           </div>
         </div>
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("Service area", "Zona de servicio")}</Label>
-          <Input data-testid="directory-area-input" value={form.service_area} onChange={(e) => setField("service_area", e.target.value)} className="mt-1.5 rounded-xl" placeholder={T("Greater Houston area", "Houston y alrededores")} />
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("serviceArea")}</Label>
+          <Input data-testid="directory-area-input" value={form.service_area} onChange={(e) => setField("service_area", e.target.value)} className="mt-1.5 rounded-xl" placeholder={te("serviceAreaPh")} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{T("Phone", "Teléfono")}</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{t("directory.phone")}</Label>
             <Input data-testid="directory-phone-input" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className="mt-1.5 rounded-xl" />
           </div>
           <div>
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{T("Email", "Correo")}</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{t("directory.email")}</Label>
             <Input data-testid="directory-email-input" value={form.email} onChange={(e) => setField("email", e.target.value)} className="mt-1.5 rounded-xl" />
           </div>
         </div>
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{T("Website (optional)", "Sitio web (opcional)")}</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{te("website")}</Label>
           <Input data-testid="directory-website-input" value={form.website_url} onChange={(e) => setField("website_url", e.target.value)} className="mt-1.5 rounded-xl" placeholder="https://" />
         </div>
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{T("About your business", "Sobre tu negocio")}</Label>
-          <Textarea data-testid="directory-about-input" value={form.about} onChange={(e) => setField("about", e.target.value)} className="mt-1.5 rounded-xl min-h-[90px]" placeholder={T("What you do, your experience, what makes you different…", "Qué haces, tu experiencia, qué te hace diferente…")} />
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{te("about")}</Label>
+          <Textarea data-testid="directory-about-input" value={form.about} onChange={(e) => setField("about", e.target.value)} className="mt-1.5 rounded-xl min-h-[90px]" placeholder={te("aboutPh")} />
         </div>
         <Button onClick={save} disabled={saving} data-testid="directory-save-btn" className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700">
           {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Rocket className="w-5 h-5 mr-2" />}
-          {T("Save profile", "Guardar ficha")}
+          {te("save")}
         </Button>
       </Card>
     </div>

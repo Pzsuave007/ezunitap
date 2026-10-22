@@ -2750,6 +2750,25 @@ async def ai_translate_field(payload: TranslateFieldIn, user_id: str = Depends(g
     return {"text_en": text_en}
 
 
+class TranslateTextIn(BaseModel):
+    text: str
+    target_lang: str = "en"
+
+
+@api_router.post("/ai/translate")
+async def ai_translate(payload: TranslateTextIn, user_id: str = Depends(get_current_user_id)):
+    """Generic two-way translation (ES<->EN) for short profile/config fields."""
+    if not (payload.text or "").strip():
+        raise HTTPException(400, "Falta texto para traducir")
+    try:
+        out = await ai_service.translate_text(payload.text.strip(), payload.target_lang or "en")
+    except Exception as e:
+        logger.exception("AI translate failed")
+        raise HTTPException(500, f"AI error: {e}")
+    return {"text": out}
+
+
+
 @api_router.post("/ai/quote")
 async def ai_quote(payload: AIQuoteRequest, user_id: str = Depends(get_current_user_id), _feat: dict = Depends(require_feature("business"))):
     try:

@@ -1627,3 +1627,12 @@ Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (
   2) Lista de fichas con logo, estado publicada/oculta, ciudad y # servicios; aprobar/quitar/dar sello (POST /api/admin/directory/profiles/{user_id}/badge). Muestra contador de sellos pendientes.
 - Verificado (curl + screenshot, SIN testing agent): admin list, aprobar sello (acme-painting badge→approved, visible en listing público), PUT config. Página renderiza con la pestaña activa.
 - Frontend reconstruido (yarn build OK). Listo para Save to Github + redeploy.
+
+## [Jun 2026] Directorio movido a i18n (sin doble idioma manual)
+- Petición del usuario: el app ya traduce dashboard/sitios solo con el toggle EN/ES; aplicar lo mismo al directorio en vez de escribir ES/EN a mano.
+- Se agregó namespace `directory` (y `directory.editor`) en i18n/locales/es.json y en.json (~55 claves): tagline, buscador, CTAs, "Verificado", formulario de la ficha, y todo el editor.
+- DirectoryHome.js, DirectoryListing.js, DirectoryProfileEditor.js reescritos para usar useTranslation() + claves i18n (ya no inline T(en,es) ni navigator.language). Interpolación {{name}}/{{business}}.
+- Las páginas PÚBLICAS llevan un toggle EN/ES propio (LangToggle → i18n.changeLanguage, cachea en localStorage unitech_lang). i18n detecta ?lang, localStorage y navigator. Verificado: ?lang=es muestra español, botón EN cambia a inglés al instante.
+- AdminDirectory: se QUITARON los campos tagline_es/tagline_en y sponsor_label_es/en (ahora vienen de i18n) y los botones de traducir. Config admin ahora solo: nombre, color, toggle patrocinador + nombre/logo patrocinador. Nota explicativa agregada.
+- Backend: se agregó ai_service.translate_text(text,target_lang) + POST /api/ai/translate (traductor genérico ES<->EN, authed) — disponible para uso futuro aunque el directorio ya no lo necesita. Los campos tagline_*/sponsor_label_* siguen en el default de config pero el frontend los ignora.
+- Build de producción reconstruido. Listo para Save to Github + redeploy.

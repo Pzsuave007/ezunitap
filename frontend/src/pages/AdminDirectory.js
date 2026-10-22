@@ -110,13 +110,10 @@ export default function AdminDirectory() {
                 <Input value={cfg.primary_color || ""} onChange={(e) => setC("primary_color", e.target.value)} className="rounded-xl" />
               </div>
             </Field>
-            <Field label="Eslogan (Español)">
-              <Input data-testid="cfg-tagline-es" value={cfg.tagline_es || ""} onChange={(e) => setC("tagline_es", e.target.value)} className="rounded-xl" />
-            </Field>
-            <Field label="Eslogan (Inglés)">
-              <Input value={cfg.tagline_en || ""} onChange={(e) => setC("tagline_en", e.target.value)} className="rounded-xl" />
-            </Field>
           </div>
+          <p className="text-xs text-slate-400 mt-3">
+            Los textos del directorio (eslogan, botones, etc.) se traducen solos según el idioma del visitante (EN/ES), igual que el resto del app. No hay que escribirlos en dos idiomas.
+          </p>
 
           <div className="mt-5 pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between mb-3">
@@ -132,12 +129,6 @@ export default function AdminDirectory() {
               </Field>
               <Field label="Logo del patrocinador (URL)">
                 <Input data-testid="cfg-sponsor-logo" value={cfg.sponsor_logo_url || ""} onChange={(e) => setC("sponsor_logo_url", e.target.value)} className="rounded-xl" placeholder="https://..." />
-              </Field>
-              <Field label="Texto antes del patrocinador (ES)">
-                <Input value={cfg.sponsor_label_es || ""} onChange={(e) => setC("sponsor_label_es", e.target.value)} className="rounded-xl" placeholder="Patrocinado por" />
-              </Field>
-              <Field label="Texto antes del patrocinador (EN)">
-                <Input value={cfg.sponsor_label_en || ""} onChange={(e) => setC("sponsor_label_en", e.target.value)} className="rounded-xl" placeholder="Sponsored by" />
               </Field>
             </div>
           </div>

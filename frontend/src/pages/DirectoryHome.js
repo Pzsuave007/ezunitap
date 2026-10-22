@@ -1,18 +1,32 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { Search, MapPin, BadgeCheck, Loader2, Store, ArrowRight, Phone } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
-const lang = () => (typeof navigator !== "undefined" && (navigator.language || "es").startsWith("en") ? "en" : "es");
+function LangToggle() {
+  const { i18n } = useTranslation();
+  const cur = (i18n.language || "en").startsWith("es") ? "es" : "en";
+  return (
+    <div className="inline-flex rounded-full bg-white/20 p-0.5 text-xs font-bold" data-testid="directory-lang-toggle">
+      {["en", "es"].map((l) => (
+        <button key={l} onClick={() => i18n.changeLanguage(l)} data-testid={`directory-lang-${l}`}
+          className={`px-2.5 py-1 rounded-full transition-colors ${cur === l ? "bg-white text-slate-900" : "text-white/90"}`}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function DirectoryHome() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const es = (i18n.language || "en").startsWith("es");
   const [sp, setSp] = useSearchParams();
-  const es = lang() === "es";
-  const T = (en, esT) => (es ? esT : en);
 
   const [config, setConfig] = useState(null);
   const [cats, setCats] = useState([]);
@@ -46,7 +60,7 @@ export default function DirectoryHome() {
     finally { setLoading(false); }
   }, [q, category, city, stateF, setSp]);
 
-  useEffect(() => { search(); /* initial + whenever filters applied via button */ /* eslint-disable-next-line */ }, []);
+  useEffect(() => { search(); /* eslint-disable-next-line */ }, []);
 
   const catLabel = (slug) => { const c = cats.find((x) => x.slug === slug); return c ? (es ? c.es : c.en) : slug; };
   const dirName = config?.name || "Pro Finder";
@@ -54,64 +68,63 @@ export default function DirectoryHome() {
 
   return (
     <div className="min-h-screen bg-slate-50" data-testid="directory-home">
-      {/* Header */}
       <header className="text-white" style={{ background: primary }}>
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <button onClick={() => navigate("/directorio")} className="flex items-center gap-2 font-heading font-bold text-lg" data-testid="directory-logo-home">
             <Store className="w-6 h-6" /> {dirName}
           </button>
-          {config?.sponsor_enabled && config?.sponsor_name && (
-            <div className="text-xs opacity-90 flex items-center gap-2" data-testid="directory-sponsor">
-              <span>{es ? config.sponsor_label_es : config.sponsor_label_en}</span>
-              {config.sponsor_logo_url
-                ? <img src={config.sponsor_logo_url} alt={config.sponsor_name} className="h-6" />
-                : <span className="font-bold">{config.sponsor_name}</span>}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {config?.sponsor_enabled && config?.sponsor_name && (
+              <div className="text-xs opacity-90 flex items-center gap-2" data-testid="directory-sponsor">
+                <span>{t("directory.sponsoredBy")}</span>
+                {config.sponsor_logo_url
+                  ? <img src={config.sponsor_logo_url} alt={config.sponsor_name} className="h-6" />
+                  : <span className="font-bold">{config.sponsor_name}</span>}
+              </div>
+            )}
+            <LangToggle />
+          </div>
         </div>
-        {/* Hero */}
         <div className="max-w-5xl mx-auto px-4 pb-10 pt-4">
           <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight max-w-2xl">
-            {es ? config?.tagline_es : config?.tagline_en}
+            {t("directory.tagline")}
           </h1>
-          {/* Search bar */}
           <div className="mt-6 bg-white rounded-2xl p-3 shadow-lg flex flex-col sm:flex-row gap-2" data-testid="directory-search-bar">
             <div className="flex-1 flex items-center gap-2 px-2">
               <Search className="w-5 h-5 text-slate-400" />
               <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && search()}
-                placeholder={T("Business name…", "Nombre del negocio…")} data-testid="directory-search-q"
+                placeholder={t("directory.searchName")} data-testid="directory-search-q"
                 className="w-full py-2 text-slate-800 outline-none text-sm" />
             </div>
             <select value={category} onChange={(e) => setCategory(e.target.value)} data-testid="directory-search-category"
               className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm">
-              <option value="">{T("All services", "Todos los servicios")}</option>
+              <option value="">{t("directory.allServices")}</option>
               {cats.map((c) => <option key={c.slug} value={c.slug}>{es ? c.es : c.en}</option>)}
             </select>
             <input value={city} onChange={(e) => setCity(e.target.value)} onKeyDown={(e) => e.key === "Enter" && search()}
-              placeholder={T("City", "Ciudad")} data-testid="directory-search-city"
+              placeholder={t("directory.city")} data-testid="directory-search-city"
               className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm w-full sm:w-32" />
             <select value={stateF} onChange={(e) => setStateF(e.target.value)} data-testid="directory-search-state"
               className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm">
-              <option value="">{T("State", "Estado")}</option>
+              <option value="">{t("directory.state")}</option>
               {states.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             <button onClick={search} data-testid="directory-search-btn"
               className="px-5 py-2 rounded-xl text-white font-semibold text-sm" style={{ background: primary }}>
-              {T("Search", "Buscar")}
+              {t("directory.search")}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Results */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
         ) : results.length === 0 ? (
           <div className="text-center py-20 text-slate-500" data-testid="directory-empty">
             <Store className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-            <p className="font-semibold">{T("No contractors found", "No se encontraron contratistas")}</p>
-            <p className="text-sm">{T("Try another service or city.", "Prueba otro servicio o ciudad.")}</p>
+            <p className="font-semibold">{t("directory.noResults")}</p>
+            <p className="text-sm">{t("directory.noResultsHint")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="directory-results">
@@ -124,7 +137,7 @@ export default function DirectoryHome() {
                     <div className="w-full h-full flex items-center justify-center text-slate-300"><Store className="w-8 h-8" /></div>}
                   {r.badge && (
                     <span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-emerald-600 text-white text-[11px] font-bold px-2 py-1 rounded-full">
-                      <BadgeCheck className="w-3.5 h-3.5" /> {T("Verified", "Verificado")}
+                      <BadgeCheck className="w-3.5 h-3.5" /> {t("directory.verified")}
                     </span>
                   )}
                 </div>
@@ -137,7 +150,7 @@ export default function DirectoryHome() {
                     ))}
                   </div>
                   <span className="inline-flex items-center gap-1 text-emerald-700 text-sm font-semibold mt-3">
-                    {T("View profile", "Ver ficha")} <ArrowRight className="w-3.5 h-3.5" />
+                    {t("directory.viewProfile")} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
               </button>
@@ -145,13 +158,12 @@ export default function DirectoryHome() {
           </div>
         )}
 
-        {/* Join CTA for contractors */}
         <div className="mt-12 rounded-2xl p-6 text-center text-white" style={{ background: primary }} data-testid="directory-join-cta">
-          <h2 className="font-heading text-xl font-bold">{T("Are you a contractor?", "¿Eres contratista?")}</h2>
-          <p className="text-sm opacity-90 mt-1 max-w-xl mx-auto">{T(`List your business free on ${dirName} and get found by local customers.`, `Aparece gratis en ${dirName} y deja que los clientes de tu zona te encuentren.`)}</p>
+          <h2 className="font-heading text-xl font-bold">{t("directory.ctaTitle")}</h2>
+          <p className="text-sm opacity-90 mt-1 max-w-xl mx-auto">{t("directory.ctaDesc", { name: dirName })}</p>
           <button onClick={() => navigate("/register")} data-testid="directory-join-btn"
             className="mt-4 inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-5 py-2.5 rounded-xl">
-            <Phone className="w-4 h-4" /> {T("List my business free", "Publicar mi negocio gratis")}
+            <Phone className="w-4 h-4" /> {t("directory.ctaButton")}
           </button>
         </div>
       </main>
