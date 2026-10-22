@@ -5024,6 +5024,15 @@ async def _is_stock_photo(pid: str) -> bool:
     return bool(doc and doc.get("label") == "website_stock")
 
 
+async def _photo_is_usable(pid: str) -> bool:
+    """True if the photo_id points to a real, non-deleted photo. A missing or
+    deleted reference means the slot shows no image, so we treat it as empty."""
+    if not pid:
+        return False
+    doc = await db.photos.find_one({"id": pid}, {"_id": 0, "is_deleted": 1})
+    return bool(doc) and not doc.get("is_deleted")
+
+
 async def _store_stock_url(user_id: str, url: str) -> Optional[str]:
     """Download a Pexels URL and store it locally as a 'website_stock' photo. None on failure."""
     try:
@@ -5060,6 +5069,8 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
     async def _should_fill(pid) -> bool:
         if not pid:
             return True
+        if not await _photo_is_usable(pid):
+            return True  # broken/deleted reference → the slot looks empty, refill it
         return refresh and await _is_stock_photo(pid)
 
     to_delete = []  # old stock photos we replace
@@ -5075,9 +5086,10 @@ async def _fill_website_stock_photos(user_id: str, w: dict, card: dict, refresh:
                     to_delete.append(w["hero_photo_id"])
                 update["hero_photo_id"] = nid
 
-    # About collage (fill up to 3 if the whole slot is empty/stock)
+    # About collage (fill up to 3 if the whole slot is empty/broken/stock)
     about_ids = list(w.get("about_photo_ids") or ([] if not w.get("team_photo_id") else [w["team_photo_id"]]))
-    about_empty = len(about_ids) == 0
+    usable_about = [x for x in about_ids if await _photo_is_usable(x)]
+    about_empty = len(usable_about) == 0
     about_replaceable = about_empty or (refresh and all([await _is_stock_photo(x) for x in about_ids]))
     if about_replaceable:
         new_about = []
@@ -5737,8 +5749,12 @@ async def website_stock_photos(body: dict = Body(default={}), user_id: str = Dep
         per_page=1, orientation="landscape",
     )
     pexels_ok = bool(probe)
+    # Default = only fill EMPTY slots (safe to tap repeatedly). When the user
+    # explicitly asks for different photos, the client sends refresh=true to also
+    # re-roll the stock photos already placed (owner uploads are never touched).
+    refresh = bool(isinstance(body, dict) and body.get("refresh"))
     try:
-        update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
+        update = await _fill_website_stock_photos(user_id, w, card, refresh=refresh)
     except Exception as e:  # noqa: BLE001
         logger.error(f"website stock-photos failed: {e!r}")
         raise HTTPException(502, "Could not fetch stock photos. Try again in a moment.")
@@ -6557,17 +6573,21 @@ async def _assistant_apply(user_id: str, pending: dict, lang: str, last_image_id
             else (f"Done! I changed your website's main color to {color}. Refresh to see it.")
     if name == "fill_website_photos":
         w = await _get_or_init_website(user_id)
+        refresh = bool(args.get("refresh"))
         try:
-            update = await _fill_website_stock_photos(user_id, w, card, refresh=True)
+            update = await _fill_website_stock_photos(user_id, w, card, refresh=refresh)
         except Exception as e:  # noqa: BLE001
             logger.error(f"assistant fill_website_photos failed: {e!r}")
             raise HTTPException(502, "No pude traer las fotos en este momento. Inténtalo de nuevo en un momento." if es else "I couldn't fetch the photos right now. Try again in a moment.")
         n = len([k for k in update if k not in ("updated_at",)])
         if n:
-            return ("¡Listo! Rellené las fotos que faltaban en tu sitio y el fondo de tu tarjeta con imágenes de tu oficio. Refresca la página para verlas.") if es \
-                else ("Done! I filled the missing photos on your site and your card background with images from your trade. Refresh to see them.")
-        return ("Tu sitio ya tenía todas sus fotos puestas, así que no cambié nada. Si quieres fotos diferentes, sube las tuyas o dime qué sección cambiar.") if es \
-            else ("Your site already had all its photos, so I didn't change anything. For different photos, upload your own or tell me which section to change.")
+            if refresh:
+                return ("¡Listo! Renové las fotos automáticas de tu sitio y el fondo de tu tarjeta con imágenes nuevas de tu oficio. Refresca la página para verlas.") if es \
+                    else ("Done! I refreshed your site's auto photos and your card background with new images from your trade. Refresh to see them.")
+            return ("¡Listo! Rellené los espacios de foto vacíos de tu sitio y el fondo de tu tarjeta con imágenes de tu oficio. Refresca la página para verlas.") if es \
+                else ("Done! I filled the empty photo slots on your site and your card background with images from your trade. Refresh to see them.")
+        return ("Tu sitio ya tenía todas sus fotos puestas, así que no cambié nada. Si quieres fotos diferentes dime \u201ctráeme fotos diferentes\u201d, o sube las tuyas.") if es \
+            else ("Your site already had all its photos, so I didn't change anything. For different photos say \u201cget me different photos\u201d, or upload your own.")
     if name == "add_faq":
         q = str(args.get("question", "")).strip()[:300]
         a = str(args.get("answer", "")).strip()[:1500]

@@ -52,6 +52,7 @@ export default function WebsiteEditor() {
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false); // eslint-disable-line no-unused-vars
   const [stocking, setStocking] = useState(false);
+  const [refreshingPhotos, setRefreshingPhotos] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
@@ -107,18 +108,19 @@ export default function WebsiteEditor() {
     services: Array.isArray(w.services) ? w.services : [],
   });
 
-  const stockPhotos = async () => {
-    setStocking(true);
+  const stockPhotos = async (refresh = false) => {
+    if (refresh) setRefreshingPhotos(true); else setStocking(true);
     try {
-      const { data } = await api.post("/website/stock-photos", slotState());
+      const { data } = await api.post("/website/stock-photos", { ...slotState(), refresh });
       if (data.website) setW(data.website);
       api.get("/photos").then(({ data: pl }) => setPhotos(Array.isArray(pl) ? pl.filter((p) => p.content_type !== "video/mp4") : [])).catch(() => {});
       if (data.reason === "no_key") toast.error(t("website.stockNoKey"));
-      else if (data.filled) toast.success(t("website.stockDone"));
-      else toast.info(t("website.stockNone"));
+      else if (data.reason === "pexels_down") toast.error(isEs ? "No pude conectar con el servicio de fotos ahora. Inténtalo de nuevo en un momento." : "Couldn't reach the photo service right now. Please try again shortly.");
+      else if (data.filled) toast.success(refresh ? (isEs ? "Listo — traje fotos nuevas" : "Done — brought new photos") : t("website.stockDone"));
+      else toast.info(isEs ? "No había espacios de foto vacíos" : "No empty photo slots to fill");
     } catch (e) {
       toast.error(e?.response?.data?.detail || t("website.stockError"));
-    } finally { setStocking(false); }
+    } finally { if (refresh) setRefreshingPhotos(false); else setStocking(false); }
   };
 
   const translateEs = async () => {
@@ -542,11 +544,18 @@ export default function WebsiteEditor() {
                   ? (isEs ? `Tienes ${emptyPhotoCount} espacio${emptyPhotoCount === 1 ? "" : "s"} de foto por llenar` : `You have ${emptyPhotoCount} photo slot${emptyPhotoCount === 1 ? "" : "s"} to fill`)
                   : (isEs ? "Todas tus fotos están puestas ✓" : "All your photos are set ✓")}
               </div>
-              <Button onClick={stockPhotos} disabled={stocking} data-testid="website-stock-photos"
+              <Button onClick={() => stockPhotos(false)} disabled={stocking || refreshingPhotos} data-testid="website-stock-photos"
                 className="mt-4 rounded-xl h-12 bg-white text-indigo-700 hover:bg-white/90 font-bold w-full sm:w-auto px-6 block">
-                {stocking ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Buscando fotos…" : "Finding photos…"}</> : <><Sparkles className="w-4 h-4 mr-2" /> {isEs ? "Rellenar todas las fotos" : "Fill all photos"}</>}
+                {stocking ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Buscando fotos…" : "Finding photos…"}</> : <><Sparkles className="w-4 h-4 mr-2" /> {isEs ? "Rellenar fotos que faltan" : "Fill missing photos"}</>}
               </Button>
-              <p className="text-[11px] text-white/70 mt-2">{isEs ? "Toca de nuevo si quieres otras fotos. Puedes subir las tuyas cuando quieras un toque personal." : "Tap again for different photos. Upload your own anytime for a personal touch."}</p>
+              <p className="text-[11px] text-white/70 mt-2">{isEs ? "Solo llena los espacios vacíos; no cambia las que ya tienes. Sube las tuyas cuando quieras un toque personal." : "Only fills empty slots; it won't change the ones you already have. Upload your own anytime for a personal touch."}</p>
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <Button onClick={() => stockPhotos(true)} disabled={stocking || refreshingPhotos} variant="outline" data-testid="website-refresh-photos"
+                  className="rounded-xl h-10 bg-white/10 border-white/40 text-white hover:bg-white/20 font-bold text-sm w-full sm:w-auto">
+                  {refreshingPhotos ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isEs ? "Trayendo fotos…" : "Bringing photos…"}</> : <>🔄 {isEs ? "Traer fotos diferentes" : "Get different photos"}</>}
+                </Button>
+                <p className="text-[11px] text-white/70 mt-1">{isEs ? "Renueva TODAS las fotos automáticas por otras nuevas. Nunca toca las que tú subiste." : "Replaces ALL auto photos with fresh ones. Never touches the ones you uploaded."}</p>
+              </div>
             </div>
           </div>
         </Card>

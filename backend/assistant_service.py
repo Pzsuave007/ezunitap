@@ -220,8 +220,10 @@ TOOLS = [
     }},
     {"type": "function", "function": {
         "name": "fill_website_photos",
-        "description": "Automatically fill the EMPTY photo slots across the whole website (hero/main banner, About Us, Why-choose-us, the CTA band and EVERY service) AND the digital card background with professional stock photos related to the owner's trade. Never replaces a photo the owner uploaded. Use this whenever the user asks to fill all the photos, auto-add photos, put pictures on the site, or make the site/card look complete with images.",
-        "parameters": {"type": "object", "properties": {}},
+        "description": "Auto-fill website photos with trade-relevant stock images AND the digital card background. By default it ONLY fills EMPTY slots and never changes photos that already exist (safe to run anytime) — use this when the user asks to fill missing photos or add photos to new services. Set refresh=true ONLY when the user explicitly asks for DIFFERENT/NEW photos or to replace/renew the current ones; then it also re-rolls the stock photos already placed (never the owner's own uploads).",
+        "parameters": {"type": "object", "properties": {
+            "refresh": {"type": "boolean", "description": "false (default) = only fill empty slots. true = also replace existing auto-placed stock photos with new ones."},
+        }},
     }},
     # ---- Invoicing ----
     {"type": "function", "function": {
@@ -416,12 +418,15 @@ def confirm_summary(name: str, args: dict, lang: str) -> str:
         return (f"Voy a agregar el producto \"{args.get('name','')}\" a tu sitio. ¿Confirmas?") if es \
             else (f"I'll add the product \"{args.get('name','')}\" to your site. Confirm?")
     if name == "fill_website_photos":
-        return ("Voy a rellenar con fotos profesionales de tu oficio todos los espacios vacíos de tu sitio "
-                "(portada, Sobre Nosotros, \u201cpor qué elegirnos\u201d, el banner y todos tus servicios) y el fondo de tu "
-                "tarjeta digital. No reemplazaré las fotos que tú subiste. ¿Confirmas?") if es \
-            else ("I'll fill every empty photo slot on your site (hero, About Us, why-us, the CTA band and all your "
-                  "services) and your digital card background with professional photos from your trade. I won't "
-                  "replace photos you uploaded. Confirm?")
+        if args.get("refresh"):
+            return ("Voy a RENOVAR todas las fotos automáticas de tu sitio y el fondo de tu tarjeta por otras nuevas "
+                    "de tu oficio. No tocaré las fotos que tú subiste. ¿Confirmas?") if es \
+                else ("I'll REPLACE all the auto photos on your site and your card background with fresh ones from "
+                      "your trade. I won't touch photos you uploaded. Confirm?")
+        return ("Voy a rellenar SOLO los espacios de foto vacíos de tu sitio (incluidos servicios nuevos) y el fondo "
+                "de tu tarjeta con fotos de tu oficio. No cambiaré las que ya tienes. ¿Confirmas?") if es \
+            else ("I'll fill ONLY the empty photo slots on your site (including new services) and your card "
+                  "background with photos from your trade. I won't change the ones you already have. Confirm?")
     if name == "create_client":
         return (f"Voy a agregar al cliente \"{args.get('name','')}\". ¿Confirmas?") if es \
             else (f"I'll add the client \"{args.get('name','')}\". Confirm?")
