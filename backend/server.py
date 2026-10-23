@@ -12847,6 +12847,10 @@ async def _get_or_init_directory_profile(user_id: str) -> dict:
     return prof
 
 
+def _directory_photo_url(photo_id) -> Optional[str]:
+    return f"/api/public/directory/photo/{photo_id}" if photo_id else None
+
+
 def _dir_public_view(prof: dict, full: bool = False) -> dict:
     out = {
         "slug": prof.get("slug"),
@@ -12858,14 +12862,14 @@ def _dir_public_view(prof: dict, full: bool = False) -> dict:
         "service_area": prof.get("service_area") or "",
         "about": prof.get("about") or "",
         "badge": (prof.get("badge_status") == "approved"),
-        "logo_url": _photo_public_url(prof["logo_photo_id"]) if prof.get("logo_photo_id") else None,
-        "hero_url": _photo_public_url(prof["hero_photo_id"]) if prof.get("hero_photo_id") else None,
+        "logo_url": _directory_photo_url(prof.get("logo_photo_id")),
+        "hero_url": _directory_photo_url(prof.get("hero_photo_id")),
     }
     if full:
         out["phone"] = prof.get("phone") or ""
         out["email"] = prof.get("email") or ""
         out["website_url"] = prof.get("website_url") or ""
-        out["gallery"] = [_photo_public_url(pid) for pid in (prof.get("gallery") or [])]
+        out["gallery"] = [_directory_photo_url(pid) for pid in (prof.get("gallery") or [])]
     else:
         # short preview of the about text for cards
         out["about"] = (out["about"][:160] + "…") if len(out["about"]) > 160 else out["about"]
@@ -12911,9 +12915,9 @@ class DirectoryBadgeIn(BaseModel):
 @api_router.get("/directory/profile")
 async def get_directory_profile(user_id: str = Depends(get_current_user_id)):
     prof = await _get_or_init_directory_profile(user_id)
-    prof["logo_url"] = _photo_public_url(prof["logo_photo_id"]) if prof.get("logo_photo_id") else None
-    prof["hero_url"] = _photo_public_url(prof["hero_photo_id"]) if prof.get("hero_photo_id") else None
-    prof["gallery_urls"] = [_photo_public_url(pid) for pid in (prof.get("gallery") or [])]
+    prof["logo_url"] = _directory_photo_url(prof.get("logo_photo_id"))
+    prof["hero_url"] = _directory_photo_url(prof.get("hero_photo_id"))
+    prof["gallery_urls"] = [_directory_photo_url(pid) for pid in (prof.get("gallery") or [])]
     return prof
 
 
@@ -12963,7 +12967,7 @@ async def upload_directory_photo(
         await db.directory_profiles.update_one({"user_id": user_id}, {"$set": {"logo_photo_id": photo_id, "updated_at": _now_iso()}})
     else:
         await db.directory_profiles.update_one({"user_id": user_id}, {"$push": {"gallery": {"$each": [photo_id], "$slice": -12}}, "$set": {"updated_at": _now_iso()}})
-    return {"photo_id": photo_id, "url": _photo_public_url(photo_id), "slot": slot}
+    return {"photo_id": photo_id, "url": _directory_photo_url(photo_id), "slot": slot}
 
 
 @api_router.delete("/directory/profile/gallery/{photo_id}")
@@ -12979,7 +12983,7 @@ async def publish_directory_profile(payload: DirectoryPublishIn, user_id: str = 
         missing = []
         if not (prof.get("business_name") or "").strip():
             missing.append("nombre del negocio")
-        if not (prof.get("categories") or []):
+        if not (prof.get("categories") or []) and not (prof.get("custom_services") or []):
             missing.append("al menos un servicio")
         if not (prof.get("city") or "").strip() or not (prof.get("state") or "").strip():
             missing.append("ciudad y estado")
@@ -13005,6 +13009,39 @@ async def public_directory_config():
     cfg = await _directory_config()
     states = await db.directory_profiles.distinct("state", {"published": True, "state": {"$ne": ""}})
     return {"config": cfg, "categories": DIRECTORY_CATEGORIES, "states": sorted([s for s in states if s])}
+
+
+@api_router.get("/public/directory/photo/{photo_id}")
+async def public_directory_photo(photo_id: str, request: Request, w: int = 0, q: int = 82):
+    """Serve a photo used on a directory profile. Unlike the Smart Card photo
+    endpoint, this does NOT require an active card — directory-only (free) users
+    have no card, so we authorize by confirming the photo is referenced by a
+    directory profile (logo, cover or gallery)."""
+    doc = await db.photos.find_one({"id": photo_id, "is_deleted": False}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    ref = await db.directory_profiles.find_one(
+        {"$or": [{"logo_photo_id": photo_id}, {"hero_photo_id": photo_id}, {"gallery": photo_id}]},
+        {"_id": 0, "id": 1},
+    )
+    if not ref:
+        raise HTTPException(404, "Not found")
+    want_webp = "image/webp" in (request.headers.get("accept") or "")
+    wq = int(w or 0)
+    qq = int(q or 82)
+    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+    cached = await asyncio.to_thread(_img_cache_get, photo_id, wq, qq, want_webp)
+    if cached:
+        return Response(content=cached[0], media_type=cached[1], headers=headers)
+    try:
+        backend = storage_service.get_backend(doc.get("storage_backend"))
+        data, ct = await asyncio.to_thread(backend.get, doc["storage_path"])
+    except Exception:
+        raise HTTPException(500, "Storage error")
+    ctype = doc.get("content_type", ct) or "application/octet-stream"
+    out_data, out_type = await asyncio.to_thread(_optimize_image, data, ctype, photo_id, wq, qq, want_webp)
+    await asyncio.to_thread(_img_cache_put, photo_id, wq, qq, want_webp, out_data, out_type)
+    return Response(content=out_data, media_type=out_type, headers=headers)
 
 
 @api_router.get("/public/directory/search")

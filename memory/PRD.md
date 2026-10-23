@@ -1660,3 +1660,9 @@ Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (
 - Verificado (curl + screenshot): register source=directory → account_type=directory, features=[]; start-trial → features completas y trialing. Home corto se muestra para dirview@test.com sin redirección al wizard. Sin agente de testing (por pedido del usuario).
 - Flujo completo del enlistado (confirmado): /directorio → "Publicar mi negocio gratis" → /register?from=directory ("Reclama tu ficha gratis", sin badge de trial) → crea cuenta directory-only → cae en /directorio-ficha → llena y publica → aparece en el directorio; leads caen en CRM + email (con línea de patrocinador si está activo + upsell UniTech para no-pagos).
 - Build de producción reconstruido con todo.
+
+## [Jun 2026] Fix: fotos rotas + publicar con servicio personalizado (cuentas solo-directorio)
+- Bug 1 (imágenes rotas): el endpoint /api/public/card/photo/{id} exige una Smart Card activa; los usuarios solo-directorio no tienen card → 404. Fix: nuevo endpoint /api/public/directory/photo/{id} que autoriza si la foto está referenciada por un directory_profile (logo/hero/gallery), sin requerir card. Helper _directory_photo_url(). Actualizado: upload return url, GET /directory/profile (logo_url/hero_url/gallery_urls), _dir_public_view (logo/hero/gallery), y AdminDirectory.js (miniatura). Reusa el pipeline de optimización/caché de imágenes.
+- Bug 2 (no deja publicar): la validación de publish solo miraba `categories` (preestablecidos). Fix: ahora acepta `categories` O `custom_services`.
+- Verificado con curl + screenshot (dirview@test.com): upload logo → GET devuelve /api/public/directory/photo/... → fetch HTTP 200 image/webp; publish con solo custom_service "Metal Roofing" → published:true; editor muestra el logo cargado (naturalWidth 400). Sin agente de testing.
+- Build reconstruido.

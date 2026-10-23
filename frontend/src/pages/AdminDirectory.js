@@ -159,7 +159,7 @@ export default function AdminDirectory() {
               <div key={p.user_id} className="flex items-center gap-3 py-3" data-testid={`admin-dir-row-${p.slug}`}>
                 <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 flex-none border border-slate-200">
                   {p.logo_photo_id || p.hero_photo_id
-                    ? <img src={`${BACKEND}/api/public/card/photo/${p.logo_photo_id || p.hero_photo_id}`} alt="" className="w-full h-full object-cover" />
+                    ? <img src={`${BACKEND}/api/public/directory/photo/${p.logo_photo_id || p.hero_photo_id}`} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center text-slate-300"><Store className="w-5 h-5" /></div>}
                 </div>
                 <div className="flex-1 min-w-0">
