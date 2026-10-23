@@ -91,7 +91,10 @@ export default function DirectoryProfileEditor() {
   const save = async () => {
     setSaving(true);
     try {
-      const { data } = await api.put("/directory/profile", form);
+      const { data } = await api.put("/directory/profile", {
+        ...form,
+        content_lang: es ? "es" : "en",
+      });
       setProfile(data);
       toast.success(te("saved"));
     } catch (e) {

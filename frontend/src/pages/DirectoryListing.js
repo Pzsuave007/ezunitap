@@ -42,10 +42,14 @@ export default function DirectoryListing() {
 
   useEffect(() => {
     axios.get(`${API}/public/directory/config`).then((r) => { setConfig(r.data.config); setCats(r.data.categories || []); }).catch(() => {});
-    axios.get(`${API}/public/directory/listing/${slug}`)
+  }, []);
+
+  useEffect(() => {
+    const lng = (i18n.language || "en").startsWith("es") ? "es" : "en";
+    axios.get(`${API}/public/directory/listing/${slug}`, { params: { lang: lng } })
       .then((r) => { setData(r.data); document.title = r.data.business_name; })
       .catch(() => setErr(true));
-  }, [slug]);
+  }, [slug, i18n.language]);
 
   const catLabel = (s) => { const c = cats.find((x) => x.slug === s); return c ? (es ? c.es : c.en) : s; };
   const primary = config?.primary_color || "#0f5f46";

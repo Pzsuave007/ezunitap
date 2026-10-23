@@ -1506,6 +1506,39 @@ async def translate_text(text: str, target_lang: str = "en") -> str:
     return out
 
 
+async def translate_batch(texts: list, target_lang: str = "en") -> list:
+    """Translate a list of short strings in ONE call. Returns a same-length list
+    (falls back to the originals if anything goes wrong)."""
+    import json as _json
+    items = [str(t or "") for t in texts]
+    if not items:
+        return []
+    tgt = "English" if (target_lang or "en") == "en" else "Spanish"
+    system = (
+        f"You are a professional translator. You receive a JSON array of strings. "
+        f"Translate EACH string into {tgt}. Return ONLY a JSON array of the same length "
+        "and same order with the translations — no markdown, no comments, no extra keys. "
+        "Keep each translation natural and concise; preserve names, numbers and tone."
+    )
+    chat = _new_chat(system)
+    try:
+        resp = await chat.send_message(UserMessage(text=_json.dumps(items, ensure_ascii=False)))
+        raw = (resp or "").strip()
+        if raw.startswith("```"):
+            raw = raw.strip("`")
+            if "\n" in raw:
+                raw = raw.split("\n", 1)[1]
+            raw = raw.strip()
+            if raw.lower().startswith("json"):
+                raw = raw[4:].strip()
+        out = _json.loads(raw)
+        if isinstance(out, list) and len(out) == len(items):
+            return [str(x) for x in out]
+    except Exception:
+        pass
+    return items
+
+
 PHOTO_QUOTE_SYSTEM = """You analyze a contractor's job-site photo and propose a quote draft.
 
 Output ONLY JSON:

@@ -1666,3 +1666,15 @@ Pendiente/Backlog: UI admin para aprobar sellos y editar config del directorio (
 - Bug 2 (no deja publicar): la validación de publish solo miraba `categories` (preestablecidos). Fix: ahora acepta `categories` O `custom_services`.
 - Verificado con curl + screenshot (dirview@test.com): upload logo → GET devuelve /api/public/directory/photo/... → fetch HTTP 200 image/webp; publish con solo custom_service "Metal Roofing" → published:true; editor muestra el logo cargado (naturalWidth 400). Sin agente de testing.
 - Build reconstruido.
+
+## [Jun 2026] Traducción automática del contenido escrito por el contratista (ficha)
+- Petición: que TODO, incluso lo que escribe el usuario, se traduzca al idioma del visitante.
+- ai_service.translate_batch(texts, target_lang): traduce una lista en UNA sola llamada (JSON array in/out, fallback a originales).
+- Profile: campos content_lang ("es"/"en"/"" = idioma en que escribió el contratista) y translations{lang:{about,service_area,custom_services}} (caché).
+- PUT /directory/profile: acepta content_lang; al cambiar about/service_area/custom_services guarda content_lang y limpia translations (regenera).
+- _dir_localize(prof, lang): si lang==content_lang o vacío → original; si hay caché → úsala; si no → translate_batch([about, area, *custom_services]) y guarda en translations.{lang}. Fallback a original ante error.
+- GET /public/directory/listing/{slug}?lang=es|en aplica _dir_localize. Business name, ciudad, estado NO se traducen (nombres propios); categorías preestablecidas ya son bilingües vía i18n.
+- Frontend: DirectoryProfileEditor.save() envía content_lang (idioma actual del editor). DirectoryListing pide ?lang=<i18n> y re-fetch al cambiar el toggle EN/ES.
+- NOTA: la traducción aplica a la FICHA completa; las tarjetas del buscador quedan en original para no disparar costo de IA por búsqueda.
+- Verificado (curl): contratista escribe ES → ficha en EN sale traducida ("We're experts in metal roofing..."), cacheada. Sin agente de testing.
+- Build reconstruido. Usa OpenAI propio en prod / Emergent en preview.

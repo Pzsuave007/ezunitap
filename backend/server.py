@@ -12839,6 +12839,8 @@ async def _get_or_init_directory_profile(user_id: str) -> dict:
         "published": False,
         "badge_status": "none",   # none | pending | approved
         "slug": slug,
+        "content_lang": "",
+        "translations": {},
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -12888,6 +12890,7 @@ class DirectoryProfileIn(BaseModel):
     service_area: Optional[str] = None
     about: Optional[str] = None
     website_url: Optional[str] = None
+    content_lang: Optional[str] = None
 
 
 class DirectoryPublishIn(BaseModel):
@@ -12939,6 +12942,13 @@ async def update_directory_profile(payload: DirectoryProfileIn, user_id: str = D
         update["state"] = (update["state"] or "").strip().upper()[:2]
     if "business_name" in update and update["business_name"].strip():
         update["slug"] = await _unique_directory_slug(update["business_name"], user_id)
+    # If any user-written content changed, remember its language and clear the
+    # cached AI translations so they get regenerated on next view.
+    content_fields = ("about", "service_area", "custom_services")
+    if any(f in update for f in content_fields):
+        cl = (payload.content_lang or "").strip().lower()
+        update["content_lang"] = "es" if cl.startswith("es") else ("en" if cl.startswith("en") else "")
+        update["translations"] = {}
     update["updated_at"] = _now_iso()
     await db.directory_profiles.update_one({"user_id": user_id}, {"$set": update})
     return await get_directory_profile(user_id)
@@ -13065,12 +13075,46 @@ async def public_directory_search(
     return {"results": [_dir_public_view(d, full=False) for d in docs], "count": len(docs)}
 
 
+async def _dir_localize(prof: dict, lang: str) -> dict:
+    """Return {about, service_area, custom_services} in the visitor's language,
+    translating the contractor's text with AI and caching it on the profile."""
+    about = prof.get("about") or ""
+    area = prof.get("service_area") or ""
+    svcs = list(prof.get("custom_services") or [])
+    target = "es" if (lang or "").startswith("es") else ("en" if (lang or "").startswith("en") else "")
+    clang = prof.get("content_lang") or ""
+    if not target or target == clang:
+        return {"about": about, "service_area": area, "custom_services": svcs}
+    cached = (prof.get("translations") or {}).get(target)
+    if cached:
+        return {"about": cached.get("about", about), "service_area": cached.get("service_area", area),
+                "custom_services": cached.get("custom_services", svcs)}
+    if not (about or area or svcs):
+        return {"about": about, "service_area": area, "custom_services": svcs}
+    try:
+        payload = [about, area] + svcs
+        out = await ai_service.translate_batch(payload, target)
+        t_about, t_area, t_svcs = out[0], out[1], out[2:]
+        result = {"about": t_about, "service_area": t_area, "custom_services": t_svcs}
+        await db.directory_profiles.update_one(
+            {"id": prof["id"]}, {"$set": {f"translations.{target}": result}})
+        return result
+    except Exception as e:
+        logger.error(f"directory translate failed: {e!r}")
+        return {"about": about, "service_area": area, "custom_services": svcs}
+
+
 @api_router.get("/public/directory/listing/{slug}")
-async def public_directory_listing(slug: str):
+async def public_directory_listing(slug: str, lang: str = ""):
     prof = await db.directory_profiles.find_one({"slug": slug, "published": True}, {"_id": 0})
     if not prof:
         raise HTTPException(404, "Ficha no encontrada")
-    return _dir_public_view(prof, full=True)
+    view = _dir_public_view(prof, full=True)
+    loc = await _dir_localize(prof, lang)
+    view["about"] = loc["about"]
+    view["service_area"] = loc["service_area"]
+    view["custom_services"] = loc["custom_services"]
+    return view
 
 
 @api_router.post("/public/directory/listing/{slug}/lead")
